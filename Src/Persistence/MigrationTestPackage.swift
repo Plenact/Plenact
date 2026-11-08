@@ -2,24 +2,24 @@
 // @file       MigrationTestPackage.swift
 // @brief      Simulator-only portable assembly with preserved originals and explicit synthetic ownership
 // @details    Supported User Data Model versions: 1.0 base and working 1.1 composition. Package format 1.
-//             Produces an inspectable folder; independent contract validation and portable recovery remain required.
+//             Produces an inspectable folder; independent contract validation and portable recovery remain required
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
 import Foundation
 
 
-/// Prepares an offline test package without authenticating an owner or installing converted data.
+/// Prepares an offline test package without authenticating an owner or installing converted data
 /// @section Purpose
-///     Expose native assembly for manual inspection while retaining the complete original backup.
+///     Expose native assembly for manual inspection while retaining the complete original backup
 @MainActor
 enum MigrationTestPackage
 {
 
     static let accountID = "f0000000-0000-4000-8000-000000000001"
 
-    /// Reject incomplete source coverage, ambiguous values or inconsistent original files.
+    /// Reject incomplete source coverage, ambiguous values or inconsistent original files
     /// @section Purpose
-    ///     Leave the existing backup export available when portable preparation cannot finish.
+    ///     Leave the existing backup export available when portable preparation cannot finish
     enum Failure: Error
     {
 
@@ -169,7 +169,7 @@ enum MigrationTestPackage
                     throw Failure.reviewRequired
                 }
 
-                // UUIDv5 uses the same synthetic account namespace and name as the independent assembler.
+                // UUIDv5 uses the same synthetic account namespace and name as the independent assembler
                 var namespace = UUID(uuidString: accountID)!.uuid
                 var name      = withUnsafeBytes(of: &namespace) { Data($0) }
 

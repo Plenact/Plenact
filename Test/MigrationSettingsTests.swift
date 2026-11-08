@@ -2,16 +2,16 @@
 // @file       MigrationSettingsTests.swift
 // @brief      Isolated settings/profile and Today shortcut migration verification
 // @details    Supported User Data Model versions: 1.0. Synthetic preferences, avatar bytes and
-//             temporary journals only; no real account or owner workspace is imported or modified.
+//             temporary journals only; no real account or owner workspace is imported or modified
 // --------------------------------------------------------------------------------------------------
 import Foundation
 import XCTest
 @testable import Plenact
 
 
-/// Verifies native settings precedence, owner-qualified references and explicit default provenance.
+/// Verifies native settings precedence, owner-qualified references and explicit default provenance
 /// @section Purpose
-///     Keep account-unbound personal metadata reviewable without normalizing away saved values.
+///     Keep account-unbound personal metadata reviewable without normalizing away saved values
 @MainActor
 final class MigrationSettingsTests: XCTestCase
 {

@@ -3,7 +3,7 @@
 // @brief      Board Persistence regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// BoardPersistence regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -28,10 +28,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testListBackgroundOpacityDefaultsClampsAndPersistsIndependently
     /// @brief      Verify that list Background Opacity Defaults Clamps And Persists Independently
     /// @details    Exercises `BoardAppearance().resolved`. Checks
-    ///             `XCTAssertEqual(legacy.resolvedListBackgroundOpacity, 1)`; `XCTAssertFalse(appearance.isEmpty)`.
+    ///             `XCTAssertEqual(legacy.resolvedListBackgroundOpacity, 1)`; `XCTAssertFalse(appearance.isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListBackgroundOpacityDefaultsClampsAndPersistsIndependently() throws
     {
@@ -65,10 +65,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that list Icon Colors Persist And Main List Colors Remain Fixed
     /// @details    Exercises `restored.resolvedIconColor`, `restored.headerAppearance`, `list.resolvedIconColor`.
     ///             Checks `XCTAssertEqual(restored.resolvedIconColor(collectionColor: .orange), .blue)`;
-    ///             `XCTAssertEqual(restored.headerAppearance()?.iconColor, .blue)`.
+    ///             `XCTAssertEqual(restored.headerAppearance()?.iconColor, .blue)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListIconColorsPersistAndMainListColorsRemainFixed() throws
     {
@@ -108,10 +108,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that list Checkmark Reset Restores Exact Nested Flags Without Replacing Content
     /// @details    Exercises `.actionDetail`, `ListCheckmarkReset.reset`, `ListCheckmarkReset.values(in:
     ///             list).values.contains`. Checks `XCTAssertFalse(ListCheckmarkReset.values(in:
-    ///             list).values.contains(true))`; `XCTAssertEqual(list.archivedCards, original.archivedCards)`.
+    ///             list).values.contains(true))`; `XCTAssertEqual(list.archivedCards, original.archivedCards)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListCheckmarkResetRestoresExactNestedFlagsWithoutReplacingContent() throws
     {
@@ -176,10 +176,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testLowerCornerBackPreferenceDefaultsOnAndPersistsWithoutProfile
     /// @brief      Enable corner Back by default while retaining an explicit user opt-out
     /// @details    New preferences and older records without the field enable the shortcut. Explicitly saved false
-    ///             values still round-trip and remain disabled; reading defaults never creates a profile or record.
+    ///             values still round-trip and remain disabled; reading defaults never creates a profile or record
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLowerCornerBackPreferenceDefaultsOnAndPersistsWithoutProfile() throws
     {
@@ -222,10 +222,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testAddItemTextColorsPersistAndRemainScopedToTheirView
     /// @brief      Verify capture colors, legacy defaults, and independent List overrides
     /// @details    Checks Codable compatibility, Board inheritance, built-in readability defaults,
-    ///             and preservation of unrelated Card text colors and List content.
+    ///             and preservation of unrelated Card text colors and List content
     ///
     /// @return     (Void) records color and persistence assertions
-    /// @throws     Propagates encoding or decoding failures.
+    /// @throws     Propagates encoding or decoding failures
     ///
     func testAddItemTextColorsPersistAndRemainScopedToTheirView() throws
     {
@@ -276,10 +276,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that same Day Schedule Uses Times Only Without Changing Stored Dates
     /// @details    Exercises `card.scheduleBadges`, `badges.map`, `CardDateKind.time.label`. Checks
     ///             `XCTAssertEqual(badges.map(\.title), ["Start", "Finish"])`;
-    ///             `XCTAssertEqual(badges.map(\.systemImage), ["clock", "checkmark.circle"])`.
+    ///             `XCTAssertEqual(badges.map(\.systemImage), ["clock", "checkmark.circle"])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testSameDayScheduleUsesTimesOnlyWithoutChangingStoredDates() throws
     {
@@ -338,10 +338,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that week Selector Preserves Stored Content And Active Week
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningWeekSelector.choices`. Checks
     ///             `XCTAssertEqual(choices.count, 17)`; `XCTAssertEqual(Set(choices.map(\.startKey)).count,
-    ///             choices.count)`.
+    ///             choices.count)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testWeekSelectorPreservesStoredContentAndActiveWeek() throws
     {
@@ -396,10 +396,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that due Date Visibility Requires A Stored Date And Preserves Card Preference
     /// @details    Exercises `restored.replacingLocation`, `ListCopying.copy`, `JSONSerialization.jsonObject`. Checks
     ///             `XCTAssertTrue(card.hasDueDate, "Date presence must not depend on the sample card ID")`;
-    ///             `XCTAssertEqual(card.listDueDateLabel, card.dueDateLabel)`.
+    ///             `XCTAssertEqual(card.listDueDateLabel, card.dueDateLabel)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testDueDateVisibilityRequiresAStoredDateAndPreservesCardPreference() throws
     {
@@ -452,7 +452,7 @@ extension PlenactBoardDocumentTests
     ///             `LibraryBrowseFilter.lists.includes`. Checks `XCTAssertEqual(collections.filter {
     ///             LibraryBrowseFilter.all.includes($0) }.map(\.id), [list.id, board.id])`;
     ///             `XCTAssertEqual(collections.filter { LibraryBrowseFilter.lists.includes($0) }.map(\.id),
-    ///             [list.id])`.
+    ///             [list.id])`
     ///
     /// @return     (Void) no return value
     ///
@@ -504,10 +504,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `PlanPreferencesStore.load`, `PlanPreferencesStore.save`, `LocalProfileStore.load`.
     ///             Checks `XCTAssertTrue(try JSONDecoder().decode(LocalProfilePreferences.self, from:
     ///             Data("{}".utf8)).scrollsOverflowingTitles)`; `XCTAssertTrue(PlanPreferencesStore.load(from:
-    ///             defaults).scrollsOverflowingTitles)`.
+    ///             defaults).scrollsOverflowingTitles)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testOverflowReadingPreferenceDefaultsOnAndPersistsWithoutProfile() throws
     {
@@ -541,10 +541,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `BoardAppearance.decodeWeek`, `PersonalCollectionStore.saveChecked`,
     ///             `PersonalCollectionStore.load`. Checks `XCTAssertEqual(try
     ///             BoardAppearance.decodeWeek(XCTUnwrap(defaults.data(forKey: BoardAppearance.weekStorageKey))),
-    ///             week)`; `XCTAssertEqual(try BoardAppearance.decodeWeek(Data()), BoardAppearance())`.
+    ///             week)`; `XCTAssertEqual(try BoardAppearance.decodeWeek(Data()), BoardAppearance())`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testIndependentBoardAppearancePersistsAndAcceptsLegacyCollections() throws
     {
@@ -598,10 +598,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that edited List Metadata Persists In Independent Local Stores
     /// @details    Exercises `week.edit`, `KanbanBoardPersistence.saveListsChecked`,
     ///             `KanbanBoardPersistence.loadListsInBackground`. Checks `XCTAssertEqual(restoredWeek, [week])`;
-    ///             `XCTAssertEqual(restoredCollection, collection)`.
+    ///             `XCTAssertEqual(restoredCollection, collection)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testEditedListMetadataPersistsInIndependentLocalStores() async throws
@@ -652,10 +652,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual((attributes[.font] as? UIFont)?.pointSize,
     ///             24)`; `XCTAssertEqual(attributes[NSAttributedString.Key("PlenactFontName")] as? String,
-    ///             "Georgia")`.
+    ///             "Georgia")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testKeyboardRichFontsPersistAndFormattingSupportsUndoRedo() throws
@@ -736,10 +736,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testNewItemsUseBlankOrEnteredSubtitleAndPersistIt
     /// @brief      Verify that new Items Use Blank Or Entered Subtitle And Persist It
     /// @details    Exercises `list.makeItem`. Checks `XCTAssertEqual(blank.subtitleOverride, "")`;
-    ///             `XCTAssertEqual(blank.subtitle, "")`.
+    ///             `XCTAssertEqual(blank.subtitle, "")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testNewItemsUseBlankOrEnteredSubtitleAndPersistIt() throws
     {

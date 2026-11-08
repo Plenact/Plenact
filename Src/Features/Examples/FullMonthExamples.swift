@@ -3,14 +3,14 @@
 // @brief      Verified workspace backup, restoration and Simulator portable import recovery
 // @details    Supported User Data Model versions: 1.0 base and working 1.1; native backup formats 1/2.
 //             Builds dated sample content and maintains verified user-data backups around explicit
-//             example loading and restoration.
+//             example loading and restoration
 //
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
 import SwiftUI
 
 
-// Full-month examples use a separate, verified offline snapshot of the entire local workspace.
+// Full-month examples use a separate, verified offline snapshot of the entire local workspace
 
 
 ///
@@ -18,7 +18,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Keeps user-data backups, transition files, and preference domains separate so loading
-///     examples can preserve a recoverable workspace.
+///     examples can preserve a recoverable workspace
 ///
 struct FullMonthExampleStore: Sendable
 {
@@ -56,7 +56,7 @@ struct FullMonthExampleStore: Sendable
     ///
     /// @section    Purpose
     ///     Records creation time and file hashes used to verify retained backup content before
-    ///     restoration.
+    ///     restoration
     ///
     private struct Manifest: Codable
     {
@@ -73,10 +73,10 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.live
     /// @brief      Locate the application's live example backup directories
     /// @details    Resolves the Library, Documents, and Application Support locations and uses the application's
-    ///             preferences domain for backup and restoration.
+    ///             preferences domain for backup and restoration
     ///
     /// @return     (FullMonthExampleStore) constructed value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func live() throws -> Self
     {
@@ -107,7 +107,7 @@ struct FullMonthExampleStore: Sendable
     ///
     /// @fcn        FullMonthExampleStore.committedOperation
     /// @brief      Read the completed dataset-switch marker
-    /// @details    Returns the marker text when readable and nil when no readable commit marker exists.
+    /// @details    Returns the marker text when readable and nil when no readable commit marker exists
     ///
     /// @return     (String?) readable committed-operation marker, or nil if unavailable
     ///
@@ -122,17 +122,17 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.digest
     /// @brief      Hash a backup file without loading it entirely into memory
     /// @details    Streams the file in one-megabyte chunks through SHA-256 and closes the handle even if reading
-    ///             fails.
+    ///             fails
     ///
     /// @param[in]  url  File URL for the requested audio resource
     ///
     /// @return     (String) lowercase hexadecimal SHA-256 digest of the file's bytes
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     private func digest(_ url: URL) throws -> String
     {
 
-        // Stream large attachments rather than loading an entire video into memory.
+        // Stream large attachments rather than loading an entire video into memory
         let handle = try FileHandle(forReadingFrom: url)
 
         defer
@@ -158,14 +158,14 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.hashes
     /// @brief      Build a relative-path checksum inventory of a backup
     /// @details    Enumerates regular files, rejects symbolic links, and propagates enumeration and file-reading
-    ///             failures.
+    ///             failures
     ///
     /// @param[in]  directory  Backup directory to enumerate, decode, or verify
     ///
     /// @return     ([String: String]) relative file paths mapped to their SHA-256 checksums
     /// @throws     Explicit failures include `CocoaError(.fileReadUnknown)`,
     ///             `CocoaError(.fileReadUnsupportedScheme)`, `enumerationError`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     private func hashes(in directory: URL) throws -> [String: String]
     {
@@ -229,13 +229,13 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.verify
     /// @brief      Validate a backup before installation or recovery
     /// @details    Requires the supported manifest version, matching file checksums, and a readable saved preferences
-    ///             dictionary.
+    ///             dictionary
     ///
     /// @param[in]  directory  Backup directory to enumerate, decode, or verify
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     private func verify(_ directory: URL) throws
     {
@@ -258,13 +258,13 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.savedDomain
     /// @brief      Decode the backed-up application preferences domain
     /// @details    Reads Defaults.plist and requires a string-keyed property-list dictionary; other contents are
-    ///             treated as corrupt.
+    ///             treated as corrupt
     ///
     /// @param[in]  directory  Backup directory to enumerate, decode, or verify
     ///
     /// @return     ([String: Any]) decoded string-keyed application preferences dictionary
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     private func savedDomain(in directory: URL) throws -> [String: Any]
     {
@@ -285,13 +285,13 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.capture
     /// @brief      Capture a verified snapshot of files and preferences
     /// @details    Builds the snapshot in a temporary staging directory, synchronizes preferences, and retains
-    ///             cleanup for failures before publishing the backup.
+    ///             cleanup for failures before publishing the backup
     ///
     /// @param[in]  destination  Backup destination directory for the verified snapshot
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     private func capture(to destination: URL) throws
     {
@@ -352,13 +352,13 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.setDomain
     /// @brief      Replace and verify the application preferences domain
     /// @details    Synchronizes after writing and compares the stored dictionary with the requested value; a failed
-    ///             write or mismatch throws.
+    ///             write or mismatch throws
     ///
     /// @param[in]  domain  Complete application preferences dictionary to install and verify
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     private func setDomain(_ domain: [String: Any]) throws
     {
@@ -379,17 +379,17 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.installFiles
     /// @brief      Install backed-up Documents and Application Support trees
     /// @details    Copies each immutable snapshot tree through staging before replacing its live directory, allowing
-    ///             interrupted installation to be retried from the snapshot.
+    ///             interrupted installation to be retried from the snapshot
     ///
     /// @param[in]  snapshot  Snapshot values or directory used for the operation
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     private func installFiles(from snapshot: URL) throws
     {
 
-        // Each immutable source survives interrupted installation and can be retried at launch.
+        // Each immutable source survives interrupted installation and can be retried at launch
         for (name, target) in [("Documents", documents), ("ApplicationSupport", support)]
         {
 
@@ -415,10 +415,10 @@ struct FullMonthExampleStore: Sendable
     ///
     /// @fcn        FullMonthExampleStore.finishCommitted
     /// @brief      Clean up a successfully committed dataset transition
-    /// @details    Removes the retained user backup after a completed restore and deletes the transition directory.
+    /// @details    Removes the retained user backup after a completed restore and deletes the transition directory
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     private func finishCommitted() throws
     {
@@ -456,12 +456,12 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.recoverInterruptedSwitch
     /// @brief      Recover or finish an interrupted dataset transition
     /// @details    Finishes committed cleanup or verifies and reinstalls the transition snapshot and preferences
-    ///             before removing its journal directory.
+    ///             before removing its journal directory
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
-    /// @note       Run before constructing any view or loading any saved model after an interrupted switch.
+    /// @note       Run before constructing any view or loading any saved model after an interrupted switch
     ///
     func recoverInterruptedSwitch() throws
     {
@@ -488,12 +488,12 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.loadExample
     /// @brief      Load the full-month example while retaining user data
     /// @details    Recovers interrupted work first, captures the original user backup only when absent, verifies it,
-    ///             and journals the preferences switch before marking it committed.
+    ///             and journals the preferences switch before marking it committed
     ///
     /// @param[in]  example  Bundled example content or dataset to use
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func loadExample(_ example: FullMonthExample) throws
     {
@@ -683,11 +683,11 @@ struct FullMonthExampleStore: Sendable
     /// @fcn        FullMonthExampleStore.restoreUserData
     /// @brief      Restore the verified original user dataset
     /// @details    Requires a retained backup, journals the current state, reinstalls files and preferences, and
-    ///             attempts transition recovery if installation fails.
+    ///             attempts transition recovery if installation fails
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileNoSuchFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     func restoreUserData() throws
     {
@@ -725,7 +725,7 @@ struct FullMonthExampleStore: Sendable
 ///
 /// @section    Purpose
 ///     Keeps dated calendar Weeks and personal collections together as a generated snapshot rather
-///     than mutating the live workspace.
+///     than mutating the live workspace
 ///
 struct FullMonthExample: Sendable
 {
@@ -739,7 +739,7 @@ struct FullMonthExample: Sendable
     /// @fcn        FullMonthExample.make
     /// @brief      Create a full month of calendar-backed demonstration content
     /// @details    Builds dated weeks and examples around the reference month using the supplied calendar, with
-    ///             deterministic relationships among their lists and cards.
+    ///             deterministic relationships among their lists and cards
     ///
     /// @param[in]  now       Reference time used instead of an implicit clock read
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -817,7 +817,7 @@ struct FullMonthExample: Sendable
             document.upsert(week)
         }
 
-        // Example Library content is independent of every dated week.
+        // Example Library content is independent of every dated week
         let collections = [PersonalListExample.onTheTable, .inTheQueue, .scheduled].map
         {
 
@@ -869,14 +869,14 @@ struct FullMonthExample: Sendable
     /// @fcn        FullMonthExample.defaultsDomain
     /// @brief      Build the example dataset's preferences dictionary
     /// @details    Encodes the generated calendar, collections, bookmarks, and importance data while retaining
-    ///             platform preferences, Focus choices, and the user's optional lower-corner Back setting.
+    ///             platform preferences, Focus choices, and the user's optional lower-corner Back setting
     ///
     /// @param[in]  original  Original preferences domain retained for comparison or transformation
     ///
     /// @return     ([String: Any]) preferences domain containing the generated example and supported preserved
     ///             choices
     /// @throws     Explicit failures include `CocoaError(.coderInvalidValue)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     func defaultsDomain(preserving original: [String: Any]) throws -> [String: Any]
     {
@@ -890,7 +890,7 @@ struct FullMonthExample: Sendable
             throw CocoaError(.coderInvalidValue)
         }
 
-        // Keep non-Plenact platform preferences; all app-owned data/settings remain in the backup.
+        // Keep non-Plenact platform preferences; all app-owned data/settings remain in the backup
         var result = original.filter
         {
             !$0.key.hasPrefix("Plenact.")

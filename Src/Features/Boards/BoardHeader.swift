@@ -2,7 +2,7 @@
 // @file       BoardHeader.swift
 // @brief      Board header, options, and display settings
 // @details    Presents navigation and appearance capabilities supplied by the owner, with local
-//             confirmation and settings state.
+//             confirmation and settings state
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,17 +15,17 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Keeps checklist progress, comment counts, and due-date visibility independent of the Cards'
-///     retained data.
+///     retained data
 ///
 struct BoardDisplaySettings
 {
 
 
-    /// Whether cards show checklist completion progress.
+    /// Whether cards show checklist completion progress
     var showChecklistProgress = true /* Display checklist progress on cards */
-    /// Whether cards show their comment count.
+    /// Whether cards show their comment count
     var showCommentCounts = true /* Display comment counts on cards     */
-    /// Whether cards show due-date badges.
+    /// Whether cards show due-date badges
     var showDueDateBadges = true /* Display due date badges on cards    */
 
 }
@@ -44,7 +44,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     case standard
     case overview
 
-    /// User-defaults key for the locally stored Board presentation selection.
+    /// User-defaults key for the locally stored Board presentation selection
     static let storageKey = "Plenact.BoardPresentation.v1" /* Versioned Board layout preference key */
 
     ///
@@ -129,7 +129,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable
         if self == .standard
         {
 
-            // Reserve a 15-point neighbor preview and the 17-point gap on each side.
+            // Reserve a 15-point neighbor preview and the 17-point gap on each side
             return min(available, 360, max(172, viewportWidth - 64))
         }
 
@@ -150,7 +150,7 @@ struct BoardCardHeightPreferenceKey: PreferenceKey
 {
 
 
-    /// Current card-height reports keyed by card identity.
+    /// Current card-height reports keyed by card identity
     static var defaultValue: [Int: CGFloat] = [:] /* Empty list-center measurements before layout */
 
 
@@ -197,32 +197,32 @@ struct BoardHeader: View
 
     @Environment(\.layoutDirection) private var headerLayoutDirection
     @Binding var settings: BoardDisplaySettings /* Board display settings                              */
-    /// Shared Standard/Overview selection displayed in the Board options menu.
+    /// Shared Standard/Overview selection displayed in the Board options menu
     @Binding var presentation: BoardPresentation         /* Shared Standard or Overview layout selection */
     let activeMembers:         [String]                  /* Unique users assigned to active cards        */
     let memberColors:          [String: Color]           /* Icon colors keyed by normalized member name  */
     let onRenameMember:        (String, String) -> Void  /* Rename a member across all card assignments  */
     let onDeleteMember:        (String) -> Void          /* Remove a member from all card assignments    */
     let onSetMemberColor:      (String, Color) -> Void   /* Update a member's shared icon color          */
-    /// Opens the calendar view for the current board.
+    /// Opens the calendar view for the current board
     let onOpenCalendar: () -> Void /* Presents the Board's calendar browser */
-    /// Board name shown in the header.
+    /// Board name shown in the header
     let title: String /* Board heading displayed in the header */
-    /// Supporting board description shown in the header.
+    /// Supporting board description shown in the header
     let subtitle: String /* Supporting Board header text */
-    /// Whether to expose list creation in the header.
+    /// Whether to expose list creation in the header
     let allowsAddingLists: Bool /* Whether list creation is offered on the board */
-    /// Optional action returning to the owning collection.
+    /// Optional action returning to the owning collection
     let onClose: (() -> Void)? /* Optional return action to the collection directory */
-    /// Opens the archived-list browser.
+    /// Opens the archived-list browser
     let onViewArchivedLists: () -> Void /* Presents this Board's archived lists */
-    /// Optional callback that archives the board after confirmation.
+    /// Optional callback that archives the board after confirmation
     let onArchiveBoard:   (() -> Void)?  /* Optional whole-Board archive action                    */
     let onDeleteBoard:    (() -> Void)?  /* Confirmed parent-owned Board removal                   */
     let deleteBoardTitle: String         /* Week content clearing or personal Board deletion label */
-    /// Navigates to the first active list when more than one list exists.
+    /// Navigates to the first active list when more than one list exists
     let onJumpToFirstList: (() -> Void)? /* Optional navigation action revealing the first active list */
-    /// Navigates to the last active list when more than one list exists.
+    /// Navigates to the last active list when more than one list exists
     let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
 
     var listViewMode:    Binding<SingleListViewMode>?                             = nil
@@ -246,7 +246,7 @@ struct BoardHeader: View
     @State private var showsBoardOptions = false
     @State private var pendingBoardAction: BoardOptionsAction?
     @State private var showingSettings = false /* Controls the visibility of the board settings sheet */
-    /// Controls confirmation before archiving the complete board.
+    /// Controls confirmation before archiving the complete board
     @State private var confirmsArchiveBoard = false  /* Whole-Board archive confirmation state */
     @State private var confirmsDeleteBoard  = false  /* Permanent Board deletion confirmation  */
 
@@ -256,7 +256,7 @@ struct BoardHeader: View
     /// @brief      Execute one deferred Board options choice
     /// @details    Consumes the pending action before dispatching navigation, gallery, appearance,
     ///             or settings callbacks. Destructive choices raise their existing confirmation
-    ///             state instead of deleting immediately.
+    ///             state instead of deleting immediately
     ///
     /// @return     (Void) consumes the pending option and updates the appropriate presentation
     ///
@@ -591,7 +591,7 @@ struct BoardSettingsView: View
     @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers =
     true                                         /* Device-only visibility                   */
     @Binding var settings: BoardDisplaySettings  /* Bound to the board's display preferences */
-    /// Shared presentation choice updated immediately from Board settings.
+    /// Shared presentation choice updated immediately from Board settings
     @Binding var presentation: BoardPresentation /* Shared Board layout selection edited by this menu */
 
     @Environment(\.dismiss) private var dismiss /* Dismiss action for the settings sheet           */
@@ -1053,7 +1053,7 @@ struct MemberColorEditorSheet: View
 ///
 /// @section    Purpose
 ///     Keeps navigation, gallery, appearance, archive, and deletion choices separate from their
-///     execution callbacks.
+///     execution callbacks
 ///
 enum BoardOptionsAction
 {
@@ -1067,7 +1067,7 @@ enum BoardOptionsAction
 ///
 /// @section    Purpose
 ///     Adapts its controls to supplied capabilities and text size while reporting the selected
-///     action to the owner.
+///     action to the owner
 ///
 struct BoardOptionsPopover: View
 {
@@ -1092,7 +1092,7 @@ struct BoardOptionsPopover: View
     /// @fcn        BoardOptionsPopover.icon
     /// @brief      Build an accessible board-option icon button
     /// @details    Provides a forty-four-point target, disabled styling, an accessibility name, and the selected
-    ///             action callback.
+    ///             action callback
     ///
     /// @param[in]  symbol   SF Symbol name used by the control
     /// @param[in]  name     Storage file name, symbol name, or accessible control name selected for this operation

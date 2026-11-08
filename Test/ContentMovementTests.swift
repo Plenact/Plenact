@@ -3,7 +3,7 @@
 // @brief      Content Movement regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// ContentMovement regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -28,10 +28,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard
     /// @brief      Verify that visible Reordering Maps Past Collapsed Content And Reveals The Moved Card
     /// @details    Exercises `DaySections.visibleMove`, `DaySections.reordered`, `DaySections.reveal`. Checks
-    ///             `XCTAssertEqual(move.id, 5)`; `XCTAssertEqual(move.index, 3)`.
+    ///             `XCTAssertEqual(move.id, 5)`; `XCTAssertEqual(move.index, 3)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard() throws
     {
@@ -41,7 +41,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard.card
         /// @brief      Prepare card for the enclosing regression test
         /// @details    Supplies the local fixture for visible Reordering Maps Past Collapsed Content And Reveals The
-        ///             Moved Card.
+        ///             Moved Card
         ///
         /// @param[in]  id     Starting numeric card ID or owner-local content identity
         /// @param[in]  title  Display title or proposed title text
@@ -97,7 +97,7 @@ extension PlenactBoardDocumentTests
     ///             .noteList)`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testSingleListViewModePersistsWithoutConvertingOrReorderingContent() throws
     {
@@ -147,10 +147,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that keep Tomorrow Decision Persists Without Copying Or Retiming The Table Item
     /// @details    Exercises `DatedPlanningWeek.make`, `.now.addingTimeInterval`, `TodayReviewSelection.items`.
     ///             Checks `XCTAssertEqual(restored.eveningReview?.decisions.first?.action, .keepTomorrow)`;
-    ///             `XCTAssertTrue(TodayReviewSelection.pending(items, review: restored.eveningReview).isEmpty)`.
+    ///             `XCTAssertTrue(TodayReviewSelection.pending(items, review: restored.eveningReview).isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testKeepTomorrowDecisionPersistsWithoutCopyingOrRetimingTheTableItem() throws
@@ -229,10 +229,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that whole List Move Rejects Unavailable Or Same Board Without Mutation
     /// @details    Exercises `CrossBoardListMovement.move`. Checks `XCTAssertThrowsError(try
     ///             CrossBoardListMovement.move(listID: 4, from: source.id, to: destination, collections: &boards))`;
-    ///             `XCTAssertEqual(boards, original)`.
+    ///             `XCTAssertEqual(boards, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testWholeListMoveRejectsUnavailableOrSameBoardWithoutMutation() throws
     {
@@ -265,7 +265,7 @@ extension PlenactBoardDocumentTests
     /// @details    Checks `XCTAssertEqual(TransferConfirmation(title: "Garden path", destination: "Garden /
     ///             Ideas").message, "Moved ‘Garden path’ to Garden / Ideas.")`;
     ///             `XCTAssertEqual(TransferConfirmation(title: "My note", destination: "Journal").message, "Moved ‘My
-    ///             note’ to Journal.")`.
+    ///             note’ to Journal.")`
     ///
     /// @return     (Void) no return value
     ///
@@ -289,10 +289,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that cross Board Move Reserves Archived Identities And Preserves Format
     /// @details    Exercises `CrossBoardCardMovement.move`, `original.replacingLocation`, `saved.contains`. Checks
     ///             `XCTAssertNotEqual(moved.id, original.id)`; `XCTAssertEqual(moved, original.replacingLocation(id:
-    ///             moved.id, listTitle: "Monday"))`.
+    ///             moved.id, listTitle: "Monday"))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCrossBoardMoveReservesArchivedIdentitiesAndPreservesFormat() throws
     {
@@ -331,10 +331,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCrossBoardMoveRejectsUnavailableDestinationWithoutMutation
     /// @brief      Verify that cross Board Move Rejects Unavailable Destination Without Mutation
     /// @details    Exercises `CrossBoardCardMovement.move`. Checks `XCTAssertEqual(week, before)`;
-    ///             `XCTAssertEqual(saved, [card.id])`.
+    ///             `XCTAssertEqual(saved, [card.id])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCrossBoardMoveRejectsUnavailableDestinationWithoutMutation() throws
     {
@@ -361,10 +361,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that mixed Display Formats Persist Move Rename And Archive With Independent Defaults
     /// @details    Exercises `ItemDisplayFormat.allCases.enumerated().map`, `ItemDisplayFormat.allCases.enumerated`,
     ///             `lists[0].makeItem`. Checks `XCTAssertTrue(editBoardList(1, title: "Ideas", subtitle: "",
-    ///             newItemPresentation: .note, in: &lists))`; `XCTAssertEqual(lists[0].cards, cards)`.
+    ///             newItemPresentation: .note, in: &lists))`; `XCTAssertEqual(lists[0].cards, cards)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testMixedDisplayFormatsPersistMoveRenameAndArchiveWithIndependentDefaults() async throws
@@ -437,10 +437,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testListCopyAllocatesIDsAndPreservesContentAndInternalLinks
     /// @brief      Verify that list Copy Allocates I Ds And Preserves Content And Internal Links
     /// @details    Exercises `.linkedCard`, `ListCopying.copy`, `copy.allCards.map`. Checks `XCTAssertEqual(copy.id,
-    ///             9)`; `XCTAssertEqual(copy.allCards.map(\.id), [21, 22])`.
+    ///             9)`; `XCTAssertEqual(copy.allCards.map(\.id), [21, 22])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListCopyAllocatesIDsAndPreservesContentAndInternalLinks() throws
     {
@@ -677,7 +677,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardMovementSupportsEmptyListsAndSameListInsertionBoundaries()
     /// @brief      Verify empty-list transfers and same-list insertion boundaries
     /// @details    Checks moves before another card, appends, self/current-position no-ops, and
-    ///             destination list-title updates using synthetic records.
+    ///             destination list-title updates using synthetic records
     ///
     /// @return     (Void) records assertion failures for incorrect movement or no-op results
     ///
@@ -718,7 +718,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify invalid card movements leave every list unchanged
     /// @details    Exercises missing identities, stale boundaries, archived content, and
     ///             duplicate source cards; compares the complete snapshot after each rejected
-    ///             operation.
+    ///             operation
     ///
     /// @return     (Void) records assertion failures for invalid moves or partial mutations
     ///
@@ -786,7 +786,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify Week and personal Board movement round trips independently
     /// @details    Uses an isolated preference suite for background Week saving and personal
     ///             collection persistence; checks bookmarks and an unchanged separate Board, then
-    ///             removes the fixture domain.
+    ///             removes the fixture domain
     ///
     /// @return     (Void) records assertion failures for changed records or persistence isolation
     ///

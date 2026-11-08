@@ -3,7 +3,7 @@
 // @brief      Card Editing regression tests2
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// CardEditing regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -379,7 +379,7 @@ extension PlenactBoardDocumentTests
     ///             destination records and invalid move snapshots unchanged
     ///
     /// @return     (Void) records cross-collection move assertions
-    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest.
+    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest
     ///
     func testPersonalNoteMovePreservesContentAndResolvesCollectionLocalIDCollision() throws
     {
@@ -463,7 +463,7 @@ extension PlenactBoardDocumentTests
     /// @details    Moves the original Note record and updates only its containing List title
     ///
     /// @return     (Void) records stable-ID and source-removal assertions
-    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest.
+    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest
     ///
     func testPersonalNoteMovePreservesNonconflictingID() throws
     {
@@ -792,7 +792,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDayViewNativeDragReordersCanonicalNotesAndPreservesCancelledDrags()
     /// @brief      Exercise the focused Day view's actual native drag and drop callbacks
     /// @details    Checks append, divider boundaries, cancellation, and outside drops against
-    ///             the canonical binding without changing record content.
+    ///             the canonical binding without changing record content
     ///
     /// @return     (Void) records assertion failures for interaction installation or row layout
     ///
@@ -830,7 +830,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testDayViewNativeDragReordersCanonicalNotesAndPreservesCancelledDrags.collectionView
         /// @brief      Find collection view in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UICollectionView. Returns the first qualifying match,
-        ///             or nil when none is present.
+        ///             or nil when none is present
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///

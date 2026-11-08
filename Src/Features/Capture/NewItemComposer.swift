@@ -2,7 +2,7 @@
 // @file       NewItemComposer.swift
 // @brief      Full-featured Card and Note creation drafts
 // @details    Retains unsaved writing and attachments and submits complete content through checked
-//             destination callbacks.
+//             destination callbacks
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Combines writing, templates, scheduling, and media with checked submission callbacks;
-///     retained drafts survive cancellation and failed saves.
+///     retained drafts survive cancellation and failed saves
 ///
 struct QuickNoteComposer: View
 {
@@ -134,7 +134,7 @@ struct QuickNoteComposer: View
                     $0.id == initialListID
                 })?.newItemPresentation ?? .card)
 
-        // Explicit inline writing takes priority over a previously retained composer title.
+        // Explicit inline writing takes priority over a previously retained composer title
         let suppliedTitle = initialTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : initialTitle
 
         _title = State(
@@ -448,7 +448,7 @@ struct QuickNoteComposer: View
     /// @fcn        QuickNoteComposer.openCamera
     /// @brief      Open camera capture when the device supports it
     /// @details    Checks capture availability and authorization before presenting, retaining user-facing feedback
-    ///             when the camera cannot be used.
+    ///             when the camera cannot be used
     ///
     /// @return     (Void) no return value
     ///
@@ -494,7 +494,7 @@ struct QuickNoteComposer: View
     /// @fcn        QuickNoteComposer.importPhotos
     /// @brief      Import selected photo data into the capture draft
     /// @details    Loads the current selections asynchronously and updates the in-memory photo draft without creating
-    ///             owner records yet.
+    ///             owner records yet
     ///
     /// @return     (Void) no return value
     ///
@@ -554,7 +554,7 @@ struct QuickNoteComposer: View
     /// @fcn        QuickNoteComposer.finishDraft
     /// @brief      Clear a finished draft and reject late editor updates
     /// @details    Disables draft edits before clearing retained draft content so keyboard dismissal cannot recreate
-    ///             it.
+    ///             it
     ///
     /// @return     (Void) no return value
     ///
@@ -575,7 +575,7 @@ struct QuickNoteComposer: View
     /// @fcn        QuickNoteComposer.registerKeyboardDraft
     /// @brief      Register creation actions for the active keyboard context
     /// @details    Provides the current composer actions to the shared keyboard context without committing a new
-    ///             item.
+    ///             item
     ///
     /// @return     (Void) no return value
     ///
@@ -1175,7 +1175,7 @@ struct NewPersonalNoteComposer: View
     /// @fcn        NewPersonalNoteComposer.init
     /// @brief      Freeze available personal-list destinations for creation
     /// @details    Retains the checked save callback and captures stable destination UUIDs so numeric selection
-    ///             values cannot drift as collections change.
+    ///             values cannot drift as collections change
     ///
     /// @param[in]  initialCollectionID     Initially selected personal-list owner UUID
     /// @param[in]  availablePersonalLists  Snapshot of personal-list owners available when creation starts
@@ -1221,7 +1221,7 @@ struct NewPersonalNoteComposer: View
     /// @fcn        NewPersonalNoteComposer.save
     /// @brief      Save a full capture to its selected personal-list owner
     /// @details    Resolves the captured destination identity, calls the throwing owner-save callback, and returns
-    ///             false with feedback when creation is rejected.
+    ///             false with feedback when creation is rejected
     ///
     /// @param[in]  capture  Full capture submission including presentation, text, schedule, and attachments
     ///

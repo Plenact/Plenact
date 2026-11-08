@@ -3,7 +3,7 @@
 // @brief      Planning Review regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// PlanningReview regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -30,7 +30,7 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `DefaultListTutorial.makeStarter`. Checks
     ///             `XCTAssertEqual(collection.preferredFocusedListID, collection.lists[0].id)`;
     ///             `XCTAssertEqual(WorkspaceListReference(ownerID: collection.id, listID:
-    ///             collection.preferredFocusedListID!).listID, collection.lists[0].id)`.
+    ///             collection.preferredFocusedListID!).listID, collection.lists[0].id)`
     ///
     /// @return     (Void) no return value
     ///
@@ -66,7 +66,7 @@ extension PlenactBoardDocumentTests
     ///             3)`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testTodayFocusPreferenceDefaultsAndPersistsWithoutChangingOlderSettings() throws
     {
@@ -101,10 +101,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that focus Filters Combine As Union And Keep All Matches In Canonical Order
     /// @details    Exercises `(0..<7).map`, `cards.insert`, `entries().map`. Checks
     ///             `XCTAssertEqual(entries().map(\.id), [1, 4])`; `XCTAssertEqual(entries().first?.heading,
-    ///             "Important to me")`.
+    ///             "Important to me")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFocusFiltersCombineAsUnionAndKeepAllMatchesInCanonicalOrder() throws
     {
@@ -131,7 +131,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testFocusFiltersCombineAsUnionAndKeepAllMatchesInCanonicalOrder.entries
         /// @brief      Prepare entries for the enclosing regression test
         /// @details    Supplies the local fixture for focus Filters Combine As Union And Keep All Matches In
-        ///             Canonical Order. Uses `preferences.todayFocusEntries`.
+        ///             Canonical Order. Uses `preferences.todayFocusEntries`
         ///
         /// @return     ([TodayFocusEntry]) resulting values in the ordering described above
         ///
@@ -179,10 +179,10 @@ extension PlenactBoardDocumentTests
     ///             calendar).map`, `preferences.todayFocusEntries`. Checks
     ///             `XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: now, calendar: calendar).map(\.id),
     ///             [1, 2, 4, 5])`; `XCTAssertEqual(preferences.todayFocusEntries(in: cards, on: time(20), calendar:
-    ///             calendar).map(\.id), [5])`.
+    ///             calendar).map(\.id), [5])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFocusUpNextSkipsEndedSlotsAndKeepsCurrentUpcomingAndExplicitChoices() throws
     {
@@ -196,7 +196,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testFocusUpNextSkipsEndedSlotsAndKeepsCurrentUpcomingAndExplicitChoices.time
         /// @brief      Prepare time for the enclosing regression test
         /// @details    Supplies the local fixture for focus Up Next Skips Ended Slots And Keeps Current Upcoming And
-        ///             Explicit Choices. Uses `calendar.date`.
+        ///             Explicit Choices. Uses `calendar.date`
         ///
         /// @param[in]  hour  Hour-of-day component used by the fixture
         /// @param[in]  day   Calendar day represented by the result
@@ -263,10 +263,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that focus Shape Preferences Keep Legacy Defaults And Persist Without Profile
     /// @details    Exercises `PlanPreferencesStore.save`, `PlanPreferencesStore.load`, `LocalProfileStore.load`.
     ///             Checks `XCTAssertEqual(legacy.todayFocusOrder, .dayList)`;
-    ///             `XCTAssertFalse(legacy.todayFocusGroupsBySection)`.
+    ///             `XCTAssertFalse(legacy.todayFocusGroupsBySection)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFocusShapePreferencesKeepLegacyDefaultsAndPersistWithoutProfile() throws
     {
@@ -299,10 +299,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testTodayFocusRowCapacityNeverTruncatesOrderedUnfinishedMatches
     /// @brief      Verify that today Focus Row Capacity Never Truncates Ordered Unfinished Matches
     /// @details    Exercises `(0..<16).map`, `cards.insert`, `cards.filter`. Checks `XCTAssertEqual(open.count, 14)`;
-    ///             `XCTAssertEqual(LocalProfilePreferences().todayFocusItems(in: cards).map(\.id), open.map(\.id))`.
+    ///             `XCTAssertEqual(LocalProfilePreferences().todayFocusItems(in: cards).map(\.id), open.map(\.id))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testTodayFocusRowCapacityNeverTruncatesOrderedUnfinishedMatches() throws
     {
@@ -347,7 +347,7 @@ extension PlenactBoardDocumentTests
     ///             $0.comments.isEmpty })`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningDefaultWeekAppliesOnceAndCanBeDisabled() throws
     {
@@ -402,10 +402,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that periodic Review Carries Objectives Without Rewriting Prior Checkpoints
     /// @details    Exercises `PeriodicReviewStore.save`, `PeriodicReviewStore.load`, `PeriodicReviewStore.previous`.
     ///             Checks `XCTAssertEqual(next.startingObjectives, saved.objectives)`;
-    ///             `XCTAssertEqual(next.objectives[0].id, saved.objectives[0].id)`.
+    ///             `XCTAssertEqual(next.objectives[0].id, saved.objectives[0].id)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testPeriodicReviewCarriesObjectivesWithoutRewritingPriorCheckpoints() throws
@@ -428,7 +428,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testPeriodicReviewCarriesObjectivesWithoutRewritingPriorCheckpoints.date
         /// @brief      Prepare date for the enclosing regression test
         /// @details    Supplies the local fixture for periodic Review Carries Objectives Without Rewriting Prior
-        ///             Checkpoints. Uses `PlanningDate.date`.
+        ///             Checkpoints. Uses `PlanningDate.date`
         ///
         /// @param[in]  key  Storage key or stable lookup key used by this operation
         ///
@@ -498,10 +498,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that review Rhythm Defaults Timing And Independent Notifications
     /// @details    Exercises `ReviewRhythmStore.notificationRequests`, `ReviewRhythmStore.periodID`,
     ///             `preferences.normalized`. Checks `XCTAssertTrue(preferences.dailyInvitations)`;
-    ///             `XCTAssertTrue(preferences.weeklyInvitations)`.
+    ///             `XCTAssertTrue(preferences.weeklyInvitations)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testReviewRhythmDefaultsTimingAndIndependentNotifications() throws
@@ -517,7 +517,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testReviewRhythmDefaultsTimingAndIndependentNotifications.date
         /// @brief      Prepare date for the enclosing regression test
         /// @details    Supplies the local fixture for review Rhythm Defaults Timing And Independent Notifications.
-        ///             Uses `calendar.date`.
+        ///             Uses `calendar.date`
         ///
         /// @param[in]  day     Calendar day represented by the result
         /// @param[in]  hour    Hour-of-day component used by the fixture
@@ -544,7 +544,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testReviewRhythmDefaultsTimingAndIndependentNotifications.due
         /// @brief      Prepare due for the enclosing regression test
         /// @details    Supplies the local fixture for review Rhythm Defaults Timing And Independent Notifications.
-        ///             Uses `ReviewRhythmStore.isDue`.
+        ///             Uses `ReviewRhythmStore.isDue`
         ///
         /// @param[in]  kind       Date, review, or collection kind selecting this operation's behavior
         /// @param[in]  now        Reference time used instead of an implicit clock read
@@ -594,10 +594,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that review Rhythm Notification Requests Are Stable Local And Contain Only Review Routes
     /// @details    Exercises `ReviewRhythmStore.notificationRequests`, `requests.map`,
     ///             `ReviewRhythmKind.allCases.map`. Checks `XCTAssertEqual(Set(requests.map(\.identifier)),
-    ///             Set(ReviewRhythmKind.allCases.map(\.notificationID)))`; `XCTAssertTrue(dailyTrigger.repeats)`.
+    ///             Set(ReviewRhythmKind.allCases.map(\.notificationID)))`; `XCTAssertTrue(dailyTrigger.repeats)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testReviewRhythmNotificationRequestsAreStableLocalAndContainOnlyReviewRoutes() throws
     {
@@ -646,10 +646,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that review Rhythm Save Skip And Snooze Are Local And Preserve Corrupt Settings
     /// @details    Exercises `ReviewRhythmStore.load`, `ReviewRhythmStore.save`, `ReviewRhythmStore.deferInvitation`.
     ///             Checks `XCTAssertEqual(ReviewRhythmStore.load(from: defaults), ReviewRhythmPreferences())`;
-    ///             `XCTAssertNil(defaults.object(forKey: ReviewRhythmStore.key))`.
+    ///             `XCTAssertNil(defaults.object(forKey: ReviewRhythmStore.key))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testReviewRhythmSaveSkipAndSnoozeAreLocalAndPreserveCorruptSettings() throws
     {
@@ -701,10 +701,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `plan.recordCheckIn`, `DailyPlanStore.save`, `String(decoding: bytes, as:
     ///             UTF8.self).contains`. Checks `XCTAssertFalse(String(decoding: bytes, as:
     ///             UTF8.self).contains("\"mood\""))`; `XCTAssertNil(try DailyPlanStore.load(from:
-    ///             defaults).plans[plan.id]?.checkInHistory.first?.mood)`.
+    ///             defaults).plans[plan.id]?.checkInHistory.first?.mood)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCheckInMoodsRoundTripWithoutCarryingForwardOrChangingOlderEntries() throws
@@ -760,10 +760,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that check In History Retains Legacy Snapshots And Other Days
     /// @details    Exercises `Calendar.current.date`, `DailyPlanStore.save`, `String(decoding: bytes, as:
     ///             UTF8.self).contains`. Checks `XCTAssertFalse(String(decoding: bytes, as:
-    ///             UTF8.self).contains("checkIns"))`; `XCTAssertEqual(restored.checkInHistory.count, 1)`.
+    ///             UTF8.self).contains("checkIns"))`; `XCTAssertEqual(restored.checkInHistory.count, 1)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCheckInHistoryRetainsLegacySnapshotsAndOtherDays() throws
@@ -784,7 +784,7 @@ extension PlenactBoardDocumentTests
         legacy.checkIn = DailyCheckIn(changed: "Original note", savedAt: yesterday)
 
         let first = try DailyPlanStore.save(legacy, replacing: nil, to: defaults)
-        // Real old documents omit the new optional key entirely.
+        // Real old documents omit the new optional key entirely
         let bytes = try XCTUnwrap(defaults.data(forKey: DailyPlanStore.key))
 
         XCTAssertFalse(String(decoding: bytes, as: UTF8.self).contains("checkIns"))
@@ -844,10 +844,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCheckInSnapshotsDoNotFollowLaterCompletionOrPlanEdits
     /// @brief      Verify that check In Snapshots Do Not Follow Later Completion Or Plan Edits
     /// @details    Exercises `DatedPlanningWeek.make`, `sources.map`, `plan.recordCheckIn`. Checks
-    ///             `XCTAssertEqual(first.completedTasks, 0)`; `XCTAssertEqual(first.totalTasks, 1)`.
+    ///             `XCTAssertEqual(first.completedTasks, 0)`; `XCTAssertEqual(first.totalTasks, 1)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCheckInSnapshotsDoNotFollowLaterCompletionOrPlanEdits() throws
@@ -917,10 +917,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that evening Review Persists Reflection And Skips Decided And Reference Items
     /// @details    Exercises `DatedPlanningWeek.make`, `DailyPlanStore.save`, `DailyPlanStore.load`. Checks
     ///             `XCTAssertNil(try DailyPlanStore.load(from: defaults).plans[plan.id]?.eveningReview)`;
-    ///             `XCTAssertEqual(Set(items.map { $0.card.word }), ["Keep", "Finished"])`.
+    ///             `XCTAssertEqual(Set(items.map { $0.card.word }), ["Keep", "Finished"])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testEveningReviewPersistsReflectionAndSkipsDecidedAndReferenceItems() throws
@@ -1009,10 +1009,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that today Vision Candidates Use Real Dates And Exclude Reference And Completed Items
     /// @details    Exercises `DatedPlanningWeek.make`, `PlanningDate.key`, `week.collection.lists.firstIndex`. Checks
     ///             `XCTAssertEqual(Set(found.map { $0.card.word }), ["Day priority", "Due today", "Spans today"])`;
-    ///             `XCTAssertEqual(Set(found.map(\.id)).count, 3)`.
+    ///             `XCTAssertEqual(Set(found.map(\.id)).count, 3)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testTodayVisionCandidatesUseRealDatesAndExcludeReferenceAndCompletedItems() throws
     {
@@ -1086,10 +1086,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testTodayVisionProgressResumesAndLegacyDailyPlansStayCompatible
     /// @brief      Verify that today Vision Progress Resumes And Legacy Daily Plans Stay Compatible
     /// @details    Exercises `DailyPlanStore.save`, `JSONSerialization.jsonObject`, `plans[plan.id]?.removeValue`.
-    ///             Checks `XCTAssertNil(legacy.visionStep)`; `XCTAssertNil(legacy.visionCompletedAt)`.
+    ///             Checks `XCTAssertNil(legacy.visionStep)`; `XCTAssertNil(legacy.visionCompletedAt)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTodayVisionProgressResumesAndLegacyDailyPlansStayCompatible() throws
@@ -1146,10 +1146,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDailyPlanRoundTripsAndPreservesOtherDaysAndConflictingEdits
     /// @brief      Verify that daily Plan Round Trips And Preserves Other Days And Conflicting Edits
     /// @details    Exercises `DailyPlanStore.load`, `DailyPlanStore.save`, `PlanningDate.key`. Checks
-    ///             `XCTAssertEqual(first.id, "2026-10-16")`; `XCTAssertEqual(first.timeZoneID, "America/Chicago")`.
+    ///             `XCTAssertEqual(first.id, "2026-10-16")`; `XCTAssertEqual(first.timeZoneID, "America/Chicago")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDailyPlanRoundTripsAndPreservesOtherDaysAndConflictingEdits() throws
@@ -1210,10 +1210,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDailyPlanPrioritiesResolveLiveOwnerAndWithinBoardMovesWithoutCopyingCards
     /// @brief      Verify that daily Plan Priorities Resolve Live Owner And Within Board Moves Without Copying Cards
     /// @details    Exercises `reference.resolve`. Checks `XCTAssertEqual(reference.title, card.word)`;
-    ///             `XCTAssertNil(reference.resolve(in: []))`.
+    ///             `XCTAssertNil(reference.resolve(in: []))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testDailyPlanPrioritiesResolveLiveOwnerAndWithinBoardMovesWithoutCopyingCards() throws
     {
@@ -1263,10 +1263,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testPreviewTextColorsInheritIndependentlyFromBoardListAndItem
     /// @brief      Verify that preview Text Colors Inherit Independently From Board List And Item
     /// @details    Exercises `board.resolvedTitleColor`, `board.resolvedTextColor`. Checks
-    ///             `XCTAssertNil(board.cardTitleColor)`; `XCTAssertNil(board.cardTextColor)`.
+    ///             `XCTAssertNil(board.cardTitleColor)`; `XCTAssertNil(board.cardTextColor)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPreviewTextColorsInheritIndependentlyFromBoardListAndItem() throws
     {
@@ -1320,10 +1320,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testListPreviewTextColorsPersistIndependentlyAndDecodeLegacyDefaults
     /// @brief      Verify that list Preview Text Colors Persist Independently And Decode Legacy Defaults
     /// @details    Exercises `BoardAppearance.inheritingLists`. Checks `XCTAssertNil(legacy.cardTitleColor)`;
-    ///             `XCTAssertNil(legacy.cardTextColor)`.
+    ///             `XCTAssertNil(legacy.cardTextColor)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListPreviewTextColorsPersistIndependentlyAndDecodeLegacyDefaults() throws
     {
@@ -1375,10 +1375,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that transfer Toast Is Visible Without Taking Focus Or Intercepting Touches
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `presenter.show`. Checks `XCTAssertFalse(window.isKeyWindow)`;
-    ///             `XCTAssertTrue(scene.windows.first(where: \.isKeyWindow) === keyWindow)`.
+    ///             `XCTAssertTrue(scene.windows.first(where: \.isKeyWindow) === keyWindow)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTransferToastIsVisibleWithoutTakingFocusOrInterceptingTouches() async throws
@@ -1431,10 +1431,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertFalse(textView.isFirstResponder, "Focus must not
     ///             change inside the SwiftUI update")`; `XCTAssertFalse(textView.isFirstResponder, "An obsolete
-    ///             description-focus request must not steal title focus")`.
+    ///             description-focus request must not steal title focus")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testRichEditorDefersFocusAndIgnoresStaleRequests() async throws
@@ -1527,10 +1527,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testPlanningMigrationPreservesExistingContentAndAssociatesSevenDates
     /// @brief      Verify that planning Migration Preserves Existing Content And Associates Seven Dates
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.list`. Checks
-    ///             `XCTAssertEqual(week.startKey, "2026-10-04")`; `XCTAssertEqual(week.collection.lists, original)`.
+    ///             `XCTAssertEqual(week.startKey, "2026-10-04")`; `XCTAssertEqual(week.collection.lists, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningMigrationPreservesExistingContentAndAssociatesSevenDates() throws
     {
@@ -1555,10 +1555,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that planning Date Association Survives Renaming And Does Not Overwrite Archived Day
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.collection.lists.firstIndex`.
     ///             Checks `XCTAssertEqual(week.list(on: date)?.title, "Family plans")`;
-    ///             `XCTAssertNotEqual(replacement, id)`.
+    ///             `XCTAssertNotEqual(replacement, id)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningDateAssociationSurvivesRenamingAndDoesNotOverwriteArchivedDay() throws
     {
@@ -1590,10 +1590,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testPlanningRolloverPreservesPreviousWeekAndReusesFuturePlans
     /// @brief      Verify that planning Rollover Preserves Previous Week And Reuses Future Plans
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `future.list`. Checks
-    ///             `XCTAssertEqual(next.id, future.id)`; `XCTAssertEqual(next.collection, future.collection)`.
+    ///             `XCTAssertEqual(next.id, future.id)`; `XCTAssertEqual(next.collection, future.collection)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningRolloverPreservesPreviousWeekAndReusesFuturePlans() throws
     {
@@ -1642,10 +1642,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that planning Empty Browsing Does Not Persist And Explicit Save Round Trips
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningCalendarStore.save`. Checks
     ///             `XCTAssertNil(document.week(for: futureDate, calendar: calendar))`;
-    ///             `XCTAssertFalse(preview.hasContent)`.
+    ///             `XCTAssertFalse(preview.hasContent)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningEmptyBrowsingDoesNotPersistAndExplicitSaveRoundTrips() throws
     {
@@ -1688,10 +1688,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that planning Persistence Retains Corrupt Document Without Overwrite
     /// @details    Exercises `DatedPlanningWeek.make`, `PlanningCalendarStore.save`. Checks `XCTAssertThrowsError(try
     ///             PlanningCalendarStore.save(document, to: defaults))`; `XCTAssertEqual(defaults.data(forKey:
-    ///             PlanningCalendarStore.key), bytes)`.
+    ///             PlanningCalendarStore.key), bytes)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningPersistenceRetainsCorruptDocumentWithoutOverwrite() throws
     {
@@ -1721,10 +1721,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that collection Previews Prefer Descriptions And Read Older Collections
     /// @details    Exercises `JSONSerialization.jsonObject`, `legacy.removeValue`, `JSONSerialization.data`. Checks
     ///             `XCTAssertEqual(collection.contentPreview, "Garden plans · Desk project · Weekend ideas")`;
-    ///             `XCTAssertEqual(collection.contentPreview, "Personal projects and plans")`.
+    ///             `XCTAssertEqual(collection.contentPreview, "Personal projects and plans")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCollectionPreviewsPreferDescriptionsAndReadOlderCollections() throws
     {
@@ -1784,10 +1784,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testPlanningSharedSearchRetainsScopesAndOwnerQualifiedIdentities
     /// @brief      Verify that planning Shared Search Retains Scopes And Owner Qualified Identities
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningSharedSearchIndex.results`.
-    ///             Checks `XCTAssertEqual(results.count, 2)`; `XCTAssertNotEqual(results[0].id, results[1].id)`.
+    ///             Checks `XCTAssertEqual(results.count, 2)`; `XCTAssertNotEqual(results[0].id, results[1].id)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningSharedSearchRetainsScopesAndOwnerQualifiedIdentities() throws
     {
@@ -1847,10 +1847,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testFocusSelectionContextFadesWithoutEditingItems
     /// @brief      Let selection context fade after its reading interval without editing items
     /// @details    Hosts Focus through its three-second pause and soft fade, then checks the
-    ///             subtitle space is reclaimed while mutation callbacks remain uninvoked.
+    ///             subtitle space is reclaimed while mutation callbacks remain uninvoked
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testFocusSelectionContextFadesWithoutEditingItems() async throws
@@ -1943,7 +1943,7 @@ extension PlenactBoardDocumentTests
     ///             0.05), 4.5)`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFocusFilterPaletteUsesDistinctReadableCombinationColors() throws
     {
@@ -1953,7 +1953,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testFocusFilterPaletteUsesDistinctReadableCombinationColors.luminance
         /// @brief      Calculate relative luminance for the filter-palette test
         /// @details    Linearizes the supplied sRGB components and combines them using the red, green, and blue
-        ///             luminance weights.
+        ///             luminance weights
         ///
         /// @param[in]  values  Values to summarize in their supplied order
         ///

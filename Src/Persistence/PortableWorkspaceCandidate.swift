@@ -2,14 +2,14 @@
 // @file       PortableWorkspaceCandidate.swift
 // @brief      Complete native-store candidate assembled from portable records and verified originals
 // @details    Supported User Data Model versions: 1.0 base and working 1.1 appearance. Candidate format 1.
-//             Retains canonical evidence and numeric aliases; stages privately without activating app stores.
+//             Retains canonical evidence and numeric aliases; stages privately without activating app stores
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Holds one coordinated native projection and its canonical source of truth for guarded installation.
+/// Holds one coordinated native projection and its canonical source of truth for guarded installation
 /// @section Purpose
-///     Keep store reconstruction, media verification and provenance retention in one candidate boundary.
+///     Keep store reconstruction, media verification and provenance retention in one candidate boundary
 @MainActor
 struct PortableWorkspaceCandidate
 {
@@ -107,7 +107,7 @@ struct PortableWorkspaceCandidate
         guard let calendar = try adapter.calendarDocument(selections: selections, accountID: accountID),
               let current = calendar.weeks.first(where: { $0.startKey == calendar.currentWeekKey }) else
         {
-            // The existing root requires a saved calendar; never generate example Weeks on import.
+            // The existing root requires a saved calendar; never generate example Weeks on import
             throw PortableEditableContent.Failure.unsupported
         }
 
@@ -116,7 +116,7 @@ struct PortableWorkspaceCandidate
 
         guard zones.count == 1, let zone = zones.first else
         {
-            // Retain canonical per-Week zones; the legacy active root currently has one runtime calendar.
+            // Retain canonical per-Week zones; the legacy active root currently has one runtime calendar
             throw PortableEditableContent.Failure.unsupported
         }
 
@@ -286,9 +286,9 @@ struct PortableWorkspaceCandidate
 }
 
 
-/// Installs a candidate only within the caller's root-owned backup/rollback transaction.
+/// Installs a candidate only within the caller's root-owned backup/rollback transaction
 /// @section Purpose
-///     Keep view teardown, backup retention and activation authorization outside pure reconstruction.
+///     Keep view teardown, backup retention and activation authorization outside pure reconstruction
 extension PortableWorkspaceCandidate
 {
 

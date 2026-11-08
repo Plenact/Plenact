@@ -2,15 +2,15 @@
 // @file       PortableRichCardExport.swift
 // @brief      Verified new originals and personal selections for rich newly created Cards
 // @details    Supported User Data Model versions: 1.0 records in working 1.1 test packages.
-//             Preserves exact bytes, stable file-derived UUIDs and explicit synthetic ownership; no upload.
+//             Preserves exact bytes, stable file-derived UUIDs and explicit synthetic ownership; no upload
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
 import Foundation
 
 
-/// Extends an immutable import snapshot with frozen new originals before native Card reconstruction.
+/// Extends an immutable import snapshot with frozen new originals before native Card reconstruction
 /// @section Purpose
-///     Keep filename translation, integrity metadata and original-byte ownership explicit during export.
+///     Keep filename translation, integrity metadata and original-byte ownership explicit during export
 @MainActor
 enum PortableRichCardExport
 {
@@ -61,7 +61,7 @@ enum PortableRichCardExport
         let paths     = Set(inventory.map { $0["path"] as! String })
 
         // A removed attachment may leave no live file. Its exact original remains in the verified snapshot.
-        // The caller has already rejected missing live references via the native backup review codes.
+        // The caller has already rejected missing live references via the native backup review codes
         for (path, bytes) in baseline.media.files where paths.contains(path)
         {
             guard try MigrationBackupReader.file(path, in: backup.files) == bytes else
@@ -92,7 +92,7 @@ enum PortableRichCardExport
             let hash  = MigrationBackupReader.digest(bytes)
             let name  = (path as NSString).lastPathComponent
 
-            // PencilKit originals require a paired derivation adapter; never label them as generic files.
+            // PencilKit originals require a paired derivation adapter; never label them as generic files
             guard (name as NSString).pathExtension.lowercased() != "drawing" else
             {
                 throw PortableEditedExport.Failure.unsupported

@@ -2,7 +2,7 @@
 // @file       PlanSettingsView.swift
 // @brief      Compact Plan Settings directory and shared preference-draft lifecycle
 // @details    Focused pages edit one draft. Save commits it once; Back retains it; Cancel discards it.
-//             Independent editors retain their existing checked save controls.
+//             Independent editors retain their existing checked save controls
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 
@@ -12,7 +12,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Edits a local preference draft and publishes display and planning choices through the
-///     established save flow.
+///     established save flow
 ///
 struct PlanSettingsView: View
 {

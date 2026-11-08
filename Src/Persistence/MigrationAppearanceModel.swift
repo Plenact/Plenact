@@ -2,14 +2,14 @@
 // @file       MigrationAppearanceModel.swift
 // @brief      Additive Model 1.1 global Week defaults and authored artwork ordering
 // @details    Supported User Data Model versions: 1.0 base and 1.1 appearance composition. Local
-//             preview only; no verified workspace binding, sync API or release publication is implied.
+//             preview only; no verified workspace binding, sync API or release publication is implied
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Gives global appearance and ordered artwork dedicated records instead of overloading Collections.
+/// Gives global appearance and ordered artwork dedicated records instead of overloading Collections
 /// @section Purpose
-///     Close source representation gaps while preserving the immutable Model 1.0 record namespace.
+///     Close source representation gaps while preserving the immutable Model 1.0 record namespace
 @MainActor
 enum MigrationAppearanceModel
 {

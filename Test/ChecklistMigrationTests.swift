@@ -3,7 +3,7 @@
 // @brief      Checklist Migration regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -21,7 +21,7 @@ final class ChecklistMigrationTests: XCTestCase
 {
 
 
-    /// Holds synthetic live text so each keystroke redraws the checklist row.
+    /// Holds synthetic live text so each keystroke redraws the checklist row
     @MainActor
     private final class EditingModel: ObservableObject
     {
@@ -31,7 +31,7 @@ final class ChecklistMigrationTests: XCTestCase
     }
 
 
-    /// Hosts the actual row, including its native editor and focus binding.
+    /// Hosts the actual row, including its native editor and focus binding
     private struct EditingRow: View
     {
 

@@ -2,14 +2,14 @@
 // @file       PortableRuntimeEvidence.swift
 // @brief      Preserve portable canonical baselines and aliases in native backup format 2
 // @details    Supported User Data Model versions: 1.0 base and working 1.1. Backups retain current
-//             native edits alongside the canonical import baseline; fresh portable reconciliation is separate.
+//             native edits alongside the canonical import baseline; fresh portable reconciliation is separate
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Retains the three runtime evidence files so native backups cannot silently drop portable provenance.
+/// Retains the three runtime evidence files so native backups cannot silently drop portable provenance
 /// @section Purpose
-///     Keep native recovery usable while the editable canonical export path is being completed.
+///     Keep native recovery usable while the editable canonical export path is being completed
 @MainActor
 enum PortableRuntimeEvidence
 {

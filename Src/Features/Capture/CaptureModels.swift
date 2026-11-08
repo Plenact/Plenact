@@ -2,7 +2,7 @@
 // @file       CaptureModels.swift
 // @brief      Full capture submissions and creation policy values
 // @details    Keeps destination, writing, presentation, scheduling, template choices, and
-//             multiline parsing together before explicit item creation.
+//             multiline parsing together before explicit item creation
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -17,7 +17,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Returns a selected template to the capture flow without creating or replacing stored
-///     content.
+///     content
 ///
 struct QuickCaptureTemplatesView: View
 {
@@ -114,7 +114,7 @@ struct QuickCaptureTemplatesView: View
     ///
     /// @fcn        QuickCaptureTemplatesView.templateButton
     /// @brief      Build a quick-capture template selection button
-    /// @details    Uses the template's presentation and invokes the selection action for that particular template.
+    /// @details    Uses the template's presentation and invokes the selection action for that particular template
     ///
     /// @param[in]  template  Authored routine or capture template to preview, apply, or edit
     ///
@@ -168,7 +168,7 @@ struct QuickCaptureTemplatesView: View
 ///
 /// @section    Purpose
 ///     Binds the requested item kind in a segmented control without creating records or changing
-///     destination defaults.
+///     destination defaults
 ///
 struct ContentCreationKindPicker: View
 {
@@ -195,7 +195,7 @@ struct ContentCreationKindPicker: View
 ///
 /// @section    Purpose
 ///     Supplies each mode's label, symbol, and initial Card or Note presentation without creating a
-///     record.
+///     record
 ///
 enum TodayCaptureAction: String, CaseIterable, Identifiable
 {
@@ -268,7 +268,7 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Delegates selection to the caller so capture presentation and storage remain under the
-///     owning view's control.
+///     owning view's control
 ///
 struct TodayCaptureActions: View
 {
@@ -313,7 +313,7 @@ struct TodayCaptureActions: View
 /// Carries optional scheduling values for a capture draft
 ///
 /// @section    Purpose
-///     Validates start and stop values with the supplied calendar before a new item is committed.
+///     Validates start and stop values with the supplied calendar before a new item is committed
 ///
 struct QuickCaptureSchedule: Equatable
 {
@@ -328,7 +328,7 @@ struct QuickCaptureSchedule: Equatable
     /// @fcn        QuickCaptureSchedule.isValid
     /// @brief      Validate the optional capture schedule
     /// @details    Checks the schedule endpoints using their date kinds and the supplied calendar before new items
-    ///             are created.
+    ///             are created
     ///
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
     ///
@@ -349,7 +349,7 @@ struct QuickCaptureSchedule: Equatable
     ///
     /// @fcn        QuickCaptureSchedule.apply
     /// @brief      Copy the capture schedule onto a newly created card
-    /// @details    Normalizes the start and due values according to their date kinds and supplied calendar.
+    /// @details    Normalizes the start and due values according to their date kinds and supplied calendar
     ///
     /// @param[in,out]  card      Card or note being inspected or changed
     /// @param[in]      calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -384,7 +384,7 @@ struct QuickCaptureSchedule: Equatable
 ///
 /// @section    Purpose
 ///     Keeps destination, writing, presentation, checklist actions, attachments, and optional
-///     scheduling together for a checked owner-level save.
+///     scheduling together for a checked owner-level save
 ///
 struct QuickCaptureSubmission
 {
@@ -406,7 +406,7 @@ struct QuickCaptureSubmission
 /// Selects which parts of voice capture to retain
 ///
 /// @section    Purpose
-///     Controls whether the saved item contains recorded audio, transcribed writing, or both.
+///     Controls whether the saved item contains recorded audio, transcribed writing, or both
 ///
 enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
 {
@@ -433,7 +433,7 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
     /// @fcn        VoiceCaptureSaveOption.body
     /// @brief      Combine existing writing with a voice transcript
     /// @details    Uses the selected save option to keep, replace, or combine content without changing the underlying
-    ///             recording.
+    ///             recording
     ///
     /// @param[in]  existing    Existing body text that may be retained or combined
     /// @param[in]  transcript  Recognized voice transcript proposed for the capture body
@@ -464,7 +464,7 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Supplies local draft content without creating records until the user explicitly submits the
-///     composer.
+///     composer
 ///
 enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 {
@@ -594,7 +594,7 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
     /// @fcn        QuickCaptureTemplate.draftTitle
     /// @brief      Choose a captured title or the template default
     /// @details    Preserves a nonblank captured title exactly; blank Card and Note templates remain untitled while
-    ///             other templates use their authored title.
+    ///             other templates use their authored title
     ///
     /// @param[in]  capturedTitle  Existing title text to preserve when it is not blank
     ///
@@ -620,7 +620,7 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 /// Normalizes multiline item-title submissions
 ///
 /// @section    Purpose
-///     Preserves nonempty line order and duplicates while omitting whitespace-only entries.
+///     Preserves nonempty line order and duplicates while omitting whitespace-only entries
 ///
 enum MultilineEntry
 {
@@ -629,7 +629,7 @@ enum MultilineEntry
     ///
     /// @fcn        MultilineEntry.titles
     /// @brief      Split a multiline entry into usable item titles
-    /// @details    Trims each line and discards empty lines while preserving the order of the remaining entries.
+    /// @details    Trims each line and discards empty lines while preserving the order of the remaining entries
     ///
     /// @param[in]  text  Attributed or plain text to restore or display
     ///

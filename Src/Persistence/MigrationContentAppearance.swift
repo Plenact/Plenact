@@ -2,14 +2,14 @@
 // @file       MigrationContentAppearance.swift
 // @brief      Explicit complete-value appearance mapping with inherited nulls preserved
 // @details    Supported User Data Model versions: 1.0. Partial, local-only migration preview.
-//             Original source bytes remain preserved; no cloud ownership or synchronization is implied.
+//             Original source bytes remain preserved; no cloud ownership or synchronization is implied
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Maps portable appearance while keeping unsupported original files as explicit pending targets.
+/// Maps portable appearance while keeping unsupported original files as explicit pending targets
 /// @section Purpose
-///     Preserve authored overrides rather than exporting a flattened resolved style.
+///     Preserve authored overrides rather than exporting a flattened resolved style
 extension MigrationContentValues
 {
 

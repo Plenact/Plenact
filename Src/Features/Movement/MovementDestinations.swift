@@ -2,7 +2,7 @@
 // @file       MovementDestinations.swift
 // @brief      Owner-qualified Card and section destination controls
 // @details    Exposes checked movement capabilities and resolves List or dated destinations
-//             independently of the initiating view.
+//             independently of the initiating view
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Carries available destinations and optional checked callbacks for List or dated movement
-///     while leaving storage with the workspace owner.
+///     while leaving storage with the workspace owner
 ///
 struct CardMovementAccess
 {
@@ -35,7 +35,7 @@ struct CardMovementAccess
 ///
 /// @section    Purpose
 ///     Uses an empty adapter so detached menus have no writable destinations or implicit mutation
-///     callbacks.
+///     callbacks
 ///
 struct CardMovementAccessKey: EnvironmentKey
 {
@@ -51,7 +51,7 @@ struct CardMovementAccessKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Defaults to nil for contexts whose ownership must be resolved by the enclosing workspace
-///     route.
+///     route
 ///
 struct CardMovementSourceKey: EnvironmentKey
 {
@@ -67,7 +67,7 @@ struct CardMovementSourceKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Keeps destination capabilities separate from the current owner's identity for Card and
-///     section actions.
+///     section actions
 ///
 extension EnvironmentValues
 {
@@ -115,7 +115,7 @@ extension EnvironmentValues
 ///
 /// @section    Purpose
 ///     Supports List and dated destinations with optional date shifting and reports completion only
-///     after the injected move succeeds.
+///     after the injected move succeeds
 ///
 struct SectionMoveSheet: View
 {
@@ -373,7 +373,7 @@ struct SectionMoveSheet: View
 ///
 /// @section    Purpose
 ///     Offers List, dated, and section routes through injected access and delegates successful
-///     navigation cleanup to the caller.
+///     navigation cleanup to the caller
 ///
 struct CardDestinationMenu: View
 {

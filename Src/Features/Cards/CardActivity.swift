@@ -2,7 +2,7 @@
 // @file       CardActivity.swift
 // @brief      Card comments, generated activity, and emoji controls
 // @details    Presents retained and derived activity while delegating mutations and authored
-//             reactions to the current item owner.
+//             reactions to the current item owner
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -276,7 +276,7 @@ struct ActivitySwipeRow<Content: View>: View
 ///
 /// @section    Purpose
 ///     Groups matching emoji for display and delegates toggling or adding to the owner using the
-///     current author identity.
+///     current author identity
 ///
 struct ItemReactionStrip: View
 {
@@ -372,7 +372,7 @@ struct ItemReactionStrip: View
 ///
 /// @section    Purpose
 ///     Reports a selected reaction through the callback and dismisses without writing Card state
-///     directly.
+///     directly
 ///
 struct ItemReactionPicker: View
 {
@@ -392,7 +392,7 @@ struct ItemReactionPicker: View
     /// @fcn        ItemReactionPicker.choose
     /// @brief      Submit a chosen emoji and close the picker
     /// @details    Invokes the supplied emoji callback and then dismisses; validation and persistence belong to the
-    ///             callback's owner.
+    ///             callback's owner
     ///
     /// @param[in]  emoji  Emoji text proposed for a reaction or check-in mood
     ///
@@ -494,7 +494,7 @@ struct ItemReactionPicker: View
 ///
 /// @section    Purpose
 ///     Keeps Card preview opening, reordering, and swipe gestures available rather than adding
-///     reaction mutation controls.
+///     reaction mutation controls
 ///
 struct ItemReactionPreview: View
 {
@@ -546,7 +546,7 @@ struct ItemReactionPreview: View
     /// @fcn        ItemReactionPreview.summary
     /// @brief      Build a compact emoji and reaction-count preview
     /// @details    Displays each distinct visible emoji, its count when greater than one, and an additional-emoji
-    ///             count when the supplied remaining value is positive.
+    ///             count when the supplied remaining value is positive
     ///
     /// @param[in]  values     Values to summarize in their supplied order
     /// @param[in]  remaining  Number of additional reactions omitted from the visible emoji summary

@@ -2,7 +2,7 @@
 // @file       CardPreview.swift
 // @brief      Shared Card, Note, and picture List previews
 // @details    Resolves display metadata, completion badges, importance, and preview content
-//             without converting canonical records.
+//             without converting canonical records
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Retains the visual preview, overlays a completion badge, and disables mutations when the
-///     Card is locked.
+///     Card is locked
 ///
 struct CardVisualCompletion: ViewModifier
 {
@@ -29,7 +29,7 @@ struct CardVisualCompletion: ViewModifier
     /// @fcn        CardVisualCompletion.body(content:)
     /// @brief      Add completion interaction and a contrasting badge to a checkable visual
     /// @details    Preserves Notes as ordinary previews. Completed Cards retain their image with
-    ///             a lower-right checkmark; editing locks disable the completion action.
+    ///             a lower-right checkmark; editing locks disable the completion action
     ///
     /// @param[in]  content  Existing picture or icon preview
     ///
@@ -113,17 +113,17 @@ struct KanbanCardView: View
     var compactCards:        Bool                  = false
     var titleColor:          ListPreviewTextColor? = nil
     var supportingTextColor: ListPreviewTextColor? = nil
-    var listedOnDate:        Date?                 = nil // Assigned day from the list, independent of its editable title.
-    /// Layout preset used to select compact card dimensions.
+    var listedOnDate:        Date?                 = nil // Assigned day from the list, independent of its editable title
+    /// Layout preset used to select compact card dimensions
     var presentation: BoardPresentation = .standard  /* Board layout controlling the card row's density     */
     let labelLibrary: LabelLibrary                   /* Shared label catalog used to resolve card label IDs */
     let onUpdateCard: (KanbanCard) -> Void           /* The action invoked when card details are updated    */
     let onDeleteCard: () -> Void                     /* The action invoked when this card is deleted        */
-    /// Requests archival of the displayed card.
+    /// Requests archival of the displayed card
     let onArchiveCard: () -> Void  /* Archives this card through its containing list             */
     let onToggle:      () -> Void  /* Callback invoked when the card's title checkbox is toggled */
 
-    /// Plain writing keeps previews readable without changing the stored rich note.
+    /// Plain writing keeps previews readable without changing the stored rich note
     private var noteExcerpt: String
     {
 
@@ -138,7 +138,7 @@ struct KanbanCardView: View
     @State private var isRenaming         = false  /* Flag indicating if the rename operation is active          */
     @State private var isEditingInfo      = false  /* Flag indicating if the card info editing mode is active    */
     @State private var isConfirmingDelete = false  /* Flag indicating if the delete confirmation dialog is shown */
-    /// Current Dynamic Type size used to adapt the compact card layout.
+    /// Current Dynamic Type size used to adapt the compact card layout
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Text-size category used for adaptive card content */
 
 
@@ -853,7 +853,7 @@ struct KanbanCardView: View
 /// Presents a Card or Note in a denser focused List row
 ///
 /// @section    Purpose
-///     Changes visual density without converting the canonical record or replacing its metadata.
+///     Changes visual density without converting the canonical record or replacing its metadata
 ///
 struct SingleListNoteRow: View
 {
@@ -885,7 +885,7 @@ struct SingleListNoteRow: View
     ///
     /// @fcn        SingleListNoteRow.dateText
     /// @brief      Format a note date according to its date kind
-    /// @details    Shows a calendar date, a time, or both without adding components absent from the stored kind.
+    /// @details    Shows a calendar date, a time, or both without adding components absent from the stored kind
     ///
     /// @param[in]  date  Represented date for the operation
     /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior

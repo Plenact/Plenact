@@ -2,15 +2,15 @@
 // @file       LegacyWorkspaceExport.swift
 // @brief      Read-only iOS snapshot with exact preference and original-media preservation
 // @details    Supports User Data Model 1.0 base and working 1.1; native backup formats 1/2.
-//             Preserves legacy storage without conversion, restoration, network access or fallback data.
+//             Preserves legacy storage without conversion, restoration, network access or fallback data
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
 import Foundation
 
 
-/// Private source backup and human-review metadata, distinct from portable Model 1.0 data.
+/// Private source backup and human-review metadata, distinct from portable Model 1.0 data
 /// @section Purpose
-///     Preserve current source bytes before any future conversion or cloud write.
+///     Preserve current source bytes before any future conversion or cloud write
 struct LegacyWorkspaceBackup
 {
 
@@ -22,9 +22,9 @@ struct LegacyWorkspaceBackup
 }
 
 
-/// Captures only reviewed local stores and owned media while the main actor prevents UI edits.
+/// Captures only reviewed local stores and owned media while the main actor prevents UI edits
 /// @section Purpose
-///     Establish a recoverable native snapshot boundary without mutating saved content.
+///     Establish a recoverable native snapshot boundary without mutating saved content
 @MainActor
 enum LegacyWorkspaceExport
 {
@@ -38,9 +38,9 @@ enum LegacyWorkspaceExport
     static let maximumBytes = 256 * 1024 * 1024 /* Explicit in-memory export ceiling; never truncate */
 
 
-    /// Explicit capture failures leave source stores and files untouched.
+    /// Explicit capture failures leave source stores and files untouched
     /// @section Purpose
-    ///     Explain why a consistent, bounded source backup could not be prepared.
+    ///     Explain why a consistent, bounded source backup could not be prepared
     enum Failure: LocalizedError
     {
 
@@ -76,7 +76,7 @@ enum LegacyWorkspaceExport
 
     /// @fcn LegacyWorkspaceExport.inventory
     /// @brief Enumerate only regular files beneath reviewed media roots
-    /// @details Rejects symlinks in every path component and nonregular media entries.
+    /// @details Rejects symlinks in every path component and nonregular media entries
     /// @param[in] root App container or isolated test container
     /// @return Relative file paths and exact original bytes
     /// @throws Unsafe paths, unreadable files or the explicit size ceiling
@@ -232,7 +232,7 @@ enum LegacyWorkspaceExport
     /// @brief Freeze saved stores and media after pending Board writes finish
     /// @details Main-actor execution prevents UI writes during capture. Double-reading preferences
     ///          and media detects overlapping background imports; a mismatch aborts the whole export.
-    ///          Missing stores stay absent and corrupt bytes remain available for recovery.
+    ///          Missing stores stay absent and corrupt bytes remain available for recovery
     /// @param[in] defaults App preferences or an isolated test suite
     /// @param[in] domain Explicit persistent-domain name; registered defaults are excluded
     /// @param[in] root App container or isolated test media container

@@ -2,7 +2,7 @@
 // @file       AppearanceEditors.swift
 // @brief      Draft appearance and List surface controls
 // @details    Edits colors, icons, backgrounds, preview choices, and inline capture styling
-//             through owner-accepted saves.
+//             through owner-accepted saves
 //
 // --------------------------------------------------------------------------------------------------
 import AVKit
@@ -19,7 +19,7 @@ import UIKit
 ///
 /// @section    Purpose
 ///     Coordinates icon, banner, List background, capture colors, and optional display format; a
-///     rejected save keeps the editor open.
+///     rejected save keeps the editor open
 ///
 struct ItemAppearanceSheet: View
 {
@@ -41,7 +41,7 @@ struct ItemAppearanceSheet: View
     /// @fcn        ItemAppearanceSheet.init
     /// @brief      Initialize editable appearance and optional display controls
     /// @details    Seeds local draft state from the supplied appearance and display format and retains the checked
-    ///             save and auxiliary-editor callbacks.
+    ///             save and auxiliary-editor callbacks
     ///
     /// @param[in]  title                      Display title or proposed title text
     /// @param[in]  appearance                 Optional or explicit appearance overrides supplied by the caller
@@ -486,7 +486,7 @@ struct ItemAppearanceSheet: View
 ///
 /// @section    Purpose
 ///     Combines backgrounds, imported photos, preview colors, and optional List surface controls
-///     before handing the result to the owner.
+///     before handing the result to the owner
 ///
 struct BoardAppearanceSheet: View
 {
@@ -516,7 +516,7 @@ struct BoardAppearanceSheet: View
     /// @fcn        BoardAppearanceSheet.init
     /// @brief      Seed board appearance and optional list-surface editing
     /// @details    Builds independent draft values for presentation, surface opacity, icon visibility, icon color,
-    ///             and inherited defaults before retaining the save callbacks.
+    ///             and inherited defaults before retaining the save callbacks
     ///
     /// @param[in]  appearance                   Optional or explicit appearance overrides supplied by the caller
     /// @param[in]  presentation                 Card, note, or board presentation selected by the caller
@@ -970,7 +970,7 @@ struct BoardAppearanceSheet: View
     /// @fcn        BoardAppearanceSheet.saveAppearance
     /// @brief      Commit the edited board and list appearance settings
     /// @details    Uses the provided save callbacks and dismisses only through the editor's accepted save flow,
-    ///             retaining failed edits for correction.
+    ///             retaining failed edits for correction
     ///
     /// @return     (Void) no return value
     ///
@@ -1039,7 +1039,7 @@ struct BoardAppearanceSheet: View
 ///
 /// @section    Purpose
 ///     Keeps a view-scoped override separate from Card preview styling and allows reset to the
-///     inherited color.
+///     inherited color
 ///
 struct AddItemTextColorSection: View
 {
@@ -1102,7 +1102,7 @@ struct AddItemTextColorSection: View
 /// Edits optional title and body preview colors
 ///
 /// @section    Purpose
-///     Binds explicit palette choices while allowing nil to retain inherited presentation.
+///     Binds explicit palette choices while allowing nil to retain inherited presentation
 ///
 struct PreviewTextColorsSection: View
 {
@@ -1116,7 +1116,7 @@ struct PreviewTextColorsSection: View
     ///
     /// @fcn        PreviewTextColorsSection.picker
     /// @brief      Build a preview text-color override picker
-    /// @details    Binds the optional color choice so users can select an explicit color or retain inherited styling.
+    /// @details    Binds the optional color choice so users can select an explicit color or retain inherited styling
     ///
     /// @param[in]  title      Display title or proposed title text
     /// @param[in]  selection  Text selection or resolved navigation selection to retain
@@ -1167,7 +1167,7 @@ struct PreviewTextColorsSection: View
 ///
 /// @section    Purpose
 ///     Shares the same preview control across List appearance and Library settings without saving
-///     until the surrounding editor accepts it.
+///     until the surrounding editor accepts it
 ///
 struct ListSurfaceOpacityPicker: View
 {
@@ -1237,7 +1237,7 @@ struct ListSurfaceOpacityPicker: View
 ///
 /// @section    Purpose
 ///     Preserves the special shortcut Lists' read-only controls while binding editable custom List
-///     color choices.
+///     color choices
 ///
 struct ListIconColorPicker: View
 {

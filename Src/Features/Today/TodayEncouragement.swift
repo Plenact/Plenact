@@ -2,7 +2,7 @@
 // @file       TodayEncouragement.swift
 // @brief      Authored daily encouragement and readable motion
 // @details    Selects deterministic local-day slogans and coordinates automatic or manual reading
-//             with accessibility preferences.
+//             with accessibility preferences
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Selects one slogan by local calendar day on a sixty-day cycle for predictable Today
-///     presentation.
+///     presentation
 ///
 enum TodaySloganCatalog
 {
@@ -90,7 +90,7 @@ enum TodaySloganCatalog
     /// @fcn        TodaySloganCatalog.slogan
     /// @brief      Choose the stable slogan for a local calendar day
     /// @details    Uses a fixed Gregorian anchor in the requested time zone and a wrapped day offset so selection
-    ///             remains stable across relaunches and daylight-saving changes.
+    ///             remains stable across relaunches and daylight-saving changes
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -100,7 +100,7 @@ enum TodaySloganCatalog
     static func slogan(on date: Date, calendar: Calendar = .current) -> String
     {
 
-        // A fixed Gregorian anchor keeps rotation stable across relaunches, years, and DST.
+        // A fixed Gregorian anchor keeps rotation stable across relaunches, years, and DST
         var local = Calendar(identifier: .gregorian)
 
         local.timeZone = calendar.timeZone
@@ -120,7 +120,7 @@ enum TodaySloganCatalog
 ///
 /// @section    Purpose
 ///     Occupies the existing space above Quick capture and uses shared preview behavior for
-///     overflowing writing.
+///     overflowing writing
 ///
 struct TodaySloganView: View
 {
@@ -145,7 +145,7 @@ struct TodaySloganView: View
     /// @fcn        TodaySloganView.sloganContent
     /// @brief      Build the interactive Today slogan reader
     /// @details    Provides light or dark styling, swipe-reading accessibility guidance, and a full-text alert on
-    ///             tap.
+    ///             tap
     ///
     /// @param[in]  slogan  Authored slogan text to display
     ///
@@ -195,7 +195,7 @@ struct TodaySloganView: View
 ///
 /// @section    Purpose
 ///     Uses elapsed time and measured extents to support looping movement and smooth continuation
-///     after manual dragging.
+///     after manual dragging
 ///
 enum TodaySloganMotion
 {
@@ -205,7 +205,7 @@ enum TodaySloganMotion
     /// @fcn        TodaySloganMotion.position
     /// @brief      Calculate the slogan's looping horizontal position
     /// @details    Moves at 35.1 points per second, wraps after the trailing edge leaves view, and restarts fully
-    ///             offscreen manual positions at the right edge.
+    ///             offscreen manual positions at the right edge
     ///
     /// @param[in]  elapsed    Elapsed time in seconds since the current animation or launch anchor
     /// @param[in]  start      Starting horizontal position or original vertical scroll offset in points
@@ -230,7 +230,7 @@ enum TodaySloganMotion
         }
 
         // When released completely offscreen, restart at the invisible right edge
-        // after the reading pause instead of spending minutes crossing blank space.
+        // after the reading pause instead of spending minutes crossing blank space
         let resumeStart = start > viewport || start < -textWidth ? viewport : start
         let proposed    = resumeStart - elapsed * 35.1
 
@@ -247,7 +247,7 @@ enum TodaySloganMotion
     /// @fcn        TodaySloganMotion.draggedPosition
     /// @brief      Apply unrestricted horizontal slogan dragging
     /// @details    Adds the gesture translation to the captured start; viewport and text width do not constrain
-    ///             manual reading movement.
+    ///             manual reading movement
     ///
     /// @param[in]  start        Starting horizontal position or original vertical scroll offset in points
     /// @param[in]  translation  Horizontal gesture displacement from its captured start
@@ -270,7 +270,7 @@ enum TodaySloganMotion
 ///
 /// @section    Purpose
 ///     Uses elapsed-time positions so dragging begins at the visible location and automatic
-///     movement resumes after the reading pause.
+///     movement resumes after the reading pause
 ///
 struct InteractiveSloganPreview: View
 {
@@ -293,7 +293,7 @@ struct InteractiveSloganPreview: View
     /// @fcn        InteractiveSloganPreview.position
     /// @brief      Resolve the slogan's manual or automatic position
     /// @details    Prefers an active drag offset and otherwise applies elapsed-time motion from the retained anchor
-    ///             with the initial reading pause.
+    ///             with the initial reading pause
     ///
     /// @param[in]  date   Represented date for the operation
     /// @param[in]  width  Available horizontal extent in points
@@ -443,7 +443,7 @@ struct InteractiveSloganPreview: View
 /// Defines the quiet context and schedule policy for Today's Focus
 ///
 /// @section    Purpose
-///     Explains the active selection without presenting a filtered collection as the whole day.
+///     Explains the active selection without presenting a filtered collection as the whole day
 ///
 enum TodayFocusPresentation
 {
@@ -453,7 +453,7 @@ enum TodayFocusPresentation
     ///
     /// @fcn        TodayFocusPresentation.showsSchedule(important:bookmarked:upNext:)
     /// @brief      Show schedules for All items or a selection including Up Next
-    /// @details    Important-only and Bookmarked-only combinations keep time and progress hidden.
+    /// @details    Important-only and Bookmarked-only combinations keep time and progress hidden
     /// @param[in]  important   Whether Important participates in the selection
     /// @param[in]  bookmarked  Whether Bookmarked participates in the selection
     /// @param[in]  upNext      Whether Up Next participates in the selection
@@ -471,7 +471,7 @@ enum TodayFocusPresentation
     ///
     /// @fcn        TodayFocusPresentation.context(important:bookmarked:upNext:chronological:)
     /// @brief      Explain why the visible Focus items were selected
-    /// @details    Names the actual union of active filters and always locates the selection within today's list.
+    /// @details    Names the actual union of active filters and always locates the selection within today's list
     /// @param[in]  important    Whether Important participates in the selection
     /// @param[in]  bookmarked   Whether Bookmarked participates in the selection
     /// @param[in]  upNext       Whether Up Next participates in the selection

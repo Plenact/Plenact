@@ -2,7 +2,7 @@
 // @file       WorkspaceActions.swift
 // @brief      Calendar ownership and checked workspace operations
 // @details    Coordinates Week changes, owner-qualified transfers, review decisions, and checked
-//             persistence without copying state into a second owner.
+//             persistence without copying state into a second owner
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -15,7 +15,7 @@ import SwiftUI
 /// AppRootView behavior grouped separately from stored view state
 ///
 /// @section    Purpose
-///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle.
+///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle
 ///
 extension AppRootView
 {
@@ -25,7 +25,7 @@ extension AppRootView
     /// @fcn        AppRootView.setPlanningFirstWeekday
     /// @brief      Save a supported planning week-start change
     /// @details    Uses calendar migration and checked persistence before publishing the regrouped workspace; returns
-    ///             false with feedback when the change fails.
+    ///             false with feedback when the change fails
     ///
     /// @param[in]  weekday  Requested supported planning week-start value
     ///
@@ -107,7 +107,7 @@ extension AppRootView
     /// @fcn        AppRootView.applyExampleCardLocations
     /// @brief      Publish the one-time requested Gym and Work destination additions
     /// @details    Runs only after the calendar loads. Existing custom and protected locations
-    ///             remain intact; failed preparation or storage leaves live state unchanged.
+    ///             remain intact; failed preparation or storage leaves live state unchanged
     /// @return     (Void) publishes the saved update or reports its persistence error
     ///
     func applyExampleCardLocations()
@@ -148,7 +148,7 @@ extension AppRootView
     /// @fcn        AppRootView.applyDayListOrderingPreference
     /// @brief      Apply the enabled Day time-order policy to existing calendar weeks
     /// @details    Called after loading and when preferences change. Sorts only active date-mapped
-    ///             Lists, saves before publishing the new snapshots, and leaves personal Lists intact.
+    ///             Lists, saves before publishing the new snapshots, and leaves personal Lists intact
     /// @return     (Void) publishes persisted chronological Day contents or reports a save failure
     ///
     func applyDayListOrderingPreference()
@@ -211,7 +211,7 @@ extension AppRootView
     /// @fcn        AppRootView.persistCurrentPlanningWeek
     /// @brief      Persist the current week's live lists and bookmarks
     /// @details    Updates the retained calendar from the current workspace and reports save failures through
-    ///             database activity.
+    ///             database activity
     ///
     /// @return     (Void) no return value
     ///
@@ -231,7 +231,7 @@ extension AppRootView
         current.collection.lists = lists
         current.collection.savedCardIDs = savedCardIDs
 
-        // If a weekday was archived/deleted, its replacement receives the date association.
+        // If a weekday was archived/deleted, its replacement receives the date association
         for date in PlanningDate.days(in: current.startKey) where current.list(on: date) == nil
         {
 
@@ -286,7 +286,7 @@ extension AppRootView
     /// @fcn        AppRootView.advancePlanningWeekIfNeeded
     /// @brief      Advance the live workspace when the calendar week changes
     /// @details    Retains the outgoing week and uses existing or default-template content for the incoming week
-    ///             before publishing its lists and markers.
+    ///             before publishing its lists and markers
     ///
     /// @return     (Void) no return value
     ///
@@ -367,7 +367,7 @@ extension AppRootView
     /// @fcn        AppRootView.preparePlanningWeek
     /// @brief      Resolve a retained week or save a default-template week
     /// @details    Returns an existing matching week immediately; otherwise generates the configured routine and its
-    ///             importance IDs and returns the new week only after checked saving succeeds.
+    ///             importance IDs and returns the new week only after checked saving succeeds
     ///
     /// @param[in]  requested  Requested week snapshot to resolve or prepare
     ///
@@ -418,7 +418,7 @@ extension AppRootView
     /// @fcn        AppRootView.savePlanningWeek
     /// @brief      Save a dated week and any explicit example importance
     /// @details    Uses a recoverable preferences transaction to update calendar-backed state and publishes the
-    ///             current owner only after saving succeeds; the simple overload supplies no example markers.
+    ///             current owner only after saving succeeds; the simple overload supplies no example markers
     ///
     /// @param[in]  week  Dated planning week being inspected or saved
     ///
@@ -435,7 +435,7 @@ extension AppRootView
     /// @fcn        AppRootView.savePlanningWeek
     /// @brief      Save a dated week and any explicit example importance
     /// @details    Uses a recoverable preferences transaction to update calendar-backed state and publishes the
-    ///             current owner only after saving succeeds; the simple overload supplies no example markers.
+    ///             current owner only after saving succeeds; the simple overload supplies no example markers
     ///
     /// @param[in]  week                      Dated planning week being inspected or saved
     /// @param[in]  exampleImportantIDs       Destination card IDs explicitly marked important by an applied example
@@ -570,7 +570,7 @@ extension AppRootView
     /// @fcn        AppRootView.sectionOwners
     /// @brief      Build the canonical owner set used for section movement
     /// @details    Combines personal collections and retained calendar weeks, substituting the current live week
-    ///             values where needed.
+    ///             values where needed
     ///
     /// @param[in]  document  Retained document containing the operation's current workspace records
     ///
@@ -600,7 +600,7 @@ extension AppRootView
     /// @fcn        AppRootView.saveSectionOwners
     /// @brief      Persist owners and metadata affected by a section transfer
     /// @details    Rebuilds calendar and personal-owner storage from the supplied working owners and writes the
-    ///             related importance and daily-plan values through checked storage.
+    ///             related importance and daily-plan values through checked storage
     ///
     /// @param[in]  owners      Canonical collection owners participating in the operation
     /// @param[in]  original    Original planning calendar document retained for comparison or transformation
@@ -609,7 +609,7 @@ extension AppRootView
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     func saveSectionOwners(
         _ owners: [PersonalCollection], document original: PlanningCalendarDocument, importance: Data?,
@@ -708,7 +708,7 @@ extension AppRootView
     /// @fcn        AppRootView.movePlanningSection
     /// @brief      Move a whole section with checked persistence and Undo
     /// @details    Resolves calendar and library destinations, optionally shifts dates, remaps importance and daily
-    ///             priorities, and retains a guarded receipt for restoration only after the transfer saves.
+    ///             priorities, and retains a guarded receipt for restoration only after the transfer saves
     ///
     /// @param[in]  heading           Named divider identifying the complete section to transfer
     /// @param[in]  source            Optional source owner UUID; nil selects the current planning week
@@ -764,7 +764,7 @@ extension AppRootView
             /// @fcn        AppRootView.movePlanningSection.day
             /// @brief      Resolve the calendar day associated with an owner list
             /// @details    Searches the enclosing calendar document's day mappings and returns nil for lists without
-            ///             a dated mapping.
+            ///             a dated mapping
             ///
             /// @param[in]  owner  Owner identity used to qualify numeric item references
             /// @param[in]  list   List supplying the current content and metadata
@@ -902,7 +902,7 @@ extension AppRootView
     /// @fcn        AppRootView.movePlanningList
     /// @brief      Move a list between planning and personal owners
     /// @details    Resolves the destination, updates cross-owner references and markers, and publishes only after the
-    ///             checked storage operation succeeds.
+    ///             checked storage operation succeeds
     ///
     /// @param[in]  listID         Numeric list identity within its owner
     /// @param[in]  sourceID       Identity of the source owner
@@ -1015,7 +1015,7 @@ extension AppRootView
                 return false
             }
 
-            // Validate all payloads and retained stores before any writes or publication.
+            // Validate all payloads and retained stores before any writes or publication
             _ = try JSONEncoder().encode(document)
             _ = try JSONEncoder().encode(updatedLibrary)
             _ = try JSONEncoder().encode(current.collection.lists)
@@ -1109,7 +1109,7 @@ extension AppRootView
     /// @fcn        AppRootView.mutateReviewItem
     /// @brief      Apply an explicit review decision to its current source
     /// @details    Uses the live item and review anchor to perform the requested completion or movement and returns
-    ///             its resulting workspace identity.
+    ///             its resulting workspace identity
     ///
     /// @param[in]  live    Currently resolved workspace source item
     /// @param[in]  action  Explicit review, toolbar, or contextual action selected by the caller
@@ -1119,7 +1119,7 @@ extension AppRootView
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
     ///             `CocoaError(.fileWriteUnknown)`, `CocoaError(.fileNoSuchFile)`,
     ///             `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies propagate unless handled
-    ///             within this operation.
+    ///             within this operation
     ///
     func mutateReviewItem(_ live: PlanningSearchResult, action: DailyReviewAction, anchor: String) throws
     -> PlanningSearchResult
@@ -1144,7 +1144,7 @@ extension AppRootView
                 throw CocoaError(.validationMissingMandatoryProperty)
             }
 
-            // The review decision is the persisted change; the original item stays intact.
+            // The review decision is the persisted change; the original item stays intact
             break
         case .table:
             guard !live.card.isTitleChecked,
@@ -1378,7 +1378,7 @@ extension AppRootView
     /// @fcn        AppRootView.applyWeeklyReview
     /// @brief      Commit a weekly review decision with its review record
     /// @details    Uses the expected review baseline and recoverable workspace transaction so the item action and
-    ///             saved decision remain consistent; failures return nil with feedback.
+    ///             saved decision remain consistent; failures return nil with feedback
     ///
     /// @param[in]  source    Live source item with its calendar or Library location
     /// @param[in]  action    Explicit review, toolbar, or contextual action selected by the caller
@@ -1468,7 +1468,7 @@ extension AppRootView
     /// @fcn        AppRootView.applyDailyReview
     /// @brief      Commit an evening review decision with its daily plan
     /// @details    Checks the expected daily-plan baseline and saves the workspace action and review state together;
-    ///             failures return nil instead of advancing the review.
+    ///             failures return nil instead of advancing the review
     ///
     /// @param[in]  source    Live source item with its calendar or Library location
     /// @param[in]  action    Explicit review, toolbar, or contextual action selected by the caller
@@ -1565,7 +1565,7 @@ extension AppRootView
     /// @fcn        AppRootView.movePriorityForVision
     /// @brief      Move a planning priority to its chosen workspace list
     /// @details    Resolves the live source and returns the moved result only after the checked workspace operation
-    ///             succeeds.
+    ///             succeeds
     ///
     /// @param[in]  source       Live source item with its calendar or Library location
     /// @param[in]  destination  Owner-qualified destination list reference
@@ -1629,7 +1629,7 @@ extension AppRootView
     /// @fcn        AppRootView.movePlanningCard
     /// @brief      Transfer one card between calendar or library lists
     /// @details    Works from the canonical document, preserves content through cross-owner movement, and publishes
-    ///             changes only after checked persistence succeeds.
+    ///             changes only after checked persistence succeeds
     ///
     /// @param[in]  card              Card or note being inspected or changed
     /// @param[in]  source            Optional source owner UUID; nil selects the current planning week
@@ -1801,7 +1801,7 @@ extension AppRootView
     /// @fcn        AppRootView.switchMonthExample
     /// @brief      Request a protected example-dataset switch
     /// @details    Coordinates the requested load or restore with the application's dataset-switch presentation and
-    ///             recovery state.
+    ///             recovery state
     ///
     /// @param[in]  restoring  Whether to restore original user data rather than load an example
     ///
@@ -1825,7 +1825,7 @@ extension AppRootView
     /// @fcn        AppRootView.performMonthExampleSwitch
     /// @brief      Perform the example load or original-data restore
     /// @details    Uses the verified backup store, reloads workspace state after success, and retains recovery
-    ///             feedback when switching fails.
+    ///             feedback when switching fails
     ///
     /// @param[in]  restoring  Whether to restore original user data rather than load an example
     ///
@@ -1835,7 +1835,7 @@ extension AppRootView
     func performMonthExampleSwitch(restoring: Bool) async
     {
 
-        // Runs only after the navigation tree has disappeared and flushed its saved state.
+        // Runs only after the navigation tree has disappeared and flushed its saved state
         do
         {
 
@@ -1909,11 +1909,11 @@ extension AppRootView
     /// @fcn        AppRootView.reloadWorkspaceFromStorage
     /// @brief      Reload live workspace state after a dataset change
     /// @details    Reads the retained planning, library, and related preference values so the interface reflects the
-    ///             installed dataset.
+    ///             installed dataset
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     func reloadWorkspaceFromStorage() throws
     {
@@ -1951,7 +1951,7 @@ extension AppRootView
     /// @fcn        AppRootView.recoverWorkspace
     /// @brief      Retry recovery of interrupted workspace storage operations
     /// @details    Runs the checked recovery paths and refreshes live state when recovery succeeds, retaining
-    ///             actionable error feedback otherwise.
+    ///             actionable error feedback otherwise
     ///
     /// @return     (Void) no return value
     ///
@@ -1997,7 +1997,7 @@ extension AppRootView
     /// @fcn        AppRootView.loadExampleWeek
     /// @brief      Apply the bundled example to the current calendar week
     /// @details    Retains a full Undo snapshot and applies the example through the dated-template path so schedules,
-    ///             bookmarks, and importance align with Today.
+    ///             bookmarks, and importance align with Today
     ///
     /// @return     (Bool) true when the example is applied and saved; false when loading is rejected
     ///
@@ -2068,7 +2068,7 @@ extension AppRootView
     /// @fcn        AppRootView.undoExampleWeek
     /// @brief      Restore the workspace snapshot preceding the example load
     /// @details    Restores the retained week and its owner-qualified markers through checked persistence, consuming
-    ///             the snapshot only after success.
+    ///             the snapshot only after success
     ///
     /// @return     (Bool) true when the pre-example state is restored; false when no valid restoration succeeds
     ///
@@ -2124,7 +2124,7 @@ extension AppRootView
     /// @brief      Open the requested Card or Note creation flow
     /// @details    Uses an open personal List's Note action when available; otherwise seeds the
     ///             shared composer with the selected presentation and Today's destination when
-    ///             appropriate.
+    ///             appropriate
     ///
     /// @param[in]  presentation  Card or Note presentation requested for the new item
     ///
@@ -2156,7 +2156,7 @@ extension AppRootView
     /// @fcn        AppRootView.openToolbarCollection
     /// @brief      Open personal list or board creation from the toolbar
     /// @details    Switches to Plans and sets its pending collection-kind request so the owning view can present the
-    ///             corresponding creation flow.
+    ///             corresponding creation flow
     ///
     /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior
     ///
@@ -2175,7 +2175,7 @@ extension AppRootView
     /// @fcn        AppRootView.selectToolbarDestination
     /// @brief      Select a lower-toolbar destination and prepare its context
     /// @details    Clears stale Revisit selection for Activity; Week selection ensures today's list, clears its card
-    ///             target, and increments the request that returns navigation to the week root.
+    ///             target, and increments the request that returns navigation to the week root
     ///
     /// @param[in]  destination  Lower-toolbar destination to select
     ///
@@ -2218,7 +2218,7 @@ extension AppRootView
     /// @fcn        AppRootView.tabButton
     /// @brief      Build a toolbar destination with its tap and hold actions
     /// @details    Uses the destination's icon and title while exposing its contextual long-press shortcut alongside
-    ///             normal selection.
+    ///             normal selection
     ///
     /// @param[in]  destination  Lower-toolbar destination to select
     /// @param[in]  title        Display title or proposed title text
@@ -2457,7 +2457,7 @@ extension AppRootView
     /// @fcn        AppRootView.openSavedDestination()
     /// @brief      Select the Activity destination
     /// @details    Changes the primary navigation selection to the existing Saved-backed Activity
-    ///             surface without constructing a second copy of its history or bookmarks.
+    ///             surface without constructing a second copy of its history or bookmarks
     ///
     /// @return     (Void) updates the selected application destination
     ///
@@ -2493,7 +2493,7 @@ extension AppRootView
         {
 
 
-            // Persist the recovery copy before clearing the active Week snapshot.
+            // Persist the recovery copy before clearing the active Week snapshot
             try PersonalCollectionStore.saveChecked(updated)
 
             collections = updated

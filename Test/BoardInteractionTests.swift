@@ -3,7 +3,7 @@
 // @brief      Board Interaction regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// BoardInteraction regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -28,10 +28,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testRandomCardColorPreviewsRenderInLightAndDarkWithoutChangingRecords
     /// @brief      Verify that random Card Color Previews Render In Light And Dark Without Changing Records
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(cards, original)`.
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(cards, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testRandomCardColorPreviewsRenderInLightAndDarkWithoutChangingRecords() async throws
@@ -149,10 +149,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testListHeaderIconDefaultsAndExplicitChoicesPersist
     /// @brief      Verify that list Header Icon Defaults And Explicit Choices Persist
     /// @details    Exercises `custom.headerAppearance`, `legacy.headerAppearance`, `restored.headerAppearance`.
-    ///             Checks `XCTAssertFalse(custom.showsIconInHeader)`; `XCTAssertNil(custom.headerAppearance())`.
+    ///             Checks `XCTAssertFalse(custom.showsIconInHeader)`; `XCTAssertNil(custom.headerAppearance())`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testListHeaderIconDefaultsAndExplicitChoicesPersist() throws
     {
@@ -211,10 +211,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that toolbar Revisit Menu Renders Without Choosing Or Changing History
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(UserDefaults.standard.data(forKey:
-    ///             ActivityRecentStore.key), history)`.
+    ///             ActivityRecentStore.key), history)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testToolbarRevisitMenuRendersWithoutChoosingOrChangingHistory() async throws
@@ -276,10 +276,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that day Distribution Banner Renders With No Plan Writes
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(UserDefaults.standard.data(forKey:
-    ///             DailyPlanStore.key), before)`.
+    ///             DailyPlanStore.key), before)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDayDistributionBannerRendersWithNoPlanWrites() async throws
@@ -356,10 +356,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(UserDefaults.standard.data(forKey:
     ///             DailyPlanStore.key), beforePlans)`; `XCTAssertEqual(UserDefaults.standard.data(forKey:
-    ///             ReviewRhythmStore.dismissalsKey), beforeRhythm)`.
+    ///             ReviewRhythmStore.dismissalsKey), beforeRhythm)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTodayPerspectiveRendersWithoutMutatingPlansOrLists() async throws
@@ -457,10 +457,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that focus Overflow Retains Native Scrolling To Last Matching Item
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(entries.count, 9)`;
-    ///             `XCTAssertTrue(inner.isScrollEnabled)`.
+    ///             `XCTAssertTrue(inner.isScrollEnabled)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testFocusOverflowRetainsNativeScrollingToLastMatchingItem() async throws
@@ -525,14 +525,14 @@ extension PlenactBoardDocumentTests
 
         window.makeKeyAndVisible()
         try await Task.sleep(for: .milliseconds(400))
-        // Recurse through parent scroll views as well as ordinary containers.
+        // Recurse through parent scroll views as well as ordinary containers
 
 
         ///
         /// @fcn        PlenactBoardDocumentTests.testFocusOverflowRetainsNativeScrollingToLastMatchingItem.allScrollViews
         /// @brief      Find all scroll views in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -578,10 +578,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testFocusShapeRendersDefaultGroupedAndCompletedPreviewsWithoutMutations
     /// @brief      Verify that focus Shape Renders Default Grouped And Completed Previews Without Mutations
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(list, original)`.
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(list, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testFocusShapeRendersDefaultGroupedAndCompletedPreviewsWithoutMutations() async throws
@@ -703,10 +703,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that library Help Renders Guides Without Changing Planning Data
     /// @details    Exercises `keys.map`, `UserDefaults.standard.data`,
     ///             `UIApplication.shared.connectedScenes.compactMap`. Checks `XCTAssertEqual(keys.map {
-    ///             UserDefaults.standard.data(forKey: $0) }, before)`.
+    ///             UserDefaults.standard.data(forKey: $0) }, before)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testLibraryHelpRendersGuidesWithoutChangingPlanningData() async throws
@@ -788,10 +788,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that periodic Review Renders Setup And All Steps Without Writing
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(defaults.data(forKey:
-    ///             PeriodicReviewStore.key), bytes)`.
+    ///             PeriodicReviewStore.key), bytes)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testPeriodicReviewRendersSetupAndAllStepsWithoutWriting() async throws
@@ -878,10 +878,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that review Rhythm Invitations And Settings Render Without Writing Or Requesting Permission
     /// @details    Exercises `Calendar.current.component`, `ReviewRhythmStore.save`,
     ///             `UIApplication.shared.connectedScenes.compactMap`. Checks `XCTAssertEqual(defaults.data(forKey:
-    ///             ReviewRhythmStore.key), bytes)`; `XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))`.
+    ///             ReviewRhythmStore.key), bytes)`; `XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testReviewRhythmInvitationsAndSettingsRenderWithoutWritingOrRequestingPermission() async throws
@@ -972,10 +972,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDailyHistoryRendersCurrentPastAndEmptyDaysWithoutWriting
     /// @brief      Verify that daily History Renders Current Past And Empty Days Without Writing
     /// @details    Exercises `plan.recordCheckIn`, `date.addingTimeInterval`, `CheckInMood.custom`. Checks
-    ///             `XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), bytes)`.
+    ///             `XCTAssertEqual(defaults.data(forKey: DailyPlanStore.key), bytes)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDailyHistoryRendersCurrentPastAndEmptyDaysWithoutWriting() async throws
@@ -1060,10 +1060,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCheckInRendersWithoutSavingOrChangingSources
     /// @brief      Verify that check In Renders Without Saving Or Changing Sources
     /// @details    Exercises `DatedPlanningWeek.make`, `UIApplication.shared.connectedScenes.compactMap`,
-    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`.
+    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCheckInRendersWithoutSavingOrChangingSources() async throws
@@ -1144,10 +1144,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testEveningReviewRendersAllStepsWithoutSaving
     /// @brief      Verify that evening Review Renders All Steps Without Saving
     /// @details    Exercises `DatedPlanningWeek.make`, `UIApplication.shared.connectedScenes.compactMap`,
-    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`.
+    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testEveningReviewRendersAllStepsWithoutSaving() async throws
@@ -1245,10 +1245,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testTodayVisionRendersMorningAndRealityStepsWithoutSaving
     /// @brief      Verify that today Vision Renders Morning And Reality Steps Without Saving
     /// @details    Exercises `DatedPlanningWeek.make`, `UIApplication.shared.connectedScenes.compactMap`,
-    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`.
+    ///             `scene.windows.first`. Checks `XCTAssertEqual(saves, 0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTodayVisionRendersMorningAndRealityStepsWithoutSaving() async throws
@@ -1341,10 +1341,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that created Content Reveal Scrolls Long Day Lists In Both Layouts
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `CreatedContentReveal.shared.complete`. Checks `XCTAssertLessThan(native.contentOffset.y, 100)`;
-    ///             `XCTAssertGreaterThan(native.contentOffset.y, 100)`.
+    ///             `XCTAssertGreaterThan(native.contentOffset.y, 100)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCreatedContentRevealScrollsLongDayListsInBothLayouts() async throws
@@ -1376,7 +1376,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testCreatedContentRevealScrollsLongDayListsInBothLayouts.collection
         /// @brief      Find collection in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UICollectionView. Returns the first qualifying match,
-        ///             or nil when none is present.
+        ///             or nil when none is present
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1482,7 +1482,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testBoardCardSwipeRoutingUsesTheInitialPhysicalRightQuarter
     /// @brief      Verify the seventy-five percent boundary across preview sizes and positions
     /// @details    Uses actual Card coordinates rather than screen coordinates, with no ownership
-    ///             change based on later finger travel. Invalid and out-of-Card starts are rejected.
+    ///             change based on later finger travel. Invalid and out-of-Card starts are rejected
     ///
     /// @return     (Void) records routing assertions
     ///
@@ -1524,10 +1524,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that week And Library Boards Prioritize Inner List Swipes Without Disabling Scrolling
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertGreaterThan(BoardListSwipePriority.install(for:
-    ///             list), 0)`; `XCTAssertTrue(list.isScrollEnabled)`.
+    ///             list), 0)`; `XCTAssertTrue(list.isScrollEnabled)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testWeekAndLibraryBoardsPrioritizeInnerListSwipesWithoutDisablingScrolling() async throws
@@ -1554,7 +1554,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testWeekAndLibraryBoardsPrioritizeInnerListSwipesWithoutDisablingScrolling.collections
         /// @brief      Find collections in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UICollectionView. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1693,7 +1693,7 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `TodaySloganMotion.draggedPosition`, `TodaySloganMotion.position`. Checks
     ///             `XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100, translation: 500, viewport: 300,
     ///             textWidth: 700), 400)`; `XCTAssertEqual(TodaySloganMotion.draggedPosition(start: -100,
-    ///             translation: -500, viewport: 300, textWidth: 700), -600)`.
+    ///             translation: -500, viewport: 300, textWidth: 700), -600)`
     ///
     /// @return     (Void) no return value
     ///
@@ -1715,12 +1715,12 @@ extension PlenactBoardDocumentTests
             TodaySloganMotion.position(elapsed: 1, start: -5600, viewport: 300, textWidth: 700), 264.9, accuracy: 0.001)
         XCTAssertEqual(
             TodaySloganMotion.position(elapsed: 1, start: 5400, viewport: 300, textWidth: 700), 264.9, accuracy: 0.001)
-        // A future resume date produces negative elapsed time throughout the reading pause.
+        // A future resume date produces negative elapsed time throughout the reading pause
         XCTAssertEqual(TodaySloganMotion.position(elapsed: -1, start: -150, viewport: 300, textWidth: 700), -150)
         XCTAssertEqual(TodaySloganMotion.position(elapsed: 0, start: -150, viewport: 300, textWidth: 700), -150)
         XCTAssertEqual(
             TodaySloganMotion.position(elapsed: 1, start: -150, viewport: 300, textWidth: 700), -185.1, accuracy: 0.001)
-        // Once the text exits, the next pass enters from the right.
+        // Once the text exits, the next pass enters from the right
         XCTAssertEqual(
             TodaySloganMotion.position(elapsed: 1, start: -700, viewport: 300, textWidth: 700), 264.9, accuracy: 0.001)
     }
@@ -1730,10 +1730,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCollectionBackgroundPresetsRenderOffline
     /// @brief      Verify that collection Background Presets Render Offline
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.flexible`.
-    ///             Uses the fixture and assertions below to verify collection Background Presets Render Offline.
+    ///             Uses the fixture and assertions below to verify collection Background Presets Render Offline
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCollectionBackgroundPresetsRenderOffline() async throws
@@ -1813,10 +1813,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that personal Board Background And Week Default Render Separately
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.constant`.
     ///             Uses the fixture and assertions below to verify personal Board Background And Week Default Render
-    ///             Separately.
+    ///             Separately
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testPersonalBoardBackgroundAndWeekDefaultRenderSeparately() async throws
@@ -1891,10 +1891,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testBoardViewportMemoryRoundTripsAndKeepsOwnersSeparate
     /// @brief      Verify that board Viewport Memory Round Trips And Keeps Owners Separate
     /// @details    Exercises `first.record`, `first.flush`. Checks `XCTAssertEqual(reopened.state, first.state)`;
-    ///             `XCTAssertEqual(other.state.scale, 1)`.
+    ///             `XCTAssertEqual(other.state.scale, 1)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testBoardViewportMemoryRoundTripsAndKeepsOwnersSeparate() throws
@@ -1941,10 +1941,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that viewport Probe Restores Native Offsets In Both Directions
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Checks `XCTAssertEqual(offset, 470)`;
-    ///             `XCTAssertEqual(memory.state.offsets["position"], 470)`.
+    ///             `XCTAssertEqual(memory.state.offsets["position"], 470)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testViewportProbeRestoresNativeOffsetsInBothDirections() async throws
@@ -1974,7 +1974,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testViewportProbeRestoresNativeOffsetsInBothDirections.nativeScroll
         /// @brief      Find native scroll in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UIScrollView. Returns the first qualifying match, or
-        ///             nil when none is present.
+        ///             nil when none is present
         ///
         /// @param[in]  view        Native view inspected or synchronized by the operation
         /// @param[in]  horizontal  Whether the probe observes the horizontal rather than vertical axis
@@ -2072,10 +2072,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that zoomed Board Restores Its Real Horizontal Viewport
     /// @details    Exercises `UserDefaults.standard.removeObject`, `initial.flush`, `(0..<10).map`. Checks
     ///             `XCTAssertEqual(scroll.contentOffset.x + scroll.adjustedContentInset.left, 420)`;
-    ///             `XCTAssertEqual(list.contentOffset.y + list.adjustedContentInset.top, 350)`.
+    ///             `XCTAssertEqual(list.contentOffset.y + list.adjustedContentInset.top, 350)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testZoomedBoardRestoresItsRealHorizontalViewport() async throws
@@ -2123,7 +2123,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testZoomedBoardRestoresItsRealHorizontalViewport.scrolls
         /// @brief      Find scrolls in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -2224,10 +2224,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCustomListPreviewColorsRenderWithoutEditingContent
     /// @brief      Verify that custom List Preview Colors Render Without Editing Content
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKey`. Checks `XCTAssertEqual(originals, [card, note])`.
+    ///             `previous?.makeKey`. Checks `XCTAssertEqual(originals, [card, note])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCustomListPreviewColorsRenderWithoutEditingContent() async throws
@@ -2325,10 +2325,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testHostedSessionGuidanceUsesEntrySnapshotAndSurvivesListEdits
     /// @brief      Verify delayed guidance is tied to the visit rather than live emptiness
     /// @details    Hosts the real guidance view, changes its List after reveal, and opens a new
-    ///             nonempty visit to check that later deletion cannot trigger guidance there.
+    ///             nonempty visit to check that later deletion cannot trigger guidance there
     ///
     /// @return     (Void) records visit lifecycle assertions
-    /// @throws     Propagates missing scene and asynchronous wait failures.
+    /// @throws     Propagates missing scene and asynchronous wait failures
     ///
     @MainActor
     func testHostedSessionGuidanceUsesEntrySnapshotAndSurvivesListEdits() async throws

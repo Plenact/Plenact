@@ -3,7 +3,7 @@
 // @brief      Temporary read-only built-in List guidance
 // @details    Presents measured session-only guide content, header toggling, and coordinated
 //             capture-row placement outside retained Card records. Header retraction slides and
-//             collapses the guide together using the same timing as its entrance.
+//             collapses the guide together using the same timing as its entrance
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -16,7 +16,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Measures and slides a read-only guide outside persisted Cards, supports header toggling, and
-///     coordinates capture-row placement for the session.
+///     coordinates capture-row placement for the session
 ///
 struct SessionListGuidance: View
 {
@@ -49,7 +49,7 @@ struct SessionListGuidance: View
     ///
     /// @fcn        SessionListGuidance.init(list:labels:onReveal:)
     /// @brief      Capture eligibility at the start of this List visit
-    /// @details    State retains the entry snapshot across content edits and child presentations.
+    /// @details    State retains the entry snapshot across content edits and child presentations
     ///
     /// @param[in]  list                  List opened by the user
     /// @param[in]  labels                Shared labels used by the reading view
@@ -199,7 +199,7 @@ struct SessionListGuidance: View
             {
 
                 // Retract the card and its reserved row together, using the entrance curve.
-                // Capture remains available and follows the shrinking row back toward the header.
+                // Capture remains available and follows the shrinking row back toward the header
                 withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
                 {
 
@@ -219,7 +219,7 @@ struct SessionListGuidance: View
             if toggleRequest > 0
             {
 
-                // Expand the reserved space with the card so capture follows the same curve.
+                // Expand the reserved space with the card so capture follows the same curve
                 withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
                 {
 
@@ -233,7 +233,7 @@ struct SessionListGuidance: View
                 return
             }
 
-            // Initial entry prepares the row while capture is hidden before revealing both.
+            // Initial entry prepares the row while capture is hidden before revealing both
             var layoutTransaction = Transaction(animation: nil)
 
             layoutTransaction.disablesAnimations = true

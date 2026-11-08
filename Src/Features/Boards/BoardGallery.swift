@@ -2,7 +2,7 @@
 // @file       BoardGallery.swift
 // @brief      Section-aware Board gallery presentation
 // @details    Groups canonical items for visual browsing and delegates opening, updates, and
-//             section movement through owner callbacks.
+//             section movement through owner callbacks
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -14,7 +14,7 @@ import UniformTypeIdentifiers
 /// Groups gallery Cards beneath an optional named divider
 ///
 /// @section    Purpose
-///     Preserves the ungrouped prefix and section boundaries after collapsed-section filtering.
+///     Preserves the ungrouped prefix and section boundaries after collapsed-section filtering
 ///
 struct BoardGalleryGroup: Identifiable
 {
@@ -29,7 +29,7 @@ struct BoardGalleryGroup: Identifiable
     /// @fcn        BoardGalleryGroup.groups
     /// @brief      Partition visible gallery cards by named section
     /// @details    Begins with an ungrouped prefix and starts a new group for each named divider after collapse
-    ///             filtering.
+    ///             filtering
     ///
     /// @param[in]  list  List supplying the current content and metadata
     ///
@@ -68,7 +68,7 @@ struct BoardGalleryGroup: Identifiable
 ///
 /// @section    Purpose
 ///     Uses canonical List data, appearance, and viewport memory while delegating opening, updates,
-///     and section movement to the owner.
+///     and section movement to the owner
 ///
 struct BoardGalleryView: View
 {
@@ -207,7 +207,7 @@ struct BoardGalleryView: View
 ///
 /// @section    Purpose
 ///     Combines available cover imagery, plain-text excerpt, and resolved appearance without
-///     modifying the source record.
+///     modifying the source record
 ///
 struct BoardGalleryTile: View
 {

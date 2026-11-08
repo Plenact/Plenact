@@ -3,7 +3,7 @@
 // @brief      Board Document regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -19,7 +19,7 @@ import XCTest
 ///
 /// @section    Purpose
 ///     Protects owner-qualified models, migrations, checked mutations, calendar and review
-///     workflows, gestures, navigation, and hosted presentation behavior with synthetic fixtures.
+///     workflows, gestures, navigation, and hosted presentation behavior with synthetic fixtures
 ///
 final class PlenactBoardDocumentTests: XCTestCase
 {
@@ -28,7 +28,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     ///
     /// @fcn        PlenactBoardDocumentTests.routineCalendar
     /// @brief      Prepare routine calendar for the enclosing regression test
-    /// @details    Supplies the local fixture for plenactBoardDocumentTests.
+    /// @details    Supplies the local fixture for plenactBoardDocumentTests
     ///
     /// @param[in]  firstWeekday  Calendar weekday index used to define the fixture week start
     ///
@@ -50,7 +50,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     /// @fcn        PlenactBoardDocumentTests.findDetailNavigation
     /// @brief      Find a navigation controller containing a pushed detail view
     /// @details    Searches the supplied controller, its presented controller, and child controllers recursively;
-    ///             returns nil when no detail navigation stack exists.
+    ///             returns nil when no detail navigation stack exists
     ///
     /// @param[in]  controller  Native controller supplied to the lifecycle callback
     ///
@@ -89,7 +89,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     /// @fcn        PlenactBoardDocumentTests.planningTestCalendar
     /// @brief      Create the fixed calendar used by planning regression tests
     /// @details    Uses a Gregorian calendar in America/Chicago with Sunday as the first weekday so date and
-    ///             daylight-saving assertions are reproducible.
+    ///             daylight-saving assertions are reproducible
     ///
     /// @return     (Calendar) result described by this operation's contract
     ///
@@ -109,7 +109,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     /// @fcn        PlenactBoardDocumentTests.drawingFixture
     /// @brief      Create a small deterministic PencilKit drawing fixture
     /// @details    Builds three blue pen control points on one stroke for drawing persistence, preview, and export
-    ///             tests.
+    ///             tests
     ///
     /// @return     (PKDrawing) result described by this operation's contract
     ///

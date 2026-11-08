@@ -2,14 +2,14 @@
 // @file       PortableEditableSettings.swift
 // @brief      Account-qualified preferences, profile, label, shortcut and importance editor projections
 // @details    Supported User Data Model versions: 1.0. Pure reconstruction only; canonical ownership
-//             and provenance remain separate from local UI identities and are never authenticated here.
+//             and provenance remain separate from local UI identities and are never authenticated here
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Reconstructs personal metadata only after portable workspace ownership has been established by a caller.
+/// Reconstructs personal metadata only after portable workspace ownership has been established by a caller
 /// @section Purpose
-///     Keep settings and personal selections attached to the same identities as imported content.
+///     Keep settings and personal selections attached to the same identities as imported content
 extension PortableEditableContent
 {
 
@@ -250,9 +250,9 @@ extension PortableEditableContent
 }
 
 
-/// Reconstructs Studio preferences and authored artwork order without rewriting per-collection defaults.
+/// Reconstructs Studio preferences and authored artwork order without rewriting per-collection defaults
 /// @section Purpose
-///     Preserve the additive appearance model while projecting supported values into current editor types.
+///     Preserve the additive appearance model while projecting supported values into current editor types
 extension PortableEditableContent
 {
 

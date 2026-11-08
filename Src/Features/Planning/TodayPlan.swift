@@ -3,7 +3,7 @@
 // @brief      Daily intentions, owner-qualified priorities, check-ins, and history
 // @details    Defines compatible daily planning documents and checked baseline saves. Presents
 //             intention setting, live priority selection or creation, morning guidance, contextual
-//             check-ins, retained history, and Today summaries without duplicating canonical Cards.
+//             check-ins, retained history, and Today summaries without duplicating canonical Cards
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Retains owner-qualified identity and creation time with a display snapshot so local numeric
-///     IDs cannot resolve to another owner's Card.
+///     IDs cannot resolve to another owner's Card
 ///
 struct DailyPlanPriority: Codable, Hashable, Identifiable
 {
@@ -35,7 +35,7 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable
     ///
     /// @fcn        DailyPlanPriority.init
     /// @brief      Capture a workspace item's owner-qualified priority reference
-    /// @details    Stores the source identity and snapshot fields needed to display and later resolve the priority.
+    /// @details    Stores the source identity and snapshot fields needed to display and later resolve the priority
     ///
     /// @param[in]  source  Live source item with its calendar or Library location
     ///
@@ -59,7 +59,7 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable
     /// @fcn        DailyPlanPriority.resolve
     /// @brief      Resolve a retained daily priority against live workspace sources
     /// @details    Matches its owner-qualified identity and returns nil when the original item is no longer
-    ///             available.
+    ///             available
     ///
     /// @param[in]  sources  Live owner-qualified workspace items used to resolve retained references
     ///
@@ -84,7 +84,7 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable
 ///
 /// @section    Purpose
 ///     Uses a local date key and time-zone identity while keeping linked workspace items distinct
-///     from copied planning snapshots.
+///     from copied planning snapshots
 ///
 struct DailyPlan: Codable, Equatable, Identifiable
 {
@@ -108,7 +108,7 @@ struct DailyPlan: Codable, Equatable, Identifiable
     /// @fcn        DailyPlan.init
     /// @brief      Create an empty plan for a represented calendar day
     /// @details    Stores the local day key and calendar context used by daily planning and subsequent check-in
-    ///             history.
+    ///             history
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -131,7 +131,7 @@ struct DailyPlan: Codable, Equatable, Identifiable
 ///
 /// @section    Purpose
 ///     Loads versioned plans and saves against baselines, reporting corruption, unsupported
-///     formats, conflicts, and write failures explicitly.
+///     formats, conflicts, and write failures explicitly
 ///
 @MainActor
 enum DailyPlanStore
@@ -146,7 +146,7 @@ enum DailyPlanStore
     ///
     /// @section    Purpose
     ///     Keys retained plans by represented local day and preserves a schema version for
-    ///     compatibility checks.
+    ///     compatibility checks
     ///
     struct Document: Codable
     {
@@ -163,7 +163,7 @@ enum DailyPlanStore
     ///
     /// @section    Purpose
     ///     Distinguishes unsupported, corrupt, conflicting, and unwritable data and supplies
-    ///     actionable localized messages.
+    ///     actionable localized messages
     ///
     enum Failure: LocalizedError
     {
@@ -195,13 +195,13 @@ enum DailyPlanStore
     /// @fcn        DailyPlanStore.load
     /// @brief      Load and validate the retained daily-plan document
     /// @details    Returns an empty document for absent storage and surfaces unsupported or invalid saved data rather
-    ///             than resetting it silently.
+    ///             than resetting it silently
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     (Document) validated daily-plan document, or an empty document for absent storage
     /// @throws     Explicit failures include `Failure.corrupt`, `Failure.unsupported`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
     static func load(from defaults: UserDefaults = .standard) throws -> Document
     {
@@ -265,14 +265,14 @@ enum DailyPlanStore
     /// @fcn        DailyPlanStore.relocatingSection
     /// @brief      Follow moved section members in retained daily priorities
     /// @details    Uses the transfer receipt's owner and card identity mapping to update affected references while
-    ///             preserving unrelated plans.
+    ///             preserving unrelated plans
     ///
     /// @param[in]  receipt   Checked section-transfer receipt containing before/after owners and ID mapping
     /// @param[in]  document  Retained document containing the operation's current workspace records
     ///
     /// @return     (Document) document with affected priorities redirected and unrelated plans preserved
     ///
-    /// @note       Keep explicit priorities linked to content when its whole section changes owner or list.
+    /// @note       Keep explicit priorities linked to content when its whole section changes owner or list
     ///
     static func relocatingSection(_ receipt: SectionTransferReceipt, in document: Document) -> Document
     {
@@ -324,7 +324,7 @@ enum DailyPlanStore
     /// @fcn        DailyPlanStore.save
     /// @brief      Save a daily plan against its expected retained value
     /// @details    Checks the supplied baseline to avoid overwriting concurrent changes, then encodes and returns the
-    ///             accepted saved plan.
+    ///             accepted saved plan
     ///
     /// @param[in]  plan      Daily plan supplying the retained priorities and review state
     /// @param[in]  expected  Expected retained plan; nil requires that no plan already exists
@@ -332,9 +332,9 @@ enum DailyPlanStore
     ///
     /// @return     (DailyPlan) saved plan with an updated timestamp after baseline and write verification
     /// @throws     Explicit failures include `Failure.conflict`, `Failure.corrupt`, `Failure.write`. Errors from
-    ///             throwing dependencies propagate unless handled within this operation.
+    ///             throwing dependencies propagate unless handled within this operation
     ///
-    /// @note       Merge one day into the latest document, preserving every other day's plan.
+    /// @note       Merge one day into the latest document, preserving every other day's plan
     ///
     @discardableResult
     static func save(_ plan: DailyPlan, replacing expected: DailyPlan?, to defaults: UserDefaults = .standard) throws
@@ -390,7 +390,7 @@ enum DailyPlanStore
 ///
 /// @section    Purpose
 ///     Loads a baseline-backed plan, coordinates priorities and review destinations, and keeps
-///     unsaved writing available when persistence fails.
+///     unsaved writing available when persistence fails
 ///
 struct TodayPlanView: View
 {
@@ -422,7 +422,7 @@ struct TodayPlanView: View
     /// @fcn        TodayPlanView.init
     /// @brief      Seed daily planning and its optional evening-review entry
     /// @details    Retains preferences and entry mode and creates the represented day's initial draft without
-    ///             persisting during initialization.
+    ///             persisting during initialization
     ///
     /// @param[in]  date                Represented date for the operation
     /// @param[in]  calendar            Calendar supplying local-day, time-zone, and week-boundary rules
@@ -475,7 +475,7 @@ struct TodayPlanView: View
     /// @fcn        TodayPlanView.load
     /// @brief      Load the represented day's editable plan
     /// @details    Restores the current draft and persistence baseline and reports retained-data failures through the
-    ///             view's error state.
+    ///             view's error state
     ///
     /// @return     (Void) no return value
     ///
@@ -508,7 +508,7 @@ struct TodayPlanView: View
     /// @fcn        TodayPlanView.save
     /// @brief      Save and dismiss the edited daily plan
     /// @details    Uses baseline-aware persistence, replaces the draft with the saved value, and dismisses on
-    ///             success; failure retains the editor and sets its save error.
+    ///             success; failure retains the editor and sets its save error
     ///
     /// @return     (Void) no return value
     ///
@@ -537,7 +537,7 @@ struct TodayPlanView: View
     /// @fcn        TodayPlanView.close
     /// @brief      Request dismissal of daily planning
     /// @details    Prompts to discard unsaved changes when the draft differs from its baseline; otherwise dismisses
-    ///             immediately without writing.
+    ///             immediately without writing
     ///
     /// @return     (Void) no return value
     ///
@@ -562,7 +562,7 @@ struct TodayPlanView: View
     /// @fcn        TodayPlanView.saveVisionProgress
     /// @brief      Save daily vision progress without dismissing
     /// @details    Updates the draft and baseline from the accepted saved plan and returns false if the checked store
-    ///             rejects it.
+    ///             rejects it
     ///
     /// @return     (Bool) true after updating the draft and baseline from storage; false on save failure
     ///
@@ -591,7 +591,7 @@ struct TodayPlanView: View
     /// @fcn        TodayPlanView.priorityRow
     /// @brief      Build a daily priority row with its live workspace context
     /// @details    Resolves the stored priority to available source content and presents the corresponding navigation
-    ///             and planning controls.
+    ///             and planning controls
     ///
     /// @param[in]  priority  Owner-qualified daily priority to render or resolve
     ///
@@ -1135,7 +1135,7 @@ struct TodayPlanView: View
 ///
 /// @section    Purpose
 ///     Searches supplied owner-qualified sources and updates linked priority references without
-///     duplicating their Cards.
+///     duplicating their Cards
 ///
 struct DailyPriorityPicker: View
 {
@@ -1260,7 +1260,7 @@ struct DailyPriorityPicker: View
 ///
 /// @section    Purpose
 ///     Uses the selected calendar or personal owner and returns its searchable reference only after
-///     content and attachments are accepted.
+///     content and attachments are accepted
 ///
 @MainActor
 enum DailyPriorityCreation
@@ -1271,7 +1271,7 @@ enum DailyPriorityCreation
     /// @fcn        DailyPriorityCreation.create
     /// @brief      Create a new card or note in the chosen priority destination
     /// @details    Uses calendar or personal-owner access to save full content and attachments, returning the
-    ///             resulting searchable item only after accepted persistence.
+    ///             resulting searchable item only after accepted persistence
     ///
     /// @param[in]  title         Display title or proposed title text
     /// @param[in]  body          Body text for the new item
@@ -1363,7 +1363,7 @@ enum DailyPriorityCreation
 ///
 /// @section    Purpose
 ///     Retains writing, destination, and attachment drafts and reports the created owner-qualified
-///     result through the caller's callback.
+///     result through the caller's callback
 ///
 struct NewDailyPriorityView: View
 {
@@ -1394,7 +1394,7 @@ struct NewDailyPriorityView: View
     /// @fcn        NewDailyPriorityView.saveDraft
     /// @brief      Save the new priority draft and its imported media
     /// @details    Uses the checked capture and creation paths and retains the composer with feedback when the
-    ///             destination cannot be saved.
+    ///             destination cannot be saved
     ///
     /// @return     (Void) no return value
     ///
@@ -1450,7 +1450,7 @@ struct NewDailyPriorityView: View
     /// @fcn        NewDailyPriorityView.initializeDestination
     /// @brief      Choose On the Table as the initial priority destination
     /// @details    Runs once and selects the first available standalone On the Table owner; leaves the destination
-    ///             unset when that choice is unavailable.
+    ///             unset when that choice is unavailable
     ///
     /// @return     (Void) no return value
     ///

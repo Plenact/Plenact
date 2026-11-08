@@ -2,7 +2,7 @@
 // @file       LibraryHelp.swift
 // @brief      Offline help catalog and article presentation
 // @details    Provides searchable authored guidance with optional planning navigation while
-//             leaving workspace content unchanged during reading.
+//             leaving workspace content unchanged during reading
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Keeps a section heading and ordered paragraphs together with a title-derived display
-///     identity.
+///     identity
 ///
 struct PlenactHelpSection: Identifiable
 {
@@ -35,7 +35,7 @@ struct PlenactHelpSection: Identifiable
 ///
 /// @section    Purpose
 ///     Combines search metadata, symbol, sections, and an optional planning entry point without
-///     embedding mutable user content.
+///     embedding mutable user content
 ///
 struct PlenactHelpArticle: Identifiable
 {
@@ -53,7 +53,7 @@ struct PlenactHelpArticle: Identifiable
     ///
     /// @fcn        PlenactHelpArticle.matches
     /// @brief      Match a help article against a search query
-    /// @details    Uses the article's searchable text and normalized query without changing the help catalog.
+    /// @details    Uses the article's searchable text and normalized query without changing the help catalog
     ///
     /// @param[in]  query  User-entered search text
     ///
@@ -82,7 +82,7 @@ struct PlenactHelpArticle: Identifiable
 ///
 /// @section    Purpose
 ///     Organizes authored articles into groups and constructs paragraph-based sections for
-///     consistent offline presentation.
+///     consistent offline presentation
 ///
 enum PlenactHelpCatalog
 {
@@ -96,7 +96,7 @@ enum PlenactHelpCatalog
     ///
     /// @fcn        PlenactHelpCatalog.section
     /// @brief      Construct a help section from authored paragraphs
-    /// @details    Splits the supplied text into the paragraph representation used by the article view.
+    /// @details    Splits the supplied text into the paragraph representation used by the article view
     ///
     /// @param[in]  title       Display title or proposed title text
     /// @param[in]  paragraphs  Authored multiline paragraph text used to construct help content
@@ -396,7 +396,7 @@ enum PlenactHelpCatalog
     ///
     /// @fcn        PlenactHelpCatalog.results
     /// @brief      Filter the help catalog by the current query
-    /// @details    Uses each article's shared matching rules and preserves catalog order.
+    /// @details    Uses each article's shared matching rules and preserves catalog order
     ///
     /// @param[in]  query  User-entered search text
     ///
@@ -419,7 +419,7 @@ enum PlenactHelpCatalog
 ///
 /// @section    Purpose
 ///     Uses the shared catalog search and delegates article opening to the surrounding Library
-///     view.
+///     view
 ///
 struct LibraryHelpRows: View
 {
@@ -518,7 +518,7 @@ struct LibraryHelpRows: View
 ///
 /// @section    Purpose
 ///     Renders its authored sections and optionally opens the planning destination using injected
-///     workspace context.
+///     workspace context
 ///
 struct PlenactHelpArticleView: View
 {

@@ -2,7 +2,7 @@
 // @file       ListEditors.swift
 // @brief      Inline List naming and explicit metadata drafts
 // @details    Coordinates title selection, keyboard submission, subtitle editing, and
-//             owner-accepted saving without replacing current List content.
+//             owner-accepted saving without replacing current List content
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Selects the generated title, requests keyboard focus, and commits through the owner while
-///     keeping a fixed header height.
+///     keeping a fixed header height
 ///
 struct InlineBoardListTitle: View
 {
@@ -33,7 +33,7 @@ struct InlineBoardListTitle: View
     ///
     /// @fcn        InlineBoardListTitle.init(list:onSave:onFinish:)
     /// @brief      Seed the generated List name for immediate replacement
-    /// @details    Owns only a title draft; the parent retains canonical Cards and other metadata.
+    /// @details    Owns only a title draft; the parent retains canonical Cards and other metadata
     ///
     /// @param[in]  list      Newly created List
     /// @param[in]  onSave    Checked canonical rename callback
@@ -87,7 +87,7 @@ struct InlineBoardListTitle: View
     /// @fcn        InlineBoardListTitle.finish()
     /// @brief      Commit a new List name and return its header to normal display
     /// @details    Trims typed text, retains the generated name for blank input, and keeps editing
-    ///             on a rejected rename. Successful completion is idempotent across focus changes.
+    ///             on a rejected rename. Successful completion is idempotent across focus changes
     ///
     /// @return     (Void) saves through the owner without opening another view
     ///
@@ -123,7 +123,7 @@ struct InlineBoardListTitle: View
 ///
 /// @section    Purpose
 ///     Supports initial select-all, focus changes, and configurable return-key behavior without
-///     expanding the surrounding header layout.
+///     expanding the surrounding header layout
 ///
 struct ListTitleField: UIViewRepresentable
 {
@@ -141,7 +141,7 @@ struct ListTitleField: UIViewRepresentable
     ///
     /// @fcn        ListTitleField.makeCoordinator
     /// @brief      Create the delegate for list-title text and keyboard events
-    /// @details    Retains the current bindings and tracks whether the initial generated title was selected.
+    /// @details    Retains the current bindings and tracks whether the initial generated title was selected
     ///
     /// @return     (Coordinator) delegate retained across native view updates
     ///
@@ -155,7 +155,7 @@ struct ListTitleField: UIViewRepresentable
     /// @fcn        ListTitleField.makeUIView
     /// @brief      Create the title input with its configured keyboard submission key
     /// @details    Uses native selection, Dynamic Type, and sentence capitalization. The caller
-    ///             chooses header styling and Done or Next; creating the field never saves the List.
+    ///             chooses header styling and Done or Next; creating the field never saves the List
     ///
     /// @param[in]  context  SwiftUI lifecycle context containing the title delegate
     ///
@@ -190,7 +190,7 @@ struct ListTitleField: UIViewRepresentable
     /// @fcn        ListTitleField.updateUIView
     /// @brief      Synchronize draft text and requested title focus
     /// @details    Updates changed text only and defers first-responder reconciliation until after SwiftUI's update.
-    ///             The deferred callback reads the coordinator's latest parent so Next cannot restore stale focus.
+    ///             The deferred callback reads the coordinator's latest parent so Next cannot restore stale focus
     ///
     /// @param[in]  field    Existing native title field
     /// @param[in]  context  SwiftUI lifecycle context containing the current delegate
@@ -240,7 +240,7 @@ struct ListTitleField: UIViewRepresentable
     ///
     /// @section    Purpose
     ///     Selects the initial title once, then publishes ordinary editing and focus changes
-    ///     through the representable's current bindings.
+    ///     through the representable's current bindings
     ///
     final class Coordinator: NSObject, UITextFieldDelegate
     {
@@ -253,7 +253,7 @@ struct ListTitleField: UIViewRepresentable
         ///
         /// @fcn        ListTitleField.Coordinator.init
         /// @brief      Retain the title editor's bindings and Next action
-        /// @details    Later native updates replace this parent value with the latest SwiftUI state.
+        /// @details    Later native updates replace this parent value with the latest SwiftUI state
         ///
         /// @param[in]  parent  Title editor supplying draft and focus bindings
         ///
@@ -270,7 +270,7 @@ struct ListTitleField: UIViewRepresentable
         ///
         /// @fcn        ListTitleField.Coordinator.changed
         /// @brief      Publish native title edits into the working draft
-        /// @details    Normalizes an absent text-field value to an empty title; persistence still requires Save.
+        /// @details    Normalizes an absent text-field value to an empty title; persistence still requires Save
         ///
         /// @param[in]  field  Native title field delivering an editing-change event
         ///
@@ -288,7 +288,7 @@ struct ListTitleField: UIViewRepresentable
         /// @fcn        ListTitleField.Coordinator.textFieldDidBeginEditing
         /// @brief      Focus the title and select its initial generated name once
         /// @details    Only new-list editors request selection. Existing-list editing and subsequent focus changes
-        ///             retain normal caret behavior; deferred selection requires the field to remain first responder.
+        ///             retain normal caret behavior; deferred selection requires the field to remain first responder
         ///
         /// @param[in]  field  Native title field that began editing
         ///
@@ -329,7 +329,7 @@ struct ListTitleField: UIViewRepresentable
         ///
         /// @fcn        ListTitleField.Coordinator.textFieldDidEndEditing
         /// @brief      Clear title focus when native editing ends
-        /// @details    Leaves the parent unchanged if it already advanced focus to the subtitle.
+        /// @details    Leaves the parent unchanged if it already advanced focus to the subtitle
         ///
         /// @param[in]  field  Native title field that ended editing
         ///
@@ -352,7 +352,7 @@ struct ListTitleField: UIViewRepresentable
         /// @fcn        ListTitleField.Coordinator.textFieldShouldReturn
         /// @brief      Dispatch the parent editor's configured Return action
         /// @details    Metadata editing advances to the subtitle; inline Board naming commits.
-        ///             Suppresses default Return behavior so the field remains single-line.
+        ///             Suppresses default Return behavior so the field remains single-line
         ///
         /// @param[in]  field  Native title field whose Next key was pressed
         ///
@@ -375,7 +375,7 @@ struct ListTitleField: UIViewRepresentable
 ///
 /// @section    Purpose
 ///     Publishes display-text changes only when the owner accepts them and preserves current
-///     content through the canonical save path.
+///     content through the canonical save path
 ///
 struct ListInfoEditorSheet: View
 {
@@ -395,7 +395,7 @@ struct ListInfoEditorSheet: View
     /// @fcn        ListInfoEditorSheet.init
     /// @brief      Initialize list metadata editing with a save callback
     /// @details    Seeds editable values from the supplied list; the two-argument callback overload delegates to the
-    ///             presentation-aware initializer. New-list callers can request initial title focus and selection.
+    ///             presentation-aware initializer. New-list callers can request initial title focus and selection
     ///
     /// @param[in]  list                  List supplying the current content and metadata
     /// @param[in]  focusesTitleOnAppear  Whether to raise the keyboard and select the initial title on opening
@@ -419,7 +419,7 @@ struct ListInfoEditorSheet: View
     /// @fcn        ListInfoEditorSheet.init
     /// @brief      Initialize list metadata editing with a save callback
     /// @details    Seeds editable values from the supplied list; the two-argument callback overload delegates to the
-    ///             presentation-aware initializer. New-list callers can request initial title focus and selection.
+    ///             presentation-aware initializer. New-list callers can request initial title focus and selection
     ///
     /// @param[in]  list                  List supplying the current content and metadata
     /// @param[in]  focusesTitleOnAppear  Whether to raise the keyboard and select the initial title on opening

@@ -2,7 +2,7 @@
 // @file       WorkspaceNavigation.swift
 // @brief      Workspace destination identities and direct List navigation
 // @details    Resolves canonical owners and coordinates primary destinations while preserving
-//             caller-specific return routes.
+//             caller-specific return routes
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -99,7 +99,7 @@ enum TodayListSelection
     /// @fcn        TodayListSelection.currentDayList(in:date:calendar:)
     /// @brief      Resolve the active Week list for the supplied local day
     /// @details    Matches canonical weekday titles without consulting manual Today preferences.
-    ///             Missing, archived, renamed, or ambiguous weekday lists produce no focus.
+    ///             Missing, archived, renamed, or ambiguous weekday lists produce no focus
     ///
     /// @param[in]  lists     Canonical Week list records
     /// @param[in]  date      Date whose local weekday is resolved
@@ -297,7 +297,7 @@ enum LastViewedListStore
 }
 
 
-// Shared owner-qualified browsing prevents card/list IDs on different boards from colliding.
+// Shared owner-qualified browsing prevents card/list IDs on different boards from colliding
 
 
 ///
@@ -305,7 +305,7 @@ enum LastViewedListStore
 ///
 /// @section    Purpose
 ///     Persists a composite reference so equal list IDs in different Boards or calendar Weeks
-///     remain distinct.
+///     remain distinct
 ///
 struct WorkspaceListReference: Hashable, Codable, Identifiable
 {
@@ -326,7 +326,7 @@ struct WorkspaceListReference: Hashable, Codable, Identifiable
 /// Resolves a workspace List reference to its owner
 ///
 /// @section    Purpose
-///     Carries the live collection and List used by shortcut and destination pickers.
+///     Carries the live collection and List used by shortcut and destination pickers
 ///
 struct WorkspaceListDestination: Identifiable
 {
@@ -352,7 +352,7 @@ struct WorkspaceListDestination: Identifiable
 /// Groups workspace matches for one label
 ///
 /// @section    Purpose
-///     Retains the label catalog entry alongside owner-qualified Card matches for Library browsing.
+///     Retains the label catalog entry alongside owner-qualified Card matches for Library browsing
 ///
 struct WorkspaceLabelUsage: Identifiable
 {
@@ -374,7 +374,7 @@ struct WorkspaceLabelUsage: Identifiable
 ///
 /// @section    Purpose
 ///     Combines calendar and personal owners and derives available Lists and label usage without
-///     writing content.
+///     writing content
 ///
 enum WorkspaceBrowseIndex
 {
@@ -383,7 +383,7 @@ enum WorkspaceBrowseIndex
     ///
     /// @fcn        WorkspaceBrowseIndex.owners
     /// @brief      Combine active calendar and Library owners for browsing
-    /// @details    Builds the common owner projection used by list and label pickers without persisting changes.
+    /// @details    Builds the common owner projection used by list and label pickers without persisting changes
     ///
     /// @param[in]  document  Retained document containing the operation's current workspace records
     /// @param[in]  library   Personal owners to combine with calendar-backed weeks
@@ -410,7 +410,7 @@ enum WorkspaceBrowseIndex
     ///
     /// @fcn        WorkspaceBrowseIndex.lists
     /// @brief      Build owner-qualified list destinations
-    /// @details    Projects browsable owner lists into references that retain both collection and list identity.
+    /// @details    Projects browsable owner lists into references that retain both collection and list identity
     ///
     /// @param[in]  owners  Canonical collection owners participating in the operation
     ///
@@ -439,7 +439,7 @@ enum WorkspaceBrowseIndex
     /// @fcn        WorkspaceBrowseIndex.labels
     /// @brief      Collect label usage across browsable workspace content
     /// @details    Resolves card label IDs through the supplied catalog and retains owner context for each usage
-    ///             destination.
+    ///             destination
     ///
     /// @param[in]  owners   Canonical collection owners participating in the operation
     /// @param[in]  catalog  Catalog used to resolve the referenced display metadata
@@ -492,7 +492,7 @@ enum WorkspaceBrowseIndex
 ///
 /// @section    Purpose
 ///     Chooses the dated Week or personal owner associated with the reference and preserves the
-///     caller's return destination.
+///     caller's return destination
 ///
 struct WorkspacePinnedListView: View
 {
@@ -582,7 +582,7 @@ struct WorkspacePinnedListView: View
 ///
 /// @section    Purpose
 ///     Retains the owner snapshot and routes checked changes through calendar access, including
-///     rollback when a save fails.
+///     rollback when a save fails
 ///
 struct PinnedListDayContent: View
 {
@@ -603,7 +603,7 @@ struct PinnedListDayContent: View
     /// @fcn        PinnedListDayContent.save
     /// @brief      Save edits to a pinned list through its canonical owner
     /// @details    Uses calendar-week or personal-collection access as appropriate and returns false when the owner
-    ///             cannot be saved.
+    ///             cannot be saved
     ///
     /// @param[in]  collection  Personal collection supplying the owner context
     ///
@@ -718,9 +718,9 @@ struct PinnedListDayContent: View
 }
 
 
-/// Routes template browsing to the retained Library tab after Settings sheets have dismissed.
+/// Routes template browsing to the retained Library tab after Settings sheets have dismissed
 /// @section Purpose
-///     Keep destination selection in the workspace without persisting navigation as user data.
+///     Keep destination selection in the workspace without persisting navigation as user data
 private struct OpenTemplateLibraryKey: EnvironmentKey
 {
 
@@ -732,7 +732,7 @@ private struct OpenTemplateLibraryKey: EnvironmentKey
 extension EnvironmentValues
 {
 
-    /// Optional workspace action for opening Library with its Templates filter selected.
+    /// Optional workspace action for opening Library with its Templates filter selected
     var openTemplateLibrary: (() -> Void)?
     {
 

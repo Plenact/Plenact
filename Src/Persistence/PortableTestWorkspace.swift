@@ -2,14 +2,14 @@
 // @file       PortableTestWorkspace.swift
 // @brief      Isolated Simulator installation, durable selection and undo of portable test snapshots
 // @details    Supported User Data Model versions: 1.0 base and working 1.1; test-store format 1.
-//             Never installs legacy preferences, changes the main workspace or authenticates an owner.
+//             Never installs legacy preferences, changes the main workspace or authenticates an owner
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Retains independently verified portable snapshots in a separate local test workspace.
+/// Retains independently verified portable snapshots in a separate local test workspace
 /// @section Purpose
-///     Prove package installation and readback with atomic activation and retained undo generations.
+///     Prove package installation and readback with atomic activation and retained undo generations
 @MainActor
 struct PortableTestWorkspace
 {

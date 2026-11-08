@@ -2,7 +2,7 @@
 // @file       CardDateBrowser.swift
 // @brief      Card start-date and due-date calendar browsing
 // @details    Projects canonical scheduled content into local days and opens its existing List or
-//             Card destination.
+//             Card destination
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation

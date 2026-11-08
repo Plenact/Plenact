@@ -2,14 +2,14 @@
 // @file       MigrationContentValues.swift
 // @brief      Explicit nested value conversion, references and source-precision evidence
 // @details    Supported User Data Model versions: 1.0. Partial, local-only migration preview.
-//             Original source bytes remain preserved; no cloud ownership or synchronization is implied.
+//             Original source bytes remain preserved; no cloud ownership or synchronization is implied
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Carries resolved source ownership and preserves unresolved links explicitly.
+/// Carries resolved source ownership and preserves unresolved links explicitly
 /// @section Purpose
-///     Keep nested conversion from guessing identity, missing media or historical authorship.
+///     Keep nested conversion from guessing identity, missing media or historical authorship
 @MainActor
 final class MigrationContentValues
 {
@@ -32,9 +32,9 @@ final class MigrationContentValues
     let mediaDigests: [String: String]                     /* Exact preserved-file identities                           */
 
 
-    /// Structured conversion failures remain visible in the partial preview report.
+    /// Structured conversion failures remain visible in the partial preview report
     /// @section Purpose
-    ///     Refuse incompatible source instead of dropping fields or manufacturing values.
+    ///     Refuse incompatible source instead of dropping fields or manufacturing values
     enum Failure: Error
     {
 

@@ -2,7 +2,7 @@
 // @file       ListMutation.swift
 // @brief      Validated canonical List metadata updates
 // @details    Rejects ambiguous or unavailable destinations and preserves current records while
-//             applying accepted display edits.
+//             applying accepted display edits
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -17,7 +17,7 @@ import UniformTypeIdentifiers
 /// @fcn        setListAppearance
 /// @brief      Apply appearance to one unambiguous active list
 /// @details    Rejects missing, duplicated, or archived matches with activity feedback; stores nil for an empty
-///             appearance.
+///             appearance
 ///
 /// @param[in]      listID      Numeric list identity within its owner
 /// @param[in]      appearance  Optional or explicit appearance overrides supplied by the caller
@@ -55,7 +55,7 @@ func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: ino
 /// @fcn        editBoardList
 /// @brief      Validate and apply list title and subtitle edits
 /// @details    Requires one active matching list, preserves an unchanged subtitle override, and reports validation
-///             failures without publishing the failed edit.
+///             failures without publishing the failed edit
 ///
 /// @param[in]      listID               Numeric list identity within its owner
 /// @param[in]      title                Display title or proposed title text
@@ -65,7 +65,7 @@ func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: ino
 ///
 /// @return     (Bool) true after valid metadata is applied; false when validation or target resolution fails
 ///
-/// @note       Saves metadata into the current canonical record, not the editor's older snapshot.
+/// @note       Saves metadata into the current canonical record, not the editor's older snapshot
 ///
 @MainActor
 @discardableResult

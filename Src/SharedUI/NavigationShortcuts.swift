@@ -2,7 +2,7 @@
 // @file       NavigationShortcuts.swift
 // @brief      Shared Back behavior and navigation presentation helpers
 // @details    Exposes the configured lower-corner return action and focused navigation styling
-//             without owning workspace content.
+//             without owning workspace content
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -66,7 +66,7 @@ struct HideNavigationLinkIndicator: ViewModifier
 ///
 /// @section    Purpose
 ///     Uses the same return action as the visible Back control, defaults to enabled, and reserves
-///     space around existing content and toolbars.
+///     space around existing content and toolbars
 ///
 struct LowerCornerBackShortcut: ViewModifier
 {
@@ -89,7 +89,7 @@ struct LowerCornerBackShortcut: ViewModifier
     /// @fcn        LowerCornerBackShortcut.body
     /// @brief      Install the optional lower-left Back touch region
     /// @details    Shows an eighty-eight-point-wide target only when enabled, a Back action exists, and the keyboard
-    ///             is hidden; includes the home-indicator inset on full-screen destinations.
+    ///             is hidden; includes the home-indicator inset on full-screen destinations
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -110,7 +110,7 @@ struct LowerCornerBackShortcut: ViewModifier
                     geometry in
 
                     // Full-screen destinations have no toolbar below the target:
-                    // include their home-indicator safe area in the touch region.
+                    // include their home-indicator safe area in the touch region
                     let bottomExtension = toolbarHeight > 0 ? 0 : geometry.safeAreaInsets.bottom
 
                     HStack(spacing: 0)

@@ -2,16 +2,16 @@
 // @file       MigrationStudioTests.swift
 // @brief      Studio surface, reusable artwork and global Week-default preservation tests
 // @details    Supported User Data Model versions: 1.0 base and working 1.1. Synthetic stores/files only; no source
-//             workspace, image downloads, authenticated account or synchronization is modified.
+//             workspace, image downloads, authenticated account or synchronization is modified
 // --------------------------------------------------------------------------------------------------
 import Foundation
 import XCTest
 @testable import Plenact
 
 
-/// Verifies exact appearance metadata, shared original files and explicit canonical mapping gaps.
+/// Verifies exact appearance metadata, shared original files and explicit canonical mapping gaps
 /// @section Purpose
-///     Preserve authored personalization without turning global defaults into per-Week overrides.
+///     Preserve authored personalization without turning global defaults into per-Week overrides
 @MainActor
 final class MigrationStudioTests: XCTestCase
 {
@@ -823,7 +823,7 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertEqual(defaults.string(forKey: "PlatformSentinel"), "unchanged")
             XCTAssertEqual(try PortableRuntimeEvidence.capture(root: container)["CanonicalPackage.bin"], reviewed.snapshot)
 
-            // Export edits from the real native projection, preserving stable IDs, original files and source bytes.
+            // Export edits from the real native projection, preserving stable IDs, original files and source bytes
             var editedCalendar = try JSONDecoder().decode(PlanningCalendarDocument.self,
                 from: XCTUnwrap(defaults.data(forKey: "Plenact.CalendarWeeks.v1")))
 
@@ -893,7 +893,7 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertEqual(reconstructed.media.files, candidate.media.files)
             XCTAssertEqual(try PortableRuntimeEvidence.capture(root: container)["CanonicalPackage.bin"], reviewed.snapshot)
             XCTAssertNotNil(editedOutput.fileWrappers?["EditedNativeBackup"])
-            // A stale duplicated Board copy must fail rather than overwrite the edited calendar Card.
+            // A stale duplicated Board copy must fail rather than overwrite the edited calendar Card
             defaults.set(candidate.values["Plenact.Board.v1"], forKey: "Plenact.Board.v1")
 
             let staleBackup = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: container)
@@ -901,7 +901,7 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertThrowsError(try PortableEditedExport.prepare(staleBackup))
             defaults.set(try JSONEncoder().encode(editedCalendar.weeks[0].collection.lists), forKey: "Plenact.Board.v1")
 
-            // Explicit removal and completion are distinct from retaining the old text.
+            // Explicit removal and completion are distinct from retaining the old text
             var cleared = editedCalendar
 
             cleared.weeks[0].collection.lists[0].cards[0].descriptionOverride = nil
@@ -921,7 +921,7 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertEqual(clearedLists.first?.cards.first?.isTitleChecked, true)
             defaults.set(try JSONEncoder().encode(editedCalendar.weeks[0].collection.lists), forKey: "Plenact.Board.v1")
 
-            // A deleted Card stays retained canonically but is absent from both editable partitions.
+            // A deleted Card stays retained canonically but is absent from both editable partitions
             var deletedCalendar = editedCalendar
             let deletedNumber   = try XCTUnwrap(deletedCalendar.weeks[0].collection.lists[0].cards.first?.id)
 
@@ -962,7 +962,7 @@ final class MigrationStudioTests: XCTestCase
 
             try deletedCandidate.stage(at: deletionStage)
 
-            // Reconstructing/importing a deletion must not resurrect it on the next export.
+            // Reconstructing/importing a deletion must not resurrect it on the next export
             let deletionDomain   = "Plenact.DeletedReimport." + UUID().uuidString
             let deletionDefaults = try XCTUnwrap(UserDefaults(suiteName: deletionDomain))
 
@@ -997,7 +997,7 @@ final class MigrationStudioTests: XCTestCase
             defaults.set(candidate.values["Plenact.SavedCardIDs.v1"], forKey: "Plenact.SavedCardIDs.v1")
             defaults.set(try JSONEncoder().encode(editedCalendar.weeks[0].collection.lists), forKey: "Plenact.Board.v1")
 
-            // Reserve new identities durably, then create, move and reorder within one existing owner.
+            // Reserve new identities durably, then create, move and reorder within one existing owner
             let firstReserved = try PortableCreationIdentity.reserve(proposed: 1, count: 2, root: container)
             let reservedAgain = try PortableCreationIdentity.reserve(proposed: 1, root: container)
 
@@ -1130,7 +1130,7 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertEqual(try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: structuralOutput),
                 try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: reexportedStructural))
 
-            // Edit the rich Card after import: preserve its existing identity and untouched canonical fields.
+            // Edit the rich Card after import: preserve its existing identity and untouched canonical fields
             var importedCalendar = try JSONDecoder().decode(PlanningCalendarDocument.self,
                 from: XCTUnwrap(structuralDefaults.data(forKey: "Plenact.CalendarWeeks.v1")))
             let originalImported = importedCalendar.weeks[0].collection.lists[0].cards[0]
@@ -1277,7 +1277,7 @@ final class MigrationStudioTests: XCTestCase
 
             add(existingBlobAttachment)
 
-            // Existing List metadata must retain identities and survive a fresh native projection.
+            // Existing List metadata must retain identities and survive a fresh native projection
             var listCalendar = importedCalendar
 
             listCalendar.weeks[0].collection.title = "Renamed portable Collection"
@@ -1619,7 +1619,7 @@ final class MigrationStudioTests: XCTestCase
             structuralDefaults.set(try JSONEncoder().encode(importedCalendar), forKey: "Plenact.CalendarWeeks.v1")
             structuralDefaults.set(try JSONEncoder().encode(importedCalendar.weeks[0].collection.lists), forKey: "Plenact.Board.v1")
 
-            // Removing a live attachment must not lose its verified imported original or restore its row.
+            // Removing a live attachment must not lose its verified imported original or restore its row
             let removedName  = try XCTUnwrap(originalImported.attachments?.first?.fileName)
             var removedPhoto = importedCalendar.weeks[0].collection.lists[0].cards[0]
 
@@ -1697,7 +1697,7 @@ final class MigrationStudioTests: XCTestCase
             defaults.set(candidate.values["Plenact.SavedCardIDs.v1"], forKey: "Plenact.SavedCardIDs.v1")
             defaults.set(candidate.values["Plenact.LibraryImportant.v1"], forKey: "Plenact.LibraryImportant.v1")
 
-            // New structure must never be silently omitted by this bounded export implementation.
+            // New structure must never be silently omitted by this bounded export implementation
             var unsupported = editedCalendar
 
             unsupported.weeks[0].collection.lists[0].cards.append(KanbanCard(id: 99999, word: "New Card", listTitle: "Monday", checklists: []))

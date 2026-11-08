@@ -2,7 +2,7 @@
 // @file       CardEditors.swift
 // @brief      Explicit Card metadata editing drafts
 // @details    Edits titles, members, dates, layout, and action destinations through the owner's
-//             accepted save callbacks. Presents retained edit history as a read-only timeline.
+//             accepted save callbacks. Presents retained edit history as a read-only timeline
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -346,7 +346,7 @@ struct CardMembersSheet: View
 ///
 /// @section    Purpose
 ///     Keeps layout changes in local state and saves through a checked callback without deleting
-///     hidden section content.
+///     hidden section content
 ///
 struct CardLayoutEditor: View
 {
@@ -454,7 +454,7 @@ struct CardLayoutEditor: View
 ///
 /// @section    Purpose
 ///     Allows calendar and clock choices to change together and publishes them only when the user
-///     saves.
+///     saves
 ///
 struct CardDateEditorSheet: View
 {
@@ -472,7 +472,7 @@ struct CardDateEditorSheet: View
     /// @fcn        CardDateEditorSheet.init
     /// @brief      Initialize an optional schedule-value editor
     /// @details    Tracks whether a value already exists, seeds a missing value with the current time, and retains
-    ///             its precision and checked save callback.
+    ///             its precision and checked save callback
     ///
     /// @param[in]  title   Display title or proposed title text
     /// @param[in]  date    Represented date for the operation
@@ -590,7 +590,7 @@ struct CardDateEditorSheet: View
 ///
 /// @section    Purpose
 ///     Selects plain, linked-Card, or URL behavior from available candidates and publishes the
-///     resulting item only through checked saving.
+///     resulting item only through checked saving
 ///
 struct ChecklistItemTypeEditor: View
 {
@@ -609,7 +609,7 @@ struct ChecklistItemTypeEditor: View
     /// @fcn        ChecklistItemTypeEditor.init
     /// @brief      Seed checklist type editing without losing retained content
     /// @details    Loads the selected type, retained linked-card identity, and retained URL into independent draft
-    ///             state and keeps the available card candidates.
+    ///             state and keeps the available card candidates
     ///
     /// @param[in]  item         Item supplied to this operation
     /// @param[in]  initialType  Checklist presentation initially selected in the editor
@@ -936,7 +936,7 @@ struct CardInfoEditorSheet: View
 ///
 /// @section    Purpose
 ///     Reuses the Card date editor for start and due values and forwards an otherwise unchanged
-///     record through the owning List's update callback. Locked records remain display-only.
+///     record through the owning List's update callback. Locked records remain display-only
 ///
 struct CardPreviewDateEditor: ViewModifier
 {
@@ -952,7 +952,7 @@ struct CardPreviewDateEditor: ViewModifier
     /// @brief      Present a date editor from the preview's existing date label
     /// @details    Uses a plain button to consume date taps independently of row navigation.
     ///             Save and Remove change only the selected schedule value and its precision;
-    ///             Cancel leaves the record unchanged. Rechecks the read-only lock on save.
+    ///             Cancel leaves the record unchanged. Rechecks the read-only lock on save
     ///
     /// @param[in]  content  Existing date label retaining its preview styling
     /// @return     (some View) date control with a locally presented editor
@@ -1026,7 +1026,7 @@ struct CardPreviewDateEditor: ViewModifier
 ///
 /// @section    Purpose
 ///     Presents newest-first summaries and absolute timestamps, including an honest empty state
-///     for legacy Cards whose history begins with this feature.
+///     for legacy Cards whose history begins with this feature
 ///
 struct CardEditHistorySheet: View
 {
@@ -1039,7 +1039,7 @@ struct CardEditHistorySheet: View
     /// @fcn        CardEditHistorySheet.body
     /// @brief      Show retained saved updates and their dates
     /// @details    Uses stable entry identities and reverses append order, retaining save order
-    ///             when multiple events have the same timestamp. Viewing history never edits it.
+    ///             when multiple events have the same timestamp. Viewing history never edits it
     /// @return     (some View) read-only history sheet with a Done action
     ///
     var body: some View

@@ -2,7 +2,7 @@
 // @file       SectionTransfer.swift
 // @brief      Checked whole-section transfer and guarded Undo
 // @details    Builds both owner snapshots, remaps identities and links, optionally shifts dates,
-//             and retains restoration receipts before publication.
+//             and retains restoration receipts before publication
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -13,7 +13,7 @@ import Foundation
 ///
 /// @section    Purpose
 ///     Restores affected owners only while their current snapshots still match the completed move,
-///     including full importance levels where retained.
+///     including full importance levels where retained
 ///
 struct SectionTransferReceipt
 {
@@ -31,13 +31,13 @@ struct SectionTransferReceipt
     /// @fcn        SectionTransferReceipt.undo
     /// @brief      Restore affected owners if the transfer snapshot still matches
     /// @details    Compares current affected owners with the recorded post-transfer values, restores only those
-    ///             owners, and throws on conflicts instead of overwriting later edits.
+    ///             owners, and throws on conflicts instead of overwriting later edits
     ///
     /// @param[in]  owners  Canonical collection owners participating in the operation
     ///
     /// @return     ([PersonalCollection]) owners with only the transferred changes restored
     /// @throws     Explicit failures include `CocoaError(.fileWriteFileExists)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     func undo(in owners: [PersonalCollection]) throws -> [PersonalCollection]
     {
@@ -74,7 +74,7 @@ struct SectionTransferReceipt
 ///
 /// @section    Purpose
 ///     Validates boundaries and destinations, remaps identities and links, optionally shifts dates,
-///     and creates a guarded Undo receipt before publishing owner snapshots.
+///     and creates a guarded Undo receipt before publishing owner snapshots
 ///
 enum SectionTransfer
 {
@@ -84,7 +84,7 @@ enum SectionTransfer
     /// @fcn        SectionTransfer.move
     /// @brief      Transfer a complete named section between active lists
     /// @details    Validates both owners and the heading, remaps cross-owner IDs and nested links, optionally shifts
-    ///             calendar dates, and publishes the working owners only after constructing a valid transfer receipt.
+    ///             calendar dates, and publishes the working owners only after constructing a valid transfer receipt
     ///
     /// @param[in]      heading         Named divider identifying the complete section to transfer
     /// @param[in]      source          Owner-qualified source list reference
@@ -98,7 +98,7 @@ enum SectionTransfer
     /// @return     (SectionTransferReceipt) checked before/after snapshots and the transferred identity map
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
     ///             `CocoaError(.fileReadCorruptFile)`, `CocoaError(.validationNumberTooLarge)`. Errors from throwing
-    ///             dependencies propagate unless handled within this operation.
+    ///             dependencies propagate unless handled within this operation
     ///
     static func move(
         heading: KanbanCard, source: WorkspaceListReference, destination: WorkspaceListReference,
@@ -214,14 +214,14 @@ enum SectionTransfer
 
         }
 
-        // Freeze implicit links before moving their owner, including nested and retained links.
+        // Freeze implicit links before moving their owner, including nested and retained links
 
 
         ///
         /// @fcn        SectionTransfer.move.checklist
         /// @brief      Rewrite checklist links and retained content during a section move
         /// @details    Remaps links into the moved block, qualifies other source links when needed, and recursively
-        ///             preserves inactive retained detail.
+        ///             preserves inactive retained detail
         ///
         /// @param[in]  sourceChecklist  Checklist whose active and retained links are being rewritten
         /// @param[in]  owner            Owner identity used to qualify numeric item references
@@ -363,7 +363,7 @@ enum SectionTransfer
                 /// @fcn        SectionTransfer.move.redirect
                 /// @brief      Redirect inbound links to the moved section's new owner
                 /// @details    Applies the enclosing identity map across checklist content while avoiding a second
-                ///             rewrite of cards already relocated.
+                ///             rewrite of cards already relocated
                 ///
                 /// @param[in]  card  Card or note being inspected or changed
                 ///
@@ -374,7 +374,7 @@ enum SectionTransfer
 
                     var result = card
 
-                    // Moved cards were already redirected; do not apply an ID mapping twice.
+                    // Moved cards were already redirected; do not apply an ID mapping twice
                     if owner == destination.ownerID && moved.contains(where:
                         {
                             $0.id == card.id

@@ -3,7 +3,7 @@
 // @brief      Template Example regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// TemplateExample regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -28,7 +28,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testExampleLocationsFillOnlyEligibleEmptyCards
     /// @brief      Add the requested destinations without replacing protected or unrelated content
     /// @details    Covers exact-title matching, custom locations, locks, Notes, dividers, archived
-    ///             Lists and Cards, ordinary history, and repeat-update stability.
+    ///             Lists and Cards, ordinary history, and repeat-update stability
     /// @return     (Void) records location-fill scope and preservation regressions
     ///
     func testExampleLocationsFillOnlyEligibleEmptyCards()
@@ -71,7 +71,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testBundledGymAndWorkLocationsCarryIntoAppliedRoutines
     /// @brief      Include the verified destinations in new Jmr examples and routine copies
     /// @details    Checks both source templates and applied Cards so future week generation
-    ///             retains locations through identity remapping without changing other titles.
+    ///             retains locations through identity remapping without changing other titles
     /// @return     (Void) records bundled and copied example-location regressions
     /// @throws     Propagates routine application errors
     ///
@@ -110,7 +110,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testExampleLocationMigrationBacksUpAndRunsOnlyOnce
     /// @brief      Persist existing locations across the current week, personal Cards, and routines
     /// @details    Uses an isolated workspace domain, checks the exact pre-update backup, and
-    ///             verifies a later manual removal and unrelated maps preferences remain intact.
+    ///             verifies a later manual removal and unrelated maps preferences remain intact
     /// @return     (Void) records backed-up persistence and one-time behavior regressions
     /// @throws     Propagates fixture encoding, migration, and decoding errors
     ///
@@ -191,7 +191,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testExampleLocationMigrationRestoresDocumentsAfterRejectedWrite
     /// @brief      Roll back all saved documents when one location-update write fails
     /// @details    A test-only store rejects calendar replacement while accepting other writes,
-    ///             proving the migration does not leave partial data or a success marker behind.
+    ///             proving the migration does not leave partial data or a success marker behind
     /// @return     (Void) records transaction rollback regressions
     /// @throws     Propagates isolated-domain and fixture encoding errors
     ///
@@ -202,7 +202,7 @@ extension PlenactBoardDocumentTests
         /// Rejects only the calendar replacement to simulate a partial storage failure
         ///
         /// @section    Purpose
-        ///     Exercises rollback without changing the real app preference domain.
+        ///     Exercises rollback without changing the real app preference domain
         ///
         final class RejectingDefaults: UserDefaults
         {
@@ -212,7 +212,7 @@ extension PlenactBoardDocumentTests
             ///
             /// @fcn        RejectingDefaults.set
             /// @brief      Drop calendar writes only after the original fixture has been stored
-            /// @details    Other keys use normal isolated UserDefaults storage.
+            /// @details    Other keys use normal isolated UserDefaults storage
             /// @param[in]  value       Proposed persisted value
             /// @param[in]  defaultName Destination key
             /// @return     (Void) writes an accepted fixture value
@@ -278,10 +278,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `PlanningDate.date`, `PlanningRoutineLibrary.seeded.templates.filter`,
     ///             `DatedPlanningWeek.make`. Checks `XCTAssertTrue(important.allSatisfy { $0 > 500 })`;
     ///             `XCTAssertFalse(entries.isEmpty, "\(template.name), filter mask \(mask) must demonstrate Focus
-    ///             even late in the day")`.
+    ///             even late in the day")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testUntimedBundledExamplesPopulateEveryFocusFilterCombinationLateInTheDay() throws
     {
@@ -351,10 +351,10 @@ extension PlenactBoardDocumentTests
     ///             Templates
     /// @details    Exercises `PlanningRoutineStore.load`, `upgraded.templates.dropFirst().allSatisfy`,
     ///             `upgraded.templates.dropFirst`. Checks `XCTAssertEqual(upgraded.bundledRoutineRevision, 5)`;
-    ///             `XCTAssertEqual(upgraded.templates[0], custom)`.
+    ///             `XCTAssertEqual(upgraded.templates[0], custom)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLegacyBundledFocusMetadataUpgradeDoesNotRewriteStoredPlansOrCustomTemplates() throws
     {
@@ -407,10 +407,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that custom Template Does Not Invent Focus Marks Or Dates
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningDate.key`. Checks
     ///             `XCTAssertNil(custom.exampleFocus)`;
-    ///             `XCTAssertTrue(PlanningTemplateApplication.exampleImportantIDs(custom, in: blank).isEmpty)`.
+    ///             `XCTAssertTrue(PlanningTemplateApplication.exampleImportantIDs(custom, in: blank).isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCustomTemplateDoesNotInventFocusMarksOrDates() throws
     {
@@ -454,10 +454,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that month Example Retains Focus Choices And Provides Matching Today Items
     /// @details    Verifies that the example retains Focus choices and supplies matching dated content. Also
     ///             preserves the corner-Back choice from standalone or legacy profile preferences and honors an
-    ///             explicit opt-out so changing datasets does not silently change navigation behavior.
+    ///             explicit opt-out so changing datasets does not silently change navigation behavior
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testMonthExampleRetainsFocusChoicesAndProvidesMatchingTodayItems() throws
     {
@@ -531,10 +531,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testExampleWeekUndoRetainsCalendarAndFocusFlagsWithLegacyCompatibility
     /// @brief      Verify that example Week Undo Retains Calendar And Focus Flags With Legacy Compatibility
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `ExampleLoadUndoStore.save`. Checks
-    ///             `XCTAssertEqual(snapshot.week, week)`; `XCTAssertEqual(snapshot.savedCardIDs, [3])`.
+    ///             `XCTAssertEqual(snapshot.week, week)`; `XCTAssertEqual(snapshot.savedCardIDs, [3])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testExampleWeekUndoRetainsCalendarAndFocusFlagsWithLegacyCompatibility() throws
     {
@@ -574,10 +574,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testJmrTemplateMatchesAllRequestedTimeRangesAndDailyGymNotes
     /// @brief      Verify that jmr Template Matches All Requested Time Ranges And Daily Gym Notes
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `PlanningTemplateApplication.apply`.
-    ///             Checks `XCTAssertEqual(template.name, "Jmr")`; `XCTAssertEqual(template.kind, .week)`.
+    ///             Checks `XCTAssertEqual(template.name, "Jmr")`; `XCTAssertEqual(template.kind, .week)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testJmrTemplateMatchesAllRequestedTimeRangesAndDailyGymNotes() throws
     {
@@ -679,10 +679,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that library Starter Filters Scope Search And Exclude Personal Collections
     /// @details    Exercises `filter.includes`, `LibraryBrowseFilter.all.includes`,
     ///             `LibraryBrowseFilter.boards.includes`. Checks `XCTAssertFalse(filter.browsesCollections)`;
-    ///             `XCTAssertFalse(filter.includes(list))`.
+    ///             `XCTAssertFalse(filter.includes(list))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLibraryStarterFiltersScopeSearchAndExcludePersonalCollections() throws
     {
@@ -715,10 +715,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that library Template Capture Uses Live Week And Reserves Archived I Ds
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `week.collection.lists.firstIndex`.
     ///             Checks `XCTAssertEqual(result.id, week.id)`;
-    ///             `XCTAssertEqual(result.collection.lists[index].cards.count, 2)`.
+    ///             `XCTAssertEqual(result.collection.lists[index].cards.count, 2)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLibraryTemplateCaptureUsesLiveWeekAndReservesArchivedIDs() throws
     {
@@ -785,10 +785,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that library Templates And Examples Filters Render And Search Without Writing
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(saved, 0)`; `XCTAssertEqual(keys.map {
-    ///             UserDefaults.standard.data(forKey: $0) }, before)`.
+    ///             UserDefaults.standard.data(forKey: $0) }, before)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testLibraryTemplatesAndExamplesFiltersRenderAndSearchWithoutWriting() async throws
@@ -892,10 +892,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that planning Templates Seed Store Conflict And Corrupt Data Retention
     /// @details    Exercises `PlanningRoutineStore.load`, `baseline.templates.map`, `PlanningRoutineStore.save`.
     ///             Checks `XCTAssertNil(defaults.data(forKey: PlanningRoutineStore.key))`;
-    ///             `XCTAssertEqual(baseline.templates.map(\.name), ["Work Week", "Vacation Day", "Jmr"])`.
+    ///             `XCTAssertEqual(baseline.templates.map(\.name), ["Work Week", "Vacation Day", "Jmr"])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningTemplatesSeedStoreConflictAndCorruptDataRetention() throws
     {
@@ -938,10 +938,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that planning Week Template Copies Reset Completion And Remap Links
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `source.collection.lists.firstIndex`.
     ///             Checks `XCTAssertTrue(template.collection.lists[index].archivedCards.isEmpty)`;
-    ///             `XCTAssertTrue(template.collection.lists[index].cards[0].comments.isEmpty)`.
+    ///             `XCTAssertTrue(template.collection.lists[index].cards[0].comments.isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningWeekTemplateCopiesResetCompletionAndRemapLinks() throws
     {
@@ -1032,10 +1032,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `PlanningDate.date`, `DatedPlanningWeek.make`, `source.collection.lists.firstIndex`.
     ///             Checks `XCTAssertEqual(PlanningDate.key(try XCTUnwrap(copy.startDate), calendar:
     ///             destinationCalendar), "2026-11-02")`; `XCTAssertEqual(destinationCalendar.component(.hour, from:
-    ///             try XCTUnwrap(copy.startDate)), 9)`.
+    ///             try XCTUnwrap(copy.startDate)), 9)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanningTemplatesShiftDaysAcrossWeekStartAndDaylightSaving() throws
     {
@@ -1089,10 +1089,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that planning Template Screens Render Without Saving
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `UserDefaults.standard.data`. Checks `XCTAssertEqual(saves, 0)`;
-    ///             `XCTAssertEqual(UserDefaults.standard.data(forKey: PlanningRoutineStore.key), before)`.
+    ///             `XCTAssertEqual(UserDefaults.standard.data(forKey: PlanningRoutineStore.key), before)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testPlanningTemplateScreensRenderWithoutSaving() async throws
@@ -1171,10 +1171,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that daily Plan Is Included In Example Workspace Backup And Restore
     /// @details    Exercises `folder.appendingPathComponent`, `DailyPlanStore.save`, `WeeklyReviewStore.save`. Checks
     ///             `XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))`; `XCTAssertNil(defaults.object(forKey:
-    ///             WeeklyReviewStore.key))`.
+    ///             WeeklyReviewStore.key))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDailyPlanIsIncludedInExampleWorkspaceBackupAndRestore() throws
@@ -1233,10 +1233,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `DefaultListTutorial.makeStarter`, `LabelLibraryStore.load`,
     ///             `card.descriptionOverride?.contains`. Checks
     ///             `XCTAssertEqual(starter.boardAppearance?.bannerBackground, expected)`;
-    ///             `XCTAssertNil(list.appearance?.background)`.
+    ///             `XCTAssertNil(list.appearance?.background)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testStarterListTutorialsAreActionableAndOnlySeedTheThreeDefaultLists() throws
     {
@@ -1284,10 +1284,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testLibraryWeekExampleCreatesIndependentDraftWithoutReplacingWeek
     /// @brief      Verify that library Week Example Creates Independent Draft Without Replacing Week
     /// @details    Exercises `PersonalCollection.exampleWeek`. Checks `XCTAssertEqual(first.kind, .board)`;
-    ///             `XCTAssertEqual(first.lists, original)`.
+    ///             `XCTAssertEqual(first.lists, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLibraryWeekExampleCreatesIndependentDraftWithoutReplacingWeek() throws
     {
@@ -1310,10 +1310,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testMixedListTemplatesRetainFormatsAndCreateIndependentDrafts
     /// @brief      Verify that mixed List Templates Retain Formats And Create Independent Drafts
     /// @details    Exercises `template.makeCollection`, `cards.map`, `cards.allSatisfy`. Checks
-    ///             `XCTAssertNotEqual(draft.id, second.id)`; `XCTAssertNotEqual(draft.title, template.rawValue)`.
+    ///             `XCTAssertNotEqual(draft.id, second.id)`; `XCTAssertNotEqual(draft.title, template.rawValue)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testMixedListTemplatesRetainFormatsAndCreateIndependentDrafts() throws
     {
@@ -1361,10 +1361,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testRichBoardExamplesRemainIndependentAndResolveTheirInternalLinks
     /// @brief      Verify that rich Board Examples Remain Independent And Resolve Their Internal Links
     /// @details    Exercises `PlanningDate.date`, `example.makeCollection`, `draft.lists.flatMap`. Checks
-    ///             `XCTAssertEqual(draft.kind, .board)`; `XCTAssertNotEqual(draft.title, example.rawValue)`.
+    ///             `XCTAssertEqual(draft.kind, .board)`; `XCTAssertNotEqual(draft.title, example.rawValue)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testRichBoardExamplesRemainIndependentAndResolveTheirInternalLinks() throws
     {
@@ -1445,10 +1445,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that reactions Survive Location Changes And Archive But Not Fresh Templates
     /// @details    Exercises `card.replacingLocation`, `list.archiveCard`, `list.restoreArchivedCard`. Checks
     ///             `XCTAssertEqual(relocated.reactions, card.reactions)`; `XCTAssertEqual(relocated.createdAt,
-    ///             card.createdAt)`.
+    ///             card.createdAt)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testReactionsSurviveLocationChangesAndArchiveButNotFreshTemplates() throws
     {
@@ -1488,10 +1488,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that library Examples Layout Does Not Load Or Restore Week On Presentation
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Uses the fixture and assertions below to verify library Examples Layout Does
-    ///             Not Load Or Restore Week On Presentation.
+    ///             Not Load Or Restore Week On Presentation
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testLibraryExamplesLayoutDoesNotLoadOrRestoreWeekOnPresentation() async throws
@@ -1573,10 +1573,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that quick Capture Templates Preserve Title And Create Independent Records
     /// @details    Exercises `template.draftTitle`, `list.makeItem`, `first.checklists.flatMap(\.items).map`. Checks
     ///             `XCTAssertEqual(template.draftTitle(capturedTitle: "My own title"), "My own title")`;
-    ///             `XCTAssertEqual(first.presentation, template.presentation)`.
+    ///             `XCTAssertEqual(first.presentation, template.presentation)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testQuickCaptureTemplatesPreserveTitleAndCreateIndependentRecords() throws
     {
@@ -1629,10 +1629,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that quick Creation Switch Keeps Title And Template Writing
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Checks `XCTAssertTrue(textValues().contains("Keep this idea"))`;
-    ///             `XCTAssertTrue(textValues().contains(QuickCaptureTemplate.smallPlan.body))`.
+    ///             `XCTAssertTrue(textValues().contains(QuickCaptureTemplate.smallPlan.body))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testQuickCreationSwitchKeepsTitleAndTemplateWriting() async throws
@@ -1673,7 +1673,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        PlenactBoardDocumentTests.testQuickCreationSwitchKeepsTitleAndTemplateWriting.descendants
         /// @brief      Find descendants in the hosted view hierarchy
-        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order.
+        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1693,7 +1693,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testQuickCreationSwitchKeepsTitleAndTemplateWriting.textValues
         /// @brief      Prepare text values for the enclosing regression test
         /// @details    Supplies the local fixture for quick Creation Switch Keeps Title And Template Writing. Uses
-        ///             `descendants(host.view).compactMap`.
+        ///             `descendants(host.view).compactMap`
         ///
         /// @return     ([String]) resulting values in the ordering described above
         ///
@@ -1746,10 +1746,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that hosted Template Composer Prefills Title Without Creating Records
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Uses the fixture and assertions below to verify hosted Template Composer
-    ///             Prefills Title Without Creating Records.
+    ///             Prefills Title Without Creating Records
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testHostedTemplateComposerPrefillsTitleWithoutCreatingRecords() async throws
@@ -1775,7 +1775,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        PlenactBoardDocumentTests.testHostedTemplateComposerPrefillsTitleWithoutCreatingRecords.fields
         /// @brief      Find fields in the hosted view hierarchy
-        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order.
+        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///

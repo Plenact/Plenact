@@ -3,7 +3,7 @@
 // @brief      Capture regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// Capture regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -29,10 +29,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that plan Preferences Save Without Creating Profile And Share Profile Edits
     /// @details    Exercises `PlanPreferencesStore.load`, `PlanPreferencesStore.save`, `LocalProfileStore.load`.
     ///             Checks `XCTAssertEqual(PlanPreferencesStore.load(from: defaults).todayFocusItemCount, 4)`;
-    ///             `XCTAssertNil(LocalProfileStore.load(from: defaults))`.
+    ///             `XCTAssertNil(LocalProfileStore.load(from: defaults))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPlanPreferencesSaveWithoutCreatingProfileAndShareProfileEdits() throws
     {
@@ -72,7 +72,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testInlineListCaptureRetainsFailedDraftAndCreatesDestinationItems
     /// @brief      Verify quick entry uses canonical creation for ordinary and Day Lists
     /// @details    Checks repeated capture, Card and Note defaults, whitespace rejection, archived
-    ///             destinations, and retention of the original writing after a rejected save.
+    ///             destinations, and retention of the original writing after a rejected save
     ///
     /// @return     (Void) no return value
     ///
@@ -159,10 +159,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that personal List Full Composer Retains Schedule And Actions
     /// @details    Exercises `.now.addingTimeInterval`, `collection.addNote`, `card.checklists.flatMap(\.items).map`.
     ///             Checks `XCTAssertEqual(card.checklists.flatMap(\.items).map(\.title), ["First", "Second"])`;
-    ///             `XCTAssertEqual(card.startDate, schedule.start)`.
+    ///             `XCTAssertEqual(card.startDate, schedule.start)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testPersonalListFullComposerRetainsScheduleAndActions() throws
     {
@@ -194,10 +194,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.constant`.
     ///             Checks `XCTAssertEqual(noteTitle.text, "Shared draft title")`;
     ///             `XCTAssertEqual(PlanRichText.runs(PlanRichText.encode(writing.attributedText)),
-    ///             PlanRichText.runs(body))`.
+    ///             PlanRichText.runs(body))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testNewComposerSharesTitleAndRichBodyAcrossCardAndNote() async throws
@@ -238,7 +238,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        PlenactBoardDocumentTests.testNewComposerSharesTitleAndRichBodyAcrossCardAndNote.descendants
         /// @brief      Find descendants in the hosted view hierarchy
-        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order.
+        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -354,10 +354,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDetachListCreatesStandaloneLibraryCollectionWithoutCopying
     /// @brief      Verify that detach List Creates Standalone Library Collection Without Copying
     /// @details    Exercises `.linkedCard`, `CrossBoardListMovement.detach`. Checks
-    ///             `XCTAssertEqual(collections.count, 2)`; `XCTAssertTrue(collections[0].lists.isEmpty)`.
+    ///             `XCTAssertEqual(collections.count, 2)`; `XCTAssertTrue(collections[0].lists.isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testDetachListCreatesStandaloneLibraryCollectionWithoutCopying() throws
     {
@@ -473,10 +473,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that new Card Draft Fields Remain Editable While Saving
     /// @details    Exercises `ListCreationDraft.clear`, `UIApplication.shared.connectedScenes.compactMap`,
     ///             `scene.windows.first`. Checks `XCTAssertTrue(subtitle.becomeFirstResponder())`;
-    ///             `XCTAssertTrue(subtitle.isFirstResponder)`.
+    ///             `XCTAssertTrue(subtitle.isFirstResponder)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testNewCardDraftFieldsRemainEditableWhileSaving() async throws
@@ -521,7 +521,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testNewCardDraftFieldsRemainEditableWhileSaving.editors
         /// @brief      Find editors in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UITextView. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -546,7 +546,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testNewCardDraftFieldsRemainEditableWhileSaving.fields
         /// @brief      Find fields in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UITextField. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -609,10 +609,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that card Comment Composer Keeps Keyboard Focus While Typing
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Checks `XCTAssertTrue(comment.becomeFirstResponder())`;
-    ///             `XCTAssertTrue(comment.isFirstResponder, "Comment typing must not dismiss the keyboard")`.
+    ///             `XCTAssertTrue(comment.isFirstResponder, "Comment typing must not dismiss the keyboard")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCardCommentComposerKeepsKeyboardFocusWhileTyping() async throws
@@ -654,7 +654,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testCardCommentComposerKeepsKeyboardFocusWhileTyping.findComment
         /// @brief      Find find comment in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UITextView. Returns the first qualifying match, or
-        ///             nil when none is present.
+        ///             nil when none is present
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -699,10 +699,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that reaction Picker And Chips Render Without Creating Identity Or Editing Records
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(UserDefaults.standard.object(forKey:
-    ///             LocalReactionIdentity.key) as? String, identityBefore)`.
+    ///             LocalReactionIdentity.key) as? String, identityBefore)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testReactionPickerAndChipsRenderWithoutCreatingIdentityOrEditingRecords() async throws
@@ -803,10 +803,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testInlineBoardListNamingSelectsTitleAndDoneCommitsWithoutASheet
     /// @brief      Verify the in-column naming field's keyboard, selection, and checked commit
     /// @details    Replaces the selected generated title, rejects an initial save, then commits
-    ///             through the canonical editor while preserving Cards added after naming began.
+    ///             through the canonical editor while preserving Cards added after naming began
     ///
     /// @return     (Void) records native input and owner-update assertions
-    /// @throws     Propagates missing window, field, or text-selection fixtures.
+    /// @throws     Propagates missing window, field, or text-selection fixtures
     ///
     @MainActor
     func testInlineBoardListNamingSelectsTitleAndDoneCommitsWithoutASheet() async throws
@@ -838,7 +838,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        testInlineBoardListNamingSelectsTitleAndDoneCommitsWithoutASheet.descendants
         /// @brief      Collect native descendants of the inline editor
-        /// @details    Finds the public UITextField without depending on private SwiftUI classes.
+        /// @details    Finds the public UITextField without depending on private SwiftUI classes
         ///
         /// @param[in]  view  Native subtree to inspect
         ///
@@ -927,10 +927,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that quick Capture Actions And Composers Render Without Creating Records
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertTrue(fields(host.view).contains("Carry my thought
-    ///             forward"))`; `XCTAssertTrue(fields(host.view).contains(""))`.
+    ///             forward"))`; `XCTAssertTrue(fields(host.view).contains(""))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testQuickCaptureActionsAndComposersRenderWithoutCreatingRecords() async throws
@@ -957,7 +957,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testQuickCaptureActionsAndComposersRenderWithoutCreatingRecords.fields
         /// @brief      Find fields in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UITextField, UITextView. Returns all collected
-        ///             matches in hierarchy order.
+        ///             matches in hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1131,7 +1131,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify explicit creation kind leaves the List default unchanged
     /// @details    Creates a Card and a Note in the same personal List, checks subtitle trimming
     ///             and body retention, and round-trips the collection while preserving its Note
-    ///             creation default.
+    ///             creation default
     ///
     /// @return     (Void) records explicit-presentation and persistence assertions
     /// @throws     Synthetic fixture setup errors
@@ -1167,10 +1167,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that creating Personal List Note Uses Fresh Identity And Preserves Body
     /// @details    Exercises `collection.lists[0].makeItem`, `collection.addNote`, `board.addNote`. Checks
     ///             `XCTAssertThrowsError(try collection.addNote(title: " \n ", body: "Uncommitted"))`;
-    ///             `XCTAssertEqual(collection, original)`.
+    ///             `XCTAssertEqual(collection, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCreatingPersonalListNoteUsesFreshIdentityAndPreservesBody() throws
     {

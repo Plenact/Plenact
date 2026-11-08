@@ -4,7 +4,7 @@
 // @details    Provides login, member provisioning, assignments, and optimistic shared Board writes
 //             through the demo API client. Keeps remote session state and explicit SampleData
 //             initialization separate from the device's local profile, planning owners, and
-//             ordinary Board edits.
+//             ordinary Board edits
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI

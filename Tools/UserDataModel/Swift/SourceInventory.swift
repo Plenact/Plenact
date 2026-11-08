@@ -2,13 +2,13 @@
 // @file       SourceInventory.swift
 // @brief      Audit actual Swift Codable declarations and preference-key string segments
 // @details    Supported User Data Model versions: 1.0 source mapping; Version 0 reference.
-//             Build-time inventory only. Uses SwiftSyntax rather than parsing model bodies by regex.
+//             Build-time inventory only. Uses SwiftSyntax rather than parsing model bodies by regex
 // --------------------------------------------------------------------------------------------------
 import Foundation
 import SwiftParser
 import SwiftSyntax
 
-/// Traverses source syntax without executing app code or reading user data.
+/// Traverses source syntax without executing app code or reading user data
 final class Inventory: SyntaxVisitor
 {
 

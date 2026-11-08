@@ -2,21 +2,21 @@
 // @file       MigrationContentDates.swift
 // @brief      Pinned, explicit timezone conversion without relying on installed OS rules
 // @details    Supported User Data Model versions: 1.0. Partial, local-only migration preview.
-//             Original source bytes remain preserved; no cloud ownership or synchronization is implied.
+//             Original source bytes remain preserved; no cloud ownership or synchronization is implied
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Uses a pinned IANA 2025b transition projection for the first supported migration zones.
+/// Uses a pinned IANA 2025b transition projection for the first supported migration zones
 /// @section Purpose
-///     Preserve source instant/date intent and fold occurrence with independent cross-language checks.
+///     Preserve source instant/date intent and fold occurrence with independent cross-language checks
 @MainActor
 enum MigrationContentDates
 {
 
-    /// Pinned transition data, not a claim about the device's installed timezone package.
+    /// Pinned transition data, not a claim about the device's installed timezone package
     /// @section Purpose
-    ///     Bound current migration support explicitly to Chicago/UTC during 1900–2100.
+    ///     Bound current migration support explicitly to Chicago/UTC during 1900–2100
     private struct Rules: Decodable
     {
 

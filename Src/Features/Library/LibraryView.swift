@@ -2,7 +2,7 @@
 // @file       LibraryView.swift
 // @brief      Plans directory and personal collection workflows
 // @details    Coordinates browse filters, collection drafts, templates, examples, labels, and
-//             checked updates to retained Library owners.
+//             checked updates to retained Library owners
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Coordinates filtered browsing, examples, templates, labels, and checked collection changes
-///     while keeping draft creation separate from saved owners.
+///     while keeping draft creation separate from saved owners
 ///
 struct BoardListsView: View
 {
@@ -176,7 +176,7 @@ struct BoardListsView: View
     /// @fcn        BoardListsView.openLibrarySearchResult
     /// @brief      Open a Library match in its owning collection
     /// @details    Uses the result's owner and card identity to select the existing content rather than creating a
-    ///             duplicate.
+    ///             duplicate
     ///
     /// @param[in]  result  Resolved search or Activity match to render or open
     ///
@@ -204,7 +204,7 @@ struct BoardListsView: View
     ///
     /// @fcn        BoardListsView.librarySearchRow
     /// @brief      Build a navigable Library search-result preview
-    /// @details    Uses the result's card content and location to distinguish matching items across owners.
+    /// @details    Uses the result's card content and location to distinguish matching items across owners
     ///
     /// @param[in]  result  Resolved search or Activity match to render or open
     ///
@@ -513,7 +513,7 @@ struct BoardListsView: View
     /// @fcn        BoardListsView.prepareImportanceExample(_:)
     /// @brief      Stage a chosen example without changing live importance
     /// @details    Remembers only the draft owner. Demonstration levels are installed after Save,
-    ///             so previewing or cancelling an example cannot change existing personal marks.
+    ///             so previewing or cancelling an example cannot change existing personal marks
     ///
     /// @param[in]  collection  Newly generated Library example or template
     ///
@@ -579,7 +579,7 @@ struct BoardListsView: View
     /// @brief      Save a full capture into an active personal List
     /// @details    Resolves the current collection, forwards writing, presentation, attachments,
     ///             actions, and scheduling, and saves the complete collection snapshot before
-    ///             publication. Successful creation requests the new item's reveal.
+    ///             publication. Successful creation requests the new item's reveal
     ///
     /// @param[in]  collectionID  Active personal List identity
     /// @param[in]  capture       Complete destination-scoped creation submission with writing, media,
@@ -1347,7 +1347,7 @@ struct BoardListsView: View
     /// @fcn        BoardListsView.collectionPreview
     /// @brief      Build a short text preview of a collection
     /// @details    Extracts suitable list or card content for the Library row without altering the underlying
-    ///             collection.
+    ///             collection
     ///
     /// @param[in]  collection  Personal collection supplying the owner context
     ///
@@ -1853,7 +1853,7 @@ struct BoardListsView: View
     /// @fcn        BoardListsView.previewDaySectionExample
     /// @brief      Present a named-day-section example
     /// @details    Uses the reusable routine-template preview so users can inspect it before choosing an application
-    ///             date.
+    ///             date
     ///
     /// @param[in]  template  Authored routine or capture template to preview, apply, or edit
     ///
@@ -1988,7 +1988,7 @@ struct BoardListsView: View
     ///
     /// @fcn        BoardListsView.listExampleMenu
     /// @brief      Build actions for a particular personal-list example
-    /// @details    Routes preview and creation choices through the existing example-selection callbacks.
+    /// @details    Routes preview and creation choices through the existing example-selection callbacks
     ///
     /// @param[in]  example  Bundled example content or dataset to use
     ///

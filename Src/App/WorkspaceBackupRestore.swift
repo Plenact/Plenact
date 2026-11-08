@@ -2,15 +2,15 @@
 // @file       WorkspaceBackupRestore.swift
 // @brief      Root-owned Simulator source-recovery orchestration
 // @details    Model 1.0 preparation only. Uses existing journal/reload boundaries after navigation
-//             teardown; the user selects and confirms the backup before any destination changes.
+//             teardown; the user selects and confirms the backup before any destination changes
 // --------------------------------------------------------------------------------------------------
 import Foundation
 import SwiftUI
 
 
-/// Coordinates source recovery after the old navigation tree has disappeared.
+/// Coordinates source recovery after the old navigation tree has disappeared
 /// @section Purpose
-///     Prevent editor autosaves from racing a confirmed test restore.
+///     Prevent editor autosaves from racing a confirmed test restore
 extension AppRootView
 {
 

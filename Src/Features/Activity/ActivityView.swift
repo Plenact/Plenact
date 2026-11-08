@@ -2,7 +2,7 @@
 // @file       ActivityView.swift
 // @brief      Recent, bookmarked, and focused Activity presentation
 // @details    Resolves retained references against live owners and opens direct item destinations
-//             that return to their calling Activity surface.
+//             that return to their calling Activity surface
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Carries the owner UUID and local List and Card identities needed to open the correct
-///     retained source.
+///     retained source
 ///
 struct PersonalSavedCardTarget: Equatable
 {
@@ -34,7 +34,7 @@ struct PersonalSavedCardTarget: Equatable
 ///
 /// @section    Purpose
 ///     Retains the containing list ID and title so selecting a Saved row can resolve its original
-///     content.
+///     content
 ///
 struct SavedCardResult: Identifiable
 {
@@ -66,7 +66,7 @@ struct SavedCardResult: Identifiable
 ///
 /// @section    Purpose
 ///     Distinguishes the available Saved and focus categories while keeping the underlying Cards in
-///     their original owners.
+///     their original owners
 ///
 enum ActivityFocus: String, CaseIterable, Identifiable
 {
@@ -104,7 +104,7 @@ enum ActivityFocus: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Evaluates due-soon and other derived views without changing completion, importance, or
-///     stored Card data.
+///     stored Card data
 ///
 enum ActivityFocusSelection
 {
@@ -114,7 +114,7 @@ enum ActivityFocusSelection
     /// @fcn        ActivityFocusSelection.isDueSoon
     /// @brief      Find unfinished date-bearing work due before the upcoming horizon
     /// @details    Excludes dividers and completed cards, requires a date-bearing due value, and includes overdue
-    ///             work before the seven-calendar-day boundary.
+    ///             work before the seven-calendar-day boundary
     ///
     /// @param[in]  card      Card or note being inspected or changed
     /// @param[in]  now       Reference time used instead of an implicit clock read
@@ -139,7 +139,7 @@ enum ActivityFocusSelection
     ///
     /// @fcn        ActivityFocusSelection.dueReason
     /// @brief      Describe a card's due status for Activity
-    /// @details    Compares its due date with the reference time and local day to produce the contextual reason text.
+    /// @details    Compares its due date with the reference time and local day to produce the contextual reason text
     ///
     /// @param[in]  card      Card or note being inspected or changed
     /// @param[in]  now       Reference time used instead of an implicit clock read
@@ -176,7 +176,7 @@ enum ActivityFocusSelection
 /// Defines the toolbar's revisit destinations
 ///
 /// @section    Purpose
-///     Supplies labels, symbols, and explanations for recent, bookmarked, and archived content.
+///     Supplies labels, symbols, and explanations for recent, bookmarked, and archived content
 ///
 enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 {
@@ -248,7 +248,7 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Delegates destination selection to the caller so the existing Activity navigation remains
-///     authoritative.
+///     authoritative
 ///
 struct ToolbarRevisitMenu: View
 {
@@ -306,7 +306,7 @@ struct ToolbarRevisitMenu: View
 ///
 /// @section    Purpose
 ///     Resolves retained references against live calendar and Library owners and presents direct
-///     item routes that return to Activity.
+///     item routes that return to Activity
 ///
 struct SavedCardsView: View
 {
@@ -615,7 +615,7 @@ struct SavedCardsView: View
     ///
     /// @section    Purpose
     ///     Pairs the recent-item identity with its Card, List, location, and optional dated Week
-    ///     for direct navigation.
+    ///     for direct navigation
     ///
     private struct ActivityRecentResult: Identifiable
     {
@@ -640,7 +640,7 @@ struct SavedCardsView: View
     /// @fcn        SavedCardsView.matches
     /// @brief      Match saved content against the current search text
     /// @details    Searches the supplied title and location so users can find items by either content or owner
-    ///             context.
+    ///             context
     ///
     /// @param[in]  title     Display title or proposed title text
     /// @param[in]  location  Human-readable owner and list location used for matching
@@ -730,7 +730,7 @@ struct SavedCardsView: View
     ///
     /// @fcn        SavedCardsView.openRecent
     /// @brief      Navigate to an owner-qualified recent Activity item
-    /// @details    Resolves the retained item against available workspace content and opens its current destination.
+    /// @details    Resolves the retained item against available workspace content and opens its current destination
     ///
     /// @param[in]  result  Resolved search or Activity match to render or open
     ///
@@ -926,7 +926,7 @@ struct SavedCardsView: View
     /// @fcn        SavedCardsView.activityHeader
     /// @brief      Present Activity controls and the independent horizontal Recent carousel
     /// @details    Measures its natural height so short windows and accessibility text can retain
-    ///             a bounded header viewport while the browser keeps usable scrolling space.
+    ///             a bounded header viewport while the browser keeps usable scrolling space
     ///
     /// @return     (some View) Activity heading, optional search, revisit controls, and Recent cards
     ///
@@ -1034,7 +1034,7 @@ struct SavedCardsView: View
     /// @fcn        SavedCardsView.activityBrowserContents
     /// @brief      Present the selected Activity browser rows and archived collection actions
     /// @details    Keeps existing owner-qualified opening and lifecycle callbacks inside a common
-    ///             bounded scroll viewport for Saved, Due soon, By label, and archive destinations.
+    ///             bounded scroll viewport for Saved, Due soon, By label, and archive destinations
     ///
     /// @return     (some View) selected browser content without its own outer scrolling surface
     ///
@@ -1317,7 +1317,7 @@ struct SavedCardsView: View
     /// @brief      Present Recent items above a bounded, independently scrollable Activity browser
     /// @details    Keeps the browser selector outside its scroll viewport and allocates the remaining
     ///             view height to its rows. The header scrolls only when a short window or large
-    ///             text cannot fit naturally above the browser. Existing item routes remain intact.
+    ///             text cannot fit naturally above the browser. Existing item routes remain intact
     ///
     /// @return     (some View) paper-backed Saved surface
     /// @post       Restore delegates to the root save-first callback; bookmarked-card selection
@@ -1340,7 +1340,7 @@ struct SavedCardsView: View
                 let hasBrowser                 = revisit != .recent
                 let browserAllowance: CGFloat  = hasBrowser ? 128 : 0
                 let selectorAllowance: CGFloat = revisit == nil ? 60 : 0
-                // Keep the browser above the toolbar when the tab extends beneath its safe-area inset.
+                // Keep the browser above the toolbar when the tab extends beneath its safe-area inset
                 let bottomClearance = geometry.safeAreaInsets.bottom + 5
                 let headerLimit     = max(0, geometry.size.height - bottomClearance - 40 - browserAllowance - selectorAllowance - 16)
 

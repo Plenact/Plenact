@@ -2,7 +2,7 @@
 // @file       ChecklistModels.swift
 // @brief      Stable checklist records and typed action content
 // @details    Preserves completion, nested detail, linked destinations, and legacy decoding while
-//             retaining inactive action values.
+//             retaining inactive action values
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -203,7 +203,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Distinguishes a standard checkbox, owned detail, linked Card, and web link independently of
-///     retained inactive content.
+///     retained inactive content
 ///
 enum ChecklistItemType: String, CaseIterable, Identifiable
 {
@@ -244,7 +244,7 @@ enum ChecklistItemType: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Retains completion, active action content, and inactive linked or detailed values so
-///     changing action type does not silently discard prior content.
+///     changing action type does not silently discard prior content
 ///
 struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable
 {
@@ -274,7 +274,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     /// @fcn        KanbanChecklistItem.retainActiveContent
     /// @brief      Retain the current checklist item's alternate presentation content
     /// @details    Copies an active linked-card ID, action detail, or URL to its retained field; a standard item
-    ///             leaves retained values untouched.
+    ///             leaves retained values untouched
     ///
     /// @return     (Void) no return value
     ///

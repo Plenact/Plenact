@@ -2,14 +2,14 @@
 // @file       PortableStructuralEdits.swift
 // @brief      Reserved identities and owner-aware structural reconciliation for editable portable workspaces
 // @details    Supported User Data Model versions: 1.0 retained records and working 1.1 local deletions.
-//             New native identities are reserved before Board creation; no server identity is manufactured.
+//             New native identities are reserved before Board creation; no server identity is manufactured
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Reserves private aliases independently of whether a creation or subsequent Files export succeeds.
+/// Reserves private aliases independently of whether a creation or subsequent Files export succeeds
 /// @section Purpose
-///     Prevent number reuse and identity changes after cancellation, restart or repeated export.
+///     Prevent number reuse and identity changes after cancellation, restart or repeated export
 @MainActor
 enum PortableCreationIdentity
 {
@@ -77,9 +77,9 @@ enum PortableCreationIdentity
 }
 
 
-/// Reconciles current native ownership/order against retained canonical records without matching titles.
+/// Reconciles current native ownership/order against retained canonical records without matching titles
 /// @section Purpose
-///     Keep existing identities and unknown authored canonical values while adding explicitly reserved records.
+///     Keep existing identities and unknown authored canonical values while adding explicitly reserved records
 @MainActor
 enum PortableStructuralEdits
 {
@@ -332,7 +332,7 @@ enum PortableStructuralEdits
 
     /// @fcn PortableStructuralEdits.rollovers
     /// @brief Convert newly retained dated Weeks with owner-qualified identities before structural comparison
-    /// @details Operates on the frozen export candidate only; live stores and runtime evidence are unchanged.
+    /// @details Operates on the frozen export candidate only; live stores and runtime evidence are unchanged
     /// @param[in] assembly Retained canonical assembly
     /// @param[in] current Frozen native stores
     /// @param[in] aliases Retained global editor aliases
@@ -368,7 +368,7 @@ enum PortableStructuralEdits
         if let preferences = current["Plenact.PlanPreferences.v1"] as? Data,
            try JSONDecoder().decode(LocalProfilePreferences.self, from: preferences).defaultListID != nil
         {
-            // A numeric default without explicit owner provenance is ambiguous across newly added Weeks.
+            // A numeric default without explicit owner provenance is ambiguous across newly added Weeks
             throw PortableEditedExport.Failure.unsupported
         }
 
@@ -511,7 +511,7 @@ enum PortableStructuralEdits
             listMaps[owner] = listMap
 
             // Only editor aliases are normalized; all authored native values remain in the comparison.
-            // Nested links use the same owner-qualified Card aliases as the copied Cards themselves.
+            // Nested links use the same owner-qualified Card aliases as the copied Cards themselves
             /// @fcn PortableStructuralEdits.rollovers.references
             /// @brief Translate verified same-Week links in the frozen comparison without touching history bytes
             /// @param[in] value Newly converted native Card subtree
@@ -723,7 +723,7 @@ enum PortableStructuralEdits
     /// @fcn PortableStructuralEdits.removeTemplates
     /// @brief Remove exclusively owned template content from a complete local snapshot
     /// @details Retains original files and exact native recovery evidence. Surviving references,
-    ///          transferred aliases and pending Card deletion intent stop export rather than guessing.
+    ///          transferred aliases and pending Card deletion intent stop export rather than guessing
     /// @param[in] assembly Verified retained assembly
     /// @param[in] current Frozen source stores
     /// @param[in] aliases Retained numeric identities
@@ -826,7 +826,7 @@ enum PortableStructuralEdits
             throw PortableEditedExport.Failure.unsupported
         }
 
-        // New captures can borrow source numbers. Only retained surviving owners are transfer evidence.
+        // New captures can borrow source numbers. Only retained surviving owners are transfer evidence
         var surviving       = current
         var retainedLibrary = library
 
@@ -925,7 +925,7 @@ enum PortableStructuralEdits
     /// @fcn PortableStructuralEdits.newTemplates
     /// @brief Convert newly authored templates with independent owner-qualified portable identities
     /// @details Normalizes only frozen comparison identities; live stores, originals and runtime stay
-    ///          unchanged. Retained removals are reconciled first; unknown/external references fail closed.
+    ///          unchanged. Retained removals are reconciled first; unknown/external references fail closed
     /// @param[in] assembly Verified content baseline
     /// @param[in] current Frozen source stores
     /// @param[in] aliases Retained numeric aliases
@@ -1723,7 +1723,7 @@ enum PortableStructuralEdits
                 payload["card_ids"] = list.cards.map { reverse[$0.id]! }
                 payload["archived_card_ids"] = list.archivedCards.map { reverse[$0.id]! }
 
-                // Preserve deleted last-import membership so 1.0 references remain valid under the 1.1 overlay.
+                // Preserve deleted last-import membership so 1.0 references remain valid under the 1.1 overlay
                 if let old = existingLists[id]?["payload"] as? [String: Any]
                 {
                     for key in ["card_ids", "archived_card_ids"]
@@ -1883,7 +1883,7 @@ enum PortableStructuralEdits
 
             }
         }
-        // Preserve retained selection order and append new owners in deterministic identity order.
+        // Preserve retained selection order and append new owners in deterministic identity order
         for owner in native.keys.sorted()
         {
 
@@ -1996,7 +1996,7 @@ enum PortableStructuralEdits
                 if old.explicitlySaved != edited.explicitlySaved
                 {
 
-                    // Saving an existing generated Week records intent; removing that intent is unsupported.
+                    // Saving an existing generated Week records intent; removing that intent is unsupported
                     guard !old.explicitlySaved, edited.explicitlySaved, old.id == edited.id,
                           old.startKey == edited.startKey, payload["explicitly_saved"] as? Bool == false else
                     {

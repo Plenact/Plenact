@@ -2,7 +2,7 @@
 // @file       AppearanceModels.swift
 // @brief      Persisted appearance choices and inheritance policy
 // @details    Defines Board, List, and item overrides separately from content identity, including
-//             creation-only defaults and capture text colors.
+//             creation-only defaults and capture text colors
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -13,7 +13,7 @@ import Foundation
 ///
 /// @section    Purpose
 ///     Keeps a compact, Codable palette identity that presentation extensions resolve into standard
-///     and header colors.
+///     and header colors
 ///
 enum ItemAccent: String, CaseIterable, Codable, Sendable
 {
@@ -28,7 +28,7 @@ enum ItemAccent: String, CaseIterable, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Provides stable cases, identities, and user-facing labels, including the inherited default
-///     tint.
+///     tint
 ///
 enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable
 {
@@ -52,7 +52,7 @@ enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable
 /// Defines Board-wide Card detail defaults
 ///
 /// @section    Purpose
-///     Keeps compact or detailed Board presentation separate from explicit List-level overrides.
+///     Keeps compact or detailed Board presentation separate from explicit List-level overrides
 ///
 enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable
 {
@@ -77,7 +77,7 @@ enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 /// @section    Purpose
 ///     Identifies procedural, bundled photographic, custom-photo, and plain backgrounds
-///     independently of rendering code.
+///     independently of rendering code
 ///
 enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Sendable
 {
@@ -129,7 +129,7 @@ enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Se
 ///
 /// @section    Purpose
 ///     Pairs a preset with an optional photo filename and resolves built-in List defaults without
-///     copying attachment data.
+///     copying attachment data
 ///
 struct CollectionBackground: Hashable, Codable, Sendable
 {
@@ -143,7 +143,7 @@ struct CollectionBackground: Hashable, Codable, Sendable
     /// @fcn        CollectionBackground.defaultListBackground
     /// @brief      Resolve the built-in background for a special list
     /// @details    Uses an explicit override when supplied and otherwise chooses the tutorial background associated
-    ///             with the list title.
+    ///             with the list title
     ///
     /// @param[in]  title       Display title or proposed title text
     /// @param[in]  overriding  Explicit background override to prefer over the built-in choice
@@ -179,7 +179,7 @@ struct CollectionBackground: Hashable, Codable, Sendable
     /// @fcn        CollectionBackground.isAllowed
     /// @brief      Check whether collection-level imagery is available
     /// @details    Separates ordinary personal collections from dated-week and dated-view contexts before permitting
-    ///             a collection background.
+    ///             a collection background
     ///
     /// @param[in]  collectionID  UUID of the collection owning the referenced content
     /// @param[in]  datedWeekIDs  Known calendar-week owner identities
@@ -206,7 +206,7 @@ struct CollectionBackground: Hashable, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Stores optional banner, List, Card, background, and text-color overrides; individual Lists
-///     and items can retain more specific choices.
+///     and items can retain more specific choices
 ///
 struct BoardAppearance: Hashable, Codable, Sendable
 {
@@ -230,7 +230,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     /// @fcn        BoardAppearance.resolvedSubtitleItalic(card:list:)
     /// @brief      Resolve subtitle styling from the most specific owner override
     /// @details    Explicit false restores regular type even when an ancestor uses italics.
-    ///             Missing values inherit Card, List, then Board defaults, ending at regular.
+    ///             Missing values inherit Card, List, then Board defaults, ending at regular
     /// @param[in]  card  Optional Card or Note appearance
     /// @param[in]  list  Optional List appearance
     /// @return     (Bool) whether the subtitle should use italic type
@@ -246,7 +246,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     /// @fcn        BoardAppearance.resolvedAddItemTextColor(list:title:)
     /// @brief      Resolve the inline Add Card field color for one List
     /// @details    Prefers the List override, then Board override. Existing built-in photo Lists
-    ///             default to white without rewriting their stored appearance.
+    ///             default to white without rewriting their stored appearance
     ///
     /// @param[in]  list   Optional List appearance
     /// @param[in]  title  Destination List title used for built-in defaults
@@ -264,7 +264,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     /// @fcn        BoardAppearance.resolvedTitleColor
     /// @brief      Resolve the card preview title color through inheritance
-    /// @details    Prefers a card override, then a list override, then the board's configured title color.
+    /// @details    Prefers a card override, then a list override, then the board's configured title color
     ///
     /// @param[in]  card  Optional card-level appearance overrides
     /// @param[in]  list  Optional list-level appearance overrides
@@ -282,7 +282,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     /// @fcn        BoardAppearance.resolvedTextColor
     /// @brief      Resolve supporting preview text color through inheritance
-    /// @details    Prefers the most specific card or list override before falling back to the board setting.
+    /// @details    Prefers the most specific card or list override before falling back to the board setting
     ///
     /// @param[in]  card  Optional card-level appearance overrides
     /// @param[in]  list  Optional list-level appearance overrides
@@ -300,7 +300,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     /// @fcn        BoardAppearance.resolvedCardDetail
     /// @brief      Resolve compact or detailed preview presentation
-    /// @details    Combines card and list overrides with the board setting and the supplied fallback detail mode.
+    /// @details    Combines card and list overrides with the board setting and the supplied fallback detail mode
     ///
     /// @param[in]  card      Optional card-level appearance overrides
     /// @param[in]  list      Optional list-level appearance overrides
@@ -309,7 +309,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     /// @return     (BoardCardDetail) card, list, or board detail override, falling back to the caller's existing
     ///             layout
     ///
-    /// @note       Explicit item choices override List, then Board; nil preserves the caller's existing layout.
+    /// @note       Explicit item choices override List, then Board; nil preserves the caller's existing layout
     ///
     func resolvedCardDetail(card: ItemAppearance?, list: ItemAppearance?, fallback: BoardCardDetail = .detailed)
     -> BoardCardDetail
@@ -323,7 +323,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     /// @fcn        BoardAppearance.resolved
     /// @brief      Fill missing item backgrounds from board appearance
     /// @details    Returns an appearance copy with missing banner and list backgrounds inherited from the board;
-    ///             explicit values and other item fields are preserved.
+    ///             explicit values and other item fields are preserved
     ///
     /// @param[in]  appearance  Optional or explicit appearance overrides supplied by the caller
     ///
@@ -345,7 +345,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     /// @fcn        BoardAppearance.inheritingLists
     /// @brief      Return lists whose surface and text styling inherits from the board
     /// @details    Clears list banner, list background, and preview text-color overrides while preserving card-level
-    ///             overrides, list content, and other appearance fields. Clears subtitle style overrides as well.
+    ///             overrides, list content, and other appearance fields. Clears subtitle style overrides as well
     ///
     /// @param[in]  lists  Lists participating in the operation
     ///
@@ -386,12 +386,12 @@ struct BoardAppearance: Hashable, Codable, Sendable
     /// @fcn        BoardAppearance.decodeWeek
     /// @brief      Decode the stored current-week board appearance
     /// @details    Uses the default appearance for empty data and propagates decoding errors for malformed nonempty
-    ///             storage.
+    ///             storage
     ///
     /// @param[in]  data  Encoded input or media bytes
     ///
     /// @return     (BoardAppearance) decoded board appearance, or default appearance for empty data
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func decodeWeek(_ data: Data) throws -> BoardAppearance
     {
@@ -407,7 +407,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Persists named palette values whose light and dark rendering is resolved by presentation
-///     extensions.
+///     extensions
 ///
 enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable
 {
@@ -432,7 +432,7 @@ enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 /// @section    Purpose
 ///     Switches between Card previews and the denser Note List layout without converting the
-///     underlying records.
+///     underlying records
 ///
 enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable
 {
@@ -457,7 +457,7 @@ enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable
 ///
 /// @section    Purpose
 ///     Keeps colors, icon, collapse state, layout, and display preferences optional so absent
-///     values continue to inherit defaults.
+///     values continue to inherit defaults
 ///
 struct ItemAppearance: Hashable, Codable, Sendable
 {
@@ -498,7 +498,7 @@ struct ItemAppearance: Hashable, Codable, Sendable
     /// @fcn        ItemAppearance.hidesSubtitle
     /// @brief      Decide whether an empty subtitle should be suppressed
     /// @details    Returns true only when hideEmptySubtitle is explicitly enabled and the supplied text is blank
-    ///             after trimming whitespace.
+    ///             after trimming whitespace
     ///
     /// @param[in]  text  Attributed or plain text to restore or display
     ///
@@ -528,7 +528,7 @@ struct ItemAppearance: Hashable, Codable, Sendable
 ///
 /// @section    Purpose
 ///     Chooses persisted editable appearance fields for new Cards while leaving existing records,
-///     Notes, and dividers unchanged.
+///     Notes, and dividers unchanged
 ///
 enum NewCardAppearanceDefaults
 {
@@ -542,7 +542,7 @@ enum NewCardAppearanceDefaults
     /// @fcn        NewCardAppearanceDefaults.apply
     /// @brief      Apply configured creation appearance to a new card
     /// @details    Mutates only the new card using the user's creation preferences rather than rewriting existing
-    ///             cards.
+    ///             cards
     ///
     /// @param[in,out]  card         Card or note being inspected or changed
     /// @param[in]      preferences  User display and creation preferences

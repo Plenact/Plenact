@@ -2,14 +2,14 @@
 // @file       PortableEditableContent.swift
 // @brief      Portable-to-native editable List and Card reconstruction without source-backup fallback
 // @details    Supported User Data Model versions: 1.0 content; working 1.1 package input. Retains UUID
-//             identity aliases separately from numeric editor IDs. Does not install application data.
+//             identity aliases separately from numeric editor IDs. Does not install application data
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Converts portable content into the real editor models while retaining canonical identity evidence.
+/// Converts portable content into the real editor models while retaining canonical identity evidence
 /// @section Purpose
-///     Build the normal-workspace import bridge without silently loading legacy source preferences.
+///     Build the normal-workspace import bridge without silently loading legacy source preferences
 @MainActor
 struct PortableEditableContent
 {
@@ -20,9 +20,9 @@ struct PortableEditableContent
     let deletedCardIDs: Set<String>
 
 
-    /// Adapter failures reject unsupported or ambiguous values rather than defaulting authored content.
+    /// Adapter failures reject unsupported or ambiguous values rather than defaulting authored content
     /// @section Purpose
-    ///     Keep incomplete reconstruction from being installed as an editable workspace.
+    ///     Keep incomplete reconstruction from being installed as an editable workspace
     enum Failure: LocalizedError
     {
 
@@ -515,7 +515,7 @@ struct PortableEditableContent
         {
             throw Failure.invalid
         }
-        // The current model derives focused List state; it cannot persist an authored override.
+        // The current model derives focused List state; it cannot persist an authored override
         raw.removeValue(forKey: "preferredFocusedListID")
 
         var ownedCards = Set<String>()

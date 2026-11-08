@@ -1,22 +1,22 @@
 // --------------------------------------------------------------------------------------------------
 // @file       AppReturnTests.swift
 // @brief      Monotonic background-return policy, editor protection and native viewport resets
-// @details    Uses synthetic clocks, isolated defaults and an automated-Simulator window only.
+// @details    Uses synthetic clocks, isolated defaults and an automated-Simulator window only
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import XCTest
 @testable import Plenact
 
 
-/// Verifies that timeout navigation never replaces open work or changes shared records.
+/// Verifies that timeout navigation never replaces open work or changes shared records
 /// @section Purpose
-///     Exercise five-minute boundaries without real waiting and scroll resets against native views.
+///     Exercise five-minute boundaries without real waiting and scroll resets against native views
 @MainActor
 final class AppReturnTests: XCTestCase
 {
 
 
-    /// Manual completion follows visual order, not weekday mappings or today's date.
+    /// Manual completion follows visual order, not weekday mappings or today's date
     func testManualWeekOpeningUsesLeftmostActiveList()
     {
 
@@ -38,7 +38,7 @@ final class AppReturnTests: XCTestCase
     }
 
 
-    /// Ordinary additive edits and day templates must not trigger Week completion navigation.
+    /// Ordinary additive edits and day templates must not trigger Week completion navigation
     func testManualWeekCompletionScope()
     {
 
@@ -57,7 +57,7 @@ final class AppReturnTests: XCTestCase
     }
 
 
-    /// A destination not yet mounted reads the new top position without resetting another owner.
+    /// A destination not yet mounted reads the new top position without resetting another owner
     func testManualWeekOpeningResetsOnlyItsViewport() throws
     {
 
@@ -95,7 +95,7 @@ final class AppReturnTests: XCTestCase
     }
 
 
-    /// Measure root navigation value sizes without mounting or importing a workspace.
+    /// Measure root navigation value sizes without mounting or importing a workspace
     func testRootNavigationValueSize()
     {
 
@@ -104,13 +104,13 @@ final class AppReturnTests: XCTestCase
 
         print("ROOT_BODY_BYTES", bodyBytes)
         print("ROOT_NAVIGATION_BYTES", navigationBytes)
-        // Previously 19,944 and 18,187 bytes, repeatedly copied through the root builders.
+        // Previously 19,944 and 18,187 bytes, repeatedly copied through the root builders
         XCTAssertLessThan(bodyBytes, 8_192)
         XCTAssertLessThan(navigationBytes, 8_192)
     }
 
 
-    /// Verify visible-time boundaries, permanent cancellation and stale timer rejection.
+    /// Verify visible-time boundaries, permanent cancellation and stale timer rejection
     func testDailyOverviewDeadlineAndCancellation()
     {
 
@@ -140,7 +140,7 @@ final class AppReturnTests: XCTestCase
     }
 
 
-    /// Observe typing only in the owning scene, then detach without affecting controls.
+    /// Observe typing only in the owning scene, then detach without affecting controls
     func testDailyOverviewObservesOnlyItsOwnWindow()
     {
 
@@ -186,7 +186,7 @@ final class AppReturnTests: XCTestCase
     }
 
 
-    /// Reduce Motion switches directly and cancellation removes transient visuals.
+    /// Reduce Motion switches directly and cancellation removes transient visuals
     func testDailyOverviewFadeRespectsReduceMotion()
     {
 

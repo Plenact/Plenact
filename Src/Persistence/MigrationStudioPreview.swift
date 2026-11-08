@@ -2,21 +2,21 @@
 // @file       MigrationStudioPreview.swift
 // @brief      Saved Studio surfaces, artwork and global Week appearance preparation
 // @details    Supported User Data Model versions: 1.0 base and working 1.1 appearance composition. Local Studio-preview format 2 maps
-//             global appearance/order separately without changing the released 1.0 schemas.
+//             global appearance/order separately without changing the released 1.0 schemas
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Converts reusable artwork and retains account-unbound Studio/global appearance evidence.
+/// Converts reusable artwork and retains account-unbound Studio/global appearance evidence
 /// @section Purpose
-///     Preserve authored surfaces and original-file references without flattening inherited defaults.
+///     Preserve authored surfaces and original-file references without flattening inherited defaults
 @MainActor
 enum MigrationStudioPreview
 {
 
-    /// Independent local appearance evidence and canonical saved artwork records.
+    /// Independent local appearance evidence and canonical saved artwork records
     /// @section Purpose
-    ///     Keep source-order/global-default preservation distinct from final contract integration.
+    ///     Keep source-order/global-default preservation distinct from final contract integration
     struct Result
     {
 
@@ -54,7 +54,7 @@ enum MigrationStudioPreview
 
     /// @fcn MigrationStudioPreview.prepare
     /// @brief Convert saved appearance stores independently from content and user settings
-    /// @details Never invokes defaults/loaders, randomizers, image downloads or source writes.
+    /// @details Never invokes defaults/loaders, randomizers, image downloads or source writes
     /// @param[in] values Frozen source preferences
     /// @param[in] records Existing canonical records proving retained reference targets
     /// @param[in] mediaDigests Verified original-media hashes
@@ -187,7 +187,7 @@ enum MigrationStudioPreview
 
             let saved = try JSONDecoder().decode(BoardAppearance.self, from: data)
 
-            // Validate complete surfaces even where the generic appearance mapper preserves strings.
+            // Validate complete surfaces even where the generic appearance mapper preserves strings
             for item in [saved.studioSurface, saved.studioCardSurface].compactMap({ $0 })
             {
 

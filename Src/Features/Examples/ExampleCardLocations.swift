@@ -2,7 +2,7 @@
 // @file       ExampleCardLocations.swift
 // @brief      Oshkosh locations for bundled Gym and Work Cards
 // @details    Adds verified example destinations to new routines and performs a one-time, backed-up
-//             fill of empty locations in existing editable Cards. Custom and archived content is retained.
+//             fill of empty locations in existing editable Cards. Custom and archived content is retained
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -13,7 +13,7 @@ import Foundation
 ///
 /// @section    Purpose
 ///     Demonstrates Card locations using the requested Oshkosh places, without changing future
-///     manually created Cards. A migration marker prevents removed locations from being restored.
+///     manually created Cards. A migration marker prevents removed locations from being restored
 ///
 enum ExampleCardLocations
 {
@@ -30,7 +30,7 @@ enum ExampleCardLocations
     /// Retains the complete workspace values published after a successful location update
     ///
     /// @section    Purpose
-    ///     Separates preparing and saving a migration from replacing the live workspace state.
+    ///     Separates preparing and saving a migration from replacing the live workspace state
     ///
     struct Snapshot
     {
@@ -47,7 +47,7 @@ enum ExampleCardLocations
     /// @fcn        ExampleCardLocations.location
     /// @brief      Resolve the verified destination for an exact Gym or Work title
     /// @details    Ignores case and accidental outer whitespace without matching unrelated titles
-    ///             such as Work on a home project or Gym research.
+    ///             such as Work on a home project or Gym research
     /// @param[in]  title Existing or bundled Card title
     /// @return     (String?) requested example location, or nil for other titles
     ///
@@ -73,7 +73,7 @@ enum ExampleCardLocations
     /// @fcn        ExampleCardLocations.updating
     /// @brief      Fill empty locations in matching editable Cards of active Lists
     /// @details    Preserves existing locations, Notes, dividers, locked Cards, archived Lists,
-    ///             and archived Cards. Normal List assignment retains ordinary edit history.
+    ///             and archived Cards. Normal List assignment retains ordinary edit history
     /// @param[in]  lists Existing active and archived Lists to inspect
     /// @return     ([KanbanList]) unchanged records plus eligible location additions
     ///
@@ -129,7 +129,7 @@ enum ExampleCardLocations
     ///
     /// @fcn        ExampleCardLocations.updating
     /// @brief      Fill eligible Cards inside active personal collections
-    /// @details    Whole archived collections retain their original Cards and location values.
+    /// @details    Whole archived collections retain their original Cards and location values
     /// @param[in]  collections Saved personal Boards and Lists
     /// @return     ([PersonalCollection]) updated active collections with archived content retained
     ///
@@ -162,7 +162,7 @@ enum ExampleCardLocations
     /// @brief      Save a one-time fill of existing Gym and Work location fields
     /// @details    Prepares all records before writing, keeps a copy of prior persisted documents,
     ///             verifies each write, and restores the original documents on failure. The marker
-    ///             is written only after success, so later manual removals remain removed.
+    ///             is written only after success, so later manual removals remain removed
     /// @param[in]  lists       Live current-week Lists
     /// @param[in]  calendar    Retained dated weeks and their canonical ownership
     /// @param[in]  collections Live personal collections

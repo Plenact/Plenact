@@ -2,14 +2,14 @@
 // @file       PortableEditableNested.swift
 // @brief      Editable checklist, activity, attachment and opaque-history reconstruction
 // @details    Supported User Data Model versions: 1.0 nested content. Rejects identity semantics the
-//             current editor cannot represent, rather than stripping provenance or inventing originals.
+//             current editor cannot represent, rather than stripping provenance or inventing originals
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Reconstructs the nested values used by Plenact's editable Card model.
+/// Reconstructs the nested values used by Plenact's editable Card model
 /// @section Purpose
-///     Keep authored content and inactive retained values when bridging the portable contract.
+///     Keep authored content and inactive retained values when bridging the portable contract
 extension PortableEditableContent
 {
 

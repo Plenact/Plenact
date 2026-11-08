@@ -3,7 +3,7 @@
 // @brief      Board Interaction regression tests2
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// BoardInteraction regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -29,10 +29,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that today Shortcut Grid Renders Two Rows Without Opening Or Editing
     /// @details    Exercises `(0..<6).map`, `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`.
     ///             Uses the fixture and assertions below to verify today Shortcut Grid Renders Two Rows Without
-    ///             Opening Or Editing.
+    ///             Opening Or Editing
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTodayShortcutGridRendersTwoRowsWithoutOpeningOrEditing() async throws
@@ -95,10 +95,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that today Plan Renders Without Changing Stored Plans
     /// @details    Exercises `UserDefaults.standard.dictionaryRepresentation().filter`,
     ///             `UserDefaults.standard.dictionaryRepresentation`, `$0.key.hasPrefix`. Checks
-    ///             `XCTAssertEqual(NSDictionary(dictionary: before), NSDictionary(dictionary: after))`.
+    ///             `XCTAssertEqual(NSDictionary(dictionary: before), NSDictionary(dictionary: after))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTodayPlanRendersWithoutChangingStoredPlans() async throws
@@ -157,10 +157,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that loading Screen Resources And Reduced Motion Layout
     /// @details    Exercises `Bundle.main.url`, `UIApplication.shared.connectedScenes.compactMap`,
     ///             `scene.windows.first`. Checks `XCTAssertNotNil(UIImage(named: "LaunchLogo"))`;
-    ///             `XCTAssertNotNil(UIImage(named: "LaunchShadow"))`.
+    ///             `XCTAssertNotNil(UIImage(named: "LaunchShadow"))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testLoadingScreenResourcesAndReducedMotionLayout() async throws
@@ -246,10 +246,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that week Today Highlight Renders In Panoramic Without Changing Cards
     /// @details    Exercises `DatedPlanningWeek.make`, `PlanningDate.key`,
     ///             `UIApplication.shared.connectedScenes.compactMap`. Checks
-    ///             `XCTAssertEqual(access.document.weeks[0], week)`.
+    ///             `XCTAssertEqual(access.document.weeks[0], week)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testWeekTodayHighlightRendersInPanoramicWithoutChangingCards() async throws
@@ -346,10 +346,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that tablet Board Renders Proportional Lists
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Uses the fixture and assertions below to verify tablet Board
-    ///             Renders Proportional Lists.
+    ///             Renders Proportional Lists
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testTabletBoardRendersProportionalLists() async throws
@@ -412,7 +412,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testTabletStandardZoomPreservesProportionsAndNeighborPreviews
     /// @brief      Verify that tablet Standard Zoom Preserves Proportions And Neighbor Previews
     /// @details    Exercises `BoardPresentation.standard.columnWidth`, `BoardTabletSizing.scale`. Checks
-    ///             `XCTAssertGreaterThan(scale, 1)`; `XCTAssertEqual(preview, viewport * 0.05 + 13.5)`.
+    ///             `XCTAssertGreaterThan(scale, 1)`; `XCTAssertEqual(preview, viewport * 0.05 + 13.5)`
     ///
     /// @return     (Void) no return value
     ///
@@ -447,10 +447,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that board Options Popover Layout Does Not Invoke Destructive Actions
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Uses the fixture and assertions below to verify board Options Popover Layout
-    ///             Does Not Invoke Destructive Actions.
+    ///             Does Not Invoke Destructive Actions
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testBoardOptionsPopoverLayoutDoesNotInvokeDestructiveActions() async throws
@@ -519,7 +519,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that board Zoom Presets Reset After Pinching From Either Mode
     /// @details    Exercises `BoardPanoramicZoom.preset`, `BoardPanoramicZoom.scale`. Checks
     ///             `XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: false), 1)`;
-    ///             `XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: true), 0.62)`.
+    ///             `XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: true), 0.62)`
     ///
     /// @return     (Void) no return value
     ///
@@ -540,7 +540,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that panoramic Pinch Zoom Clamps And Reverses At Both Limits
     /// @details    Exercises `BoardPanoramicZoom.scale`, `BoardPanoramicZoom.clamped`,
     ///             `BoardPresentation.standard.columnWidth`. Checks `XCTAssertEqual(BoardPanoramicZoom.initial,
-    ///             0.62)`; `XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 1.5), 0.93)`.
+    ///             0.62)`; `XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 1.5), 0.93)`
     ///
     /// @return     (Void) no return value
     ///
@@ -580,7 +580,7 @@ extension PlenactBoardDocumentTests
     ///             `XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 100,
     ///             controlsWidth: 176, gapCount: 4, regularSpacing: 12), 12)`;
     ///             `XCTAssertEqual(WorkspaceHeaderSpacing.gap(availableWidth: 360, titleIdealWidth: 150,
-    ///             controlsWidth: 176, gapCount: 4, regularSpacing: 12), 0)`.
+    ///             controlsWidth: 176, gapCount: 4, regularSpacing: 12), 0)`
     ///
     /// @return     (Void) no return value
     ///
@@ -615,10 +615,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that adaptive Header Retains Control Targets And Gives Long Text The Gap Space
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(try XCTUnwrap(frames[id]).width, 44)`;
-    ///             `XCTAssertEqual(try XCTUnwrap(frames[id]).height, 44)`.
+    ///             `XCTAssertEqual(try XCTUnwrap(frames[id]).height, 44)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testAdaptiveHeaderRetainsControlTargetsAndGivesLongTextTheGapSpace() async throws
@@ -738,10 +738,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that slideable Header Text Scrolls Only Overflow And Retains Reading Position
     /// @details    Exercises `PlanPreferencesStore.save`, `UIApplication.shared.connectedScenes.compactMap`,
     ///             `scene.windows.first`. Checks `XCTAssertTrue(scrolling.isScrollEnabled)`;
-    ///             `XCTAssertTrue(overflow.contains(true))`.
+    ///             `XCTAssertTrue(overflow.contains(true))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition() async throws
@@ -778,7 +778,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition.scrolls
         /// @brief      Find scrolls in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -846,10 +846,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that long List And Board Headers Expose Independent Native Readers
     /// @details    Exercises `PlanPreferencesStore.save`, `UIApplication.shared.connectedScenes.compactMap`,
     ///             `scene.windows.first`. Checks `XCTAssertGreaterThanOrEqual(readers.count, 2)`;
-    ///             `XCTAssertTrue(reader.isScrollEnabled)`.
+    ///             `XCTAssertTrue(reader.isScrollEnabled)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testLongListAndBoardHeadersExposeIndependentNativeReaders() async throws
@@ -886,7 +886,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testLongListAndBoardHeadersExposeIndependentNativeReaders.scrolls
         /// @brief      Find scrolls in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UIScrollView. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -976,7 +976,7 @@ extension PlenactBoardDocumentTests
             try await Task.sleep(for: .milliseconds(250))
 
             // A top-edge native scroll view can extend into the container safe area;
-            // its single-line content height identifies the reader, not its UIKit bounds.
+            // its single-line content height identifies the reader, not its UIKit bounds
             let readers = scrolls(host.view).filter
             {
 
@@ -1009,10 +1009,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testHostedMixedDisplayFormatsAndPicturePlaceholdersDoNotMutateRecords
     /// @brief      Verify that hosted Mixed Display Formats And Picture Placeholders Do Not Mutate Records
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKey`. Checks `XCTAssertEqual(item, original)`.
+    ///             `previous?.makeKey`. Checks `XCTAssertEqual(item, original)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testHostedMixedDisplayFormatsAndPicturePlaceholdersDoNotMutateRecords() async throws
@@ -1217,10 +1217,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that hosted List Editor Prefills Without Mutating Records
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Checks `XCTAssertTrue(fields(in: controller.view).contains { $0.text ==
-    ///             list.title })`.
+    ///             list.title })`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testHostedListEditorPrefillsWithoutMutatingRecords() async throws
@@ -1252,7 +1252,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testHostedListEditorPrefillsWithoutMutatingRecords.fields
         /// @brief      Find fields in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UITextField. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1277,7 +1277,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testHostedListEditorPrefillsWithoutMutatingRecords.textViews
         /// @brief      Find text views in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UITextView. Returns all collected matches in
-        ///             hierarchy order.
+        ///             hierarchy order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1333,10 +1333,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that shared Keyboard Attaches To Plain Fields And Renders Narrow And Wide
     /// @details    Exercises `PlenactKeyboard.shared.install`, `NotificationCenter.default.post`,
     ///             `UIApplication.shared.connectedScenes.compactMap`. Checks `XCTAssertTrue(field.inputAccessoryView
-    ///             is PlenactKeyboardToolbar)`; `XCTAssertEqual(field.keyboardType, .emailAddress)`.
+    ///             is PlenactKeyboardToolbar)`; `XCTAssertEqual(field.keyboardType, .emailAddress)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testSharedKeyboardAttachesToPlainFieldsAndRendersNarrowAndWide() throws
@@ -1976,7 +1976,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCardDropGeometryUsesMidpointsAndRejectsOutsideViewport()
     /// @brief      Verify insertion targeting across row midpoints and viewport boundaries
     /// @details    Uses synthetic offset frames to check empty lists, gaps, nonfinite coordinates,
-    ///             missing measurements, and unmeasured trailing rows without moving records.
+    ///             missing measurements, and unmeasured trailing rows without moving records
     ///
     /// @return     (Void) records assertion failures for incorrect geometry targets
     ///
@@ -2009,7 +2009,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testCardDropGeometryUsesMidpointsAndRejectsOutsideViewport.target(_:_:frames:)
         /// @brief      Resolve a synthetic drop point relative to the fixture viewport
         /// @details    Adds the viewport origin to test coordinates and forwards the selected row
-        ///             frames to canonical target resolution.
+        ///             frames to canonical target resolution
         ///
         /// @param[in]  x       Horizontal test offset from the fixture viewport origin
         /// @param[in]  y       Vertical test offset from the fixture viewport origin
@@ -2055,7 +2055,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify hosted card rows install native drag and one shared list receiver
     /// @details    Checks row count, enabled drag sources, receiver identity, collection
     ///             delegation, and bounds across presentation presets and accessibility text sizes.
-    ///             Restores the prior key window after the synthetic layout fixture.
+    ///             Restores the prior key window after the synthetic layout fixture
     ///
     /// @return     (Void) records assertion failures for interaction installation or row layout
     ///
@@ -2096,7 +2096,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testWholeCardDragSourcesAndInsertionMarkersKeepNativeListRowIdentityAndLayout.collectionView(in:)
         /// @brief      Find the first collection view in the hosted synthetic view tree
         /// @details    Returns the current view when it is a collection, otherwise recursively
-        ///             searches its subviews in order.
+        ///             searches its subviews in order
         ///
         /// @param[in]  view  Root view to search for the hosted collection
         ///
@@ -2124,7 +2124,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        testWholeCardDragSourcesAndInsertionMarkersKeepNativeListRowIdentityAndLayout.importanceMarker(in:)
         /// @brief      Locate a rendered star control's native geometry marker
-        /// @details    Searches public view descendants inside the real hosted List cell.
+        /// @details    Searches public view descendants inside the real hosted List cell
         ///
         /// @param[in]  view  Card content subtree to inspect
         ///

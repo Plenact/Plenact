@@ -2,7 +2,7 @@
 // @file       MigrationPlanningTests.swift
 // @brief      Historical daily/check-in/review migration and safe-reference acceptance
 // @details    Supported User Data Model versions: 1.0. Synthetic plans, content and temporary
-//             journals only; no actual review action, notification or owner workspace is changed.
+//             journals only; no actual review action, notification or owner workspace is changed
 // --------------------------------------------------------------------------------------------------
 import Foundation
 import XCTest
@@ -10,9 +10,9 @@ import SwiftUI
 @testable import Plenact
 
 
-/// Tests immutable planning snapshots, exact creation-qualified references and source-only conversion.
+/// Tests immutable planning snapshots, exact creation-qualified references and source-only conversion
 /// @section Purpose
-///     Prove deleted/reused Card IDs cannot rewrite historical writing or resolve to unrelated content.
+///     Prove deleted/reused Card IDs cannot rewrite historical writing or resolve to unrelated content
 @MainActor
 final class MigrationPlanningTests: XCTestCase
 {
@@ -640,7 +640,7 @@ final class MigrationPlanningTests: XCTestCase
 
     /// @fcn MigrationPlanningTests.testEveningReflectionFieldsAcceptFocusAndTyping
     /// @brief Verify native reflection controls accept focus and update the review binding
-    /// @details Hosts only a synthetic review on the automated Simulator, preserving the prior window.
+    /// @details Hosts only a synthetic review on the automated Simulator, preserving the prior window
     /// @return Void after restoring the test window and removing the synthetic editor
     /// @throws Missing scene, control or binding errors
     func testEveningReflectionFieldsAcceptFocusAndTyping() async throws
@@ -722,7 +722,7 @@ final class MigrationPlanningTests: XCTestCase
 
     /// @fcn MigrationPlanningTests.testNestedEveningReflectionFieldsAcceptFocusAndTyping
     /// @brief Verify native reflection controls accept focus and update the review binding
-    /// @details Hosts only a synthetic review on the automated Simulator, preserving the prior window.
+    /// @details Hosts only a synthetic review on the automated Simulator, preserving the prior window
     /// @return Void after restoring the test window and removing the synthetic editor
     /// @throws Missing scene, control or binding errors
     func testNestedEveningReflectionFieldsAcceptFocusAndTyping() async throws
@@ -816,7 +816,7 @@ final class MigrationPlanningTests: XCTestCase
     /// @fcn MigrationPlanningTests.testWeeklyReviewEditedExport
     /// @brief Reconcile weekly reflection writing and history without executing recorded decisions
     /// @details Covers new/retained identities, real-save precision, clearing, strict validation,
-    ///          unchanged other stores, frozen evidence and fresh installation/re-export.
+    ///          unchanged other stores, frozen evidence and fresh installation/re-export
     /// @return Void after isolated fixture cleanup
     /// @throws Fixture, conversion or installation failures
     func testWeeklyReviewEditedExport() throws
@@ -1000,7 +1000,7 @@ final class MigrationPlanningTests: XCTestCase
     /// @fcn MigrationPlanningTests.testPeriodicReviewEditedExport
     /// @brief Reconcile periodic reflections and independent objective snapshots without executing recorded decisions
     /// @details Covers new/retained identities, real-save precision, clearing, strict validation,
-    ///          unchanged other stores, frozen evidence and fresh installation/re-export.
+    ///          unchanged other stores, frozen evidence and fresh installation/re-export
     /// @return Void after isolated fixture cleanup
     /// @throws Fixture, conversion or installation failures
     func testPeriodicReviewEditedExport() throws
@@ -1218,7 +1218,7 @@ final class MigrationPlanningTests: XCTestCase
     /// @fcn MigrationPlanningTests.testEveningReviewEditedExport
     /// @brief Retain reflection writing, achievements and decision history without replaying actions
     /// @details Exercises creation, existing edits, submillisecond timestamps, clearing, strict nested
-    ///          validation, source immutability and fresh installation with identical re-export.
+    ///          validation, source immutability and fresh installation with identical re-export
     /// @return Void after synthetic state cleanup
     /// @throws Fixture, package, capture or installation errors
     func testEveningReviewEditedExport() throws
@@ -1404,7 +1404,7 @@ final class MigrationPlanningTests: XCTestCase
     /// @fcn MigrationPlanningTests.testDailyPlanEditedExport
     /// @brief Preserve daily writing, historical references and new check-ins through verified export
     /// @details Uses isolated rich history with explicit references and new dates, plus rejected provenance,
-    ///          malformed sources, frozen-source checks and fresh installation/re-export.
+    ///          malformed sources, frozen-source checks and fresh installation/re-export
     /// @return Void after synthetic state cleanup
     /// @throws Fixture, conversion, installation or assertion-support failures
     func testDailyPlanEditedExport() throws
@@ -1634,9 +1634,9 @@ final class MigrationPlanningTests: XCTestCase
 }
 
 
-/// Planning-preference export regression sharing the isolated Studio package fixture.
+/// Planning-preference export regression sharing the isolated Studio package fixture
 /// @section Purpose
-///     Keep planning coverage separate without growing the combined activation/recovery test.
+///     Keep planning coverage separate without growing the combined activation/recovery test
 @MainActor
 extension MigrationStudioTests
 {
@@ -1644,7 +1644,7 @@ extension MigrationStudioTests
     /// @fcn MigrationStudioTests.testReviewRhythmEditedExport
     /// @brief Verify newly saved and retained rhythm preferences through complete isolated export
     /// @details Checks all seven choices, identity, unchanged history, source immutability, strict
-    ///          rejection and fresh installation/re-export without invoking notification scheduling.
+    ///          rejection and fresh installation/re-export without invoking notification scheduling
     /// @return Void after temporary synthetic stores and files are removed
     /// @throws Fixture, package, capture or installation failures
     func testReviewRhythmEditedExport() throws

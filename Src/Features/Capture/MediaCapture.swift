@@ -2,7 +2,7 @@
 // @file       MediaCapture.swift
 // @brief      Camera and voice capture lifecycle
 // @details    Coordinates selected photo bytes, recording, transcription, and explicit media
-//             commits with cleanup limited to failed draft files.
+//             commits with cleanup limited to failed draft files
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Publishes capture status and errors, retains recording and speech tasks, and uses generation
-///     tracking to reject obsolete asynchronous work.
+///     tracking to reject obsolete asynchronous work
 ///
 @MainActor
 final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelegate
@@ -39,7 +39,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     /// @fcn        QuickCaptureVoice.start
     /// @brief      Request recording access and begin voice capture
     /// @details    Sets up the recording session and local file, publishes capture status, and reports authorization
-    ///             or recording setup failures.
+    ///             or recording setup failures
     ///
     /// @return     (Void) no return value
     ///
@@ -127,7 +127,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     /// @fcn        QuickCaptureVoice.stop
     /// @brief      Stop the active voice recorder
     /// @details    Ends recording through the recorder so its completion delegate can update capture and
-    ///             transcription state.
+    ///             transcription state
     ///
     /// @return     (Void) no return value
     ///
@@ -151,7 +151,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     /// @fcn        QuickCaptureVoice.audioRecorderDidFinishRecording
     /// @brief      Handle completion of a voice recording
-    /// @details    Updates recording state and starts transcription only for a successfully completed recording.
+    /// @details    Updates recording state and starts transcription only for a successfully completed recording
     ///
     /// @param[in]  recorder  Audio recorder delivering completion
     /// @param[in]  flag      Whether the system reports successful completion
@@ -186,7 +186,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     /// @fcn        QuickCaptureVoice.transcribe
     /// @brief      Transcribe the captured audio when speech access permits
     /// @details    Creates an asynchronous speech-recognition request, publishes its result, and reports
-    ///             authorization or recognition failures without discarding the recording.
+    ///             authorization or recognition failures without discarding the recording
     ///
     /// @return     (Void) no return value
     ///
@@ -318,7 +318,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     /// @fcn        QuickCaptureVoice.cancelTranscription
     /// @brief      Cancel outstanding speech recognition work
-    /// @details    Stops and clears the retained recognition task so later capture work does not reuse it.
+    /// @details    Stops and clears the retained recognition task so later capture work does not reuse it
     ///
     /// @return     (Void) no return value
     ///
@@ -343,11 +343,11 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     /// @fcn        QuickCaptureVoice.audioData
     /// @brief      Read the current recording's encoded audio
     /// @details    Loads the captured file and propagates file access failures rather than returning invented audio
-    ///             data.
+    ///             data
     ///
     /// @return     (Data) recorded file bytes ready for attachment import
     /// @throws     Explicit failures include `CocoaError(.fileReadNoSuchFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     func audioData() throws -> Data
     {
@@ -364,7 +364,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     /// @fcn        QuickCaptureVoice.cleanup
     /// @brief      Release voice capture work and its temporary file
-    /// @details    Stops recording, cancels transcription, and removes retained temporary recording resources.
+    /// @details    Stops recording, cancels transcription, and removes retained temporary recording resources
     ///
     /// @return     (Void) no return value
     ///
@@ -391,7 +391,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 ///
 /// @section    Purpose
 ///     Keeps encoded bytes and their extension with a temporary identity; image decoding does not
-///     persist an attachment.
+///     persist an attachment
 ///
 struct QuickCapturePhoto: Identifiable
 {
@@ -414,7 +414,7 @@ struct QuickCapturePhoto: Identifiable
 ///
 /// @section    Purpose
 ///     Writes files only for explicit submission and removes this draft's newly created files when
-///     the owner rejects the handoff.
+///     the owner rejects the handoff
 ///
 @MainActor
 enum QuickCaptureMediaCommit
@@ -425,7 +425,7 @@ enum QuickCaptureMediaCommit
     /// @fcn        QuickCaptureMediaCommit.save
     /// @brief      Import capture media and commit its attachment records
     /// @details    Tracks newly created photo, audio, and drawing files; retains them only when the supplied owner
-    ///             commit accepts the records and removes them on failure.
+    ///             commit accepts the records and removes them on failure
     ///
     /// @param[in]  photos    Photo drafts to import before committing the owner update
     /// @param[in]  audio     Optional recorded audio bytes to import
@@ -435,7 +435,7 @@ enum QuickCaptureMediaCommit
     ///
     /// @return     (Bool) true if the owner accepts the imported records; false after a rejected commit and cleanup
     /// @throws     Explicit failures include `CocoaError(.fileReadCorruptFile)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     static func save(
         _ photos: [QuickCapturePhoto], audio: Data? = nil, drawings: [DrawingCaptureDraft] = [],
@@ -501,7 +501,7 @@ enum QuickCaptureMediaCommit
 ///
 /// @section    Purpose
 ///     Delivers a selected image through the caller's callback and dismisses on capture or
-///     cancellation.
+///     cancellation
 ///
 struct QuickCaptureCamera: UIViewControllerRepresentable
 {
@@ -515,7 +515,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     /// @fcn        QuickCaptureCamera.makeCoordinator
     /// @brief      Create the native bridge coordinator
     /// @details    Creates the coordinator retained by SwiftUI for QuickCaptureCamera so its delegate or observation
-    ///             state can span view updates.
+    ///             state can span view updates
     ///
     /// @return     (Coordinator) retained native bridge coordinator
     ///
@@ -528,7 +528,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     ///
     /// @fcn        QuickCaptureCamera.makeUIViewController
     /// @brief      Create the camera picker used by quick capture
-    /// @details    Configures camera capture and assigns the coordinator as the picker delegate.
+    /// @details    Configures camera capture and assigns the coordinator as the picker delegate
     ///
     /// @param[in]  context  Framework-supplied update context and coordinator access
     ///
@@ -549,7 +549,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     ///
     /// @fcn        QuickCaptureCamera.updateUIViewController
     /// @brief      Satisfy camera-picker updates without resetting capture
-    /// @details    The picker is configured during creation and has no incremental update work in this representable.
+    /// @details    The picker is configured during creation and has no incremental update work in this representable
     ///
     /// @param[in]  controller  Native controller supplied to the lifecycle callback
     /// @param[in]  context     Framework-supplied update context and coordinator access
@@ -567,7 +567,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     ///
     /// @section    Purpose
     ///     Retains the camera representable so UIKit delegate events reach its image callback and
-    ///     dismissal action.
+    ///     dismissal action
     ///
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate
     {
@@ -580,7 +580,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
         /// @fcn        QuickCaptureCamera.Coordinator.init
         /// @brief      Retain the camera representable for delegate callbacks
         /// @details    Keeps the current parent value so capture and cancellation callbacks can reach its selection
-        ///             and dismissal actions.
+        ///             and dismissal actions
         ///
         /// @param[in]  parent  Representable value supplying the delegate's current bindings and callbacks
         ///
@@ -597,7 +597,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
         ///
         /// @fcn        QuickCaptureCamera.Coordinator.imagePickerControllerDidCancel
         /// @brief      Dismiss a cancelled camera capture
-        /// @details    Invokes the parent capture presentation's dismissal path without producing an image.
+        /// @details    Invokes the parent capture presentation's dismissal path without producing an image
         ///
         /// @param[in]  picker  Native camera controller delivering the delegate callback
         ///
@@ -613,7 +613,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
         /// @fcn        QuickCaptureCamera.Coordinator.imagePickerController
         /// @brief      Receive the photo selected by the camera picker
         /// @details    Extracts the captured image, hands it to the parent callback when available, and finishes the
-        ///             picker presentation.
+        ///             picker presentation
         ///
         /// @param[in]  picker  Native camera controller delivering the delegate callback
         /// @param[in]  info    System image-picker metadata for the selected capture

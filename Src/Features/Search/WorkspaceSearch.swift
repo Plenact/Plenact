@@ -2,7 +2,7 @@
 // @file       WorkspaceSearch.swift
 // @brief      Shared matching, scopes, and owner provenance
 // @details    Searches canonical workspace records and carries enough owner context to
-//             disambiguate local numeric identifiers.
+//             disambiguate local numeric identifiers
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -17,7 +17,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Carries the matching list or card alongside optional collection and week ownership so local
-///     numeric identities remain unambiguous.
+///     numeric identities remain unambiguous
 ///
 struct TodaySearchResult: Identifiable
 {
@@ -287,7 +287,7 @@ enum TodaySearchIndex
 ///
 /// @section    Purpose
 ///     Uses shared text matching and annotates matches with collection provenance so navigation
-///     resolves the correct owner.
+///     resolves the correct owner
 ///
 enum LibrarySearchIndex
 {
@@ -297,7 +297,7 @@ enum LibrarySearchIndex
     /// @fcn        LibrarySearchIndex.results
     /// @brief      Search active lists across personal collections
     /// @details    Annotates shared search matches with their collection UUID and title so equal numeric card IDs
-    ///             remain owner-qualified.
+    ///             remain owner-qualified
     ///
     /// @param[in]  query        User-entered search text
     /// @param[in]  collections  Personal collection values available to the operation
@@ -340,7 +340,7 @@ enum LibrarySearchIndex
 ///
 /// @section    Purpose
 ///     Reuses Today matching and filters while carrying provenance that disambiguates Board-local
-///     numeric identities.
+///     numeric identities
 ///
 enum PlanningSharedSearchIndex
 {
@@ -350,7 +350,7 @@ enum PlanningSharedSearchIndex
     /// @fcn        PlanningSharedSearchIndex.results
     /// @brief      Search retained weeks and active personal collections
     /// @details    Runs the shared search over active lists and annotates each match with its owner, week key, and
-    ///             location title for later navigation.
+    ///             location title for later navigation
     ///
     /// @param[in]  query   User-entered search text
     /// @param[in]  scope   Search scope restricting the kind of shared results

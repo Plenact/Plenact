@@ -2,7 +2,7 @@
 // @file       CalendarViews.swift
 // @brief      Calendar browsing and Week or Day selection
 // @details    Derives visible date content and delegates canonical destination opening without
-//             changing the active Week merely by browsing.
+//             changing the active Week merely by browsing
 //
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Coordinates month selection, shared search, and Week routes through injected workspace
-///     access.
+///     access
 ///
 struct PlanningCalendarView: View
 {
@@ -38,7 +38,7 @@ struct PlanningCalendarView: View
     /// @fcn        PlanningCalendarView.init
     /// @brief      Initialize calendar navigation around a requested date
     /// @details    Seeds the displayed month and selected local day using Calendar.current and retains the callback
-    ///             used when leaving for home.
+    ///             used when leaving for home
     ///
     /// @param[in]  initialDate     Date initially selected when the view opens
     /// @param[in]  onLeaveForHome  Callback used after navigation leaves the calendar for home
@@ -108,7 +108,7 @@ struct PlanningCalendarView: View
     /// @fcn        PlanningCalendarView.week
     /// @brief      Resolve a retained week or an unsaved empty preview
     /// @details    Uses the shared calendar document when available and otherwise constructs a week with the display
-    ///             calendar without saving it.
+    ///             calendar without saving it
     ///
     /// @param[in]  date  Represented date for the operation
     ///
@@ -125,7 +125,7 @@ struct PlanningCalendarView: View
     /// @fcn        PlanningCalendarView.items
     /// @brief      Look up searchable content for a calendar date
     /// @details    Uses the shared calendar-content selector and returns an empty result when calendar access is
-    ///             unavailable.
+    ///             unavailable
     ///
     /// @param[in]  date  Represented date for the operation
     ///
@@ -148,7 +148,7 @@ struct PlanningCalendarView: View
     /// @fcn        PlanningCalendarView.open
     /// @brief      Navigate to the selected calendar search result
     /// @details    Routes retained-week content within the calendar; library content opens through its owner callback
-    ///             before leaving the calendar presentation.
+    ///             before leaving the calendar presentation
     ///
     /// @param[in]  result  Resolved search or Activity match to render or open
     ///
@@ -190,7 +190,7 @@ struct PlanningCalendarView: View
                 VStack(alignment: .leading, spacing: 20)
                 {
 
-                    monthGrid.dynamicTypeSize(.large)  // Seven columns stay legible; full dates are announced by VoiceOver.
+                    monthGrid.dynamicTypeSize(.large)  // Seven columns stay legible; full dates are announced by VoiceOver
                     daySummary
                 }
                 .padding(16)
@@ -455,7 +455,7 @@ struct PlanningCalendarView: View
     /// @fcn        PlanningCalendarView.dayButton
     /// @brief      Build a selectable calendar day cell
     /// @details    Shows the day number, today styling, selection state, and an item-presence dot based on the day's
-    ///             searchable content.
+    ///             searchable content
     ///
     /// @param[in]  date  Represented date for the operation
     ///
@@ -564,7 +564,7 @@ struct PlanningCalendarView: View
     /// @fcn        PlanningCalendarView.moveMonth
     /// @brief      Advance the displayed calendar month
     /// @details    Adds the requested month offset and leaves the current month unchanged if calendar arithmetic
-    ///             fails.
+    ///             fails
     ///
     /// @param[in]  amount  Signed calendar-month offset
     ///
@@ -590,7 +590,7 @@ struct PlanningCalendarView: View
 ///
 /// @section    Purpose
 ///     Shows Card or Note identity, completion state, and owner/List labels without mutating the
-///     source item.
+///     source item
 ///
 struct PlanningCalendarResultRow: View
 {
@@ -630,7 +630,7 @@ struct PlanningCalendarResultRow: View
 /// Selects the Week currently being browsed
 ///
 /// @section    Purpose
-///     Changes the displayed Board without silently replacing Today's active calendar Week.
+///     Changes the displayed Board without silently replacing Today's active calendar Week
 ///
 struct PlanningWeekSelector: View
 {
@@ -651,7 +651,7 @@ struct PlanningWeekSelector: View
     /// @fcn        PlanningWeekSelector.init
     /// @brief      Seed the week chooser's selected date and highlight
     /// @details    Retains the calendar document, searchable sources, and selection callback while initializing its
-    ///             local date and week-key state.
+    ///             local date and week-key state
     ///
     /// @param[in]  initialDate      Date initially selected when the view opens
     /// @param[in]  document         Retained document containing the operation's current workspace records
@@ -682,7 +682,7 @@ struct PlanningWeekSelector: View
     /// @fcn        PlanningWeekSelector.choices
     /// @brief      Build retained and nearby unsaved week choices
     /// @details    Adds missing weeks within eight weeks of the reference date to a key-indexed copy and returns
-    ///             chronological choices without persisting them.
+    ///             chronological choices without persisting them
     ///
     /// @param[in]  document       Retained document containing the operation's current workspace records
     /// @param[in]  referenceDate  Date around which available calendar choices are constructed
@@ -729,7 +729,7 @@ struct PlanningWeekSelector: View
     /// @fcn        PlanningWeekSelector.monthDays
     /// @brief      Create a six-week calendar selection grid
     /// @details    Begins at the calendar week containing the month's first day and returns up to forty-two dates;
-    ///             unavailable boundaries yield an empty grid.
+    ///             unavailable boundaries yield an empty grid
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -781,7 +781,7 @@ struct PlanningWeekSelector: View
     ///
     /// @fcn        PlanningWeekSelector.changeMonth
     /// @brief      Move the selector's reference month
-    /// @details    Calculates from the first day of the displayed month to avoid drift from differing month lengths.
+    /// @details    Calculates from the first day of the displayed month to avoid drift from differing month lengths
     ///
     /// @param[in]  amount  Signed calendar-month offset
     ///
@@ -805,7 +805,7 @@ struct PlanningWeekSelector: View
     /// @fcn        PlanningWeekSelector.select
     /// @brief      Confirm one calendar date and its containing week
     /// @details    Prevents duplicate selection, briefly updates the highlighted choice with Reduce Motion support,
-    ///             then invokes the callback and dismisses.
+    ///             then invokes the callback and dismisses
     ///
     /// @param[in]  date  Represented date for the operation
     ///
@@ -1021,7 +1021,7 @@ struct PlanningWeekSelector: View
 ///
 /// @section    Purpose
 ///     Retains the initial choice locally and reports the selected date through the caller's
-///     callback.
+///     callback
 ///
 struct PlanningDaySelector: View
 {
@@ -1035,7 +1035,7 @@ struct PlanningDaySelector: View
     ///
     /// @fcn        PlanningDaySelector.init
     /// @brief      Seed a day chooser with its initial date
-    /// @details    Retains the date-selection callback and stores the initial date as editable local state.
+    /// @details    Retains the date-selection callback and stores the initial date as editable local state
     ///
     /// @param[in]  initialDate  Date initially selected when the view opens
     /// @param[in]  onSelect     Callback invoked after the user confirms a selection

@@ -2,7 +2,7 @@
 // @file       BoardBindings.swift
 // @brief      Active and archived Board binding projections
 // @details    Lets child views edit one partition while retaining the complete owner's other
-//             partition.
+//             partition
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI

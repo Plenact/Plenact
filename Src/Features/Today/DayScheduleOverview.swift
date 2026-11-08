@@ -2,7 +2,7 @@
 // @file       DayScheduleOverview.swift
 // @brief      Read-only planned-time and Day schedule summaries
 // @details    Derives task duration and completion categories without treating planned task-hours
-//             as tracked elapsed time.
+//             as tracked elapsed time
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 /// Determines whether a dated List receives Today's highlight
 ///
 /// @section    Purpose
-///     Uses calendar-day comparison and excludes Lists without an assigned date.
+///     Uses calendar-day comparison and excludes Lists without an assigned date
 ///
 enum WeekDayHighlight
 {
@@ -24,7 +24,7 @@ enum WeekDayHighlight
     ///
     /// @fcn        WeekDayHighlight.isToday
     /// @brief      Determine whether an assigned list date is today
-    /// @details    Uses the supplied calendar's day comparison; an unassigned date never receives the highlight.
+    /// @details    Uses the supplied calendar's day comparison; an unassigned date never receives the highlight
     ///
     /// @param[in]  assignedDate  Calendar date assigned to the list, or nil for an undated list
     /// @param[in]  now           Reference time used instead of an implicit clock read
@@ -53,7 +53,7 @@ enum WeekDayHighlight
 ///
 /// @section    Purpose
 ///     Summarizes planned time above scrollable content without replacing restored Day position or
-///     first-task navigation.
+///     first-task navigation
 ///
 struct DayScheduleOverview: View
 {
@@ -245,7 +245,7 @@ struct DayScheduleOverview: View
     /// @fcn        DayScheduleOverview.chart
     /// @brief      Draw planned tag distribution and completion arcs
     /// @details    Uses segment shares of planned time for the main ring and completed planned time for the thin
-    ///             outer ring; the accompanying legend supplies accessible text.
+    ///             outer ring; the accompanying legend supplies accessible text
     ///
     /// @param[in]  data  Encoded input or media bytes
     ///
@@ -308,7 +308,7 @@ struct DayScheduleOverview: View
     /// @fcn        DayScheduleOverview.legend
     /// @brief      Summarize the leading planned-time categories
     /// @details    Shows up to three tag totals, an additional-tag count, and an empty-state prompt when no timed
-    ///             work is available.
+    ///             work is available
     ///
     /// @param[in]  data  Encoded input or media bytes
     ///
@@ -358,7 +358,7 @@ struct DayScheduleOverview: View
 ///
 /// @section    Purpose
 ///     Counts planned task durations and completion by category, keeping untimed Cards and Notes
-///     distinct from tracked time.
+///     distinct from tracked time
 ///
 struct DayTimeDistribution
 {
@@ -369,7 +369,7 @@ struct DayTimeDistribution
     ///
     /// @section    Purpose
     ///     Keeps category identity and color alongside planned and completed task durations for
-    ///     read-only schedule summaries.
+    ///     read-only schedule summaries
     ///
     struct Segment: Identifiable
     {
@@ -412,7 +412,7 @@ struct DayTimeDistribution
     /// @fcn        DayTimeDistribution.durationLabel
     /// @brief      Format a duration as a compact hour-minute label
     /// @details    Rounds seconds to the nearest minute and omits zero hour or minute components for compact chart
-    ///             totals and legend entries.
+    ///             totals and legend entries
     ///
     /// @param[in]  seconds  Duration in seconds to round to a compact minute-based label
     ///
@@ -432,7 +432,7 @@ struct DayTimeDistribution
     /// @fcn        DayTimeDistribution.init
     /// @brief      Aggregate planned and completed time by tag for one day
     /// @details    Uses timed task intervals clipped to the represented calendar day, divides multi-tag time equally,
-    ///             and records overlaps as additive planned time rather than actual tracked time.
+    ///             and records overlaps as additive planned time rather than actual tracked time
     ///
     /// @param[in]  cards     Canonical card values in their current order
     /// @param[in]  labels    Label catalog used to resolve stored label IDs
@@ -463,7 +463,7 @@ struct DayTimeDistribution
         /// @fcn        DayTimeDistribution.init.resolve
         /// @brief      Resolve one schedule endpoint for the represented day
         /// @details    Anchors time-only values to the day and excludes date-only values from timed-duration
-        ///             calculations.
+        ///             calculations
         ///
         /// @param[in]  date  Represented date for the operation
         /// @param[in]  kind  Date, review, or collection kind selecting this operation's behavior

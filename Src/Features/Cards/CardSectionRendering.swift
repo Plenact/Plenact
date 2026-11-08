@@ -2,7 +2,7 @@
 // @file       CardSectionRendering.swift
 // @brief      Card detail toolbar and section rendering
 // @details    Selects retained section content and contextual controls, using the existing scroll
-//             and synchronization context.
+//             and synchronization context
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 /// CardDetailView behavior grouped separately from stored view state
 ///
 /// @section    Purpose
-///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle.
+///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle
 ///
 extension CardDetailView
 {
@@ -146,7 +146,7 @@ extension CardDetailView
     /// @fcn        CardDetailView.cardSection(_:using:)
     /// @brief      Render one configured Card detail section
     /// @details    Selects the section-specific content and actions from the current working
-    ///             snapshot, using the scroll proxy when additions need to be revealed.
+    ///             snapshot, using the scroll proxy when additions need to be revealed
     ///
     /// @param[in]  section      Card section whose retained content and controls should be rendered
     /// @param[in]  scrollProxy  Detail scroll proxy used to reveal newly requested content

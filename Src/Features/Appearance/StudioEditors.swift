@@ -2,16 +2,16 @@
 // @file       StudioEditors.swift
 // @brief      Native material editor, personal artwork library, and live previews
 // @details    Keeps edits local until Done, supports Photos and Files imports, and saves reusable looks
-//             without coupling artwork lifetime to the items displaying it.
+//             without coupling artwork lifetime to the items displaying it
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
 
 
-/// Opens the same background editor from any owner appearance form.
+/// Opens the same background editor from any owner appearance form
 /// @section Purpose
-///     Keeps per-owner editing inside the caller's existing checked Save and Cancel transaction.
+///     Keeps per-owner editing inside the caller's existing checked Save and Cancel transaction
 struct StudioSurfaceSettings: View
 {
 
@@ -27,7 +27,7 @@ struct StudioSurfaceSettings: View
     /// @fcn        StudioSurfaceSettings.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
@@ -70,9 +70,9 @@ struct StudioSurfaceSettings: View
 
 
 
-/// Edits one reusable surface with live readable content.
+/// Edits one reusable surface with live readable content
 /// @section Purpose
-///     Provides consistent color, texture, photo, and online-image controls for all surface destinations.
+///     Provides consistent color, texture, photo, and online-image controls for all surface destinations
 struct StudioSurfaceEditor: View
 {
 
@@ -102,7 +102,7 @@ struct StudioSurfaceEditor: View
 
     /// @fcn StudioSurfaceEditor.init(surface:header:italic:titleColor:textColor:)
     /// @brief Capture a local surface draft and optional look settings
-    /// @details Child cancellation preserves the owner draft, while Done passes the chosen material back.
+    /// @details Child cancellation preserves the owner draft, while Done passes the chosen material back
     /// @param[in] surface Optional owner material binding
     /// @param[in] header Optional owner header-color draft
     /// @param[in] italic Optional subtitle-style draft
@@ -131,7 +131,7 @@ struct StudioSurfaceEditor: View
 
     /// @fcn StudioSurfaceEditor.colorBinding(_:)
     /// @brief Bridge a stored RGB string to the native color picker
-    /// @details Stores opaque six-digit colors independently of display appearance.
+    /// @details Stores opaque six-digit colors independently of display appearance
     /// @param[in] path Writable color field in the draft
     /// @return (Binding<Color>) editable RGB color
     private func colorBinding(_ path: WritableKeyPath<StudioSurface, String>) -> Binding<Color>
@@ -162,7 +162,7 @@ struct StudioSurfaceEditor: View
 
     /// @fcn StudioSurfaceEditor.importImage(_:)
     /// @brief Retain a personal image in the reusable library
-    /// @details Enforces an input-size bound and stores one immutable artwork reference for future uses.
+    /// @details Enforces an input-size bound and stores one immutable artwork reference for future uses
     /// @param[in] data User-selected encoded image
     /// @return (Void) updates the draft after successful storage, otherwise presents an error
     private func importImage(_ data: Data)
@@ -199,11 +199,11 @@ struct StudioSurfaceEditor: View
 
     /// @fcn StudioSurfaceEditor.saveArtwork(name:surface:)
     /// @brief Save a named reusable look without copying its image
-    /// @details Encodes the complete library before replacing preferences and preserves optional header styling.
+    /// @details Encodes the complete library before replacing preferences and preserves optional header styling
     /// @param[in] name User-visible library name
     /// @param[in] surface Material to retain
     /// @return (Void) replaces the encoded library after successful encoding
-    /// @throws Encoding or malformed-library errors are presented by the caller.
+    /// @throws Encoding or malformed-library errors are presented by the caller
     private func saveArtwork(name: String, surface: StudioSurface) throws
     {
 
@@ -222,7 +222,7 @@ struct StudioSurfaceEditor: View
 
     /// @fcn StudioSurfaceEditor.applySurface()
     /// @brief Commit a captured look only after required provider selection tracking succeeds
-    /// @details Preserves the owner draft on failed or cancelled requests and counts favorite reuse.
+    /// @details Preserves the owner draft on failed or cancelled requests and counts favorite reuse
     /// @return (Void) starts a cancellable, checked application of the selected artwork
     private func applySurface()
     {
@@ -291,7 +291,7 @@ struct StudioSurfaceEditor: View
     /// @fcn        StudioSurfaceEditor.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
@@ -635,9 +635,9 @@ struct StudioSurfaceEditor: View
 
 
 
-/// Browses named artwork without deleting files referenced by existing content.
+/// Browses named artwork without deleting files referenced by existing content
 /// @section Purpose
-///     Reuses looks, permits renaming, and removes favorites while retaining underlying image files.
+///     Reuses looks, permits renaming, and removes favorites while retaining underlying image files
 struct StudioLibraryView: View
 {
 
@@ -657,7 +657,7 @@ struct StudioLibraryView: View
 
     /// @fcn StudioLibraryView.saveRename()
     /// @brief Update one saved look name without replacing its artwork reference
-    /// @details Ignores empty names and presents encoding failures without losing the library.
+    /// @details Ignores empty names and presents encoding failures without losing the library
     /// @return (Void) commits the renamed library entry when valid
     private func saveRename()
     {
@@ -709,7 +709,7 @@ struct StudioLibraryView: View
     /// @fcn        StudioLibraryView.body
     /// @brief      Compose the native personalization interface for this destination
     /// @details    Keeps editing state within its owning view and preserves existing behavior
-    ///             when no material override is configured. Decorative art stays below controls.
+    ///             when no material override is configured. Decorative art stays below controls
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///

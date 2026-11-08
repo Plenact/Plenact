@@ -2,15 +2,15 @@
 // @file       MigrationPreview.swift
 // @brief      Canonical content and metadata conversion with explicit partial coverage
 // @details    Supported User Data Model versions: 1.0 base and working 1.1 appearance metadata.
-//             Private journal formats 1/2/3; local preview only, without authenticated ownership or sync.
+//             Private journal formats 1/2/3; local preview only, without authenticated ownership or sync
 // --------------------------------------------------------------------------------------------------
 import CoreFoundation
 import Foundation
 
 
-/// A partial conversion plus original backup, never a complete synchronized workspace.
+/// A partial conversion plus original backup, never a complete synchronized workspace
 /// @section Purpose
-///     Make migration progress inspectable without disguising unsupported source domains.
+///     Make migration progress inspectable without disguising unsupported source domains
 struct MigrationPreview
 {
 
@@ -67,9 +67,9 @@ struct MigrationPreview
     }
 
 
-    /// Stable conversion errors retain the source backup and existing identity journal.
+    /// Stable conversion errors retain the source backup and existing identity journal
     /// @section Purpose
-    ///     Prevent defaults or partial output from disguising invalid legacy content.
+    ///     Prevent defaults or partial output from disguising invalid legacy content
     enum Failure: Error
     {
 
@@ -110,7 +110,7 @@ struct MigrationPreview
     /// @fcn MigrationPreview.labels
     /// @brief Decode the actual legacy label library and explicitly map category/label identities
     /// @details Missing source means no invented library. Unknown fields and broken categories block
-    ///          this conversion rather than being silently normalized by a source loader.
+    ///          this conversion rather than being silently normalized by a source loader
     /// @param[in] value Original optional property-list value
     /// @param[in,out] journal Stable source identity mappings
     /// @return Canonical categories followed by labels in their authored order
@@ -220,7 +220,7 @@ struct MigrationPreview
     /// @fcn MigrationPreview.prepare
     /// @brief Convert the first supported metadata domains and preserve every original source file
     /// @details Persists identity mappings before returning output. No cloud account/workspace is
-    ///          claimed; preview IDs remain explicitly local until a separate verified binding step.
+    ///          claimed; preview IDs remain explicitly local until a separate verified binding step
     /// @param[in] backup Frozen source evidence
     /// @param[in] journalURL App-private migration journal or isolated test path
     /// @return Original backup with partial canonical records, journal and coverage report
@@ -233,7 +233,7 @@ struct MigrationPreview
 
         guard backup.files.fileWrappers?["PortableRuntime"] == nil else
         {
-            // Never remigrate the normalized native projection as though it were original legacy data.
+            // Never remigrate the normalized native projection as though it were original legacy data
             throw Failure.invalidSnapshot
         }
 
@@ -255,7 +255,7 @@ struct MigrationPreview
             }
         }
 
-        // The unsaved catalog is the explicit application fallback, never a recovered user catalog.
+        // The unsaved catalog is the explicit application fallback, never a recovered user catalog
         let usesDefaultLabels = values["Plenact.LabelLibrary.v1"] == nil &&
             ["Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1", "Plenact.PlanningTemplates.v1"].contains(where: { values[$0] != nil })
         let defaultCatalog = usesDefaultLabels ? try JSONEncoder().encode(LabelLibrary.starter.includingDayAreas) : nil

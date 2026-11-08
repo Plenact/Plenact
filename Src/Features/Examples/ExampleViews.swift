@@ -2,7 +2,7 @@
 // @file       ExampleViews.swift
 // @brief      Searchable example discovery and read-only previews
 // @details    Shows authored starting points and routes selection through existing template or
-//             collection draft flows.
+//             collection draft flows
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -37,7 +37,7 @@ struct PersonalListExamplesView: View
     /// @fcn        PersonalListExamplesView.init
     /// @brief      Configure example-selection routes and initial Undo availability
     /// @details    Retains the optional week, board, and mixed-template callbacks and seeds the displayed week-Undo
-    ///             state from the caller.
+    ///             state from the caller
     ///
     /// @param[in]  onLoadExampleWeek      Optional checked callback to load the bundled example week
     /// @param[in]  onUndoExampleWeek      Optional checked callback to restore the pre-example week
@@ -430,7 +430,7 @@ struct PersonalListExamplesView: View
 ///
 /// @section    Purpose
 ///     Keeps discovery read-only and routes actual use through the checked Day template application
-///     flow.
+///     flow
 ///
 struct LibraryDaySectionExamples: View
 {
@@ -444,7 +444,7 @@ struct LibraryDaySectionExamples: View
     ///
     /// @fcn        LibraryDaySectionExamples.matches
     /// @brief      Search the bundled named-day-section examples
-    /// @details    Matches template names, headings, and member text while retaining the predefined example order.
+    /// @details    Matches template names, headings, and member text while retaining the predefined example order
     ///
     /// @param[in]  query  User-entered search text
     ///
@@ -551,7 +551,7 @@ struct LibraryDaySectionExamples: View
 ///
 /// @section    Purpose
 ///     Groups a title, explanation, and sample Lists for read-only presentation without registering
-///     a new collection.
+///     a new collection
 ///
 struct LibraryExamplePreview: Identifiable
 {
@@ -570,7 +570,7 @@ struct LibraryExamplePreview: Identifiable
 ///
 /// @section    Purpose
 ///     Renders sample Lists and importance styling in an isolated preview; applying an example
-///     remains a separate checked action.
+///     remains a separate checked action
 ///
 struct LibraryExamplePreviewView: View
 {

@@ -2,7 +2,7 @@
 // @file       CardMovement.swift
 // @brief      Canonical Card movement, ordering, and deletion transforms
 // @details    Preserves complete records and related personal marks while allocating
-//             destination-safe identities and validating boundaries.
+//             destination-safe identities and validating boundaries
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -13,7 +13,7 @@ import Foundation
 ///
 /// @section    Purpose
 ///     Carries the target List and insertion context used to move content without replacing native
-///     row identity.
+///     row identity
 ///
 struct BoardCardDropTarget: Equatable
 {
@@ -40,7 +40,7 @@ enum BoardCardMovement
     /// @brief      Move the complete canonical card to a validated insertion boundary
     /// @details    Requires unambiguous active source and destination records and rejects
     ///             stale boundaries. Validates a copied list array before committing; a nil
-    ///             boundary appends and only the card list title and position change.
+    ///             boundary appends and only the card list title and position change
     ///
     /// @param[in]     cardID        Board-local identity of the card being dragged or moved
     /// @param[in]     listID        Board-local identity of the destination list
@@ -170,7 +170,7 @@ enum BoardCardMovement
     /// @brief      Resolve a card insertion boundary from visible global-coordinate geometry
     /// @details    Rejects nonfinite points, invalid viewports, and locations outside active list
     ///             panels. Uses row midpoints, excludes the dragged card, and avoids appending past
-    ///             unmeasured trailing rows.
+    ///             unmeasured trailing rows
     ///
     /// @param[in]  cardID      Board-local identity of the card being dragged or moved
     /// @param[in]  point       Pointer location in the Board window coordinate space
@@ -362,7 +362,7 @@ enum BoardListReordering
     /// @brief      Resolve a deliberate horizontal title-area swipe to a Board edge
     /// @details    Rejects nonfinite, short, or predominantly vertical gestures. A leftward
     ///             swipe selects the last list; a rightward swipe selects the first,
-    ///             matching the content movement of ordinary horizontal scrolling.
+    ///             matching the content movement of ordinary horizontal scrolling
     ///
     /// @param[in]  translation      Completed drag translation in points
     /// @param[in]  minimumDistance  Minimum horizontal travel required to trigger a jump
@@ -437,7 +437,7 @@ enum BoardListReordering
     ///
     /// @section    Purpose
     ///     Represents the leading or trailing edge for direct List navigation and drag-related
-    ///     paging.
+    ///     paging
     ///
     enum BoardListBoundary
     {
@@ -712,7 +712,7 @@ enum BoardContentDeletion
 ///
 /// @section    Purpose
 ///     Pairs the destination List with its Board owner; legacy nil ownership denotes the active
-///     Week context.
+///     Week context
 ///
 struct CardMoveDestination: Identifiable, Hashable
 {
@@ -737,7 +737,7 @@ struct CardMoveDestination: Identifiable, Hashable
 ///
 /// @section    Purpose
 ///     Preserves hidden fields, allocates destination-safe identity, and relocates bookmarks before
-///     publishing changed owners.
+///     publishing changed owners
 ///
 enum CrossBoardCardMovement
 {
@@ -747,7 +747,7 @@ enum CrossBoardCardMovement
     /// @fcn        CrossBoardCardMovement.move
     /// @brief      Move a card between current-week and personal-owner lists
     /// @details    Validates unique source and active destination, allocates a collision-free destination card ID
-    ///             when crossing owners, and transfers the moved card's bookmark with its content.
+    ///             when crossing owners, and transfers the moved card's bookmark with its content
     ///
     /// @param[in]      card         Card or note being inspected or changed
     /// @param[in]      sourceID     Identity of the source owner
@@ -759,7 +759,7 @@ enum CrossBoardCardMovement
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
     ///             `CocoaError(.validationNumberTooLarge)`. Errors from throwing dependencies propagate unless
-    ///             handled within this operation.
+    ///             handled within this operation
     ///
     static func move(
         _ card: KanbanCard, from sourceID: UUID?, to destination: CardMoveDestination,

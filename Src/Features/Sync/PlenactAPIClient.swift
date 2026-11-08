@@ -4,7 +4,7 @@
 // @details    Defines authentication, directory, Board snapshot, and assignment payloads with
 //             version-conflict and transport errors. Stores bearer sessions in Keychain and sends
 //             explicit authenticated requests for synthetic shared-demo content; local workspace
-//             records are not uploaded implicitly.
+//             records are not uploaded implicitly
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -842,10 +842,10 @@ struct PlenactAPIClient
 
                 let card = sampleLists[listIndex].cards[cardIndex] /* Original seed card */
 
-                // Covers and bundled illustrations belong to the local example, not the demo schema.
+                // Covers and bundled illustrations belong to the local example, not the demo schema
                 sampleLists[listIndex].cards[cardIndex].coverAttachmentID = nil
                 sampleLists[listIndex].cards[cardIndex].attachments = nil
-                // Picture display depends on local artwork, which is excluded from the demo seed.
+                // Picture display depends on local artwork, which is excluded from the demo seed
                 sampleLists[listIndex].cards[cardIndex].listDisplayFormat = nil
 
                 sampleLists[listIndex].cards[cardIndex].members = card.members.map

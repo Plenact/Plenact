@@ -2,7 +2,7 @@
 // @file       TodayScrolling.swift
 // @brief      Today header fading and deliberate section settling
 // @details    Observes native scrolling and applies boundary-aware targets without publishing
-//             unnecessary content mutations.
+//             unnecessary content mutations
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -25,7 +25,7 @@ struct TodayScrollOffsetPreferenceKey: PreferenceKey
     /// @section    Purpose
     ///     Carry the latest vertical scroll offset from Today content to its observer
     ///
-    /// Latest vertical offset reported by Today scroll content.
+    /// Latest vertical offset reported by Today scroll content
     static var defaultValue: CGFloat = 0 /* Unmeasured bottom navigation height */
 
 
@@ -55,7 +55,7 @@ struct TodayScrollOffsetPreferenceKey: PreferenceKey
 ///
 /// @section    Purpose
 ///     Changes the native settling target only when a directional swipe crosses a configured
-///     section boundary; otherwise preserves normal scrolling.
+///     section boundary; otherwise preserves normal scrolling
 ///
 struct TodaySectionSnapBehavior: ScrollTargetBehavior
 {
@@ -70,7 +70,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
     /// @fcn        TodaySectionSnapBehavior.destination
     /// @brief      Choose an optional Today-section scroll destination
     /// @details    Requires a meaningful directional swipe across the perspective or shortcut boundary; returns nil
-    ///             when snapping is disabled or the gesture does not cross a boundary.
+    ///             when snapping is disabled or the gesture does not cross a boundary
     ///
     /// @param[in]  start            Starting horizontal position or original vertical scroll offset in points
     /// @param[in]  proposed         Proposed vertical scroll offset at the end of the gesture
@@ -119,7 +119,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
     /// @fcn        TodaySectionSnapBehavior.updateTarget
     /// @brief      Apply the Today-section snap to a native scroll target
     /// @details    Uses the original and proposed offsets with content bounds, replacing only the target's vertical
-    ///             origin when a snap is warranted.
+    ///             origin when a snap is warranted
     ///
     /// @param[in,out]  target   Proposed native scroll target, updated in place when the snapping rules apply
     /// @param[in]      context  Framework-supplied update context and coordinator access
@@ -152,7 +152,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
 ///
 /// @section    Purpose
 ///     Keeps the fade binding synchronized with native scroll geometry, with a coordinate-space
-///     fallback on older systems.
+///     fallback on older systems
 ///
 struct TodayScrollFadeTracking: ViewModifier
 {

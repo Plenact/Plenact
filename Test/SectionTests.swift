@@ -3,7 +3,7 @@
 // @brief      Section regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// Section regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -30,10 +30,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `.linkedCard`, `.actionDetail`, `watcher.checklists.append`. Checks
     ///             `XCTAssertEqual(owners[0].lists[0].cards.map(\.id), [0, 5, 6])`;
     ///             `XCTAssertEqual(owners[1].lists[0].cards.map(\.word), ["Existing", "--- Morning", "Breakfast",
-    ///             "---", "Walk"])`.
+    ///             "---", "Walk"])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo() throws
@@ -43,7 +43,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        PlenactBoardDocumentTests.testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo.card
         /// @brief      Prepare card for the enclosing regression test
-        /// @details    Supplies the local fixture for section Transfer Keeps Whole Block Links Bookmarks And Undo.
+        /// @details    Supplies the local fixture for section Transfer Keeps Whole Block Links Bookmarks And Undo
         ///
         /// @param[in]  id     Starting numeric card ID or owner-local content identity
         /// @param[in]  title  Display title or proposed title text
@@ -191,10 +191,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testSectionTransferShiftsDatesAcrossDSTAndRejectsInvalidMovesAtomically
     /// @brief      Verify that section Transfer Shifts Dates Across DST And Rejects Invalid Moves Atomically
     /// @details    Exercises `PlanningDate.date`, `dated.replacingLocation`, `SectionTransfer.move`. Checks
-    ///             `XCTAssertTrue(owners[0].lists[0].cards.isEmpty)`; `XCTAssertEqual(result.map(\.id), [1, 2, 3])`.
+    ///             `XCTAssertTrue(owners[0].lists[0].cards.isEmpty)`; `XCTAssertEqual(result.map(\.id), [1, 2, 3])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testSectionTransferShiftsDatesAcrossDSTAndRejectsInvalidMovesAtomically() throws
     {
@@ -272,10 +272,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `TransferConfirmationPresenter.shared.dismiss`. Checks `XCTAssertEqual(moves, 0)`;
     ///             `XCTAssertFalse(scene.windows.contains { !$0.isHidden && $0.windowLevel > .alert }, "Persistent
-    ///             Undo must not create another window")`.
+    ///             Undo must not create another window")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testSectionMoveChooserAndUndoNoticeRenderWithoutMovingAndOnlyNoticeReceivesTouches() async throws
@@ -383,10 +383,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that day Sections Keep Plain Dividers Inside Their Named Section
     /// @details    Exercises `DaySections.visible(cards).map`, `DaySections.visible`, `DaySections.owner`. Checks
     ///             `XCTAssertEqual(DaySections.visible(cards).map(\.id), [0, 1, 5, 6])`;
-    ///             `XCTAssertEqual(DaySections.owner(of: 4, in: cards)?.id, 1)`.
+    ///             `XCTAssertEqual(DaySections.owner(of: 4, in: cards)?.id, 1)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testDaySectionsKeepPlainDividersInsideTheirNamedSection() throws
     {
@@ -395,7 +395,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        PlenactBoardDocumentTests.testDaySectionsKeepPlainDividersInsideTheirNamedSection.card
         /// @brief      Prepare card for the enclosing regression test
-        /// @details    Supplies the local fixture for day Sections Keep Plain Dividers Inside Their Named Section.
+        /// @details    Supplies the local fixture for day Sections Keep Plain Dividers Inside Their Named Section
         ///
         /// @param[in]  id     Starting numeric card ID or owner-local content identity
         /// @param[in]  title  Display title or proposed title text
@@ -461,10 +461,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that day Section Movement Retains The Whole Block And Its Metadata
     /// @details    Exercises `DaySections.moved`, `moved.map`, `DaySections.moved(cards, sectionID: 7, offset:
     ///             -1).map`. Checks `XCTAssertEqual(moved.map(\.id), [0, 5, 6, 1, 2, 3, 4, 7, 8])`;
-    ///             `XCTAssertEqual(DaySections.moved(moved, sectionID: 1, offset: -1), cards)`.
+    ///             `XCTAssertEqual(DaySections.moved(moved, sectionID: 1, offset: -1), cards)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testDaySectionMovementRetainsTheWholeBlockAndItsMetadata() throws
     {
@@ -473,7 +473,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        PlenactBoardDocumentTests.testDaySectionMovementRetainsTheWholeBlockAndItsMetadata.card
         /// @brief      Prepare card for the enclosing regression test
-        /// @details    Supplies the local fixture for day Section Movement Retains The Whole Block And Its Metadata.
+        /// @details    Supplies the local fixture for day Section Movement Retains The Whole Block And Its Metadata
         ///
         /// @param[in]  id     Starting numeric card ID or owner-local content identity
         /// @param[in]  title  Display title or proposed title text
@@ -521,10 +521,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `library.templates.removeAll`, `PlanningRoutineLibrary.sectionExamples.contains`,
     ///             `PlanningRoutineStore.load`. Checks
     ///             `XCTAssertEqual(Array(upgraded.templates.prefix(original.count)), original)`;
-    ///             `XCTAssertEqual(upgraded.defaultWeekID, library.defaultWeekID)`.
+    ///             `XCTAssertEqual(upgraded.defaultWeekID, library.defaultWeekID)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testSectionExampleUpgradePreservesExistingRoutinesAndStoredBytes() throws
     {
@@ -610,10 +610,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDaySectionRowsRenderWithLargeTextAndWithoutEditingOnAppearance
     /// @brief      Verify that day Section Rows Render With Large Text And Without Editing On Appearance
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(writes, 0)`.
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertEqual(writes, 0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDaySectionRowsRenderWithLargeTextAndWithoutEditingOnAppearance() async throws
@@ -710,10 +710,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `list.makeItem`, `NewCardAppearanceDefaults.headerPalette.contains`,
     ///             `NewCardAppearanceDefaults.backgroundPalette.contains`. Checks
     ///             `XCTAssertEqual(card.appearance?.background != nil, headers)`;
-    ///             `XCTAssertEqual(card.appearance?.cardBackground != nil, backgrounds)`.
+    ///             `XCTAssertEqual(card.appearance?.cardBackground != nil, backgrounds)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testRandomCardCreationColorsAreIndependentAndExcludeNotesAndDividers() throws
     {
@@ -790,10 +790,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that focus Shape Preserves Sections Stable Ties And All Matches After Sorting
     /// @details    Exercises `preferences.todayFocusEntries`, `entries.map`, `preferences.todayFocusItems(in:
     ///             cards).map`. Checks `XCTAssertEqual(entries.map(\.id), [1, 3, 4, 2, 7, 6, 8])`;
-    ///             `XCTAssertEqual(entries[1].heading, "Looking forward to")`.
+    ///             `XCTAssertEqual(entries[1].heading, "Looking forward to")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFocusShapePreservesSectionsStableTiesAndAllMatchesAfterSorting() throws
     {
@@ -803,7 +803,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testFocusShapePreservesSectionsStableTiesAndAllMatchesAfterSorting.item
         /// @brief      Prepare item for the enclosing regression test
         /// @details    Supplies the local fixture for focus Shape Preserves Sections Stable Ties And All Matches
-        ///             After Sorting. Uses `time.map`.
+        ///             After Sorting. Uses `time.map`
         ///
         /// @param[in]  id     Starting numeric card ID or owner-local content identity
         /// @param[in]  title  Display title or proposed title text
@@ -876,7 +876,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion
     /// @brief      Verify that today Section Snap Only Crosses Boundaries And Respects Reduced Motion
     /// @details    Exercises `TodaySectionSnapBehavior.destination`. Checks `XCTAssertEqual(snap(0, 450), 800)`;
-    ///             `XCTAssertEqual(snap(800, 650), 0)`.
+    ///             `XCTAssertEqual(snap(800, 650), 0)`
     ///
     /// @return     (Void) no return value
     ///
@@ -888,7 +888,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion.snap
         /// @brief      Prepare snap for the enclosing regression test
         /// @details    Supplies the local fixture for today Section Snap Only Crosses Boundaries And Respects Reduced
-        ///             Motion. Uses `TodaySectionSnapBehavior.destination`.
+        ///             Motion. Uses `TodaySectionSnapBehavior.destination`
         ///
         /// @param[in]  start     Starting horizontal position or original vertical scroll offset in points
         /// @param[in]  proposed  Proposed vertical scroll offset at the end of the gesture
@@ -927,7 +927,7 @@ extension PlenactBoardDocumentTests
     ///             "morning").map`, `LibraryDaySectionExamples.matches(query: "tools teardown").map`. Checks
     ///             `XCTAssertEqual(LibraryDaySectionExamples.matches(query: "day sections").count, 3)`;
     ///             `XCTAssertEqual(LibraryDaySectionExamples.matches(query: "morning").map(\.name), ["A day in
-    ///             chapters"])`.
+    ///             chapters"])`
     ///
     /// @return     (Void) no return value
     ///
@@ -948,7 +948,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that gallery Groups Preserve Item Order And Divider Identity
     /// @details    Exercises `list.makeItem`, `BoardGalleryGroup.groups`, `groups.flatMap(\.cards).map`. Checks
     ///             `XCTAssertEqual(groups.flatMap(\.cards).map(\.id), [1, 3, 4, 6])`;
-    ///             `XCTAssertEqual(groups.compactMap(\.divider).map(\.id), [2, 5])`.
+    ///             `XCTAssertEqual(groups.compactMap(\.divider).map(\.id), [2, 5])`
     ///
     /// @return     (Void) no return value
     ///
@@ -990,10 +990,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testNamedDividersPreserveIdentityAndLegacySeparators
     /// @brief      Verify that named Dividers Preserve Identity And Legacy Separators
     /// @details    Exercises `list.makeItem`. Checks `XCTAssertTrue(named.isSectionDivider)`;
-    ///             `XCTAssertEqual(named.word, "Ideas")`.
+    ///             `XCTAssertEqual(named.word, "Ideas")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testNamedDividersPreserveIdentityAndLegacySeparators() throws
     {
@@ -1041,10 +1041,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDisplayFormatsOverrideLegacyDividersWithoutChangingRetainedContent
     /// @brief      Verify that display Formats Override Legacy Dividers Without Changing Retained Content
     /// @details    Exercises `JSONSerialization.jsonObject`, `.manual`, `decoded.replacingLocation`. Checks
-    ///             `XCTAssertEqual(legacy.displayFormat, .divider)`; `XCTAssertNil(legacyJSON["listDisplayFormat"])`.
+    ///             `XCTAssertEqual(legacy.displayFormat, .divider)`; `XCTAssertNil(legacyJSON["listDisplayFormat"])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testDisplayFormatsOverrideLegacyDividersWithoutChangingRetainedContent() throws
     {
@@ -1123,7 +1123,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testKeyboardNeighborsStayWithinActiveListAndSkipDividers
     /// @brief      Verify that keyboard Neighbors Stay Within Active List And Skip Dividers
     /// @details    Exercises `CardKeyboardNeighbors.resolve`. Checks `XCTAssertNil(CardKeyboardNeighbors.resolve(a,
-    ///             in: lists).previous)`; `XCTAssertEqual(CardKeyboardNeighbors.resolve(a, in: lists).next, b)`.
+    ///             in: lists).previous)`; `XCTAssertEqual(CardKeyboardNeighbors.resolve(a, in: lists).next, b)`
     ///
     /// @return     (Void) no return value
     ///
@@ -1155,10 +1155,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that card Section Layout Persists Without Removing Hidden Content
     /// @details    Exercises `JSONSerialization.jsonObject`, `legacy.removeValue`, `JSONSerialization.data`. Checks
     ///             `XCTAssertEqual(decoded.sectionLayout, layout)`; `XCTAssertEqual(decoded.sectionLayout?.sections,
-    ///             [.activity, .quickActions, .media, .details])`.
+    ///             [.activity, .quickActions, .media, .details])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCardSectionLayoutPersistsWithoutRemovingHiddenContent() throws
     {
@@ -1203,7 +1203,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testListNoteDefaultAppliesOnlyToNewNondividerItems
     /// @brief      Verify that list Note Default Applies Only To New Nondivider Items
     /// @details    Exercises `list.makeItem`, `card.checklists.map`, `legacyCard.checklists.map`. Checks
-    ///             `XCTAssertEqual(card.presentation, .card)`; `XCTAssertEqual(card.word, legacyCard.word)`.
+    ///             `XCTAssertEqual(card.presentation, .card)`; `XCTAssertEqual(card.word, legacyCard.word)`
     ///
     /// @return     (Void) no return value
     ///
@@ -1279,10 +1279,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testDividerMovementPreservesRecordsWithinAndBetweenLists
     /// @brief      Verify that divider Movement Preserves Records Within And Between Lists
     /// @details    Exercises `BoardCardMovement.move`. Checks `XCTAssertTrue(try BoardCardMovement.move(divider.id,
-    ///             to: 10, in: &lists))`; `XCTAssertEqual(lists[0].cards, [card, divider])`.
+    ///             to: 10, in: &lists))`; `XCTAssertEqual(lists[0].cards, [card, divider])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testDividerMovementPreservesRecordsWithinAndBetweenLists() throws
     {

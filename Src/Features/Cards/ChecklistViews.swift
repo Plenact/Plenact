@@ -2,7 +2,7 @@
 // @file       ChecklistViews.swift
 // @brief      Typed checklist action presentation and editing
 // @details    Coordinates completion, nested details, linked destinations, text entry, and
-//             action-type drafts through owner callbacks.
+//             action-type drafts through owner callbacks
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -536,7 +536,7 @@ struct ChecklistBlock: View
     /// @brief      Change a checklist action type while retaining prior content
     /// @details    Reuses retained detail, Card, or URL values where available. Requests a type
     ///             editor when a destination is missing and opens action detail only after the
-    ///             owner accepts the change.
+    ///             owner accepts the change
     ///
     /// @param[in]  type  Requested checklist action type
     /// @param[in]  item  Checklist item whose active type is changing; retained inactive content
@@ -606,7 +606,7 @@ struct ChecklistBlock: View
     /// @fcn        ChecklistBlock.submitNewItems
     /// @brief      Submit nonempty checklist entry text
     /// @details    Uses the shared multiline parser to reject blank input, then invokes the add callback and clears
-    ///             the editor text.
+    ///             the editor text
     ///
     /// @return     (Void) no return value
     ///
@@ -952,7 +952,7 @@ struct ChecklistItemRow: View
     let onFocusHandled: () -> Void        /* The action invoked when the text field focus has been handled */
 
     @State private var horizontalOffset:   CGFloat = 0  /* Current swipe translation */
-    // UIKit reports focus through the binding; no SwiftUI .focused modifier owns this editor.
+    // UIKit reports focus through the binding; no SwiftUI .focused modifier owns this editor
     @State private var isTextFocused: Bool = false      /* Native editor focus state */
 
 
@@ -1226,7 +1226,7 @@ struct ChecklistItemRow: View
 ///
 /// @section    Purpose
 ///     Selects existing writing on initial entry, then permits ordinary caret changes and delegates
-///     focus and submission through bindings.
+///     focus and submission through bindings
 ///
 struct ChecklistTextField: UIViewRepresentable
 {
@@ -1240,7 +1240,7 @@ struct ChecklistTextField: UIViewRepresentable
     /// @fcn        ChecklistTextField.makeCoordinator
     /// @brief      Create the native bridge coordinator
     /// @details    Creates the coordinator retained by SwiftUI for ChecklistTextField so its delegate or observation
-    ///             state can span view updates.
+    ///             state can span view updates
     ///
     /// @return     (Coordinator) retained native bridge coordinator
     ///
@@ -1254,7 +1254,7 @@ struct ChecklistTextField: UIViewRepresentable
     /// @fcn        ChecklistTextField.makeUIView
     /// @brief      Create the native single-line checklist editor
     /// @details    Configures dynamic type, delegate callbacks, the Done return key, and horizontal layout priorities
-    ///             appropriate for an editable row.
+    ///             appropriate for an editable row
     ///
     /// @param[in]  context  Framework-supplied update context and coordinator access
     ///
@@ -1286,7 +1286,7 @@ struct ChecklistTextField: UIViewRepresentable
     ///
     /// @fcn        ChecklistTextField.updateUIView
     /// @brief      Synchronize checklist text and requested focus
-    /// @details    Updates changed text and makes or resigns first responder according to the parent focus value.
+    /// @details    Updates changed text and makes or resigns first responder according to the parent focus value
     ///
     /// @param[in]  field    Native checklist text field delivering the delegate callback
     /// @param[in]  context  Framework-supplied update context and coordinator access
@@ -1323,7 +1323,7 @@ struct ChecklistTextField: UIViewRepresentable
     /// @fcn        ChecklistTextField.sizeThatFits
     /// @brief      Measure a checklist editor at the proposed width
     /// @details    Returns nil without a width proposal and otherwise uses its intrinsic height with a
-    ///             twenty-four-point minimum.
+    ///             twenty-four-point minimum
     ///
     /// @param[in]  proposal  Parent layout proposal, including an optional available width
     /// @param[in]  uiView    Native editor whose fitting size is being measured
@@ -1348,7 +1348,7 @@ struct ChecklistTextField: UIViewRepresentable
     ///
     /// @section    Purpose
     ///     Publishes native text and focus changes through the representable's latest bindings and
-    ///     supports initial selection behavior.
+    ///     supports initial selection behavior
     ///
     class Coordinator: NSObject, UITextFieldDelegate
     {
@@ -1360,7 +1360,7 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         /// @fcn        ChecklistTextField.Coordinator.init
         /// @brief      Retain the checklist representable for text-field callbacks
-        /// @details    Stores the parent bindings used to publish native text and focus changes.
+        /// @details    Stores the parent bindings used to publish native text and focus changes
         ///
         /// @param[in]  parent  Representable value supplying the delegate's current bindings and callbacks
         ///
@@ -1377,7 +1377,7 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         /// @fcn        ChecklistTextField.Coordinator.changed
         /// @brief      Copy native checklist text into its SwiftUI binding
-        /// @details    Normalizes a nil text-field value to an empty string on editing changes.
+        /// @details    Normalizes a nil text-field value to an empty string on editing changes
         ///
         /// @param[in]  field  Native checklist text field delivering the delegate callback
         ///
@@ -1394,7 +1394,7 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         /// @fcn        ChecklistTextField.Coordinator.textFieldDidBeginEditing
         /// @brief      Place the insertion cursor after the existing checklist text when editing begins
-        /// @details    Marks the parent as focused and defers a collapsed end selection until native focus settles.
+        /// @details    Marks the parent as focused and defers a collapsed end selection until native focus settles
         ///
         /// @param[in]  field  Native checklist text field delivering the delegate callback
         ///
@@ -1425,7 +1425,7 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         /// @fcn        ChecklistTextField.Coordinator.textFieldDidEndEditing
         /// @brief      Clear the checklist row's focus state
-        /// @details    Updates the parent binding after native editing ends.
+        /// @details    Updates the parent binding after native editing ends
         ///
         /// @param[in]  field  Native checklist text field delivering the delegate callback
         ///
@@ -1443,7 +1443,7 @@ struct ChecklistTextField: UIViewRepresentable
         /// @fcn        ChecklistTextField.Coordinator.textFieldShouldReturn
         /// @brief      Finish checklist editing from the return key
         /// @details    Ends native focus through the field's return-key handling and returns the delegate's
-        ///             acceptance result.
+        ///             acceptance result
         ///
         /// @param[in]  field  Native checklist text field delivering the delegate callback
         ///

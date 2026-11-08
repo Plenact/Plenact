@@ -2,14 +2,14 @@
 // @file       MigrationCalendarTemplates.swift
 // @brief      Owner-qualified calendar and reusable-template metadata conversion
 // @details    Supported User Data Model versions: 1.0. Local migration preview only. Preserves
-//             explicit source mappings and ordering without generating Weeks, routines or accounts.
+//             explicit source mappings and ordering without generating Weeks, routines or accounts
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Converts calendar indexes, dated Weeks and template libraries after owned content is mapped.
+/// Converts calendar indexes, dated Weeks and template libraries after owned content is mapped
 /// @section Purpose
-///     Preserve the scheduling structure around content without inferring mappings from titles.
+///     Preserve the scheduling structure around content without inferring mappings from titles
 @MainActor
 enum MigrationCalendarTemplates
 {
@@ -72,7 +72,7 @@ enum MigrationCalendarTemplates
 
     /// @fcn MigrationCalendarTemplates.convert
     /// @brief Convert actual saved calendar/template metadata using established content identities
-    /// @details No loaders, timezone fallback, default-template selection or account allocation runs.
+    /// @details No loaders, timezone fallback, default-template selection or account allocation runs
     /// @param[in] values Frozen source preferences already guarded by the content census
     /// @param[in] context Candidate content mappings; caller discards the entire slice on failure
     /// @param[in] originalTimeZoneID User-confirmed original live-calendar zone
@@ -218,7 +218,7 @@ enum MigrationCalendarTemplates
                     throw MigrationContentValues.Failure.invalid("template_collection_mapping")
                 }
 
-                // Validate the stored zone even for a routine containing no timed Cards.
+                // Validate the stored zone even for a routine containing no timed Cards
                 let zoneContext = MigrationContentValues(journal: context.journal, timeZoneID: template.timeZoneID, mediaDigests: [:])
 
                 _ = try MigrationContentDates.convert(1_600_000_000, kind: "date", context: zoneContext, path: "template-zone")

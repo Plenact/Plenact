@@ -1,16 +1,16 @@
 // --------------------------------------------------------------------------------------------------
 // @file       ShortcutEditedExportTests.swift
 // @brief      Owner-qualified Today shortcut edits, rollover and portable recovery
-// @details    Uses isolated synthetic preferences/media only. No personal archives or live stores.
+// @details    Uses isolated synthetic preferences/media only. No personal archives or live stores
 // --------------------------------------------------------------------------------------------------
 import Foundation
 import XCTest
 @testable import Plenact
 
 
-/// Exercises the shortcut adapter through complete frozen export and fresh installation.
+/// Exercises the shortcut adapter through complete frozen export and fresh installation
 /// @section Purpose
-///     Preserve authored order without guessing owners or silently normalizing invalid references.
+///     Preserve authored order without guessing owners or silently normalizing invalid references
 @MainActor
 extension MigrationStudioTests
 {

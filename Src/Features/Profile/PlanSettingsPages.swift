@@ -2,14 +2,14 @@
 // @file       PlanSettingsPages.swift
 // @brief      Focused Plan Settings destinations sharing one parent-owned preference draft
 // @details    Keeps ordinary preference pages short without constraining accessibility scrolling.
-//             Studio, reminders, templates and shortcuts retain independent editing transactions.
+//             Studio, reminders, templates and shortcuts retain independent editing transactions
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 
 
-/// Identifies the compact directory and its focused preference pages.
+/// Identifies the compact directory and its focused preference pages
 /// @section Purpose
-///     Keep visible navigation names, order and accessibility identifiers consistent.
+///     Keep visible navigation names, order and accessibility identifiers consistent
 enum PlanSettingsPage: String, CaseIterable, Identifiable
 {
 
@@ -60,9 +60,9 @@ enum PlanSettingsPage: String, CaseIterable, Identifiable
 }
 
 
-/// Matches a sheet-backed settings editor to the directory's disclosure rows.
+/// Matches a sheet-backed settings editor to the directory's disclosure rows
 /// @section Purpose
-///     Preserve the reminder editor's existing independent Save and Cancel controls.
+///     Preserve the reminder editor's existing independent Save and Cancel controls
 struct PlanSettingsMenuRow: View
 {
 
@@ -94,9 +94,9 @@ struct PlanSettingsMenuRow: View
 }
 
 
-/// Renders a single preference module without owning or saving another draft.
+/// Renders a single preference module without owning or saving another draft
 /// @section Purpose
-///     Back retains the parent draft; Save publishes it once and closes the settings flow.
+///     Back retains the parent draft; Save publishes it once and closes the settings flow
 struct PlanSettingsModulePage: View
 {
 

@@ -4,7 +4,7 @@
 // @details    Defines dated review periods and objective status or progress, derives intersecting
 //             weekly context, and validates versioned storage. Presents baseline-backed reflection
 //             drafts with explicit saves and completion rather than changing workspace content
-//             during browsing.
+//             during browsing
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Distinguishes active, achieved, paused, and released objectives without deleting their
-///     reflection history.
+///     reflection history
 ///
 enum ObjectiveStatus: String, Codable, CaseIterable, Identifiable
 {
@@ -35,7 +35,7 @@ enum ObjectiveStatus: String, Codable, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Keeps stable identity, status, progress writing, and a proposed next step within a periodic
-///     review.
+///     review
 ///
 struct ReviewObjective: Codable, Equatable, Identifiable
 {
@@ -55,7 +55,7 @@ struct ReviewObjective: Codable, Equatable, Identifiable
 ///
 /// @section    Purpose
 ///     Retains local date bounds, reflections, starting and current objectives, priorities, and
-///     completion progress with calendar context.
+///     completion progress with calendar context
 ///
 struct PeriodicReviewRecord: Codable, Equatable, Identifiable
 {
@@ -82,7 +82,7 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
     /// @fcn        PeriodicReviewRecord.init
     /// @brief      Initialize a custom review period and prior context
     /// @details    Stores the requested title and calendar-day bounds and carries the supplied previous review into
-    ///             the new review's setup.
+    ///             the new review's setup
     ///
     /// @param[in]  title     Display title or proposed title text
     /// @param[in]  start     First date included in the proposed review period
@@ -117,7 +117,7 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
     ///
     /// @fcn        PeriodicReviewRecord.weeks
     /// @brief      Find weekly reviews intersecting this review period
-    /// @details    Filters retained weekly records using the custom review's date range.
+    /// @details    Filters retained weekly records using the custom review's date range
     ///
     /// @param[in]  document  Retained document containing the operation's current workspace records
     ///
@@ -152,7 +152,7 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
 ///
 /// @section    Purpose
 ///     Checks period invariants and versioned documents and compares saved baselines before
-///     replacing retained records.
+///     replacing retained records
 ///
 @MainActor
 enum PeriodicReviewStore
@@ -166,7 +166,7 @@ enum PeriodicReviewStore
     /// Wraps periodic review records in a versioned document
     ///
     /// @section    Purpose
-    ///     Retains keyed review snapshots and schema version separately from editor state.
+    ///     Retains keyed review snapshots and schema version separately from editor state
     ///
     struct Document: Codable, Equatable
     {
@@ -180,13 +180,13 @@ enum PeriodicReviewStore
     ///
     /// @fcn        PeriodicReviewStore.validate
     /// @brief      Check a periodic review's persisted invariants
-    /// @details    Rejects unsupported or invalid record content before it can be accepted into the review store.
+    /// @details    Rejects unsupported or invalid record content before it can be accepted into the review store
     ///
     /// @param[in]  record  Retained review record to inspect or load
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `DailyPlanStore.Failure.corrupt`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     static func validate(_ record: PeriodicReviewRecord) throws
     {
@@ -228,13 +228,13 @@ enum PeriodicReviewStore
     ///
     /// @fcn        PeriodicReviewStore.load
     /// @brief      Read and validate the periodic-review document
-    /// @details    Uses an empty document for missing storage and surfaces decoding or record validation failures.
+    /// @details    Uses an empty document for missing storage and surfaces decoding or record validation failures
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     (Document) validated periodic-review document, or an empty document for absent storage
     /// @throws     Explicit failures include `DailyPlanStore.Failure.corrupt`, `DailyPlanStore.Failure.unsupported`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func load(from defaults: UserDefaults = .standard) throws -> Document
     {
@@ -274,7 +274,7 @@ enum PeriodicReviewStore
     /// @fcn        PeriodicReviewStore.previous
     /// @brief      Find the most recent review preceding a period
     /// @details    Searches the supplied document by its period keys and returns nil when no earlier review
-    ///             qualifies.
+    ///             qualifies
     ///
     /// @param[in]  startKey  Local period-start key used for comparison
     /// @param[in]  document  Retained document containing the operation's current workspace records
@@ -304,7 +304,7 @@ enum PeriodicReviewStore
     ///
     /// @fcn        PeriodicReviewStore.save
     /// @brief      Persist a periodic-review draft with conflict detection
-    /// @details    Checks the expected baseline and validates the record before encoding the updated document.
+    /// @details    Checks the expected baseline and validates the record before encoding the updated document
     ///
     /// @param[in]  draft     Editable value proposed for persistence
     /// @param[in]  baseline  Expected retained value used to detect a conflicting edit
@@ -312,7 +312,7 @@ enum PeriodicReviewStore
     ///
     /// @return     (PeriodicReviewRecord) saved periodic-review record after validation and baseline checks
     /// @throws     Explicit failures include `DailyPlanStore.Failure.conflict`, `DailyPlanStore.Failure.write`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func save(
         _ draft: PeriodicReviewRecord, replacing baseline: PeriodicReviewRecord?, to defaults: UserDefaults = .standard
@@ -363,7 +363,7 @@ enum PeriodicReviewStore
 ///
 /// @section    Purpose
 ///     Loads weekly context and retained records, edits objectives and reflections, and preserves
-///     the draft when checked saving fails.
+///     the draft when checked saving fails
 ///
 struct PeriodicReviewView: View
 {
@@ -393,7 +393,7 @@ struct PeriodicReviewView: View
     /// @fcn        PeriodicReviewView.init
     /// @brief      Seed custom review setup and optional existing-review selection
     /// @details    Retains calendar, preferences, and the requested review identity while initializing the proposed
-    ///             range from the month's start through the reference date.
+    ///             range from the month's start through the reference date
     ///
     /// @param[in]  date             Represented date for the operation
     /// @param[in]  calendar         Calendar supplying local-day, time-zone, and week-boundary rules
@@ -427,7 +427,7 @@ struct PeriodicReviewView: View
     ///
     /// @fcn        PeriodicReviewView.load
     /// @brief      Restore the selected periodic review or initial setup
-    /// @details    Loads retained review data and sets the working draft and baseline used by the editor.
+    /// @details    Loads retained review data and sets the working draft and baseline used by the editor
     ///
     /// @return     (Void) no return value
     ///
@@ -467,7 +467,7 @@ struct PeriodicReviewView: View
     ///
     /// @fcn        PeriodicReviewView.begin
     /// @brief      Create the draft for the chosen review period
-    /// @details    Uses the user's title and date bounds together with the preceding review context.
+    /// @details    Uses the user's title and date bounds together with the preceding review context
     ///
     /// @return     (Void) no return value
     ///
@@ -487,7 +487,7 @@ struct PeriodicReviewView: View
     ///
     /// @fcn        PeriodicReviewView.text
     /// @brief      Bind a periodic-review text field
-    /// @details    Provides a read-write binding into the draft using the supplied key path.
+    /// @details    Provides a read-write binding into the draft using the supplied key path
     ///
     /// @param[in]  path  Stable hierarchy path or writable field key path used by the operation
     ///
@@ -511,7 +511,7 @@ struct PeriodicReviewView: View
     ///
     /// @fcn        PeriodicReviewView.addObjective
     /// @brief      Append an editable objective to the review
-    /// @details    Creates a new objective in the working draft for the user to describe before saving.
+    /// @details    Creates a new objective in the working draft for the user to describe before saving
     ///
     /// @return     (Void) no return value
     ///
@@ -536,7 +536,7 @@ struct PeriodicReviewView: View
     /// @fcn        PeriodicReviewView.save
     /// @brief      Save periodic review progress and optionally advance
     /// @details    Uses the checked store path and retains the current draft with error feedback when persistence is
-    ///             rejected.
+    ///             rejected
     ///
     /// @param[in]  advance  Whether an accepted save should advance the guided review flow
     ///
@@ -591,7 +591,7 @@ struct PeriodicReviewView: View
     ///
     /// @fcn        PeriodicReviewView.objective
     /// @brief      Bind an objective by its stable identity
-    /// @details    Looks up the objective within the editable draft so changes are applied to the intended record.
+    /// @details    Looks up the objective within the editable draft so changes are applied to the intended record
     ///
     /// @param[in]  id  Stable draft or objective identity
     ///

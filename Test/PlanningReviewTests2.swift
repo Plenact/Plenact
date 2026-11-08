@@ -3,7 +3,7 @@
 // @brief      Planning Review regression tests2
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// PlanningReview regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -27,7 +27,7 @@ extension PlenactBoardDocumentTests
     ///
     /// @fcn        PlenactBoardDocumentTests.testTodayInitialTaskFocusSkipsCompletedAndNonTaskFormatsWithoutReordering
     /// @brief      Verify that today Initial Task Focus Skips Completed And Non Task Formats Without Reordering
-    /// @details    Checks `XCTAssertEqual(list.firstUncheckedTaskID, 5)`; `XCTAssertEqual(list.cards, cards)`.
+    /// @details    Checks `XCTAssertEqual(list.firstUncheckedTaskID, 5)`; `XCTAssertEqual(list.cards, cards)`
     ///
     /// @return     (Void) no return value
     ///
@@ -71,7 +71,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Start naming a new Board list immediately and advance to its subtitle
     /// @details    Mounts the new-list editor, checks native first-responder and full-title selection, types a
     ///             replacement name, and invokes the keyboard return delegate. Focus changes must not call Save
-    ///             or mutate the supplied list, and the title's return key must be labeled Next.
+    ///             or mutate the supplied list, and the title's return key must be labeled Next
     ///
     /// @return     (Void) no return value
     /// @throws     XCTest setup failures or cancelled fixture delays
@@ -108,7 +108,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        testNewBoardListEditorSelectsTitleAndNextFocusesSubtitle.descendants
         /// @brief      Collect the native descendants of the hosted editor
         /// @details    Includes the supplied view so callers can find both single-line fields and the multiline
-        ///             subtitle editor without relying on private SwiftUI container classes.
+        ///             subtitle editor without relying on private SwiftUI container classes
         ///
         /// @param[in]  view  Native subtree to inspect
         ///
@@ -179,7 +179,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testStandardBoardHasEqualFifteenPointNeighborPreviews
     /// @brief      Verify that standard Board Has Equal Fifteen Point Neighbor Previews
     /// @details    Exercises `BoardPresentation.standard.columnWidth`. Checks `XCTAssertEqual(sideInset - 17,
-    ///             15)`; `XCTAssertEqual(width + 2 * sideInset, viewport)`.
+    ///             15)`; `XCTAssertEqual(width + 2 * sideInset, viewport)`
     ///
     /// @return     (Void) no return value
     ///

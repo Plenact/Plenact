@@ -2,14 +2,14 @@
 // @file       MigrationContentNested.swift
 // @brief      Lossless checklist, activity, attachment, history and appearance conversion
 // @details    Supported User Data Model versions: 1.0. Partial, local-only migration preview.
-//             Original source bytes remain preserved; no cloud ownership or synchronization is implied.
+//             Original source bytes remain preserved; no cloud ownership or synchronization is implied
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Explicitly maps nested native values; unknown source fields are rejected before native decoding.
+/// Explicitly maps nested native values; unknown source fields are rejected before native decoding
 /// @section Purpose
-///     Preserve inactive retained content, attribution and media/history evidence.
+///     Preserve inactive retained content, attribution and media/history evidence
 extension MigrationContentValues
 {
 

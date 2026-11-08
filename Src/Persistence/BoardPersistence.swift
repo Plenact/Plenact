@@ -2,7 +2,7 @@
 // @file       BoardPersistence.swift
 // @brief      Checked local Board snapshot storage
 // @details    Loads compatible retained content and coordinates save boundaries without embedding
-//             presentation preferences in the Board document.
+//             presentation preferences in the Board document
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -20,10 +20,10 @@ enum KanbanBoardPersistence
 {
 
 
-    /// Versioned storage key for the serialized Board snapshot.
+    /// Versioned storage key for the serialized Board snapshot
     private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */
 
-    /// Serial queue used for Board snapshot I/O.
+    /// Serial queue used for Board snapshot I/O
     private static let queue = DispatchQueue(
         label: "Plenact.Board.persistence", qos: .userInitiated) /* Serial worker for ordered Board persistence */
 
@@ -32,7 +32,7 @@ enum KanbanBoardPersistence
     /// @fcn        KanbanBoardPersistence.waitForPendingSaves
     /// @brief      Establish a read-only source-export boundary behind earlier Board writes
     /// @details    Supports User Data Model 1.0 migration preparation. Must run on the main actor,
-    ///             outside the persistence queue; it neither enqueues a save nor supplies examples.
+    ///             outside the persistence queue; it neither enqueues a save nor supplies examples
     /// @return     Void after all previously queued persistence work finishes
     ///
     @MainActor
@@ -42,7 +42,7 @@ enum KanbanBoardPersistence
         queue.sync
         {
 
-            // Waiting behind earlier saves does not enqueue a write.
+            // Waiting behind earlier saves does not enqueue a write
         }
     }
 
@@ -192,7 +192,7 @@ enum KanbanBoardPersistence
         let activity  = DatabaseActivity.shared            /* Shared persistence progress and failure reporter */
         let operation = activity.begin("Saving Board...")  /* Progress identity for the queued Board save      */
 
-        // A serial queue preserves snapshot order even when edits arrive faster than encoding.
+        // A serial queue preserves snapshot order even when edits arrive faster than encoding
         queue.async
         {
 

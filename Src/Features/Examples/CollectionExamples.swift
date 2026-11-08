@@ -2,7 +2,7 @@
 // @file       CollectionExamples.swift
 // @brief      Offline personal List and Board example drafts
 // @details    Constructs mixed-format synthetic content with independent identities and leaves
-//             publication to an explicit checked save.
+//             publication to an explicit checked save
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -283,7 +283,7 @@ enum PersonalListExample: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Returns synthetic unsaved collection drafts without writing collections or personal
-///     preference storage.
+///     preference storage
 ///
 enum PersonalBoardExample: String, CaseIterable, Identifiable
 {
@@ -432,7 +432,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
     /// @fcn        PersonalBoardExample.makeCollection
     /// @brief      Instantiate a personal board example
     /// @details    Uses the supplied date and calendar for dated content and avoids title collisions with existing
-    ///             collections.
+    ///             collections
     ///
     /// @param[in]  existingTitles  Collection titles to avoid when choosing a new name
     /// @param[in]  now             Reference time used instead of an implicit clock read
@@ -606,7 +606,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
             return list
         }
 
-        // Internal references stay in the draft's own identity space, including across lists.
+        // Internal references stay in the draft's own identity space, including across lists
         for listIndex in board.lists.indices
         {
 
@@ -667,7 +667,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Provides authored planning, exploration, and project examples without saving a collection
-///     until the user accepts the draft.
+///     until the user accepts the draft
 ///
 enum MixedListTemplate: String, CaseIterable, Identifiable
 {
@@ -778,7 +778,7 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
     /// @fcn        MixedListTemplate.makeCollection
     /// @brief      Instantiate the mixed-presentation list template
     /// @details    Creates a fresh collection whose title avoids existing names and whose items retain the template's
-    ///             intended presentation.
+    ///             intended presentation
     ///
     /// @param[in]  existingTitles  Collection titles to avoid when choosing a new name
     ///
@@ -830,7 +830,7 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Allocates an available title and copies sample content without replacing the active calendar
-///     Week.
+///     Week
 ///
 extension PersonalCollection
 {
@@ -840,7 +840,7 @@ extension PersonalCollection
     /// @fcn        PersonalCollection.exampleWeek
     /// @brief      Create a personal collection from the example week
     /// @details    Uses an available title and the example week's lists rather than replacing the active planning
-    ///             week.
+    ///             week
     ///
     /// @param[in]  existingTitles  Collection titles to avoid when choosing a new name
     ///

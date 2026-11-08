@@ -2,7 +2,7 @@
 // @file       SectionViews.swift
 // @brief      Named divider headings and section presentation
 // @details    Renders collapse controls and colored membership rails without changing canonical
-//             List order.
+//             List order
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Uses the divider's retained heading and accent while keeping section membership in the
-///     canonical List order.
+///     canonical List order
 ///
 struct NamedSectionDivider: View
 {
@@ -53,7 +53,7 @@ struct NamedSectionDivider: View
 /// Presents a Day section heading with separate actions
 ///
 /// @section    Purpose
-///     Keeps collapse and section operations out of the heading's navigation tap target.
+///     Keeps collapse and section operations out of the heading's navigation tap target
 ///
 struct DaySectionRow: View
 {
@@ -203,7 +203,7 @@ struct DaySectionRow: View
     /// @fcn        DaySectionRow.setColor
     /// @brief      Update the named section's accent color
     /// @details    Preserves other appearance fields and normalizes an empty appearance to nil before invoking the
-    ///             update callback.
+    ///             update callback
     ///
     /// @param[in]  color  Requested section accent; nil clears the explicit accent
     ///
@@ -229,7 +229,7 @@ struct DaySectionRow: View
 ///
 /// @section    Purpose
 ///     Derives the owning heading from canonical order and excludes the decorative overlay from
-///     touch and accessibility handling.
+///     touch and accessibility handling
 ///
 struct DaySectionRail: ViewModifier
 {
@@ -243,7 +243,7 @@ struct DaySectionRail: ViewModifier
     /// @fcn        DaySectionRail.body
     /// @brief      Show a section-colored rail beside a member card
     /// @details    Uses the owning heading's accent and keeps the decorative overlay outside hit testing and
-    ///             accessibility.
+    ///             accessibility
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///

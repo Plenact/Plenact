@@ -2,7 +2,7 @@
 // @file       MigrationAssetTests.swift
 // @brief      Synthetic media preservation, linkage and integrity acceptance tests
 // @details    Supported User Data Model versions: 1.0. Isolated preferences and temporary media only;
-//             no real workspace, cloud account or Simulator source restore is modified.
+//             no real workspace, cloud account or Simulator source restore is modified
 // --------------------------------------------------------------------------------------------------
 import XCTest
 import UIKit
@@ -10,9 +10,9 @@ import PencilKit
 @testable import Plenact
 
 
-/// Verifies exact original-file evidence and source-derived metadata without account fabrication.
+/// Verifies exact original-file evidence and source-derived metadata without account fabrication
 /// @section Purpose
-///     Exercise media absent from the owner's current zero-media backup before hands-on testing.
+///     Exercise media absent from the owner's current zero-media backup before hands-on testing
 @MainActor
 final class MigrationAssetTests: XCTestCase
 {

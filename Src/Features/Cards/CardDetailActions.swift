@@ -2,7 +2,7 @@
 // @file       CardDetailActions.swift
 // @brief      Owner-scoped Card editing and attachment operations
 // @details    Applies explicit editor actions through complete working snapshots while respecting
-//             editing locks, callbacks, and attachment retention.
+//             editing locks, callbacks, and attachment retention
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 /// CardDetailView behavior grouped separately from stored view state
 ///
 /// @section    Purpose
-///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle.
+///     Keep owner-scoped operations with the existing view while retaining its state and lifecycle
 ///
 extension CardDetailView
 {
@@ -25,13 +25,13 @@ extension CardDetailView
     /// @fcn        CardDetailView.richTextFocusBinding
     /// @brief      Bridge one rich-text field into shared editor focus
     /// @details    Clears native header focus when a rich editor becomes active and clears only the matching
-    ///             rich-text selection on blur.
+    ///             rich-text selection on blur
     ///
     /// @param[in]  field  Selected editable field or field key path
     ///
     /// @return     (Binding<Bool>) binding that coordinates this rich-text field with the native header editor focus
     ///
-    /// @note       UIKit focus uses ordinary state; SwiftUI FocusState only tracks native text fields.
+    /// @note       UIKit focus uses ordinary state; SwiftUI FocusState only tracks native text fields
     ///
     func richTextFocusBinding(for field: EditableField) -> Binding<Bool>
     {
@@ -65,7 +65,7 @@ extension CardDetailView
     ///
     /// @fcn        CardDetailView.dismissEditing
     /// @brief      End header and rich-text editing together
-    /// @details    Clears rich-text focus, native field focus, and the active header-field editing mode.
+    /// @details    Clears rich-text focus, native field focus, and the active header-field editing mode
     ///
     /// @return     (Void) no return value
     ///
@@ -393,7 +393,7 @@ extension CardDetailView
     /// @fcn        CardDetailView.updatePhotoCaption
     /// @brief      Save a photo caption through the card's checked update
     /// @details    Edits a working card snapshot, publishes attachment state only after sync accepts it, and reports
-    ///             validation or save failures.
+    ///             validation or save failures
     ///
     /// @param[in]  id       Stable draft or objective identity
     /// @param[in]  caption  Proposed photo caption text
@@ -432,7 +432,7 @@ extension CardDetailView
     /// @fcn        CardDetailView.reorderGalleryPhotos
     /// @brief      Save a validated photo-gallery order
     /// @details    Reorders a working snapshot and updates local attachments only after checked card synchronization
-    ///             succeeds.
+    ///             succeeds
     ///
     /// @param[in]  ids  Photo identities in their requested display order
     ///
@@ -469,7 +469,7 @@ extension CardDetailView
     ///
     /// @fcn        CardDetailView.selectedCoverPreview
     /// @brief      Build the selected cover's accessible preview button
-    /// @details    Opens the attachment preview on tap and supplies the photo caption as the accessibility value.
+    /// @details    Opens the attachment preview on tap and supplies the photo caption as the accessibility value
     ///
     /// @param[in]  cover  Currently selected cover attachment
     ///
@@ -654,13 +654,13 @@ extension CardDetailView
     /// @fcn        CardDetailView.addDrawingAttachment
     /// @brief      Import and save an editable drawing on this card
     /// @details    Rejects deleted or moved cards and restores the previous attachment state if media import or card
-    ///             synchronization fails.
+    ///             synchronization fails
     ///
     /// @param[in]  draft  Editable value proposed for persistence
     ///
     /// @return     (Bool) true when the imported drawing is retained by the owner; false on rejection or failure
     ///
-    /// @note       Attach both the preview and editable strokes, publishing only after the owner accepts the update.
+    /// @note       Attach both the preview and editable strokes, publishing only after the owner accepts the update
     ///
     func addDrawingAttachment(_ draft: DrawingCaptureDraft) -> Bool
     {
@@ -1032,7 +1032,7 @@ extension CardDetailView
     /// @brief      Save an explicit lock change while retaining the complete working content
     /// @details    Ends editing before saving the current draft and lock flag together. A failed checked callback
     ///             for a relocated Note leaves the prior lock state in place. Clearing media selections prevents pending imports from
-    ///             modifying the locked presentation; unlocking is allowed by the normal content-update guard.
+    ///             modifying the locked presentation; unlocking is allowed by the normal content-update guard
     ///
     /// @param[in]  locked  Requested content-editing lock state
     ///
@@ -1076,7 +1076,7 @@ extension CardDetailView
     /// @fcn        CardDetailView.toggleReaction
     /// @brief      Toggle the current author's reaction only while editing is unlocked
     /// @details    Validates the emoji before creating an author identity and restores the prior reactions if the
-    ///             owner rejects synchronization. Locked items never create a reaction identity or submit changes.
+    ///             owner rejects synchronization. Locked items never create a reaction identity or submit changes
     ///
     /// @param[in]  emoji  Proposed single emoji reaction
     ///
@@ -1362,7 +1362,7 @@ extension CardDetailView
     /// @fcn        CardDetailView.saveDate
     /// @brief      Save or clear one card schedule endpoint
     /// @details    Normalizes the chosen precision, explicitly signals a cleared endpoint, and restores both dates
-    ///             and kinds if card synchronization rejects the change.
+    ///             and kinds if card synchronization rejects the change
     ///
     /// @param[in]  value  Optional schedule value; nil explicitly clears the endpoint
     /// @param[in]  kind   Date, review, or collection kind selecting this operation's behavior
@@ -1370,7 +1370,7 @@ extension CardDetailView
     ///
     /// @return     (Bool) true when date and kind save together; false after restoring the original selection
     ///
-    /// @note       Commit date value and kind together; failed persistence retains the original selection.
+    /// @note       Commit date value and kind together; failed persistence retains the original selection
     ///
     func saveDate(_ value: Date?, kind: CardDateKind, for field: DateField) -> Bool
     {
@@ -2412,7 +2412,7 @@ extension CardDetailView
     /// @fcn        CardDetailView.cardCoverPanel(onDone:)
     /// @brief      Present the current item's cover controls
     /// @details    Wraps the shared cover controls in a sheet-sized navigation surface with an
-    ///             explicit Done action and database error presentation.
+    ///             explicit Done action and database error presentation
     ///
     /// @param[in]  onDone  Action invoked by the cover panel's Done button
     ///
@@ -2450,7 +2450,7 @@ extension CardDetailView
     /// @fcn        CardDetailView.addMenu
     /// @brief      Build the card or note's contextual Add menu
     /// @details    Provides reaction, cover, checklist, date, and comment actions while excluding
-    ///             presentation-specific actions for dividers.
+    ///             presentation-specific actions for dividers
     ///
     /// @param[in]  scrollProxy  Proxy used to reveal newly added content in the detail view
     ///

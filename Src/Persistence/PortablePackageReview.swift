@@ -2,15 +2,15 @@
 // @file       PortablePackageReview.swift
 // @brief      Read-only Simulator review of portable package records and exact original files
 // @details    Supported User Data Model versions: 1.0 base and working 1.1; test package format 1.
-//             Reads only portable members, never restores Preferences.plist or changes a workspace.
+//             Reads only portable members, never restores Preferences.plist or changes a workspace
 // --------------------------------------------------------------------------------------------------
 import CoreFoundation
 import Foundation
 
 
-/// Human-readable counts from a frozen portable test package, without import authorization.
+/// Human-readable counts from a frozen portable test package, without import authorization
 /// @section Purpose
-///     Distinguish verified portable-file review from source recovery and workspace installation.
+///     Distinguish verified portable-file review from source recovery and workspace installation
 struct ReviewedPortablePackage
 {
 
@@ -23,16 +23,16 @@ struct ReviewedPortablePackage
 }
 
 
-/// Checks integrity and core workspace relationships without executing any saved action.
+/// Checks integrity and core workspace relationships without executing any saved action
 /// @section Purpose
-///     Establish a read-only review boundary before a future portable importer is allowed to write.
+///     Establish a read-only review boundary before a future portable importer is allowed to write
 @MainActor
 enum PortablePackageReview
 {
 
-    /// Review failures retain both the selected package and the current application workspace.
+    /// Review failures retain both the selected package and the current application workspace
     /// @section Purpose
-    ///     Reject unsupported versions, inconsistent metadata and corrupted original bytes.
+    ///     Reject unsupported versions, inconsistent metadata and corrupted original bytes
     enum Failure: LocalizedError
     {
 

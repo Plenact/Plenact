@@ -2,7 +2,7 @@
 // @file       BoardViewport.swift
 // @brief      Board sizing, zoom, and retained scroll position
 // @details    Keeps per-owner viewport preferences separate from content and bridges native scroll
-//             observation and restoration.
+//             observation and restoration
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Supplies bounded zoom presets and related layout calculations separately from Card metadata
-///     visibility settings.
+///     visibility settings
 ///
 enum BoardPanoramicZoom
 {
@@ -27,7 +27,7 @@ enum BoardPanoramicZoom
     ///
     /// @fcn        BoardPanoramicZoom.preset
     /// @brief      Choose the initial zoom for the selected board mode
-    /// @details    Panoramic mode uses the overview scale; standard mode starts at a scale of one.
+    /// @details    Panoramic mode uses the overview scale; standard mode starts at a scale of one
     ///
     /// @param[in]  panoramic  Whether the board is using its panoramic overview
     ///
@@ -46,7 +46,7 @@ enum BoardPanoramicZoom
     /// @fcn        BoardPanoramicZoom.clamped
     /// @brief      Constrain a board zoom scale to supported bounds
     /// @details    Nonfinite input falls back to the initial scale; finite input is limited to the minimum and
-    ///             maximum.
+    ///             maximum
     ///
     /// @param[in]  scale  Proposed board magnification factor
     ///
@@ -68,7 +68,7 @@ enum BoardPanoramicZoom
     /// @fcn        BoardPanoramicZoom.scale
     /// @brief      Apply a pinch magnification to the starting zoom
     /// @details    Invalid or nonpositive magnification preserves the clamped starting scale instead of propagating
-    ///             an invalid value.
+    ///             an invalid value
     ///
     /// @param[in]  start          Starting horizontal position or original vertical scroll offset in points
     /// @param[in]  magnification  Relative pinch multiplier applied to the starting scale
@@ -94,7 +94,7 @@ enum BoardPanoramicZoom
 ///
 /// @section    Purpose
 ///     Scales the complete standard List, including its typography and Cards, to retain the
-///     intended phone-like proportions.
+///     intended phone-like proportions
 ///
 enum BoardTabletSizing
 {
@@ -104,7 +104,7 @@ enum BoardTabletSizing
     /// @fcn        BoardTabletSizing.scale
     /// @brief      Calculate the optional tablet enlargement factor
     /// @details    Requires an enabled tablet layout and valid column width; otherwise returns one. The enlarged
-    ///             baseline includes a ten percent reduction.
+    ///             baseline includes a ten percent reduction
     ///
     /// @param[in]  viewportWidth  Available board viewport width in points
     /// @param[in]  columnWidth    Unscaled list-column width in points
@@ -121,7 +121,7 @@ enum BoardTabletSizing
             return 1
         }
 
-        // Ease back ten percent from the near-full-width tablet baseline.
+        // Ease back ten percent from the near-full-width tablet baseline
         return max(1, 0.9 * (viewportWidth - 30) / (columnWidth + 34))
     }
 
@@ -133,7 +133,7 @@ enum BoardTabletSizing
 ///
 /// @section    Purpose
 ///     Keeps owner-specific horizontal and vertical scroll values out of the user's
-///     planning-content snapshots.
+///     planning-content snapshots
 ///
 struct BoardViewportState: Codable, Equatable
 {
@@ -154,7 +154,7 @@ struct BoardViewportState: Codable, Equatable
 ///
 /// @section    Purpose
 ///     Tracks horizontal and vertical positions separately from planning content and debounces
-///     writes to the supplied preferences store.
+///     writes to the supplied preferences store
 ///
 @MainActor
 final class BoardViewportMemory
@@ -173,7 +173,7 @@ final class BoardViewportMemory
     /// @fcn        BoardViewportMemory.init
     /// @brief      Restore viewport memory for a particular owner
     /// @details    Decodes saved state or uses defaults, clamps the zoom scale, and discards negative or nonfinite
-    ///             offsets.
+    ///             offsets
     ///
     /// @param[in]  owner     Owner identity used to qualify numeric item references
     /// @param[in]  defaults  Preferences store used for this operation
@@ -217,7 +217,7 @@ final class BoardViewportMemory
     ///
     /// @fcn        BoardViewportMemory.record
     /// @brief      Record a normalized scroll offset
-    /// @details    Rejects nonfinite input, clamps negative offsets to zero, and schedules a debounced save.
+    /// @details    Rejects nonfinite input, clamps negative offsets to zero, and schedules a debounced save
     ///
     /// @param[in]  offset  Relative section or photo movement, or normalized scroll displacement
     /// @param[in]  key     Storage key or stable lookup key used by this operation
@@ -242,7 +242,7 @@ final class BoardViewportMemory
     /// @fcn        BoardViewportMemory.scheduleSave
     /// @brief      Debounce persistence of viewport changes
     /// @details    Cancels the previous work item and schedules a weakly captured flush on the main queue after 0.35
-    ///             seconds.
+    ///             seconds
     ///
     /// @return     (Void) no return value
     ///
@@ -266,7 +266,7 @@ final class BoardViewportMemory
     ///
     /// @fcn        BoardViewportMemory.flush
     /// @brief      Persist changed viewport state immediately
-    /// @details    Cancels pending work, encodes the state, and avoids rewriting identical stored data.
+    /// @details    Cancels pending work, encodes the state, and avoids rewriting identical stored data
     ///
     /// @return     (Void) no return value
     ///
@@ -293,7 +293,7 @@ final class BoardViewportMemory
 ///
 /// @section    Purpose
 ///     Defaults to no memory so standalone views do not save positions into an unrelated owner's
-///     preference key.
+///     preference key
 ///
 struct BoardViewportMemoryKey: EnvironmentKey
 {
@@ -309,7 +309,7 @@ struct BoardViewportMemoryKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Lets native scroll probes restore and retain position without passing storage ownership
-///     through every view initializer.
+///     through every view initializer
 ///
 extension EnvironmentValues
 {
@@ -340,7 +340,7 @@ extension EnvironmentValues
 ///
 /// @section    Purpose
 ///     Discovers the relevant scroll view and delegates observation and restoration to a retained
-///     coordinator.
+///     coordinator
 ///
 struct BoardViewportScrollProbe: UIViewRepresentable
 {
@@ -357,7 +357,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     ///
     /// @section    Purpose
     ///     Invokes its attachment callback only once a window exists so scroll-ancestor discovery
-    ///     has a mounted hierarchy.
+    ///     has a mounted hierarchy
     ///
     final class Marker: UIView
     {
@@ -370,7 +370,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @fcn        BoardViewportScrollProbe.Marker.didMoveToWindow
         /// @brief      Notify the probe when its marker becomes attached
         /// @details    Calls the superclass implementation and invokes the attachment callback only when a window
-        ///             exists.
+        ///             exists
         ///
         /// @return     (Void) no return value
         ///
@@ -391,7 +391,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     /// @fcn        BoardViewportScrollProbe.makeCoordinator
     /// @brief      Create the native bridge coordinator
     /// @details    Creates the coordinator retained by SwiftUI for BoardViewportScrollProbe so its delegate or
-    ///             observation state can span view updates.
+    ///             observation state can span view updates
     ///
     /// @return     (Coordinator) retained native bridge coordinator
     ///
@@ -404,7 +404,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     ///
     /// @fcn        BoardViewportScrollProbe.makeUIView
     /// @brief      Create a noninteractive marker for native scroll discovery
-    /// @details    Configures the coordinator and uses weak references in the marker's window attachment callback.
+    /// @details    Configures the coordinator and uses weak references in the marker's window attachment callback
     ///
     /// @param[in]  context  Framework-supplied update context and coordinator access
     ///
@@ -437,7 +437,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     /// @fcn        BoardViewportScrollProbe.updateUIView
     /// @brief      Refresh the viewport probe's owner and scroll axis
     /// @details    Reconfigures the coordinator and attempts native scroll discovery once the marker is attached to a
-    ///             window.
+    ///             window
     ///
     /// @param[in]  view     Native view inspected or synchronized by the operation
     /// @param[in]  context  Framework-supplied update context and coordinator access
@@ -460,7 +460,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     /// @fcn        BoardViewportScrollProbe.dismantleUIView
     /// @brief      Finish observing a departing native scroll view
     /// @details    Captures the final offset, invalidates observation, and flushes viewport memory through the
-    ///             coordinator.
+    ///             coordinator
     ///
     /// @param[in]  view         Native view inspected or synchronized by the operation
     /// @param[in]  coordinator  Coordinator retaining the native bridge's observation or delegate state
@@ -478,7 +478,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     ///
     /// @section    Purpose
     ///     Retains the viewport key and restoration target, observes offsets, and bounds discovery
-    ///     retries without publishing per-frame SwiftUI state.
+    ///     retries without publishing per-frame SwiftUI state
     ///
     @MainActor
     final class Coordinator
@@ -501,7 +501,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @fcn        BoardViewportScrollProbe.Coordinator.configure
         /// @brief      Switch the probe to a new viewport memory key
         /// @details    Finishes the previous observation before resetting the desired offset, restoration flag, and
-        ///             discovery attempts.
+        ///             discovery attempts
         ///
         /// @param[in]  memory      Optional owner-scoped viewport state and persistence object
         /// @param[in]  key         Storage key or stable lookup key used by this operation
@@ -545,7 +545,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @fcn        BoardViewportScrollProbe.Coordinator.matches
         /// @brief      Check whether a native scroll view serves the requested axis
         /// @details    Horizontal probes require horizontal scrolling; vertical probes also recognize table and
-        ///             collection views.
+        ///             collection views
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -567,7 +567,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         /// @fcn        BoardViewportScrollProbe.Coordinator.descendant
         /// @brief      Find the first suitable scroll view below a container
-        /// @details    Searches descendants recursively and returns nil when no matching native scroller is present.
+        /// @details    Searches descendants recursively and returns nil when no matching native scroller is present
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -604,7 +604,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @fcn        BoardViewportScrollProbe.Coordinator.findScroll
         /// @brief      Locate the native scroller associated with the marker
         /// @details    Defers hierarchy inspection to the main queue, bounds discovery retries, and refreshes
-        ///             inner-list swipe priority for an attached scroller.
+        ///             inner-list swipe priority for an attached scroller
         ///
         /// @param[in]  marker  Attached marker used to locate the enclosing native scroll view
         ///
@@ -616,7 +616,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             if let scroll
             {
 
-                // SwiftUI may install row actions after the first empty List layout.
+                // SwiftUI may install row actions after the first empty List layout
                 if !horizontal
                 {
                     BoardListSwipePriority.install(for: scroll)
@@ -668,7 +668,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                             return
                         }
 
-                        break  // Never pick a different column beyond the enclosing Board scroll.
+                        break  // Never pick a different column beyond the enclosing Board scroll
                     }
 
                     if let native = self.descendant(in: view)
@@ -700,7 +700,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @fcn        BoardViewportScrollProbe.Coordinator.attach
         /// @brief      Observe a discovered native scroll view
         /// @details    Retains its content-offset observation and schedules restoration after the current layout
-        ///             pass.
+        ///             pass
         ///
         /// @param[in]  scroll  Native scroll view to observe or restore
         ///
@@ -733,7 +733,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @fcn        BoardViewportScrollProbe.Coordinator.restore
         /// @brief      Restore the saved offset within the laid-out content bounds
         /// @details    Accounts for adjusted insets and the selected axis, respects disabled horizontal restoration
-        ///             and active dragging, then enables offset capture.
+        ///             and active dragging, then enables offset capture
         ///
         /// @return     (Void) no return value
         ///
@@ -786,7 +786,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @fcn        BoardViewportScrollProbe.Coordinator.capture
         /// @brief      Capture the current inset-normalized scroll position
         /// @details    Records offsets only after restoration and while both the native scroll view and viewport
-        ///             memory remain available.
+        ///             memory remain available
         ///
         /// @return     (Void) no return value
         ///
@@ -811,7 +811,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @fcn        BoardViewportScrollProbe.Coordinator.finish
         /// @brief      Release scroll observation and save the last viewport
         /// @details    Captures before invalidating observation, clears the native scroller reference, and flushes
-        ///             memory.
+        ///             memory
         ///
         /// @return     (Void) no return value
         ///
@@ -837,7 +837,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 ///
 /// @section    Purpose
 ///     Retains fresh Board measurements without forcing a SwiftUI Board redraw for every passive
-///     scroll update.
+///     scroll update
 ///
 final class BoardDragGeometryCache
 {
@@ -856,7 +856,7 @@ final class BoardDragGeometryCache
 ///
 /// @section    Purpose
 ///     Shows the current percentage as noninteractive decoration and respects Reduce Motion when
-///     removing the hint.
+///     removing the hint
 ///
 struct BoardZoomHint: View
 {
@@ -892,7 +892,7 @@ struct BoardZoomHint: View
 
             }
             catch
-            {  /* Leaving the board cancels the hint timer. */
+            {  /* Leaving the board cancels the hint timer  */
 
             }
 
@@ -907,7 +907,7 @@ struct BoardZoomHint: View
 /// Retains in-progress Board pinch state
 ///
 /// @section    Purpose
-///     Separates transient magnification and gesture activity from the committed zoom preference.
+///     Separates transient magnification and gesture activity from the committed zoom preference
 ///
 struct BoardPinchState
 {
@@ -923,7 +923,7 @@ struct BoardPinchState
 /// Adapts Board scroll snapping to the zoom presentation
 ///
 /// @section    Purpose
-///     Uses view-aligned column snapping in standard mode and leaves panoramic scroll targets free.
+///     Uses view-aligned column snapping in standard mode and leaves panoramic scroll targets free
 ///
 struct BoardZoomScrollBehavior: ScrollTargetBehavior
 {
@@ -936,7 +936,7 @@ struct BoardZoomScrollBehavior: ScrollTargetBehavior
     /// @fcn        BoardZoomScrollBehavior.updateTarget
     /// @brief      Apply column snapping only in standard board mode
     /// @details    Delegates to SwiftUI's view-aligned behavior outside panoramic mode; panoramic scrolling retains
-    ///             its proposed target.
+    ///             its proposed target
     ///
     /// @param[in,out]  target   Proposed native scroll target, updated in place when the snapping rules apply
     /// @param[in]      context  Framework-supplied update context and coordinator access

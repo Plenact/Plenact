@@ -2,16 +2,16 @@
 // @file       LegacyWorkspaceExportTests.swift
 // @brief      Native migration-preparation backup regression coverage
 // @details    Supports User Data Model 1.0 preparation and source backup format 1 only.
-//             All tests use isolated preferences and temporary synthetic media; no user data is read.
+//             All tests use isolated preferences and temporary synthetic media; no user data is read
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
 import Foundation
 import XCTest
 
 
-/// Verifies exact source preservation before portable migration is implemented.
+/// Verifies exact source preservation before portable migration is implemented
 /// @section Purpose
-///     Exercise corruption, absence, media safety, native decoding and immutable export boundaries.
+///     Exercise corruption, absence, media safety, native decoding and immutable export boundaries
 @MainActor
 final class LegacyWorkspaceExportTests: XCTestCase
 {

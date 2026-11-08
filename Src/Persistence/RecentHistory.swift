@@ -2,7 +2,7 @@
 // @file       RecentHistory.swift
 // @brief      Owner-qualified viewed-item and search history
 // @details    Retains lightweight references and recent terms rather than copying canonical Cards
-//             into separate history content.
+//             into separate history content
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -113,7 +113,7 @@ enum RecentSearchStore
 ///
 /// @section    Purpose
 ///     Stores collection and local Card identity in visit order so Library and Activity history
-///     can resolve canonical live content.
+///     can resolve canonical live content
 ///
 struct LibraryRecentItem: Codable, Equatable, Identifiable
 {
@@ -135,7 +135,7 @@ struct LibraryRecentItem: Codable, Equatable, Identifiable
 ///
 /// @section    Purpose
 ///     Decodes and saves recent-item references through the supplied preferences store without
-///     copying the underlying Cards.
+///     copying the underlying Cards
 ///
 enum LibraryRecentStore
 {
@@ -148,7 +148,7 @@ enum LibraryRecentStore
     /// @fcn        LibraryRecentStore.load
     /// @brief      Read the Library's recent item history
     /// @details    Decodes retained owner-qualified items and returns an empty array when storage is absent or
-    ///             unreadable.
+    ///             unreadable
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
@@ -170,7 +170,7 @@ enum LibraryRecentStore
     /// @fcn        LibraryRecentStore.remember
     /// @brief      Move an item to the front of Library recents
     /// @details    Also records Activity history, deduplicates the selected item, limits Library history to eight,
-    ///             and persists when encoding succeeds.
+    ///             and persists when encoding succeeds
     ///
     /// @param[in]  item      Item supplied to this operation
     /// @param[in]  defaults  Preferences store used for this operation
@@ -203,7 +203,7 @@ enum LibraryRecentStore
 ///
 /// @section    Purpose
 ///     Falls back to legacy Library history only when Activity storage is absent and maintains its
-///     own encoded recent references.
+///     own encoded recent references
 ///
 enum ActivityRecentStore
 {
@@ -216,7 +216,7 @@ enum ActivityRecentStore
     /// @fcn        ActivityRecentStore.load
     /// @brief      Read Activity history with a legacy Library fallback
     /// @details    Uses Library recents only when Activity storage is absent; malformed Activity data produces an
-    ///             empty array.
+    ///             empty array
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
@@ -239,7 +239,7 @@ enum ActivityRecentStore
     /// @fcn        ActivityRecentStore.remember
     /// @brief      Record a recently opened item for Activity
     /// @details    Moves the owner-qualified identity to the front, removes duplicates, and retains at most twenty
-    ///             entries.
+    ///             entries
     ///
     /// @param[in]  item      Item supplied to this operation
     /// @param[in]  defaults  Preferences store used for this operation
@@ -265,7 +265,7 @@ enum ActivityRecentStore
     ///
     /// @fcn        ActivityRecentStore.clear
     /// @brief      Explicitly clear both Activity and Library recent history
-    /// @details    Writes empty encoded arrays to both keys so the legacy fallback cannot repopulate cleared history.
+    /// @details    Writes empty encoded arrays to both keys so the legacy fallback cannot repopulate cleared history
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///

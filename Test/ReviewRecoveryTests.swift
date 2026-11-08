@@ -3,7 +3,7 @@
 // @brief      Review Recovery regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// ReviewRecovery regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -30,11 +30,11 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `DailyReviewTransaction.perform`, `PropertyListSerialization.data`,
     ///             `DailyReviewTransaction.recover`. Checks `XCTAssertEqual(defaults.data(forKey:
     ///             LibraryImportanceSelection.key), before)`; `XCTAssertEqual(defaults.data(forKey:
-    ///             "Plenact.Board.v1"), Data("board".utf8))`.
+    ///             "Plenact.Board.v1"), Data("board".utf8))`
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.fileWriteUnknown)`. Errors from throwing dependencies
-    ///             propagate unless handled within this operation.
+    ///             propagate unless handled within this operation
     ///
     @MainActor
     func testSectionMoveJournalRestoresImportanceAndSupportsLegacyRecovery() throws
@@ -64,7 +64,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), Data("board".utf8))
         XCTAssertNil(defaults.object(forKey: DailyReviewTransaction.key))
 
-        // Old journals did not capture importance; recovering them must not remove it.
+        // Old journals did not capture importance; recovering them must not remove it
         let legacy = try PropertyListSerialization.data(
             fromPropertyList: ["version": 1, "previous": ["Plenact.Board.v1": Data("old".utf8)]], format: .binary,
             options: 0)
@@ -81,10 +81,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that weekly Review Calendar Boundaries Persistence And Recovery
     /// @details    Exercises `DailyPlanStore.Document`, `PlanningDate.date`, `review.dailyPlans(in: days).map`.
     ///             Checks `XCTAssertEqual(review.startKey, "2026-10-12")`; `XCTAssertEqual(review.dailyPlans(in:
-    ///             days).map(\.id), ["2026-10-12", "2026-10-18"])`.
+    ///             days).map(\.id), ["2026-10-12", "2026-10-18"])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testWeeklyReviewCalendarBoundariesPersistenceAndRecovery() throws
@@ -152,11 +152,11 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that evening Review Transaction Recovers Interrupted And Failed Writes
     /// @details    Exercises `DailyReviewTransaction.perform`, `DailyReviewTransaction.begin`,
     ///             `DailyReviewTransaction.recover`. Checks `XCTAssertEqual(defaults.data(forKey: key),
-    ///             Data(key.utf8))`; `XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))`.
+    ///             Data(key.utf8))`; `XCTAssertNil(defaults.object(forKey: DailyPlanStore.key))`
     ///
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `Forced.failure`. Errors from throwing dependencies propagate unless
-    ///             handled within this operation.
+    ///             handled within this operation
     ///
     @MainActor
     func testEveningReviewTransactionRecoversInterruptedAndFailedWrites() throws
@@ -183,7 +183,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @section    Purpose
         ///     Forces rollback after preferences have changed so the test can verify restoration of
-        ///     all retained keys.
+        ///     all retained keys
         ///
         enum Forced: Error
         {
@@ -237,10 +237,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that full Month Backup Rejects Corruption And Recovers Interrupted Switch
     /// @details    Exercises `folder.appendingPathComponent`, `store.documents.appendingPathComponent`,
     ///             `Data([1]).write`. Checks `XCTAssertEqual(defaults.string(forKey: "Plenact.Protected"), "user
-    ///             data")`; `XCTAssertEqual(try Data(contentsOf: file), Data([1]))`.
+    ///             data")`; `XCTAssertEqual(try Data(contentsOf: file), Data([1]))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testFullMonthBackupRejectsCorruptionAndRecoversInterruptedSwitch() throws
     {
@@ -286,7 +286,7 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
         XCTAssertTrue(store.hasUserData)
 
-        // An unavailable backup location must prevent replacement as well.
+        // An unavailable backup location must prevent replacement as well
         let blocked = folder.appendingPathComponent("blocked")
 
         try Data([0]).write(to: blocked)

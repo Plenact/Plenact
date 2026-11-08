@@ -2,7 +2,7 @@
 // @file       ImportanceStore.swift
 // @brief      Personal owner-qualified importance persistence
 // @details    Resolves legacy marks, retains bounded levels, and supplies incremental owner
-//             adapters without changing canonical Card content.
+//             adapters without changing canonical Card content
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Decodes missing legacy levels as one star and exposes a bounded level without changing the
-///     original Card record.
+///     original Card record
 ///
 struct LibraryImportanceItem: Codable
 {
@@ -39,7 +39,7 @@ struct LibraryImportanceItem: Codable
 ///
 /// @section    Purpose
 ///     Resolves legacy marks as one star, clamps levels to zero through five, and adjusts by one
-///     deliberate gesture while preserving unrelated owners.
+///     deliberate gesture while preserving unrelated owners
 ///
 enum LibraryImportanceSelection
 {
@@ -51,7 +51,7 @@ enum LibraryImportanceSelection
     ///
     /// @fcn        LibraryImportanceSelection.cardIDs
     /// @brief      Read important-card IDs for one collection owner
-    /// @details    Decodes owner-qualified selections and returns an empty set for absent or malformed data.
+    /// @details    Decodes owner-qualified selections and returns an empty set for absent or malformed data
     ///
     /// @param[in]  collectionID  UUID of the collection owning the referenced content
     /// @param[in]  data          Encoded input or media bytes
@@ -74,7 +74,7 @@ enum LibraryImportanceSelection
     /// @fcn        LibraryImportanceSelection.setting
     /// @brief      Encode a card's requested importance state
     /// @details    Marking retains an existing higher level or begins at one; unmarking removes the
-    ///             selection. Returns the original bytes if encoding fails.
+    ///             selection. Returns the original bytes if encoding fails
     ///
     /// @param[in]  cardID        Numeric card identity within its owner
     /// @param[in]  collectionID  UUID of the collection owning the referenced content
@@ -98,7 +98,7 @@ enum LibraryImportanceSelection
     /// @fcn        LibraryImportanceSelection.demoData
     /// @brief      Mark recognized demonstration cards as important
     /// @details    Matches the explicit demonstration-title set across supplied owners and preserves unrelated
-    ///             existing selections.
+    ///             existing selections
     ///
     /// @param[in]  owners               Canonical collection owners participating in the operation
     /// @param[in]  data                 Encoded input or media bytes
@@ -106,7 +106,7 @@ enum LibraryImportanceSelection
     ///
     /// @return     (Data) encoded selections including the recognized supplied demonstration cards
     ///
-    /// @note       Only call for freshly created demonstration owners, never on a user's existing weeks.
+    /// @note       Only call for freshly created demonstration owners, never on a user's existing weeks
     ///
     static func demoData(
         in owners: [PersonalCollection], preserving data: Data = Data(), includesAllExamples: Bool = false
@@ -147,7 +147,7 @@ enum LibraryImportanceSelection
     /// @fcn        LibraryImportanceSelection.demonstrationLevel(for:)
     /// @brief      Give fresh examples a recognizable range of symbolic attention
     /// @details    Work and Gym demonstrate four and three layers; key calls and dinner show five.
-    ///             Other example titles receive a deterministic one-through-five variation.
+    ///             Other example titles receive a deterministic one-through-five variation
     ///
     /// @param[in]  title  Newly generated example title
     ///
@@ -184,7 +184,7 @@ enum LibraryImportanceSelection
     ///
     /// @fcn        LibraryImportanceSelection.contains
     /// @brief      Check an owner-qualified card's importance flag
-    /// @details    Matches both collection UUID and card ID, treating malformed selection data as empty.
+    /// @details    Matches both collection UUID and card ID, treating malformed selection data as empty
     ///
     /// @param[in]  cardID        Numeric card identity within its owner
     /// @param[in]  collectionID  UUID of the collection owning the referenced content
@@ -202,7 +202,7 @@ enum LibraryImportanceSelection
     ///
     /// @fcn        LibraryImportanceSelection.level(cardID:collectionID:data:)
     /// @brief      Resolve bounded importance for one owner-qualified Card
-    /// @details    Legacy marks mean one star. Missing and malformed selections mean no stars.
+    /// @details    Legacy marks mean one star. Missing and malformed selections mean no stars
     ///
     /// @param[in]  cardID        Owner-local Card identity
     /// @param[in]  collectionID  Owning collection identity
@@ -225,7 +225,7 @@ enum LibraryImportanceSelection
     ///
     /// @fcn        LibraryImportanceSelection.settingLevel(cardID:collectionID:level:data:)
     /// @brief      Persist a bounded importance snapshot for migration, examples, or transfer
-    /// @details    Retains every other owner's marks. User-facing controls use adjusting instead.
+    /// @details    Retains every other owner's marks. User-facing controls use adjusting instead
     ///
     /// @param[in]  cardID        Owner-local Card identity
     /// @param[in]  collectionID  Owning collection identity
@@ -261,7 +261,7 @@ enum LibraryImportanceSelection
     /// @fcn        LibraryImportanceSelection.adjusting(cardID:collectionID:direction:data:)
     /// @brief      Give or remove exactly one gesture of attention
     /// @details    Only the direction matters; large input values cannot jump multiple levels.
-    ///             Five is a ceiling and never wraps to zero.
+    ///             Five is a ceiling and never wraps to zero
     ///
     /// @param[in]  cardID        Owner-local Card identity
     /// @param[in]  collectionID  Owning collection identity
@@ -291,7 +291,7 @@ enum LibraryImportanceSelection
 ///
 /// @section    Purpose
 ///     Supplies presence, marking, level lookup, and incremental adjustment callbacks without
-///     giving child views direct storage ownership.
+///     giving child views direct storage ownership
 ///
 struct LibraryImportanceAccess
 {
@@ -318,7 +318,7 @@ struct LibraryImportanceAccess
 ///
 /// @section    Purpose
 ///     Shares the encoded owner-qualified marks with dated Week and Day editors without moving
-///     importance into Card content.
+///     importance into Card content
 ///
 struct OwnerImportanceControls: ViewModifier
 {
@@ -332,7 +332,7 @@ struct OwnerImportanceControls: ViewModifier
     /// @fcn        OwnerImportanceControls.body
     /// @brief      Provide owner-qualified importance actions to descendant views
     /// @details    Installs contains and set closures for the available owner and writes selections through the
-    ///             shared encoding helper.
+    ///             shared encoding helper
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///
@@ -382,7 +382,7 @@ struct OwnerImportanceControls: ViewModifier
 ///
 /// @section    Purpose
 ///     Defaults to no owner adapter so isolated previews and unrelated destinations do not mutate
-///     an assumed workspace.
+///     an assumed workspace
 ///
 struct LibraryImportanceKey: EnvironmentKey
 {
@@ -398,7 +398,7 @@ struct LibraryImportanceKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Forwards access through LibraryImportanceKey while leaving persistence and validation with
-///     the injected callbacks.
+///     the injected callbacks
 ///
 extension EnvironmentValues
 {

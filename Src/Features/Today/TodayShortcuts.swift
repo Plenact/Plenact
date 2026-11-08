@@ -2,7 +2,7 @@
 // @file       TodayShortcuts.swift
 // @brief      Retained owner-qualified Today List shortcuts
 // @details    Normalizes stored pins, edits their selection, and renders destinations against
-//             currently available workspace owners.
+//             currently available workspace owners
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Loads, normalizes, and resolves owner-qualified pins against available workspace
-///     collections.
+///     collections
 ///
 enum TodayListPins
 {
@@ -29,13 +29,13 @@ enum TodayListPins
     /// @fcn        TodayListPins.loadInitialCollections
     /// @brief      Load the initial collections needed by Today shortcuts
     /// @details    Reads the supplied preferences without discarding existing owner data and uses the established
-    ///             starter path when appropriate.
+    ///             starter path when appropriate
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     ([PersonalCollection]) existing collections or successfully saved first-install tutorial owners
     ///
-    /// @note       Seed only a fresh installation; saved empty collections or shortcut selections stay empty.
+    /// @note       Seed only a fresh installation; saved empty collections or shortcut selections stay empty
     ///
     static func loadInitialCollections(from defaults: UserDefaults = .standard) -> [PersonalCollection]
     {
@@ -84,7 +84,7 @@ enum TodayListPins
     /// @fcn        TodayListPins.normalized
     /// @brief      Deduplicate and limit Today shortcut references
     /// @details    Preserves the first occurrence of each owner-qualified list reference and retains at most six
-    ///             pins.
+    ///             pins
     ///
     /// @param[in]  pins  Owner-qualified Today shortcut list references
     ///
@@ -106,7 +106,7 @@ enum TodayListPins
     /// @fcn        TodayListPins.decode
     /// @brief      Decode stored Today shortcut references
     /// @details    Returns the normalized decoded references or an empty selection if decoding fails; intentionally
-    ///             empty saved choices remain empty.
+    ///             empty saved choices remain empty
     ///
     /// @param[in]  data  Encoded input or media bytes
     ///
@@ -123,7 +123,7 @@ enum TodayListPins
     /// @fcn        TodayListPins.encode
     /// @brief      Encode normalized Today shortcut references
     /// @details    Serializes the normalized selection for preferences storage, using the helper's fallback bytes if
-    ///             encoding fails.
+    ///             encoding fails
     ///
     /// @param[in]  pins  Owner-qualified Today shortcut list references
     ///
@@ -143,7 +143,7 @@ enum TodayListPins
 ///
 /// @section    Purpose
 ///     Normalizes the initial pins and publishes the chosen references only through the caller's
-///     save action.
+///     save action
 ///
 struct TodayShortcutEditor: View
 {
@@ -159,7 +159,7 @@ struct TodayShortcutEditor: View
     /// @fcn        TodayShortcutEditor.init
     /// @brief      Initialize the Today shortcut editor with normalized pins
     /// @details    Seeds the editable pin selection through the shared normalization helper and retains the available
-    ///             owners and save callback.
+    ///             owners and save callback
     ///
     /// @param[in]  pins    Owner-qualified Today shortcut list references
     /// @param[in]  owners  Canonical collection owners participating in the operation
@@ -324,7 +324,7 @@ struct TodayShortcutEditor: View
 ///
 /// @section    Purpose
 ///     Uses a three-column grid and adapts icon size to the shortcut count while delegating
-///     navigation to the caller.
+///     navigation to the caller
 ///
 struct TodayShortcutGrid: View
 {

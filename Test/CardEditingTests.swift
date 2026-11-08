@@ -3,7 +3,7 @@
 // @brief      Card Editing regression tests
 // @details    Verifies related workspace behavior with synthetic fixtures and the shared
 //             PlenactBoardDocumentTests helpers. Retains original test identities and checked
-//             assertions while separating this coverage from unrelated feature tests.
+//             assertions while separating this coverage from unrelated feature tests
 //
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
@@ -18,7 +18,7 @@ import XCTest
 /// CardEditing regression coverage for the shared workspace test suite
 ///
 /// @section    Purpose
-///     Verify related model and presentation contracts with isolated synthetic fixtures.
+///     Verify related model and presentation contracts with isolated synthetic fixtures
 ///
 extension PlenactBoardDocumentTests
 {
@@ -28,10 +28,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testNoteListDayLayoutRendersAtPhoneAndTabletWidths
     /// @brief      Verify that note List Day Layout Renders At Phone And Tablet Widths
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertGreaterThan(host.view.bounds.height, 0)`.
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertGreaterThan(host.view.bounds.height, 0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testNoteListDayLayoutRendersAtPhoneAndTabletWidths() async throws
@@ -114,10 +114,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testCheckInPersistsSharedPlanAndTracksLiveProgressWithoutCountingNotes
     /// @brief      Verify that check In Persists Shared Plan And Tracks Live Progress Without Counting Notes
     /// @details    Exercises `DatedPlanningWeek.make`, `sources.map`, `DailyPlanStore.save`. Checks `XCTAssertNil(try
-    ///             DailyPlanStore.load(from: defaults).plans[plan.id]?.checkIn)`; `XCTAssertEqual(restored, saved)`.
+    ///             DailyPlanStore.load(from: defaults).plans[plan.id]?.checkIn)`; `XCTAssertEqual(restored, saved)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCheckInPersistsSharedPlanAndTracksLiveProgressWithoutCountingNotes() throws
@@ -232,10 +232,10 @@ extension PlenactBoardDocumentTests
     /// @details    Exercises `table.lists[0].cards.map`, `CrossBoardCardMovement.move`,
     ///             `collections[1].lists[0].cards.first`. Checks
     ///             `XCTAssertTrue(collections[0].lists[0].cards.isEmpty)`;
-    ///             `XCTAssertEqual(collections[1].lists[0].cards.count, 2)`.
+    ///             `XCTAssertEqual(collections[1].lists[0].cards.count, 2)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testMorningTransferPreservesDetailsAndReturnsOneNewDestinationIdentity() throws
     {
@@ -283,10 +283,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that adding Daily Priority Saves Canonical Card Or Note And Rejects Failed Destinations
     /// @details    Exercises `DatedPlanningWeek.make`, `DailyPriorityCreation.create`,
     ///             `DailyPlanPriority(source).resolve`. Checks `XCTAssertEqual(source.card.id, 91)`;
-    ///             `XCTAssertEqual(source.card.word, "New priority")`.
+    ///             `XCTAssertEqual(source.card.word, "New priority")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testAddingDailyPrioritySavesCanonicalCardOrNoteAndRejectsFailedDestinations() throws
@@ -417,10 +417,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that direct Card And Note Back Dismisses Result To Its Presenter
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `PlanningDate.date`. Checks `XCTAssertTrue(probe.presented)`; `XCTAssertFalse(probe.presented,
-    ///             "Back must dismiss the direct result for week=\(usesWeek), note=\(isNote)")`.
+    ///             "Back must dismiss the direct result for week=\(usesWeek), note=\(isNote)")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testDirectCardAndNoteBackDismissesResultToItsPresenter() async throws
@@ -522,10 +522,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that note Navigation Reports Toolbar Visibility And Restores On Return
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Checks `XCTAssertFalse(probe.noteIsVisible)`;
-    ///             `XCTAssertTrue(probe.noteIsVisible, "A pushed Note must hide the app bar")`.
+    ///             `XCTAssertTrue(probe.noteIsVisible, "A pushed Note must hide the app bar")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testNoteNavigationReportsToolbarVisibilityAndRestoresOnReturn() async throws
@@ -586,10 +586,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testChecklistTypeSwitchesPreserveInactiveContentAndIdentity
     /// @brief      Verify that checklist Type Switches Preserve Inactive Content And Identity
     /// @details    Exercises `.actionDetail`, `.linkedCard`, `.webLink`. Checks `XCTAssertEqual(restored.id, id)`;
-    ///             `XCTAssertTrue(restored.isCompleted)`.
+    ///             `XCTAssertTrue(restored.isCompleted)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testChecklistTypeSwitchesPreserveInactiveContentAndIdentity() throws
     {
@@ -637,7 +637,7 @@ extension PlenactBoardDocumentTests
     ///             .linkedCard(cardID: 12))`.
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLegacyTypedChecklistItemsSeedRetainedPayloads() throws
     {
@@ -664,10 +664,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that compact Profile Renders Slimmer Than Detailed Without Editing
     /// @details    Exercises `compact.sizeThatFits`, `detailed.sizeThatFits`,
     ///             `UIApplication.shared.connectedScenes.compactMap`. Checks `XCTAssertLessThan(compactSize.height,
-    ///             detailedSize.height)`; `XCTAssertLessThanOrEqual(compactSize.height, 90)`.
+    ///             detailedSize.height)`; `XCTAssertLessThanOrEqual(compactSize.height, 90)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testCompactProfileRendersSlimmerThanDetailedWithoutEditing() async throws
@@ -683,7 +683,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        PlenactBoardDocumentTests.testCompactProfileRendersSlimmerThanDetailedWithoutEditing.row
         /// @brief      Prepare row for the enclosing regression test
-        /// @details    Supplies the local fixture for compact Profile Renders Slimmer Than Detailed Without Editing.
+        /// @details    Supplies the local fixture for compact Profile Renders Slimmer Than Detailed Without Editing
         ///
         /// @param[in]  compact  Whether the compact presentation is selected
         ///
@@ -787,10 +787,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testBoardCardDetailPersistsAndDecodesLegacyAppearance
     /// @brief      Verify that board Card Detail Persists And Decodes Legacy Appearance
     /// @details    Exercises `BoardAppearance.decodeWeek`. Checks `XCTAssertNil(legacy.cardDetail)`;
-    ///             `XCTAssertEqual(try BoardAppearance.decodeWeek(data).cardDetail, detail)`.
+    ///             `XCTAssertEqual(try BoardAppearance.decodeWeek(data).cardDetail, detail)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testBoardCardDetailPersistsAndDecodesLegacyAppearance() throws
     {
@@ -826,10 +826,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that library Search Finds Note Content And Keeps Collection Identity
     /// @details    Exercises `LabelLibraryStore.load`, `LibrarySearchIndex.results`, `results.compactMap`. Checks
     ///             `XCTAssertEqual(results.count, 2)`; `XCTAssertEqual(Set(results.compactMap(\.ownerID)), [first.id,
-    ///             second.id])`.
+    ///             second.id])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testLibrarySearchFindsNoteContentAndKeepsCollectionIdentity() throws
     {
@@ -870,10 +870,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that cross Board Move Supports Notes And Keeps Within Board Identity
     /// @details    Exercises `CrossBoardCardMovement.move`, `note.replacingLocation`. Checks `XCTAssertEqual(moved,
     ///             note.replacingLocation(id: note.id, listTitle: "Ready"))`;
-    ///             `XCTAssertTrue(collections[0].lists[0].cards.isEmpty)`.
+    ///             `XCTAssertTrue(collections[0].lists[0].cards.isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testCrossBoardMoveSupportsNotesAndKeepsWithinBoardIdentity() throws
     {
@@ -918,10 +918,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that emoji Reactions Validate One Emoji And Toggle Only The Current Author
     /// @details    Exercises `ItemEmojiReaction.validatedEmoji`, `ItemEmojiReaction.toggling`. Checks
     ///             `XCTAssertEqual(ItemEmojiReaction.validatedEmoji(" " + emoji + " "), emoji)`;
-    ///             `XCTAssertNil(ItemEmojiReaction.validatedEmoji(invalid))`.
+    ///             `XCTAssertNil(ItemEmojiReaction.validatedEmoji(invalid))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testEmojiReactionsValidateOneEmojiAndToggleOnlyTheCurrentAuthor() throws
     {
@@ -956,10 +956,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testReactionPreviewVisibilityDefaultsAndPersistsWithoutRemovingReactions
     /// @brief      Verify that reaction Preview Visibility Defaults And Persists Without Removing Reactions
     /// @details    Exercises `restored.replacingLocation`. Checks `XCTAssertNil(card.showsReactionsInPreviews)`;
-    ///             `XCTAssertEqual(card.previewReactions, [reaction])`.
+    ///             `XCTAssertEqual(card.previewReactions, [reaction])`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testReactionPreviewVisibilityDefaultsAndPersistsWithoutRemovingReactions() throws
     {
@@ -996,10 +996,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that reaction Identity Is Stable And Legacy Cards Remain Unchanged Until Reacted To
     /// @details    Exercises `LocalReactionIdentity.current`, `LocalReactionIdentity.forUserAction`,
     ///             `LocalProfileStore.load`. Checks `XCTAssertNil(LocalReactionIdentity.current(in: defaults))`;
-    ///             `XCTAssertNil(defaults.object(forKey: LocalReactionIdentity.key))`.
+    ///             `XCTAssertNil(defaults.object(forKey: LocalReactionIdentity.key))`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testReactionIdentityIsStableAndLegacyCardsRemainUnchangedUntilReactedTo() throws
     {
@@ -1047,10 +1047,10 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testLongDetailHeadersRenderWithoutEditingCardsOrNotes
     /// @brief      Verify that long Detail Headers Render Without Editing Cards Or Notes
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertTrue(emissions.isEmpty)`.
+    ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertTrue(emissions.isEmpty)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testLongDetailHeadersRenderWithoutEditingCardsOrNotes() async throws
@@ -1123,10 +1123,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that appearance Retains Card Note Copies Archives And Both Local Stores
     /// @details    Exercises `card.replacingLocation`, `list.archiveCard`, `collection.rename`. Checks
     ///             `XCTAssertEqual(copy.appearance, appearance)`; `XCTAssertEqual(copy.attachments,
-    ///             card.attachments)`.
+    ///             card.attachments)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     func testAppearanceRetainsCardNoteCopiesArchivesAndBothLocalStores() async throws
     {
@@ -1188,10 +1188,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that appearance Sheet And Decorated Note Layout Do Not Modify Records
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKey`. Uses the fixture and assertions below to verify appearance Sheet And
-    ///             Decorated Note Layout Do Not Modify Records.
+    ///             Decorated Note Layout Do Not Modify Records
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testAppearanceSheetAndDecoratedNoteLayoutDoNotModifyRecords() async throws
@@ -1291,7 +1291,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testEditingLockRoundTripsAndSurvivesCopyArchiveAndRelocation
     /// @brief      Persist Card and Note locks without changing legacy editable records
     /// @details    Verifies omitted legacy lock keys, explicit locking and unlocking, owner storage, list copying,
-    ///             archive restoration, and destination identity changes while retaining attachments and content.
+    ///             archive restoration, and destination identity changes while retaining attachments and content
     ///
     /// @return     (Void) no return value
     /// @throws     Fixture encoding, decoding, or checked storage failures
@@ -1354,7 +1354,7 @@ extension PlenactBoardDocumentTests
     /// @fcn        PlenactBoardDocumentTests.testLockedContentRejectsEditsAndAllowsOnlyAnUnchangedUnlock
     /// @brief      Protect locked content from stale editors and bulk completion clearing
     /// @details    Rejects title, completion, nested checklist, attachment, and unlock-with-edit proposals. A pure
-    ///             unlock remains accepted, and clearing list checkmarks changes only unlocked cards.
+    ///             unlock remains accepted, and clearing list checkmarks changes only unlocked cards
     ///
     /// @return     (Void) no return value
     /// @throws     XCTest fixture unwrapping failures
@@ -1434,7 +1434,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Render locked Cards and Notes for reading without opening editors or saving
     /// @details    Mounts both item kinds with body text, nested checklist content, and an attached picture. The
     ///             locked presentation must not contain enabled text fields or editable text views, and rendering
-    ///             must never invoke the owner update callback.
+    ///             must never invoke the owner update callback
     ///
     /// @return     (Void) no return value
     /// @throws     XCTest fixture setup or cancelled layout delays
@@ -1463,7 +1463,7 @@ extension PlenactBoardDocumentTests
         ///
         /// @fcn        testLockedCardAndNoteDetailsDoNotMountEditableTextInputs.descendants
         /// @brief      Collect hosted native views for input inspection
-        /// @details    Includes the root and recursively traverses child views without assuming private containers.
+        /// @details    Includes the root and recursively traverses child views without assuming private containers
         ///
         /// @param[in]  view  Native subtree to inspect
         ///
@@ -1573,10 +1573,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify selected-run rich-text formatting and retained content
     /// @details    Applies bold, italic, and color changes to the selected native text range,
     ///             checks unaffected writing and selection, and round-trips formatted Card and
-    ///             comment content through Codable.
+    ///             comment content through Codable
     ///
     /// @return     (Void) records rich-text editing and persistence assertions
-    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest.
+    /// @throws     Fixture setup, decoding, or checked creation errors propagate to XCTest
     ///
     @MainActor
     func testRichTextFormattingPreservesSelectedRunsAndCardPersistence() throws
@@ -1637,10 +1637,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that rich Text Editor Provides Accessible Keyboard Toolbar
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.constant`.
     ///             Checks `XCTAssertNotNil(controls.first(where: { $0.accessibilityLabel == "Font and formatting"
-    ///             })?.menu)`; `XCTAssertEqual(text.text, "A multiline description\nwith a second line")`.
+    ///             })?.menu)`; `XCTAssertEqual(text.text, "A multiline description\nwith a second line")`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testRichTextEditorProvidesAccessibleKeyboardToolbar() async throws
@@ -1676,7 +1676,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testRichTextEditorProvidesAccessibleKeyboardToolbar.editor
         /// @brief      Find editor in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UITextView. Returns the first qualifying match, or
-        ///             nil when none is present.
+        ///             nil when none is present
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1704,7 +1704,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testRichTextEditorProvidesAccessibleKeyboardToolbar.buttons
         /// @brief      Find buttons in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UIButton. Returns all collected matches in hierarchy
-        ///             order.
+        ///             order
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///
@@ -1746,7 +1746,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that rich Text Typing Styles And Legacy Text
     /// @details    Exercises `editor.makeCoordinator`, `PlanRichText.attributed`, `UIFont.preferredFont`. Checks
     ///             `XCTAssertEqual(stored, "Legacy plain text 😊")`; `XCTAssertTrue((view.typingAttributes[.font] as?
-    ///             UIFont)?.fontDescriptor.symbolicTraits.contains(.traitBold) ?? false)`.
+    ///             UIFont)?.fontDescriptor.symbolicTraits.contains(.traitBold) ?? false)`
     ///
     /// @return     (Void) no return value
     ///
@@ -1788,10 +1788,10 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that checklist Editing Selects Whole Existing Item
     /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
     ///             `previous?.makeKeyAndVisible`. Checks `XCTAssertTrue(field.becomeFirstResponder())`;
-    ///             `XCTAssertEqual(field.offset(from: field.beginningOfDocument, to: selection.start), 0)`.
+    ///             `XCTAssertEqual(field.offset(from: field.beginningOfDocument, to: selection.start), 0)`
     ///
     /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     @MainActor
     func testChecklistEditingSelectsWholeExistingItem() async throws
@@ -1846,7 +1846,7 @@ extension PlenactBoardDocumentTests
         /// @fcn        PlenactBoardDocumentTests.testChecklistEditingSelectsWholeExistingItem.find
         /// @brief      Find find in the hosted view hierarchy
         /// @details    Recursively inspects native subviews for UITextField. Returns the first qualifying match, or
-        ///             nil when none is present.
+        ///             nil when none is present
         ///
         /// @param[in]  view  Native view inspected or synchronized by the operation
         ///

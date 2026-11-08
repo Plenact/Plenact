@@ -2,16 +2,16 @@
 // @file       AppDailyOpening.swift
 // @brief      First daily opening to today's Week List, using a separate device-local preference domain
 // @details    Local calendar-day boundaries start at midnight. A daily opening takes priority over the
-//             five-minute browsing reset, but never over open work. No workspace/export keys are added.
+//             five-minute browsing reset, but never over open work. No workspace/export keys are added
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import UIKit
 import UIKit.UIGestureRecognizerSubclass
 
 
-/// Records only which local calendar day already received its daily opening.
+/// Records only which local calendar day already received its daily opening
 /// @section Purpose
-///     Persist the once-per-day decision across launches without sharing navigation as user data.
+///     Persist the once-per-day decision across launches without sharing navigation as user data
 enum AppDailyOpening
 {
 
@@ -57,7 +57,7 @@ extension AppRootView
     /// @brief Select the current Week and today's List at its top on the first eligible opening of the day
     /// @param[in] date Current local instant, injected when needed by callers
     /// @return True after claiming the daily opening and issuing its navigation request
-    /// @note Missing/archived targets or active editors defer the rule to a later foreground opening.
+    /// @note Missing/archived targets or active editors defer the rule to a later foreground opening
     @discardableResult
     func openFirstDailyWeek(at date: Date = .now) -> Bool
     {
@@ -75,7 +75,7 @@ extension AppRootView
             return false
         }
 
-        // A not-yet-mounted Week must read the same top position as an already mounted Week.
+        // A not-yet-mounted Week must read the same top position as an already mounted Week
         let memory = BoardViewportMemory(owner: week.id.uuidString)
 
         memory.resetScrollOffsets()
@@ -100,9 +100,9 @@ extension AppRootView
 }
 
 
-/// One-shot monotonic deadline for an untouched daily Week overview.
+/// One-shot monotonic deadline for an untouched daily Week overview
 /// @section Purpose
-///     Cancellation consumes this opening; stale tasks cannot affect another opening.
+///     Cancellation consumes this opening; stale tasks cannot affect another opening
 struct DailyWeekOverview
 {
 
@@ -112,7 +112,7 @@ struct DailyWeekOverview
     private(set) var deadline: ContinuousClock.Instant?
 
 
-    /// Arm only after the daily opening has been claimed.
+    /// Arm only after the daily opening has been claimed
     mutating func arm()
     {
 
@@ -122,7 +122,7 @@ struct DailyWeekOverview
     }
 
 
-    /// Begin once the destination is visible and its scroll target has been consumed.
+    /// Begin once the destination is visible and its scroll target has been consumed
     mutating func begin(at instant: ContinuousClock.Instant) -> UUID?
     {
 
@@ -138,7 +138,7 @@ struct DailyWeekOverview
     }
 
 
-    /// Consume a matching deadline once, rejecting early or stale callbacks.
+    /// Consume a matching deadline once, rejecting early or stale callbacks
     mutating func consume(_ request: UUID, at instant: ContinuousClock.Instant) -> Bool
     {
 
@@ -152,7 +152,7 @@ struct DailyWeekOverview
     }
 
 
-    /// Cancel permanently for this opening, including before its timer starts.
+    /// Cancel permanently for this opening, including before its timer starts
     mutating func cancel()
     {
 
@@ -166,7 +166,7 @@ struct DailyWeekOverview
 extension AppRootView
 {
 
-    /// Start the daily overview only after Week appears and navigation settles.
+    /// Start the daily overview only after Week appears and navigation settles
     func beginDailyOverview()
     {
 
@@ -199,9 +199,9 @@ extension AppRootView
 }
 
 
-/// Fades a transient in-memory snapshot while preserving both tab hierarchies.
+/// Fades a transient in-memory snapshot while preserving both tab hierarchies
 /// @section Purpose
-///     No screen image is written to disk; backgrounding immediately removes the overlay.
+///     No screen image is written to disk; backgrounding immediately removes the overlay
 @MainActor
 final class DailyOverviewFade
 {
@@ -209,7 +209,7 @@ final class DailyOverviewFade
     private(set) weak var overlay: UIView?
 
 
-    /// Switch tabs beneath a noninteractive snapshot, respecting Reduce Motion.
+    /// Switch tabs beneath a noninteractive snapshot, respecting Reduce Motion
     func transition(in window: UIWindow?, reduceMotion: Bool, selectToday: () -> Void)
     {
 
@@ -251,7 +251,7 @@ final class DailyOverviewFade
     }
 
 
-    /// Remove any unfinished visual transition on loss of foreground visibility.
+    /// Remove any unfinished visual transition on loss of foreground visibility
     func cancel()
     {
 
@@ -264,9 +264,9 @@ final class DailyOverviewFade
 }
 
 
-/// Reports actual Week appearance and passively observes interaction in its scene.
+/// Reports actual Week appearance and passively observes interaction in its scene
 /// @section Purpose
-///     Touches fail immediately without delaying or preventing normal controls and scrolling.
+///     Touches fail immediately without delaying or preventing normal controls and scrolling
 struct DailyOverviewProbe: UIViewControllerRepresentable
 {
 
@@ -333,7 +333,7 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
         }
 
 
-        /// Attach only during a pending overview; observe typing in this window as well as touches.
+        /// Attach only during a pending overview; observe typing in this window as well as touches
         func configure(armed: Bool, interaction: @escaping () -> Void)
         {
 
@@ -382,7 +382,7 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
         }
 
 
-        /// Remove scene observers when the opening is consumed or its view is dismantled.
+        /// Remove scene observers when the opening is consumed or its view is dismantled
         func disconnect()
         {
 

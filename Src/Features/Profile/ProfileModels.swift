@@ -4,7 +4,7 @@
 // @details    Defines Codable profile colors, avatar choices, identity, and planning or
 //             accessibility preferences. Resolves compatible defaults for older settings and
 //             derives filtered Focus entries without copying canonical Day content; identity
-//             remains separate from online authentication.
+//             remains separate from online authentication
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -424,7 +424,7 @@ enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable
 /// Defines ordering choices for Today Focus entries
 ///
 /// @section    Purpose
-///     Selects the derived preview order without reordering canonical Day List content.
+///     Selects the derived preview order without reordering canonical Day List content
 ///
 enum TodayFocusOrder: String, Codable, CaseIterable
 {
@@ -444,7 +444,7 @@ enum TodayFocusOrder: String, Codable, CaseIterable
 ///
 /// @section    Purpose
 ///     Pairs a canonical Card with its owning Day section heading without creating another
-///     persisted record.
+///     persisted record
 ///
 struct TodayFocusEntry: Identifiable
 {
@@ -459,7 +459,7 @@ struct TodayFocusEntry: Identifiable
         card.id
     }
 
-    /// Date-only values do not claim a time; a timed start takes precedence over a timed due date.
+    /// Date-only values do not claim a time; a timed start takes precedence over a timed due date
     var previewTime: (date: Date, isStart: Bool)?
     {
 
@@ -511,14 +511,14 @@ struct TodayFocusEntry: Identifiable
     /// @fcn        TodayFocusEntry.isUpNext
     /// @brief      Check whether an entry has an applicable upcoming schedule
     /// @details    Treats time-only endpoints as the reference day's wall-clock times, date-only ends as the full
-    ///             calendar day, and applies the current-time eligibility rules without mutating the card.
+    ///             calendar day, and applies the current-time eligibility rules without mutating the card
     ///
     /// @param[in]  now       Reference time used instead of an implicit clock read
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
     ///
     /// @return     (Bool) true when the entry has an applicable nonelapsed date or time schedule
     ///
-    /// @note       Treat time-only schedules as today's wall clock and date-only ends as the full day.
+    /// @note       Treat time-only schedules as today's wall clock and date-only ends as the full day
     ///
     func isUpNext(at now: Date, calendar: Calendar) -> Bool
     {
@@ -528,7 +528,7 @@ struct TodayFocusEntry: Identifiable
         /// @fcn        TodayFocusEntry.isUpNext.resolved
         /// @brief      Resolve a schedule endpoint for Up Next matching
         /// @details    Anchors time-only values to the reference day and treats a date-only end as the following
-        ///             calendar-day boundary; nil endpoints remain nil.
+        ///             calendar-day boundary; nil endpoints remain nil
         ///
         /// @param[in]  value  Optional schedule value; nil explicitly clears the endpoint
         /// @param[in]  kind   Date, review, or collection kind selecting this operation's behavior
@@ -577,7 +577,7 @@ struct TodayFocusEntry: Identifiable
         if let finish
         {
 
-            // Date-only finish is an exclusive next-midnight boundary.
+            // Date-only finish is an exclusive next-midnight boundary
             let remains = card.dueDateKind == .date ? finish > now : finish >= now
 
             guard remains else
@@ -607,7 +607,7 @@ struct TodayFocusEntry: Identifiable
     /// @fcn        TodayFocusEntry.scheduleDate
     /// @brief      Resolve the preferred schedule date used for Focus ordering
     /// @details    Prefers startDate to dueDate, anchors time-only values to the represented day, and normalizes
-    ///             date-only precision through the supplied calendar.
+    ///             date-only precision through the supplied calendar
     ///
     /// @param[in]  day       Calendar day represented by the result
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -645,7 +645,7 @@ struct TodayFocusEntry: Identifiable
 ///
 /// @section    Purpose
 ///     Persists Tucked or Fanned presentation independently of the owner's zero-through-five
-///     importance level.
+///     importance level
 ///
 enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable
 {
@@ -670,7 +670,7 @@ enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable
 ///
 /// @section    Purpose
 ///     Shares a stable time-of-day policy between canonical Day Lists and the Focus projection.
-///     Equal times and untimed cards retain their relative order; only active dated Lists change.
+///     Equal times and untimed cards retain their relative order; only active dated Lists change
 ///
 enum DayListTimeOrder
 {
@@ -680,7 +680,7 @@ enum DayListTimeOrder
     /// @fcn        DayListTimeOrder.time
     /// @brief      Resolve a Card's timed start, or timed due value when no timed start exists
     /// @details    Date-only values are untimed. Anchoring clock components to one represented
-    ///             day makes time-only and full date/time values comparable within a Day List.
+    ///             day makes time-only and full date/time values comparable within a Day List
     /// @param[in]  card     Card whose explicit schedule precision determines eligibility
     /// @param[in]  day      Common day used to compare clock times
     /// @param[in]  calendar Calendar supplying time-zone and daylight-saving rules
@@ -707,7 +707,7 @@ enum DayListTimeOrder
     /// @fcn        DayListTimeOrder.cards
     /// @brief      Sort each existing section by time while keeping its divider in place
     /// @details    Stable ties preserve manual order. Untimed and date-only Cards follow timed
-    ///             Cards in their own section; no Card is removed or moved into another section.
+    ///             Cards in their own section; no Card is removed or moved into another section
     /// @param[in]  cards    Complete canonical List contents, including section dividers
     /// @param[in]  calendar Calendar used to interpret schedule clock components
     /// @return     ([KanbanCard]) stably ordered contents retaining all original Card values
@@ -722,7 +722,7 @@ enum DayListTimeOrder
         ///
         /// @fcn        DayListTimeOrder.cards.flush
         /// @brief      Append the current section in stable schedule order
-        /// @details    Uses original offsets to order ties and untimed Cards consistently.
+        /// @details    Uses original offsets to order ties and untimed Cards consistently
         /// @return     (Void) drains the current section into the ordered result
         ///
         func flush()
@@ -782,7 +782,7 @@ enum DayListTimeOrder
     ///
     /// @fcn        DayListTimeOrder.lists
     /// @brief      Apply time ordering exclusively to active date-associated Day Lists
-    /// @details    Other Lists and archived contents retain their exact order and content.
+    /// @details    Other Lists and archived contents retain their exact order and content
     /// @param[in]  lists      Complete workspace List snapshot
     /// @param[in]  dayListIDs Identities mapped to real dates by the planning calendar
     /// @param[in]  calendar   Calendar used to interpret schedule clock components
@@ -826,7 +826,7 @@ enum DayListTimeOrder
 ///
 /// @section    Purpose
 ///     Decodes compatible defaults for older profiles and keeps creation, focus, importance
-///     styling, and corner-navigation choices separate from Card content.
+///     styling, and corner-navigation choices separate from Card content
 ///
 struct LocalProfilePreferences: Hashable, Codable
 {
@@ -970,7 +970,7 @@ struct LocalProfilePreferences: Hashable, Codable
     /// @fcn        LocalProfilePreferences.todayFocusEntries
     /// @brief      Select and order the complete set of matching Focus entries
     /// @details    Applies completion visibility and OR-combined filters while preserving section context; the
-    ///             display row limit does not truncate this result set.
+    ///             display row limit does not truncate this result set
     ///
     /// @param[in]  cards              Canonical card values in their current order
     /// @param[in]  day                Calendar day represented by the result
@@ -981,7 +981,7 @@ struct LocalProfilePreferences: Hashable, Codable
     /// @return     ([TodayFocusEntry]) all matching Focus entries with section context and the configured ordering
     ///
     /// @note       Derive Focus without mutating Day order or interpreting the meaning of headings. Section
-    ///             boundaries are captured before filtering; viewport capacity never removes matches.
+    ///             boundaries are captured before filtering; viewport capacity never removes matches
     ///
     func todayFocusEntries(
         in cards: [KanbanCard], on day: Date = .now, calendar: Calendar = .current, importantCardIDs: Set<Int> = [],
@@ -1025,7 +1025,7 @@ struct LocalProfilePreferences: Hashable, Codable
         if keepsDayListsInTimeOrder || todayFocusOrder == .chronological
         {
 
-            // Stable ties and undated items retain the user's original sequence.
+            // Stable ties and undated items retain the user's original sequence
             let sectionOrder = Dictionary(
                 uniqueKeysWithValues:
                 cards.enumerated().filter
@@ -1092,7 +1092,7 @@ struct LocalProfilePreferences: Hashable, Codable
     ///
     /// @fcn        LocalProfilePreferences.todayFocusItems
     /// @brief      Project Focus entries into their card values
-    /// @details    Uses the shared Focus selection path for callers that do not need section metadata.
+    /// @details    Uses the shared Focus selection path for callers that do not need section metadata
     ///
     /// @param[in]  cards  Canonical card values in their current order
     ///

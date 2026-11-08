@@ -2,14 +2,14 @@
 // @file       PortableMediaPlacement.swift
 // @brief      Verified, collision-free native placement plan for portable original files
 // @details    Supported User Data Model versions: 1.0 Assets and working 1.1 appearance references.
-//             Stages only into a new caller-owned directory. Never replaces active app media areas.
+//             Stages only into a new caller-owned directory. Never replaces active app media areas
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Retains exact original bytes and native filenames independently of the active application container.
+/// Retains exact original bytes and native filenames independently of the active application container
 /// @section Purpose
-///     Prepare and verify every original before the complete-workspace coordinator is allowed to activate it.
+///     Prepare and verify every original before the complete-workspace coordinator is allowed to activate it
 @MainActor
 struct PortableMediaPlacement
 {
@@ -52,7 +52,7 @@ struct PortableMediaPlacement
             {
                 throw PortablePackageReview.Failure.invalid
             }
-            // Also retain originals with no active content reference, in their declared owned media area.
+            // Also retain originals with no active content reference, in their declared owned media area
             areas[id, default: []].insert(area)
         }
 

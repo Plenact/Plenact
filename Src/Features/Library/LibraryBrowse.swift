@@ -2,7 +2,7 @@
 // @file       LibraryBrowse.swift
 // @brief      Derived Library filters and owner-qualified browsing
 // @details    Builds upcoming previews and label matches without duplicating canonical Card
-//             records or taking persistence ownership.
+//             records or taking persistence ownership
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,7 +16,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Provides labels and search prompts for user collections, labels, examples, templates, and
-///     help.
+///     help
 ///
 enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 {
@@ -163,7 +163,7 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
     /// @fcn        LibraryBrowseFilter.includes
     /// @brief      Check whether an active collection belongs in this Library filter
     /// @details    Requires a collection-browsing filter and matches list or board kind unless the All filter is
-    ///             selected.
+    ///             selected
     ///
     /// @param[in]  collection  Personal collection supplying the owner context
     ///
@@ -184,7 +184,7 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 ///
 /// @section    Purpose
 ///     Pairs its canonical owner, list, and Card with the reason, rank, and reference date used by
-///     the preview.
+///     the preview
 ///
 struct LibraryPlateItem: Identifiable
 {
@@ -210,7 +210,7 @@ struct LibraryPlateItem: Identifiable
 ///
 /// @section    Purpose
 ///     Ranks unfinished, non-divider content by date-bearing urgency and importance while retaining
-///     owner-qualified identities.
+///     owner-qualified identities
 ///
 enum LibraryPlateSelection
 {
@@ -220,7 +220,7 @@ enum LibraryPlateSelection
     /// @fcn        LibraryPlateSelection.items
     /// @brief      Rank unfinished Library content for the upcoming-items preview
     /// @details    Considers date-bearing urgency and explicit importance across active owners and lists while
-    ///             excluding completed cards and section dividers.
+    ///             excluding completed cards and section dividers
     ///
     /// @param[in]  collections  Personal collection values available to the operation
     /// @param[in]  important    Importance selections or the Important filter state
@@ -251,7 +251,7 @@ enum LibraryPlateSelection
                     let marked = important.contains(LibraryRecentItem(collectionID: collection.id, cardID: card.id))
                     var due    = card.dueDate
 
-                    // A time without a date cannot be assigned an urgency day.
+                    // A time without a date cannot be assigned an urgency day
                     if !card.dueDateKind.includesDate
                     {
 
@@ -334,7 +334,7 @@ enum LibraryPlateSelection
 ///
 /// @section    Purpose
 ///     Uses an inert default so views outside a Library route do not create visit-history side
-///     effects.
+///     effects
 ///
 struct LibraryItemOpenedKey: EnvironmentKey
 {
@@ -353,7 +353,7 @@ struct LibraryItemOpenedKey: EnvironmentKey
 ///
 /// @section    Purpose
 ///     Lets descendants report a viewed Card to the owner without coupling them to its
-///     recent-history storage.
+///     recent-history storage
 ///
 extension EnvironmentValues
 {
@@ -384,7 +384,7 @@ extension EnvironmentValues
 ///
 /// @section    Purpose
 ///     Displays the item's reason and owner styling in a Dynamic Type-scaled tile without changing
-///     the source record.
+///     the source record
 ///
 struct LibraryPlateTile: View
 {
@@ -445,7 +445,7 @@ struct LibraryPlateTile: View
 ///
 /// @section    Purpose
 ///     Resolves live owner-qualified matches, filters their displayed context, and opens the chosen
-///     source item.
+///     source item
 ///
 struct LibraryLabelMatchesView: View
 {

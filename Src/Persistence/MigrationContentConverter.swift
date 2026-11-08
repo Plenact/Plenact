@@ -2,21 +2,21 @@
 // @file       MigrationContentConverter.swift
 // @brief      Owner-aware Board/List/Card conversion with projection reconciliation
 // @details    Supported User Data Model versions: 1.0. Partial, local-only migration preview.
-//             Original source bytes remain preserved; no cloud ownership or synchronization is implied.
+//             Original source bytes remain preserved; no cloud ownership or synchronization is implied
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Converts complete owned content while retaining unresolved dependencies separately.
+/// Converts complete owned content while retaining unresolved dependencies separately
 /// @section Purpose
-///     Produce inspectable canonical content without claiming the remaining workspace adapters exist.
+///     Produce inspectable canonical content without claiming the remaining workspace adapters exist
 @MainActor
 enum MigrationContentConverter
 {
 
-    /// Original owner context, distinct from a translated title or current List position.
+    /// Original owner context, distinct from a translated title or current List position
     /// @section Purpose
-    ///     Keep copied template content and retained live Weeks independent.
+    ///     Keep copied template content and retained live Weeks independent
     private struct Owner
     {
 
@@ -28,9 +28,9 @@ enum MigrationContentConverter
     }
 
 
-    /// Complete result of this atomic conversion slice.
+    /// Complete result of this atomic conversion slice
     /// @section Purpose
-    ///     Report records, unresolved references and source precision independently.
+    ///     Report records, unresolved references and source precision independently
     struct Result
     {
 
@@ -183,8 +183,8 @@ enum MigrationContentConverter
                 namespace: "template:" + $0.id.uuidString.lowercased() + ":" + $0.collection.id.uuidString.lowercased()) }
 
         }
-        // Original optional values remain available even when compatible native constructors normalize them.
-        /// Retain original optional values using immutable source owner/Card keys.
+        // Original optional values remain available even when compatible native constructors normalize them
+        /// Retain original optional values using immutable source owner/Card keys
         /// @fcn MigrationContentConverter.remember
         /// @param[in] collection Original stored Collection object
         /// @return Void; records raw evidence without writing source data
@@ -476,16 +476,16 @@ enum MigrationContentConverter
 }
 
 
-/// Prepares personal selections without assigning an unverified cloud account.
+/// Prepares personal selections without assigning an unverified cloud account
 /// @section Purpose
-///     Retain owner-qualified bookmarks and importance as local evidence until account binding.
+///     Retain owner-qualified bookmarks and importance as local evidence until account binding
 @MainActor
 enum MigrationSelectionPreview
 {
 
-    /// Reviewable entries remain distinct from canonical content_selection records.
+    /// Reviewable entries remain distinct from canonical content_selection records
     /// @section Purpose
-    ///     Expose unresolved or conflicting selections without discarding their original stores.
+    ///     Expose unresolved or conflicting selections without discarding their original stores
     struct Result
     {
 
@@ -497,7 +497,7 @@ enum MigrationSelectionPreview
 
     /// @fcn MigrationSelectionPreview.prepare
     /// @brief Reconcile saved selections against exact original owners and converted Card targets
-    /// @details Does not infer an account ID, clamp importance, or spread a numeric bookmark across owners.
+    /// @details Does not infer an account ID, clamp importance, or spread a numeric bookmark across owners
     /// @param[in] values Frozen original preferences
     /// @param[in] owners Distinct original owner namespaces and Collections
     /// @param[in] currentScope Calendar owner of the unqualified Board bookmark projection
@@ -577,7 +577,7 @@ enum MigrationSelectionPreview
                let scope = currentScope, let owner = owners.first(where: { $0.0 == scope }),
                Set(ids) == owner.1.savedCardIDs
             {
-                // This is the current Week's projection, already represented by its owner below.
+                // This is the current Week's projection, already represented by its owner below
             }
             else
             {

@@ -2,7 +2,7 @@
 // @file       BoardInteractions.swift
 // @brief      Native Board drag, drop, and swipe routing
 // @details    Coordinates native row interactions, insertion boundaries, and the reserved
-//             Board-paging swipe region without replacing canonical content identities.
+//             Board-paging swipe region without replacing canonical content identities
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 ///
 /// @section    Purpose
 ///     Makes enclosing horizontal paging wait for eligible native row pans while excluding the
-///     routing gate to avoid dependency cycles.
+///     routing gate to avoid dependency cycles
 ///
 @MainActor
 enum BoardListSwipePriority
@@ -26,7 +26,7 @@ enum BoardListSwipePriority
     /// @fcn        BoardListSwipePriority.install
     /// @brief      Prioritize native list row gestures over board paging
     /// @details    Finds a horizontal ancestor and makes its pan wait for the inner list's other pan gestures;
-    ///             returns the number of dependencies installed.
+    ///             returns the number of dependencies installed
     ///
     /// @param[in]  list  List supplying the current content and metadata
     ///
@@ -51,7 +51,7 @@ enum BoardListSwipePriority
             {
 
                 // Leave the vertical scrolling pan independent; prioritize the
-                // native row-action/editing pans before horizontal Board paging.
+                // native row-action/editing pans before horizontal Board paging
                 let gestures = (list.gestureRecognizers ?? []).filter
                 {
 
@@ -81,7 +81,7 @@ enum BoardListSwipePriority
 ///
 /// @section    Purpose
 ///     Reserves the rightmost quarter for Board paging and leaves the remaining width available to
-///     native row swipe actions.
+///     native row swipe actions
 ///
 enum BoardCardSwipeRouting
 {
@@ -91,7 +91,7 @@ enum BoardCardSwipeRouting
     /// @fcn        BoardCardSwipeRouting.routesToBoard(start:bounds:)
     /// @brief      Reserve the rightmost quarter of a Card for Board navigation
     /// @details    Uses the physical Card bounds, independent of text direction or screen width.
-    ///             Only a start inside the Card and at or beyond seventy-five percent is routed.
+    ///             Only a start inside the Card and at or beyond seventy-five percent is routed
     ///
     /// @param[in]  start   Initial touch in the same coordinates as bounds
     /// @param[in]  bounds  Actual Card preview bounds
@@ -112,7 +112,7 @@ enum BoardCardSwipeRouting
 ///
 /// @section    Purpose
 ///     Fails outside the reserved Card region and permits the Board pan to recognize alongside the
-///     gate without replacing native delegates.
+///     gate without replacing native delegates
 ///
 @MainActor
 final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDelegate
@@ -127,7 +127,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     /// @fcn        BoardCardSwipeGate.touchesBegan(_:with:)
     /// @brief      Choose the Card's swipe region at the beginning of a touch
     /// @details    Fails immediately outside enabled right-quarter markers, leaving native Delete
-    ///             gestures unaffected elsewhere. Accepted touches still require leftward intent.
+    ///             gestures unaffected elsewhere. Accepted touches still require leftward intent
     ///
     /// @param[in]  touches  New native touches
     /// @param[in]  event    Native touch event
@@ -160,7 +160,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     ///
     /// @fcn        BoardCardSwipeGate.gestureRecognizerShouldBegin(_:)
     /// @brief      Reserve only predominantly leftward horizontal movement
-    /// @details    Vertical scrolling and rightward swipes keep their existing native behavior.
+    /// @details    Vertical scrolling and rightward swipes keep their existing native behavior
     ///
     /// @param[in]  gestureRecognizer  Gate whose movement is being evaluated
     ///
@@ -178,7 +178,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     ///
     /// @fcn        BoardCardSwipeGate.gestureRecognizer(_:shouldRecognizeSimultaneouslyWith:)
     /// @brief      Allow the Board to scroll while its Delete-blocking gate is active
-    /// @details    The gate never translates content itself or replaces a UIKit delegate.
+    /// @details    The gate never translates content itself or replaces a UIKit delegate
     ///
     /// @param[in]  gestureRecognizer       This gate
     /// @param[in]  otherGestureRecognizer  Potential simultaneous recognizer
@@ -199,7 +199,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     /// @fcn        BoardCardSwipeGate.install(marker:)
     /// @brief      Attach one shared routing gate to an embedded native List
     /// @details    Requires a horizontal Board ancestor. Single List and Day views receive no gate.
-    ///             Native row-action pans wait for it; Board paging may run simultaneously with it.
+    ///             Native row-action pans wait for it; Board paging may run simultaneously with it
     ///
     /// @param[in]  marker  Card preview's geometry marker
     ///
@@ -298,7 +298,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
 ///
 /// @section    Purpose
 ///     Installs the native routing gate after mounting and disables participation when the row's
-///     editing context requires it.
+///     editing context requires it
 ///
 struct BoardCardSwipeZone: UIViewRepresentable
 {
@@ -312,7 +312,7 @@ struct BoardCardSwipeZone: UIViewRepresentable
     ///
     /// @section    Purpose
     ///     Registers after window attachment and retains whether this row currently participates in
-    ///     the Board's gesture split.
+    ///     the Board's gesture split
     ///
     final class Marker: UIView
     {
@@ -324,7 +324,7 @@ struct BoardCardSwipeZone: UIViewRepresentable
         ///
         /// @fcn        BoardCardSwipeZone.Marker.didMoveToWindow()
         /// @brief      Register the Card region after its native List hierarchy is mounted
-        /// @details    Defers discovery so enclosing scroll views have completed their layout.
+        /// @details    Defers discovery so enclosing scroll views have completed their layout
         ///
         /// @return     (Void) schedules native routing setup
         ///
@@ -350,7 +350,7 @@ struct BoardCardSwipeZone: UIViewRepresentable
     ///
     /// @fcn        BoardCardSwipeZone.makeUIView(context:)
     /// @brief      Create a transparent noninteractive Card geometry marker
-    /// @details    The enclosing List receives touches; this view only supplies the Card bounds.
+    /// @details    The enclosing List receives touches; this view only supplies the Card bounds
     ///
     /// @param[in]  context  SwiftUI bridge context
     ///
@@ -371,7 +371,7 @@ struct BoardCardSwipeZone: UIViewRepresentable
     ///
     /// @fcn        BoardCardSwipeZone.updateUIView(_:context:)
     /// @brief      Refresh Edit-mode eligibility and native routing registration
-    /// @details    Weak marker registration avoids retaining removed or recycled Card rows.
+    /// @details    Weak marker registration avoids retaining removed or recycled Card rows
     ///
     /// @param[in]  marker   Existing Card marker
     /// @param[in]  context  SwiftUI bridge context
@@ -415,7 +415,7 @@ struct BoardCardFramePreferenceKey: PreferenceKey
     /// @fcn        BoardCardFramePreferenceKey.reduce(value:nextValue:)
     /// @brief      Merge visible card-frame reports by card identity
     /// @details    Uses the latest child report for each identity so drop targeting follows current
-    ///             row geometry.
+    ///             row geometry
     ///
     /// @param[in,out] value      Accumulated preference values updated in place
     /// @param[in]     nextValue  Provider of the next child preference report
@@ -453,7 +453,7 @@ struct BoardListFramePreferenceKey: PreferenceKey
     /// @fcn        BoardListFramePreferenceKey.reduce(value:nextValue:)
     /// @brief      Merge Board list-panel frame reports by list identity
     /// @details    Keeps the latest frame for each list so hit testing uses the currently measured
-    ///             panels.
+    ///             panels
     ///
     /// @param[in,out] value      Accumulated preference values updated in place
     /// @param[in]     nextValue  Provider of the next child preference report
@@ -479,7 +479,7 @@ struct BoardListFramePreferenceKey: PreferenceKey
 ///
 /// @section    Purpose
 ///     Installs drag interaction on the row content container, excludes marked importance controls,
-///     and tracks cancellation separately from List reordering.
+///     and tracks cancellation separately from List reordering
 ///
 struct BoardCardDragSource: UIViewRepresentable
 {
@@ -510,7 +510,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @fcn        BoardCardDragSource.Probe.didMoveToWindow()
         /// @brief      Install the card drag source after the probe enters a window
         /// @details    Calls the superclass lifecycle hook, then asks the coordinator to locate the
-        ///             enclosing card cell.
+        ///             enclosing card cell
         ///
         /// @return     (Void) attempts native interaction installation
         ///
@@ -566,7 +566,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @brief      Attach an enabled native drag interaction to the enclosing card cell
         /// @details    Walks probe ancestors only after window attachment, reuses the current
         ///             content container, and removes an earlier interaction when the container
-        ///             changes.
+        ///             changes
         ///
         /// @param[in]  probe  Row probe used to locate the enclosing native container
         ///
@@ -636,7 +636,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @brief      Begin a local card session and construct its token-only provider
         /// @details    Marks the source active and reports the starting point. Registers only the
         ///             Board token bytes with own-process visibility; card content and attachment
-        ///             references are excluded.
+        ///             references are excluded
         ///
         /// @param[in]  point  Pointer location in the Board window coordinate space
         ///
@@ -676,7 +676,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @fcn        BoardCardDragSource.Coordinator.finish()
         /// @brief      End an active native drag session exactly once
         /// @details    Ignores repeated completion, reports session termination, and removes the
-        ///             interaction if its source probe was detached.
+        ///             interaction if its source probe was detached
         ///
         /// @return     (Void) clears active-session state and performs deferred cleanup
         ///
@@ -710,7 +710,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @fcn        BoardCardDragSource.Coordinator.canBegin(at:in:)
         /// @brief      Reserve importance controls for their own tap-and-hold action
         /// @details    Declines a native lift before creating drag state or a payload when the
-        ///             session starts on a star. The rest of the Card remains draggable.
+        ///             session starts on a star. The rest of the Card remains draggable
         ///
         /// @param[in]  point            Initial native drag-session point
         /// @param[in]  coordinateSpace  View supplying that point's coordinates
@@ -733,7 +733,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @fcn        BoardCardDragSource.Coordinator.dragInteraction(_:itemsForBeginning:)
         /// @brief      Create a native drag item for an attached card source
         /// @details    Requires the interaction window and a start outside importance controls,
-        ///             then begins the token-only session and retains the coordinator in localObject.
+        ///             then begins the token-only session and retains the coordinator in localObject
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
@@ -771,7 +771,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @fcn        BoardCardDragSource.Coordinator.dragInteraction(_:sessionDidMove:)
         /// @brief      Forward the native drag pointer to Board hover state
         /// @details    Converts the session point through the interaction window; ignores movement
-        ///             when the source has no window.
+        ///             when the source has no window
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
@@ -798,7 +798,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @fcn        BoardCardDragSource.Coordinator.dragInteraction(_:session:didEndWith:)
         /// @brief      Clean up the source when UIKit ends the native session
         /// @details    Uses the registered session-end delegate signature and forwards completion
-        ///             to the idempotent finish path regardless of drop operation.
+        ///             to the idempotent finish path regardless of drop operation
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
@@ -822,7 +822,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @fcn        BoardCardDragSource.Coordinator.dragInteraction(_:sessionIsRestrictedToDraggingApplication:)
         /// @brief      Restrict native card dragging to this application
         /// @details    Keeps Board-token sessions inside Plenact rather than offering them to other
-        ///             apps.
+        ///             apps
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
@@ -843,7 +843,7 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @fcn        BoardCardDragSource.Coordinator.dragInteraction(_:sessionAllowsMoveOperation:)
         /// @brief      Allow native move proposals for local card sessions
         /// @details    Enables UIKit move semantics; canonical movement still validates the
-        ///             destination at drop time.
+        ///             destination at drop time
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
@@ -865,7 +865,7 @@ struct BoardCardDragSource: UIViewRepresentable
     /// @fcn        BoardCardDragSource.makeCoordinator()
     /// @brief      Create the native card-drag coordinator
     /// @details    Captures this representable so UIKit callbacks can forward session lifecycle and
-    ///             location updates.
+    ///             location updates
     ///
     /// @return     (Coordinator) coordinator configured with this drag source
     ///
@@ -881,7 +881,7 @@ struct BoardCardDragSource: UIViewRepresentable
     /// @fcn        BoardCardDragSource.makeUIView(context:)
     /// @brief      Create a noninteractive probe for native card-drag installation
     /// @details    Connects the probe to the SwiftUI coordinator without intercepting touches on
-    ///             the card.
+    ///             the card
     ///
     /// @param[in]  context  SwiftUI context containing the retained coordinator
     ///
@@ -904,7 +904,7 @@ struct BoardCardDragSource: UIViewRepresentable
     /// @fcn        BoardCardDragSource.updateUIView(_:context:)
     /// @brief      Refresh the drag coordinator and retry cell installation
     /// @details    Replaces callback and token state with the current representable before locating
-    ///             the enclosing cell.
+    ///             the enclosing cell
     ///
     /// @param[in]  probe    Row probe used to locate the enclosing native container
     /// @param[in]  context  SwiftUI context containing the retained coordinator
@@ -925,7 +925,7 @@ struct BoardCardDragSource: UIViewRepresentable
     /// @fcn        BoardCardDragSource.dismantleUIView(_:coordinator:)
     /// @brief      Detach the probe without canceling a live native drag
     /// @details    Marks the coordinator detached. Removes an idle interaction immediately; an
-    ///             active session retains its source and defers removal until finish.
+    ///             active session retains its source and defers removal until finish
     ///
     /// @param[in]  probe        Row probe used to locate the enclosing native container
     /// @param[in]  coordinator  Coordinator associated with the native session or representable
@@ -936,7 +936,7 @@ struct BoardCardDragSource: UIViewRepresentable
     {
 
 
-        // A live native session may outlast the source cell while the Board scrolls.
+        // A live native session may outlast the source cell while the Board scrolls
         coordinator.isDetached = true
 
         if !coordinator.isDragging, let interaction = coordinator.interaction
@@ -1020,7 +1020,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @fcn        BoardCardDropSurface.Probe.didMoveToWindow()
         /// @brief      Install the list drop receiver after the probe enters a window
         /// @details    Calls the superclass lifecycle hook, then asks the coordinator to locate the
-        ///             enclosing collection view.
+        ///             enclosing collection view
         ///
         /// @return     (Void) attempts native receiver installation
         ///
@@ -1076,7 +1076,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @brief      Install or update one retained native receiver per list collection
         /// @details    Walks probe ancestors to find the collection view and reuses its retained
         ///             receiver. Enables native drop delegation in normal mode and restores the
-        ///             original delegate when disabled.
+        ///             original delegate when disabled
         ///
         /// @param[in]  probe  Row probe used to locate the enclosing native container
         ///
@@ -1156,7 +1156,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @fcn        BoardCardDropSurface.Coordinator.accepts(_:)
         /// @brief      Validate a single active drag from the same local Board
         /// @details    Requires an enabled surface, exactly one item, a local drag-source
-        ///             coordinator, an active source session, and a matching Board token.
+        ///             coordinator, an active source session, and a matching Board token
         ///
         /// @param[in]  items  Native drag items to validate against the active local Board
         ///
@@ -1189,7 +1189,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @fcn        BoardCardDropSurface.Coordinator.perform(_:at:)
         /// @brief      Forward an accepted native drop to canonical Board movement
         /// @details    Rejects invalid items before forwarding the final location and invoking the
-        ///             Board drop callback.
+        ///             Board drop callback
         ///
         /// @param[in]  items  Native drag items to validate against the active local Board
         /// @param[in]  point  Pointer location in the Board window coordinate space
@@ -1219,7 +1219,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @fcn        BoardCardDropSurface.Coordinator.dropInteraction(_:canHandle:)
         /// @brief      Accept only a validated local Board drag session
         /// @details    Requires a local native drag session and the shared single-item,
-        ///             active-source, matching-token validation.
+        ///             active-source, matching-token validation
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
@@ -1239,7 +1239,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @brief      Update hover geometry and propose a validated local move
         /// @details    Returns a forbidden proposal without accepted items or an attached window.
         ///             Otherwise forwards the window-coordinate pointer to Board targeting and
-        ///             proposes a move.
+        ///             proposes a move
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
@@ -1271,7 +1271,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @fcn        BoardCardDropSurface.Coordinator.dropInteraction(_:performDrop:)
         /// @brief      Forward the final native drop point to the shared receiver
         /// @details    Requires an attached window and invokes the same accepted-item commit path
-        ///             used by the other native drop delegate.
+        ///             used by the other native drop delegate
         ///
         /// @param[in]  interaction  Native interaction delivering this delegate callback
         /// @param[in]  session      Native drag or drop session delivering the callback
@@ -1298,7 +1298,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @fcn        BoardCardDropSurface.Coordinator.collectionView(_:canHandle:)
         /// @brief      Accept only a validated local Board drag session
         /// @details    Requires a local native drag session and the shared single-item,
-        ///             active-source, matching-token validation.
+        ///             active-source, matching-token validation
         ///
         /// @param[in]  collectionView  List collection view delivering the drop callback
         /// @param[in]  session         Native drag or drop session delivering the callback
@@ -1318,7 +1318,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @brief      Update hover geometry and propose a validated local move
         /// @details    Returns a forbidden proposal without accepted items or an attached window.
         ///             Otherwise forwards the window-coordinate pointer to Board targeting and
-        ///             proposes a move.
+        ///             proposes a move
         ///
         /// @param[in]  collectionView        List collection view delivering the drop callback
         /// @param[in]  session               Native drag or drop session delivering the callback
@@ -1354,7 +1354,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @fcn        BoardCardDropSurface.Coordinator.collectionView(_:performDropWith:)
         /// @brief      Forward the final native drop point to the shared receiver
         /// @details    Requires an attached window and invokes the same accepted-item commit path
-        ///             used by the other native drop delegate.
+        ///             used by the other native drop delegate
         ///
         /// @param[in]  collectionView  List collection view delivering the drop callback
         /// @param[in]  coordinator     Coordinator associated with the native session or
@@ -1386,7 +1386,7 @@ struct BoardCardDropSurface: UIViewRepresentable
     /// @fcn        BoardCardDropSurface.makeCoordinator()
     /// @brief      Create the native list-drop coordinator
     /// @details    Captures this surface so collection and interaction delegates share its current
-    ///             token and callbacks.
+    ///             token and callbacks
     ///
     /// @return     (Coordinator) coordinator configured with this drop surface
     ///
@@ -1402,7 +1402,7 @@ struct BoardCardDropSurface: UIViewRepresentable
     /// @fcn        BoardCardDropSurface.makeUIView(context:)
     /// @brief      Create a noninteractive probe for native list-drop installation
     /// @details    Associates the probe with the SwiftUI coordinator without adding a touch target
-    ///             over list content.
+    ///             over list content
     ///
     /// @param[in]  context  SwiftUI context containing the retained coordinator
     ///
@@ -1425,7 +1425,7 @@ struct BoardCardDropSurface: UIViewRepresentable
     /// @fcn        BoardCardDropSurface.updateUIView(_:context:)
     /// @brief      Refresh the drop surface and its retained native receiver
     /// @details    Copies current token, enablement, and callbacks into the coordinator before
-    ///             locating the list collection.
+    ///             locating the list collection
     ///
     /// @param[in]  probe    Row probe used to locate the enclosing native container
     /// @param[in]  context  SwiftUI context containing the retained coordinator
@@ -1447,7 +1447,7 @@ struct BoardCardDropSurface: UIViewRepresentable
     /// @brief      Leave the collection-owned receiver installed during row virtualization
     /// @details    Individual row probes can disappear while the list remains visible. The
     ///             collection retains its shared receiver, so this hook intentionally performs no
-    ///             removal.
+    ///             removal
     ///
     /// @param[in]  probe        Row probe used to locate the enclosing native container
     /// @param[in]  coordinator  Coordinator associated with the native session or representable
@@ -1458,7 +1458,7 @@ struct BoardCardDropSurface: UIViewRepresentable
     {
 
 
-    // The list retains its one receiver while individual rows are virtualized.
+    // The list retains its one receiver while individual rows are virtualized
 
     }
 
@@ -1475,7 +1475,7 @@ struct BoardListCenterPreferenceKey: PreferenceKey
 {
 
 
-    /// Current list-center reports keyed by list identity.
+    /// Current list-center reports keyed by list identity
     static var defaultValue: [Int: CGFloat] = [:] /* Empty card-height measurements before layout */
 
 

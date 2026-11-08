@@ -2,7 +2,7 @@
 // @file       BoardView.swift
 // @brief      Horizontally browsed Board composition
 // @details    Coordinates canonical List bindings, owner callbacks, creation, and Board
-//             presentation while delegating shared components to focused files.
+//             presentation while delegating shared components to focused files
 //
 // --------------------------------------------------------------------------------------------------
 import PhotosUI
@@ -53,23 +53,23 @@ struct ContentView: View
     @ObservedObject var creationReveal = CreatedContentReveal.shared
 
     @Binding var lists: [KanbanList] /* Shared kanban board lists                        */
-    /// Archived lists belonging to the same board.
+    /// Archived lists belonging to the same board
     @Binding var archivedLists:     [KanbanList]  /* Archived partition belonging to this Board      */
     @Binding var boardTargetListID: Int?          /* Requested list to reveal after board navigation */
-    /// Optional card identity to open after navigating to its containing list.
+    /// Optional card identity to open after navigating to its containing list
     @Binding var boardTargetCardID: Int? /* Pending card identity to open after revealing its list */
-    /// Explicit parent requests to return from Card Detail to this Board's root.
+    /// Explicit parent requests to return from Card Detail to this Board's root
     let boardRootRequest:      Int       /* Changing request value returns card navigation to the Board root */
     @Binding var savedCardIDs: Set<Int>  /* Locally bookmarked card identities                               */
-    /// Reports which list is nearest the center of the visible board.
+    /// Reports which list is nearest the center of the visible board
     let onListViewed: (Int) -> Void /* Reports the list nearest the viewport center */
-    /// Title displayed in the board header.
+    /// Title displayed in the board header
     let boardTitle: String /* Primary heading displayed above the Board */
-    /// Supporting text displayed beneath the board title.
+    /// Supporting text displayed beneath the board title
     let boardSubtitle: String /* Supporting text displayed beneath the Board heading */
-    /// Whether the board offers list creation.
+    /// Whether the board offers list creation
     let allowsAddingLists: Bool /* Whether the board offers list creation */
-    /// Lets a single-list personal collection fill the Standard viewport without changing Overview.
+    /// Lets a single-list personal collection fill the Standard viewport without changing Overview
     let fillsAvailableListWidth: Bool /* Whether a single personal List fills the Standard viewport */
     @State var standaloneListActionsRequest = 0
 
@@ -119,21 +119,21 @@ struct ContentView: View
         return description
     }
 
-    /// Optional action that returns to the parent collection view.
+    /// Optional action that returns to the parent collection view
     let onClose: (() -> Void)? /* Optional return action to the parent collection directory */
-    /// Optional parent-owned action for archiving the complete board.
+    /// Optional parent-owned action for archiving the complete board
     let onArchiveBoard: (() -> Void)? /* Parent-owned action archiving the complete Board */
-    /// Optional parent-owned permanent Board deletion.
+    /// Optional parent-owned permanent Board deletion
     let onDeleteBoard: (() -> Void)? /* Parent-owned action permanently removing Board content */
-    /// Names the special Week clearing action without implying removal of its tab.
+    /// Names the special Week clearing action without implying removal of its tab
     let deleteBoardTitle: String /* Context-specific label for the Board deletion action */
-    /// Optional save-first boundary for confirmed card/list removal.
+    /// Optional save-first boundary for confirmed card/list removal
     let onCommitDeletion:
     (([KanbanList], Set<Int>) throws -> Void)? /* Checked persistence boundary for confirmed content removal */
-    /// Receives active-list snapshots for caller-owned persistence.
+    /// Receives active-list snapshots for caller-owned persistence
     let onListsChanged:
     @MainActor ([KanbanList]) -> Void /* Publishes active-list snapshots for caller-owned persistence */
-    /// Supplies other retained snapshots whose attachment files must not be pruned.
+    /// Supplies other retained snapshots whose attachment files must not be pruned
     let retainedAttachmentLists: () -> [KanbanList]  /* Supplies external snapshots protecting referenced media */
     let personalCollectionID:    UUID?               /* Owning personal collection; nil for the Week workspace  */
     let appearanceBinding:       Binding<BoardAppearance?>?
@@ -234,7 +234,7 @@ struct ContentView: View
     ((UUID, KanbanCard) -> Bool)? /* Deletes a Note under its current collection owner         */
     let onToggleMovedNoteBookmark:
     ((UUID, Int, Bool) -> Bool)? /* Persists a relocated Note's collection-local saved state  */
-    /// Controls presentation of the calendar sheet.
+    /// Controls presentation of the calendar sheet
     @Environment(\.appReturnResetRequest) var appReturnResetRequest
     @Environment(\.appReturnTargetListID) var appReturnTargetListID
     @Environment(\.planningCalendarAccess) var planningCalendarAccess
@@ -266,9 +266,9 @@ struct ContentView: View
     @State var showsWeekSelector = false
     @State var showsCalendar     = false                        /* Calendar sheet presentation state         */
     @State var calendarCardTarget: (listID: Int, cardID: Int)?  /* Selection opened after Calendar dismissal */
-    /// Controls presentation of archived lists.
+    /// Controls presentation of archived lists
     @State var showsArchivedLists = false /* Archived-list browser presentation state */
-    /// Navigation stack path for card-detail destinations.
+    /// Navigation stack path for card-detail destinations
     @State var listToCopy:      KanbanList?
     @State var listToMove:      KanbanList?
     @State var namingNewListID: Int?
@@ -278,21 +278,21 @@ struct ContentView: View
     @State var boardBoundaryJumpRequest = 0                /* Trigger distinguishing repeated boundary-navigation requests */
     @State var boardBoundaryJumpTarget:
     BoardListReordering.BoardListBoundary? /* First or last list boundary requested for navigation         */
-    /// Last visible list identity sent through `onListViewed`.
+    /// Last visible list identity sent through `onListViewed`
     @State var lastReportedVisibleListID: Int? /* Last centered list reported to the parent */
-    /// Currently centered list identity.
+    /// Currently centered list identity
     @State var visibleListID: Int? /* List identity currently centered in the viewport */
-    /// List identity currently being dragged for reordering.
+    /// List identity currently being dragged for reordering
     @State var draggedListID: Int? /* List identity participating in active reordering */
-    /// Measured horizontal centers keyed by list identity.
+    /// Measured horizontal centers keyed by list identity
     @State var dragGeometry         = BoardDragGeometryCache()
     @State var dragGeometryRevision = 0
     // /* Measured horizontal centers keyed by list identity */
-    /// Current horizontal location of an active list drag.
+    /// Current horizontal location of an active list drag
     @State var listDragLocation: CGFloat? /* Horizontal pointer position during list reordering */
-    /// Horizontal offset between the drag start and the grabbed list center.
+    /// Horizontal offset between the drag start and the grabbed list center
     @State var listDragGrabOffset:    CGFloat = 0 /* Offset between the initial pointer and grabbed list center */
-    @State var listDragInitialCenter: CGFloat?    // Center before the temporary drag overview.
+    @State var listDragInitialCenter: CGFloat?    // Center before the temporary drag overview
     @State var listDragTilt:          Double = 0
     @State var viewportMemory:        BoardViewportMemory
     @State var isPanoramic         = false
@@ -352,13 +352,13 @@ struct ContentView: View
     @State var draggedCardID:    Int?             /* Card identity participating in the native drag session    */
     @State var cardDragLocation: CGPoint?         /* Current card-drag pointer in global coordinates           */
     @State var cardDragToken = UUID().uuidString  /* Per-Board token rejecting drags from other Board surfaces */
-    /// Environment preference used to reduce or remove animated transitions.
+    /// Environment preference used to reduce or remove animated transitions
     @Environment(\.accessibilityReduceMotion)
     var reducesMotion /* Accessibility preference limiting animated transitions */
-    /// Current Dynamic Type size used when selecting Board dimensions.
+    /// Current Dynamic Type size used when selecting Board dimensions
     @Environment(\.dynamicTypeSize) var dynamicTypeSize  /* Text-size category informing Board dimensions            */
     @Environment(\.scenePhase) var scenePhase            /* Scene lifecycle used to cancel interrupted drag sessions */
-    /// Locally persisted choice between Standard and Overview Board layouts.
+    /// Locally persisted choice between Standard and Overview Board layouts
     @State var presentation                  = BoardPresentation.standard /* Persisted Standard or Overview layout selection  */
     @State var labelLibrary                  = LabelLibraryStore.load()   /* Label library containing all available labels    */
     @State var displaySettings               = BoardDisplaySettings()     /* Board display settings                           */
@@ -1087,7 +1087,7 @@ struct ContentView: View
                                                     )
                                                 }
                                                 .buttonStyle(.plain)
-                                                // Lay out at the same base width as a List, then scale the entire control.
+                                                // Lay out at the same base width as a List, then scale the entire control
                                                 .frame(width: columnWidth)
                                                 .scaleEffect(layoutListScale, anchor: .top)
                                                 .frame(width: columnWidth * layoutListScale,
@@ -1427,7 +1427,7 @@ struct ContentView: View
                                         {
 
 
-                                        // Releasing the header cancels edge scrolling.
+                                        // Releasing the header cancels edge scrolling
 
                                         }
                                         catch
@@ -1509,7 +1509,7 @@ struct ContentView: View
                                         {
 
 
-                                        // Release or cancellation stops edge scrolling without moving a card.
+                                        // Release or cancellation stops edge scrolling without moving a card
 
                                         }
                                         catch

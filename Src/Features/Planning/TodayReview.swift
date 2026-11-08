@@ -4,7 +4,7 @@
 // @details    Defines review actions, retained decisions, evening reflection, and weekly records.
 //             Protects multi-store mutations with recovery snapshots, derives live review
 //             candidates, and saves review progress against baselines so failed or conflicting
-//             operations retain the user's draft.
+//             operations retain the user's draft
 //
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
@@ -15,7 +15,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Distinguishes leaving content in place, completion, archival, and movement to built-in Lists
-///     or a specified date.
+///     or a specified date
 ///
 enum DailyReviewAction: Codable, Equatable
 {
@@ -56,7 +56,7 @@ enum DailyReviewAction: Codable, Equatable
 ///
 /// @section    Purpose
 ///     Retains before-and-after owner-qualified references, the selected action, and its recording
-///     time for review history.
+///     time for review history
 ///
 struct DailyReviewDecision: Codable, Equatable, Identifiable
 {
@@ -76,7 +76,7 @@ struct DailyReviewDecision: Codable, Equatable, Identifiable
 ///
 /// @section    Purpose
 ///     Stores the current step, completion time, reflection writing, achievements, and accepted
-///     decisions within a Daily plan.
+///     decisions within a Daily plan
 ///
 struct DailyEveningReview: Codable, Equatable
 {
@@ -98,7 +98,7 @@ struct DailyEveningReview: Codable, Equatable
 ///
 /// @section    Purpose
 ///     Resolves retained priorities and relevant workspace sources while excluding reference-only
-///     material using the supplied labels.
+///     material using the supplied labels
 ///
 enum TodayReviewSelection
 {
@@ -108,7 +108,7 @@ enum TodayReviewSelection
     /// @fcn        TodayReviewSelection.items
     /// @brief      Select the day's unfinished review candidates
     /// @details    Resolves priorities and relevant workspace content through calendar access while excluding
-    ///             reference-only material according to the supplied label IDs.
+    ///             reference-only material according to the supplied label IDs
     ///
     /// @param[in]  plan               Daily plan supplying the retained priorities and review state
     /// @param[in]  date               Represented date for the operation
@@ -159,7 +159,7 @@ enum TodayReviewSelection
     /// @fcn        TodayReviewSelection.pending
     /// @brief      Find review items without a recorded decision
     /// @details    Compares candidate identities against the saved evening review so already handled items are not
-    ///             offered again.
+    ///             offered again
     ///
     /// @param[in]  items   Candidate workspace items to inspect
     /// @param[in]  review  Optional recorded evening-review decisions
@@ -195,7 +195,7 @@ enum TodayReviewSelection
 ///
 /// @section    Purpose
 ///     Keeps pending decisions separate from committed progress and applies source changes through
-///     checked workspace operations.
+///     checked workspace operations
 ///
 struct TodayReviewView: View
 {
@@ -272,7 +272,7 @@ struct TodayReviewView: View
     ///
     /// @fcn        TodayReviewView.text
     /// @brief      Bind one evening-review text field
-    /// @details    Reads and writes the specified key path in the editable review value.
+    /// @details    Reads and writes the specified key path in the editable review value
     ///
     /// @param[in]  key  Key path selecting the editable preference or optional contextual callback
     ///
@@ -302,7 +302,7 @@ struct TodayReviewView: View
     ///
     /// @fcn        TodayReviewView.propose
     /// @brief      Stage a review action for confirmation
-    /// @details    Records the requested action and source item without immediately committing its workspace change.
+    /// @details    Records the requested action and source item without immediately committing its workspace change
     ///
     /// @param[in]  action  Explicit review, toolbar, or contextual action selected by the caller
     /// @param[in]  source  Live source item with its calendar or Library location
@@ -321,7 +321,7 @@ struct TodayReviewView: View
     ///
     /// @fcn        TodayReviewView.advance
     /// @brief      Advance the evening review to its next stage
-    /// @details    Uses the current review state to save progress and move through the guided review flow.
+    /// @details    Uses the current review state to save progress and move through the guided review flow
     ///
     /// @return     (Void) no return value
     ///
@@ -373,7 +373,7 @@ struct TodayReviewView: View
     /// @fcn        TodayReviewView.perform
     /// @brief      Apply the staged evening-review decision
     /// @details    Uses the checked review callback and updates local progress only when the workspace action
-    ///             succeeds.
+    ///             succeeds
     ///
     /// @return     (Void) no return value
     ///
@@ -809,7 +809,7 @@ struct TodayReviewView: View
 ///
 /// @section    Purpose
 ///     Stores calendar conventions, progress, writing, priorities, and completion state so daily
-///     records resolve to the correct review period.
+///     records resolve to the correct review period
 ///
 struct WeeklyReviewRecord: Codable, Equatable, Identifiable
 {
@@ -835,7 +835,7 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
     /// @fcn        WeeklyReviewRecord.init
     /// @brief      Initialize the review period for a calendar week
     /// @details    Derives the week's local start and end keys and retains its calendar context for later review
-    ///             lookup.
+    ///             lookup
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -876,7 +876,7 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
     ///
     /// @fcn        WeeklyReviewRecord.dailyPlans
     /// @brief      Find daily plans represented by this weekly review
-    /// @details    Filters the stored daily-plan document using the review's inclusive date range.
+    /// @details    Filters the stored daily-plan document using the review's inclusive date range
     ///
     /// @param[in]  document  Retained document containing the operation's current workspace records
     ///
@@ -903,7 +903,7 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
 ///
 /// @section    Purpose
 ///     Loads versioned records and saves against retained baselines so concurrent changes and
-///     malformed data are surfaced.
+///     malformed data are surfaced
 ///
 @MainActor
 enum WeeklyReviewStore
@@ -918,7 +918,7 @@ enum WeeklyReviewStore
     ///
     /// @section    Purpose
     ///     Keys records by their calendar-qualified review identity and retains the schema version
-    ///     for compatibility checks.
+    ///     for compatibility checks
     ///
     struct Document: Codable
     {
@@ -933,13 +933,13 @@ enum WeeklyReviewStore
     /// @fcn        WeeklyReviewStore.load
     /// @brief      Load and validate retained weekly review records
     /// @details    Returns an empty document when storage is absent and propagates unreadable or unsupported stored
-    ///             data.
+    ///             data
     ///
     /// @param[in]  defaults  Preferences store used for this operation
     ///
     /// @return     (Document) validated weekly-review document, or an empty document for absent storage
     /// @throws     Explicit failures include `DailyPlanStore.Failure.corrupt`, `DailyPlanStore.Failure.unsupported`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func load(from defaults: UserDefaults = .standard) throws -> Document
     {
@@ -983,7 +983,7 @@ enum WeeklyReviewStore
     /// @fcn        WeeklyReviewStore.save
     /// @brief      Save a weekly review against its expected baseline
     /// @details    Validates the current retained value before replacing the draft so concurrent changes are reported
-    ///             rather than overwritten.
+    ///             rather than overwritten
     ///
     /// @param[in]  draft     Editable value proposed for persistence
     /// @param[in]  baseline  Expected retained value used to detect a conflicting edit
@@ -991,7 +991,7 @@ enum WeeklyReviewStore
     ///
     /// @return     (WeeklyReviewRecord) saved weekly review including its updated persistence metadata
     /// @throws     Explicit failures include `DailyPlanStore.Failure.conflict`, `DailyPlanStore.Failure.write`.
-    ///             Errors from throwing dependencies propagate unless handled within this operation.
+    ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func save(
         _ draft: WeeklyReviewRecord, replacing baseline: WeeklyReviewRecord?, to defaults: UserDefaults = .standard
@@ -1040,7 +1040,7 @@ enum WeeklyReviewStore
 ///
 /// @section    Purpose
 ///     Loads daily context and existing records, edits a baseline-backed draft, and saves
-///     deliberate decisions through checked owner access.
+///     deliberate decisions through checked owner access
 ///
 struct WeeklyReviewView: View
 {
@@ -1071,7 +1071,7 @@ struct WeeklyReviewView: View
     /// @fcn        WeeklyReviewView.init
     /// @brief      Seed weekly review editing for a represented date
     /// @details    Retains the calendar and preferences store and creates an initial weekly draft without saving it
-    ///             during view construction.
+    ///             during view construction
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -1133,7 +1133,7 @@ struct WeeklyReviewView: View
     ///
     /// @fcn        WeeklyReviewView.load
     /// @brief      Load a weekly review into editable state
-    /// @details    Copies the selected record into the view and establishes the baseline used for checked saving.
+    /// @details    Copies the selected record into the view and establishes the baseline used for checked saving
     ///
     /// @param[in]  record  Retained review record to inspect or load
     ///
@@ -1175,7 +1175,7 @@ struct WeeklyReviewView: View
     ///
     /// @fcn        WeeklyReviewView.binding
     /// @brief      Bind a weekly-review text property
-    /// @details    Reads and writes the draft through the supplied writable key path.
+    /// @details    Reads and writes the draft through the supplied writable key path
     ///
     /// @param[in]  path  Stable hierarchy path or writable field key path used by the operation
     ///
@@ -1200,7 +1200,7 @@ struct WeeklyReviewView: View
     /// @fcn        WeeklyReviewView.save
     /// @brief      Persist weekly review progress and optionally advance
     /// @details    Uses the stored baseline for conflict detection and retains the editing view with feedback when
-    ///             saving fails.
+    ///             saving fails
     ///
     /// @param[in]  advance  Whether an accepted save should advance the guided review flow
     ///
@@ -1257,7 +1257,7 @@ struct WeeklyReviewView: View
     ///
     /// @fcn        WeeklyReviewView.propose
     /// @brief      Stage an unfinished weekly item and action
-    /// @details    Records the candidate decision for the review's confirmation flow.
+    /// @details    Records the candidate decision for the review's confirmation flow
     ///
     /// @param[in]  action  Explicit review, toolbar, or contextual action selected by the caller
     /// @param[in]  source  Live source item with its calendar or Library location
@@ -1276,7 +1276,7 @@ struct WeeklyReviewView: View
     ///
     /// @fcn        WeeklyReviewView.apply
     /// @brief      Commit the pending weekly-review action
-    /// @details    Uses the shared checked workspace action before accepting the resulting review state.
+    /// @details    Uses the shared checked workspace action before accepting the resulting review state
     ///
     /// @return     (Void) no return value
     ///

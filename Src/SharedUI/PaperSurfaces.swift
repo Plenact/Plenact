@@ -2,7 +2,7 @@
 // @file       PaperSurfaces.swift
 // @brief      Shared decorative Today paper and panel surfaces
 // @details    Keeps texture and readable panel backgrounds independent of content state and hit
-//             testing.
+//             testing
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation

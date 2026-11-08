@@ -2,7 +2,7 @@
 // @file       ArchiveViews.swift
 // @brief      Read-only inspection of retained archives
 // @details    Makes archived collections, Lists, and Cards inspectable without silently restoring
-//             or editing their contents.
+//             or editing their contents
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -321,14 +321,14 @@ struct ArchivedListsView: View
 {
 
 
-    /// Archived lists available for restoration.
+    /// Archived lists available for restoration
     @Binding var lists: [KanbanList] /* Shared archived-list partition */
-    /// Requests restoration of a list by identity.
+    /// Requests restoration of a list by identity
     let onRestore:                   (Int) -> Void       /* Restores an archived list by identity        */
     let onDelete:                    (Int) -> Void       /* Permanently remove a confirmed archived list */
     let onDeleteCard:                (Int, Int) -> Void  /* Remove a card within the archived list       */
     @State private var deletingList: KanbanList?         /* List awaiting permanent deletion             */
-    /// Dismiss action for the archive browser.
+    /// Dismiss action for the archive browser
     @Environment(\.dismiss) private var dismiss /* Archived-list browser dismissal action */
 
 
@@ -837,11 +837,11 @@ struct ArchivedCardsView: View
 {
 
 
-    /// Title of the list whose archived cards are being browsed.
+    /// Title of the list whose archived cards are being browsed
     let listTitle: String /* Owning list name displayed in the archive browser */
-    /// Archived card snapshot supplied by the owning list.
+    /// Archived card snapshot supplied by the owning list
     @Binding var cards: [KanbanCard] /* Shared archived-card collection displayed by the browser */
-    /// Requests restoration of an archived card by identity.
+    /// Requests restoration of an archived card by identity
     let onRestore:                   (Int) -> Void  /* Returns an archived card to its active list */
     let onDelete:                    (Int) -> Void  /* Owner removes confirmed archived cards      */
     @State private var deletingCard: KanbanCard?    /* Archived card awaiting deletion             */

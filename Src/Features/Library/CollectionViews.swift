@@ -2,7 +2,7 @@
 // @file       CollectionViews.swift
 // @brief      Personal collection presentation and settings
 // @details    Presents reusable directory rows and Board destinations and edits collection
-//             metadata through isolated drafts.
+//             metadata through isolated drafts
 //
 // --------------------------------------------------------------------------------------------------
 import AVFoundation
@@ -16,13 +16,13 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Matches the default On the Table identity to its banner while preserving explicit custom
-///     colors.
+///     colors
 ///
 extension PersonalCollection
 {
 
 
-    /// Match the default On the Table identity to its banner without changing custom colors.
+    /// Match the default On the Table identity to its banner without changing custom colors
     var libraryIdentityColor: Color
     {
 
@@ -43,7 +43,7 @@ extension PersonalCollection
 ///
 /// @section    Purpose
 ///     Combines identity, active content count, and an optional moving preview while adapting its
-///     layout for text size.
+///     layout for text size
 ///
 struct LibraryCollectionRow: View
 {
@@ -136,7 +136,7 @@ struct LibraryCollectionRow: View
 ///
 /// @section    Purpose
 ///     Keeps the selected checkmark visible during dismissal and delegates the accepted filter
-///     choice to the Library owner.
+///     choice to the Library owner
 ///
 struct CollectionFilterPopover: View
 {
@@ -224,7 +224,7 @@ struct CollectionFilterPopover: View
                 dismiss()
             }
             catch
-            {  /* A newer selection or outside dismissal cancels this dismissal. */
+            {  /* A newer selection or outside dismissal cancels this dismissal  */
 
             }
 

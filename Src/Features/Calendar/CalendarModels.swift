@@ -2,7 +2,7 @@
 // @file       CalendarModels.swift
 // @brief      Dated Week ownership and stable local calendar keys
 // @details    Keeps represented dates, owner identities, List mappings, and recognized migration
-//             rules separate from Library directory records.
+//             rules separate from Library directory records
 //
 // --------------------------------------------------------------------------------------------------
 import CryptoKit
@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// @section    Purpose
 ///     Formats and resolves local date and Week keys using explicit calendar context rather than
-///     shifted timestamp identities.
+///     shifted timestamp identities
 ///
 enum PlanningDate
 {
@@ -24,7 +24,7 @@ enum PlanningDate
     /// @fcn        PlanningDate.listTitle
     /// @brief      Build a dated list title for nonheader contexts
     /// @details    Appends month and day, adding a two-digit year when the represented year differs from the
-    ///             reference year.
+    ///             reference year
     ///
     /// @param[in]  title     Display title or proposed title text
     /// @param[in]  date      Represented date for the operation
@@ -51,7 +51,7 @@ enum PlanningDate
     /// @fcn        PlanningDate.key
     /// @brief      Create a stable local calendar-day storage key
     /// @details    Uses Gregorian year, month, and day in the supplied calendar's time zone, independent of its
-    ///             week-start setting.
+    ///             week-start setting
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -75,7 +75,7 @@ enum PlanningDate
     /// @fcn        PlanningDate.date
     /// @brief      Resolve a stored day key to a local date
     /// @details    Parses three numeric components and constructs local noon in a Gregorian calendar with the
-    ///             supplied time zone; returns nil if construction fails.
+    ///             supplied time zone; returns nil if construction fails
     ///
     /// @param[in]  key       Storage key or stable lookup key used by this operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -107,7 +107,7 @@ enum PlanningDate
     /// @fcn        PlanningDate.weekKey
     /// @brief      Find the storage key for the containing week's start
     /// @details    Uses the supplied calendar's week interval, falling back to the given date if that interval is
-    ///             unavailable.
+    ///             unavailable
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -125,7 +125,7 @@ enum PlanningDate
     /// @fcn        PlanningDate.days
     /// @brief      Resolve the seven local dates belonging to a week key
     /// @details    Adds calendar days from the decoded start so daylight-saving transitions do not assume fixed
-    ///             twenty-four-hour intervals; invalid keys produce an empty array.
+    ///             twenty-four-hour intervals; invalid keys produce an empty array
     ///
     /// @param[in]  weekKey   Local calendar-week start key
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -151,7 +151,7 @@ enum PlanningDate
     ///
     /// @fcn        PlanningDate.weekdayTitle
     /// @brief      Return the English weekday name for a date
-    /// @details    Indexes the Sunday-first name table using the supplied calendar's weekday component.
+    /// @details    Indexes the Sunday-first name table using the supplied calendar's weekday component
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -173,7 +173,7 @@ enum PlanningDate
 ///
 /// @section    Purpose
 ///     Retains collection ownership, date keys, and explicit-save state so day navigation remains
-///     independent of numeric List IDs.
+///     independent of numeric List IDs
 ///
 struct DatedPlanningWeek: Identifiable, Hashable, Codable
 {
@@ -249,7 +249,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     /// @fcn        DatedPlanningWeek.list
     /// @brief      Find the active list mapped to a calendar day
     /// @details    Resolves the day key through dayListIDs and returns nil when the mapping or active list is
-    ///             missing.
+    ///             missing
     ///
     /// @param[in]  date  Represented date for the operation
     ///
@@ -275,7 +275,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     /// @fcn        DatedPlanningWeek.prepareDay
     /// @brief      Ensure the week contains an active list for a day
     /// @details    Reuses an existing mapped list or allocates and appends a new weekday list, then records its day
-    ///             mapping.
+    ///             mapping
     ///
     /// @param[in]  date  Represented date for the operation
     ///
@@ -303,7 +303,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     /// @fcn        DatedPlanningWeek.make
     /// @brief      Construct a dated week around existing or empty lists
     /// @details    Maps weekday titles onto calendar days, creates missing day lists, and retains the supplied
-    ///             saved-card IDs in the new collection.
+    ///             saved-card IDs in the new collection
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  lists     Lists participating in the operation
@@ -365,7 +365,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 ///
 /// @section    Purpose
 ///     Keeps the current Week key, calendar conventions, and dated owner snapshots available for
-///     validation and migration.
+///     validation and migration
 ///
 struct PlanningCalendarDocument: Hashable, Codable
 {
@@ -392,7 +392,7 @@ struct PlanningCalendarDocument: Hashable, Codable
     /// @fcn        PlanningCalendarDocument.week
     /// @brief      Find the retained week containing a date
     /// @details    Matches a week-start key using the supplied calendar override or the document's calendar and
-    ///             returns nil if absent.
+    ///             returns nil if absent
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  calendar  Calendar supplying local-day, time-zone, and week-boundary rules
@@ -413,7 +413,7 @@ struct PlanningCalendarDocument: Hashable, Codable
     ///
     /// @fcn        PlanningCalendarDocument.upsert
     /// @brief      Insert or replace a dated week by its start key
-    /// @details    Replaces an existing matching week or appends it, then sorts all weeks chronologically by key.
+    /// @details    Replaces an existing matching week or appends it, then sorts all weeks chronologically by key
     ///
     /// @param[in]  week  Dated planning week being inspected or saved
     ///
@@ -449,7 +449,7 @@ struct PlanningCalendarDocument: Hashable, Codable
     /// @fcn        PlanningCalendarDocument.rollForward
     /// @brief      Retain the outgoing week and select the requested week
     /// @details    Captures current lists and bookmarks before choosing an existing, supplied, or empty destination
-    ///             week and updating currentWeekKey.
+    ///             week and updating currentWeekKey
     ///
     /// @param[in]  date              Represented date for the operation
     /// @param[in]  currentLists      Current live-week lists retained before selecting another week
@@ -502,7 +502,7 @@ struct PlanningCalendarDocument: Hashable, Codable
 ///
 /// @section    Purpose
 ///     Applies recognized legacy weekday mappings while preserving source identities and
-///     date-qualified ownership.
+///     date-qualified ownership
 ///
 extension PlanningCalendarDocument
 {
@@ -512,15 +512,15 @@ extension PlanningCalendarDocument
     /// @fcn        PlanningCalendarDocument.repairLegacyMondayFirstLayout
     /// @brief      Repair a recognized legacy weekday mapping
     /// @details    Checks the specific Monday-first legacy arrangement before invoking the calendar migration;
-    ///             unrelated layouts return false without alteration.
+    ///             unrelated layouts return false without alteration
     ///
     /// @param[in]  now  Reference time used instead of an implicit clock read
     ///
     /// @return     (Bool) true when the recognized legacy layout was repaired; false when no repair applies
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation.
+    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
     ///
     /// @note       Legacy Monday–Sunday boards were initially dated using the device's Sunday-start calendar.
-    ///             Repartition by existing date associations; never relabel the old Sunday's content.
+    ///             Repartition by existing date associations; never relabel the old Sunday's content
     ///
     @discardableResult
     mutating func repairLegacyMondayFirstLayout(now: Date = .now) throws -> Bool
@@ -568,7 +568,7 @@ extension PlanningCalendarDocument
     /// @fcn        PlanningCalendarDocument.changeFirstWeekday
     /// @brief      Regroup retained planning days under a new week start
     /// @details    Accepts Sunday or Monday, rebuilds dated ownership while preserving content and bookmarks, and
-    ///             rewrites IDs and links where ownership changes.
+    ///             rewrites IDs and links where ownership changes
     ///
     /// @param[in]  weekday  Requested supported planning week-start value
     /// @param[in]  now      Reference time used instead of an implicit clock read
@@ -576,10 +576,10 @@ extension PlanningCalendarDocument
     /// @return     (Void) no return value
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
     ///             `CocoaError(.coderReadCorrupt)`. Errors from throwing dependencies propagate unless handled within
-    ///             this operation.
+    ///             this operation
     ///
     /// @note       Repartition dated lists without changing their dates or dropping archived content. Undated lists
-    ///             and board appearance stay with the middle of their original week.
+    ///             and board appearance stay with the middle of their original week
     ///
     mutating func changeFirstWeekday(to weekday: Int, now: Date = .now) throws
     {
@@ -619,7 +619,7 @@ extension PlanningCalendarDocument
                 $0.collection.lists.flatMap(\.allCards)
             } .map(\.id).max() ?? -1) + 1
 
-        // Globally distinct IDs prevent a link from resolving to an unrelated card after a split.
+        // Globally distinct IDs prevent a link from resolving to an unrelated card after a split
         for source in sources
         {
 
@@ -694,7 +694,7 @@ extension PlanningCalendarDocument
                 ?? ownerKey
                 var target = rebuilt[key] ?? DatedPlanningWeek.make(for: date ?? middle, calendar: newCalendar)
 
-                // A new boundary week starts empty; weekday panels are filled after migration.
+                // A new boundary week starts empty; weekday panels are filled after migration
                 if rebuilt[key] == nil
                 {
 
@@ -712,7 +712,7 @@ extension PlanningCalendarDocument
                 /// @fcn        PlanningCalendarDocument.changeFirstWeekday.relocated
                 /// @brief      Relocate a card during weekday regrouping
                 /// @details    Replaces its ID and list title using the enclosing migration maps and updates
-                ///             checklist references to retained and linked cards.
+                ///             checklist references to retained and linked cards
                 ///
                 /// @param[in]  card  Card or note being inspected or changed
                 ///
@@ -841,7 +841,7 @@ extension PlanningCalendarDocument
 
         }
 
-        // Keep checklist links navigable when their two dated lists now belong to different weeks.
+        // Keep checklist links navigable when their two dated lists now belong to different weeks
         let cardOwners = Dictionary(
             uniqueKeysWithValues: rebuilt.values.flatMap
             {
@@ -889,7 +889,7 @@ extension PlanningCalendarDocument
             /// @fcn        PlanningCalendarDocument.changeFirstWeekday.preservingOwners
             /// @brief      Qualify retained checklist references after regrouping
             /// @details    Resolves implicit or former-week ownership through the migration's card-owner map so
-            ///             references still identify their retained cards.
+            ///             references still identify their retained cards
             ///
             /// @param[in]  card  Card or note being inspected or changed
             ///
@@ -961,7 +961,7 @@ extension PlanningCalendarDocument
 ///
 /// @section    Purpose
 ///     Carries owner, List, and optional Week provenance alongside the canonical Card so navigation
-///     avoids local-ID collisions.
+///     avoids local-ID collisions
 ///
 struct PlanningSearchResult: Identifiable, Hashable
 {
@@ -987,7 +987,7 @@ struct PlanningSearchResult: Identifiable, Hashable
 ///
 /// @section    Purpose
 ///     Keeps calendar day indicators and Week chooser summaries consistent about which retained
-///     items count as content.
+///     items count as content
 ///
 enum PlanningCalendarContent
 {
@@ -997,7 +997,7 @@ enum PlanningCalendarContent
     /// @fcn        PlanningCalendarContent.items
     /// @brief      Select content represented on a calendar day
     /// @details    Includes cards in that day's mapped list and cards with a date-bearing start or due value on that
-    ///             day; time-only values do not create calendar matches.
+    ///             day; time-only values do not create calendar matches
     ///
     /// @param[in]  date      Represented date for the operation
     /// @param[in]  document  Retained document containing the operation's current workspace records

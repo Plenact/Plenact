@@ -2,7 +2,7 @@
 // @file       ExampleUndoStore.swift
 // @brief      Pre-example workspace restoration snapshots
 // @details    Keeps complete content and related personal selection state available for explicit
-//             recovery after demonstration loading.
+//             recovery after demonstration loading
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
@@ -38,7 +38,7 @@ enum ExampleLoadUndoStore
 {
 
 
-    /// Versioned storage key for the saved undo snapshot.
+    /// Versioned storage key for the saved undo snapshot
     private static let storageKey = "Plenact.ExampleLoadUndo.v1" /* Versioned example-load recovery key */
 
 

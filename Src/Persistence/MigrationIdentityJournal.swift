@@ -3,14 +3,14 @@
 // @brief      Durable source-qualified identities for repeatable local migration
 // @details    Supported User Data Model versions: 1.0 base and 1.1 appearance metadata. Private
 //             journal formats 1/2/3; targetModelVersion retains its legacy meaning of base Model 1.0.
-//             The journal is neither a server record, an account credential nor a sync operation.
+//             The journal is neither a server record, an account credential nor a sync operation
 // --------------------------------------------------------------------------------------------------
 import Foundation
 
 
-/// Identifies legacy content without confusing another owner's matching numeric identifier.
+/// Identifies legacy content without confusing another owner's matching numeric identifier
 /// @section Purpose
-///     Preserve source provenance independently from titles, list positions and account display names.
+///     Preserve source provenance independently from titles, list positions and account display names
 struct MigrationSourceIdentity: Codable, Hashable
 {
 
@@ -22,9 +22,9 @@ struct MigrationSourceIdentity: Codable, Hashable
 }
 
 
-/// Associates one qualified source identity with a stable portable UUID.
+/// Associates one qualified source identity with a stable portable UUID
 /// @section Purpose
-///     Retain the same mapping across retries, restarts and explicit export copies.
+///     Retain the same mapping across retries, restarts and explicit export copies
 struct MigrationIdentityEntry: Codable, Equatable
 {
 
@@ -34,9 +34,9 @@ struct MigrationIdentityEntry: Codable, Equatable
 }
 
 
-/// Persistent local migration journal, explicitly unlinked to a verified cloud owner.
+/// Persistent local migration journal, explicitly unlinked to a verified cloud owner
 /// @section Purpose
-///     Allocate stable identities before conversion without pretending a local profile is an account.
+///     Allocate stable identities before conversion without pretending a local profile is an account
 struct MigrationIdentityJournal: Codable
 {
 
@@ -48,9 +48,9 @@ struct MigrationIdentityJournal: Codable
     private var targets: [MigrationSourceIdentity: UUID] = [:] /* Rebuilt local lookup; never serialized */
 
 
-    /// Exact on-disk journal fields; the lookup cache is derived only.
+    /// Exact on-disk journal fields; the lookup cache is derived only
     /// @section Purpose
-    ///     Keep durable provenance independent of transient migration performance state.
+    ///     Keep durable provenance independent of transient migration performance state
     private enum CodingKeys: String, CodingKey
     {
 
@@ -58,9 +58,9 @@ struct MigrationIdentityJournal: Codable
     }
 
 
-    /// Stable migration failures never authorize replacing a corrupt or incompatible journal.
+    /// Stable migration failures never authorize replacing a corrupt or incompatible journal
     /// @section Purpose
-    ///     Fail closed when retry identities cannot be trusted.
+    ///     Fail closed when retry identities cannot be trusted
     enum Failure: Error
     {
 
@@ -85,7 +85,7 @@ struct MigrationIdentityJournal: Codable
 
     /// @fcn MigrationIdentityJournal.resolve
     /// @brief Reuse an exact qualified identity or allocate it once
-    /// @details Owner/creation changes remain distinct. Callers retain a stable owner through moves.
+    /// @details Owner/creation changes remain distinct. Callers retain a stable owner through moves
     /// @param[in] source Original qualified identity
     /// @return Stable target UUID
     /// @throws Invalid or unsupported identity kinds
@@ -172,7 +172,7 @@ struct MigrationIdentityJournal: Codable
 
     /// @fcn MigrationIdentityJournal.decode
     /// @brief Validate retained journal structure, version and one-to-one mapping before use
-    /// @details Unknown fields/versions and colliding mappings are not silently dropped or reset.
+    /// @details Unknown fields/versions and colliding mappings are not silently dropped or reset
     /// @param[in] data Original journal bytes
     /// @return Validated journal
     /// @throws Corrupt or unsupported journal errors
@@ -239,9 +239,9 @@ struct MigrationIdentityJournal: Codable
 }
 
 
-/// Coordinates a private journal with exact-baseline compare before atomic replacement.
+/// Coordinates a private journal with exact-baseline compare before atomic replacement
 /// @section Purpose
-///     Avoid resetting identities after corruption or overwriting another migration's newer mapping.
+///     Avoid resetting identities after corruption or overwriting another migration's newer mapping
 @MainActor
 enum MigrationIdentityStore
 {
@@ -293,7 +293,7 @@ enum MigrationIdentityStore
     /// @fcn MigrationIdentityStore.save
     /// @brief Persist mappings before exposing an export, retaining their expected baseline
     /// @details This main-actor API is the app's only journal writer. Atomic replacement protects
-    ///          interrupted writes; baseline comparison rejects stale writers within that boundary.
+    ///          interrupted writes; baseline comparison rejects stale writers within that boundary
     /// @param[in] journal Fully prepared mapping journal
     /// @param[in] url Private destination
     /// @param[in] expected Original bytes or nil for first creation

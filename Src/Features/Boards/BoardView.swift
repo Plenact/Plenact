@@ -225,6 +225,7 @@ struct ContentView: View
     ((UUID, Int, Bool) -> Bool)? /* Persists a relocated Note's collection-local saved state  */
     /// Controls presentation of the calendar sheet.
     @Environment(\.appReturnResetRequest) var appReturnResetRequest
+    @Environment(\.appReturnTargetListID) var appReturnTargetListID
     @Environment(\.planningCalendarAccess) var planningCalendarAccess
     @Environment(\.planningHomeExit) var planningHomeExit
     @Environment(\.planningDisplayedWeekKey) var displayedWeekKey
@@ -1583,7 +1584,13 @@ struct ContentView: View
 
                     BoardViewportMemory.prefix + $0.id.uuidString == viewportMemory.key
                 }
-                let firstID = AppReturnSession.firstListID(in: week, lists: lists)
+                let explicit = appReturnTargetListID.flatMap
+                {
+                    target in
+
+                    lists.contains(where: { $0.id == target }) ? target : nil
+                }
+                let firstID = explicit ?? AppReturnSession.firstListID(in: week, lists: lists)
                 visibleListID = firstID
                 boardTargetCardID = nil
                 boardTargetListID = firstID

@@ -147,6 +147,7 @@ enum SectionTransfer
         ?? sourceCards.count
         let block = Array(sourceCards[start ..< end])
         let ids   = Set(block.map(\.id))
+
         guard ids.count == block.count else
         {
             throw CocoaError(.fileReadCorruptFile)
@@ -156,6 +157,7 @@ enum SectionTransfer
         let reserved            = Set(owners[to].lists.flatMap(\.allCards).map(\.id))
         var next                = max(reserved.max() ?? -1, ids.max() ?? -1)
         var mapping: [Int: Int] = [:]
+
         for card in block
         {
 
@@ -163,6 +165,7 @@ enum SectionTransfer
             {
 
                 let (value, overflow) = next.addingReportingOverflow(1)
+
                 guard !overflow else
                 {
                     throw CocoaError(.validationNumberTooLarge)
@@ -170,11 +173,13 @@ enum SectionTransfer
 
                 next = value;
                 mapping[card.id] = next
+
             }
             else
             {
 
                 mapping[card.id] = card.id
+
             }
 
         }
@@ -192,6 +197,7 @@ enum SectionTransfer
 
         let anchor = sourceDay ?? dated.min()
         let delta: Int
+
         if shiftDates, let destinationDay, let anchor
         {
 
@@ -199,11 +205,13 @@ enum SectionTransfer
             calendar.dateComponents(
                 [.day], from: calendar.startOfDay(for: anchor), to: calendar.startOfDay(for: destinationDay)
             ).day ?? 0
+
         }
         else
         {
 
             delta = 0
+
         }
 
         // Freeze implicit links before moving their owner, including nested and retained links.
@@ -227,7 +235,9 @@ enum SectionTransfer
             let items = sourceChecklist.items.map
             {
                 original -> KanbanChecklistItem in
+
                 var item = original
+
                 if case .actionDetail(var detail) = item.content
                 {
 
@@ -237,6 +247,7 @@ enum SectionTransfer
                     }
 
                     item.content = .actionDetail(detail)
+
                 }
                 else if var detail = item.retainedDetail
                 {
@@ -247,6 +258,7 @@ enum SectionTransfer
                     }
 
                     item.retainedDetail = detail
+
                 }
 
                 let linked: Bool =
@@ -259,9 +271,12 @@ enum SectionTransfer
                     ;
                     return item.retainedCardID != nil
                 }()
+
                 if freeze && linked && item.linkedCollectionID == nil
                 {
+
                     item.linkedCollectionID = source.ownerID
+
                 }
 
                 if (item.linkedCollectionID ?? owner) == source.ownerID
@@ -272,6 +287,7 @@ enum SectionTransfer
 
                         item.retainedCardID = newID;
                         item.linkedCollectionID = destination.ownerID
+
                     }
 
                     if case .linkedCard(let id) = item.content, let newID = mapping[id]
@@ -279,6 +295,7 @@ enum SectionTransfer
 
                         item.content = .linkedCard(cardID: newID);
                         item.linkedCollectionID = destination.ownerID
+
                     }
 
                 }
@@ -295,7 +312,9 @@ enum SectionTransfer
         let moved    = block.map
         {
             card -> KanbanCard in
+
             var result = card.replacingLocation(id: mapping[card.id]!, listTitle: snapshot[to].lists[toList].title)
+
             if delta != 0
             {
 
@@ -303,12 +322,14 @@ enum SectionTransfer
                 {
 
                     result.startDate = calendar.date(byAdding: .day, value: delta, to: value)
+
                 }
 
                 if let value = result.dueDate, result.dueDateKind != .time
                 {
 
                     result.dueDate = calendar.date(byAdding: .day, value: delta, to: value)
+
                 }
 
             }
@@ -352,6 +373,7 @@ enum SectionTransfer
                 {
 
                     var result = card
+
                     // Moved cards were already redirected; do not apply an ID mapping twice.
                     if owner == destination.ownerID && moved.contains(where:
                         {
@@ -375,6 +397,7 @@ enum SectionTransfer
                     snapshot[index].lists[listIndex].cards = snapshot[index].lists[listIndex].cards.map(redirect)
                     snapshot[index].lists[listIndex].archivedCards = snapshot[index].lists[listIndex].archivedCards.map(
                         redirect)
+
                 }
 
             }
@@ -397,7 +420,9 @@ enum SectionTransfer
                 changed.contains($0.id)
             },
             source: source, destination: destination, mapping: mapping, heading: moved[0])
+
         owners = snapshot
+
         return receipt
     }
 

@@ -119,6 +119,7 @@ final class ListCreationDraftModel: ObservableObject
 
     private let key: String
     private var acceptsEdits = true
+
     @Published var title: String
     {
         didSet
@@ -160,10 +161,13 @@ final class ListCreationDraftModel: ObservableObject
     {
 
         self.key = key
+
         let saved = ListCreationDraft.load(key: key)
+
         title = saved.title
         subtitle = saved.subtitle
         description = saved.description
+
     }
 
 
@@ -179,11 +183,14 @@ final class ListCreationDraftModel: ObservableObject
     {
 
         acceptsEdits = false
+
         let saved = ListCreationDraft.load(key: key)
+
         title = saved.title
         subtitle = saved.subtitle
         description = saved.description
         acceptsEdits = true
+
     }
 
 
@@ -203,6 +210,7 @@ final class ListCreationDraftModel: ObservableObject
         title = ""
         subtitle = ""
         description = ""
+
         ListCreationDraft.clear(key: key)
     }
 
@@ -233,6 +241,7 @@ final class ListCreationDraftModel: ObservableObject
                 }
 
                 self[keyPath: field] = value
+
             })
     }
 
@@ -302,6 +311,7 @@ struct InlineListCapture: View
             {
 
                 isFocused = false
+
                 onOpenComposer()
             }
             label:
@@ -330,15 +340,19 @@ struct InlineListCapture: View
             _, visible in
             if !visible
             {
+
                 isFocused = false
+
             }
 
         }
         .onChange(of: list.id)
         {
             _, _ in
+
             draft = InlineListCaptureDraft()
             isFocused = false
+
         }
 
     }
@@ -355,6 +369,7 @@ struct InlineListCapture: View
     {
 
         let previousRevealID = CreatedContentReveal.shared.target?.id
+
         guard draft.submit(to: list, onCreate: onCreate) else
         {
             return
@@ -369,6 +384,7 @@ struct InlineListCapture: View
         }
 
         isFocused = true
+
     }
 
 }
@@ -403,6 +419,7 @@ struct InlineListCaptureDraft
     {
 
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard !trimmed.isEmpty else
         {
             return false
@@ -411,12 +428,14 @@ struct InlineListCaptureDraft
         let capture = QuickCaptureSubmission(
             listID: list.id, title: trimmed, body: "",
             subtitle: "", presentation: list.newItemPresentation, actions: nil, attachments: [], schedule: nil)
+
         guard onCreate(capture) else
         {
             return false
         }
 
         title = ""
+
         return true
     }
 
@@ -438,6 +457,7 @@ struct ListItemComposer: View
     let draftKey:     String
     var initialTitle: String = ""
     let onCreate:     (QuickCaptureSubmission) -> Bool
+
     var body:         some View
     {
 
@@ -448,11 +468,13 @@ struct ListItemComposer: View
         )
         {
             id, title, body, subtitle, presentation, actions in
+
             _ = onCreate(
                 QuickCaptureSubmission(
                     listID: id, title: title, body: body,
                     subtitle: subtitle, presentation: presentation ?? list.newItemPresentation,
                     actions: actions, attachments: [], schedule: nil))
+
         }
 
     }
@@ -502,6 +524,7 @@ enum ListItemCreation
             startingAt: id, titles: capture.title,
             description: capture.body, subtitle: capture.subtitle,
             presentation: capture.presentation, actions: capture.actions)
+
         guard !cards.isEmpty else
         {
             return nil
@@ -517,6 +540,7 @@ enum ListItemCreation
         {
             $0.kind == .photo
         }?.id
+
         return cards
     }
 

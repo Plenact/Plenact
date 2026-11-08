@@ -133,6 +133,7 @@ struct DetailSection<Content: View>: View
         self.trailing = trailing              /* The optional trailing symbol of the detail section */
         self.trailingAction = trailingAction  /* The optional action for the trailing symbol        */
         self.content = content                /* The content of the detail section                  */
+
     }
 
 
@@ -342,6 +343,7 @@ struct SectionCollapseButton: View
 
     let title:                String
     @Binding var isCollapsed: Bool
+
     var body:                 some View
     {
 

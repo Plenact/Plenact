@@ -209,6 +209,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     {
 
         let description = collectionDescription?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
         if !description.isEmpty
         {
             return description
@@ -292,6 +293,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         }
 
         savedCardIDs = []
+
     }
 
 
@@ -322,6 +324,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
 
 
             lists[index].newItemPresentation = .note
+
         }
 
     }
@@ -436,6 +439,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
 
 
             cards[index].listTitle = title
+
         }
 
 
@@ -446,6 +450,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
 
 
             archivedCards[index].listTitle = title
+
         }
 
         lists[0] = KanbanList(
@@ -454,6 +459,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         lists[0].isArchived = column.isArchived
         lists[0].subtitleOverride = column.subtitleOverride
         lists[0].appearance = column.appearance
+
     }
 
 
@@ -518,9 +524,12 @@ struct PersonalCollection: Identifiable, Hashable, Codable
 
         note.presentation = presentation
         note.subtitleOverride = subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+
         if presentation == .note || actions == nil
         {
+
             note.checklists = []
+
         }
 
         schedule?.apply(to: &note, calendar: calendar)
@@ -532,11 +541,14 @@ struct PersonalCollection: Identifiable, Hashable, Codable
                 {
                     $0.kind == .photo
                 })?.id
+
         }
 
         destination.cards.append(note)
         DaySections.reveal(note.id, in: &destination.cards)
+
         lists[listIndex] = destination
+
     }
 
 
@@ -599,6 +611,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
 
         title = Self.uniqueTitle(base, existingTitles: existingTitles)
         isArchived = false
+
     }
 
 
@@ -658,6 +671,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
 
             candidate = "\(base) (\(number))"
             number += 1
+
         }
 
 

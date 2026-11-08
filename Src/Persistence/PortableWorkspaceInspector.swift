@@ -30,24 +30,34 @@ struct PortableWorkspaceInspector: View
         {
             return [:]
         }
+
         let deleted = Set(export["local_card_deletions"] as? [String] ?? [])
+
         if var planning = base["planning"] as? [String: Any], var content = planning["content"] as? [String: Any]
         {
+
             content["cards"] = (content["cards"] as? [[String: Any]] ?? []).filter { !deleted.contains($0["id"] as? String ?? "") }
             content["lists"] = (content["lists"] as? [[String: Any]] ?? []).map { record in
+
                 var record = record
+
                 if var payload = record["payload"] as? [String: Any]
                 {
                     for key in ["card_ids", "archived_card_ids"]
                     {
+
                         payload[key] = (payload[key] as? [String] ?? []).filter { !deleted.contains($0) }
+
                     }
+
                     record["payload"] = payload
+
                 }
                 return record
             }
             planning["content"] = content
             base["planning"] = planning
+
         }
         return base
     }
@@ -67,6 +77,7 @@ struct PortableWorkspaceInspector: View
         let selections = base["content_selections"] as? [[String: Any]] ?? []
         let artwork    = base["artwork"] as? [[String: Any]] ?? []
         let plans      = planning["daily_plans"] as? [[String: Any]] ?? []
+
         Form
         {
             Section
@@ -80,6 +91,7 @@ struct PortableWorkspaceInspector: View
             {
                 ForEach(lists.indices, id: \.self)
                 { index in
+
                     let list    = lists[index]
                     let payload = list["payload"] as? [String: Any] ?? [:]
                     let ids     = payload["card_ids"] as? [String] ?? []
@@ -90,6 +102,7 @@ struct PortableWorkspaceInspector: View
                         }
                         return (id, card)
                     })
+
                     NavigationLink(payload["title"] as? String ?? "List")
                     {
                         List

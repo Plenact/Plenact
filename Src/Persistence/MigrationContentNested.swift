@@ -25,6 +25,7 @@ extension MigrationContentValues
 
         let source = try Self.lowerUUID(value)
         let key    = scope + ":" + kind + ":" + source
+
         guard usedNested.insert(key).inserted else
         {
             throw Failure.invalid("duplicate_nested_" + kind)
@@ -78,42 +79,70 @@ extension MigrationContentValues
     {
 
         try values.map { list in
+
             let identifier = try nested("checklist", list["id"], scope: scope)
             let items      = try (list["items"] as! [[String: Any]]).map { item -> [String: Any] in
+
                 let identifier            = try nested("checklist_item", item["id"], scope: scope)
                 var linkedOwner           = owner
                 var linkedCollection: Any = NSNull()
                 let originalItem          = try Self.lowerUUID(item["id"])
                 let calendarOverride      = calendarOwnerScopes.contains(owner) ? checklistWeekOverrides[originalItem] : nil
+
                 if let original = calendarOverride ?? (item["linkedCollectionID"] as? String)?.lowercased()
                 {
                     if originalCollectionIDs[owner] == original
                     {
+
                         linkedOwner = owner
+
                     }
                     else if let candidates = ownerScopesByCollection[original], candidates.count == 1
                     {
+
                         linkedOwner = candidates[0]
+
                     }
                     else
                     {
+
                         linkedOwner = "unresolved_from:" + owner + ":" + original
+
                     }
+
                     let target = try collectionTargets[linkedOwner] ?? id("collection", owner: "source_collections", legacy: linkedOwner)
+
                     linkedCollection = try reference("collection", target)
+
                 }
+
                 let source = item["content"] as! [String: Any]
                 let kind   = source["kind"] as! String
                 var content: [String: Any]
+
                 switch kind
                 {
-                case "standard": content = ["kind": "standard"]
-                case "linkedCard": content = ["kind": "linked_card", "card_id": try cardReference(source["cardID"] as! Int, owner: linkedOwner)]
-                case "webLink": content = ["kind": "web_link", "url": try Self.webURL(source["url"]!)]
-                case "actionDetail": content = ["kind": "action_detail", "detail": try detail(source["detail"] as! [String: Any], owner: owner, scope: scope)]
+                case "standard":
+
+                    content = ["kind": "standard"]
+
+                case "linkedCard":
+
+                    content = ["kind": "linked_card", "card_id": try cardReference(source["cardID"] as! Int, owner: linkedOwner)]
+
+                case "webLink":
+
+                    content = ["kind": "web_link", "url": try Self.webURL(source["url"]!)]
+
+                case "actionDetail":
+
+                    content = ["kind": "action_detail", "detail": try detail(source["detail"] as! [String: Any], owner: owner, scope: scope)]
+
                 default: throw Failure.invalid("action_kind")
                 }
+
                 var retained: Any = NSNull()
+
                 if let saved = item["retainedDetail"] as? [String: Any]
                 {
                     if kind == "actionDetail"
@@ -122,11 +151,15 @@ extension MigrationContentValues
                         {
                             throw Failure.invalid("divergent_retained_detail")
                         }
+
                         retained = content["detail"]!
+
                     }
                     else
                     {
+
                         retained = try detail(saved, owner: owner, scope: scope)
+
                     }
                 }
                 return ["id": identifier, "title": item["title"]!, "completed": item["isCompleted"]!,
@@ -135,6 +168,7 @@ extension MigrationContentValues
                     "retained_url": try item["retainedURL"].map(Self.webURL) as Any? ?? NSNull(),
                     "linked_collection_id": linkedCollection]
             }
+
             return ["id": identifier, "title": list["title"]!, "items": items]
         }
     }
@@ -172,8 +206,11 @@ extension MigrationContentValues
             return NSNull()
         }
         return try values.map { value -> [String: Any] in
+
             let target = try nested("attachment", value["id"], scope: scope)
+
             attachmentTargets[scope + ":" + (try Self.lowerUUID(value["id"]))] = target
+
             return ["id": target, "kind": value["mediaKind"] ?? (value["url"] == nil ? "photo" : "link"),
                 "asset_id": try asset(value["fileName"], area: "Documents/CardAttachments"),
                 "drawing_asset_id": try asset(value["drawingFileName"], area: "Documents/CardAttachments"),
@@ -198,21 +235,29 @@ extension MigrationContentValues
             return NSNull()
         }
         return try values.map { value -> [String: Any] in
+
             let changes = (value["changes"] as! [[String: Any]]).map { change -> [String: Any] in
+
                 var result: [String: Any] = ["field": change["field"]!]
+
                 for (source, target) in [("previousValue", "previous_value"), ("newValue", "new_value")]
                 {
                     if let data = change[source]
                     {
+
                         result[target] = ["encoding": "base64", "source_format": "swift_codable_json", "source_model_version": "local_legacy", "data": data]
+
                     }
                     else
                     {
+
                         result[target] = NSNull()
+
                     }
                 }
                 return result
             }
+
             return ["id": try nested("history", value["id"], scope: scope),
                 "source_timestamp_utc": try utc(value["timestamp"]!, path: scope + "/history"), "changes": changes]
         }

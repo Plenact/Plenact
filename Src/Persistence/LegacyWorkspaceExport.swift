@@ -18,6 +18,7 @@ struct LegacyWorkspaceBackup
     let storeCount:  Int         /* Number of captured present preference values  */
     let mediaCount:  Int         /* Number of original media files                */
     let reviewCodes: [String]    /* Bounded issue descriptions without raw values */
+
 }
 
 
@@ -85,15 +86,20 @@ enum LegacyWorkspaceExport
         let manager                = FileManager.default /* File access stays within the supplied source container */
         var result: [String: Data] = [:]                 /* Complete media inventory, including unreferenced originals */
         var size                   = 0                   /* Running memory bound */
+
         for area in mediaRoots
         {
+
             var directory = root
+
             for component in area.split(separator: "/")
             {
                 directory.appendPathComponent(String(component))
                 if manager.fileExists(atPath: directory.path)
                 {
+
                     let attributes = try manager.attributesOfItem(atPath: directory.path)
+
                     guard attributes[.type] as? FileAttributeType == .typeDirectory else
                     {
                         throw Failure.unsafeFile
@@ -108,10 +114,14 @@ enum LegacyWorkspaceExport
             {
                 continue
             }
+
             let entries = try regularFiles(in: directory)
+
             for file in entries
             {
+
                 let attributes = try manager.attributesOfItem(atPath: file.path)
+
                 if attributes[.type] as? FileAttributeType == .typeDirectory
                 {
                     continue
@@ -120,19 +130,27 @@ enum LegacyWorkspaceExport
                 {
                     throw Failure.unsafeFile
                 }
+
                 let length = (attributes[.size] as? NSNumber)?.intValue ?? maximumBytes + 1
+
                 guard length <= maximumBytes - size else
                 {
                     throw Failure.tooLarge
                 }
+
                 let bytes = try Data(contentsOf: file)
+
                 size += bytes.count
+
                 guard size <= maximumBytes else
                 {
                     throw Failure.tooLarge
                 }
+
                 let relative = String(file.path.dropFirst(root.path.count + 1))
+
                 result[relative] = bytes
+
             }
         }
         return result
@@ -148,9 +166,12 @@ enum LegacyWorkspaceExport
     {
 
         var files: [URL] = []
+
         for child in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
         {
+
             let attributes = try FileManager.default.attributesOfItem(atPath: child.path)
+
             switch attributes[.type] as? FileAttributeType
             {
             case .typeDirectory:
@@ -176,22 +197,33 @@ enum LegacyWorkspaceExport
 
         let parts  = path.split(separator: "/").map(String.init)
         var parent = directory
+
         for part in parts.dropLast()
         {
             if let existing = parent.fileWrappers?[part]
             {
+
                 parent = existing
+
             }
             else
             {
+
                 let child = FileWrapper(directoryWithFileWrappers: [:])
+
                 child.preferredFilename = part
+
                 parent.addFileWrapper(child)
+
                 parent = child
+
             }
         }
+
         let file = FileWrapper(regularFileWithContents: data)
+
         file.preferredFilename = parts.last
+
         parent.addFileWrapper(file)
     }
 
@@ -210,6 +242,7 @@ enum LegacyWorkspaceExport
     {
 
         KanbanBoardPersistence.waitForPendingSaves()
+
         let migrationURL = root.resolvingSymlinksInPath()
             .appendingPathComponent("Library/Application Support/PlenactMigration/source-identities-v1.json")
         let migrationJournal = try MigrationIdentityStore.read(at: migrationURL)
@@ -217,11 +250,14 @@ enum LegacyWorkspaceExport
         let original         = defaults.persistentDomain(forName: domain) ?? [:]
         let values           = original.filter { LegacyStoreValidation.includes($0.key) }
         let preferences      = try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
+
         guard preferences.count + (migrationJournal?.count ?? 0) <= maximumBytes else
         {
             throw Failure.tooLarge
         }
+
         var issues: [String] = []
+
         for key in original.keys.sorted()
         {
             if !LegacyStoreValidation.includes(key)
@@ -237,7 +273,9 @@ enum LegacyWorkspaceExport
                 issues.append(issue + ": " + key)
             }
         }
+
         let media = try inventory(root: root)
+
         for (key, value) in values
         {
             guard let data = value as? Data,
@@ -247,7 +285,9 @@ enum LegacyWorkspaceExport
             }
             issues.append(contentsOf: LegacyStoreValidation.mediaIssues(json, store: key, files: Set(media.keys)))
         }
+
         issues = Array(Set(issues)).sorted()
+
         guard media.values.reduce(preferences.count + (migrationJournal?.count ?? 0) + portableRuntime.values.reduce(0, { $0 + $1.count }), { $0 + $1.count }) <= maximumBytes else
         {
             throw Failure.tooLarge
@@ -259,7 +299,9 @@ enum LegacyWorkspaceExport
         {
             throw Failure.changedSource
         }
+
         let wrapper = FileWrapper(directoryWithFileWrappers: [:])
+
         insert(preferences, path: "Preferences.plist", directory: wrapper)
         if let migrationJournal
         {
@@ -273,6 +315,7 @@ enum LegacyWorkspaceExport
         {
             insert(bytes, path: "PortableRuntime/" + name, directory: wrapper)
         }
+
         var manifest: [String: Any] = [
             "format": "plenact.ios-frozen-backup", "format_version": portableRuntime.isEmpty ? 1 : 2,
             "target_user_data_model_version": "1.0", "portable_conversion_complete": false,
@@ -284,11 +327,14 @@ enum LegacyWorkspaceExport
             "media": media.keys.sorted().map { ["path": $0, "byte_length": media[$0]!.count,
                 "sha256": digest(media[$0]!)] as [String: Any] }
         ]
+
         if !portableRuntime.isEmpty
         {
+
             manifest["portable_runtime_files"] = portableRuntime.keys.sorted().map { name in
                 ["name": name, "sha256": digest(portableRuntime[name]!), "byte_length": portableRuntime[name]!.count] as [String: Any]
             }
+
         }
         insert(try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys]),
             path: "NativePreflight.json", directory: wrapper)

@@ -122,6 +122,7 @@ struct KanbanListActionsSheet: View
                         {
 
                             isEditingList = true
+
                         }
 
                     }
@@ -132,7 +133,9 @@ struct KanbanListActionsSheet: View
 
                         Button("Appearance", systemImage: "paintpalette")
                         {
+
                             isEditingAppearance = true
+
                         }
 
                     }
@@ -164,6 +167,7 @@ struct KanbanListActionsSheet: View
                         {
 
                             cardEditMode = cardEditMode == .active ? .inactive : .active
+
                         }
 
                         dismiss()
@@ -276,6 +280,7 @@ struct KanbanListActionsSheet: View
                         {
 
                             showsArchivedCards = true
+
                         }
                         label:
                         {
@@ -303,6 +308,7 @@ struct KanbanListActionsSheet: View
                         {
 
                             confirmingArchive = true
+
                         }
                         label:
                         {
@@ -316,6 +322,7 @@ struct KanbanListActionsSheet: View
                         {
 
                             confirmingDelete = true
+
                         }
                         label:
                         {
@@ -410,14 +417,18 @@ struct KanbanListActionsSheet: View
         .presentationDetents([.height(624), .large], selection: $sheetHeight)
         .onAppear
         {
+
             sheetHeight = dynamicTypeSize.isAccessibilitySize ? .large : .height(624)
+
         }
         .onChange(of: dynamicTypeSize)
         {
             _, size in
             if size.isAccessibilitySize
             {
+
                 sheetHeight = .large
+
             }
 
         }
@@ -513,6 +524,7 @@ struct CopyListDestinationSheet: View
     {
 
         let sourceID: UUID? = currentID ?? access.document.week(for: .now)?.id
+
         return access.document.weeks.filter
         {
             $0.collection.isActive && $0.id != sourceID
@@ -537,6 +549,7 @@ struct CopyListDestinationSheet: View
 
         var updated = week
         let copy    = ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
+
         updated.collection.lists.append(copy)
         if access.saveWeek(updated)
         {
@@ -604,6 +617,7 @@ struct CopyListDestinationSheet: View
                             {
 
                                 var updated = board
+
                                 updated.lists.append(ListCopying.copy(source, into: updated.lists, crossBoard: true))
                                 if access.saveLibrary(updated)
                                 {
@@ -669,6 +683,7 @@ struct MoveListDestinationSheet: View
     let access:    PlanningCalendarAccess?
     let currentID: UUID?
     @Environment(\.dismiss) private var dismiss
+
     private var sourceID: UUID?
     {
 
@@ -831,12 +846,14 @@ struct ListCheckmarkResetControl: View
             {
 
                 self.session = nil
+
                 apply(cards)
             }
             else
             {
 
                 confirmsClear = true
+
             }
 
         }
@@ -915,7 +932,9 @@ struct ListCheckmarkResetConfirmation: ViewModifier
                 }
 
                 let (snapshot, cards) = ListCheckmarkReset.reset(list)
+
                 session = snapshot
+
                 for card in cards where list.cards.first(where:
                     {
                         $0.id == card.id

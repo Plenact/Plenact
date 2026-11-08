@@ -77,6 +77,7 @@ struct LowerCornerBackShortcut: ViewModifier
     @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()
     @Environment(\.workspaceBottomBarHeight) private var toolbarHeight
     @State private var keyboardVisible = false
+
     private var enabled: Bool
     {
 
@@ -107,9 +108,11 @@ struct LowerCornerBackShortcut: ViewModifier
                 GeometryReader
                 {
                     geometry in
+
                     // Full-screen destinations have no toolbar below the target:
                     // include their home-indicator safe area in the touch region.
                     let bottomExtension = toolbarHeight > 0 ? 0 : geometry.safeAreaInsets.bottom
+
                     HStack(spacing: 0)
                     {
 
@@ -137,12 +140,16 @@ struct LowerCornerBackShortcut: ViewModifier
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification))
         {
             _ in
+
             keyboardVisible = true
+
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
         {
             _ in
+
             keyboardVisible = false
+
         }
 
     }

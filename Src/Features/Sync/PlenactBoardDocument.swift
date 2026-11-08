@@ -70,6 +70,7 @@ struct PlenactBoardDocument: Codable, Equatable
         self.boardKey = boardKey
         self.lists = lists
         self.labelLibrary = labelLibrary
+
     }
 
 

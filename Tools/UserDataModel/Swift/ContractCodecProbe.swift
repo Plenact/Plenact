@@ -25,30 +25,44 @@ indirect enum PortableJSONValue: Codable
     /// @return Initialized portable value
     init(from decoder: Decoder) throws
     {
+
         let value = try decoder.singleValueContainer()
+
         if value.decodeNil()
         {
+
             self = .null
+
         }
         else if let boolean = try? value.decode(Bool.self)
         {
+
             self = .boolean(boolean)
+
         }
         else if let text = try? value.decode(String.self)
         {
+
             self = .string(text)
+
         }
         else if let object = try? value.decode([String: PortableJSONValue].self)
         {
+
             self = .object(object)
+
         }
         else if let array = try? value.decode([PortableJSONValue].self)
         {
+
             self = .array(array)
+
         }
         else
         {
+
             self = .number(try value.decode(Decimal.self))
+
         }
     }
 
@@ -58,7 +72,9 @@ indirect enum PortableJSONValue: Codable
     /// @return Void; throws on unsupported numeric representation
     func encode(to encoder: Encoder) throws
     {
+
         var value = encoder.singleValueContainer()
+
         switch self
         {
         case .null:
@@ -82,6 +98,7 @@ indirect enum PortableJSONValue: Codable
 ///     Exercise shared wire names independently of platform-specific app models.
 struct PortableContentDocument: Codable
 {
+
     let modelVersion:   String
     let schemaVersion:  Int
     let recordType:     String
@@ -103,15 +120,19 @@ struct PortableContentDocument: Codable
 /// Describes a shared fixture expectation without defining runtime sync behavior.
 struct FixtureCase: Decodable
 {
+
     let file:   String
     let schema: String
     let valid:  Bool
+
 }
 
 /// Retains the shared fixture list consumed by prototype codecs.
 struct FixtureManifest: Decodable
 {
+
     let cases: [FixtureCase]
+
 }
 
 /// @fcn roundTripFixtures
@@ -121,13 +142,18 @@ struct FixtureManifest: Decodable
 /// @return Number of emitted fixture files
 func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
 {
+
     let decoder = JSONDecoder()
     let encoder = JSONEncoder()
+
     encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
+
     let manifest = try decoder.decode(
         FixtureManifest.self,
         from: Data(contentsOf: fixtures.appendingPathComponent("manifest.json")))
+
     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+
     let contentSchemas = Set([
         "card.schema.json",
         "list.schema.json",
@@ -155,24 +181,33 @@ func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
                 "unavailable-reference.schema.json"
     ])
     var count = 0
+
     for fixture in manifest.cases where fixture.valid
     {
         guard URL(fileURLWithPath: fixture.file).lastPathComponent == fixture.file else
         {
             throw CocoaError(.fileReadInvalidFileName)
         }
+
         let input = try Data(contentsOf: fixtures.appendingPathComponent(fixture.file))
         let result: Data
+
         if contentSchemas.contains(fixture.schema)
         {
+
             result = try encoder.encode(decoder.decode(PortableContentDocument.self, from: input))
+
         }
         else
         {
+
             result = try encoder.encode(decoder.decode(PortableJSONValue.self, from: input))
+
         }
         try result.write(to: output.appendingPathComponent(fixture.file), options: .atomic)
+
         count += 1
+
     }
     return count
 }
@@ -184,9 +219,11 @@ do
     {
         throw CocoaError(.fileReadInvalidFileName)
     }
+
     let count = try roundTripFixtures(
         fixtures: URL(fileURLWithPath: CommandLine.arguments[1]),
         output: URL(fileURLWithPath: CommandLine.arguments[2]))
+
     print("Swift emitted \(count) valid fixture round trips.")
 }
 catch

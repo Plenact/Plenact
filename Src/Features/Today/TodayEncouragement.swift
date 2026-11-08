@@ -102,10 +102,13 @@ enum TodaySloganCatalog
 
         // A fixed Gregorian anchor keeps rotation stable across relaunches, years, and DST.
         var local = Calendar(identifier: .gregorian)
+
         local.timeZone = calendar.timeZone
+
         let anchor = local.date(from: DateComponents(year: 2026, month: 10, day: 15))!
         let days   = local.dateComponents([.day], from: anchor, to: local.startOfDay(for: date)).day ?? 0
         let index  = ((days % slogans.count) + slogans.count) % slogans.count
+
         return slogans[index]
     }
 
@@ -158,7 +161,9 @@ struct TodaySloganView: View
                 : Color(red: 0.40, green: 0.31, blue: 0.23)).opacity(0.55),
             onTap:
             {
+
                 showsFullSlogan = true
+
             }
         )
         .padding(.horizontal, 8)
@@ -213,6 +218,7 @@ enum TodaySloganMotion
     {
 
         let distance = viewport + textWidth
+
         guard distance > 0 else
         {
             return 0
@@ -227,6 +233,7 @@ enum TodaySloganMotion
         // after the reading pause instead of spending minutes crossing blank space.
         let resumeStart = start > viewport || start < -textWidth ? viewport : start
         let proposed    = resumeStart - elapsed * 35.1
+
         if proposed >= -textWidth
         {
             return proposed
@@ -303,6 +310,7 @@ struct InteractiveSloganPreview: View
 
         let start   = anchorOffset ?? width
         let elapsed = max(0, date.timeIntervalSince(anchorDate) - (anchorOffset == nil ? 0.4 : 0))
+
         return TodaySloganMotion.position(elapsed: elapsed, start: start, viewport: width, textWidth: textWidth)
     }
 
@@ -368,12 +376,14 @@ struct InteractiveSloganPreview: View
                                 {
 
                                     dragStart = position(at: Date(), width: geometry.size.width)
+
                                 }
 
                                 draggedOffset = TodaySloganMotion.draggedPosition(
                                     start: dragStart ?? 0,
                                     translation: value.translation.width, viewport: geometry.size.width,
                                     textWidth: textWidth)
+
                             }
                             .onEnded
                             {
@@ -387,6 +397,7 @@ struct InteractiveSloganPreview: View
                                 anchorDate = Date().addingTimeInterval(1)
                                 self.draggedOffset = nil
                                 dragStart = nil
+
                             })
                     }
 
@@ -394,7 +405,9 @@ struct InteractiveSloganPreview: View
                 .clipped()
                 .onPreferenceChange(PreviewTextWidthKey.self)
                 {
+
                     textWidth = $0
+
                 }
                 .modifier(PreviewVisibility(visible: $visible))
                 .accessibilityElement(children: .ignore)
@@ -413,10 +426,12 @@ struct InteractiveSloganPreview: View
         .onChange(of: text)
         {
             _, _ in
+
             anchorDate = Date();
             anchorOffset = nil;
             dragStart = nil;
             draggedOffset = nil
+
         }
 
     }

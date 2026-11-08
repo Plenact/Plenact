@@ -239,6 +239,7 @@ struct ProfileAvatarIconPicker: View
         _draftAvatarColor = State(initialValue: avatarColor.wrappedValue)
         _draftForegroundColor = State(initialValue: foregroundColor.wrappedValue)
         _draftPhotoData = State(initialValue: photoData.wrappedValue)
+
     }
 
 
@@ -274,6 +275,7 @@ struct ProfileAvatarIconPicker: View
         avatarColor = draftAvatarColor
         foregroundColor = draftForegroundColor
         photoData = draftPhotoData
+
         dismiss()
     }
 
@@ -350,11 +352,15 @@ struct ProfileAvatarIconPicker: View
                 )
                 .onAppear
                 {
+
                     isEditingColorMap = true
+
                 }
                 .onDisappear
                 {
+
                     isEditingColorMap = false
+
                 }
 
             }
@@ -384,11 +390,15 @@ struct ProfileAvatarIconPicker: View
                 )
                 .onAppear
                 {
+
                     isEditingColorMap = true
+
                 }
                 .onDisappear
                 {
+
                     isEditingColorMap = false
+
                 }
 
             }
@@ -433,6 +443,7 @@ struct ProfileAvatarIconPicker: View
 
                         draftIcon = icon
                         draftPhotoData = nil
+
                     }
                     label:
                     {
@@ -529,7 +540,9 @@ struct ProfileAvatarIconPicker: View
 
                         Button("Remove Photo", role: .destructive)
                         {
+
                             draftPhotoData = nil
+
                         }
 
                     }
@@ -575,6 +588,7 @@ struct ProfileAvatarIconPicker: View
 
 
                 isLoadingPhoto = false
+
             }
 
 
@@ -602,6 +616,7 @@ struct ProfileAvatarIconPicker: View
 
 
                 cropImage = AvatarCropImage(image: image)
+
             }
             catch
             {
@@ -612,6 +627,7 @@ struct ProfileAvatarIconPicker: View
 
 
                     photoError = error.localizedDescription
+
                 }
 
             }
@@ -620,14 +636,18 @@ struct ProfileAvatarIconPicker: View
 
         .sheet(item: $cropImage, onDismiss:
             {
+
                 selectedPhoto = nil
+
             })
         {
             crop in
             AvatarPhotoCropView(image: crop.image)
             {
                 data in
+
                 draftPhotoData = data
+
             }
 
         }
@@ -643,8 +663,10 @@ struct ProfileAvatarIconPicker: View
                             {
                                 if !$0
                                 {
+
                                     photoError = nil;
                                     selectedPhoto = nil
+
                                 }
 
                             }
@@ -657,6 +679,7 @@ struct ProfileAvatarIconPicker: View
 
                 photoError = nil;
                 selectedPhoto = nil
+
             }
 
         }
@@ -803,6 +826,7 @@ struct AvatarCropImage: Identifiable
 
     let id = UUID()     /* Identity for the pending crop presentation */
     let image: UIImage  /* Decoded source image                       */
+
 }
 
 
@@ -1015,17 +1039,21 @@ struct AvatarPhotoCropView: View
             .updating($drag)
             {
                 value, state, _ in
+
                 state = value.translation
+
             }
             .onEnded
             {
                 value in
+
                 offset = AvatarPhotoCrop.constrainedOffset(
                     CGSize(
                         width: offset.width + value.translation.width,
                         height: offset.height + value.translation.height),
                     imageSize: image.size, side: side, zoom: zoom
                 )
+
             }
         )
         .simultaneousGesture(
@@ -1033,25 +1061,33 @@ struct AvatarPhotoCropView: View
             .updating($magnification)
             {
                 value, state, _ in
+
                 state = value
+
             }
             .onEnded
             {
                 value in
+
                 zoom = min(max(zoom * value, 1), 6)
                 offset = AvatarPhotoCrop.constrainedOffset(offset, imageSize: image.size, side: side, zoom: zoom)
+
             }
         )
         .accessibilityLabel("Avatar photo crop")
         .onAppear
         {
+
             cropSide = side
+
         }
         .onChange(of: side)
         {
             oldSide, newSide in
+
             offset = CGSize(width: offset.width * newSide / oldSide, height: offset.height * newSide / oldSide)
             cropSide = newSide
+
         }
 
     }
@@ -1076,6 +1112,7 @@ struct AvatarPhotoCropView: View
             GeometryReader
             {
                 geometry in
+
                 let side = max(
                     1, min(geometry.size.width - 32, geometry.size.height - 160, 360)) /* Available square crop viewport */
 
@@ -1102,6 +1139,7 @@ struct AvatarPhotoCropView: View
                         {
 
                             offset.width -= side / 10
+
                         }
                         label:
                         {
@@ -1113,6 +1151,7 @@ struct AvatarPhotoCropView: View
                         {
 
                             offset.height -= side / 10
+
                         }
                         label:
                         {
@@ -1124,6 +1163,7 @@ struct AvatarPhotoCropView: View
                         {
 
                             offset.height += side / 10
+
                         }
                         label:
                         {
@@ -1135,6 +1175,7 @@ struct AvatarPhotoCropView: View
                         {
 
                             offset.width += side / 10
+
                         }
                         label:
                         {
@@ -1147,6 +1188,7 @@ struct AvatarPhotoCropView: View
 
                             zoom = 1;
                             offset = .zero
+
                         }
 
                     }
@@ -1192,6 +1234,7 @@ struct AvatarPhotoCropView: View
 
 
                             cropFailed = true
+
                         }
 
                     }
@@ -1301,6 +1344,7 @@ struct ProfileColorMapPicker: View
         _hue = State(initialValue: components.hue)
         _saturation = State(initialValue: components.saturation)
         _brightness = State(initialValue: components.brightness)
+
     }
 
 
@@ -1330,6 +1374,7 @@ struct ProfileColorMapPicker: View
 
 
         selection = selectedColor
+
         dismiss()
     }
 
@@ -1382,6 +1427,7 @@ struct ProfileColorMapPicker: View
         hue = components.hue
         saturation = components.saturation
         brightness = components.brightness
+
     }
 
 
@@ -1405,11 +1451,15 @@ struct ProfileColorMapPicker: View
             }
             .onAppear
             {
+
                 isEditingRGB = true
+
             }
             .onDisappear
             {
+
                 isEditingRGB = false
+
             }
 
         }
@@ -1628,6 +1678,7 @@ struct ProfileRGBColorEditor: View
         _red = State(initialValue: color.red * 255)
         _green = State(initialValue: color.green * 255)
         _blue = State(initialValue: color.blue * 255)
+
     }
 
 
@@ -1769,6 +1820,7 @@ struct RGBChannelControl: View
         self.title = title
         _value = value
         _hexValue = State(initialValue: Self.hexString(value.wrappedValue))
+
     }
 
 
@@ -1823,6 +1875,7 @@ struct RGBChannelControl: View
 
 
                     hexValue = Self.hexString(newValue)
+
                 }
 
             }
@@ -1830,6 +1883,7 @@ struct RGBChannelControl: View
             .onChange(of: hexValue)
             {
                 _, newValue in
+
                 let validCharacters = Set("0123456789ABCDEF") /* Accepted hexadecimal digits */
                 let normalized      = String(
                     newValue.uppercased().filter
@@ -1842,10 +1896,12 @@ struct RGBChannelControl: View
 
 
                     hexValue = normalized
+
                 }
 
 
                 value = normalized.isEmpty ? 0 : Double(UInt8(normalized, radix: 16) ?? 0)
+
             }
 
             .onChange(of: isEditingHex)
@@ -1856,6 +1912,7 @@ struct RGBChannelControl: View
 
 
                     hexValue = Self.hexString(value)
+
                 }
 
             }
@@ -1922,6 +1979,7 @@ struct ProfileColorMapSurface: View
         GeometryReader
         {
             geometry in
+
             let width  = max(geometry.size.width, 1)   /* Safe color-map width  */
             let height = max(geometry.size.height, 1)  /* Safe color-map height */
 
@@ -1962,8 +2020,10 @@ struct ProfileColorMapSurface: View
                 .onChanged
                 {
                     value in
+
                     hue = min(max(value.location.x / width, 0), 1)
                     saturation = 1 - min(max(value.location.y / height, 0), 1)
+
                 }
             )
             .accessibilityElement()
@@ -1977,9 +2037,13 @@ struct ProfileColorMapSurface: View
 
 
                 case .increment:
+
                     hue = min(hue + 0.02, 1)
+
                 case .decrement:
+
                     hue = max(hue - 0.02, 0)
+
                 @unknown default:
                     break
                 }

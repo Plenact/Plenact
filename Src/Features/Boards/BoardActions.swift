@@ -43,6 +43,7 @@ extension ContentView
             {
 
                 appearanceBinding.wrappedValue = appearance
+
             }
             else
             {
@@ -54,6 +55,7 @@ extension ContentView
 
                 _ = try BoardAppearance.decodeWeek(weekAppearanceData)
                 weekAppearanceData = try JSONEncoder().encode(appearance)
+
             }
 
             if applyToAll
@@ -61,6 +63,7 @@ extension ContentView
 
                 lists = BoardAppearance.inheritingLists(lists)
                 archivedLists = BoardAppearance.inheritingLists(archivedLists)
+
             }
 
             return true
@@ -88,7 +91,9 @@ extension ContentView
 
         if draggedListID != nil || draggedCardID != nil
         {
+
             dragGeometryRevision &+= 1
+
         }
 
     }
@@ -110,6 +115,7 @@ extension ContentView
         viewportMemory.state.gallery = isGallery
         viewportMemory.state.presentation = presentation.rawValue
         viewportMemory.state.visibleListID = visibleListID
+
         viewportMemory.flush()
     }
 
@@ -134,6 +140,7 @@ extension ContentView
         {
 
             boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic)
+
         }
 
     }
@@ -161,9 +168,13 @@ extension ContentView
         {
 
         case .increment:
+
             boardScale = BoardPanoramicZoom.clamped(boardScale * 1.15)
+
         case .decrement:
+
             boardScale = BoardPanoramicZoom.clamped(boardScale / 1.15)
+
         @unknown default:
             break
         }
@@ -191,7 +202,9 @@ extension ContentView
         {
 
             isPanoramic.toggle()
+
             boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic)
+
         }
 
     }
@@ -232,6 +245,7 @@ extension ContentView
 
         viewportMemory.horizontalRestoreAllowed = false
         visibleListID = targetListID
+
         listProxy.scrollTo(targetListID, anchor: presentation == .standard ? .center : .leading)
 
         if let targetCardID = boardTargetCardID, /* Requested card identity to open                  */
@@ -245,13 +259,17 @@ extension ContentView
         {  /* Requested record resolved in its containing list */
 
             navigationPath = NavigationPath()
+
             navigationPath.append(card)
+
             openedDirectItem = directItemReturn != nil
+
         }
 
 
         boardTargetListID = nil
         boardTargetCardID = nil
+
     }
 
 
@@ -271,6 +289,7 @@ extension ContentView
 
         boardBoundaryJumpTarget = boundary
         boardBoundaryJumpRequest += 1
+
     }
 
 
@@ -379,6 +398,7 @@ extension ContentView
 
 
                 lists[listIndex].cards[cardIndex] = updatedCard
+
             }
 
         }
@@ -389,6 +409,7 @@ extension ContentView
 
 
             currentUserName = updatedName
+
         }
 
 
@@ -397,6 +418,7 @@ extension ContentView
 
 
             memberColors[updatedKey] = memberColors[updatedKey] ?? existingColor
+
         }
 
     }
@@ -460,6 +482,7 @@ extension ContentView
 
 
             currentUserName = "You"
+
         }
 
     }
@@ -484,6 +507,7 @@ extension ContentView
 
 
         memberColors[memberName.lowercased()] = color
+
     }
 
 
@@ -534,15 +558,19 @@ extension ContentView
 
 
         let nextListID: Int
+
         do
         {
+
             nextListID = try PortableCreationIdentity.reserve(proposed: ((lists + archivedLists).map(\.id).max() ?? -1) + 1)
+
         }
         catch
         {
             DatabaseActivity.shared.report("The new List identity could not be reserved. Please try again.")
             return
         }
+
         let existingTitles = Set(lists.map
             {
                 $0.title.lowercased()
@@ -556,14 +584,18 @@ extension ContentView
 
             newTitle = "New List \(suffix)"
             suffix += 1
+
         }
 
 
         let newList = KanbanList(id: nextListID, title: newTitle, cards: [])
+
         lists.append(newList)
+
         visibleListID = nextListID
         boardTargetListID = nextListID
         namingNewListID = nextListID
+
     }
 
 
@@ -596,10 +628,13 @@ extension ContentView
                 $0.allCards.map(\.id)
             } .max() ?? -1) + 1
         let nextCardID: Int
+
         do
         {
+
             nextCardID = try PortableCreationIdentity.reserve(proposed: proposedCardID,
                 count: max(1, MultilineEntry.titles(capture.title).count))
+
         }
         catch
         {
@@ -616,6 +651,7 @@ extension ContentView
         }
 
         var snapshot = lists
+
         snapshot[listIndex].cards.append(contentsOf: created)
         if let first = created.first
         {
@@ -645,6 +681,7 @@ extension ContentView
         }
 
         lists = snapshot
+
         if let card = created.first
         {
             CreatedContentReveal.shared.request(listID: capture.listID, card: card)
@@ -737,6 +774,7 @@ extension ContentView
 
                 archivedLists = snapshot.filter(\.isArchived)
                 savedCardIDs = bookmarks
+
             }
 
 
@@ -781,6 +819,7 @@ extension ContentView
         }
 
         lists[index].cards = DaySections.moved(lists[index].cards, sectionID: sectionID, offset: offset)
+
     }
 
 
@@ -818,18 +857,21 @@ extension ContentView
         var cards = lists[listIndex].cards /* Mutable card-order copy */
 
         let reordered = DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
+
         guard reordered != cards else
         {
             return
         }
 
         cards = reordered
+
         DaySections.reveal(cardID, in: &cards)
 
         withAnimation(.easeInOut(duration: 0.2))
         {
 
             lists[listIndex].cards = cards
+
         }
 
     }
@@ -870,6 +912,7 @@ extension ContentView
 
 
         let copiedList = ListCopying.copy(lists[sourceIndex], into: lists + archivedLists, crossBoard: false)
+
         lists.insert(copiedList, at: sourceIndex + 1)
     }
 
@@ -952,10 +995,12 @@ extension ContentView
 
 
             listDragInitialCenter = dragGeometry.centers[listID]
+
             withAnimation(reducesMotion ? nil : .smooth(duration: 0.25))
             {
 
                 draggedListID = listID
+
             }
 
         }
@@ -976,6 +1021,7 @@ extension ContentView
             listDragGrabOffset =
             (value.startLocation.x - (listDragInitialCenter ?? value.startLocation.x))
             * (listDragScale / boardZoomScale)
+
         }
 
 
@@ -1011,6 +1057,7 @@ extension ContentView
         {
 
             _ = BoardListReordering.move(listID, to: destination, in: &lists)
+
         }
 
     }
@@ -1049,6 +1096,7 @@ extension ContentView
             listDragGrabOffset = 0
             listDragInitialCenter = nil
             listDragTilt = 0
+
         }
 
     }
@@ -1163,6 +1211,7 @@ extension ContentView
         updatedList.cards = sortedCards
 
         lists[listIndex] = updatedList
+
     }
 
 
@@ -1309,6 +1358,7 @@ extension ContentView
         var archived = lists[index] /* List snapshot marked archived before partition transfer */
 
         archived.isArchived = true
+
         archivedLists.append(archived)
         lists.removeAll
         {
@@ -1354,6 +1404,7 @@ extension ContentView
         var restored = archivedLists[index] /* List snapshot marked active before partition transfer */
 
         restored.isArchived = false
+
         lists.append(restored)
         archivedLists.removeAll
         {
@@ -1418,6 +1469,7 @@ extension ContentView
 
         updatedList.cards[cardIndex] = updatedCard
         lists[listIndex] = updatedList
+
     }
 
 
@@ -1436,6 +1488,7 @@ extension ContentView
     {
 
         let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)
+
         return CardKeyboardNavigation(
             previous: neighbors.previous == nil
             ? nil
@@ -1448,8 +1501,11 @@ extension ContentView
                 }
 
                 var path = NavigationPath();
+
                 path.append(target);
+
                 navigationPath = path
+
             },
             next: neighbors.next == nil
             ? nil
@@ -1462,8 +1518,11 @@ extension ContentView
                 }
 
                 var path = NavigationPath();
+
                 path.append(target);
+
                 navigationPath = path
+
             })
     }
 
@@ -1540,7 +1599,9 @@ extension ContentView
 
         do
         {
+
             _ = try PlanningCalendarStore.load()
+
         }
         catch
         {
@@ -1644,6 +1705,7 @@ extension ContentView
 
 
         cardDragLocation = location
+
     }
 
 
@@ -1671,6 +1733,7 @@ extension ContentView
 
         draggedCardID = cardID
         cardDragLocation = location
+
     }
 
 
@@ -1708,6 +1771,7 @@ extension ContentView
 
 
             cardDragLocation = location
+
         }
 
 
@@ -1717,6 +1781,7 @@ extension ContentView
 
             draggedCardID = nil
             cardDragLocation = nil
+
         }
 
 

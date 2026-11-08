@@ -40,6 +40,7 @@ struct BoardGalleryGroup: Identifiable
     {
 
         var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])]
+
         for card in DaySections.visible(list.cards)
         {
 
@@ -91,6 +92,7 @@ struct BoardGalleryView: View
     var showsListHeadings = true
     var boardAppearance   = BoardAppearance()
     @Environment(\.dynamicTypeSize) private var typeSize
+
     private var columns: [GridItem]
     {
 
@@ -214,6 +216,7 @@ struct BoardGalleryTile: View
     let card:       KanbanCard
     var appearance: ItemAppearance? = nil
     var boardAppearance             = BoardAppearance()
+
     private var excerpt: String
     {
 

@@ -62,6 +62,7 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
         self.kind = kind
         self.userID = userID
         self.displayName = displayName
+
     }
 
 
@@ -114,6 +115,7 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
 
 
         self = .manual(value)
+
     }
 
 }
@@ -270,10 +272,14 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
     {
 
         let date = DateFormatter()
+
         date.dateStyle = .medium
+
         let time = DateFormatter()
+
         time.locale = Locale(identifier: "en_US_POSIX")
         time.dateFormat = "h:mm a"
+
         switch self
         {
 
@@ -321,6 +327,7 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
     {
 
         let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard value.count == 1,
         value.unicodeScalars.contains(where:
             {
@@ -428,6 +435,7 @@ enum LocalReactionIdentity
         }
 
         let id = UUID();
+
         defaults.set(id.uuidString, forKey: key);
         return id
     }
@@ -476,6 +484,7 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable
         self.author = author
         self.body = body
         self.createdAt = createdAt
+
     }
 
 }
@@ -597,10 +606,12 @@ struct CardSectionLayout: Hashable, Codable, Sendable
 
     var order:    [CardSection]    = CardSection.allCases
     var hidden:   Set<CardSection> = []
+
     var sections: [CardSection]
     {
 
         var seen: Set<CardSection> = []
+
         return (order + CardSection.allCases).filter
         {
             seen.insert($0).inserted && !hidden.contains($0)
@@ -625,6 +636,7 @@ struct CardScheduleBadge: Equatable
     let title:       String
     let value:       String
     let systemImage: String
+
     var label:       String
     {
         title.isEmpty ? value : title + " · " + value

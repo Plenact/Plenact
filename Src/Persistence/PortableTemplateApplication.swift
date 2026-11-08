@@ -38,33 +38,41 @@ enum PortableTemplateApplication
 
             throw PortableEditedExport.Failure.structureChanged
         }
+
         let originalLists = Set(original.collection.lists.map(\.id))
         let originalCards = Set(original.collection.lists.flatMap(\.allCards).map(\.id))
         let lists         = preview.collection.lists.map(\.id)
         let cards         = preview.collection.lists.flatMap(\.allCards).map(\.id)
+
         guard Set(lists).count == lists.count, Set(cards).count == cards.count,
               importantIDs.isSubset(of: Set(cards)) else
         {
 
             throw PortableEditedExport.Failure.inconsistent
         }
+
         let newLists = lists.filter { !originalLists.contains($0) }
         let newCards = cards.filter { !originalCards.contains($0) }
         let count    = newLists.count + newCards.count
+
         guard count > 0 else
         {
 
             return (preview, importantIDs)
         }
+
         let maximum = (lists + cards + Array(originalLists) + Array(originalCards)).max() ?? -1
+
         guard maximum < Int.max else
         {
 
             throw PortableEditedExport.Failure.unsupported
         }
+
         let start   = try PortableCreationIdentity.reserve(proposed: maximum + 1, count: count, root: root)
         let listMap = Dictionary(uniqueKeysWithValues: newLists.enumerated().map { ($0.element, start + $0.offset) })
         let cardMap = Dictionary(uniqueKeysWithValues: newCards.enumerated().map { ($0.element, start + newLists.count + $0.offset) })
+
         /// @fcn PortableTemplateApplication.reserve.references
         /// @brief Translate explicit copied Card links without interpreting opaque edit-history bytes
         /// @param[in] value Newly copied Card subtree
@@ -82,12 +90,14 @@ enum PortableTemplateApplication
                     {
 
                         object[field] = target
+
                     }
                 }
                 for field in object.keys where field != "editHistory"
                 {
 
                     object[field] = references(object[field]!)
+
                 }
                 return object
             }
@@ -98,14 +108,18 @@ enum PortableTemplateApplication
             }
             return value
         }
+
         var raw        = try JSONSerialization.jsonObject(with: JSONEncoder().encode(preview)) as! [String: Any]
         var collection = raw["collection"] as! [String: Any]
         var rawLists   = collection["lists"] as! [[String: Any]]
+
         for index in rawLists.indices
         {
 
             let number = rawLists[index]["id"] as! Int
+
             rawLists[index]["id"] = listMap[number] ?? number
+
             for field in ["cards", "archivedCards"]
             {
 
@@ -118,29 +132,41 @@ enum PortableTemplateApplication
                 {
 
                     let number = items[item]["id"] as! Int
+
                     if let target = cardMap[number]
                     {
 
                         items[item] = references(items[item]) as! [String: Any]
                         items[item]["id"] = target
+
                     }
                 }
+
                 rawLists[index][field] = items
+
             }
         }
+
         collection["lists"] = rawLists
+
         if let saved = collection["savedCardIDs"] as? [Int]
         {
 
             collection["savedCardIDs"] = saved.map { cardMap[$0] ?? $0 }.sorted()
+
         }
+
         raw["collection"] = collection
+
         if let days = raw["dayListIDs"] as? [String: Int]
         {
 
             raw["dayListIDs"] = days.mapValues { listMap[$0] ?? $0 }
+
         }
+
         let week = try JSONDecoder().decode(DatedPlanningWeek.self, from: JSONSerialization.data(withJSONObject: raw))
+
         return (week, Set(importantIDs.map { cardMap[$0] ?? $0 }))
     }
 
@@ -162,13 +188,17 @@ enum PortableTemplateApplication
 
             return data
         }
+
         let items = try JSONDecoder().decode([LibraryImportanceItem].self, from: data)
+
         guard let raw = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], raw.count == items.count else
         {
 
             throw PortableEditedExport.Failure.inconsistent
         }
+
         var seen = Set<String>()
+
         for (item, object) in zip(items, raw)
         {
 
@@ -180,13 +210,17 @@ enum PortableTemplateApplication
                 throw PortableEditedExport.Failure.inconsistent
             }
         }
+
         let actual = Set(week.collection.lists.flatMap(\.allCards).map(\.id))
+
         guard items.contains(where: { $0.collectionID == week.id && !actual.contains($0.cardID) }) else
         {
 
             return data
         }
+
         let runtime = try PortableRuntimeEvidence.capture(root: root)
+
         guard let baseline = runtime["NativeStores.plist"] else
         {
 
@@ -197,6 +231,7 @@ enum PortableTemplateApplication
 
             throw PortableEditedExport.Failure.inconsistent
         }
+
         let retained = try (stores[LibraryImportanceSelection.key] as? Data).map
         {
 
@@ -208,6 +243,7 @@ enum PortableTemplateApplication
 
             $0.0.collectionID != week.id || actual.contains($0.0.cardID) || retainedIDs.contains($0.0.cardID)
         }.map { $0.1 }
+
         guard kept.count != raw.count else
         {
 

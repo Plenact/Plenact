@@ -19,6 +19,7 @@ struct ReviewedPortablePackage
     let listCount:   Int
     let mediaCount:  Int
     let snapshot:    Data /* Frozen portable members; no native source backup */
+
 }
 
 
@@ -116,6 +117,7 @@ enum PortablePackageReview
         let selected  = FileManager.default.fileExists(atPath: nested.path) ? nested : url
         var remaining = LegacyWorkspaceExport.maximumBytes
         let files     = try LocalBackupRestore.readTree(selected, remaining: &remaining)
+
         return try review(files: files)
     }
 
@@ -133,7 +135,9 @@ enum PortablePackageReview
         {
             throw Failure.invalid
         }
+
         let manifest = try object("Manifest.json", files: files)
+
         guard Set(manifest.keys) == ["format", "format_version", "user_data_model_version", "ownership_verified",
                 "cloud_upload_allowed", "originals", "files"],
               manifest["format"] as? String == "plenact.synthetic-export-package",
@@ -144,7 +148,9 @@ enum PortablePackageReview
         {
             throw Failure.invalid
         }
+
         var actual = Set(["Assembly.json"])
+
         for (name, file) in originals.fileWrappers ?? [:]
         {
             guard file.isRegularFile, !file.isSymbolicLink, name.count == 68, name.hasSuffix(".bin"),
@@ -154,7 +160,9 @@ enum PortablePackageReview
             }
             actual.insert("Originals/" + name)
         }
+
         var declared = Set<String>()
+
         for entry in inventory
         {
             guard Set(entry.keys) == ["path", "byte_length", "sha256"], let path = entry["path"] as? String,
@@ -162,7 +170,9 @@ enum PortablePackageReview
             {
                 throw Failure.integrity
             }
+
             let bytes = try MigrationBackupReader.file(path, in: files)
+
             guard integer(entry["byte_length"], equals: bytes.count),
                   entry["sha256"] as? String == MigrationBackupReader.digest(bytes) else
             {
@@ -173,7 +183,9 @@ enum PortablePackageReview
         {
             throw Failure.integrity
         }
+
         let assembly = try object("Assembly.json", files: files)
+
         guard assembly["format"] as? String == "plenact.synthetic-assembly-test",
               integer(assembly["format_version"], equals: 1), isFalse(assembly["ownership_verified"]),
               isFalse(assembly["cloud_upload_allowed"]),
@@ -190,6 +202,7 @@ enum PortablePackageReview
         {
             throw Failure.relationships
         }
+
         let contentGroups  = ["collections": "collection", "lists": "list", "cards": "card"]
         let planningGroups = ["calendar_indexes": "calendar_index", "weeks": "calendar_week", "daily_plans": "daily_plan",
             "weekly_reviews": "weekly_review", "periodic_reviews": "periodic_review", "templates": "planning_template",
@@ -197,6 +210,7 @@ enum PortablePackageReview
         let baseGroups = ["profiles": "user_profile", "label_categories": "label_category", "labels": "label",
             "artwork": "studio_artwork", "content_selections": "content_selection", "unavailable_references": "unavailable_reference"]
         var records: [[String: Any]] = []
+
         for (object, groups) in [(content, contentGroups), (planning, planningGroups), (base, baseGroups)]
         {
             for (key, kind) in groups
@@ -205,7 +219,9 @@ enum PortablePackageReview
                 {
                     throw Failure.relationships
                 }
+
                 records += group
+
             }
         }
         for key in ["account", "workspace", "user_preferences", "studio_settings", "today_shortcuts", "display_preferences"]
@@ -234,7 +250,9 @@ enum PortablePackageReview
                 throw Failure.relationships
             }
         }
+
         var identities = Set<String>()
+
         for record in records
         {
             guard let id = record["id"] as? String, UUID(uuidString: id) != nil,
@@ -249,10 +267,12 @@ enum PortablePackageReview
                 throw Failure.relationships
             }
         }
+
         let assets     = planning["assets"] as! [[String: Any]]
         var seenAssets = Set<String>()
         var seenPaths  = Set<String>()
         var usedBlobs  = Set<String>()
+
         for mapping in mappings
         {
             guard Set(mapping.keys) == ["asset_id", "source_path", "blob"],
@@ -266,8 +286,10 @@ enum PortablePackageReview
             {
                 throw Failure.relationships
             }
+
             let bytes = try MigrationBackupReader.file(blob, in: files)
             let hash  = MigrationBackupReader.digest(bytes)
+
             guard blob == "Originals/" + hash + ".bin", payload["sha256"] as? String == hash,
                   payload["byte_length"] as? String == String(bytes.count) else
             {
@@ -279,7 +301,9 @@ enum PortablePackageReview
         {
             throw Failure.integrity
         }
+
         let deleted = try PortableLocalDeletions.ids(in: export)
+
         try references(records: records)
         guard let snapshot = files.serializedRepresentation else
         {
@@ -299,6 +323,7 @@ enum PortablePackageReview
     {
 
         let byID = Dictionary(uniqueKeysWithValues: records.map { ($0["id"] as! String, $0) })
+
         if records.contains(where: { $0["record_type"] as? String == "studio_artwork" }) &&
             !records.contains(where: { $0["record_type"] as? String == "artwork_library" })
         {
@@ -306,8 +331,10 @@ enum PortablePackageReview
         }
         for record in records
         {
+
             let kind    = record["record_type"] as? String
             let payload = record["payload"] as! [String: Any]
+
             for (field, expected) in [("list_ids", "list"), ("card_ids", "card")]
             {
                 if let targets = payload[field] as? [String]
@@ -328,7 +355,9 @@ enum PortablePackageReview
             }
             if kind == "artwork_library"
             {
+
                 let expected = Set(records.filter { $0["record_type"] as? String == "studio_artwork" }.compactMap { $0["id"] as? String })
+
                 guard let ids = payload["artwork_ids"] as? [String], Set(ids) == expected, Set(ids).count == ids.count else
                 {
                     throw Failure.relationships

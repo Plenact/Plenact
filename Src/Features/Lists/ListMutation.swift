@@ -46,6 +46,7 @@ func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: ino
     }
 
     lists[index].appearance = appearance?.isEmpty == true ? nil : appearance
+
     return true
 }
 
@@ -93,10 +94,13 @@ func editBoardList(
         }
 
         let subtitleOverride = subtitle == lists[index].subtitle ? lists[index].subtitleOverride : subtitle
+
         try lists[index].edit(title: title, subtitle: subtitleOverride)
         if let newItemPresentation
         {
+
             lists[index].newItemPresentation = newItemPresentation
+
         }
 
         return true

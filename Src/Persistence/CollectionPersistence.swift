@@ -144,6 +144,7 @@ enum PersonalCollectionStore
         var updated = collections /* Directory snapshot carrying the archive state change */
 
         updated[index].isArchived = true
+
         try saveChecked(updated, to: defaults)
 
         return updated
@@ -187,6 +188,7 @@ enum PersonalCollectionStore
         var updated = collections /* Directory snapshot carrying the archived collection */
 
         updated[index].isArchived = true
+
         try saveChecked(updated, to: defaults)
 
         return updated

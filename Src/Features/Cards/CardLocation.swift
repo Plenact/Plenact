@@ -55,6 +55,7 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
         }
 
         var components = URLComponents()
+
         components.scheme = "https"
         components.host = self == .apple ? "maps.apple.com" : "www.google.com"
         components.path = self == .apple ? "/" : "/maps/search/"
@@ -63,6 +64,7 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
         : [URLQueryItem(name: "api", value: "1"), URLQueryItem(name: "query", value: query)]
         // Preserve literal plus signs when a provider decodes form-style query parameters.
         components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+
         return components.url
     }
 
@@ -138,6 +140,7 @@ struct CardLocationRow: View
 
         let maps = PlanPreferencesStore.resolved(
             preferencesData: preferencesData, profileData: profileData).preferredMapsApp
+
         if let location = CardLocation.normalized(location), let url = maps.placeURL(for: location)
         {
 
@@ -231,6 +234,7 @@ struct CardLocationEditorSheet: View
         self.onSave = onSave
         self.hasLocation = CardLocation.normalized(location) != nil
         self._text = State(initialValue: location ?? "")
+
     }
 
 
@@ -255,6 +259,7 @@ struct CardLocationEditorSheet: View
         {
 
             saveFailed = true
+
         }
 
     }
@@ -289,7 +294,9 @@ struct CardLocationEditorSheet: View
                     {
                         CardLocationSearchView(query: text)
                         {
+
                             text = $0
+
                         }
                         .presentationDetents([.large])
                     }

@@ -174,6 +174,7 @@ struct ActivitySwipeRow<Content: View>: View
         self.onDelete = onDelete
         self.deletionAccessibilityLabel = deletionAccessibilityLabel
         self.content = content
+
     }
 
 
@@ -229,6 +230,7 @@ struct ActivitySwipeRow<Content: View>: View
                     }
 
                     horizontalOffset = min(0, max(-72, value.translation.width))
+
                 }
 
                 .onEnded
@@ -254,6 +256,7 @@ struct ActivitySwipeRow<Content: View>: View
                         {
 
                             horizontalOffset = value.translation.width < -36 ? -72 : 0
+
                         }
 
                     }
@@ -283,6 +286,7 @@ struct ItemReactionStrip: View
     let authorID:       UUID?
     let onToggle:       (String) -> Void
     let onAdd:          () -> Void
+
     private var emojis: [String]
     {
         reactions.reduce(into: [])
@@ -308,6 +312,7 @@ struct ItemReactionStrip: View
                 ForEach(emojis, id: \.self)
                 {
                     emoji in
+
                     let matching = reactions.filter
                     {
                         $0.emoji == emoji
@@ -496,6 +501,7 @@ struct ItemReactionPreview: View
 
 
     let card:           KanbanCard
+
     private var emojis: [String]
     {
 
@@ -560,10 +566,12 @@ struct ItemReactionPreview: View
                 {
 
                     Text(emoji)
+
                     let count = card.previewReactions.filter
                     {
                         $0.emoji == emoji
                     } .count
+
                     if count > 1
                     {
                         Text("\(count)").font(.caption2).foregroundStyle(.secondary)

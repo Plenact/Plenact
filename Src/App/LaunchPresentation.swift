@@ -107,6 +107,7 @@ struct PlenactLaunchProgress: Equatable
     {
 
         let index = min(3, max(0, Int(max(0, elapsed) / 0.22)))
+
         return Self(
             stage: PlenactLaunchStage(rawValue: index) ?? .restore,
             finished: finished && elapsed >= 0.84)
@@ -151,6 +152,7 @@ struct PlenactLaunchIndicators: View
     let progress: PlenactLaunchProgress
     var animates = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View
     {
 
@@ -160,7 +162,9 @@ struct PlenactLaunchIndicators: View
             ForEach(PlenactLaunchStage.allCases, id: \.rawValue)
             {
                 step in
+
                 let status = progress.status(for: step)
+
                 Image(systemName: step.symbol)
                 .font(.system(size: 25.3, weight: .light))
                 .frame(width: 30.8, height: 35.2)
@@ -200,6 +204,7 @@ struct PlenactLaunchSequence: View
     let progress: PlenactLaunchProgress
     var animates: Bool
     @State private var startedAt = Date()
+
     var body: some View
     {
 
@@ -345,7 +350,9 @@ final class TodayWelcomeCue: ObservableObject
     ///
     init(defaults: UserDefaults = .standard)
     {
+
         self.defaults = defaults
+
     }
 
 
@@ -367,12 +374,16 @@ final class TodayWelcomeCue: ObservableObject
             now.timeIntervalSince($0) >= Self.returnInterval
         }
         == true
+
         hasActivated = true
         departure = nil
+
         if shouldGreet
         {
+
             pending = true;
             requestID += 1
+
         }
 
     }
@@ -394,6 +405,7 @@ final class TodayWelcomeCue: ObservableObject
         {
 
             departure = now
+
             defaults.set(now.timeIntervalSince1970, forKey: Self.lastDepartureKey)
         }
 
@@ -413,13 +425,17 @@ final class TodayWelcomeCue: ObservableObject
 
         generation += 1
         pending = false
+
         var transaction = Transaction();
+
         transaction.disablesAnimations = true
+
         withTransaction(transaction)
         {
 
             illuminated = false;
             target = nil
+
         }
 
     }
@@ -468,6 +484,7 @@ final class TodayWelcomeCue: ObservableObject
         }
 
         pending = false
+
         let token = generation
 
 
@@ -501,6 +518,7 @@ final class TodayWelcomeCue: ObservableObject
             {
 
                 illuminated = value
+
             }
             else
             {
@@ -509,6 +527,7 @@ final class TodayWelcomeCue: ObservableObject
                 {
 
                     illuminated = value
+
                 }
 
             }
@@ -519,8 +538,10 @@ final class TodayWelcomeCue: ObservableObject
         {
             if token == generation
             {
+
                 illuminated = false;
                 target = nil
+
             }
 
         }
@@ -538,6 +559,7 @@ final class TodayWelcomeCue: ObservableObject
                 }
 
                 target = cue
+
                 if reduceMotion
                 {
 
@@ -580,6 +602,7 @@ final class TodayWelcomeCue: ObservableObject
                 }
 
                 target = nil
+
                 if cue == .profile
                 {
                     try await pause(.milliseconds(500))

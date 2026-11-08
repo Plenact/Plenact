@@ -36,7 +36,9 @@ enum AppDailyOpening
 
             return false
         }
+
         let day = PlanningDate.key(date, calendar: calendar)
+
         guard defaults.string(forKey: key) != day else
         {
 
@@ -72,19 +74,27 @@ extension AppRootView
 
             return false
         }
+
         // A not-yet-mounted Week must read the same top position as an already mounted Week.
         let memory = BoardViewportMemory(owner: week.id.uuidString)
+
         memory.resetScrollOffsets()
+
         memory.state.visibleListID = target
+
         memory.flush()
+
         displayedPlanningWeek = nil
         displayedPlanningListID = nil
         boardTargetCardID = nil
         boardTargetListID = target
         weekReturnTargetListID = target
         weekReturnResetRequest += 1
+
         dailyOverview.arm()
+
         selectedDestination = .board
+
         return true
     }
 }
@@ -108,6 +118,7 @@ struct DailyWeekOverview
 
         id = UUID()
         deadline = nil
+
     }
 
 
@@ -120,7 +131,9 @@ struct DailyWeekOverview
 
             return nil
         }
+
         deadline = instant.advanced(by: Self.delay)
+
         return id
     }
 
@@ -145,6 +158,7 @@ struct DailyWeekOverview
 
         id = nil
         deadline = nil
+
     }
 }
 
@@ -178,6 +192,7 @@ extension AppRootView
             {
 
                 selectedDestination = .today
+
             }
         }
     }
@@ -205,10 +220,14 @@ final class DailyOverviewFade
             selectToday()
             return
         }
+
         snapshot.frame = window.bounds
         snapshot.isUserInteractionEnabled = false
+
         window.addSubview(snapshot)
+
         overlay = snapshot
+
         selectToday()
         DispatchQueue.main.async
         {
@@ -222,6 +241,7 @@ final class DailyOverviewFade
             {
 
                 snapshot.alpha = 0
+
             } completion:
             {
                 _ in
@@ -237,7 +257,9 @@ final class DailyOverviewFade
 
         overlay?.layer.removeAllAnimations()
         overlay?.removeFromSuperview()
+
         overlay = nil
+
     }
 }
 
@@ -263,7 +285,9 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
         {
 
             interaction?()
+
             state = .failed
+
         }
 
 
@@ -315,6 +339,7 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
 
             self.armed = armed
             observer.interaction = interaction
+
             guard armed else
             {
 
@@ -326,10 +351,12 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
 
                 return
             }
+
             observedWindow = window
             observer.cancelsTouchesInView = false
             observer.delaysTouchesBegan = false
             observer.delaysTouchesEnded = false
+
             window.addGestureRecognizer(observer)
             for name in [UITextField.textDidBeginEditingNotification, UITextField.textDidChangeNotification,
                          UITextView.textDidBeginEditingNotification, UITextView.textDidChangeNotification]
@@ -360,7 +387,9 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
         {
 
             observedWindow?.removeGestureRecognizer(observer)
+
             observedWindow = nil
+
             notifications.forEach(NotificationCenter.default.removeObserver)
             notifications.removeAll()
         }
@@ -371,7 +400,9 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
     {
 
         let controller = Controller()
+
         controller.view.isUserInteractionEnabled = false
+
         return controller
     }
 
@@ -380,6 +411,7 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
     {
 
         controller.visible = onVisible
+
         controller.configure(armed: armed, interaction: onInteraction)
     }
 

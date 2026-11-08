@@ -23,16 +23,22 @@ extension AppRootView
 
         defer
         {
+
             pendingNativeRestore = nil
             undoingNativeRestore = false
             isSwitchingWorkspace = false
+
         }
+
         var committed = false
+
         do
         {
             #if targetEnvironment(simulator)
             KanbanBoardPersistence.waitForPendingSaves()
+
             let store = try FullMonthExampleStore.live()
+
             if undoingNativeRestore
             {
                 try store.undoNativeSource()
@@ -49,20 +55,28 @@ extension AppRootView
             {
                 throw LocalBackupRestore.Failure.invalid
             }
+
             committed = true
+
             try reloadWorkspaceFromStorage()
+
             workspaceNotice = undoingNativeRestore
                 ? "The workspace from before the test restore is back."
                 : "Local backup restored. Compare your Week and personal Lists. This was a source recovery test; cloud synchronization is still off."
+
             #endif
         }
         catch
         {
             if committed || (try? FullMonthExampleStore.live().needsRecovery) == true
             {
+
                 workspaceRecoveryError = error.localizedDescription
+
             }
+
             workspaceNotice = "The test restore could not finish. Recovery data has been retained: " + error.localizedDescription
+
         }
     }
 }

@@ -130,7 +130,9 @@ struct BottomToolbarBackground: View
         GeometryReader
         {
             geometry in
+
             let surfaceHeight = max(0, geometry.size.height - topInset) + max(0, bottomInset)  /* Paper and tint coverage including the reserved bottom strip */
+
             ZStack(alignment: .top)
             {
 

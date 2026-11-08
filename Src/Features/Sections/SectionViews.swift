@@ -22,6 +22,7 @@ struct NamedSectionDivider: View
 
 
     let card: KanbanCard
+
     var body: some View
     {
 
@@ -65,6 +66,7 @@ struct DaySectionRow: View
     var onOpen:   (() -> Void)? = nil
     @Environment(\.cardMovementAccess) private var movement
     @State private var showsMove = false
+
     @ViewBuilder private var heading: some View
     {
 
@@ -113,8 +115,10 @@ struct DaySectionRow: View
 
                     var updated    = card
                     var appearance = updated.appearance ?? ItemAppearance()
+
                     appearance.sectionCollapsed = appearance.sectionCollapsed != true
                     updated.appearance = appearance
+
                     onUpdate(updated)
                 }
                 label:
@@ -133,7 +137,9 @@ struct DaySectionRow: View
 
                         Button("Move section to…", systemImage: "arrowshape.turn.up.right")
                         {
+
                             showsMove = true
+
                         }
 
                     }
@@ -208,8 +214,10 @@ struct DaySectionRow: View
 
         var updated    = card
         var appearance = updated.appearance ?? ItemAppearance()
+
         appearance.accent = color
         updated.appearance = appearance.isEmpty ? nil : appearance
+
         onUpdate(updated)
     }
 

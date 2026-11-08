@@ -686,8 +686,11 @@ struct KanbanCardView: View
                                                     set:
                                                     {
                                                         visible in
+
                                                         var updated = card
+
                                                         updated.showsReactionsInPreviews = visible
+
                                                         onUpdateCard(updated)
                                                     }))
                 Toggle(
@@ -700,8 +703,11 @@ struct KanbanCardView: View
                                                     set:
                                                     {
                                                         visible in
+
                                                         var updated = card
+
                                                         updated.showsDueDateInList = visible
+
                                                         onUpdateCard(updated)
                                                     }))
             }
@@ -717,6 +723,7 @@ struct KanbanCardView: View
                     var updated = card /* Card snapshot clearing the featured cover without removing attachments */
 
                     updated.coverAttachmentID = nil
+
                     onUpdateCard(updated)
                 }
 
@@ -734,6 +741,7 @@ struct KanbanCardView: View
             {
 
                 isConfirmingDelete = true
+
             }
             label:
             {
@@ -746,6 +754,7 @@ struct KanbanCardView: View
 
                 renameDraft = card.word
                 isRenaming = true
+
             }
             label:
             {
@@ -757,6 +766,7 @@ struct KanbanCardView: View
             {
 
                 isEditingInfo = true
+
             }
             label:
             {
@@ -857,10 +867,12 @@ struct SingleListNoteRow: View
     var onDelete:  (() -> Void)? = nil
     let onUpdateCard: (KanbanCard) -> Void
     @State private var confirmsDelete = false
+
     private var preview: String
     {
 
         let subtitle = card.subtitleOverride?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
         if !subtitle.isEmpty
         {
             return subtitle
@@ -998,7 +1010,9 @@ struct SingleListNoteRow: View
             {
                 Button("Delete", systemImage: "trash", role: .destructive)
                 {
+
                     confirmsDelete = true
+
                 }
 
             }

@@ -72,6 +72,7 @@ struct ItemAppearanceSheet: View
         self.onSaveDisplay = onSaveDisplay
         _draftDisplay = State(initialValue: displayFormat)
         _draft = State(initialValue: appearance ?? ItemAppearance())
+
     }
 
 
@@ -105,7 +106,9 @@ struct ItemAppearanceSheet: View
                                                                                 draftDisplay ?? .card
                                                                             }, set:
                                                                             {
+
                                                                                 draftDisplay = $0
+
                                                                             }
                                                                         )
                         )
@@ -166,7 +169,9 @@ struct ItemAppearanceSheet: View
                                                                             },
                                                                             set:
                                                                             {
+
                                                                                 draft.hideEmptySubtitle = $0 ? true : nil
+
                                                                             }
                                                                         )
                         )
@@ -255,7 +260,9 @@ struct ItemAppearanceSheet: View
                                                                             },
                                                                             set:
                                                                             {
+
                                                                                 draft.showsIconInHeader = $0
+
                                                                             }
                                                                         ))
                         Text("Show this List's icon beside its title when opening the List or Day view.")
@@ -320,7 +327,9 @@ struct ItemAppearanceSheet: View
                                 },
                                 set:
                                 {
+
                                     draft.listBackgroundOpacity = $0
+
                                 }
                             ))
                         Text(
@@ -404,7 +413,9 @@ struct ItemAppearanceSheet: View
 
                     Button("Reset appearance")
                     {
+
                         draft = ItemAppearance()
+
                     }
                     .accessibilityIdentifier("appearance.reset")
                     Text(
@@ -438,15 +449,18 @@ struct ItemAppearanceSheet: View
 
                         let appearance = draft.isEmpty ? nil : draft
                         let saved: Bool
+
                         if let draftDisplay, let onSaveDisplay
                         {
 
                             saved = onSaveDisplay(appearance, draftDisplay)
+
                         }
                         else
                         {
 
                             saved = onSave(appearance)
+
                         }
 
                         if saved
@@ -545,6 +559,7 @@ struct BoardAppearanceSheet: View
         _draftPresentation = State(initialValue: presentation)
         self.onSavePresentation = onSavePresentation
         self.onSave = onSave
+
     }
 
 
@@ -644,7 +659,9 @@ struct BoardAppearanceSheet: View
                         },
                         set:
                         {
+
                             draft.subtitleItalic = $0 ? true : nil
+
                         }
                     ))
                     .accessibilityIdentifier("boardAppearance.subtitleItalic")
@@ -785,9 +802,12 @@ struct BoardAppearanceSheet: View
             }
 
             isImportingPhoto = true
+
             defer
             {
+
                 isImportingPhoto = false
+
             }
 
             do
@@ -804,9 +824,12 @@ struct BoardAppearanceSheet: View
 
                     try CollectionBackgroundPhotoStore.preparedPhoto(data)
                 } .value
+
                 try Task.checkCancellation()
+
                 draftPhoto = prepared
                 draft.collectionBackground = CollectionBackground(preset: .photo)
+
             }
             catch is CancellationError
             {
@@ -816,6 +839,7 @@ struct BoardAppearanceSheet: View
             {
 
                 backgroundError = "This photo could not be opened. Please choose another image."
+
             }
 
         }
@@ -828,7 +852,9 @@ struct BoardAppearanceSheet: View
                             {
                                 if !$0
                                 {
+
                                     backgroundError = nil
+
                                 }
 
                             })
@@ -837,7 +863,9 @@ struct BoardAppearanceSheet: View
 
             Button("OK", role: .cancel)
             {
+
                 backgroundError = nil
+
             }
 
         }
@@ -884,7 +912,9 @@ struct BoardAppearanceSheet: View
 
                                             if preset != .photo
                                             {
+
                                                 draftPhoto = nil
+
                                             }
 
                                             draft.collectionBackground = preset.map
@@ -954,6 +984,7 @@ struct BoardAppearanceSheet: View
 
         var updated = draft
         var importedName: String?
+
         do
         {
 
@@ -961,8 +992,10 @@ struct BoardAppearanceSheet: View
             {
 
                 let name = try CollectionBackgroundPhotoStore.save(draftPhoto)
+
                 importedName = name
                 updated.collectionBackground?.photoFileName = name
+
             }
 
             if onSave(updated, applyToAll)
@@ -993,6 +1026,7 @@ struct BoardAppearanceSheet: View
             }
 
             backgroundError = "The background could not be saved. Your current appearance has been kept."
+
         }
 
     }
@@ -1030,22 +1064,27 @@ struct AddItemTextColorSection: View
                                         set:
                                         {
                                             color in
+
                                             var red: CGFloat   = 0
                                             var green: CGFloat = 0
                                             var blue: CGFloat  = 0
                                             var alpha: CGFloat = 0
+
                                             guard UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else
                                             {
                                                 return
                                             }
 
                                             selection = ProfileColor(red: Double(red), green: Double(green), blue: Double(blue))
+
                                         }), supportsOpacity: false
             )
             .accessibilityIdentifier("appearance.addItemTextColor")
             Button("Use default color")
             {
+
                 selection = nil
+
             }
             .disabled(selection == nil)
             Text(
@@ -1137,6 +1176,7 @@ struct ListSurfaceOpacityPicker: View
     let title:            String
     var tint:             KanbanListTint = .neutral
     @Binding var opacity: Double
+
     var body:             some View
     {
 
@@ -1210,6 +1250,7 @@ struct ListIconColorPicker: View
         ("Coral", .coral), ("Graphite", .graphite), ("White", .white),
         ("Charcoal", .charcoal), ("Yellow", .lemon), ("Sky", .sky)
     ]
+
     var body: some View
     {
 

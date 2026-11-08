@@ -22,6 +22,7 @@ struct PlanningTemplatesView: View
 
     @Environment(\.dismiss) private var dismiss
     var onOpenLibrary: (() -> Void)? = nil
+
     var body: some View
     {
 
@@ -90,13 +91,16 @@ struct PlanningTemplateLibraryRows: View
 
         do
         {
+
             library = try PlanningRoutineStore.load(from: defaults)
+
         }
         catch
         {
 
             library = nil;
             message = "Templates couldn't be read. Your saved data has been retained. Please retry."
+
         }
 
     }
@@ -121,11 +125,14 @@ struct PlanningTemplateLibraryRows: View
         }
 
         var next = baseline;
+
         change(&next)
         do
         {
             try PlanningRoutineStore.save(next, baseline: baseline, to: defaults);
+
             library = next;
+
             return true
         }
         catch
@@ -156,6 +163,7 @@ struct PlanningTemplateLibraryRows: View
         {
 
             message = "There is no saved plan for that date yet. Open and plan its week first.";
+
             return
         }
 
@@ -165,10 +173,13 @@ struct PlanningTemplateLibraryRows: View
             editing = try PlanningRoutineTemplate.capture(
                 name: kind == .day ? "My Day" : "My Week", week: week,
                 day: kind == .day ? sourceDate : nil, calendar: access.document.calendar)
+
         }
         catch
         {
+
             message = "That day has no active list to save as a template."
+
         }
 
     }
@@ -198,9 +209,12 @@ struct PlanningTemplateLibraryRows: View
                                                                             set:
                                                                             {
                                                                                 value in
+
                                                                                 _ = update
                                                                                 {
+
                                                                                     $0.defaultWeekID = value
+
                                                                                 }
 
                                                                             })
@@ -281,22 +295,27 @@ struct PlanningTemplateLibraryRows: View
 
                                         Button("Edit template", systemImage: "pencil")
                                         {
+
                                             editing = template
+
                                         }
 
                                         Button("Duplicate", systemImage: "plus.square.on.square")
                                         {
 
                                             var copy = template;
+
                                             copy.id = UUID();
                                             copy.name += " Copy";
                                             editing = copy
+
                                         }
 
                                         Button("Delete template", systemImage: "trash", role: .destructive)
                                         {
 
                                             deleting = template
+
                                         }
 
                                     }
@@ -312,7 +331,9 @@ struct PlanningTemplateLibraryRows: View
                                 .foregroundStyle(.secondary)
                                 Button("Preview & apply", systemImage: "calendar.badge.plus")
                                 {
+
                                     applying = template
+
                                 }
                                 .frame(minHeight: 44)
                             } .padding(.vertical, 4)
@@ -324,7 +345,9 @@ struct PlanningTemplateLibraryRows: View
                                                 {
                                                     if !$0
                                                     {
+
                                                         deleting = nil
+
                                                     }
 
                                                 }),
@@ -348,19 +371,24 @@ struct PlanningTemplateLibraryRows: View
 
                                             if library.defaultWeekID == deleting.id
                                             {
+
                                                 library.defaultWeekID = nil
+
                                             }
 
                                         }
 
                                         self.deleting = nil
+
                                     }
 
                                 }
 
                                 Button("Cancel", role: .cancel)
                                 {
+
                                     deleting = nil
+
                                 }
 
                             }
@@ -485,6 +513,7 @@ struct PlanningTemplateLibraryRows: View
                     {
 
                         library.templates[index] = updated
+
                     }
                     else
                     {
@@ -509,7 +538,9 @@ struct PlanningTemplateLibraryRows: View
                 {
                     if !$0
                     {
+
                         message = nil
+
                     }
 
                 }))
@@ -517,7 +548,9 @@ struct PlanningTemplateLibraryRows: View
 
             Button("OK", role: .cancel)
             {
+
                 message = nil
+
             }
 
         }
@@ -565,10 +598,12 @@ struct PlanningTemplateEditor: View
         _template = State(initialValue: template)
         self.original = template
         self.onSave = onSave
+
     }
 
     @State private var failed = false
     @Environment(\.dismiss) private var dismiss
+
     var body: some View
     {
 
@@ -622,13 +657,16 @@ struct PlanningTemplateEditor: View
                     {
 
                         template.name = template.name.trimmingCharacters(in: .whitespacesAndNewlines)
+
                         if onSave(template)
                         {
                             dismiss()
                         }
                         else
                         {
+
                             failed = true
+
                         }
 
                     } .disabled(template.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -675,6 +713,7 @@ struct PlanningTemplateListEditor: View
     let allLists:      [KanbanList]
     let anchor:        Date
     @State private var creationFailed = false
+
     var body:          some View
     {
 
@@ -763,6 +802,7 @@ struct PlanningTemplateListEditor: View
         {
 
             creationFailed = true
+
         }
     }
 
@@ -793,15 +833,18 @@ enum PlanningTemplateItemCreation
     {
 
         let maximum = ((allLists.flatMap(\.allCards) + list.allCards).map(\.id).max() ?? -1)
+
         guard maximum < Int.max, createdAt.timeIntervalSince1970.isFinite else
         {
 
             throw CocoaError(.validationMissingMandatoryProperty)
         }
+
         let next = try PortableCreationIdentity.reserve(proposed: maximum + 1, root: root)
         let card = KanbanCard(id: next, word: presentation == .note ? "New note" : "New card",
             listTitle: list.title, checklists: [], descriptionOverride: "", subtitleOverride: "",
             presentation: presentation, createdAt: createdAt)
+
         list.cards.append(card)
     }
 }
@@ -820,6 +863,7 @@ struct PlanningTemplateCardEditor: View
 
     @Binding var card: KanbanCard
     let anchor:        Date
+
     var body:          some View
     {
 
@@ -838,7 +882,9 @@ struct PlanningTemplateCardEditor: View
                             card.descriptionOverride ?? ""
                         }, set:
                         {
+
                             card.descriptionOverride = $0
+
                         }))
             }
 
@@ -851,7 +897,9 @@ struct PlanningTemplateCardEditor: View
                                                         card.startDate != nil
                                                     }, set:
                                                     {
+
                                                         card.startDate = $0 ? anchor : nil
+
                                                     }))
                 if card.startDate != nil
                 {
@@ -873,7 +921,9 @@ struct PlanningTemplateCardEditor: View
                                                                     card.startDate ?? anchor
                                                                 }, set:
                                                                 {
+
                                                                     card.startDate = $0
+
                                                                 }),
                                                             displayedComponents: [.date, .hourAndMinute])
                 }
@@ -883,7 +933,9 @@ struct PlanningTemplateCardEditor: View
                             card.dueDate != nil
                         }, set:
                         {
+
                             card.dueDate = $0 ? anchor : nil
+
                         }))
                 if card.dueDate != nil
                 {
@@ -904,7 +956,9 @@ struct PlanningTemplateCardEditor: View
                                                                     card.dueDate ?? anchor
                                                                 }, set:
                                                                 {
+
                                                                     card.dueDate = $0
+
                                                                 }),
                                                             displayedComponents: [.date, .hourAndMinute])
                 }
@@ -949,6 +1003,7 @@ struct PlanningTemplateChecklistEditor: View
 
 
     @Binding var checklist: KanbanChecklist
+
     private var items:      Binding<[KanbanChecklistItem]>
     {
 
@@ -960,8 +1015,10 @@ struct PlanningTemplateChecklistEditor: View
             set:
             {
                 values in
+
                 checklist = KanbanChecklist(
                     id: checklist.id, title: checklist.title, items: values, completedItemIndices: [])
+
             })
     }
 
@@ -981,8 +1038,10 @@ struct PlanningTemplateChecklistEditor: View
                                         set:
                                         {
                                             title in
+
                                             checklist = KanbanChecklist(
                                                 id: checklist.id, title: title, items: checklist.items, completedItemIndices: [])
+
                                         })
             ).textInputAutocapitalization(.sentences)
             ForEach(items)
@@ -993,15 +1052,20 @@ struct PlanningTemplateChecklistEditor: View
             .onDelete
             {
                 offsets in
+
                 var values = items.wrappedValue;
+
                 values.remove(atOffsets: offsets);
+
                 items.wrappedValue = values
+
             }
 
             Button("Add action", systemImage: "plus")
             {
 
                 items.wrappedValue = items.wrappedValue + [KanbanChecklistItem(title: "")]
+
             }
 
         }
@@ -1047,23 +1111,30 @@ struct PlanningTemplateApplyView: View
 
         guard let access else
         {
+
             preview = nil;
+
             return
         }
 
         baseline = access.document.week(for: date)
+
         let target = baseline ?? DatedPlanningWeek.make(for: date, calendar: access.document.calendar)
+
         do
         {
 
             preview = try PlanningTemplateApplication.apply(
                 template, to: target, date: date, calendar: access.document.calendar, mode: mode)
             exampleImportantIDs = PlanningTemplateApplication.exampleImportantIDs(template, in: target)
+
         }
         catch
         {
+
             preview = nil;
             message = "This template couldn't be prepared. Your plans have not changed."
+
         }
 
     }
@@ -1086,14 +1157,18 @@ struct PlanningTemplateApplyView: View
         }
 
         let persisted: PlanningCalendarDocument?
+
         do
         {
+
             persisted = try PlanningCalendarStore.load()
+
         }
         catch
         {
 
             message = "Your saved calendar couldn't be read. Please retry after reopening the app.";
+
             return
         }
 
@@ -1101,26 +1176,32 @@ struct PlanningTemplateApplyView: View
         {
 
             message = "This week changed while you were previewing it. Refresh the preview before applying.";
+
             return
         }
 
         let committed: (week: DatedPlanningWeek, importantIDs: Set<Int>)
+
         do
         {
 
             committed = try PortableTemplateApplication.reserve(preview, original: baseline,
                 importantIDs: exampleImportantIDs)
+
         }
         catch
         {
 
             message = "The applied items' identities could not be reserved. Your plans have not changed. Your preview is still open."
+
             return
         }
+
         let saved =
         committed.importantIDs.isEmpty
         ? access.saveWeek(committed.week)
         : (access.saveExampleWeek?(committed.week, committed.importantIDs) ?? access.saveWeek(committed.week))
+
         if saved
         {
 
@@ -1130,6 +1211,7 @@ struct PlanningTemplateApplyView: View
         {
 
             message = "The template couldn't be applied. Your preview is still open; refresh and retry."
+
         }
 
     }
@@ -1241,7 +1323,9 @@ struct PlanningTemplateApplyView: View
 
                         if mode == .replace && baseline?.hasContent == true
                         {
+
                             confirmsReplace = true
+
                         }
                         else
                         {
@@ -1293,7 +1377,9 @@ struct PlanningTemplateApplyView: View
                     {
                         if !$0
                         {
+
                             message = nil
+
                         }
 
                     }))
@@ -1301,7 +1387,9 @@ struct PlanningTemplateApplyView: View
 
                 Button("OK", role: .cancel)
                 {
+
                     message = nil
+
                 }
 
             }
@@ -1341,6 +1429,7 @@ enum LibraryStarterSearch
     {
 
         let content = texts.joined(separator: " ")
+
         return query.split(whereSeparator: \.isWhitespace).allSatisfy
         {
 
@@ -1396,6 +1485,7 @@ enum LibraryTemplateCapture
             startingAt: nextID, titles: capture.title,
             description: capture.body, subtitle: capture.subtitle, presentation: capture.presentation,
             actions: capture.actions)
+
         guard !created.isEmpty else
         {
             throw CocoaError(.validationMissingMandatoryProperty)
@@ -1414,6 +1504,7 @@ enum LibraryTemplateCapture
             {
                 $0.kind == .photo
             }?.id
+
         }
 
         next.collection.lists[index].cards.append(contentsOf: created)
@@ -1472,12 +1563,14 @@ struct LibraryQuickTemplateComposer: View
         {
 
             let updated = try LibraryTemplateCapture.adding(capture, to: current)
+
             guard access.saveWeek(updated) else
             {
                 return false
             }
 
             let previousIDs = Set(current.collection.lists.flatMap(\.cards).map(\.id))
+
             if let list = updated.collection.lists.first(where:
                 {
                     $0.id == capture.listID
@@ -1586,6 +1679,7 @@ struct LibraryExampleWeekTemplateButton: View
     @State private var editing:  PlanningRoutineTemplate?
     @State private var baseline: PlanningRoutineLibrary?
     @State private var message:  String?
+
     var body:                    some View
     {
 
@@ -1596,14 +1690,19 @@ struct LibraryExampleWeekTemplateButton: View
             {
 
                 baseline = try PlanningRoutineStore.load()
+
                 var example = PlanningRoutineLibrary.seeded.templates[0]
+
                 example.id = UUID();
                 example.name = "Example Week"
                 editing = example
+
             }
             catch
             {
+
                 message = "Saved templates couldn't be read. Your data has been retained; please retry."
+
             }
 
         }
@@ -1619,6 +1718,7 @@ struct LibraryExampleWeekTemplateButton: View
                 }
 
                 var next = baseline
+
                 next.templates.append(updated)
                 do
                 {
@@ -1640,7 +1740,9 @@ struct LibraryExampleWeekTemplateButton: View
                 {
                     if !$0
                     {
+
                         message = nil
+
                     }
 
                 }))
@@ -1648,7 +1750,9 @@ struct LibraryExampleWeekTemplateButton: View
 
             Button("OK", role: .cancel)
             {
+
                 message = nil
+
             }
 
         }

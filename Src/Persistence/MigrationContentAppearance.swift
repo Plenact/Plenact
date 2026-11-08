@@ -38,36 +38,64 @@ extension MigrationContentValues
         }
         if kind == "color", let token = value as? String
         {
+
             let data  = try JSONSerialization.data(withJSONObject: token, options: .fragmentsAllowed)
             let color = try JSONDecoder().decode(ProfileColor.self, from: data)
+
             return ["red": color.red, "green": color.green, "blue": color.blue, "legacy_token": token]
         }
         guard let source = value as? [String: Any], let mapping = Self.appearanceFields[kind] else
         {
             throw Failure.invalid("appearance")
         }
+
         var output: [String: Any] = [:]
+
         for (key, wire) in mapping
         {
+
             var item: Any = source[key] ?? NSNull()
+
             switch key
             {
-            case "collectionBackground": item = try appearance(source[key], kind: "collection_background")
-            case "studioSurface", "studioCardSurface": item = try appearance(source[key], kind: "surface")
-            case "addItemTextColor", "iconColor": item = try appearance(source[key], kind: "color")
-            case "remotePhoto": item = try appearance(source[key], kind: "remote_photo")
-            case "imageURL", "profileURL", "downloadURL": item = try source[key].map(Self.webURL) as Any? ?? NSNull()
-            case "photoFileName": item = try asset(source[key], area: kind == "collection_background"
+            case "collectionBackground":
+
+                item = try appearance(source[key], kind: "collection_background")
+
+            case "studioSurface", "studioCardSurface":
+
+                item = try appearance(source[key], kind: "surface")
+
+            case "addItemTextColor", "iconColor":
+
+                item = try appearance(source[key], kind: "color")
+
+            case "remotePhoto":
+
+                item = try appearance(source[key], kind: "remote_photo")
+
+            case "imageURL", "profileURL", "downloadURL":
+
+                item = try source[key].map(Self.webURL) as Any? ?? NSNull()
+
+            case "photoFileName":
+
+                item = try asset(source[key], area: kind == "collection_background"
                 ? "Library/Application Support/PlenactCollectionBackgrounds" : "Library/Application Support/PlenactStudioArtwork")
+
             case "preset":
                 if let token = item as? String
                 {
+
                     item = ["forestPath": "forest_path", "sunlitWall": "sunlit_wall"][token] ?? token
+
                 }
             case "listViewMode":
                 if item as? String == "noteList"
                 {
+
                     item = "note_list"
+
                 }
             default: break
             }
@@ -80,11 +108,15 @@ extension MigrationContentValues
             {
                 throw Failure.invalid("appearance_zoom")
             }
+
             output[wire] = item
+
         }
         if kind == "remote_photo"
         {
+
             output["provider"] = "unsplash"
+
         }
         return output
     }

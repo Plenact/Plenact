@@ -196,6 +196,7 @@ struct LibraryPlateItem: Identifiable
     let reason:     String
     let rank:       Int
     let date:       Date
+
     var id:         String
     {
             "\(collection.id.uuidString).\(card.id)"
@@ -237,6 +238,7 @@ enum LibraryPlateSelection
         let today                     = calendar.startOfDay(for: now)
         let horizon                   = calendar.date(byAdding: .day, value: 7, to: today) ?? today
         var items: [LibraryPlateItem] = []
+
         for collection in collections where collection.isActive
         {
 
@@ -248,19 +250,24 @@ enum LibraryPlateSelection
 
                     let marked = important.contains(LibraryRecentItem(collectionID: collection.id, cardID: card.id))
                     var due    = card.dueDate
+
                     // A time without a date cannot be assigned an urgency day.
                     if !card.dueDateKind.includesDate
                     {
+
                         due = nil
+
                     }
 
                     let rank: Int
                     let reason: String
+
                     if let due, due < today || (card.dueDateKind.includesTime && due < now)
                     {
 
                         rank = 0;
                         reason = "Overdue · " + card.dueDateLabel
+
                     }
                     else if let due, calendar.isDate(due, inSameDayAs: now)
                     {
@@ -269,18 +276,21 @@ enum LibraryPlateSelection
 
                         reason =
                         card.dueDateKind.includesTime ? "Due at " + CardDateKind.time.label(for: due) : "Due today"
+
                     }
                     else if let due, due < horizon
                     {
 
                         rank = 2;
                         reason = "Due " + card.dueDateLabel
+
                     }
                     else if marked
                     {
 
                         rank = 3;
                         reason = "Marked important"
+
                     }
                     else
                     {
@@ -359,7 +369,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[LibraryItemOpenedKey.self] = newValue
+
         }
 
     }
@@ -444,6 +456,7 @@ struct LibraryLabelMatchesView: View
     @Environment(\.dismiss) private var dismiss
     @State private var openedCard: PlanningSearchResult?
     @State private var query = ""
+
     private var matches: [PlanningSearchResult]
     {
 
@@ -455,6 +468,7 @@ struct LibraryLabelMatchesView: View
         }?
         .matches ?? []
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+
         return all.filter
         {
 
@@ -485,6 +499,7 @@ struct LibraryLabelMatchesView: View
                     {
 
                         openedCard = result
+
                     }
                     label:
                     {
@@ -539,6 +554,7 @@ struct LibraryLabelMatchesView: View
                         {
 
                             openedCard = nil;
+
                             dismiss()
                         })
                 }
@@ -554,6 +570,7 @@ struct LibraryLabelMatchesView: View
                         {
 
                             openedCard = nil;
+
                             dismiss()
                         })
                 }

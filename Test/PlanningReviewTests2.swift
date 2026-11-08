@@ -43,16 +43,25 @@ extension PlenactBoardDocumentTests
             KanbanCard(id: 6, word: "Later task", listTitle: "Plans")
         ]
         var list = KanbanList(id: 0, title: "Plans", cards: cards)
+
         XCTAssertEqual(list.firstUncheckedTaskID, 5)
         XCTAssertEqual(list.cards, cards)
+
         list.cards[4].isTitleChecked = true
+
         XCTAssertEqual(list.firstUncheckedTaskID, 6)
+
         list.cards[5].isTitleChecked = true
+
         XCTAssertNil(list.firstUncheckedTaskID)
+
         list.cards = []
+
         XCTAssertNil(list.firstUncheckedTaskID)
+
         list.cards = cards
         list.isArchived = true
+
         XCTAssertNil(list.firstUncheckedTaskID)
     }
 
@@ -72,7 +81,9 @@ extension PlenactBoardDocumentTests
     {
 
         var list = KanbanList(id: 7, title: "New List 2", cards: [])
+
         list.subtitleOverride = "Initial subtitle"
+
         let original = list
         let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -80,12 +91,15 @@ extension PlenactBoardDocumentTests
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
 
             window.endEditing(true)
+
             window.isHidden = true
             window.rootViewController = nil
+
             previous?.makeKeyAndVisible()
         }
 
@@ -110,14 +124,19 @@ extension PlenactBoardDocumentTests
             rootView: ListInfoEditorSheet(list: list, focusesTitleOnAppear: true)
             {
                 _, _, _ in
+
                 saveCalls += 1
+
                 return true
             })
+
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = host
+
         window.makeKeyAndVisible()
         host.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(350))
+
         let titleField = try XCTUnwrap(
             descendants(host.view).compactMap
             {
@@ -126,21 +145,28 @@ extension PlenactBoardDocumentTests
             {
                 $0.text == list.title
             })
+
         XCTAssertTrue(titleField.isFirstResponder)
         XCTAssertEqual(titleField.returnKeyType, .next)
+
         let selection = try XCTUnwrap(titleField.selectedTextRange)
+
         XCTAssertEqual(titleField.text(in: selection), list.title)
         titleField.insertText("Roadmap")
         try await Task.sleep(for: .milliseconds(60))
         XCTAssertEqual(titleField.text, "Roadmap")
+
         _ = titleField.delegate?.textFieldShouldReturn?(titleField)
+
         try await Task.sleep(for: .milliseconds(150))
+
         let subtitle = try XCTUnwrap(
             descendants(host.view).first
             {
                 view in
                 (view as? UITextField)?.text == list.subtitle || (view as? UITextView)?.text == list.subtitle
             })
+
         XCTAssertTrue(subtitle.isFirstResponder)
         XCTAssertFalse(titleField.isFirstResponder)
         XCTAssertEqual(titleField.text, "Roadmap")
@@ -166,6 +192,7 @@ extension PlenactBoardDocumentTests
 
             let width     = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
             let sideInset = (viewport - width) / 2
+
             XCTAssertEqual(
                 sideInset - 17, 15, accuracy: 0.001,
                                         "Each side must show 15 points of its neighbor after the 17-point gap")

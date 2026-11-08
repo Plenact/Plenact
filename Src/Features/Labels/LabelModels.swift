@@ -122,6 +122,7 @@ struct KanbanLabelCategory: Identifiable, Hashable, Codable
 
     let id:   String  /* Stable category identity  */
     var name: String  /* User-facing category name */
+
 }
 
 
@@ -144,6 +145,7 @@ struct KanbanLabel: Identifiable, Hashable, Codable
     var name:       String            /* User-facing label name          */
     var categoryID: String            /* Stable owning-category identity */
     var color:      KanbanLabelColor  /* Persisted palette selection     */
+
 }
 
 
@@ -170,10 +172,12 @@ struct LabelLibrary: Hashable, Codable
         KanbanLabel(id: "day-home", name: "Home", categoryID: "home", color: .coral),
         KanbanLabel(id: "day-spirit", name: "Spirit", categoryID: "home", color: .orange)
     ]
+
     var includingDayAreas: LabelLibrary
     {
 
         var copy = self
+
         for label in Self.dayAreaLabels where !copy.labels.contains(where:
             {
                 $0.id == label.id
@@ -224,6 +228,7 @@ struct LabelLibrary: Hashable, Codable
         }
 
         var updated = self
+
         if !updated.categories.contains(where:
             {
                 $0.id == Self.referenceCategory.id
@@ -288,6 +293,7 @@ struct LabelLibrary: Hashable, Codable
             referenceLabel
         ]
     )
+
 }
 
 

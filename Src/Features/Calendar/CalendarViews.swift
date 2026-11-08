@@ -54,6 +54,7 @@ struct PlanningCalendarView: View
         self.onLeaveForHome = onLeaveForHome
         _month = State(initialValue: Calendar.current.dateInterval(of: .month, for: initialDate)?.start ?? initialDate)
         _selectedDate = State(initialValue: Calendar.current.startOfDay(for: initialDate))
+
     }
 
     private var displayCalendar: Calendar
@@ -65,6 +66,7 @@ struct PlanningCalendarView: View
     {
 
         let calendar = displayCalendar
+
         guard let first = calendar.dateInterval(of: .month, for: month)?.start,
         let start = calendar.dateInterval(of: .weekOfYear, for: first)?.start,
         let count = calendar.range(of: .day, in: .month, for: month)?.count
@@ -75,6 +77,7 @@ struct PlanningCalendarView: View
 
         let leading  = calendar.dateComponents([.day], from: start, to: first).day ?? 0
         let rowCount = (leading + count + 6) / 7
+
         return (0 ..< rowCount).map
         {
             row in
@@ -92,6 +95,7 @@ struct PlanningCalendarView: View
 
         let calendar = displayCalendar
         let values   = calendar.veryShortStandaloneWeekdaySymbols
+
         return (0 ..< 7).map
         {
             values[(calendar.firstWeekday - 1 + $0) % 7]
@@ -160,6 +164,7 @@ struct PlanningCalendarView: View
         {
 
             route = PlanningWeekRoute(week: savedWeek, dayID: result.listID, cardID: result.card.id)
+
         }
         else
         {
@@ -225,6 +230,7 @@ struct PlanningCalendarView: View
                     {
 
                         self.route = nil;
+
                         dismiss();
                         onLeaveForHome()
                     })
@@ -267,6 +273,7 @@ struct PlanningCalendarView: View
             {
 
                 showsSearch = true
+
             }
             label:
             {
@@ -372,6 +379,7 @@ struct PlanningCalendarView: View
             ForEach(rows.indices, id: \.self)
             {
                 index in
+
                 let dates   = rows[index]
                 let rowWeek = dates.first.map
                 {
@@ -379,6 +387,7 @@ struct PlanningCalendarView: View
                 }
 
                 let isCurrent = rowWeek?.startKey == access?.document.currentWeekKey
+
                 HStack(spacing: 2)
                 {
 
@@ -389,6 +398,7 @@ struct PlanningCalendarView: View
                         {
 
                             route = PlanningWeekRoute(week: rowWeek)
+
                         }
                         label:
                         {
@@ -456,10 +466,12 @@ struct PlanningCalendarView: View
 
         let selected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
         let count    = items(on: date).count
+
         return Button
         {
 
             selectedDate = date
+
         }
         label:
         {
@@ -501,7 +513,9 @@ struct PlanningCalendarView: View
 
                     var target = week(on: selectedDate)
                     let listID = target.prepareDay(selectedDate)
+
                     route = PlanningWeekRoute(week: target, dayID: listID)
+
                 }
                 label:
                 {
@@ -512,6 +526,7 @@ struct PlanningCalendarView: View
             }
 
             let selectedItems = items(on: selectedDate)
+
             if selectedItems.isEmpty
             {
 
@@ -560,7 +575,9 @@ struct PlanningCalendarView: View
 
         if let next = Calendar.current.date(byAdding: .month, value: amount, to: month)
         {
+
             month = next
+
         }
 
     }
@@ -580,6 +597,7 @@ struct PlanningCalendarResultRow: View
 
 
     let result: PlanningSearchResult
+
     var body:   some View
     {
 
@@ -656,6 +674,7 @@ struct PlanningWeekSelector: View
         _referenceDate = State(initialValue: initialDate)
         _selectedDate = State(initialValue: initialDate)
         _highlightedWeekKey = State(initialValue: selectedWeekKey)
+
     }
 
 
@@ -677,6 +696,7 @@ struct PlanningWeekSelector: View
             {
                 ($0.startKey, $0)
             })
+
         for offset in -8 ... 8
         {
 
@@ -687,9 +707,12 @@ struct PlanningWeekSelector: View
             }
 
             let key = PlanningDate.weekKey(date, calendar: document.calendar)
+
             if choices[key] == nil
             {
+
                 choices[key] = DatedPlanningWeek.make(for: date, calendar: document.calendar)
+
             }
 
         }
@@ -734,6 +757,7 @@ struct PlanningWeekSelector: View
     {
 
         let days = Self.monthDays(referenceDate, calendar: document.calendar)
+
         return stride(from: 0, to: days.count, by: 7).map
         {
             Array(days[$0 ..< min($0 + 7, days.count)])
@@ -745,6 +769,7 @@ struct PlanningWeekSelector: View
     {
 
         let symbols = document.calendar.veryShortStandaloneWeekdaySymbols
+
         return (0 ..< 7).map
         {
             symbols[($0 + document.calendar.firstWeekday - 1) % 7]
@@ -770,6 +795,7 @@ struct PlanningWeekSelector: View
         {
 
             referenceDate = next
+
         }
 
     }
@@ -794,15 +820,19 @@ struct PlanningWeekSelector: View
         }
 
         isSelecting = true
+
         let key = PlanningDate.weekKey(date, calendar: document.calendar)
+
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12))
         {
 
             highlightedWeekKey = key
             selectedDate = date
+
         }
 
         let week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
+
         Task
         {
             @MainActor in
@@ -880,6 +910,7 @@ struct PlanningWeekSelector: View
                         ForEach(rows.indices, id: \.self)
                         {
                             row in
+
                             let dates       = rows[row]
                             let highlighted =
                             dates.first.map
@@ -888,18 +919,21 @@ struct PlanningWeekSelector: View
                                 PlanningDate.weekKey($0, calendar: document.calendar) == highlightedWeekKey
                             }
                             ?? false
+
                             HStack(spacing: 0)
                             {
 
                                 ForEach(dates, id: \.self)
                                 {
                                     date in
+
                                     let selected = document.calendar.isDate(date, inSameDayAs: selectedDate)
                                     let inMonth  = document.calendar.isDate(
                                         date, equalTo: referenceDate, toGranularity: .month)
                                     let count = PlanningCalendarContent.items(
                                         on: date, document: document, sources: sources
                                     ).count
+
                                     Button
                                     {
 
@@ -1013,6 +1047,7 @@ struct PlanningDaySelector: View
 
         _date = State(initialValue: initialDate)
         self.onSelect = onSelect
+
     }
 
     var body: some View

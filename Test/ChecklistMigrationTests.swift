@@ -27,6 +27,7 @@ final class ChecklistMigrationTests: XCTestCase
     {
 
         @Published var text = "Original"
+
     }
 
 
@@ -40,7 +41,11 @@ final class ChecklistMigrationTests: XCTestCase
         {
 
             ChecklistItemRow(item: model.text, isCompleted: false,
-                onToggle: {}, onUpdate: { model.text = $0 }, onDelete: {},
+                onToggle: {}, onUpdate: {
+
+                    model.text = $0
+
+                }, onDelete: {},
                 shouldFocus: false, onFocusHandled: {})
         }
     }
@@ -58,14 +63,17 @@ final class ChecklistMigrationTests: XCTestCase
         let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         window.rootViewController = host
+
         window.makeKeyAndVisible()
         defer
         {
 
             window.isHidden = true
             window.rootViewController = nil
+
             previous?.makeKeyAndVisible()
         }
         try await Task.sleep(for: .milliseconds(500))
@@ -80,10 +88,14 @@ final class ChecklistMigrationTests: XCTestCase
             }
             return view.subviews.lazy.compactMap { editor(in: $0) }.first
         }
+
         let field = try XCTUnwrap(editor(in: host.view))
+
         XCTAssertTrue(field.becomeFirstResponder())
         try await Task.sleep(for: .milliseconds(150))
+
         let selection = try XCTUnwrap(field.selectedTextRange)
+
         XCTAssertTrue(selection.isEmpty)
         XCTAssertEqual(field.offset(from: field.beginningOfDocument, to: selection.start),
             (model.text as NSString).length)
@@ -91,6 +103,7 @@ final class ChecklistMigrationTests: XCTestCase
         {
 
             field.text = text
+
             field.sendActions(for: .editingChanged)
             try await Task.sleep(for: .milliseconds(150))
             XCTAssertEqual(model.text, text)

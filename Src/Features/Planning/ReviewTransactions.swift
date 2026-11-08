@@ -49,6 +49,7 @@ enum DailyReviewTransaction
         }
 
         var previous: [String: Any] = [:]
+
         guard Set(additionalKeys).isSubset(of: ["Plenact.LibraryImportant.v1"]) else
         {
 
@@ -56,13 +57,17 @@ enum DailyReviewTransaction
         }
 
         let capturedKeys = Array(Set(keys + additionalKeys))
+
         for name in capturedKeys
         {
+
             previous[name] = defaults.object(forKey: name)
+
         }
 
         let data = try PropertyListSerialization.data(
             fromPropertyList: ["version": 1, "previous": previous, "keys": capturedKeys], format: .binary, options: 0)
+
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
         {
@@ -103,6 +108,7 @@ enum DailyReviewTransaction
         }
 
         let capturedKeys = snapshot["keys"] as? [String] ?? keys
+
         guard Set(keys).isSubset(of: Set(capturedKeys)),
         Set(capturedKeys).isSubset(of: Set(keys + ["Plenact.LibraryImportant.v1"])),
         Set(previous.keys).isSubset(of: Set(capturedKeys))
@@ -162,10 +168,12 @@ enum DailyReviewTransaction
     {
 
         let snapshot = try begin(in: defaults, additionalKeys: additionalKeys)
+
         do
         {
 
             let result = try action()
+
             guard defaults.synchronize() else
             {
                 throw CocoaError(.fileWriteUnknown)

@@ -128,6 +128,7 @@ extension ItemAccent
             uiColor: UIColor
             {
                 traits in
+
                 let tint               = UIColor(self.color).resolvedColor(with: traits)
                 let base               = UIColor.systemBackground.resolvedColor(with: traits)
                 var red: CGFloat       = 0
@@ -137,9 +138,12 @@ extension ItemAccent
                 var baseRed: CGFloat   = 0
                 var baseGreen: CGFloat = 0
                 var baseBlue: CGFloat  = 0
+
                 tint.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
                 base.getRed(&baseRed, green: &baseGreen, blue: &baseBlue, alpha: &alpha)
+
                 let amount: CGFloat = increasedContrast ? 0.10 : 0.16
+
                 return UIColor(
                     red: baseRed * (1 - amount) + red * amount,
                     green: baseGreen * (1 - amount) + green * amount,
@@ -282,6 +286,7 @@ struct ItemPicturePreview: View
             !$0.isEmpty
         }
         .joined(separator: ", ")
+
         return text.isEmpty ? "Picture" : text
     }
 
@@ -325,6 +330,7 @@ struct ItemPicturePreview: View
 
             image = nil
             unavailable = false
+
             guard let attachment else
             {
                 return
@@ -339,6 +345,7 @@ struct ItemPicturePreview: View
                 }
 
             } .value
+
             guard !Task.isCancelled else
             {
                 return
@@ -348,9 +355,13 @@ struct ItemPicturePreview: View
             {
 
             case .success(let thumbnail):
+
                 image = thumbnail
+
             case .failure:
+
                 unavailable = true
+
             }
 
         }
@@ -387,7 +398,9 @@ struct ItemDisplayFormatMenu: View
                 {
 
                     var updated = card
+
                     updated.displayFormat = format
+
                     onUpdate(updated)
                 }
                 label:
@@ -421,6 +434,7 @@ struct CardDisplayProfilePicker: View
 
 
     @Binding var selection: BoardCardDetail?
+
     var body:               some View
     {
 
@@ -454,37 +468,54 @@ extension ListPreviewTextColor
 
         let light: (CGFloat, CGFloat, CGFloat)
         let dark: (CGFloat, CGFloat, CGFloat)
+
         switch self
         {
 
         case .graphite:
+
             light = (0.22, 0.25, 0.29);
             dark = (0.78, 0.81, 0.85)
+
         case .blue:
+
             light = (0.16, 0.32, 0.56);
             dark = (0.59, 0.75, 0.98)
+
         case .teal:
+
             light = (0.12, 0.40, 0.42);
             dark = (0.52, 0.83, 0.83)
+
         case .green:
+
             light = (0.19, 0.39, 0.23);
             dark = (0.60, 0.84, 0.62)
+
         case .plum:
+
             light = (0.40, 0.26, 0.48);
             dark = (0.81, 0.67, 0.92)
+
         case .rose:
+
             light = (0.55, 0.25, 0.34);
             dark = (0.95, 0.65, 0.73)
+
         case .amber:
+
             light = (0.47, 0.34, 0.13);
             dark = (0.92, 0.78, 0.49)
+
         }
 
         return Color(
             uiColor: UIColor
             {
                 traits in
+
                 let rgb = traits.userInterfaceStyle == .dark ? dark : light
+
                 return UIColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
             })
     }
@@ -524,6 +555,7 @@ enum CollectionBackgroundPhotoStore
         let root = try FileManager.default.url(
             for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         let url = root.appendingPathComponent("PlenactCollectionBackgrounds", isDirectory: true)
+
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
@@ -578,6 +610,7 @@ enum CollectionBackgroundPhotoStore
     {
 
         let name = UUID().uuidString + ".jpg"
+
         try data.write(to: directory().appendingPathComponent(name), options: .atomic)
         return name
     }
@@ -614,7 +647,9 @@ enum CollectionBackgroundPhotoStore
         }
 
         cache.setObject(image, forKey: name as NSString, cost: Int(image.size.width * image.size.height * 4))
+
         cache.totalCostLimit = 32 * 1024 * 1024
+
         return image
     }
 
@@ -657,6 +692,7 @@ struct CollectionBackgroundSurface: View
 
     var background:     CollectionBackground? = nil
     var draftPhoto:     Data?                 = nil
+
     private var colors: [Color]
     {
 
@@ -734,7 +770,9 @@ struct CollectionBackgroundSurface: View
                     Canvas
                     {
                         context, size in
+
                         var grain = Path()
+
                         for row in stride(from: 0, through: Int(size.height), by: 7)
                         {
 
@@ -742,6 +780,7 @@ struct CollectionBackgroundSurface: View
                             {
 
                                 let shift = (row * 17 + column * 13) % 5
+
                                 grain.addEllipse(
                                     in: CGRect(x: CGFloat(column + shift), y: CGFloat(row), width: 0.8, height: 0.8))
                             }
@@ -753,6 +792,7 @@ struct CollectionBackgroundSurface: View
                         {
 
                             var weave = Path()
+
                             for x in stride(from: 0, through: Int(size.width), by: 4)
                             {
 
@@ -788,6 +828,7 @@ private struct SubtitleItalicKey: EnvironmentKey
 {
 
     static let defaultValue = false
+
 }
 
 
@@ -808,7 +849,9 @@ extension EnvironmentValues
         }
         set
         {
+
             self[SubtitleItalicKey.self] = newValue
+
         }
     }
 }

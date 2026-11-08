@@ -514,7 +514,9 @@ struct CardPhotoGallery: View
                             {
                                 if !$0
                                 {
+
                                     removalPhoto = nil
+
                                 }
 
                             }
@@ -529,14 +531,18 @@ struct CardPhotoGallery: View
                 {
 
                     onRemove(photo)
+
                     removalPhoto = nil
+
                 }
 
             }
 
             Button("Cancel", role: .cancel)
             {
+
                 removalPhoto = nil
+
             }
 
         }
@@ -559,6 +565,7 @@ struct CardPhotoGallery: View
             {
 
                 showsArrangement = true
+
             }
             .disabled(photos.count < 2)
             .accessibilityLabel("Arrange gallery photos")
@@ -667,6 +674,7 @@ struct CardPhotoGallery: View
                 }
 
                 var ids = photos.map(\.id)
+
                 ids.remove(at: source)
                 ids.insert(id, at: index)
                 return onReorder(ids)
@@ -686,6 +694,7 @@ struct CardPhotoGallery: View
                     {
 
                         captionPhoto = photo
+
                     }
 
                     Button("Move earlier", systemImage: "arrow.left")
@@ -705,7 +714,9 @@ struct CardPhotoGallery: View
 
                     Button("Remove photo", systemImage: "trash", role: .destructive)
                     {
+
                         removalPhoto = photo
+
                     }
 
                 }
@@ -740,8 +751,11 @@ struct CardPhotoGallery: View
     {
 
         var ids = photos.map(\.id)
+
         ids.swapAt(index, index + offset)
+
         _ = onReorder(ids)
+
     }
 
 }
@@ -781,6 +795,7 @@ struct CardPhotoCaptionSheet: View
         self.photo = photo
         self.onSave = onSave
         _caption = State(initialValue: photo.caption ?? "")
+
     }
 
 
@@ -892,9 +907,13 @@ struct CardPhotoArrangementSheet: View
                     .onMove
                     {
                         source, destination in
+
                         var ids = photos.map(\.id)
+
                         ids.move(fromOffsets: source, toOffset: destination)
+
                         _ = onReorder(ids)
+
                     }
 
                 }
@@ -1078,17 +1097,23 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
         {
 
             let session = AVAudioSession.sharedInstance()
+
             try session.setCategory(.playback, mode: .spokenAudio)
             try session.setActive(true)
+
             let player = try AVAudioPlayer(contentsOf: url)
+
             player.delegate = self;
             self.player = player
             isPlaying = player.play()
+
         }
         catch
         {
+
             isPlaying = false;
             errorMessage = "This recording couldn't be played. The file may be unavailable."
+
         }
 
     }
@@ -1108,13 +1133,17 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
 
         guard player != nil else
         {
+
             isPlaying = false;
+
             return
         }
 
         player?.stop();
+
         player = nil;
         isPlaying = false
+
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
@@ -1158,6 +1187,7 @@ struct AudioAttachmentPlayer: View
     let url: URL
     @StateObject private var playback = CaptureAudioPlayback()
     @Environment(\.scenePhase) private var scenePhase
+
     var body: some View
     {
 
@@ -1219,6 +1249,7 @@ struct CardAttachmentPreview: View
     var onSaveDrawing:                   ((KanbanAttachment) -> Bool)? = nil
     @State private var editedAttachment: KanbanAttachment?
     @State private var showsDrawingEditor = false
+
     private var currentAttachment: KanbanAttachment
     {
         editedAttachment ?? attachment
@@ -1316,7 +1347,9 @@ struct CardAttachmentPreview: View
 
                         Button("Edit drawing", systemImage: "pencil.tip")
                         {
+
                             showsDrawingEditor = true
+
                         }
 
                     }
@@ -1357,6 +1390,7 @@ struct CardAttachmentPreview: View
                     {
 
                         let replacement = try DrawingAttachmentStore.save(drawing, replacing: currentAttachment)
+
                         guard onSaveDrawing(replacement) else
                         {
 
@@ -1366,6 +1400,7 @@ struct CardAttachmentPreview: View
                         }
 
                         editedAttachment = replacement
+
                         return true
                     }
                     catch

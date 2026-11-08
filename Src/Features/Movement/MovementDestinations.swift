@@ -26,6 +26,7 @@ struct CardMovementAccess
     var moveToDate:        ((KanbanCard, UUID?, Date) -> Bool)?                      = nil
     var moveSection:       ((KanbanCard, UUID?, CardMoveDestination, Bool) -> Bool)? = nil
     var moveSectionToDate: ((KanbanCard, UUID?, Date, Bool) -> Bool)?                = nil
+
 }
 
 
@@ -41,6 +42,7 @@ struct CardMovementAccessKey: EnvironmentKey
 
 
     static let defaultValue = CardMovementAccess()
+
 }
 
 
@@ -56,6 +58,7 @@ struct CardMovementSourceKey: EnvironmentKey
 
 
     static let defaultValue: UUID? = nil
+
 }
 
 
@@ -80,7 +83,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[CardMovementAccessKey.self] = newValue
+
         }
 
     }
@@ -95,7 +100,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[CardMovementSourceKey.self] = newValue
+
         }
 
     }
@@ -129,18 +136,21 @@ struct SectionMoveSheet: View
     @State private var destination: CardMoveDestination?
     @State private var shiftDates = false
     @State private var failed     = false
+
     private var destinations: [CardMoveDestination]
     {
 
         movement.destinations.filter
         {
             item in
+
             let current = planning?.document.weeks.first
             {
                 $0.startKey == planning?.document.currentWeekKey
             }?.id
             let ownerID  = item.collectionID ?? current
             let sourceID = source ?? current
+
             guard ownerID == sourceID else
             {
                 return true
@@ -180,6 +190,7 @@ struct SectionMoveSheet: View
         {
             $0.startKey == document.currentWeekKey
         }?.id
+
         return document.weeks.first
         {
             $0.id == owner
@@ -298,10 +309,12 @@ struct SectionMoveSheet: View
                     {
 
                         let succeeded: Bool
+
                         if chooseDate
                         {
 
                             succeeded = movement.moveSectionToDate?(heading, source, date, shiftDates) == true
+
                         }
                         else if let destination
                         {
@@ -309,6 +322,7 @@ struct SectionMoveSheet: View
                             succeeded =
                             movement.moveSection?(heading, source, destination, shiftDates && destinationDay != nil)
                             == true
+
                         }
                         else
                         {
@@ -323,7 +337,9 @@ struct SectionMoveSheet: View
                         }
                         else
                         {
+
                             failed = true
+
                         }
 
                     } .disabled(!chooseDate && destination == nil)
@@ -376,6 +392,7 @@ struct CardDestinationMenu: View
 
     @Environment(\.cardMovementAccess) private var access
     @Environment(\.cardMovementSource) private var source
+
     private var destinations: [CardMoveDestination]
     {
 
@@ -392,6 +409,7 @@ struct CardDestinationMenu: View
             {
 
                 showsSectionMove = true
+
             }
             label:
             {
@@ -458,7 +476,9 @@ struct CardDestinationMenu: View
 
                     Button("Choose a date…", systemImage: "calendar")
                     {
+
                         showsDatePicker = true
+
                     }
 
                 }
@@ -500,7 +520,9 @@ struct CardDestinationMenu: View
                         {
                             Button("Cancel")
                             {
+
                                 showsDatePicker = false
+
                             }
 
                         }
@@ -515,6 +537,7 @@ struct CardDestinationMenu: View
                                 {
 
                                     showsDatePicker = false;
+
                                     onMoved()
                                 }
 

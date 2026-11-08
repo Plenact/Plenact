@@ -43,6 +43,7 @@ struct AppReturnSession
 
         let active = Set(lists.map(\.id))
         let dated  = week?.dayListIDs.sorted { $0.key < $1.key }.map(\.value) ?? []
+
         return dated.first { active.contains($0) } ?? lists.first?.id
     }
 
@@ -57,6 +58,7 @@ struct AppReturnSession
 
         departure = departure ?? instant
         protectedAtDeparture = protectedAtDeparture || protected
+
     }
 
 
@@ -73,9 +75,12 @@ struct AppReturnSession
 
             return false
         }
+
         let shouldReset = !protected && !protectedAtDeparture && departure.duration(to: instant) >= Self.timeout
+
         self.departure = nil
         protectedAtDeparture = false
+
         return shouldReset
     }
 }
@@ -92,6 +97,7 @@ private struct AppReturnProtectionKey: EnvironmentKey
         _, _ in
 
     }
+
 }
 
 
@@ -102,6 +108,7 @@ private struct AppReturnResetKey: EnvironmentKey
 {
 
     static let defaultValue = 0
+
 }
 
 
@@ -112,6 +119,7 @@ private struct AppReturnTargetKey: EnvironmentKey
 {
 
     static let defaultValue: Int? = nil
+
 }
 
 
@@ -130,6 +138,7 @@ extension EnvironmentValues
         {
 
             self[AppReturnTargetKey.self] = newValue
+
         }
     }
 
@@ -145,6 +154,7 @@ extension EnvironmentValues
         {
 
             self[AppReturnProtectionKey.self] = newValue
+
         }
     }
 
@@ -160,6 +170,7 @@ extension EnvironmentValues
         {
 
             self[AppReturnResetKey.self] = newValue
+
         }
     }
 }
@@ -259,6 +270,7 @@ struct AppReturnWindowProbe: UIViewRepresentable
             {
 
                 reference?.window = window
+
             }
         }
     }
@@ -271,8 +283,10 @@ struct AppReturnWindowProbe: UIViewRepresentable
     {
 
         let view = Marker()
+
         view.isUserInteractionEnabled = false
         view.reference = reference
+
         return view
     }
 
@@ -285,10 +299,12 @@ struct AppReturnWindowProbe: UIViewRepresentable
     {
 
         view.reference = reference
+
         if let window = view.window
         {
 
             reference.window = window
+
         }
     }
 }
@@ -313,6 +329,7 @@ extension AppRootView
         let fromBackground = appReturnSession.hasBackgroundDeparture
         let protected      = hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture
         let reset          = appReturnSession.becameActive(at: .now, protected: protected)
+
         guard hasLoadedBoard, !protected else
         {
 
@@ -335,13 +352,19 @@ extension AppRootView
         case .today:
             break
         case .board:
+
             weekReturnTargetListID = nil
             weekReturnResetRequest += 1
+
         case .lists:
+
             libraryReturnResetRequest += 1
+
         case .saved:
+
             activityRevisitDestination = nil
             activityReturnResetRequest += 1
+
         }
     }
 }

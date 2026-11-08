@@ -556,6 +556,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
 
         return tags
     }()
+
     var tags: [String]
     {
         Self.tagCatalog[rawValue] ?? rawValue.components(separatedBy: "-")
@@ -699,6 +700,7 @@ struct CardCoverLibrary: View
                 {
 
                     query = ""
+
                 }
                 label:
                 {
@@ -918,6 +920,7 @@ struct CardCoverPreview: View
                 }
 
             } .value
+
             guard !Task.isCancelled else
             {
 
@@ -931,9 +934,13 @@ struct CardCoverPreview: View
 
 
             case .success(let thumbnail):
+
                 image = thumbnail /* Decoded cover thumbnail */
+
             case .failure:
+
                 unavailable = true
+
             }
 
         }

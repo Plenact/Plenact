@@ -122,6 +122,7 @@ struct CardLabelsSheet: View
         _library = State(initialValue: library)
         _selectedLabelIDs = State(initialValue: selectedLabelIDs)
         _categorySelection = State(initialValue: library.categories.first?.id ?? "__new_category__")
+
     }
 
 
@@ -202,12 +203,14 @@ struct CardLabelsSheet: View
             {  /* Reuse the category matching the normalized name */
 
                 categoryID = existingCategory.id
+
             }
             else
             {
 
 
                 categoryID = UUID().uuidString
+
                 library.categories.append(KanbanLabelCategory(id: categoryID, name: trimmedCategoryName))
             }
 
@@ -217,6 +220,7 @@ struct CardLabelsSheet: View
 
 
             categoryID = categorySelection
+
         }
 
 
@@ -226,10 +230,13 @@ struct CardLabelsSheet: View
             categoryID: categoryID,
             color: selectedColor
         )
+
         library.labels.append(label)
         selectedLabelIDs.append(label.id)
+
         labelNameDraft = ""
         newCategoryDraft = ""
+
     }
 
 

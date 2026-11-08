@@ -219,33 +219,43 @@ enum SampleData
 
                     card.attachments = [attachment]
                     card.coverAttachmentID = attachment.id
+
                 }
 
 
                 let gallery: [(ExampleCoverImage, String?)]
+
                 switch cardTitle
                 {
 
                 case "Review the week ahead":
+
                     gallery = [
                         (.calendarPlan, "Make room for what matters"),
                         (.projectPlanning, "A few clear priorities"),
                         (.workspace, "A calm place to begin")
                     ]
+
                 case "Plan the weekend":
+
                     gallery = [
                         (.camping, "A little adventure together"),
                         (.travelBag, "Bring only what we need"),
                         (.picnic, "Time to pause and enjoy")
                     ]
+
                 case "Spend time outdoors":
+
                     gallery = [
                         (.forestPath, "Follow a quieter path"),
                         (.coastalWalk, "Room to breathe"),
                         (.mountains, nil)
                     ]
+
                 default:
+
                     gallery = []
+
                 }
 
                 if !gallery.isEmpty
@@ -264,26 +274,37 @@ enum SampleData
 
                 // A few local Picture rows demonstrate mixed Lists without replacing activity content.
                 let picture: ExampleCoverImage?
+
                 switch (listIndex, cardTitle)
                 {
 
                 case (1, "Capture a new idea"):
+
                     picture = .writingNotes
+
                 case (2, "Take a walk"):
+
                     picture = .forestPath
+
                 case (6, "Capture notes and ideas"):
+
                     picture = .flowerBouquet
+
                 default:
+
                     picture = nil
+
                 }
 
                 if let picture
                 {
 
                     let photo = KanbanAttachment(mediaKind: .photo, exampleImage: picture)
+
                     card.attachments = (card.attachments ?? []) + [photo]
                     card.coverAttachmentID = photo.id
                     card.displayFormat = .picture
+
                 }
 
 
@@ -322,6 +343,7 @@ enum SampleData
                 )
 
                 globalIndex += 1
+
             }
 
         }
@@ -360,6 +382,7 @@ enum SampleData
                     for: sourceCard,
                     linkedCard: linkedCard
                 )
+
             }
 
         }
@@ -367,6 +390,7 @@ enum SampleData
 
         return initializedLists
     }()
+
 }
 
 
@@ -406,6 +430,7 @@ enum DefaultListTutorial
             with: "This guide stays here for this visit. Your Cards and Notes are separate from this guidance.")
         card.presentation = .note
         card.isEditingLocked = true
+
         return card
     }
 
@@ -429,10 +454,12 @@ enum DefaultListTutorial
         }
 
         var result = collection
+
         for index in result.lists.indices
         {
 
             let list = result.lists[index]
+
             guard !list.isArchived,
             let template = makeStarter(title: list.title, includesWelcomeCard: true).lists.first?.cards.first
             else
@@ -459,7 +486,9 @@ enum DefaultListTutorial
                 }
 
                 var comparable = template
+
                 comparable.checklists = card.checklists
+
                 return card == comparable && !collection.savedCardIDs.contains(card.id)
             }
 
@@ -513,45 +542,66 @@ enum DefaultListTutorial
 
         let icon: PersonalCollectionIcon
         let color: ProfileColor
+
         switch title
         {
 
         case "On the Table":
+
             icon = .tasks;
             color = .coral
+
         case "In the Queue":
+
             icon = .project;
             color = .teal
+
         case "Scheduled":
+
             icon = .upcoming;
             color = .graphite
+
         case "Shopping":
+
             icon = .shopping;
             color = .teal
+
         case "Reminders":
+
             icon = .reminders;
             color = .teal
+
         default:
+
             icon = .tasks;
             color = .teal
+
         }
 
         var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color)
+
         if KanbanList.defaultHeaderIcon(for: title) != nil
         {
 
             collection.lists[0].appearance = ItemAppearance(showsIconInHeader: true)
+
         }
 
         switch title
         {
 
         case "On the Table":
+
             collection.boardAppearance = BoardAppearance(bannerBackground: .coral, addItemTextColor: .white)
+
         case "In the Queue":
+
             collection.boardAppearance = BoardAppearance(bannerBackground: .teal, addItemTextColor: .white)
+
         case "Scheduled":
+
             collection.boardAppearance = BoardAppearance(bannerBackground: .graphite, addItemTextColor: .white)
+
         default:
             break
         }
@@ -559,10 +609,12 @@ enum DefaultListTutorial
         let heading: String
         let body: String
         let steps: [String]
+
         switch title
         {
 
         case "On the Table":
+
             heading = "Make room for today"
             body =
                                 "This is a place for things you hope to accomplish today, time permitting. Choose what matters most, work through what you can, and let the rest wait without pressure.\n\nAdd a Card for something to do or a Note for something to remember. Move an item here from In the Queue when you are ready to give it attention. Mark tasks complete as you go; move anything that can wait back to In the Queue.\n\nThis welcome card is yours to edit, archive, or delete. It will not return when the List becomes empty."
@@ -570,7 +622,9 @@ enum DefaultListTutorial
                                 "Add one thing you hope to accomplish today", "Move an item here from In the Queue",
                                 "Mark a task complete when it is finished"
             ]
+
         case "In the Queue":
+
             heading = "Keep it for another day"
             body =
                                 "Keep ideas, unfinished tasks, and backburner items here, including things that keep getting delayed. They still matter, even when today has no room for them.\n\nAdd a Card or Note whenever something is worth keeping. Review this List when planning your day, then move an item to On the Table when you are ready to give it attention. If it needs a particular date or time, move it to Scheduled or to a day in your calendar.\n\nThis welcome card is yours to edit, archive, or delete. It will not return when the List becomes empty."
@@ -578,7 +632,9 @@ enum DefaultListTutorial
                                 "Capture one idea or backburner task", "Move a ready item to On the Table",
                                 "Mark a task complete when it is finished"
             ]
+
         case "Scheduled":
+
             heading = "Give it a place in time"
             body =
                                 "Keep commitments and tasks with a planned date or time here. Use this List for things you want to return to at the right moment.\n\nAdd a Card, open it, and set its Start date or Due date in Details. Include a time when it matters. You can also move the item to a specific day in your calendar. Adding an item to this List alone does not assign a date or create a notification.\n\nWhen the time comes, work on the item here or move it to On the Table. Mark it complete when it is finished.\n\nThis welcome card is yours to edit, archive, or delete. It will not return when the List becomes empty."
@@ -586,6 +642,7 @@ enum DefaultListTutorial
                                 "Add a task and set its Start date or Due date", "Try moving a planned item to a day in your calendar",
                                 "Mark a task complete when it is finished"
             ]
+
         default:
             return collection
         }
@@ -600,9 +657,12 @@ enum DefaultListTutorial
             comments: [], members: [], labelIDs: [LabelLibraryStore.load().referenceLabelID], attachments: [],
             descriptionOverride: body,
             subtitleOverride: "'\(title)', A quick guide to this List", presentation: .card)
+
         if includesWelcomeCard
         {
+
             collection.lists[0].cards = [card]
+
         }
 
         return collection

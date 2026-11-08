@@ -52,6 +52,7 @@ struct AppRootView: View
     @State private var templateLibraryRequest            = 0                        /* Transient Library routing request */
     @State var selectedDestination:       AppDestination = .today                   /* Currently selected primary destination       */
     @State var bottomNavigationSafeInset: CGFloat        = 34
+
     var bottomToolbarLayout:              BottomToolbarLayout
     {
 
@@ -65,6 +66,7 @@ struct AppRootView: View
     }
 
     @State var visibleNoteIDs: Set<UUID> = []
+
     var isNotePresented:       Bool
     {
         !visibleNoteIDs.isEmpty
@@ -211,22 +213,30 @@ struct AppRootView: View
         .animation(reduceLaunchMotion ? nil : .easeInOut(duration: 0.45), value: hasLoadedBoard)
         .environmentObject(welcomeCue)
         .environment(\.localBackupRestore, LocalBackupRestoreAccess(restore: { backup in
+
             pendingNativeRestore = backup
             undoingNativeRestore = false
             isSwitchingWorkspace = true
+
         }, undo: {
+
             pendingNativeRestore = nil
             undoingNativeRestore = true
             isSwitchingWorkspace = true
+
         }))
         .environment(\.portableWorkspaceImport, PortableWorkspaceImportAccess(install: { package in
+
             pendingPortableImport = package
             undoingPortableImport = false
             isSwitchingWorkspace = true
+
         }, undo: {
+
             pendingPortableImport = nil
             undoingPortableImport = true
             isSwitchingWorkspace = true
+
         }))
         .databaseActivityOverlay()
         .confirmationDialog("Load an example month?", isPresented: $confirmsExampleMonth, titleVisibility: .visible)
@@ -282,7 +292,9 @@ struct AppRootView: View
                             {
                                 if !$0
                                 {
+
                                     workspaceNotice = nil
+
                                 }
 
                             })
@@ -291,7 +303,9 @@ struct AppRootView: View
 
             Button("OK")
             {
+
                 workspaceNotice = nil
+
             }
 
         }
@@ -347,7 +361,9 @@ struct AppRootView: View
             route in
             if route != nil
             {
+
                 selectedDestination = .today
+
             }
 
         }
@@ -374,14 +390,20 @@ struct AppRootView: View
 
 
             let launchDeadline = ContinuousClock.now.advanced(by: .milliseconds(900))
+
             launchProgress = PlenactLaunchProgress()
             launchShadowFading = false
+
             let legacy = await KanbanBoardPersistence.loadListsInBackground()
+
             launchProgress.stage = .plans
+
             await Task.yield()
+
             var seedsFreshDemoImportance = false
             var preparedDocument: PlanningCalendarDocument?
             var preparedWeek: DatedPlanningWeek?
+
             do
             {
 
@@ -389,6 +411,7 @@ struct AppRootView: View
                 {
 
                     try document.repairLegacyMondayFirstLayout()
+
                     let previous = document.weeks.first
                     {
                         $0.startKey == document.currentWeekKey
@@ -396,10 +419,12 @@ struct AppRootView: View
                     let newWeek =
                     document.week(for: .now) == nil
                     ? try PlanningRoutineStore.newWeek(for: .now, calendar: document.calendar) : nil
+
                     preparedWeek = document.rollForward(
                         to: .now, currentLists: previous.collection.lists, saved: previous.collection.savedCardIDs,
                         newWeek: newWeek)
                     preparedDocument = document
+
                 }
                 else
                 {
@@ -408,18 +433,23 @@ struct AppRootView: View
                     {
 
                         _ = try JSONDecoder().decode([KanbanList].self, from: data)
+
                     }
 
                     var calendar = Calendar.current
+
                     calendar.firstWeekday = 2
                     seedsFreshDemoImportance = UserDefaults.standard.data(forKey: "Plenact.Board.v1") == nil
+
                     let current =
                     UserDefaults.standard.data(forKey: "Plenact.Board.v1") == nil
                     ? try PlanningRoutineStore.newWeek(for: .now, calendar: calendar)
                     : DatedPlanningWeek.make(for: .now, lists: legacy, saved: savedCardIDs, calendar: calendar)
+
                     preparedWeek = current
                     preparedDocument = PlanningCalendarDocument(
                         currentWeekKey: current.startKey, firstWeekday: 2, weeks: [current])
+
                 }
 
             }
@@ -427,12 +457,14 @@ struct AppRootView: View
             {
 
                 lists = legacy
+
                 DatabaseActivity.shared.report(
                                                 "Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained."
                 )
             }
 
             launchProgress.stage = .ready
+
             await Task.yield()
             if let document = preparedDocument, let current = preparedWeek
             {
@@ -450,10 +482,12 @@ struct AppRootView: View
                     lists = current.collection.lists
                     savedCardIDs = current.collection.savedCardIDs
                     calendarDocument = document
+
                     if seedsFreshDemoImportance
                     {
 
                         let defaults = UserDefaults.standard
+
                         defaults.set(
                             LibraryImportanceSelection.demoData(
                                 in: [current.collection],
@@ -466,6 +500,7 @@ struct AppRootView: View
                 {
 
                     lists = legacy
+
                     DatabaseActivity.shared.report(
                                                             "Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained."
                     )
@@ -474,10 +509,14 @@ struct AppRootView: View
             }
 
             SavedCardPersistence.save(savedCardIDs)
+
             launchProgress.stage = .welcome
+
             await Task.yield()
+
             // Preparation is complete; keep the steady icons visible during the existing minimum launch time.
             launchProgress.finished = true
+
             do
             {
                 try await ContinuousClock().sleep(until: launchDeadline)
@@ -489,6 +528,7 @@ struct AppRootView: View
 
             // Finish with a full second of shadow fade before revealing the workspace.
             launchShadowFading = true
+
             do
             {
                 try await Task.sleep(for: .seconds(1))
@@ -509,6 +549,7 @@ struct AppRootView: View
             }
 
             hasLoadedBoard = true
+
             applyDayListOrderingPreference()
             applyExampleCardLocations()
             openFirstDailyWeek()
@@ -547,13 +588,16 @@ struct AppRootView: View
                     onSaveProfile:
                     {
                         updatedProfile in
+
                         profile = updatedProfile
+
                         LocalProfileStore.save(updatedProfile)
                     },
                     onRemoveProfile:
                     {
 
                         profile = nil
+
                         LocalProfileStore.remove()
                     },
                     onAddCard:
@@ -610,7 +654,9 @@ struct AppRootView: View
                             week: displayedPlanningWeek, initialDayID: nil, initialCardID: nil,
                             onLeaveForHome:
                             {
+
                                 self.displayedPlanningWeek = nil
+
                             }, isWeekTab: true,
                             initialBoardListID: displayedPlanningListID
                         )
@@ -658,7 +704,9 @@ struct AppRootView: View
                 onVisible:
                 {
                     visible in
+
                     dailyWeekVisible = visible
+
                     if visible
                     {
 
@@ -701,8 +749,10 @@ struct AppRootView: View
                     onOpenPersonalCard:
                     {
                         target in
+
                         savedPersonalCardTarget = target
                         selectedDestination = .lists
+
                     },
                     onRestoreBoard: restoreBoard,
                     onDeleteBoard: deletePersonalBoard,
@@ -747,12 +797,16 @@ struct AppRootView: View
                 }
                 .onAppear
                 {
+
                     bottomNavigationSafeInset = geometry.safeAreaInsets.bottom
+
                 }
                 .onChange(of: geometry.safeAreaInsets.bottom)
                 {
                     _, inset in
+
                     bottomNavigationSafeInset = inset
+
                 }
 
             }
@@ -782,6 +836,7 @@ struct AppRootView: View
 
             templateLibraryRequest += 1
             selectedDestination = .lists
+
         })
         .environment(\.calendar, calendarDocument?.calendar ?? .current)
         .modifier(
@@ -857,7 +912,9 @@ struct AppRootView: View
 
             PlanningCalendarView(onLeaveForHome:
                 {
+
                     showsToolbarCalendar = false
+
                 })
         }
         .sheet(isPresented: $showsCenterNewCardSheet)
@@ -913,15 +970,20 @@ struct AppRootView: View
                 weekRootRequest += 1
                 boardTargetListID = nil;
                 boardTargetCardID = nil
+
             }, openToday:
             {
+
                 selectedDestination = .today
+
             },
             openLibraryCard:
             {
                 target in
+
                 savedPersonalCardTarget = target;
                 selectedDestination = .lists
+
             },
             saveLibrary:
             {
@@ -935,11 +997,15 @@ struct AppRootView: View
                 }
 
                 var snapshot = collections;
+
                 snapshot[index] = collection
+
                 do
                 {
                     try PersonalCollectionStore.saveChecked(snapshot);
+
                     collections = snapshot;
+
                     return true
                 }
                 catch
@@ -967,6 +1033,7 @@ struct AppRootView: View
                 boardTargetListID = nil;
                 boardTargetCardID = nil
                 selectedDestination = .board
+
             }, moveList: movePlanningList,
             openWeekOnDay:
             {
@@ -977,12 +1044,14 @@ struct AppRootView: View
                 }
 
                 let listID = week.dayListIDs[PlanningDate.key(date, calendar: document.calendar)]
+
                 weekRootRequest += 1
                 displayedPlanningListID = listID
                 displayedPlanningWeek = week.startKey == calendarDocument?.currentWeekKey ? nil : week
                 boardTargetCardID = nil
                 boardTargetListID = week.startKey == calendarDocument?.currentWeekKey ? listID : nil
                 selectedDestination = .board
+
             },
             saveExampleWeek:
             {
@@ -1061,6 +1130,7 @@ struct AppRootView: View
 
                 var week   = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
                 let listID = week.prepareDay(date)
+
                 guard let list = week.collection.lists.first(where:
                     {
                         $0.id == listID
@@ -1092,6 +1162,7 @@ struct AppRootView: View
 
                 var week   = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
                 let listID = week.prepareDay(date)
+
                 document.upsert(week)
                 return movePlanningSection(
                     heading, source: source,
@@ -1123,17 +1194,23 @@ struct AppRootView: View
             onUndoExampleWeek: undoExampleWeek,
             onLoadExampleMonth:
             {
+
                 confirmsExampleMonth = true
+
             },
             onRestoreUserData:
             {
+
                 confirmsRestoreUserData = true
+
             },
             hasUserDataBackup: (try? FullMonthExampleStore.live().hasUserData) ?? false,
             savedPersonalCardTarget: savedPersonalCardTarget,
             onClearSavedPersonalCardTarget:
             {
+
                 savedPersonalCardTarget = nil
+
             }
         )
         .environment(\.appReturnResetRequest, libraryReturnResetRequest)
@@ -1194,6 +1271,7 @@ struct AppRootView: View
             isCompact /* Adaptive arrangement of creation actions */
             ? AnyLayout(HStackLayout(spacing: layout.newLabelSpacing))
             : AnyLayout(VStackLayout(spacing: layout.newLabelSpacing))
+
             newLayout
             {
 
@@ -1204,11 +1282,13 @@ struct AppRootView: View
                     {
 
                         quickCreateRequest += 1
+
                     }
                     else if selectedDestination == .lists
                     {
 
                         newLibraryListRequest += 1
+
                     }
                     else
                     {
@@ -1216,6 +1296,7 @@ struct AppRootView: View
                         centerNewPresentation = .card
                         centerNewListID = nil
                         showsCenterNewCardSheet = true
+
                     }
 
                 }
@@ -1312,6 +1393,7 @@ struct AppNavigationSurface<Content: View>: View
     {
 
         self.content = content
+
     }
 
 

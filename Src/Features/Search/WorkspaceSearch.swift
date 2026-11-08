@@ -198,18 +198,26 @@ enum TodaySearchIndex
 
 
                 case .labels:
+
                     searchableText = labelText
+
                 case .users:
+
                     searchableText = users
+
                 case .all:
+
                     searchableText =
                     [
                         list.title, card.word, PlanRichText.plain(card.descriptionOverride ?? ""),
                         card.subtitleOverride ?? ""
                     ]
                     + checklistText + commentText + users + labelText
+
                 case .boards:
+
                     searchableText = []
+
                 }
 
 
@@ -235,10 +243,15 @@ enum TodaySearchIndex
 
 
                 case .labels:
+
                     detail = labels.map(\.name).joined(separator: ", ")
+
                 case .users:
+
                     detail = users.joined(separator: ", ")
+
                 default:
+
                     detail =
                     [card.subtitleOverride, card.descriptionOverride.map
                         {
@@ -253,6 +266,7 @@ enum TodaySearchIndex
                             !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                         })
                     ?? checklistText.first ?? ""
+
                 }
 
 
@@ -305,9 +319,12 @@ enum LibrarySearchIndex
             ).map
             {
                 match in
+
                 var result = match
+
                 result.ownerID = collection.id
                 result.ownerTitle = collection.title
+
                 return result
             }
 
@@ -375,10 +392,13 @@ enum PlanningSharedSearchIndex
             ).map
             {
                 match in
+
                 var result = match
+
                 result.ownerID = ownerID;
                 result.weekKey = weekKey;
                 result.ownerTitle = title
+
                 return result
             }
 

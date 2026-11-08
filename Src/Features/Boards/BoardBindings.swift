@@ -44,7 +44,9 @@ extension Binding where Value == [KanbanList]
             },
             set:
             {
+
                 wrappedValue = $0 + wrappedValue.filter(\.isArchived)
+
             }
         )
     }
@@ -70,6 +72,7 @@ extension Binding where Value == [KanbanList]
             set:
             {
                 archived in
+
                 wrappedValue =
                 wrappedValue.filter
                 {
@@ -79,8 +82,11 @@ extension Binding where Value == [KanbanList]
                 + archived.map
                 {
                     list in
+
                     var archivedList = list /* Incoming list normalized to archived state */
+
                     archivedList.isArchived = true
+
                     return archivedList
                 }
 

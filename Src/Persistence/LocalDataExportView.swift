@@ -15,6 +15,7 @@ struct LegacyBackupDocument: FileDocument
 {
 
     static var readableContentTypes: [UTType] { [.folder] }
+
     private let serialized: Data /* Immutable Sendable snapshot; reconstruct a fresh wrapper per save */
 
 
@@ -30,7 +31,9 @@ struct LegacyBackupDocument: FileDocument
         {
             throw CocoaError(.fileWriteUnknown)
         }
+
         self.serialized = serialized
+
     }
 
 
@@ -224,7 +227,9 @@ struct LocalDataExportView: View
                         {
                             Button("Save portable test package to Files…")
                             {
+
                                 savingPackage = true
+
                             }
                             .disabled(preparing)
                         }
@@ -232,7 +237,9 @@ struct LocalDataExportView: View
                     #endif
                     Button(preview == nil ? "Save backup to Files…" : "Save backup and preview to Files…")
                     {
+
                         saving = true
+
                     }
                 }
             }
@@ -248,7 +255,9 @@ struct LocalDataExportView: View
             {
                 Button("Choose portable test package…")
                 {
+
                     choosingPortablePackage = true
+
                 }
                 .disabled(preparing)
                 if let portableReview
@@ -259,7 +268,9 @@ struct LocalDataExportView: View
                     LabeledContent("Verified original files", value: String(portableReview.mediaCount))
                     Button("Install isolated portable test copy…")
                     {
+
                         confirmsPortableInstall = true
+
                     }
                     .disabled(preparing)
                 }
@@ -288,14 +299,19 @@ struct LocalDataExportView: View
                     {
                         do
                         {
+
                             let store = try PortableTestWorkspace.live()
+
                             installedPortable = try store.undo()
                             canUndoPortable = try store.canUndo()
                             message = "Previous isolated test state restored. Your main workspace is unchanged."
+
                         }
                         catch
                         {
+
                             message = "The previous portable test state could not be verified. Nothing was changed."
+
                         }
                     }
                 }
@@ -309,7 +325,9 @@ struct LocalDataExportView: View
                 {
                     Button("Import into editable Simulator workspace…")
                     {
+
                         confirmsEditableImport = true
+
                     }
                     .disabled(preparing || editableImportAccess == nil || (try? FullMonthExampleStore.live().hasPortableImportBackup) == true)
                 }
@@ -326,7 +344,9 @@ struct LocalDataExportView: View
                     .disabled(preparing)
                     Button("Undo editable workspace import…")
                     {
+
                         confirmsEditableUndo = true
+
                     }
                     .disabled(preparing || editableImportAccess == nil)
                 }
@@ -338,7 +358,9 @@ struct LocalDataExportView: View
             {
                 Button("Choose backup folder…")
                 {
+
                     choosingRestore = true
+
                 }
                 .disabled(preparing || restoreAccess == nil)
                 if let reviewedRestore
@@ -349,7 +371,9 @@ struct LocalDataExportView: View
                     LabeledContent("Media files", value: String(reviewedRestore.mediaCount))
                     Button("Restore into this Simulator…")
                     {
+
                         confirmsRestore = true
+
                     }
                     .disabled(preparing || restoreAccess == nil)
                 }
@@ -376,8 +400,10 @@ struct LocalDataExportView: View
         { result in
             do
             {
+
                 let url    = try result.get()
                 let access = url.startAccessingSecurityScopedResource()
+
                 defer
                 {
                     if access
@@ -385,23 +411,31 @@ struct LocalDataExportView: View
                         url.stopAccessingSecurityScopedResource()
                     }
                 }
+
                 reviewedRestore = nil
                 reviewedRestore = try LocalBackupRestore.review(at: url)
                 message = "Backup verified. Review the counts before confirming the Simulator restore."
+
             }
             catch
             {
+
                 reviewedRestore = nil
                 message = "Backup review did not finish: " + error.localizedDescription
+
             }
         }
         .fileImporter(isPresented: $choosingPortablePackage, allowedContentTypes: [.folder])
         { result in
+
             portableReview = nil
+
             do
             {
+
                 let url    = try result.get()
                 let access = url.startAccessingSecurityScopedResource()
+
                 defer
                 {
                     if access
@@ -409,15 +443,19 @@ struct LocalDataExportView: View
                         url.stopAccessingSecurityScopedResource()
                     }
                 }
+
                 portableReview = try PortablePackageReview.review(at: url)
                 message = "Portable package integrity and core references reviewed. No data was imported."
+
             }
             catch
             {
                 if (error as NSError).code != NSUserCancelledError
                 {
+
                     message = (error as? PortablePackageReview.Failure)?.errorDescription
                         ?? "The portable package could not be reviewed. No data was imported."
+
                 }
             }
         }
@@ -425,13 +463,18 @@ struct LocalDataExportView: View
         {
             do
             {
+
                 let store = try PortableTestWorkspace.live()
+
                 installedPortable = try store.active()
                 canUndoPortable = try store.canUndo()
+
             }
             catch
             {
+
                 message = "The retained portable test copy needs review. Your main workspace is unchanged."
+
             }
         }
         .confirmationDialog("Install an isolated portable test copy?", isPresented: $confirmsPortableInstall, titleVisibility: .visible)
@@ -444,14 +487,19 @@ struct LocalDataExportView: View
                     {
                         return
                     }
+
                     let store = try PortableTestWorkspace.live()
+
                     installedPortable = try store.install(portableReview)
                     canUndoPortable = try store.canUndo()
                     message = "Portable test copy installed and read back from disk. Your main workspace is unchanged."
+
                 }
                 catch
                 {
+
                     message = "The isolated test copy could not be installed. The previous test state and main workspace are preserved."
+
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -504,11 +552,15 @@ struct LocalDataExportView: View
         }
         .onChange(of: originalTimeZoneID)
         {
+
             preview = nil
             packageDocument = nil
+
             if let backup
             {
+
                 document = try? LegacyBackupDocument(files: backup.files)
+
             }
         }
         .fileExporter(isPresented: $savingPackage, document: packageDocument,
@@ -517,9 +569,13 @@ struct LocalDataExportView: View
             switch result
             {
             case .success:
+
                 message = "Portable test package saved with its original backup. Independent review and portable recovery testing are still required."
+
             case .failure:
+
                 message = "The test package was not saved. You can choose a destination and try again."
+
             }
         }
         .fileExporter(isPresented: $savingEdited, document: editedDocument,
@@ -528,11 +584,17 @@ struct LocalDataExportView: View
             switch result
             {
             case .success:
+
                 message = "Edited portable test package saved with its exact native backup. Your workspace and Undo are unchanged."
+
             case .failure:
+
                 message = "The edited package was not saved. You can try again."
+
             }
+
             editedDocument = nil
+
         }
         .alert("Edited export could not be prepared", isPresented: $showsEditedExportError)
         {
@@ -551,11 +613,16 @@ struct LocalDataExportView: View
         { result in
             switch result
             {
-            case .success: message = "Backup saved. Your Plenact workspace is unchanged."
+            case .success:
+
+                message = "Backup saved. Your Plenact workspace is unchanged."
+
             case .failure(let error):
                 if (error as NSError).code != NSUserCancelledError
                 {
+
                     message = "The backup could not be saved. Please choose a destination and try again."
+
                 }
             }
         }
@@ -571,10 +638,13 @@ struct LocalDataExportView: View
         preparing = true
         editedDocument = nil
         message = nil
+
         Task { @MainActor in
             defer
             {
+
                 preparing = false
+
             }
             do
             {
@@ -583,16 +653,21 @@ struct LocalDataExportView: View
                 {
                     throw LegacyWorkspaceExport.Failure.missingDomain
                 }
+
                 let backup = try LegacyWorkspaceExport.capture(defaults: .standard, domain: domain,
                     root: URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true))
+
                 editedDocument = try LegacyBackupDocument(files: PortableEditedExport.prepare(backup))
                 savingEdited = true
+
             }
             catch
             {
+
                 editedExportError = error.localizedDescription
                 message = editedExportError
                 showsEditedExportError = true
+
             }
         }
     }
@@ -609,24 +684,33 @@ struct LocalDataExportView: View
         {
             return
         }
+
         packageDocument = nil
         preparing = true
         message = nil
+
         Task { @MainActor in
             await Task.yield()
             defer
             {
+
                 preparing = false
+
             }
             do
             {
+
                 let files = try MigrationTestPackage.prepare(preview)
+
                 packageDocument = try LegacyBackupDocument(files: files)
                 message = "Portable test package prepared. Save it to Files for independent review. No data was installed or uploaded."
+
             }
             catch
             {
+
                 message = "The portable test package needs review. Save the backup and preview so the remaining items can be checked. Your original data is unchanged."
+
             }
         }
     }
@@ -643,35 +727,50 @@ struct LocalDataExportView: View
         {
             return
         }
+
         preparing = true
         packageDocument = nil
         message = nil
+
         Task { @MainActor in
             await Task.yield()
-            defer { preparing = false }
+            defer {
+
+                preparing = false
+
+            }
             do
             {
+
                 let support = try FileManager.default.url(for: .applicationSupportDirectory,
                     in: .userDomainMask, appropriateFor: nil, create: true).resolvingSymlinksInPath()
                 let journal = support.appendingPathComponent("PlenactMigration", isDirectory: true)
                     .appendingPathComponent("source-identities-v1.json")
                 let prepared = try MigrationPreview.prepare(backup: backup, journalURL: journal,
                     timeZoneID: originalTimeZoneID.isEmpty ? nil : originalTimeZoneID)
+
                 document = try LegacyBackupDocument(files: prepared.files)
                 preview = prepared
                 message = "Migration preview prepared. Complete workspace conversion is still in progress."
+
             }
             catch MigrationIdentityJournal.Failure.unsupported
             {
+
                 message = "The existing migration journal needs a newer app. It has been preserved."
+
             }
             catch MigrationBackupReader.Failure.pendingRecovery
             {
+
                 message = "Finish recovering the pending review before converting this backup. Your backup is preserved."
+
             }
             catch
             {
+
                 message = "The migration preview needs review. Your source backup and existing identity journal have been preserved."
+
             }
         }
     }
@@ -690,24 +789,34 @@ struct LocalDataExportView: View
         preview = nil
         document = nil
         message = nil
+
         Task { @MainActor in
             await Task.yield()
-            defer { preparing = false }
+            defer {
+
+                preparing = false
+
+            }
             do
             {
                 guard let domain = Bundle.main.bundleIdentifier else
                 {
                     throw LegacyWorkspaceExport.Failure.missingDomain
                 }
+
                 let prepared = try LegacyWorkspaceExport.capture(defaults: .standard, domain: domain,
                     root: URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true))
+
                 document = try LegacyBackupDocument(files: prepared.files)
                 backup = prepared
+
             }
             catch
             {
+
                 message = (error as? LegacyWorkspaceExport.Failure)?.errorDescription
                     ?? "A complete backup could not be prepared. Your saved data is unchanged."
+
             }
         }
     }

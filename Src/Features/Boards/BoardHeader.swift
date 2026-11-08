@@ -27,6 +27,7 @@ struct BoardDisplaySettings
     var showCommentCounts = true /* Display comment counts on cards     */
     /// Whether cards show due-date badges.
     var showDueDateBadges = true /* Display due date badges on cards    */
+
 }
 
 
@@ -268,6 +269,7 @@ struct BoardHeader: View
         }
 
         pendingBoardAction = nil
+
         switch action
         {
 
@@ -284,13 +286,19 @@ struct BoardHeader: View
         case .listActions:
             onListActions?()
         case .settings:
+
             showingSettings = true
+
         case .archived:
             onViewArchivedLists()
         case .archive:
+
             confirmsArchiveBoard = true
+
         case .delete:
+
             confirmsDeleteBoard = true
+
         }
 
     }
@@ -311,7 +319,9 @@ struct BoardHeader: View
                 .font(.title2)
                 SlideableHeaderText(text: title, onOverflowChange:
                     {
+
                         titleOverflows = $0
+
                     })
                 .font(onClose == nil ? .largeTitle.weight(.bold) : .title2.weight(.bold))
                 .foregroundStyle(.white)
@@ -325,7 +335,9 @@ struct BoardHeader: View
                     text: subtitle, onTap: onSubtitleTap,
                     onOverflowChange:
                     {
+
                         subtitleOverflows = $0
+
                     }
                 )
                 .font(inheritedSubtitleItalic ? .subheadline.italic() : .subheadline)
@@ -333,7 +345,9 @@ struct BoardHeader: View
                 .accessibilityIdentifier(onSubtitleTap == nil ? "board.subtitle" : "board.weekSelector")
                 .onDisappear
                 {
+
                     subtitleOverflows = false
+
                 }
 
             }
@@ -461,6 +475,7 @@ struct BoardHeader: View
             {
 
                 showsBoardOptions = true
+
             }
             label:
             {
@@ -481,8 +496,10 @@ struct BoardHeader: View
                 )
                 {
                     action in
+
                     pendingBoardAction = action
                     showsBoardOptions = false
+
                 }
                 .presentationCompactAdaptation(.popover)
                 .onDisappear
@@ -685,6 +702,7 @@ struct BoardSettingsView: View
                                 {
 
                                     selectedMemberColor = MemberColorTarget(member: member, color: memberColor)
+
                                 }
                                 label:
                                 {
@@ -709,6 +727,7 @@ struct BoardSettingsView: View
                                     editingMember = member
                                     memberNameDraft = member
                                     isRenamingMember = true
+
                                 }
                                 label:
                                 {
@@ -731,6 +750,7 @@ struct BoardSettingsView: View
                                 {
 
                                     memberToDelete = member
+
                                 }
                                 label:
                                 {
@@ -814,7 +834,9 @@ struct BoardSettingsView: View
                                         {
                                             if !$0
                                             {
+
                                                 memberToDelete = nil
+
                                             }
 
                                         }
@@ -838,6 +860,7 @@ struct BoardSettingsView: View
                     onDeleteMember(memberToDelete)
 
                     self.memberToDelete = nil
+
                 }
 
 
@@ -845,6 +868,7 @@ struct BoardSettingsView: View
                 {
 
                     memberToDelete = nil
+
                 }
 
             }
@@ -954,6 +978,7 @@ struct MemberColorEditorSheet: View
         self.memberName = memberName
         self.onSave = onSave
         _selectedColor = State(initialValue: initialColor)
+
     }
 
 

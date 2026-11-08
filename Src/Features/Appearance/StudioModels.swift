@@ -41,6 +41,7 @@ struct StudioRemotePhoto: Codable, Hashable, Sendable
     let photographer: String
     let profileURL:   URL
     let downloadURL:  URL
+
 }
 
 
@@ -62,6 +63,7 @@ struct StudioSurface: Codable, Hashable, Sendable
     var showsInPreviews:  Bool               = true
     var photoFileName:    String?            = nil
     var remotePhoto:      StudioRemotePhoto? = nil
+
 }
 
 
@@ -80,6 +82,7 @@ struct StudioArtwork: Codable, Identifiable, Hashable, Sendable
     var italicSubtitle: Bool?                 = nil
     var titleColor:     ListPreviewTextColor? = nil
     var textColor:      ListPreviewTextColor? = nil
+
 }
 
 
@@ -155,30 +158,39 @@ struct StudioSettings: Codable, Equatable
         }
 
         var surface = card.appearance?.studioSurface ?? (card.presentation == .note ? settings.defaultNoteSurface : settings.defaultCardSurface)
+
         if settings.variesNewSurfaces, card.appearance?.studioSurface == nil, let color = settings.palette.randomElement()
         {
 
             if surface == nil
             {
+
                 surface = StudioSurface(material: .color)
+
             }
 
             surface?.color = color
+
         }
 
         var appearance = card.appearance ?? ItemAppearance()
+
         if settings.variesNewHeaders, appearance.background == nil
         {
 
             appearance.background = ItemAccent.allCases.randomElement()
+
         }
 
         if let surface
         {
+
             appearance.studioSurface = surface
+
         }
 
         card.appearance = appearance.isEmpty ? nil : appearance
+
     }
 
 }

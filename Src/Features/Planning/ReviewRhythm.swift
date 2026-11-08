@@ -57,6 +57,7 @@ struct ReviewRhythmRoute: Identifiable
     let id = UUID()
     let kind: ReviewRhythmKind
     let date: Date
+
 }
 
 
@@ -91,19 +92,26 @@ struct ReviewRhythmPreferences: Codable, Equatable
     {
 
         var copy = self
+
         if !(0 ..< 1440).contains(copy.dailyMinutes)
         {
+
             copy.dailyMinutes = 1230
+
         }
 
         if !(0 ..< 1440).contains(copy.weeklyMinutes)
         {
+
             copy.weeklyMinutes = 1080
+
         }
 
         if !(1 ... 7).contains(copy.weeklyWeekday)
         {
+
             copy.weeklyWeekday = 1
+
         }
 
         return copy
@@ -175,6 +183,7 @@ enum ReviewRhythmStore
             }
 
             _ = try JSONDecoder().decode(ReviewRhythmPreferences.self, from: data)
+
         }
 
         defaults.set(try JSONEncoder().encode(value.normalized()), forKey: key)
@@ -197,6 +206,7 @@ enum ReviewRhythmStore
 
         let key =
         kind == .daily ? PlanningDate.key(date, calendar: calendar) : PlanningDate.weekKey(date, calendar: calendar)
+
         return kind.rawValue + "|" + key + "|" + calendar.timeZone.identifier + "|" + String(calendar.firstWeekday)
     }
 
@@ -233,6 +243,7 @@ enum ReviewRhythmStore
 
         let value   = preferences.normalized()
         let minutes = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+
         switch kind
         {
 
@@ -272,7 +283,9 @@ enum ReviewRhythmStore
                 try? JSONDecoder().decode([String: Date].self, from: $0)
             })
         ?? [:]
+
         values[periodID(kind, date: date, calendar: calendar)] = until
+
         if values.count > 64
         {
 
@@ -282,6 +295,7 @@ enum ReviewRhythmStore
 
                 ($0.split(separator: "|").dropFirst().first ?? "") > ($1.split(separator: "|").dropFirst().first ?? "")
             } .prefix(64)
+
             values = values.filter
             {
                 keys.contains($0.key)
@@ -311,6 +325,7 @@ enum ReviewRhythmStore
     {
 
         let value = value.normalized()
+
         return ReviewRhythmKind.allCases.compactMap
         {
             kind in
@@ -321,19 +336,25 @@ enum ReviewRhythmStore
 
             let minutes    = kind == .daily ? value.dailyMinutes : value.weeklyMinutes
             var components = DateComponents()
+
             components.hour = minutes / 60;
             components.minute = minutes % 60
+
             if kind == .weekly
             {
+
                 components.weekday = value.weeklyWeekday
+
             }
 
             // No explicit time zone: these reminders follow local wall-clock time.
             let content = UNMutableNotificationContent()
+
             content.title = kind.title
             content.body = kind.message
             content.sound = .default
             content.userInfo = ["plenactReview": kind.rawValue]
+
             return UNNotificationRequest(
                 identifier: kind.notificationID, content: content,
                 trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: true))
@@ -371,7 +392,9 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     ///
     func install()
     {
+
         UNUserNotificationCenter.current().delegate = self
+
     }
 
 
@@ -396,32 +419,42 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
         let preferences        = ReviewRhythmStore.load()
         let wantsNotifications = preferences.dailyNotifications || preferences.weeklyNotifications
         var status             = await center.notificationSettings().authorizationStatus
+
         if wantsNotifications && requestPermission && status == .notDetermined
         {
 
             _ = try await center.requestAuthorization(options: [.alert, .sound])
             status = await center.notificationSettings().authorizationStatus
+
         }
 
         // Serialize reconciliation, then read the latest saved choices again on a queued pass.
         if isReconciling
         {
+
             needsReconcile = true;
+
             return status == .authorized || status == .provisional
         }
 
         isReconciling = true
+
         defer
         {
+
             isReconciling = false
+
         }
 
         repeat
         {
 
             needsReconcile = false
+
             center.removePendingNotificationRequests(withIdentifiers: ReviewRhythmKind.allCases.map(\.notificationID))
+
             let latest = ReviewRhythmStore.load()
+
             if status == .authorized || status == .provisional || status == .ephemeral
             {
 
@@ -461,10 +494,13 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
         {
 
             let date = response.notification.date
+
             Task
             {
                 @MainActor in
+
                 self.pending = ReviewRhythmRoute(kind: kind, date: date)
+
             }
 
         }
@@ -517,6 +553,7 @@ struct ReviewRhythmPanel: View
     @AppStorage(ReviewRhythmStore.dismissalsKey) private var dismissalsData = Data()
     @AppStorage(DailyPlanStore.key) private var dailyData                   = Data()
     @AppStorage(WeeklyReviewStore.key) private var weeklyData               = Data()
+
     private var calendar: Calendar
     {
         access?.document.calendar ?? .current
@@ -538,24 +575,29 @@ struct ReviewRhythmPanel: View
     {
 
         let completed: Bool
+
         if kind == .daily
         {
 
             completed =
             (try? DailyPlanStore.load(from: defaults).plans[PlanningDate.key(now, calendar: calendar)]?
                 .eveningReview?.completedAt) != nil
+
         }
         else
         {
 
             let id = WeeklyReviewRecord(date: now, calendar: calendar).id
+
             completed = (try? WeeklyReviewStore.load(from: defaults).records[id]?.completedAt) != nil
+
         }
 
         let deferred =
         (try? JSONDecoder().decode(
                 [String: Date].self, from: defaults.data(forKey: ReviewRhythmStore.dismissalsKey) ?? Data()))? [
         ReviewRhythmStore.periodID(kind, date: now, calendar: calendar)]
+
         return ReviewRhythmStore.isDue(
             kind, now: now, preferences: ReviewRhythmStore.load(from: defaults), calendar: calendar,
             completed: completed, deferredUntil: deferred)
@@ -567,7 +609,9 @@ struct ReviewRhythmPanel: View
         TimelineView(.everyMinute)
         {
             timeline in
+
             let now = nowOverride ?? timeline.date
+
             VStack(alignment: .leading, spacing: 12)
             {
 
@@ -658,6 +702,7 @@ struct ReviewRhythmDestination: View
 
     let route: ReviewRhythmRoute
     @Environment(\.planningCalendarAccess) private var access
+
     var body: some View
     {
 
@@ -718,8 +763,10 @@ struct ReviewRhythmSettingsView: View
             set:
             {
                 date in
+
                 preferences[keyPath: key] =
                 Calendar.current.component(.hour, from: date) * 60 + Calendar.current.component(.minute, from: date)
+
             })
     }
 
@@ -813,12 +860,15 @@ struct ReviewRhythmSettingsView: View
                     {
 
                         saving = true
+
                         Task
                         {
                             @MainActor in
                             defer
                             {
+
                                 saving = false
+
                             }
 
                             do
@@ -835,6 +885,7 @@ struct ReviewRhythmSettingsView: View
 
                                     error =
                                                                                                             "Your choices are saved. iOS notifications are not allowed; invitations on Today still work. You can allow notifications in iOS Settings or turn the notification switches off."
+
                                 }
 
                             }
@@ -843,6 +894,7 @@ struct ReviewRhythmSettingsView: View
 
                                 self.error =
                                                                                                 "Could not finish saving reminders: \(error.localizedDescription). Your Cards and Notes are unchanged."
+
                             }
 
                         }

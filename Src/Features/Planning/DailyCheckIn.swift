@@ -72,17 +72,20 @@ enum TodayVisionSelection
             }
 
             let spanning: Bool
+
             if let start = item.card.startDate, let end = item.card.dueDate
             {
 
                 spanning =
                 calendar.startOfDay(for: start) <= calendar.startOfDay(for: date)
                 && calendar.startOfDay(for: end) >= calendar.startOfDay(for: date)
+
             }
             else
             {
 
                 spanning = false
+
             }
 
             return onDay || dated || spanning
@@ -116,11 +119,14 @@ struct TodayVisionView: View
     @State private var transferError  = false
     @State private var planSaveFailed = false
     @State private var saving         = false
+
     private var calendar: Calendar
     {
 
         var result = access?.document.calendar ?? .current
+
         result.timeZone = TimeZone(identifier: plan.timeZoneID) ?? .current
+
         return result
     }
 
@@ -193,6 +199,7 @@ struct TodayVisionView: View
     {
 
         let priority = DailyPlanPriority(source)
+
         if !plan.priorities.contains(where:
             {
                 $0.id == priority.id
@@ -219,13 +226,19 @@ struct TodayVisionView: View
             return
         }
         ;
+
         saving = true
+
         let previousStep       = plan.visionStep
         let previousCompletion = plan.visionCompletedAt
+
         plan.visionStep = step == 2 ? nil : step + 1
+
         if step == 2
         {
+
             plan.visionCompletedAt = .now
+
         }
 
         if onSave()
@@ -237,7 +250,9 @@ struct TodayVisionView: View
             }
             else
             {
+
                 step += 1
+
             }
 
         }
@@ -247,9 +262,11 @@ struct TodayVisionView: View
             plan.visionStep = previousStep
             plan.visionCompletedAt = previousCompletion
             planSaveFailed = true
+
         }
 
         saving = false
+
     }
 
     var body: some View
@@ -325,6 +342,7 @@ struct TodayVisionView: View
                                     {
 
                                         transfer = source
+
                                     }
 
                                 }
@@ -384,12 +402,16 @@ struct TodayVisionView: View
 
                         Button("Choose priorities", systemImage: "plus.circle")
                         {
+
                             showsPicker = true
+
                         }
 
                         Button("Add priority", systemImage: "square.and.pencil")
                         {
+
                             showsNew = true
+
                         }
 
                     }
@@ -446,7 +468,9 @@ struct TodayVisionView: View
                     {
                         Button("Previous step")
                         {
+
                             step -= 1
+
                         }
 
                     }
@@ -485,7 +509,9 @@ struct TodayVisionView: View
             }
             .onAppear
             {
+
                 step = min(2, max(0, plan.visionStep ?? 0))
+
             }
             .sheet(isPresented: $showsPicker)
             {
@@ -508,7 +534,9 @@ struct TodayVisionView: View
                                         {
                                             if !$0
                                             {
+
                                                 transfer = nil
+
                                             }
 
                                         }),
@@ -523,12 +551,15 @@ struct TodayVisionView: View
                     let moved = access?.moveForDailyPlan?(source, table.reference)
                     else
                     {
+
                         transferError = true;
                         transfer = nil;
+
                         return
                     }
 
                     let reference = DailyPlanPriority(moved)
+
                     if let index = plan.priorities.firstIndex(where:
                         {
                             $0.id == source.id
@@ -536,6 +567,7 @@ struct TodayVisionView: View
                     {
 
                         plan.priorities[index] = reference
+
                     }
                     else
                     {
@@ -544,17 +576,22 @@ struct TodayVisionView: View
                     }
 
                     transfer = nil
+
                     // The move is already committed; retain the link and report any plan-save failure.
                     if !onSave()
                     {
+
                         planSaveFailed = true
+
                     }
 
                 }
 
                 Button("Cancel", role: .cancel)
                 {
+
                     transfer = nil
+
                 }
 
             }
@@ -619,6 +656,7 @@ struct DailyCheckIn: Codable, Equatable
     var focus: DailyPlanPriority? = nil
     var changed                   = ""
     var savedAt: Date?            = nil
+
 }
 
 
@@ -635,6 +673,7 @@ struct CheckInMood: Codable, Equatable
 
     let emoji:   String
     let label:   String
+
     var display: String
     {
         emoji + " " + label
@@ -673,6 +712,7 @@ struct CheckInMood: Codable, Equatable
             {
                 $0.properties.isEmoji
             })
+
         guard emoji.count == 1, isEmoji, !label.isEmpty, label.count <= 40 else
         {
             return nil
@@ -767,6 +807,7 @@ struct DailyCheckInEntry: Codable, Equatable, Identifiable
     let unavailable:    Int?
     let legacy:         Bool
     var mood:           CheckInMood? = nil
+
 }
 
 
@@ -825,14 +866,17 @@ extension DailyPlan
         var entries  = checkInHistory
         let focus    = DailyCheckInProgress.focus(plan: self, sources: sources)
         let progress = DailyCheckInProgress.counts(plan: self, sources: sources)
+
         entries.append(
             .init(
                 id: UUID().uuidString, savedAt: timestamp, changed: changed, focus: focus,
                 intention: intention, constraints: constraints, concerns: concerns, priorities: priorities,
                 completedTasks: progress.completed, totalTasks: progress.tasks,
                 notes: progress.notes, unavailable: progress.unavailable, legacy: false, mood: mood))
+
         checkIns = entries
         checkIn = DailyCheckIn(focus: focus, changed: changed, savedAt: timestamp)
+
     }
 
 }
@@ -879,6 +923,7 @@ struct DailyHistoryReviewView: View
         self.calendar = calendar;
         self.defaults = defaults
         _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
+
     }
 
     private var plan: DailyPlan?
@@ -905,13 +950,16 @@ struct DailyHistoryReviewView: View
 
         do
         {
+
             document = try DailyPlanStore.load(from: defaults);
             loadError = nil
+
         }
         catch
         {
 
             loadError = error.localizedDescription
+
         }
 
     }
@@ -931,7 +979,9 @@ struct DailyHistoryReviewView: View
     {
 
         var style = Date.FormatStyle(date: .omitted, time: .shortened)
+
         style.timeZone = TimeZone(identifier: timeZoneID) ?? calendar.timeZone
+
         return timestamp.formatted(style)
     }
 
@@ -995,7 +1045,9 @@ struct DailyHistoryReviewView: View
 
                                 Button(day.formatted(date: .abbreviated, time: .omitted))
                                 {
+
                                     date = day
+
                                 }
 
                             }
@@ -1027,6 +1079,7 @@ struct DailyHistoryReviewView: View
                         {
 
                             let counts = DailyCheckInProgress.counts(plan: plan, sources: access?.searchableItems ?? [])
+
                             Text("\(counts.completed) of \(counts.tasks) priority tasks complete").font(.headline)
                             if counts.tasks > 0
                             {
@@ -1253,12 +1306,15 @@ enum DailyCheckInProgress
     {
 
         var result = (completed: 0, tasks: 0, notes: 0, unavailable: 0)
+
         for priority in plan.priorities
         {
 
             guard let source = priority.resolve(in: sources) else
             {
+
                 result.unavailable += 1;
+
                 continue
             }
 
@@ -1266,14 +1322,18 @@ enum DailyCheckInProgress
             {
 
                 result.notes += 1
+
             }
             else
             {
 
                 result.tasks += 1;
+
                 if source.card.isTitleChecked
                 {
+
                     result.completed += 1
+
                 }
 
             }
@@ -1336,6 +1396,7 @@ struct TodayCheckInView: View
     @State private var showsPicker = false
     @State private var showsNew    = false
     @State private var saveFailed  = false
+
     private var sources: [PlanningSearchResult]
     {
         access?.searchableItems ?? []
@@ -1350,6 +1411,7 @@ struct TodayCheckInView: View
     @State private var moodChoice: CheckInMoodChoice = .none
     @State private var customEmoji                   = ""
     @State private var customFeeling                 = ""
+
     private var selectedMood: CheckInMood?
     {
 
@@ -1385,6 +1447,7 @@ struct TodayCheckInView: View
         self.date = date;
         self.onSave = onSave
         _selectedFocus = State(initialValue: plan.wrappedValue.checkIn?.focus)
+
     }
 
     private var focusPlan: DailyPlan
@@ -1392,8 +1455,10 @@ struct TodayCheckInView: View
 
         var result = plan
         var latest = checkIn;
+
         latest.focus = selectedFocus;
         result.checkIn = latest
+
         return result
     }
 
@@ -1414,6 +1479,7 @@ struct TodayCheckInView: View
     {
 
         selectedFocus = priority
+
     }
 
 
@@ -1434,18 +1500,24 @@ struct TodayCheckInView: View
         }
 
         let previous = plan
+
         plan.checkIns = plan.checkInHistory
         plan.checkIn = focusPlan.checkIn
+
         plan.recordCheckIn(changed: changed, sources: sources, mood: selectedMood)
         if onSave()
         {
+
             didSave = true;
+
             dismiss()
         }
         else
         {
+
             plan = previous;
             saveFailed = true
+
         }
 
     }
@@ -1472,6 +1544,7 @@ struct TodayCheckInView: View
                 {
 
                     let progress = DailyCheckInProgress.counts(plan: plan, sources: sources)
+
                     Text("\(progress.completed) of \(progress.tasks) priority tasks complete").font(.headline)
                     if progress.tasks > 0
                     {
@@ -1506,7 +1579,9 @@ struct TodayCheckInView: View
                     ForEach(plan.priorities)
                     {
                         priority in
+
                         let source = priority.resolve(in: sources)
+
                         HStack(alignment: .top, spacing: 12)
                         {
 
@@ -1534,6 +1609,7 @@ struct TodayCheckInView: View
 
                                     let focused =
                                     DailyCheckInProgress.focus(plan: focusPlan, sources: sources)?.id == priority.id
+
                                     Button(focused ? "Next focus ✓" : "Focus on this next")
                                     {
 
@@ -1557,12 +1633,16 @@ struct TodayCheckInView: View
 
                     Button("Choose priorities", systemImage: "plus.circle")
                     {
+
                         showsPicker = true
+
                     }
 
                     Button("Add priority", systemImage: "square.and.pencil")
                     {
+
                         showsNew = true
+
                     }
 
                 }
@@ -1604,7 +1684,9 @@ struct TodayCheckInView: View
                         .onChange(of: customFeeling)
                         {
                             _, value in
+
                             customFeeling = String(value.prefix(40))
+
                         }
 
                         if selectedMood == nil
@@ -1685,7 +1767,9 @@ struct TodayCheckInView: View
 
                         if hasUnsavedCheckIn
                         {
+
                             confirmsLeaving = true
+
                         }
                         else
                         {
@@ -1711,7 +1795,9 @@ struct TodayCheckInView: View
                 NewDailyPriorityView
                 {
                     source in
+
                     let priority = DailyPlanPriority(source)
+
                     if !plan.priorities.contains(where:
                         {
                             $0.id == priority.id
@@ -1819,6 +1905,7 @@ struct TodayPlanSummaryPanel: View
 
         self.onOpen = onOpen
         _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
+
     }
 
 
@@ -1838,11 +1925,14 @@ struct TodayPlanSummaryPanel: View
 
             plan = try DailyPlanStore.load(from: defaults).plans[PlanningDate.key(date, calendar: calendar)]
             readFailed = false
+
         }
         catch
         {
+
             plan = nil;
             readFailed = true
+
         }
 
     }
@@ -1902,7 +1992,9 @@ struct TodayPlanSummaryPanel: View
                     ForEach(Array(plan.priorities.prefix(3)))
                     {
                         priority in
+
                         let source = priority.resolve(in: sources)
+
                         HStack(alignment: .top, spacing: 12)
                         {
 

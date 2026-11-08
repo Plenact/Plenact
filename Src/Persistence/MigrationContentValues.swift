@@ -54,6 +54,7 @@ final class MigrationContentValues
         self.journal = journal
         self.timeZoneID = timeZoneID
         self.mediaDigests = mediaDigests
+
     }
 
 
@@ -66,7 +67,9 @@ final class MigrationContentValues
     {
 
         let encoder = JSONEncoder()
+
         encoder.dateEncodingStrategy = .secondsSince1970
+
         guard let object = try JSONSerialization.jsonObject(with: encoder.encode(value)) as? [String: Any] else
         {
             throw Failure.invalid("native_object")
@@ -116,9 +119,12 @@ final class MigrationContentValues
 
         if !known.contains(target), unavailable[target] == nil
         {
+
             let record = try id("unavailable_reference", owner: "unavailable", legacy: type + ":" + target)
+
             unavailable[target] = document("unavailable_reference", id: record,
                 payload: ["target_type": type, "target_id": target, "reason": "legacy_unresolved", "display_text": NSNull()])
+
         }
         return target
     }
@@ -159,12 +165,16 @@ final class MigrationContentValues
         {
             throw Failure.invalid("media_filename")
         }
+
         let path = area + "/" + name
+
         if let target = assetTargets[path]
         {
             return try reference("asset", target)
         }
+
         let target = try id("asset", owner: "owned_media", legacy: path, discriminator: mediaDigests[path])
+
         return try reference("asset", target)
     }
 
@@ -182,22 +192,29 @@ final class MigrationContentValues
         {
             throw Failure.invalid("timestamp")
         }
+
         let epoch = number.doubleValue
+
         guard epoch >= -62_135_596_800, epoch < 253_402_300_800 else
         {
             throw Failure.invalid("timestamp_range")
         }
+
         let milliseconds = floor(epoch * 1000)
+
         if abs(epoch - milliseconds / 1000) > 0.000_000_1
         {
             precisionEvidence.append(["path": path, "source_epoch_seconds": epoch,
                 "wire_epoch_milliseconds": milliseconds, "source_format": "native_date_seconds_since_1970"])
         }
+
         let formatter = DateFormatter()
+
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
         return formatter.string(from: Date(timeIntervalSince1970: milliseconds / 1000))
     }
 

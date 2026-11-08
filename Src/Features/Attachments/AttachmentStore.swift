@@ -50,6 +50,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
     let addedAt:         Date                   /* Attachment creation time                                  */
     let exampleImage:    ExampleCoverImage?     /* Immutable original example illustration, never user media */
     var drawingFileName: String? = nil          /* Editable PencilKit strokes, absent in legacy photos       */
+
     var storedFileNames: [String]
     {
         [fileName, drawingFileName].compactMap
@@ -113,6 +114,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
         self.addedAt = addedAt
         self.exampleImage = exampleImage
         self.caption = caption
+
     }
 
 }
@@ -206,6 +208,7 @@ enum CardAttachmentStore
 
 
         let retained = retained.union(try PlanningRoutineStore.retainedFiles())
+
         for name in candidates.subtracting(retained)
         {
 
@@ -416,6 +419,7 @@ enum CardAttachmentStore
         }
 
         let fileNames = fileNames.union(templateFiles)
+
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else
         {  /* App Documents directory */

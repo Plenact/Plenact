@@ -28,6 +28,7 @@ struct ImportanceStarCluster: View
 
     let level:         Int
     var style:         ImportanceStarStyle = .tucked
+
     private var count: Int
     {
         min(5, max(0, level))
@@ -86,6 +87,7 @@ struct ImportanceStarCluster: View
             CGSize(width: 6, height: 8), CGSize(width: 0, height: 3),
             CGSize(width: 11, height: 2), CGSize(width: 3, height: 0), CGSize(width: 8, height: 0)
         ]
+
         return positions[depth]
     }
 
@@ -111,6 +113,7 @@ struct ImportantItemIndicator: View
     @Environment(\.cardMovementSource) private var source
     @Environment(\.libraryImportance) private var importance
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var level: Int
     {
 
@@ -197,6 +200,7 @@ struct ImportantItemIndicator: View
     {
 
         let previous = level
+
         guard direction > 0 ? previous < 5 : previous > 0 else
         {
             return
@@ -208,6 +212,7 @@ struct ImportantItemIndicator: View
             importantData = LibraryImportanceSelection.adjusting(
                 cardID: cardID, collectionID: owner,
                 direction: direction, data: importantData)
+
         }
         else
         {
@@ -262,7 +267,9 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     {
 
         let marker = Marker()
+
         marker.isUserInteractionEnabled = false
+
         return marker
     }
 
@@ -330,6 +337,7 @@ struct ImportanceStarStylePicker: View
 
 
     @Binding var selection: ImportanceStarStyle
+
     var body:               some View
     {
 

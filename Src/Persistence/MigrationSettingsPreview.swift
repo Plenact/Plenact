@@ -41,6 +41,7 @@ enum MigrationSettingsPreview
         let preparedCount:  Int
         let shortcutCount:  Int
         let issueCount:     Int
+
     }
 
 
@@ -105,6 +106,7 @@ enum MigrationSettingsPreview
         let list = journal.entries.first {
             $0.source.recordType == "list" && $0.source.owner == owner && $0.source.legacyID == String(id)
         }?.target.uuidString.lowercased()
+
         guard let collection, let list,
               records.contains(where: { record in
                   record["record_type"] as? String == "collection" && record["id"] as? String == collection &&
@@ -138,16 +140,21 @@ enum MigrationSettingsPreview
         var profile: LocalProfile?
         var rawProfile: [String: Any]         = [:]
         var profilePreferences: [String: Any] = [:]
+
         if let value = values["Plenact.LocalProfile.v1"]
         {
+
             rawProfile = try object(value, allowed: ["id", "createdAt", "displayName", "email", "context",
                 "avatarColor", "avatarIcon", "avatarForegroundColor", "avatarPhotoFileName", "preferences"])
+
             guard let saved = rawProfile["preferences"] as? [String: Any] else
             {
                 throw MigrationContentValues.Failure.invalid("settings_profile_preferences")
             }
+
             profilePreferences = saved
             _ = try preferences(saved)
+
             for key in ["avatarColor", "avatarForegroundColor"]
             {
                 if let color = rawProfile[key], !(color is NSNull)
@@ -155,60 +162,90 @@ enum MigrationSettingsPreview
                     try MigrationContentGuard.check(color, type: "ProfileColor")
                 }
             }
+
             profile = try JSONDecoder().decode(LocalProfile.self, from: value as! Data)
+
         }
+
         let rawPreferences: [String: Any]
         let origin: String
+
         if let value = values["Plenact.PlanPreferences.v1"]
         {
+
             rawPreferences = try object(value, allowed: Set(fields.keys))
             origin = "saved_planning_preferences"
+
         }
         else if profile != nil
         {
+
             rawPreferences = profilePreferences
             origin = "saved_profile_preferences"
+
         }
         else
         {
+
             rawPreferences = [:]
             origin = "application_defaults"
+
         }
+
         let effective             = try preferences(rawPreferences)
         let encoded               = try MigrationContentValues.object(effective)
         var mapped: [String: Any] = [:]
+
         for (source, target) in fields
         {
+
             mapped[target] = encoded[source] ?? NSNull()
+
         }
+
         mapped["today_focus_order"] = effective.todayFocusOrder == .dayList ? "day_list" : "chronological"
+
         var issues: [String]       = []
         var unresolvedDefault: Any = NSNull()
+
         mapped["default_list_id"] = NSNull()
+
         if let sourceList = effective.defaultListID
         {
+
             var owner: String?
+
             if let data = values["Plenact.CalendarWeeks.v1"] as? Data
             {
+
                 let calendar = try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
+
                 owner = calendar.weeks.first(where: { $0.startKey == calendar.currentWeekKey })?.collection.id.uuidString.lowercased()
+
             }
             if let owner, let target = list(owner: owner, id: sourceList, journal: context.journal, records: records)
             {
+
                 mapped["default_list_id"] = target.1
+
             }
             else
             {
                 issues.append("default_list_owner_requires_review")
+
                 unresolvedDefault = sourceList
+
             }
         }
+
         let preferencesID                   = try context.id("user_preferences", owner: "workspace_metadata", legacy: "effective_user_preferences")
         let preferencesDraft: [String: Any] = ["id": preferencesID, "payload": ["preferences": mapped]]
         var profileDraft: Any               = NSNull()
         var assetRecords: [[String: Any]]   = []
+
         if let profile
         {
+
             let raw                    = try MigrationContentValues.object(profile)
             let id                     = try context.id("user_profile", owner: "local_profile", legacy: profile.id.uuidString.lowercased())
             let avatar                 = try context.asset(profile.avatarPhotoFileName, area: "Documents/ProfileAvatars")
@@ -219,11 +256,15 @@ enum MigrationSettingsPreview
                 "avatar_icon": profile.avatarIcon.rawValue,
                 "avatar_foreground_color": try context.appearance(raw["avatarForegroundColor"], kind: "color"),
                 "avatar_asset_id": avatar]
+
             profileDraft = ["id": id, "payload": payload]
+
             assetRecords.append(["record_type": "user_profile_preview", "id": id, "payload": payload])
         }
+
         var converted: [[String: Any]] = []
         var shortcutCount              = 0
+
         if let value = values["Plenact.TodayListShortcuts.v1"]
         {
             guard let data = value as? Data,
@@ -232,12 +273,16 @@ enum MigrationSettingsPreview
             {
                 throw MigrationContentValues.Failure.invalid("settings_shortcut_fields")
             }
+
             let pins = try JSONDecoder().decode([WorkspaceListReference].self, from: data)
+
             guard Set(pins).count == pins.count else
             {
                 throw MigrationContentValues.Failure.invalid("settings_duplicate_shortcuts")
             }
+
             var items: [[String: Any]] = []
+
             for pin in pins
             {
                 guard let target = list(owner: pin.ownerID.uuidString.lowercased(), id: pin.listID,
@@ -247,11 +292,17 @@ enum MigrationSettingsPreview
                 }
                 items.append(["collection_id": target.0, "list_id": target.1])
             }
+
             let id = try context.id("today_shortcuts", owner: "workspace_metadata", legacy: "Plenact.TodayListShortcuts.v1")
+
             converted.append(context.document("today_shortcuts", id: id, payload: ["items": items]))
+
             shortcutCount = items.count
+
         }
+
         converted += context.unavailable.keys.sorted().map { context.unavailable[$0]! }
+
         let defaultedPreferences = fields.keys.filter { rawPreferences[$0] == nil || rawPreferences[$0] is NSNull }.sorted()
         let defaultedProfile     = profile == nil ? [] : ["avatarIcon", "avatarForegroundColor"].filter {
             rawProfile[$0] == nil || rawProfile[$0] is NSNull
@@ -263,7 +314,9 @@ enum MigrationSettingsPreview
             "profile_preferences_shadowed": values["Plenact.PlanPreferences.v1"] != nil && profile != nil,
             "unresolved_default_list_id": unresolvedDefault, "source_precision": context.precisionEvidence,
             "issues": issues, "ready_for_binding": issues.isEmpty]
+
         journal = context.journal
+
         return Result(document: document, records: converted, assetRecords: assetRecords,
             preparedCount: profile == nil ? 1 : 2, shortcutCount: shortcutCount, issueCount: issues.count)
     }

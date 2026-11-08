@@ -21,6 +21,7 @@ struct PlenactHelpSection: Identifiable
 
     let title:      String
     let paragraphs: [String]
+
     var id:         String
     {
         title
@@ -65,6 +66,7 @@ struct PlenactHelpArticle: Identifiable
             {
                 [$0.title] + $0.paragraphs
             }).joined(separator: " ")
+
         return query.split(whereSeparator: \.isWhitespace).allSatisfy
         {
             text.localizedStandardContains(String($0))
@@ -433,6 +435,7 @@ struct LibraryHelpRows: View
     {
 
         let matches = PlenactHelpCatalog.results(for: query)
+
         Section
         {
 
@@ -449,6 +452,7 @@ struct LibraryHelpRows: View
         ForEach(PlenactHelpCatalog.groups, id: \.self)
         {
             group in
+
             let articles = matches.filter
             {
                 $0.group == group
@@ -524,6 +528,7 @@ struct PlenactHelpArticleView: View
     @Environment(\.dismiss) private var dismiss
     @Environment(\.planningCalendarAccess) private var access
     @State private var showsPlan = false
+
     var body: some View
     {
 
@@ -564,7 +569,9 @@ struct PlenactHelpArticleView: View
 
                         Button("Open Today's Plan", systemImage: "sun.max")
                         {
+
                             showsPlan = true
+
                         } .disabled(access == nil)
                     }
 

@@ -18,6 +18,7 @@ struct MigrationSourceIdentity: Codable, Hashable
     let owner:         String  /* Stable source-owner namespace, never display text   */
     let legacyID:      String  /* Original identifier represented without coercion   */
     let discriminator: String? /* Source creation discriminator where actually known */
+
 }
 
 
@@ -29,6 +30,7 @@ struct MigrationIdentityEntry: Codable, Equatable
 
     let source: MigrationSourceIdentity /* Exact source provenance */
     let target: UUID                    /* Stable portable identity */
+
 }
 
 
@@ -77,6 +79,7 @@ struct MigrationIdentityJournal: Codable
         sourceInstallationID = UUID()
         previewWorkspaceID = UUID()
         entries = []
+
     }
 
 
@@ -92,11 +95,15 @@ struct MigrationIdentityJournal: Codable
         try Self.validate(source)
         if source.recordType.hasPrefix("nested_")
         {
+
             formatVersion = max(formatVersion, 2)
+
         }
         if ["workspace_appearance", "artwork_library"].contains(source.recordType)
         {
+
             formatVersion = max(formatVersion, 3)
+
         }
         if targets.count != entries.count
         {
@@ -104,15 +111,21 @@ struct MigrationIdentityJournal: Codable
             {
                 throw Failure.corrupt
             }
+
             targets = Dictionary(uniqueKeysWithValues: entries.map { ($0.source, $0.target) })
+
         }
         if let existing = targets[source]
         {
             return existing
         }
+
         let target = UUID()
+
         entries.append(MigrationIdentityEntry(source: source, target: target))
+
         targets[source] = target
+
         return target
     }
 
@@ -132,6 +145,7 @@ struct MigrationIdentityJournal: Codable
             "today_shortcuts", "workspace_display_preferences", "unavailable_reference", "workspace_appearance", "artwork_library",
             "nested_checklist", "nested_checklist_item", "nested_action_detail", "nested_comment",
             "nested_reaction", "nested_attachment", "nested_history", "nested_assignee"]
+
         guard types.contains(source.recordType), !source.owner.isEmpty,
               source.owner.utf8.count <= 4096, source.legacyID.utf8.count <= 4096,
               (source.discriminator?.utf8.count ?? 0) <= 4096 else
@@ -149,7 +163,9 @@ struct MigrationIdentityJournal: Codable
     {
 
         let encoder = JSONEncoder()
+
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
+
         return try encoder.encode(self)
     }
 
@@ -186,7 +202,9 @@ struct MigrationIdentityJournal: Codable
                 throw Failure.corrupt
             }
         }
+
         let journal = try JSONDecoder().decode(MigrationIdentityJournal.self, from: data)
+
         guard Set(journal.entries.map(\.source)).count == journal.entries.count,
               Set(journal.entries.map(\.target)).count == journal.entries.count,
               !journal.entries.contains(where: { $0.target == journal.sourceInstallationID || $0.target == journal.previewWorkspaceID }),
@@ -194,7 +212,9 @@ struct MigrationIdentityJournal: Codable
         {
             throw Failure.corrupt
         }
+
         let uuidPattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+
         for identifier in [journal.sourceInstallationID, journal.previewWorkspaceID] + journal.entries.map(\.target)
         {
             guard identifier.uuidString.lowercased().range(of: uuidPattern, options: .regularExpression) != nil else
@@ -235,11 +255,14 @@ enum MigrationIdentityStore
     {
 
         var current = url
+
         while current.path != "/"
         {
             if FileManager.default.fileExists(atPath: current.path)
             {
+
                 let attributes = try FileManager.default.attributesOfItem(atPath: current.path)
+
                 guard attributes[.type] as? FileAttributeType != .typeSymbolicLink else
                 {
                     throw MigrationIdentityJournal.Failure.unsafePath
@@ -255,7 +278,9 @@ enum MigrationIdentityStore
         {
             return nil
         }
+
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+
         guard attributes[.type] as? FileAttributeType == .typeRegular,
               (attributes[.size] as? NSNumber)?.intValue ?? Int.max <= 32 * 1024 * 1024 else
         {
@@ -281,12 +306,17 @@ enum MigrationIdentityStore
         {
             throw MigrationIdentityJournal.Failure.conflictingWrite
         }
+
         let data = try journal.encoded()
+
         _ = try MigrationIdentityJournal.decode(data)
+
         if let expected
         {
+
             let original = try MigrationIdentityJournal.decode(expected)
             let retained = Dictionary(uniqueKeysWithValues: journal.entries.map { ($0.source, $0.target) })
+
             guard original.formatVersion <= journal.formatVersion,
                   original.sourceInstallationID == journal.sourceInstallationID,
                   original.previewWorkspaceID == journal.previewWorkspaceID,

@@ -22,6 +22,7 @@ final class AppReturnTests: XCTestCase
 
         let bodyBytes       = MemoryLayout<AppRootView.Body>.size
         let navigationBytes = MemoryLayout.size(ofValue: AppRootView().navigationContent)
+
         print("ROOT_BODY_BYTES", bodyBytes)
         print("ROOT_NAVIGATION_BYTES", navigationBytes)
         // Previously 19,944 and 18,187 bytes, repeatedly copied through the root builders.
@@ -36,8 +37,11 @@ final class AppReturnTests: XCTestCase
 
         let now      = ContinuousClock.now
         var overview = DailyWeekOverview()
+
         overview.arm()
+
         let first = overview.id!
+
         XCTAssertFalse(overview.consume(first, at: now.advanced(by: .seconds(30))))
         XCTAssertEqual(overview.begin(at: now), first)
         XCTAssertNil(overview.begin(at: now.advanced(by: .seconds(1))))
@@ -48,7 +52,9 @@ final class AppReturnTests: XCTestCase
         overview.cancel()
         XCTAssertNil(overview.begin(at: now))
         overview.arm()
+
         let second = overview.begin(at: now)!
+
         XCTAssertFalse(overview.consume(first, at: now.advanced(by: .seconds(4))))
         overview.cancel()
         XCTAssertFalse(overview.consume(second, at: now.advanced(by: .seconds(4))))
@@ -61,22 +67,31 @@ final class AppReturnTests: XCTestCase
 
         let window     = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
         let controller = DailyOverviewProbe.Controller()
+
         window.rootViewController = controller
         window.isHidden = false
+
         defer
         {
 
             controller.disconnect()
+
             window.isHidden = true
             window.rootViewController = nil
+
         }
+
         let field = UITextField(frame: CGRect(x: 0, y: 0, width: 100, height: 40))
+
         controller.view.addSubview(field)
+
         var interactions = 0
+
         controller.configure(armed: true)
         {
 
             interactions += 1
+
         }
         XCTAssertTrue(controller.observer.view === window)
         XCTAssertFalse(controller.observer.cancelsTouchesInView)
@@ -98,10 +113,12 @@ final class AppReturnTests: XCTestCase
 
         let fade     = DailyOverviewFade()
         var selected = false
+
         fade.transition(in: nil, reduceMotion: true)
         {
 
             selected = true
+
         }
         XCTAssertTrue(selected)
         XCTAssertNil(fade.overlay)
@@ -118,6 +135,7 @@ final class AppReturnTests: XCTestCase
 
         let now     = ContinuousClock.now
         var session = AppReturnSession()
+
         XCTAssertFalse(session.becameActive(at: now, protected: false))
         session.leftForBackground(at: now, protected: false)
         XCTAssertFalse(session.becameActive(at: now.advanced(by: .seconds(299)), protected: false))
@@ -133,6 +151,7 @@ final class AppReturnTests: XCTestCase
 
         let now     = ContinuousClock.now
         var session = AppReturnSession()
+
         session.leftForBackground(at: now, protected: false)
         session.leftForBackground(at: now.advanced(by: .seconds(240)), protected: false)
         XCTAssertTrue(session.becameActive(at: now.advanced(by: .seconds(300)), protected: false))
@@ -149,10 +168,12 @@ final class AppReturnTests: XCTestCase
     {
 
         let now = ContinuousClock.now
+
         for (departure, arrival) in [(true, false), (false, true), (true, true)]
         {
 
             var session = AppReturnSession()
+
             session.leftForBackground(at: now, protected: departure)
             XCTAssertFalse(session.becameActive(at: now.advanced(by: .seconds(86400)), protected: arrival))
             session.leftForBackground(at: now.advanced(by: .seconds(86401)), protected: false)
@@ -168,18 +189,24 @@ final class AppReturnTests: XCTestCase
     {
 
         let date = Date(timeIntervalSince1970: 1793620800)
+
         for firstWeekday in [1, 2]
         {
 
             var calendar = Calendar(identifier: .gregorian)
+
             calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
             calendar.firstWeekday = firstWeekday
+
             let week    = DatedPlanningWeek.make(for: date, calendar: calendar)
             let first   = try XCTUnwrap(week.dayListIDs[week.startKey])
             let undated = KanbanList(id: 900, title: "Undated", cards: [])
             let visible = [undated] + week.collection.lists.reversed()
+
             XCTAssertEqual(AppReturnSession.firstListID(in: week, lists: visible), first)
+
             let remaining = visible.filter { $0.id != first }
+
             XCTAssertNotEqual(AppReturnSession.firstListID(in: week, lists: remaining), undated.id)
             XCTAssertEqual(AppReturnSession.firstListID(in: nil, lists: [undated]), undated.id)
             XCTAssertNil(AppReturnSession.firstListID(in: week, lists: []))
@@ -195,14 +222,21 @@ final class AppReturnTests: XCTestCase
 
         let domain   = "Plenact.DailyOpeningTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+
         defer { defaults.removePersistentDomain(forName: domain) }
+
         var calendar = Calendar(identifier: .gregorian)
+
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+
         let date   = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-11-07T18:00:00Z"))
         let source = Data([0, 255, 1])
+
         defaults.set(source, forKey: "syntheticUserData")
         XCTAssertTrue(AppDailyOpening.claim(at: date, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
+
         let reopened = try XCTUnwrap(UserDefaults(suiteName: domain))
+
         XCTAssertFalse(AppDailyOpening.claim(at: date.addingTimeInterval(3600), calendar: calendar,
             protected: false, targetAvailable: true, defaults: reopened))
         XCTAssertEqual(reopened.string(forKey: AppDailyOpening.key), "2026-11-07")
@@ -219,12 +253,17 @@ final class AppReturnTests: XCTestCase
 
         let domain   = "Plenact.DailyBoundaryTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+
         defer { defaults.removePersistentDomain(forName: domain) }
+
         var calendar = Calendar(identifier: .gregorian)
+
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+
         let formatter = ISO8601DateFormatter()
         let before    = try XCTUnwrap(formatter.date(from: "2026-11-08T05:59:59Z"))
         let after     = before.addingTimeInterval(1)
+
         XCTAssertTrue(AppDailyOpening.claim(at: before, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
         XCTAssertEqual(defaults.string(forKey: AppDailyOpening.key), "2026-11-07")
         XCTAssertTrue(AppDailyOpening.claim(at: after, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
@@ -242,8 +281,11 @@ final class AppReturnTests: XCTestCase
 
         let domain   = "Plenact.DeferredDailyTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+
         defer { defaults.removePersistentDomain(forName: domain) }
+
         let date = Date(timeIntervalSince1970: 1794074400)
+
         for (protected, available) in [(true, true), (false, false), (true, false)]
         {
 
@@ -264,12 +306,17 @@ final class AppReturnTests: XCTestCase
 
         let domain   = "Plenact.DailyDSTTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+
         defer { defaults.removePersistentDomain(forName: domain) }
+
         var calendar = Calendar(identifier: .gregorian)
+
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+
         let formatter = ISO8601DateFormatter()
         let first     = try XCTUnwrap(formatter.date(from: "2026-11-01T06:30:00Z"))
         let repeated  = try XCTUnwrap(formatter.date(from: "2026-11-01T07:30:00Z"))
+
         XCTAssertTrue(AppDailyOpening.claim(at: first, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
         XCTAssertFalse(AppDailyOpening.claim(at: repeated, calendar: calendar,
             protected: false, targetAvailable: true, defaults: defaults))
@@ -284,22 +331,34 @@ final class AppReturnTests: XCTestCase
 
         let domain   = "Plenact.ReturnViewportTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+
         defer { defaults.removePersistentDomain(forName: domain) }
+
         let bytes = Data([0, 1, 255])
+
         defaults.set(bytes, forKey: "syntheticUserRecord")
+
         let memory = BoardViewportMemory(owner: "week", defaults: defaults)
+
         memory.state.scale = 0.7
         memory.state.panoramic = true
         memory.state.presentation = "standard"
         memory.state.visibleListID = 17
         memory.state.offsets = ["horizontal": 470, "list:17": 920]
+
         memory.flush()
+
         let other = BoardViewportMemory(owner: "personal", defaults: defaults)
+
         other.record(810, for: "horizontal")
         other.flush()
+
         let retained = defaults.data(forKey: other.key)
+
         memory.resetScrollOffsets()
+
         let restored = BoardViewportMemory(owner: "week", defaults: defaults)
+
         XCTAssertEqual(restored.state.offsets, ["horizontal": 0, "list:17": 0])
         XCTAssertEqual(restored.state.scale, 0.7)
         XCTAssertTrue(restored.state.panoramic)
@@ -320,6 +379,7 @@ final class AppReturnTests: XCTestCase
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
         let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
+
         defer
         {
 
@@ -330,6 +390,7 @@ final class AppReturnTests: XCTestCase
         {
 
             let memory = BoardViewportMemory(owner: horizontal ? "horizontal" : "vertical", defaults: defaults)
+
             memory.record(470, for: "position")
             memory.flush()
             func screen(_ request: Int) -> some View
@@ -344,16 +405,20 @@ final class AppReturnTests: XCTestCase
                 .frame(width: 260, height: 230)
                 .environment(\.appReturnResetRequest, request)
             }
+
             let host   = UIHostingController(rootView: screen(0))
             let window = UIWindow(windowScene: scene)
+
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             window.rootViewController = host
+
             window.makeKeyAndVisible()
             defer
             {
 
                 window.isHidden = true
                 window.rootViewController = nil
+
             }
             try await Task.sleep(for: .milliseconds(300))
             host.view.layoutIfNeeded()
@@ -368,7 +433,9 @@ final class AppReturnTests: XCTestCase
                 }
                 return view.subviews.lazy.compactMap(find).first
             }
+
             let scroll = try XCTUnwrap(find(host.view))
+
             func offset() -> CGFloat
             {
 
@@ -377,7 +444,9 @@ final class AppReturnTests: XCTestCase
             }
             XCTAssertEqual(offset(), 470, accuracy: 2)
             memory.resetScrollOffsets()
+
             host.rootView = screen(1)
+
             try await Task.sleep(for: .milliseconds(300))
             XCTAssertEqual(offset(), 0, accuracy: 2)
             scroll.setContentOffset(horizontal ? CGPoint(x: 530, y: 0) : CGPoint(x: 0, y: 530), animated: false)
@@ -397,10 +466,13 @@ final class AppReturnTests: XCTestCase
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
         let owner    = UUID()
         let memory   = BoardViewportMemory(owner: owner.uuidString, defaults: defaults)
+
         memory.state.scale = 0.62
         memory.state.panoramic = true
         memory.state.presentation = "standard"
+
         memory.flush()
+
         let lists = (0..<5).map
         {
             index in
@@ -414,11 +486,13 @@ final class AppReturnTests: XCTestCase
         let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
 
             window.isHidden = true
             window.rootViewController = nil
+
             defaults.removePersistentDomain(forName: domain)
             previous?.makeKeyAndVisible()
         }
@@ -435,12 +509,16 @@ final class AppReturnTests: XCTestCase
 
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)
         }
+
         let host = UIHostingController(rootView: screen(0))
+
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = host
+
         window.makeKeyAndVisible()
         try await Task.sleep(for: .milliseconds(600))
         host.view.layoutIfNeeded()
+
         let horizontal = try XCTUnwrap(scrolls(host.view).first
         {
 
@@ -451,16 +529,21 @@ final class AppReturnTests: XCTestCase
 
             $0 is UICollectionView && $0.contentSize.height > $0.bounds.height + 100
         })
+
         vertical.setContentOffset(CGPoint(x: vertical.contentOffset.x, y: 350 - vertical.adjustedContentInset.top), animated: false)
         try await Task.sleep(for: .milliseconds(400))
         horizontal.setContentOffset(CGPoint(x: 420 - horizontal.adjustedContentInset.left, y: horizontal.contentOffset.y), animated: false)
         try await Task.sleep(for: .milliseconds(400))
         XCTAssertGreaterThan(horizontal.contentOffset.x + horizontal.adjustedContentInset.left, 300)
+
         host.rootView = screen(1)
+
         try await Task.sleep(for: .milliseconds(600))
         XCTAssertEqual(horizontal.contentOffset.x + horizontal.adjustedContentInset.left, 0, accuracy: 4)
         XCTAssertEqual(vertical.contentOffset.y + vertical.adjustedContentInset.top, 0, accuracy: 4)
+
         host.rootView = screen(2, target: 2)
+
         try await Task.sleep(for: .milliseconds(600))
         XCTAssertGreaterThan(horizontal.contentOffset.x + horizontal.adjustedContentInset.left, 100)
         XCTAssertEqual(BoardViewportMemory(owner: owner.uuidString, defaults: defaults).state.visibleListID, 2)
@@ -484,13 +567,16 @@ final class AppReturnTests: XCTestCase
         let reference = AppReturnWindow()
         let host      = UIHostingController(rootView: Color.clear.background(AppReturnWindowProbe(reference: reference)))
         let window    = UIWindow(windowScene: scene)
+
         window.rootViewController = host
+
         window.makeKeyAndVisible()
         defer
         {
 
             window.isHidden = true
             window.rootViewController = nil
+
             previous?.makeKeyAndVisible()
         }
         try await Task.sleep(for: .milliseconds(150))

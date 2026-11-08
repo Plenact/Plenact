@@ -68,6 +68,7 @@ struct ChecklistActionDetailView: View
         _descriptionText = State(initialValue: detail.description)
         _checklists = State(initialValue: detail.checklists)
         _comments = State(initialValue: detail.comments)
+
     }
 
 
@@ -128,6 +129,7 @@ struct ChecklistActionDetailView: View
             title: checklist.title,
             items: items
         )
+
     }
 
 
@@ -155,7 +157,9 @@ struct ChecklistActionDetailView: View
 
 
         comments.append(KanbanComment(author: currentUserName, body: trimmedDraft))
+
         commentDraft = ""
+
     }
 
 
@@ -544,24 +548,31 @@ struct ChecklistBlock: View
     {
 
         var updated = item
+
         switch type
         {
 
         case .standard:
+
             updated.content = .standard
+
         case .actionDetail:
+
             updated.content = .actionDetail(item.retainedDetail ?? KanbanChecklistActionDetail())
+
         case .linkedCard:
             if let id = item.retainedCardID, item.type != .linkedCard
             {
 
                 updated.content = .linkedCard(cardID: id)
+
             }
             else
             {
 
                 requestedType = type;
                 typeDraft = item;
+
                 return
             }
 
@@ -570,12 +581,14 @@ struct ChecklistBlock: View
             {
 
                 updated.content = .webLink(url)
+
             }
             else
             {
 
                 requestedType = type;
                 typeDraft = item;
+
                 return
             }
 
@@ -606,7 +619,9 @@ struct ChecklistBlock: View
         }
 
         onAddItem(newItemText)
+
         newItemText = ""
+
     }
 
 
@@ -630,6 +645,7 @@ struct ChecklistBlock: View
 
                     titleDraft = checklist.title
                     isRenaming = true
+
                 }
 
                 .accessibilityHint("Touch and hold to rename this checklist")
@@ -724,6 +740,7 @@ struct ChecklistBlock: View
 
                         titleDraft = checklist.title
                         isRenaming = true
+
                     }
                     label:
                     {
@@ -736,6 +753,7 @@ struct ChecklistBlock: View
                     {
 
                         confirmsDeletion = true
+
                     }
                     label:
                     {
@@ -803,6 +821,7 @@ struct ChecklistBlock: View
 
                                 requestedType = entry.element.type
                                 typeDraft = entry.element
+
                             }
 
                         }
@@ -993,6 +1012,7 @@ struct ChecklistItemRow: View
         self.onDelete = onDelete
         self.shouldFocus = shouldFocus
         self.onFocusHandled = onFocusHandled
+
     }
 
 
@@ -1019,6 +1039,7 @@ struct ChecklistItemRow: View
             {
 
                 horizontalOffset = 0
+
                 onDelete()
             }
             label:
@@ -1124,7 +1145,9 @@ struct ChecklistItemRow: View
                             isTextFocused
                         }, set:
                         {
+
                             isTextFocused = $0
+
                         })
                 )
                 .onAppear
@@ -1139,6 +1162,7 @@ struct ChecklistItemRow: View
                     {
 
                         isTextFocused = true
+
                         onFocusHandled()
                     }
 
@@ -1167,6 +1191,7 @@ struct ChecklistItemRow: View
 
 
                     horizontalOffset = min(0, max(-72, value.translation.width))
+
                 }
                 .onEnded
                 {
@@ -1183,6 +1208,7 @@ struct ChecklistItemRow: View
                     {
 
                         horizontalOffset = value.translation.width < -36 ? -72 : 0
+
                     }
 
                 }
@@ -1238,6 +1264,7 @@ struct ChecklistTextField: UIViewRepresentable
     {
 
         let field = UITextField()
+
         field.autocapitalizationType = .sentences
         field.placeholder = "Item"
         field.font = .preferredFont(forTextStyle: .subheadline)
@@ -1245,9 +1272,12 @@ struct ChecklistTextField: UIViewRepresentable
         field.textColor = .label
         field.returnKeyType = .done
         field.accessibilityLabel = "Checklist item"
+
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         field.delegate = context.coordinator
+
         field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
         return field
     }
@@ -1267,9 +1297,12 @@ struct ChecklistTextField: UIViewRepresentable
     {
 
         context.coordinator.parent = self
+
         if field.text != text
         {
+
             field.text = text
+
         }
 
         if focus && !field.isFirstResponder
@@ -1335,7 +1368,9 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         init(_ parent: ChecklistTextField)
         {
+
             self.parent = parent
+
         }
 
 
@@ -1350,7 +1385,9 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         @objc func changed(_ field: UITextField)
         {
+
             parent.text = field.text ?? ""
+
         }
 
 
@@ -1367,6 +1404,7 @@ struct ChecklistTextField: UIViewRepresentable
         {
 
             parent.focus = true
+
             DispatchQueue.main.async
             {
                 [weak field] in
@@ -1376,7 +1414,9 @@ struct ChecklistTextField: UIViewRepresentable
                 }
 
                 let end = field.endOfDocument
+
                 field.selectedTextRange = field.textRange(from: end, to: end)
+
             }
 
         }
@@ -1393,7 +1433,9 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         func textFieldDidEndEditing(_ field: UITextField)
         {
+
             parent.focus = false
+
         }
 
 

@@ -145,6 +145,7 @@ struct BoardViewportState: Codable, Equatable
     var presentation:  String?          = nil
     var visibleListID: Int?             = nil
     var offsets:       [String: Double] = [:]
+
 }
 
 
@@ -208,6 +209,7 @@ final class BoardViewportMemory
 
         state.offsets = state.offsets.mapValues { _ in 0 }
         horizontalRestoreAllowed = true
+
         flush()
     }
 
@@ -231,6 +233,7 @@ final class BoardViewportMemory
         }
 
         state.offsets[key] = max(0, offset)
+
         scheduleSave()
     }
 
@@ -247,6 +250,7 @@ final class BoardViewportMemory
     {
 
         pendingSave?.cancel()
+
         let work = DispatchWorkItem
         {
             [weak self] in
@@ -254,6 +258,7 @@ final class BoardViewportMemory
         }
 
         pendingSave = work
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
     }
 
@@ -269,7 +274,9 @@ final class BoardViewportMemory
     {
 
         pendingSave?.cancel();
+
         pendingSave = nil
+
         guard let data = try? JSONEncoder().encode(state), defaults.data(forKey: key) != data else
         {
             return
@@ -293,6 +300,7 @@ struct BoardViewportMemoryKey: EnvironmentKey
 
 
     static let defaultValue: BoardViewportMemory? = nil
+
 }
 
 
@@ -317,7 +325,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[BoardViewportMemoryKey.self] = newValue
+
         }
 
     }
@@ -404,8 +414,11 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     {
 
         let view = Marker();
+
         view.isUserInteractionEnabled = false
+
         context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest)
+
         view.attached =
         {
             [weak view, weak coordinator = context.coordinator] in
@@ -508,6 +521,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                     self.resetRequest = resetRequest
                     desired = 0
                     restored = false
+
                     memory?.record(0, for: key)
                     restore()
                 }
@@ -515,6 +529,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             }
 
             finish()
+
             self.memory = memory;
             self.key = key;
             self.horizontal = horizontal
@@ -522,6 +537,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             desired = memory?.state.offsets[key]
             restored = false;
             attempts = 0
+
         }
 
 
@@ -615,6 +631,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             }
 
             finding = true
+
             DispatchQueue.main.async
             {
                 [weak self, weak marker] in
@@ -624,13 +641,16 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 }
 
                 self.finding = false
+
                 guard let marker, marker.window != nil else
                 {
                     return
                 }
 
                 self.attempts += 1
+
                 var parent = marker.superview
+
                 for _ in 0 ..< 10
                 {
 
@@ -658,6 +678,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                     }
 
                     parent = view.superview
+
                 }
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05)
@@ -739,19 +760,25 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 let length   = horizontal ? scroll.bounds.width : scroll.bounds.height
                 let value    = min(CGFloat(desired), max(0, content - length + inset + endInset)) - inset
                 var point    = scroll.contentOffset
+
                 if horizontal
                 {
+
                     point.x = value
+
                 }
                 else
                 {
+
                     point.y = value
+
                 }
 
                 scroll.setContentOffset(point, animated: false)
             }
 
             restored = true
+
         }
 
 
@@ -775,6 +802,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             horizontal
             ? scroll.contentOffset.x + scroll.adjustedContentInset.left
             : scroll.contentOffset.y + scroll.adjustedContentInset.top
+
             memory.record(Double(offset), for: key)
         }
 
@@ -792,8 +820,10 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
             capture();
             observation?.invalidate();
+
             observation = nil;
             scroll = nil
+
             memory?.flush()
         }
 
@@ -817,6 +847,7 @@ final class BoardDragGeometryCache
     var cards:    [Int: CGRect]  = [:]
     var lists:    [Int: CGRect]  = [:]
     var viewport: CGRect         = .zero
+
 }
 
 
@@ -834,6 +865,7 @@ struct BoardZoomHint: View
     let percentage: Int
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var visible = true
+
     var body: some View
     {
 
@@ -846,13 +878,16 @@ struct BoardZoomHint: View
         {
 
             visible = true
+
             do
             {
 
                 try await Task.sleep(for: .seconds(3))
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.7))
                 {
+
                     visible = false
+
                 }
 
             }
@@ -880,6 +915,7 @@ struct BoardPinchState
 
     var magnification: CGFloat = 1
     var active                 = false
+
 }
 
 

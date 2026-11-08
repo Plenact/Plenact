@@ -85,6 +85,7 @@ final class CreatedContentReveal: ObservableObject
         }
 
         target = CreatedContentTarget(listID: listID, cardID: card.id, createdAt: createdAt)
+
     }
 
 
@@ -102,7 +103,9 @@ final class CreatedContentReveal: ObservableObject
 
         if target?.id == request.id
         {
+
             target = nil
+
         }
 
     }
@@ -125,6 +128,7 @@ struct RevealCreatedContent: ViewModifier
     var existingProxy: ScrollViewProxy? = nil
     @ObservedObject private var reveal  = CreatedContentReveal.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var request: CreatedContentTarget?
     {
 

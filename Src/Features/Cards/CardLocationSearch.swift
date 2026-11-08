@@ -38,6 +38,7 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 
         let title   = CardLocation.normalized(name)
         let address = CardLocation.normalized(address)
+
         if let title, let address, title.caseInsensitiveCompare(address) != .orderedSame
         {
 
@@ -74,6 +75,7 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
         self.address = address
         self.latitude = latitude
         self.longitude = longitude
+
     }
 
 
@@ -91,12 +93,14 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 
         let coordinate: CLLocationCoordinate2D
         let address: String
+
         if #available(iOS 26.0, *)
         {
 
             coordinate = item.location.coordinate
             address = item.addressRepresentations?.fullAddress(includingRegion: true, singleLine: true)
             ?? item.address?.fullAddress ?? ""
+
         }
 
         else
@@ -104,6 +108,7 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 
             coordinate = item.placemark.coordinate
             address = item.placemark.title ?? ""
+
         }
 
         guard CLLocationCoordinate2DIsValid(coordinate) else
@@ -195,6 +200,7 @@ final class CardLocationSearchModel: ObservableObject
 
         self.query = query
         self.searcher = searcher ?? Self.findPlaces
+
     }
 
 
@@ -213,6 +219,7 @@ final class CardLocationSearchModel: ObservableObject
         results = []
         selectedID = nil
         phase = .idle
+
     }
 
 
@@ -236,11 +243,14 @@ final class CardLocationSearchModel: ObservableObject
         }
 
         let requestRevision = revision
+
         phase = .searching
+
         do
         {
 
             let matches = try await searcher(query, region)
+
             guard revision == requestRevision else
             {
 
@@ -256,6 +266,7 @@ final class CardLocationSearchModel: ObservableObject
 
             results = matches
             phase = matches.isEmpty ? .empty : .results
+
         }
 
         catch
@@ -275,6 +286,7 @@ final class CardLocationSearchModel: ObservableObject
             }
 
             phase = .failed
+
         }
 
     }
@@ -295,12 +307,15 @@ final class CardLocationSearchModel: ObservableObject
     {
 
         let request = MKLocalSearch.Request()
+
         request.naturalLanguageQuery = query
         request.resultTypes = [.address, .pointOfInterest]
+
         if let region, region.span.latitudeDelta < 120, region.span.longitudeDelta < 180
         {
 
             request.region = region
+
         }
 
         let search   = MKLocalSearch(request: request)
@@ -364,6 +379,7 @@ struct CardLocationSearchView: View
 
         self.onSelect = onSelect
         self._model = StateObject(wrappedValue: model ?? CardLocationSearchModel(query: query))
+
     }
 
 
@@ -391,6 +407,7 @@ struct CardLocationSearchView: View
                 {
 
                     model.selectedID = place.id
+
                 }
 
                 label:
@@ -446,6 +463,7 @@ struct CardLocationSearchView: View
                 {
 
                     retryRevision += 1
+
                 }
 
             }
@@ -500,6 +518,7 @@ struct CardLocationSearchView: View
                 {
 
                     visibleRegion = $0.region
+
                 }
                 .accessibilityIdentifier("card.location.search.map")
                 searchFeedback
@@ -515,6 +534,7 @@ struct CardLocationSearchView: View
         {
 
             retryRevision += 1
+
         }
         .toolbar
         {
@@ -593,7 +613,9 @@ struct CardLocationSearchView: View
         {
 
         _, _ in
+
             position = .automatic
+
         }
         .onChange(of: model.selectedID)
         {
@@ -610,6 +632,7 @@ struct CardLocationSearchView: View
 
                 position = .region(MKCoordinateRegion(center: selected.coordinate,
                         span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)))
+
             }
 
         }

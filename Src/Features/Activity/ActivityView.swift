@@ -25,6 +25,7 @@ struct PersonalSavedCardTarget: Equatable
     let collectionID: UUID  /* Owning personal collection         */
     let listID:       Int   /* Containing collection-local list   */
     let cardID:       Int   /* Collection-local bookmarked record */
+
 }
 
 
@@ -254,6 +255,7 @@ struct ToolbarRevisitMenu: View
 
 
     let onChoose: (ToolbarRevisitDestination) -> Void
+
     var body:     some View
     {
 
@@ -312,6 +314,7 @@ struct SavedCardsView: View
 
     let planningDocument:   PlanningCalendarDocument?
     var revisitDestination: Binding<ToolbarRevisitDestination?> = .constant(nil)
+
     private var revisit:    ToolbarRevisitDestination?
     {
         revisitDestination.wrappedValue
@@ -330,6 +333,7 @@ struct SavedCardsView: View
     @State private var selectedLabelID:  String?
     @State private var activityHeaderHeight: CGFloat = 0
     @State private var focusLabelLibrary             = LabelLibraryStore.load()
+
     private var focusCalendar: Calendar
     {
         planningDocument?.calendar ?? .current
@@ -340,10 +344,12 @@ struct SavedCardsView: View
     {
 
         var items: [ActivityRecentResult] = []
+
         for week in planningDocument?.weeks ?? []
         {
 
             let current = week.startKey == planningDocument?.currentWeekKey
+
             for list in (current ? lists : week.collection.lists) where !list.isArchived
             {
 
@@ -392,6 +398,7 @@ struct SavedCardsView: View
             {
                 $0.card.labelIDs
             })
+
         return focusLabelLibrary.labels.filter
         {
             assigned.contains($0.id)
@@ -509,6 +516,7 @@ struct SavedCardsView: View
                         {
 
                             selectedLabelID = label.id
+
                         }
                         label:
                         {
@@ -619,6 +627,7 @@ struct SavedCardsView: View
         let location:  String
         let week:      DatedPlanningWeek?
         let isCurrent: Bool
+
         var id:        String
         {
             item.id
@@ -652,6 +661,7 @@ struct SavedCardsView: View
         recentData.isEmpty
         ? ActivityRecentStore.load()
         : ((try? JSONDecoder().decode([LibraryRecentItem].self, from: recentData)) ?? [])
+
         return items.compactMap
         {
             item in
@@ -690,6 +700,7 @@ struct SavedCardsView: View
 
             let current = week.startKey == planningDocument?.currentWeekKey
             let source  = current ? lists : week.collection.lists
+
             guard
             let list = source.first(where:
                 {
@@ -729,6 +740,7 @@ struct SavedCardsView: View
     {
 
         historicalTarget = result
+
     }
 
     private var recentSection: some View
@@ -938,7 +950,9 @@ struct SavedCardsView: View
                         showsSearch.toggle();
                         if !showsSearch
                         {
+
                             query = ""
+
                         }
 
                     }
@@ -956,6 +970,7 @@ struct SavedCardsView: View
                         {
 
                             confirmsClear = true
+
                         }
 
                     }
@@ -997,7 +1012,9 @@ struct SavedCardsView: View
                     Spacer()
                     Button("All Activity")
                     {
+
                         revisitDestination.wrappedValue = nil
+
                     }
                     .font(.subheadline).frame(minHeight: 44)
                 }
@@ -1121,7 +1138,9 @@ struct SavedCardsView: View
 
                                     Button("Delete Card")
                                     {
+
                                         deletingCard = result.card
+
                                     }
 
                                 }
@@ -1234,7 +1253,9 @@ struct SavedCardsView: View
 
                                 Button(board.title)
                                 {
+
                                     inspectingBoard = board
+
                                 }
                                 .font(.headline)
                                 Text(
@@ -1254,7 +1275,9 @@ struct SavedCardsView: View
                             .accessibilityLabel("Restore \(board.title)")
                             Button("Delete", systemImage: "trash", role: .destructive)
                             {
+
                                 deletingBoard = board
+
                             }
                             .labelStyle(.iconOnly)
                             .accessibilityLabel("Delete \(board.title)")
@@ -1313,12 +1336,14 @@ struct SavedCardsView: View
             GeometryReader
             {
                 geometry in
+
                 let hasBrowser                 = revisit != .recent
                 let browserAllowance: CGFloat  = hasBrowser ? 128 : 0
                 let selectorAllowance: CGFloat = revisit == nil ? 60 : 0
                 // Keep the browser above the toolbar when the tab extends beneath its safe-area inset.
                 let bottomClearance = geometry.safeAreaInsets.bottom + 5
                 let headerLimit     = max(0, geometry.size.height - bottomClearance - 40 - browserAllowance - selectorAllowance - 16)
+
                 VStack(alignment: .leading, spacing: 16)
                 {
 
@@ -1333,7 +1358,9 @@ struct SavedCardsView: View
                             }
                             action:
                             {
+
                                 activityHeaderHeight = $0
+
                             }
                     }
                     .scrollIndicators(.hidden)
@@ -1384,19 +1411,24 @@ struct SavedCardsView: View
             showsSearch = false
             selectedLabelID = nil
             revisitDestination.wrappedValue = nil
+
         }
         .onAppear
         {
+
             focusLabelLibrary = LabelLibraryStore.load()
+
         }
         .onChange(of: revisit, initial: true)
         {
             _, choice in
             if choice != nil
             {
+
                 query = "";
                 showsSearch = false;
                 focus = .saved
+
             }
 
         }
@@ -1405,7 +1437,9 @@ struct SavedCardsView: View
             _, value in
             if value == .labels && selectedFocusLabel == nil
             {
+
                 selectedLabelID = availableFocusLabels.first?.id
+
             }
 
         }
@@ -1417,7 +1451,9 @@ struct SavedCardsView: View
                     $0.id == selectedLabelID
                 })
             {
+
                 selectedLabelID = labels.first?.id
+
             }
 
         }
@@ -1445,7 +1481,9 @@ struct SavedCardsView: View
                     week: week, initialDayID: result.list.id, initialCardID: result.card.id,
                     onLeaveForHome:
                     {
+
                         historicalTarget = nil
+
                     })
             }
             else if let collection = collections.first(where:
@@ -1458,7 +1496,9 @@ struct SavedCardsView: View
                     collection: collection, initialListID: result.list.id, initialCardID: result.card.id,
                     onLeaveForHome:
                     {
+
                         historicalTarget = nil
+
                     })
             }
 
@@ -1474,7 +1514,9 @@ struct SavedCardsView: View
                             {
                                 if !$0
                                 {
+
                                     deletingBoard = nil
+
                                 }
 
                             }
@@ -1490,16 +1532,20 @@ struct SavedCardsView: View
 
 
                     _ = onDeleteBoard(deletingBoard.id)
+
                 }
 
 
                 deletingBoard = nil
+
             }
 
 
             Button("Cancel", role: .cancel)
             {
+
                 deletingBoard = nil
+
             }
 
         }
@@ -1521,7 +1567,9 @@ struct SavedCardsView: View
                             {
                                 if !$0
                                 {
+
                                     deletingCard = nil
+
                                 }
 
                             }
@@ -1537,16 +1585,20 @@ struct SavedCardsView: View
 
 
                     _ = onDeleteCard(deletingCard.id)
+
                 }
 
 
                 deletingCard = nil
+
             }
 
 
             Button("Cancel", role: .cancel)
             {
+
                 deletingCard = nil
+
             }
 
         }
@@ -1591,9 +1643,13 @@ struct SavedCardsView: View
 
 
                             var snapshot = collections /* Directory snapshot saved before publishing archive changes */
+
                             snapshot[index] = updated
+
                             try PersonalCollectionStore.saveChecked(snapshot)
+
                             collections = snapshot
+
                         }
                         catch
                         {

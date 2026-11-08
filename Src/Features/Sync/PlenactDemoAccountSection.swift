@@ -187,6 +187,7 @@ struct PlenactDemoAccountSection: View
 
                                 needsConflictReload = false
                                 remoteDraft = remoteSnapshot?.document
+
                                 await refreshRemoteState()
                             }
 
@@ -212,6 +213,7 @@ struct PlenactDemoAccountSection: View
                     {
 
                         confirmsSeed = true
+
                     }
 
                     .disabled(isWorking)
@@ -412,6 +414,7 @@ struct PlenactDemoAccountSection: View
 
 
             activeOperationCount -= 1
+
         }
 
 
@@ -468,6 +471,7 @@ struct PlenactDemoAccountSection: View
 
 
             activeOperationCount -= 1
+
         }
 
 
@@ -484,6 +488,7 @@ struct PlenactDemoAccountSection: View
             remoteSnapshot = snapshot
             remoteDraft = snapshot.document
             currentRevision = snapshot.revision
+
         }
         catch PlenactAPIError.boardNotSeeded
         {
@@ -492,6 +497,7 @@ struct PlenactDemoAccountSection: View
             remoteSnapshot = nil
             remoteDraft = nil
             currentRevision = 0
+
         }
         catch PlenactAPIError.unauthorized
         {
@@ -550,6 +556,7 @@ struct PlenactDemoAccountSection: View
 
 
             activeOperationCount -= 1
+
         }
 
 
@@ -606,6 +613,7 @@ struct PlenactDemoAccountSection: View
 
 
             activeOperationCount -= 1
+
         }
 
 
@@ -628,6 +636,7 @@ struct PlenactDemoAccountSection: View
         remoteSnapshot = nil
         remoteDraft = nil
         currentRevision = nil
+
     }
 
 
@@ -746,7 +755,9 @@ struct PlenactDemoAccountSection: View
                                                                 },
                                                                 set:
                                                                 {
+
                                                                     manualAssigneeDrafts[card.id] = $0
+
                                                                 }
                                                             )
                     ).textInputAutocapitalization(.sentences)
@@ -805,6 +816,7 @@ struct PlenactDemoAccountSection: View
                     ForEach(directory)
                     {
                         user in
+
                         let assigned = card.members.contains
                         {  /* Whether this directory user is assigned */
 
@@ -898,6 +910,7 @@ struct PlenactDemoAccountSection: View
 
 
             activeOperationCount -= 1
+
         }
 
 
@@ -914,8 +927,11 @@ struct PlenactDemoAccountSection: View
                 action: action,
                 userID: targetUserID
             )
+
             await refreshRemoteState()
+
             needsConflictReload = false
+
         }
         catch
         {
@@ -983,6 +999,7 @@ struct PlenactDemoAccountSection: View
 
                 updatedDocument.lists[listIndex].cards[cardIndex] = updatedCard
                 remoteDraft = updatedDocument
+
             }
         )
     }
@@ -1018,7 +1035,9 @@ struct PlenactDemoAccountSection: View
 
 
         binding.wrappedValue.members.append(.manual(displayName))
+
         manualAssigneeDrafts[cardID] = ""
+
     }
 
 
@@ -1083,6 +1102,7 @@ struct PlenactDemoAccountSection: View
 
 
             activeOperationCount -= 1
+
         }
 
 
@@ -1097,14 +1117,18 @@ struct PlenactDemoAccountSection: View
                 document: remoteDraft,
                 expectedRevision: remoteSnapshot.revision
             )
+
             await refreshRemoteState()
+
             needsConflictReload = false
+
         }
         catch PlenactAPIError.revisionConflict
         {
 
 
             needsConflictReload = true
+
             present(PlenactAPIError.revisionConflict(nil))
         }
         catch
@@ -1149,6 +1173,7 @@ struct PlenactDemoAccountSection: View
 
 
             activeOperationCount -= 1
+
         }
 
 
@@ -1168,6 +1193,7 @@ struct PlenactDemoAccountSection: View
             newMemberDisplayName = ""
             newMemberPassword = ""
             directory = try await client.directory(token: remoteSession.accessToken)
+
             present("Member account created. Share its temporary credentials privately.")
         }
         catch
@@ -1175,6 +1201,7 @@ struct PlenactDemoAccountSection: View
 
 
             newMemberPassword = ""
+
             present(error)
         }
 
@@ -1220,6 +1247,7 @@ struct PlenactDemoAccountSection: View
 
         alertMessage = message
         showsAlert = true
+
     }
 
 }

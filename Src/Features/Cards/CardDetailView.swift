@@ -43,6 +43,7 @@ struct ChecklistCandidatesKey: EnvironmentKey
 {
 
     static let defaultValue: [KanbanCard] = []
+
 }
 
 
@@ -67,7 +68,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[ChecklistCandidatesKey.self] = newValue
+
         }
 
     }
@@ -592,6 +595,7 @@ struct CardDetailView: View
 
         _checklists = State(
             initialValue: card.checklists) /* Initialize checklist state from the card's stored values             */
+
     }
 
 
@@ -612,6 +616,7 @@ struct CardDetailView: View
             {
 
                 showsCoverLibrary = true
+
             }
 
             .frame(minHeight: 44)
@@ -632,6 +637,7 @@ struct CardDetailView: View
             {
 
                 showsCoverPicker = true
+
             }
 
             .disabled(!attachments.contains
@@ -747,7 +753,9 @@ struct CardDetailView: View
             {
 
                 dismissEditing();
+
                 activeSheet = .reactions
+
             })
     }
 
@@ -791,16 +799,19 @@ struct CardDetailView: View
         updated.comments = comments
         updated.dismissedActivityIDs = dismissedActivityIDs
         updated.descriptionOverride = hasEditedDescription ? descriptionText : card.descriptionOverride
+
         if displayFormat == .card || displayFormat == .note
         {
 
             updated.presentation = presentation
+
         }
 
         if displayFormat == .divider || displayFormat != card.displayFormat || card.listDisplayFormat != nil
         {
 
             updated.displayFormat = displayFormat
+
         }
 
         return updated
@@ -840,6 +851,7 @@ struct CardDetailView: View
                 {
 
                     hasMovedCard = true;
+
                     dismiss()
                 }, locationTitle: currentListTitle)
         }
@@ -885,6 +897,7 @@ struct CardDetailView: View
 
                 hasEditedDescription = true
                 descriptionText = $0
+
             }
         )
     }
@@ -1015,6 +1028,7 @@ struct CardDetailView: View
                     {
 
                         activeSheet = .attachmentSources
+
                     }
                     .frame(minHeight: 44)
                 }
@@ -1030,7 +1044,9 @@ struct CardDetailView: View
 
                     Button("Done")
                     {
+
                         activeSheet = nil
+
                     }
 
                 }
@@ -1063,7 +1079,9 @@ struct CardDetailView: View
                         card: workingCardSnapshot, labels: labelLibrary,
                         onOpenAttachment:
                         {
+
                             activeSheet = .attachmentPreview($0)
+
                         })
                 }
                 else if displayFormat == .divider
@@ -1106,9 +1124,12 @@ struct CardDetailView: View
                                                                                         set:
                                                                                         {
                                                                                             value in
+
                                                                                             var updated = appearance ?? ItemAppearance()
+
                                                                                             updated.sectionCollapsed = value
                                                                                             appearance = updated
+
                                                                                             syncCardState()
                                                                                         }))
                             Picker(
@@ -1121,9 +1142,12 @@ struct CardDetailView: View
                                                                                         set:
                                                                                         {
                                                                                             value in
+
                                                                                             var updated = appearance ?? ItemAppearance()
+
                                                                                             updated.accent = value
                                                                                             appearance = updated.isEmpty ? nil : updated
+
                                                                                             syncCardState()
                                                                                         })
                             )
@@ -1165,8 +1189,10 @@ struct CardDetailView: View
                                 {
 
                                     dismissEditing()
+
                                     activeSheet = .appearance
                                     showsAppearanceCover = true
+
                                 }
                                 label:
                                 {
@@ -1235,7 +1261,9 @@ struct CardDetailView: View
                                                         .focused($focusedField, equals: .title)
                                                         .task
                                                         {
+
                                                             focusedField = .title
+
                                                         }
                                                         .submitLabel(.done)
                                                         .onSubmit
@@ -1256,7 +1284,9 @@ struct CardDetailView: View
                                                             text: titleText.isEmpty ? "Card title" : titleText,
                                                             onTap:
                                                             {
+
                                                                 editingHeaderField = .title
+
                                                             }
                                                         )
                                                         .accessibilityLabel("Card title, " + titleText)
@@ -1289,6 +1319,7 @@ struct CardDetailView: View
                                                             {
 
                                                                 focusedField = .subtitle
+
                                                             }
 
                                                         }
@@ -1311,7 +1342,9 @@ struct CardDetailView: View
                                                             text: subtitleText,
                                                             onTap:
                                                             {
+
                                                                 editingHeaderField = .subtitle
+
                                                             }
                                                         )
                                                         .accessibilityLabel("Card subtitle, " + subtitleText)
@@ -1449,7 +1482,9 @@ struct CardDetailView: View
 
                             Button("Edit history", systemImage: "clock.arrow.circlepath")
                             {
+
                                 activeSheet = .editHistory
+
                             }
                             .accessibilityIdentifier("card.editHistory")
 
@@ -1478,7 +1513,9 @@ struct CardDetailView: View
                                     {
 
                                         dismissEditing();
+
                                         activeSheet = .reactions
+
                                     }
 
                                     if let libraryImportance
@@ -1516,11 +1553,16 @@ struct CardDetailView: View
                                                                                                                 set:
                                                                                                                 {
                                                                                                                     visible in
+
                                                                                                                     let previous = showsReactionsInPreviews
+
                                                                                                                     showsReactionsInPreviews = visible
+
                                                                                                                     if !syncCardState()
                                                                                                                     {
+
                                                                                                                         showsReactionsInPreviews = previous
+
                                                                                                                     }
 
                                                                                                                 }))
@@ -1534,11 +1576,16 @@ struct CardDetailView: View
                                                                                                                 set:
                                                                                                                 {
                                                                                                                     visible in
+
                                                                                                                     let previous = showsDueDateInList
+
                                                                                                                     showsDueDateInList = visible
+
                                                                                                                     if !syncCardState()
                                                                                                                     {
+
                                                                                                                         showsDueDateInList = previous
+
                                                                                                                     }
 
                                                                                                                 }))
@@ -1551,6 +1598,7 @@ struct CardDetailView: View
                                     {
 
                                         editingHeaderField = .subtitle
+
                                     }
 
                                 }
@@ -1559,7 +1607,9 @@ struct CardDetailView: View
                                 {
 
                                     dismissEditing()
+
                                     activeSheet = .appearance
+
                                 }
                                 .disabled(onTitleToggle == nil)
 
@@ -1570,6 +1620,7 @@ struct CardDetailView: View
                                     {
 
                                         richTextFocusedField = .description
+
                                     }
                                     label:
                                     {
@@ -1586,6 +1637,7 @@ struct CardDetailView: View
                                             {
 
                                                 hasMovedCard = true;
+
                                                 dismiss()
                                             })
                                     }
@@ -1607,6 +1659,7 @@ struct CardDetailView: View
 
                                         showsNoteDetails = true
                                         activityFilter = .all
+
                                     }
                                     label:
                                     {
@@ -1664,6 +1717,7 @@ struct CardDetailView: View
                                     {
 
                                         showingDeleteConfirmation = true
+
                                     }
                                     label:
                                     {
@@ -1731,6 +1785,7 @@ struct CardDetailView: View
                 }
 
                 libraryItemOpened(card.id)
+
                 let owner =
                 checklistCollectionID
                 ?? checklistTypePlanningAccess?.document.weeks.first(where:
@@ -1738,6 +1793,7 @@ struct CardDetailView: View
 
                         $0.startKey == checklistTypePlanningAccess?.document.currentWeekKey
                     })?.id
+
                 if let owner
                 {
                     ActivityRecentStore.remember(LibraryRecentItem(collectionID: owner, cardID: card.id))
@@ -1788,7 +1844,9 @@ struct CardDetailView: View
                             }
                             ;
                             dismissEditing();
+
                             activeSheet = .attachmentSources
+
                         },
                         checklist:
                         {
@@ -1799,6 +1857,7 @@ struct CardDetailView: View
                             }
                             ;
                             dismissEditing();
+
                             showsNoteDetails = true;
 
                             addChecklist(using: scrollProxy)
@@ -1832,12 +1891,16 @@ struct CardDetailView: View
                 _, field in
                 if field != nil
                 {
+
                     richTextFocusedField = nil
+
                 }
 
                 if let editingHeaderField, field != editingHeaderField
                 {
+
                     self.editingHeaderField = nil
+
                 }
 
             }
@@ -1851,7 +1914,9 @@ struct CardDetailView: View
 
 
                 let requestID = UUID() /* Identity used to reject superseded cover imports */
+
                 coverImportID = requestID
+
                 Task
                 {
                     await importPhotos(from: [photoItem], coverRequestID: requestID)
@@ -1922,11 +1987,16 @@ struct CardDetailView: View
                     CardLocationEditorSheet(location: location)
                     {
                         value in
+
                         let previous = location
+
                         location = CardLocation.normalized(value)
+
                         guard syncCardState() else
                         {
+
                             location = previous
+
                             return false
                         }
                         return true
@@ -1961,7 +2031,9 @@ struct CardDetailView: View
                     CardMembersSheet(members: members, memberColors: memberColors)
                     {
                         updatedMembers in
+
                         members = updatedMembers
+
                         syncCardState(members: updatedMembers)
                     }
 
@@ -1973,6 +2045,7 @@ struct CardDetailView: View
                     {
 
                     updatedLibrary, updatedLabelIDs in
+
                         labelLibrary = updatedLibrary
                         selectedLabelIDs = updatedLabelIDs
 
@@ -1987,13 +2060,17 @@ struct CardDetailView: View
                         photoSelection: $selectedPhotoItems,
                         onAddLink:
                         {
+
                             activeSheet = .addLink
+
                         },
                         onPasteClipboard: addClipboardAttachment,
                         onComingSoon: showAttachmentSourceComingSoon,
                         onAddDrawing:
                         {
+
                             activeSheet = .addDrawing(DrawingCaptureDraft())
+
                         }
                     )
                     .databaseActivityOverlay()
@@ -2008,11 +2085,15 @@ struct CardDetailView: View
                         appearance: appearance,
                         onOpenCover: displayFormat == .divider ? nil :
                         {
+
                             showsAppearanceCover = true
+
                         },
                         onOpenLayout:
                         {
+
                             showsLayoutEditor = true
+
                         },
                         displayFormat: displayFormat,
                         onSaveDisplay: saveDisplayAppearance
@@ -2026,7 +2107,9 @@ struct CardDetailView: View
 
                         cardCoverPanel
                         {
+
                             showsAppearanceCover = false
+
                         }
 
                     }
@@ -2036,14 +2119,18 @@ struct CardDetailView: View
                         CardLayoutEditor(layout: sectionLayout)
                         {
                             updated in
+
                             let previous = sectionLayout
+
                             sectionLayout = updated
+
                             if syncCardState()
                             {
                                 return true
                             }
 
                             sectionLayout = previous
+
                             return false
                         }
 
@@ -2053,7 +2140,9 @@ struct CardDetailView: View
                 case .cover:
                     cardCoverPanel
                     {
+
                         activeSheet = nil
+
                     }
 
 
@@ -2081,10 +2170,14 @@ struct CardDetailView: View
                             }
 
                             let previous = attachments
+
                             attachments[index] = replacement
+
                             guard syncCardState(attachments: attachments) else
                             {
+
                                 attachments = previous;
+
                                 return false
                             }
 

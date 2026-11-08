@@ -51,6 +51,7 @@ struct DrawingCaptureDraft: Identifiable
         self.drawing = drawing
         // Cache a bounded preview so typing in the composer never rerenders every drawing.
         preview = DrawingImageExport.image(drawing, transparent: false, maximumDimension: 960)
+
     }
 
 }
@@ -106,8 +107,10 @@ enum DrawingImageExport
         let scale  = min(2, maximumDimension / max(rect.width, rect.height))
         let ink    = drawing.image(from: rect, scale: scale)
         let format = UIGraphicsImageRendererFormat()
+
         format.scale = scale
         format.opaque = !transparent
+
         return UIGraphicsImageRenderer(size: rect.size, format: format).image
         {
             context in
@@ -146,6 +149,7 @@ enum DrawingImageExport
         }
 
         let image = image(drawing, transparent: format == .png && transparent)
+
         guard let data = format == .png ? image.pngData() : image.jpegData(compressionQuality: 0.95) else
         {
 
@@ -195,12 +199,14 @@ enum DrawingAttachmentStore
 
         let png     = try DrawingImageExport.data(draft.drawing, format: .png)
         let preview = try CardAttachmentStore.saveMedia(png, kind: .photo, fileExtension: "png")
+
         guard let previewURL = CardAttachmentStore.fileURL(for: preview) else
         {
             throw CocoaError(.fileWriteUnknown)
         }
 
         let strokesURL = previewURL.deletingPathExtension().appendingPathExtension("drawing")
+
         do
         {
 
@@ -216,7 +222,9 @@ enum DrawingAttachmentStore
         var attachment = KanbanAttachment(
             id: previous?.id ?? preview.id, fileName: preview.fileName,
             mediaKind: .photo, addedAt: previous?.addedAt ?? preview.addedAt, caption: previous?.caption)
+
         attachment.drawingFileName = strokesURL.lastPathComponent
+
         return attachment
     }
 
@@ -243,6 +251,7 @@ enum DrawingAttachmentStore
         }
 
         let data = try Data(contentsOf: previewURL.deletingLastPathComponent().appendingPathComponent(name))
+
         return DrawingCaptureDraft(id: attachment.id, drawing: try PKDrawing(data: data))
     }
 
@@ -281,7 +290,9 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     {
 
         hasMarks = !drawing.strokes.isEmpty
+
         super.init()
+
         canvas.drawing = drawing
         canvas.delegate = self
         canvas.drawingPolicy = .anyInput
@@ -290,6 +301,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
         canvas.tool = PKInkingTool(.pen, color: .black, width: 3)
         canvas.contentSize = CGSize(width: 1200, height: 1600)
         canvas.maximumZoomScale = 3
+
     }
 
 
@@ -306,6 +318,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     {
 
         hasMarks = !canvasView.drawing.strokes.isEmpty
+
         // PencilKit registers undo after its drawing-change delegate callback.
         DispatchQueue.main.async
         {
@@ -328,6 +341,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 
         canUndo = canvas.undoManager?.canUndo ?? false;
         canRedo = canvas.undoManager?.canRedo ?? false
+
     }
 
 
@@ -371,6 +385,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     {
 
         let previous = canvas.drawing
+
         canvas.undoManager?.registerUndo(withTarget: self)
         {
             target in
@@ -378,6 +393,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
         }
 
         canvas.drawing = PKDrawing()
+
         refreshUndo()
     }
 
@@ -396,6 +412,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     {
 
         let previous = canvas.drawing
+
         canvas.undoManager?.registerUndo(withTarget: self)
         {
             target in
@@ -403,6 +420,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
         }
 
         canvas.drawing = drawing
+
         refreshUndo()
     }
 
@@ -495,9 +513,12 @@ final class DrawingCanvasView: PKCanvasView
         }
 
         lastSize = bounds.size
+
         let fit = min(bounds.width / 1200, bounds.height / 1600)
+
         minimumZoomScale = fit
         zoomScale = fit
+
     }
 
 }
@@ -564,6 +585,7 @@ struct DrawingExportFile: Identifiable
 
     let id = UUID()
     let url: URL
+
 }
 
 
@@ -655,6 +677,7 @@ struct DrawingCaptureEditor: View
         self.initial = initial;
         self.onSave = onSave
         _state = StateObject(wrappedValue: DrawingCanvasState(drawing: initial.drawing))
+
     }
 
     private var changed: Bool
@@ -681,14 +704,22 @@ struct DrawingCaptureEditor: View
         {
 
             let data = try DrawingImageExport.data(state.canvas.drawing, format: format, transparent: transparent)
+
             cleanExport()
+
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "Plenact-Drawing-" + UUID().uuidString, isDirectory: true)
+
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
             exportDirectory = directory
+
             let url = directory.appendingPathComponent("Drawing." + (format == .png ? "png" : "jpg"))
+
             try data.write(to: url, options: .atomic)
+
             exportFile = DrawingExportFile(url: url)
+
         }
         catch
         {
@@ -696,6 +727,7 @@ struct DrawingCaptureEditor: View
             cleanExport();
 
             errorMessage = "The image couldn't be exported. Your drawing is still here; please try again."
+
         }
 
     }
@@ -718,6 +750,7 @@ struct DrawingCaptureEditor: View
         }
 
         exportDirectory = nil
+
     }
 
     var body: some View
@@ -740,7 +773,9 @@ struct DrawingCaptureEditor: View
                     {
                         if changed
                         {
+
                             showsDiscard = true
+
                         }
                         else
                         {
@@ -773,7 +808,9 @@ struct DrawingCaptureEditor: View
                         } .disabled(!state.canRedo)
                         Button("Clear drawing", systemImage: "trash", role: .destructive)
                         {
+
                             showsClear = true
+
                         }
                         .disabled(!state.hasMarks)
                     }
@@ -810,6 +847,7 @@ struct DrawingCaptureEditor: View
                     {
 
                         let draft = DrawingCaptureDraft(id: initial.id, drawing: state.canvas.drawing)
+
                         if onSave(draft)
                         {
 
@@ -820,6 +858,7 @@ struct DrawingCaptureEditor: View
 
                             errorMessage =
                                                                                             "The drawing couldn't be saved. Your changes are still here; please try again."
+
                         }
 
                     } .disabled(!state.hasMarks)
@@ -864,7 +903,9 @@ struct DrawingCaptureEditor: View
                 {
                     if !$0
                     {
+
                         errorMessage = nil
+
                     }
 
                 }))
@@ -872,7 +913,9 @@ struct DrawingCaptureEditor: View
 
             Button("OK", role: .cancel)
             {
+
                 errorMessage = nil
+
             }
 
         }

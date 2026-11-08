@@ -51,6 +51,7 @@ struct QuickNoteComposer: View
     @State private var stopDate                                = Date.now
     @State private var includesDateTime                        = false
     @Environment(\.scenePhase) private var scenePhase
+
     private var schedule: QuickCaptureSchedule
     {
 
@@ -119,6 +120,7 @@ struct QuickNoteComposer: View
 
         _lists = lists
         self.draftKey = draftKey
+
         let savedDraft = draftKey.map
         {
             ListCreationDraft.load(key: $0)
@@ -131,8 +133,10 @@ struct QuickNoteComposer: View
                 {
                     $0.id == initialListID
                 })?.newItemPresentation ?? .card)
+
         // Explicit inline writing takes priority over a previously retained composer title.
         let suppliedTitle = initialTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : initialTitle
+
         _title = State(
             initialValue: template?.draftTitle(capturedTitle: initialTitle) ?? suppliedTitle ?? savedDraft?.title
             ?? initialTitle)
@@ -148,6 +152,7 @@ struct QuickNoteComposer: View
         self.captureAction = captureAction
         self.onSaveCapture = onSaveCapture
         self.onSave = onSave
+
     }
 
 
@@ -209,6 +214,7 @@ struct QuickNoteComposer: View
                     {
 
                         drawingToEdit = drawing
+
                     }
                     label:
                     {
@@ -231,7 +237,9 @@ struct QuickNoteComposer: View
 
             Button("Add drawing", systemImage: "pencil.tip")
             {
+
                 drawingToEdit = DrawingCaptureDraft()
+
             }
             .frame(minHeight: 44).disabled(drawings.count >= 6)
             Text("Drawings stay editable. Tap a preview to edit or export it. They are attached when you tap Add.")
@@ -309,7 +317,9 @@ struct QuickNoteComposer: View
 
                     if voice.recordingURL != nil
                     {
+
                         replaceRecording = true
+
                     }
                     else
                     {
@@ -422,7 +432,9 @@ struct QuickNoteComposer: View
 
             Button("Add photo", systemImage: "camera")
             {
+
                 showsPhotoSources = true
+
             }
             .frame(minHeight: 44).disabled(importingPhotos)
             Text("Photos are attached when you tap Add. Cancelling leaves your original Quick capture title in place.")
@@ -447,26 +459,32 @@ struct QuickNoteComposer: View
         {
 
             mediaError = "A camera isn't available on this device. Choose Photo library instead."
+
             return
         }
 
         let status  = AVCaptureDevice.authorizationStatus(for: .video)
         var allowed = status == .authorized
+
         if status == .notDetermined
         {
+
             allowed = await AVCaptureDevice.requestAccess(for: .video)
+
         }
 
         if allowed
         {
 
             showsCamera = true
+
         }
         else
         {
 
             mediaError =
                                     "Camera access is unavailable. You can allow it in Settings → Plenact, or choose Photo library."
+
         }
 
     }
@@ -489,10 +507,13 @@ struct QuickNoteComposer: View
         }
 
         importingPhotos = true
+
         defer
         {
+
             importingPhotos = false;
             photoSelection = []
+
         }
 
         do
@@ -523,6 +544,7 @@ struct QuickNoteComposer: View
         {
 
             mediaError = "Some photos couldn't be prepared. Your draft and any photos already added are still here."
+
         }
 
     }
@@ -540,6 +562,7 @@ struct QuickNoteComposer: View
     {
 
         acceptsDraftEdits = false
+
         if let draftKey
         {
             ListCreationDraft.clear(key: draftKey)
@@ -819,6 +842,7 @@ struct QuickNoteComposer: View
                         let actionTitles: [String]? =
                         template != nil || captureAction == .checklist || !editedActions.isEmpty
                         ? editedActions : nil
+
                         if let onSaveCapture
                         {
 
@@ -832,6 +856,7 @@ struct QuickNoteComposer: View
 
                                 let audio =
                                 captureAction == .voice && voiceSaveOption.savesAudio ? try voice.audioData() : nil
+
                                 guard
                                 try attachmentDraft.save(commit:
                                     {
@@ -935,12 +960,15 @@ struct QuickNoteComposer: View
 
                 offeredDrawing = true;
                 drawingToEdit = DrawingCaptureDraft()
+
             }
 
             if captureAction == .photo && !offeredPhotoSources
             {
+
                 offeredPhotoSources = true;
                 showsPhotoSources = true
+
             }
 
         }
@@ -957,6 +985,7 @@ struct QuickNoteComposer: View
                 {
 
                     drawings[index] = updated
+
                 }
                 else
                 {
@@ -982,14 +1011,18 @@ struct QuickNoteComposer: View
 
             Button("Photo library")
             {
+
                 showsPhotoLibrary = true
+
             }
 
             if onSaveCapture != nil
             {
                 Button("Drawing")
                 {
+
                     drawingToEdit = DrawingCaptureDraft()
+
                 }
 
             }
@@ -1022,6 +1055,7 @@ struct QuickNoteComposer: View
                 {
 
                     mediaError = "This photo couldn't be prepared. Please try again."
+
                 }
 
             } .ignoresSafeArea()
@@ -1092,7 +1126,9 @@ struct QuickNoteComposer: View
                             {
                                 if !$0
                                 {
+
                                     mediaError = nil
+
                                 }
 
                             })
@@ -1101,7 +1137,9 @@ struct QuickNoteComposer: View
 
             Button("OK", role: .cancel)
             {
+
                 mediaError = nil
+
             }
 
         }
@@ -1155,6 +1193,7 @@ struct NewPersonalNoteComposer: View
         self.availablePersonalLists = availablePersonalLists
         self.onSave = onSave
         _destinationIDs = State(initialValue: PersonalListNoteDraft.destinations(in: availablePersonalLists).map(\.id))
+
     }
 
     private var destinations: [KanbanList]
@@ -1197,6 +1236,7 @@ struct NewPersonalNoteComposer: View
         }
 
         let ownerID = destinationIDs[capture.listID]
+
         guard availablePersonalLists.contains(where:
             {
                 $0.id == ownerID && $0.kind == .list && $0.isActive
@@ -1230,10 +1270,12 @@ struct NewPersonalNoteComposer: View
         )
         {
             id, title, body, subtitle, presentation, actions in
+
             _ = save(
                 QuickCaptureSubmission(
                     listID: id, title: title, body: body, subtitle: subtitle,
                     presentation: presentation ?? .note, actions: actions, attachments: [], schedule: nil))
+
         }
 
     }

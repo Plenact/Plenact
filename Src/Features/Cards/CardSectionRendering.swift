@@ -61,10 +61,12 @@ extension CardDetailView
 
                     dismissEditing()
                     showsNoteDetails.toggle()
+
                     let target =
                     showsNoteDetails
                     ? "note.detailsStart"
                     : "plenact.noteEditor" /* Scroll anchor selected by Note detail visibility */
+
                     DispatchQueue.main.async
                     {
 
@@ -91,7 +93,9 @@ extension CardDetailView
                 {
 
                     dismissEditing()
+
                     activeSheet = .noteAttachments
+
                 }
                 label:
                 {
@@ -175,12 +179,16 @@ extension CardDetailView
                         title: "Add Attachment", icon: "paperclip", color: .cyan,
                         action:
                         {
+
                             activeSheet = .attachmentSources
+
                         }
                     )
                     ActionTile(title: "Members", icon: "person.2", color: .purple, action:
                         {
+
                             activeSheet = .members
+
                         })
                 }
 
@@ -202,6 +210,7 @@ extension CardDetailView
 
                 let visibleAttachments = workingCardSnapshot
                 .attachmentsExcludingCover /* Gallery records excluding the featured cover */
+
                 if !visibleAttachments.isEmpty
                 {
 
@@ -255,7 +264,9 @@ extension CardDetailView
 
                 CardLocationRow(location: location, canEdit: !isEditingLocked)
                 {
+
                     activeSheet = .location
+
                 }
                 if location != nil || !isEditingLocked
                 {
@@ -284,6 +295,7 @@ extension CardDetailView
                 {
 
                     activeSheet = .labels
+
                 }
                 label:
                 {
@@ -337,6 +349,7 @@ extension CardDetailView
                 {
 
                     activeSheet = .members
+
                 }
                 label:
                 {

@@ -62,6 +62,7 @@ enum LegacyStoreValidation
     {
 
         _ = try JSONDecoder().decode(type, from: data)
+
     }
 
 
@@ -76,6 +77,7 @@ enum LegacyStoreValidation
     {
 
         var issues: [String] = []
+
         if let object = value as? [String: Any]
         {
             for (key, child) in object
@@ -90,16 +92,24 @@ enum LegacyStoreValidation
                     }
                     else
                     {
+
                         let candidates: [String]
+
                         switch key
                         {
                         case "fileName", "drawingFileName":
+
                             candidates = ["Documents/CardAttachments/" + filename]
+
                         case "avatarPhotoFileName":
+
                             candidates = ["Documents/ProfileAvatars/" + filename]
+
                         default:
+
                             candidates = ["Library/Application Support/PlenactStudioArtwork/" + filename,
                                 "Library/Application Support/PlenactCollectionBackgrounds/" + filename]
+
                         }
                         if !candidates.contains(where: files.contains)
                         {
@@ -137,9 +147,11 @@ enum LegacyStoreValidation
 
         guard jsonKeys.contains(key) else
         {
+
             let booleans: Set<String> = ["Plenact.CardCovers.enabled", "Plenact.ActivityShowsCovers",
                 "Plenact.ActivityRecentSquareCards", "Plenact.LibraryShowsCollectionPreviews",
                 "Plenact.LibraryScrollsCollectionPreviews", "Plenact.ExampleCardLocations.Applied.v1"]
+
             if booleans.contains(key)
             {
                 guard let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else
@@ -157,7 +169,9 @@ enum LegacyStoreValidation
 
         do
         {
+
             let json = try JSONSerialization.jsonObject(with: data)
+
             if let object = json as? [String: Any], let version = object["version"] as? NSNumber,
                (CFGetTypeID(version) == CFBooleanGetTypeID() || version.doubleValue != 1)
             {

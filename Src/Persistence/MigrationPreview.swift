@@ -100,6 +100,7 @@ struct MigrationPreview
 
         let target = try journal.resolve(MigrationSourceIdentity(recordType: type,
             owner: "workspace_metadata", legacyID: source, discriminator: nil))
+
         return ["user_data_model_version": "1.0", "payload_schema_version": 1,
             "record_type": type, "id": target.uuidString.lowercased(),
             "workspace_id": journal.previewWorkspaceID.uuidString.lowercased(), "payload": payload]
@@ -131,19 +132,26 @@ struct MigrationPreview
         {
             throw Failure.unsupportedFields
         }
+
         let library = try JSONDecoder().decode(LabelLibrary.self, from: data)
+
         guard Set(library.categories.map(\.id)).count == library.categories.count,
               Set(library.labels.map(\.id)).count == library.labels.count else
         {
             throw Failure.invalidLabels
         }
+
         var categoryIDs: [String: String] = [:]
         var documents: [[String: Any]]    = []
+
         for category in library.categories
         {
+
             let record = try document(type: "label_category", source: category.id,
                 payload: ["name": category.name], journal: &journal)
+
             categoryIDs[category.id] = record["id"] as? String
+
             documents.append(record)
         }
         for label in library.labels
@@ -172,12 +180,16 @@ struct MigrationPreview
         {
             return []
         }
+
         var payload: [String: Any] = [:]
+
         for (key, wire) in displayKeys
         {
             guard let value = values[key] else
             {
+
                 payload[wire] = NSNull()
+
                 continue
             }
             if wire == "board_presentation"
@@ -186,7 +198,9 @@ struct MigrationPreview
                 {
                     throw Failure.invalidPreference
                 }
+
                 payload[wire] = token
+
             }
             else
             {
@@ -194,7 +208,9 @@ struct MigrationPreview
                 {
                     throw Failure.invalidPreference
                 }
+
                 payload[wire] = boolean.boolValue
+
             }
         }
         return [try document(type: "workspace_display_preferences", source: "display_preferences", payload: payload, journal: &journal)]
@@ -214,18 +230,23 @@ struct MigrationPreview
     {
 
         let values = try MigrationBackupReader.values(in: backup)
+
         guard backup.files.fileWrappers?["PortableRuntime"] == nil else
         {
             // Never remigrate the normalized native projection as though it were original legacy data.
             throw Failure.invalidSnapshot
         }
+
         let baseline = try MigrationIdentityStore.read(at: journalURL)
         var journal  = try baseline.map(MigrationIdentityJournal.decode) ?? MigrationIdentityJournal()
+
         if backup.files.fileWrappers?["Migration"] != nil
         {
+
             let retained = try MigrationIdentityJournal.decode(
                 MigrationBackupReader.file("Migration/IdentityJournal.json", in: backup.files))
             let current = Dictionary(uniqueKeysWithValues: journal.entries.map { ($0.source, $0.target) })
+
             guard baseline != nil, retained.sourceInstallationID == journal.sourceInstallationID,
                   retained.previewWorkspaceID == journal.previewWorkspaceID,
                   retained.entries.allSatisfy({ current[$0.source] == $0.target }) else
@@ -233,140 +254,211 @@ struct MigrationPreview
                 throw MigrationIdentityJournal.Failure.conflictingWrite
             }
         }
+
         // The unsaved catalog is the explicit application fallback, never a recovered user catalog.
         let usesDefaultLabels = values["Plenact.LabelLibrary.v1"] == nil &&
             ["Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1", "Plenact.PlanningTemplates.v1"].contains(where: { values[$0] != nil })
         let defaultCatalog = usesDefaultLabels ? try JSONEncoder().encode(LabelLibrary.starter.includingDayAreas) : nil
         var records        = try labels(values["Plenact.LabelLibrary.v1"] ?? defaultCatalog, journal: &journal)
+
         records.append(contentsOf: try displays(values, journal: &journal))
+
         var content: MigrationContentConverter.Result?
         var blockedContentReason: String?
         let contentKeys = ["Plenact.Board.v1", "Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1", "Plenact.PlanningTemplates.v1"]
+
         if contentKeys.contains(where: { values[$0] != nil })
         {
             if let timeZoneID, !timeZoneID.isEmpty
             {
                 do
                 {
+
                     let sourceReport              = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
                     var digests: [String: String] = [:]
+
                     for entry in sourceReport["media"] as! [[String: Any]]
                     {
+
                         digests[entry["path"] as! String] = entry["sha256"] as? String
+
                     }
+
                     content = try MigrationContentConverter.convert(values: values, timeZoneID: timeZoneID,
                         mediaDigests: digests, existing: records, journal: journal)
+
                     records.append(contentsOf: content!.records)
+
                     journal = content!.journal
+
                 }
                 catch let error as MigrationContentValues.Failure
                 {
                     switch error
                     {
-                    case .invalid(let code): blockedContentReason = "content_validation:" + code
-                    case .timezoneRequired: blockedContentReason = "original_timezone_confirmation_required"
-                    case .projectionConflict: blockedContentReason = "board_week_projection_conflict"
-                    case .duplicateIdentity: blockedContentReason = "duplicate_source_identity"
-                    case .unsupportedField(let type): blockedContentReason = "unsupported_source_fields:" + type
+                    case .invalid(let code):
+
+                        blockedContentReason = "content_validation:" + code
+
+                    case .timezoneRequired:
+
+                        blockedContentReason = "original_timezone_confirmation_required"
+
+                    case .projectionConflict:
+
+                        blockedContentReason = "board_week_projection_conflict"
+
+                    case .duplicateIdentity:
+
+                        blockedContentReason = "duplicate_source_identity"
+
+                    case .unsupportedField(let type):
+
+                        blockedContentReason = "unsupported_source_fields:" + type
+
                     }
                 }
                 catch
                 {
+
                     blockedContentReason = "native_content_decode_failed"
+
                 }
             }
             else
             {
+
                 blockedContentReason = "original_timezone_confirmation_required"
+
             }
         }
+
         var settings: MigrationSettingsPreview.Result?
         var settingsBlocker: String?
         var settingsJournal = journal
+
         do
         {
+
             let source  = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
             let digests = Dictionary(uniqueKeysWithValues: (source["media"] as! [[String: Any]]).map {
                 ($0["path"] as! String, $0["sha256"] as! String)
             })
+
             settings = try MigrationSettingsPreview.prepare(values: values, records: records,
                 mediaDigests: digests, journal: &settingsJournal)
+
             records.append(contentsOf: settings!.records)
+
             journal = settingsJournal
+
         }
         catch let error as MigrationContentValues.Failure
         {
             if case .invalid(let code) = error
             {
+
                 settingsBlocker = code
+
             }
             else
             {
+
                 settingsBlocker = "settings_source_requires_review"
+
             }
         }
         catch
         {
+
             settingsBlocker = "settings_source_decode_failed"
+
         }
+
         var studio: MigrationStudioPreview.Result?
         var studioBlocker: String?
         var studioJournal = journal
+
         do
         {
+
             let source  = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
             let digests = Dictionary(uniqueKeysWithValues: (source["media"] as! [[String: Any]]).map {
                 ($0["path"] as! String, $0["sha256"] as! String)
             })
+
             studio = try MigrationStudioPreview.prepare(values: values, records: records,
                 mediaDigests: digests, journal: &studioJournal)
+
             records.append(contentsOf: studio!.records)
+
             journal = studioJournal
+
         }
         catch let error as MigrationContentValues.Failure
         {
             if case .invalid(let code) = error
             {
+
                 studioBlocker = code
+
             }
             else
             {
+
                 studioBlocker = "studio_source_requires_review"
+
             }
         }
         catch
         {
+
             studioBlocker = "studio_source_decode_failed"
+
         }
+
         var planning: MigrationPlanningPreview.Result?
         var planningBlocker: String?
         var planningJournal = journal
+
         do
         {
+
             planning = try MigrationPlanningPreview.prepare(values: values, records: records, journal: &planningJournal)
+
             records.append(contentsOf: planning!.records)
+
             journal = planningJournal
+
         }
         catch let error as MigrationContentValues.Failure
         {
             if case .invalid(let code) = error
             {
+
                 planningBlocker = code
+
             }
             else
             {
+
                 planningBlocker = "planning_source_requires_review"
+
             }
         }
         catch
         {
+
             planningBlocker = "planning_source_decode_failed"
+
         }
+
         let assets = try MigrationAssetPreview.prepare(backup: backup,
             records: records + (settings?.assetRecords ?? []) + (studio?.assetRecords ?? []) + (studio?.appearanceRecords ?? []), journal: &journal)
         let encoderOptions: JSONSerialization.WritingOptions = [.prettyPrinted, .sortedKeys]
         let encodedRecords                                   = try records.map { try JSONSerialization.data(withJSONObject: $0, options: encoderOptions) }
         var supported                                        = Set(displayKeys.keys).union(["Plenact.LabelLibrary.v1"])
+
         if content?.boardConverted == true
         {
             supported.insert("Plenact.Board.v1")
@@ -376,6 +468,7 @@ struct MigrationPreview
             supported.insert("Plenact.TodayListShortcuts.v1")
         }
         supported.formUnion(planning?.convertedStores ?? [])
+
         let deviceKeys: Set<String> = ["Plenact.LibraryRecents.v1", "Plenact.ActivityRecents.v1",
             "Plenact.RecentSearches.v1", "Plenact.LocalReactionAuthor.v1", "Plenact.LastViewedList.v1",
             "Plenact.Welcome.lastDeparture.v1", "Plenact.ReviewRhythmDismissals.v1"]
@@ -435,76 +528,113 @@ struct MigrationPreview
                 "full_workspace_validation", "recovery_acceptance"]
         ]
         let reportData = try JSONSerialization.data(withJSONObject: report, options: encoderOptions)
+
         guard let serialized = backup.files.serializedRepresentation,
               let output = FileWrapper(serializedRepresentation: serialized), output.isDirectory,
               output.fileWrappers?["MigrationPreview"] == nil else
         {
             throw Failure.invalidSnapshot
         }
+
         let recordDirectory = FileWrapper(directoryWithFileWrappers: [:])
+
         for (index, record) in records.enumerated()
         {
+
             let file = FileWrapper(regularFileWithContents: encodedRecords[index])
+
             file.preferredFilename = String(format: "%04d", index) + "-" + (record["record_type"] as! String) + ".json"
+
             recordDirectory.addFileWrapper(file)
         }
+
         let preview = FileWrapper(directoryWithFileWrappers: [
             "Records": recordDirectory,
             "Report.json": FileWrapper(regularFileWithContents: reportData),
             "IdentityJournal.json": FileWrapper(regularFileWithContents: try journal.encoded())
         ])
         let assetFile = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: assets.document, options: encoderOptions))
+
         assetFile.preferredFilename = "AssetPreview.json"
+
         preview.addFileWrapper(assetFile)
         if let planning
         {
+
             let file = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: planning.document, options: encoderOptions))
+
             file.preferredFilename = "PlanningPreview.json"
+
             preview.addFileWrapper(file)
         }
         if let studio
         {
+
             let appearanceFile = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: studio.appearanceDocument, options: encoderOptions))
+
             appearanceFile.preferredFilename = "AppearancePreview.json"
+
             preview.addFileWrapper(appearanceFile)
+
             let file = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: studio.document, options: encoderOptions))
+
             file.preferredFilename = "StudioPreview.json"
+
             preview.addFileWrapper(file)
         }
         if let settings
         {
+
             let file = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: settings.document, options: encoderOptions))
+
             file.preferredFilename = "SettingsPreview.json"
+
             preview.addFileWrapper(file)
         }
         if let defaultCatalog
         {
+
             let catalog = FileWrapper(regularFileWithContents: defaultCatalog)
+
             catalog.preferredFilename = "ApplicationDefaultLabels.json"
+
             preview.addFileWrapper(catalog)
         }
         if let content
         {
+
             let selections = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: [
                 "format": "plenact.ios-selection-preview", "format_version": 1,
                 "target_user_data_model_version": "1.0", "account_binding_pending": true,
                 "entries": content.selections.entries, "issues": content.selections.issues
             ], options: encoderOptions))
+
             selections.preferredFilename = "SelectionPreview.json"
+
             preview.addFileWrapper(selections)
+
             let graph = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: content.graph, options: encoderOptions))
+
             graph.preferredFilename = "ContentGraph.json"
+
             preview.addFileWrapper(graph)
+
             let evidence = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: content.evidence, options: encoderOptions))
+
             evidence.preferredFilename = "SourcePrecision.json"
+
             preview.addFileWrapper(evidence)
         }
+
         preview.preferredFilename = "MigrationPreview"
+
         output.addFileWrapper(preview)
         try MigrationIdentityStore.save(journal, at: journalURL, expected: baseline)
+
         let settingsLabels = ["saved_planning_preferences": "Saved planning settings",
             "saved_profile_preferences": "Saved profile settings", "application_defaults": "Application defaults"]
         let settingsOrigin = settings?.document["preferences_origin"] as? String ?? ""
+
         return MigrationPreview(files: output, recordCount: records.count,
             contentRecordCount: (content?.records.count ?? 0) - (content?.metadataRecordCount ?? 0), blockedContentReason: blockedContentReason, metadataRecordCount: content?.metadataRecordCount ?? 0, selectionEntryCount: content?.selections.entries.count ?? 0,
             selectionIssueCount: content?.selections.issues.count ?? 0,

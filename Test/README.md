@@ -320,3 +320,6 @@ Day-template application/export evidence lives in `TemplateEditedExportTests.swi
 
 
 `ShortcutEditedExportTests.swift` adds `MigrationStudioTests.testTodayShortcutEditedExport`: isolated absent/empty distinction, creation, order/selection changes, six pins, clearing, wrong-owner/unknown/duplicate/missing target guards, and rollover references across three owners. It checks exact native recovery evidence, source/runtime immutability, repeated export, fresh import and identical re-export. Extract its `ShortcutsPackage` attachments for the independent `--shortcuts-package` checker. No personal data is used.
+
+
+`AppReturnTests` covers the device-local Home-screen return policy with injected monotonic instants and isolated viewport defaults. Eight new cases plus four existing viewport/Library checks pass. The reset applies only to the active tab after a genuine five-minute background interval, with open work protected. Fresh-process navigation/draft restoration is deferred; first launch stays on Today. See [return behavior](../Doc/App-Return-Behavior.md) for the precise scope and focused manual check.

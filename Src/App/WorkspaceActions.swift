@@ -265,7 +265,7 @@ extension AppRootView
     func advancePlanningWeekIfNeeded()
     {
 
-        guard !isSwitchingWorkspace, hasLoadedBoard, var document = calendarDocument,
+        guard !isSwitchingWorkspace, hasLoadedBoard, !hasProtectedAppReturnContext, var document = calendarDocument,
         document.currentWeekKey != PlanningDate.weekKey(.now, calendar: document.calendar)
         else
         {

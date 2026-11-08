@@ -70,6 +70,12 @@ struct AppRootView: View
         !visibleNoteIDs.isEmpty
     }
 
+    @State var appReturnSession = AppReturnSession()
+    @State var appReturnWindow = AppReturnWindow()
+    @State var appReturnProtectionIDs: Set<UUID> = []
+    @State var weekReturnResetRequest = 0
+    @State var libraryReturnResetRequest = 0
+    @State var activityReturnResetRequest = 0
     @State var weekRootRequest = 0                         /* Explicit Week toolbar taps return to the Board root */
     @State var savedCardIDs = SavedCardPersistence.load()  /* Device-local saved cards                            */
     @State var savedPersonalCardTarget:
@@ -162,6 +168,22 @@ struct AppRootView: View
 
         }
 
+        .background(AppReturnWindowProbe(reference: appReturnWindow))
+        .environment(\.appReturnProtection,
+        {
+            id, protected in
+
+            if protected
+            {
+
+                appReturnProtectionIDs.insert(id)
+            }
+            else
+            {
+
+                appReturnProtectionIDs.remove(id)
+            }
+        })
         .animation(reduceLaunchMotion ? nil : .easeInOut(duration: 0.45), value: hasLoadedBoard)
         .environmentObject(welcomeCue)
         .environment(\.localBackupRestore, LocalBackupRestoreAccess(restore: { backup in
@@ -261,7 +283,7 @@ struct AppRootView: View
             {
 
                 welcomeCue.becameActive();
-                advancePlanningWeekIfNeeded()
+                handleAppReturn()
                 Task
                 {
                     try? await ReviewRhythmNotifications.shared.synchronize()
@@ -272,6 +294,11 @@ struct AppRootView: View
             {
 
                 welcomeCue.leftForeground()
+                if phase == .background, hasLoadedBoard
+                {
+
+                    appReturnSession.leftForBackground(at: .now, protected: hasProtectedAppReturnContext)
+                }
             }
 
         }
@@ -590,6 +617,7 @@ struct AppRootView: View
                 }
 
             }
+            .environment(\.appReturnResetRequest, weekReturnResetRequest)
             .tabItem
             {
 
@@ -622,6 +650,7 @@ struct AppRootView: View
                 onArchiveCard: archiveWeekCard,
                 onDeleteCard: deleteWeekCard
             )
+            .environment(\.appReturnResetRequest, activityReturnResetRequest)
             .tabItem
             {
 
@@ -1047,6 +1076,7 @@ struct AppRootView: View
                 savedPersonalCardTarget = nil
             }
         )
+        .environment(\.appReturnResetRequest, libraryReturnResetRequest)
         .tabItem
         {
 

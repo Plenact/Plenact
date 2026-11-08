@@ -321,6 +321,7 @@ struct SavedCardsView: View
     @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers = true
     @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards = false
     @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion
+    @Environment(\.appReturnResetRequest) private var appReturnResetRequest
     @State private var query = ""
     @State private var showsSearch = false
     @State private var confirmsClear = false
@@ -1373,6 +1374,17 @@ struct SavedCardsView: View
             .id(revisit)
         }
 
+        .id(appReturnResetRequest)
+        .onChange(of: appReturnResetRequest)
+        {
+            _, _ in
+
+            focus = .saved
+            query = ""
+            showsSearch = false
+            selectedLabelID = nil
+            revisitDestination.wrappedValue = nil
+        }
         .onAppear
         {
             focusLabelLibrary = LabelLibraryStore.load()

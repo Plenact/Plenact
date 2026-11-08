@@ -28,6 +28,7 @@ struct BoardListsView: View
     @State private var browseLabelLibrary = LabelLibraryStore.load()
     @Environment(\.workspaceBottomBarHeight) private var bottomBarHeight
 
+    @Environment(\.appReturnResetRequest) private var appReturnResetRequest
     @State private var libraryEditMode: EditMode = .inactive
 
     @State private var showsSharedSearch = false
@@ -2510,6 +2511,7 @@ struct BoardListsView: View
 
             }
 
+            .id(appReturnResetRequest)
             .listRowSpacing(7)
             .listSectionSpacing(.custom(0))
             .contentMargins(.top, 12, for: .scrollContent)
@@ -2875,6 +2877,16 @@ struct BoardListsView: View
                 Text("Keeps all content on this device. Restore it from Saved.")
             }
 
+        }
+        .onChange(of: appReturnResetRequest)
+        {
+            _, _ in
+
+            browseFilter = .all
+            searchText = ""
+            showsSharedSearch = false
+            isLibrarySearchFocused = false
+            libraryEditMode = .inactive
         }
         .onChange(of: templateLibraryRequest, initial: true)
         {

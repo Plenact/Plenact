@@ -16,6 +16,86 @@ final class AppReturnTests: XCTestCase
 {
 
 
+    /// Verify visible-time boundaries, permanent cancellation and stale timer rejection.
+    func testDailyOverviewDeadlineAndCancellation()
+    {
+
+        let now = ContinuousClock.now
+        var overview = DailyWeekOverview()
+        overview.arm()
+        let first = overview.id!
+        XCTAssertFalse(overview.consume(first, at: now.advanced(by: .seconds(30))))
+        XCTAssertEqual(overview.begin(at: now), first)
+        XCTAssertNil(overview.begin(at: now.advanced(by: .seconds(1))))
+        XCTAssertFalse(overview.consume(first, at: now.advanced(by: .milliseconds(1249))))
+        XCTAssertTrue(overview.consume(first, at: now.advanced(by: .milliseconds(1250))))
+        XCTAssertFalse(overview.consume(first, at: now.advanced(by: .seconds(4))))
+        overview.arm()
+        overview.cancel()
+        XCTAssertNil(overview.begin(at: now))
+        overview.arm()
+        let second = overview.begin(at: now)!
+        XCTAssertFalse(overview.consume(first, at: now.advanced(by: .seconds(4))))
+        overview.cancel()
+        XCTAssertFalse(overview.consume(second, at: now.advanced(by: .seconds(4))))
+    }
+
+
+    /// Observe typing only in the owning scene, then detach without affecting controls.
+    func testDailyOverviewObservesOnlyItsOwnWindow()
+    {
+
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
+        let controller = DailyOverviewProbe.Controller()
+        window.rootViewController = controller
+        window.isHidden = false
+        defer
+        {
+
+            controller.disconnect()
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+        let field = UITextField(frame: CGRect(x: 0, y: 0, width: 100, height: 40))
+        controller.view.addSubview(field)
+        var interactions = 0
+        controller.configure(armed: true)
+        {
+
+            interactions += 1
+        }
+        XCTAssertTrue(controller.observer.view === window)
+        XCTAssertFalse(controller.observer.cancelsTouchesInView)
+        XCTAssertFalse(controller.observer.delaysTouchesBegan)
+        NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: UITextField())
+        XCTAssertEqual(interactions, 0)
+        NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: field)
+        XCTAssertEqual(interactions, 1)
+        controller.configure(armed: false, interaction: {})
+        XCTAssertNil(controller.observer.view)
+        NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: field)
+        XCTAssertEqual(interactions, 1)
+    }
+
+
+    /// Reduce Motion switches directly and cancellation removes transient visuals.
+    func testDailyOverviewFadeRespectsReduceMotion()
+    {
+
+        let fade = DailyOverviewFade()
+        var selected = false
+        fade.transition(in: nil, reduceMotion: true)
+        {
+
+            selected = true
+        }
+        XCTAssertTrue(selected)
+        XCTAssertNil(fade.overlay)
+        fade.cancel()
+        XCTAssertNil(fade.overlay)
+    }
+
+
     /// @fcn AppReturnTests.testFreshActivationAndShortReturnPreserveContext
     /// @brief A new process and a short Home-screen interval issue no browsing reset
     /// @throws None
@@ -90,6 +170,95 @@ final class AppReturnTests: XCTestCase
             XCTAssertEqual(AppReturnSession.firstListID(in: nil, lists: [undated]), undated.id)
             XCTAssertNil(AppReturnSession.firstListID(in: week, lists: []))
         }
+    }
+
+
+    /// @fcn AppReturnTests.testDailyOpeningIsOncePerLocalDayAcrossNewStoreInstances
+    /// @brief First eligible opening claims the day; later launches on that day retain normal startup behavior
+    /// @throws Isolated preference or date fixture failure
+    func testDailyOpeningIsOncePerLocalDayAcrossNewStoreInstances() throws
+    {
+
+        let domain = "Plenact.DailyOpeningTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        let date = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-11-07T18:00:00Z"))
+        let source = Data([0, 255, 1])
+        defaults.set(source, forKey: "syntheticUserData")
+        XCTAssertTrue(AppDailyOpening.claim(at: date, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
+        let reopened = try XCTUnwrap(UserDefaults(suiteName: domain))
+        XCTAssertFalse(AppDailyOpening.claim(at: date.addingTimeInterval(3600), calendar: calendar,
+            protected: false, targetAvailable: true, defaults: reopened))
+        XCTAssertEqual(reopened.string(forKey: AppDailyOpening.key), "2026-11-07")
+        XCTAssertEqual(reopened.data(forKey: "syntheticUserData"), source)
+        XCTAssertNotEqual(AppDailyOpening.domain, Bundle.main.bundleIdentifier)
+    }
+
+
+    /// @fcn AppReturnTests.testDailyOpeningChangesAtLocalMidnightNotUTCMidnight
+    /// @brief Use the phone's local calendar day and permit exactly one opening after midnight
+    /// @throws Isolated preference or date fixture failure
+    func testDailyOpeningChangesAtLocalMidnightNotUTCMidnight() throws
+    {
+
+        let domain = "Plenact.DailyBoundaryTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        let formatter = ISO8601DateFormatter()
+        let before = try XCTUnwrap(formatter.date(from: "2026-11-08T05:59:59Z"))
+        let after = before.addingTimeInterval(1)
+        XCTAssertTrue(AppDailyOpening.claim(at: before, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
+        XCTAssertEqual(defaults.string(forKey: AppDailyOpening.key), "2026-11-07")
+        XCTAssertTrue(AppDailyOpening.claim(at: after, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
+        XCTAssertEqual(defaults.string(forKey: AppDailyOpening.key), "2026-11-08")
+        XCTAssertFalse(AppDailyOpening.claim(at: after.addingTimeInterval(300), calendar: calendar,
+            protected: false, targetAvailable: true, defaults: defaults))
+    }
+
+
+    /// @fcn AppReturnTests.testProtectedOrUnavailableMorningIsDeferredWithoutClaimingTheDay
+    /// @brief Open work and missing target Lists prevent daily navigation without consuming its later opportunity
+    /// @throws Isolated preference failure
+    func testProtectedOrUnavailableMorningIsDeferredWithoutClaimingTheDay() throws
+    {
+
+        let domain = "Plenact.DeferredDailyTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let date = Date(timeIntervalSince1970: 1794074400)
+        for (protected, available) in [(true, true), (false, false), (true, false)]
+        {
+
+            XCTAssertFalse(AppDailyOpening.claim(at: date, calendar: .current,
+                protected: protected, targetAvailable: available, defaults: defaults))
+            XCTAssertNil(defaults.object(forKey: AppDailyOpening.key))
+        }
+        XCTAssertTrue(AppDailyOpening.claim(at: date, calendar: .current,
+            protected: false, targetAvailable: true, defaults: defaults))
+    }
+
+
+    /// @fcn AppReturnTests.testRepeatedDSTHourDoesNotCreateAnotherDailyOpening
+    /// @brief Repeated local clock times during fall-back remain one calendar day
+    /// @throws Isolated preference or date fixture failure
+    func testRepeatedDSTHourDoesNotCreateAnotherDailyOpening() throws
+    {
+
+        let domain = "Plenact.DailyDSTTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+        let formatter = ISO8601DateFormatter()
+        let first = try XCTUnwrap(formatter.date(from: "2026-11-01T06:30:00Z"))
+        let repeated = try XCTUnwrap(formatter.date(from: "2026-11-01T07:30:00Z"))
+        XCTAssertTrue(AppDailyOpening.claim(at: first, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
+        XCTAssertFalse(AppDailyOpening.claim(at: repeated, calendar: calendar,
+            protected: false, targetAvailable: true, defaults: defaults))
     }
 
 
@@ -239,12 +408,13 @@ final class AppReturnTests: XCTestCase
             defaults.removePersistentDomain(forName: domain)
             previous?.makeKeyAndVisible()
         }
-        func screen(_ request: Int) -> some View
+        func screen(_ request: Int, target: Int? = nil) -> some View
         {
 
             ContentView(lists: .constant(lists), boardTitle: "Return test", onListsChanged: { _ in },
                 personalCollectionID: owner, viewportDefaults: defaults)
                 .environment(\.appReturnResetRequest, request)
+                .environment(\.appReturnTargetListID, target)
         }
         func scrolls(_ view: UIView) -> [UIScrollView]
         {
@@ -276,6 +446,15 @@ final class AppReturnTests: XCTestCase
         try await Task.sleep(for: .milliseconds(600))
         XCTAssertEqual(horizontal.contentOffset.x + horizontal.adjustedContentInset.left, 0, accuracy: 4)
         XCTAssertEqual(vertical.contentOffset.y + vertical.adjustedContentInset.top, 0, accuracy: 4)
+        host.rootView = screen(2, target: 2)
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertGreaterThan(horizontal.contentOffset.x + horizontal.adjustedContentInset.left, 100)
+        XCTAssertEqual(BoardViewportMemory(owner: owner.uuidString, defaults: defaults).state.visibleListID, 2)
+        for list in scrolls(host.view) where list is UICollectionView && list.contentSize.height > list.bounds.height + 100
+        {
+
+            XCTAssertEqual(list.contentOffset.y + list.adjustedContentInset.top, 0, accuracy: 4)
+        }
         XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), nil)
     }
 

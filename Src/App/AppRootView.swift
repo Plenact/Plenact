@@ -70,9 +70,13 @@ struct AppRootView: View
         !visibleNoteIDs.isEmpty
     }
 
+    @State var dailyWeekVisible = false
+    @State var dailyOverview = DailyWeekOverview()
+    @State var dailyOverviewFade = DailyOverviewFade()
     @State var appReturnSession = AppReturnSession()
     @State var appReturnWindow = AppReturnWindow()
     @State var appReturnProtectionIDs: Set<UUID> = []
+    @State var weekReturnTargetListID: Int?
     @State var weekReturnResetRequest = 0
     @State var libraryReturnResetRequest = 0
     @State var activityReturnResetRequest = 0
@@ -169,6 +173,21 @@ struct AppRootView: View
         }
 
         .background(AppReturnWindowProbe(reference: appReturnWindow))
+        .onChange(of: selectedDestination)
+        {
+            _, destination in
+            if destination != .board
+            {
+
+                dailyOverview.cancel()
+            }
+        }
+        .onDisappear
+        {
+
+            dailyOverview.cancel()
+            dailyOverviewFade.cancel()
+        }
         .environment(\.appReturnProtection,
         {
             id, protected in
@@ -177,6 +196,7 @@ struct AppRootView: View
             {
 
                 appReturnProtectionIDs.insert(id)
+                dailyOverview.cancel()
             }
             else
             {
@@ -293,6 +313,8 @@ struct AppRootView: View
             else
             {
 
+                dailyOverview.cancel()
+                dailyOverviewFade.cancel()
                 welcomeCue.leftForeground()
                 if phase == .background, hasLoadedBoard
                 {
@@ -485,6 +507,7 @@ struct AppRootView: View
             hasLoadedBoard = true
             applyDayListOrderingPreference()
             applyExampleCardLocations()
+            openFirstDailyWeek()
         }
 
     }
@@ -618,6 +641,27 @@ struct AppRootView: View
 
             }
             .environment(\.appReturnResetRequest, weekReturnResetRequest)
+            .environment(\.appReturnTargetListID, weekReturnTargetListID)
+            .background(DailyOverviewProbe(armed: dailyOverview.id != nil,
+                onVisible:
+                {
+                    visible in
+                    dailyWeekVisible = visible
+                    if visible
+                    {
+
+                        beginDailyOverview()
+                    }
+                }, onInteraction: { dailyOverview.cancel() }))
+            .onChange(of: boardTargetListID)
+            {
+                _, target in
+                if target == nil
+                {
+
+                    beginDailyOverview()
+                }
+            }
             .tabItem
             {
 

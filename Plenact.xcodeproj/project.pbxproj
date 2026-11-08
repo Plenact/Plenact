@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9BFEC804F40D40959D8DF010 /* AppDailyOpening.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0905DFE0618E41FBA9E13029 /* AppDailyOpening.swift */; };
 		95A409072B8D4246B7DC97D5 /* AppReturnTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1105978102A4291902C8D5E /* AppReturnTests.swift */; };
 		587E91B5AEE14321ACB7E449 /* AppReturnBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86C4AECC90C4B8AB64BBF15 /* AppReturnBehavior.swift */; };
 		82DAAEA37B46483584C3C652 /* ShortcutEditedExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B59690BDB8FB4DAABE617E33 /* ShortcutEditedExportTests.swift */; };
@@ -216,6 +217,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0905DFE0618E41FBA9E13029 /* AppDailyOpening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDailyOpening.swift; sourceTree = "<group>"; };
 		E1105978102A4291902C8D5E /* AppReturnTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReturnTests.swift; sourceTree = "<group>"; };
 		F86C4AECC90C4B8AB64BBF15 /* AppReturnBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReturnBehavior.swift; sourceTree = "<group>"; };
 		B59690BDB8FB4DAABE617E33 /* ShortcutEditedExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutEditedExportTests.swift; sourceTree = "<group>"; };
@@ -489,6 +491,7 @@
 			children = (
 				AA93E6C495E981EDD7ED252A /* AppRootView.swift */,
 				F86C4AECC90C4B8AB64BBF15 /* AppReturnBehavior.swift */,
+				0905DFE0618E41FBA9E13029 /* AppDailyOpening.swift */,
 				0561852F27834A82FD134A08 /* WorkspaceBackupRestore.swift */,
 				6F5C619ABC7747568BC8148D /* PortableWorkspaceActivation.swift */,
 				12E7BF6CAA8CDCB83E62735D /* BottomToolbar.swift */,
@@ -1041,6 +1044,7 @@
 				095FA34834C665E5E74EE78D /* LegacyStoreValidation.swift in Sources */,
 				FA22C8B07D8FBA279799A11C /* AppRootView.swift in Sources */,
 				587E91B5AEE14321ACB7E449 /* AppReturnBehavior.swift in Sources */,
+				9BFEC804F40D40959D8DF010 /* AppDailyOpening.swift in Sources */,
 				32ED0B2696E7CABD78C172AE /* BottomToolbar.swift in Sources */,
 				C7AAEDDF6BD2D7A282747F80 /* LaunchPresentation.swift in Sources */,
 				593B8A7500493D4687082C4C /* WorkspaceActions.swift in Sources */,

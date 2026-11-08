@@ -3,7 +3,8 @@
 // @brief      Device-local, in-process Home-screen return policy
 // @details    Uses monotonic elapsed time, preserves open items/editors, and resets only the active tab.
 //             No navigation state is added to shared preferences, packages or cloud data. A new process
-//             still starts on Today; restoration after termination is a separate feature.
+//             uses the separate daily-opening rule; other launches start on Today. Restoring prior
+//             navigation/drafts after termination is a separate feature.
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import UIKit
@@ -18,6 +19,18 @@ struct AppReturnSession
     static let timeout: Duration = .seconds(300)
     private var departure: ContinuousClock.Instant?
     private var protectedAtDeparture = false
+
+    var hasBackgroundDeparture: Bool
+    {
+
+        departure != nil
+    }
+
+    var hasProtectedDeparture: Bool
+    {
+
+        protectedAtDeparture
+    }
 
 
     /// @fcn AppReturnSession.firstListID
@@ -92,8 +105,33 @@ private struct AppReturnResetKey: EnvironmentKey
 }
 
 
+/// Optional explicit List target for a daily opening; ordinary timeout resets keep it nil.
+/// @section Purpose
+///     Distinguish today's List from the Week's first dated List without changing content.
+private struct AppReturnTargetKey: EnvironmentKey
+{
+
+    static let defaultValue: Int? = nil
+}
+
+
 extension EnvironmentValues
 {
+
+    var appReturnTargetListID: Int?
+    {
+
+        get
+        {
+
+            self[AppReturnTargetKey.self]
+        }
+        set
+        {
+
+            self[AppReturnTargetKey.self] = newValue
+        }
+    }
 
     var appReturnProtection: (UUID, Bool) -> Void
     {
@@ -272,14 +310,20 @@ extension AppRootView
     func handleAppReturn()
     {
 
-        let protected = hasProtectedAppReturnContext
+        let fromBackground = appReturnSession.hasBackgroundDeparture
+        let protected = hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture
         let reset = appReturnSession.becameActive(at: .now, protected: protected)
-        guard !protected else
+        guard hasLoadedBoard, !protected else
         {
 
             return
         }
         advancePlanningWeekIfNeeded()
+        if fromBackground, openFirstDailyWeek()
+        {
+
+            return
+        }
         guard reset else
         {
 
@@ -291,6 +335,7 @@ extension AppRootView
         case .today:
             break
         case .board:
+            weekReturnTargetListID = nil
             weekReturnResetRequest += 1
         case .lists:
             libraryReturnResetRequest += 1

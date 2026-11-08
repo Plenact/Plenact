@@ -1718,6 +1718,7 @@ struct CardDetailView: View
                 }
 
             }
+            .protectsAppReturn()
             // Keep the Note's navigation toolbar at the screen bottom, beneath the keyboard.
             // The focused editor supplies its own accessory controls above the keyboard.
             .ignoresSafeArea(.keyboard, edges: presentation == .note && displayFormat != .divider ? .bottom : [])

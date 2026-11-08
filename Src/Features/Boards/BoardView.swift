@@ -224,6 +224,7 @@ struct ContentView: View
     let onToggleMovedNoteBookmark:
     ((UUID, Int, Bool) -> Bool)? /* Persists a relocated Note's collection-local saved state  */
     /// Controls presentation of the calendar sheet.
+    @Environment(\.appReturnResetRequest) var appReturnResetRequest
     @Environment(\.planningCalendarAccess) var planningCalendarAccess
     @Environment(\.planningHomeExit) var planningHomeExit
     @Environment(\.planningDisplayedWeekKey) var displayedWeekKey
@@ -390,6 +391,7 @@ struct ContentView: View
     /// @param[in]  onToggleMovedNoteBookmark  Optional callback changing a moved Note's personal
     ///             bookmark
     /// @param[in]  boardAppearance            Inherited Board-level presentation and color defaults
+    /// @param[in]  viewportDefaults          Device-local preferences, isolated in regression tests
     /// @param[in]  viewportOwnerID            Optional owner identity used to isolate retained Board scroll
     ///             positions
     ///
@@ -436,12 +438,13 @@ struct ContentView: View
         onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
         onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil,
         boardAppearance: Binding<BoardAppearance?>? = nil,
-        viewportOwnerID: UUID? = nil
+        viewportOwnerID: UUID? = nil,
+        viewportDefaults: UserDefaults = .standard
     )
     {
 
 
-        let memory = BoardViewportMemory(owner: (viewportOwnerID ?? personalCollectionID)?.uuidString ?? "week.current")
+        let memory = BoardViewportMemory(owner: (viewportOwnerID ?? personalCollectionID)?.uuidString ?? "week.current", defaults: viewportDefaults)
         _viewportMemory = State(initialValue: memory)
         _boardScale = State(initialValue: CGFloat(memory.state.scale))
         _isPanoramic = State(initialValue: memory.state.panoramic)
@@ -1566,6 +1569,24 @@ struct ContentView: View
                     directItemReturn?()
                 }
 
+            }
+            .onChange(of: appReturnResetRequest)
+            {
+                _, _ in
+
+                navigationPath = NavigationPath()
+                viewportMemory.resetScrollOffsets()
+                viewportMemory.horizontalRestoreAllowed = false
+                isGallery = false
+                let week = planningCalendarAccess?.document.weeks.first
+                {
+
+                    BoardViewportMemory.prefix + $0.id.uuidString == viewportMemory.key
+                }
+                let firstID = AppReturnSession.firstListID(in: week, lists: lists)
+                visibleListID = firstID
+                boardTargetCardID = nil
+                boardTargetListID = firstID
             }
             .onChange(of: boardRootRequest)
             {

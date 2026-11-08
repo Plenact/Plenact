@@ -200,6 +200,18 @@ final class BoardViewportMemory
     }
 
 
+    /// @fcn BoardViewportMemory.resetScrollOffsets
+    /// @brief Reset browsing offsets while retaining the user's zoom and presentation choices
+    /// @return Void; only this owner's existing device-local viewport record is updated
+    func resetScrollOffsets()
+    {
+
+        state.offsets = state.offsets.mapValues { _ in 0 }
+        horizontalRestoreAllowed = true
+        flush()
+    }
+
+
     ///
     /// @fcn        BoardViewportMemory.record
     /// @brief      Record a normalized scroll offset
@@ -327,6 +339,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     let memory: BoardViewportMemory?
     let key:    String
     var horizontal = false
+    @Environment(\.appReturnResetRequest) private var resetRequest
 
 
     ///
@@ -392,7 +405,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
         let view = Marker();
         view.isUserInteractionEnabled = false
-        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal)
+        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest)
         view.attached =
         {
             [weak view, weak coordinator = context.coordinator] in
@@ -421,7 +434,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     func updateUIView(_ view: Marker, context: Context)
     {
 
-        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal)
+        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest)
         if view.window != nil
         {
             context.coordinator.findScroll(from: view)
@@ -468,6 +481,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         private var desired: Double?
         private var attempts = 0
         private var finding = false
+        private var resetRequest = 0
 
 
         ///
@@ -482,11 +496,21 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         /// @return     (Void) no return value
         ///
-        func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool)
+        func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool, resetRequest: Int = 0)
         {
 
-            guard self.memory !== memory || self.key != key else
+            if self.memory === memory, self.key == key, self.horizontal == horizontal
             {
+
+                if self.resetRequest != resetRequest
+                {
+
+                    self.resetRequest = resetRequest
+                    desired = 0
+                    restored = false
+                    memory?.record(0, for: key)
+                    restore()
+                }
                 return
             }
 
@@ -494,6 +518,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             self.memory = memory;
             self.key = key;
             self.horizontal = horizontal
+            self.resetRequest = resetRequest
             desired = memory?.state.offsets[key]
             restored = false;
             attempts = 0
@@ -705,7 +730,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 BoardListSwipePriority.install(for: scroll)
             }
 
-            if let desired, !(horizontal && memory?.horizontalRestoreAllowed == false), !scroll.isDragging
+            if let desired = memory?.state.offsets[key] ?? desired, !(horizontal && memory?.horizontalRestoreAllowed == false), !scroll.isDragging
             {
 
                 let inset = horizontal ? scroll.adjustedContentInset.left : scroll.adjustedContentInset.top

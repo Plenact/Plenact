@@ -32,6 +32,8 @@ struct BoardListsView: View
     @Environment(\.appReturnResetRequest) private var appReturnResetRequest /* App return reset request */
     @State private var libraryEditMode: EditMode = .inactive /* Library edit mode */
 
+    @State private var collectionDeletions: [LibraryCollectionDeletion] = [] /* Pending deletion Undo */
+
     @State private var showsSharedSearch = false /* Shared Search visibility */
 
     let retainedWeekLists: [KanbanList] /* Week references protect shared attachments */
@@ -97,6 +99,85 @@ struct BoardListsView: View
     @State private var libraryStarterError:      String? /* Library starter error */
     @State private var examplePreview:           LibraryExamplePreview? /* Example preview */
     @State private var daySectionExampleToApply: PlanningRoutineTemplate? /* Day section example to apply */
+
+
+    /// @fcn BoardListsView.deleteLibraryCollection
+    /// @brief Publish deletion and its Undo snapshot only after persistence succeeds
+    /// @param[in] id Confirmed owner to delete
+    /// @return Void; preserves failed deletions and earlier unexpired Undo snapshots
+    /// @throws Persistence errors or a missing owner
+    private func deleteLibraryCollection(_ id: UUID) throws
+    {
+
+        let deletion = try LibraryCollectionDeletion(id: id, in: collections) /* Owner recovery snapshot */
+        let updated = collections.filter { $0.id != id } /* Directory after confirmed removal */
+
+        try PersonalCollectionStore.saveChecked(updated)
+        collections = updated
+        collectionDeletions.removeAll { $0.deadline <= .now }
+        collectionDeletions.append(deletion)
+    }
+
+
+    /// @fcn BoardListsView.undoLibraryCollectionDeletion
+    /// @brief Persist restoration before dismissing the Undo notice
+    /// @param[in] deletion Retained owner to restore
+    /// @return Void; a failed save keeps the snapshot available until its deadline
+    private func undoLibraryCollectionDeletion(_ deletion: LibraryCollectionDeletion)
+    {
+
+        do
+        {
+
+            let restored = try deletion.restoring(in: collections) /* Merged current directory */
+
+            try PersonalCollectionStore.saveChecked(restored)
+            collections = restored
+            collectionDeletions.removeAll { $0.id == deletion.id }
+        }
+        catch
+        {
+
+            DatabaseActivity.shared.report("Could not undo the deletion: \(error.localizedDescription)")
+        }
+    }
+
+
+    /// @fcn BoardListsView.collectionDeletionNotice
+    /// @brief Present the most recent deletion above the bottom navigation
+    /// @return Accessible, four-second Undo prompt
+    @ViewBuilder
+    private var collectionDeletionNotice: some View /* Transient Library deletion notice */
+    {
+
+        if let deletion = collectionDeletions.last
+        {
+
+            HStack(spacing: 16)
+            {
+
+                Text("\(deletion.collection.kind.rawValue) deleted")
+                    .font(.subheadline.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Button("Undo", systemImage: "arrow.uturn.backward")
+                {
+
+                    undoLibraryCollectionDeletion(deletion)
+                }
+                .font(.headline)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("library.collection.delete.undo")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .foregroundStyle(.primary)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+            .padding(.horizontal, 16)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
 
 
     ///
@@ -963,6 +1044,7 @@ struct BoardListsView: View
         let retainedLists = /* Retained lists */
         collections.flatMap(\.lists) /* Retained lists considered before deleting Note media */
         + retainedWeekLists
+        + collectionDeletions.flatMap { $0.collection.lists }
         + (ExampleLoadUndoStore.load()?.lists ?? [])
         let retainedFileNames = Set( /* Retained file names */
             retainedLists.flatMap(\.allCards) /* Attachment filenames still referenced by retained records */
@@ -1059,6 +1141,7 @@ struct BoardListsView: View
         let retainedLists = /* Retained lists */
         retainedWeekLists /* External and undo snapshots protecting referenced attachments */
         + otherCollectionLists
+        + collectionDeletions.flatMap { $0.collection.lists }
         + (ExampleLoadUndoStore.load()?.lists ?? [])
         let activePersonalLists = collections.filter /* Active personal lists */
         {
@@ -1082,15 +1165,7 @@ struct BoardListsView: View
             onDelete:
             {
 
-                let updated = collections.filter /* Edited value to publish */
-                {
-
-                    $0.id != collection.id
-                }  /* Directory snapshot excluding the deleted collection */
-
-                try PersonalCollectionStore.saveChecked(updated)
-
-                collections = updated
+                try deleteLibraryCollection(collection.id)
 
             },
             onCommitDeletion:
@@ -2703,6 +2778,33 @@ struct BoardListsView: View
             {
                 TodayPaperBackground().overlay { StudioWorkspaceBackground(destination: .plans) }
             }
+            .overlay(alignment: .bottom)
+            {
+
+                collectionDeletionNotice
+                    .padding(.bottom, bottomBarHeight > 0 ? 93 : 16)
+            }
+            .animation(.easeInOut(duration: 0.2), value: collectionDeletions.map(\.id))
+            .task(id: collectionDeletions.map(\.id))
+            {
+
+                guard let deadline = collectionDeletions.map(\.deadline).min() else
+                {
+
+                    return
+                }
+                do
+                {
+
+                    try await ContinuousClock().sleep(until: deadline)
+                    collectionDeletions.removeAll { $0.deadline <= .now }
+                }
+                catch
+                {
+
+                    // A changed notice cancels the previous deadline task
+                }
+            }
             .environment(\.editMode, $libraryEditMode)
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSharedSearch))
 
@@ -2932,16 +3034,7 @@ struct BoardListsView: View
                         {
 
 
-                            let updated = collections.filter /* Edited value to publish */
-                            {
-
-                                $0.id != deletingCollection.id
-                            }  /* Directory snapshot excluding the confirmed deletion */
-
-
-                            try PersonalCollectionStore.saveChecked(updated)
-
-                            collections = updated
+                            try deleteLibraryCollection(deletingCollection.id)
 
                         }
                         catch
@@ -2971,7 +3064,7 @@ struct BoardListsView: View
             {
 
                 Text(
-                                                "Permanently deletes this collection, all active and archived lists/cards, and its bookmarks. This cannot be undone. Your Week board is not affected."
+                                                "Deletes this collection, all active and archived lists/cards, and its bookmarks. Undo is available for four seconds afterward. Your Week board is not affected."
                 )
             }
 

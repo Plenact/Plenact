@@ -568,7 +568,7 @@ struct BoardHeader: View
         {
 
             Text(
-                                    "Permanently removes all active and archived lists, cards, and bookmarks in this board. This cannot be undone. Other boards and retained archive copies are unchanged."
+                                    "Removes all active and archived lists, cards, and bookmarks in this board. Other boards and retained archive copies are unchanged."
             )
         }
 

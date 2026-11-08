@@ -34,7 +34,7 @@ enum ListCopying
     static func copy(_ source: KanbanList, into destination: [KanbanList], crossBoard: Bool) -> KanbanList
     {
 
-        let listID = (destination.map(\.id).max() ?? -1) + 1
+        let listID      = (destination.map(\.id).max() ?? -1) + 1
         let firstCardID = (destination.flatMap
             {
                 $0.allCards.map(\.id)
@@ -158,15 +158,15 @@ enum CrossBoardListMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var snapshot = collections
+        var snapshot    = collections
         var destination = PersonalCollection(
             title: list.title, kind: .board,
             icon: list.newItemPresentation == .note ? .notes : .tasks, color: source.color)
         destination.lists = []
         snapshot.append(destination)
-        let moved = try move(listID: listID, from: sourceID, to: destination.id, collections: &snapshot)
+        let moved       = try move(listID: listID, from: sourceID, to: destination.id, collections: &snapshot)
         let targetIndex = snapshot.count - 1
-        var standalone = PersonalCollection(
+        var standalone  = PersonalCollection(
             id: destination.id, title: moved.title, kind: .list,
             icon: destination.icon, color: destination.color)
         standalone.lists = [moved]
@@ -221,17 +221,17 @@ enum CrossBoardListMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var snapshot = collections
-        let source = snapshot[sourceIndex].lists[listIndex]
+        var snapshot         = collections
+        let source           = snapshot[sourceIndex].lists[listIndex]
         let destinationLists = snapshot[destinationIndex].lists
-        let targetIDs = Set(destinationLists.flatMap(\.allCards).map(\.id))
-        let sourceIDs = Set(source.allCards.map(\.id))
+        let targetIDs        = Set(destinationLists.flatMap(\.allCards).map(\.id))
+        let sourceIDs        = Set(source.allCards.map(\.id))
         guard sourceIDs.count == source.allCards.count else
         {
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var nextID = max(targetIDs.max() ?? -1, sourceIDs.max() ?? -1)
+        var nextID              = max(targetIDs.max() ?? -1, sourceIDs.max() ?? -1)
         var mapping: [Int: Int] = [:]
         for card in source.allCards
         {

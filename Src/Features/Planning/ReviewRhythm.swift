@@ -71,12 +71,12 @@ struct ReviewRhythmPreferences: Codable, Equatable
 {
 
 
-    var dailyInvitations = true
-    var weeklyInvitations = true
-    var dailyMinutes = 20 * 60 + 30
-    var weeklyMinutes = 18 * 60
-    var weeklyWeekday = 1  // Calendar weekday: Sunday.
-    var dailyNotifications = false
+    var dailyInvitations    = true
+    var weeklyInvitations   = true
+    var dailyMinutes        = 20 * 60 + 30
+    var weeklyMinutes       = 18 * 60
+    var weeklyWeekday       = 1 // Calendar weekday: Sunday.
+    var dailyNotifications  = false
     var weeklyNotifications = false
 
 
@@ -123,7 +123,7 @@ enum ReviewRhythmStore
 {
 
 
-    static let key = "Plenact.ReviewRhythm.v1"
+    static let key           = "Plenact.ReviewRhythm.v1"
     static let dismissalsKey = "Plenact.ReviewRhythmDismissals.v1"
 
 
@@ -231,7 +231,7 @@ enum ReviewRhythmStore
             return false
         }
 
-        let value = preferences.normalized()
+        let value   = preferences.normalized()
         let minutes = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
         switch kind
         {
@@ -319,7 +319,7 @@ enum ReviewRhythmStore
                 return nil
             }
 
-            let minutes = kind == .daily ? value.dailyMinutes : value.weeklyMinutes
+            let minutes    = kind == .daily ? value.dailyMinutes : value.weeklyMinutes
             var components = DateComponents()
             components.hour = minutes / 60;
             components.minute = minutes % 60
@@ -358,7 +358,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 
     static let shared = ReviewRhythmNotifications()
     @Published var pending: ReviewRhythmRoute?
-    private var isReconciling = false
+    private var isReconciling  = false
     private var needsReconcile = false
 
 
@@ -392,10 +392,10 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     func synchronize(requestPermission: Bool = false) async throws -> Bool
     {
 
-        let center = UNUserNotificationCenter.current()
-        let preferences = ReviewRhythmStore.load()
+        let center             = UNUserNotificationCenter.current()
+        let preferences        = ReviewRhythmStore.load()
         let wantsNotifications = preferences.dailyNotifications || preferences.weeklyNotifications
-        var status = await center.notificationSettings().authorizationStatus
+        var status             = await center.notificationSettings().authorizationStatus
         if wantsNotifications && requestPermission && status == .notDetermined
         {
 
@@ -511,12 +511,12 @@ struct ReviewRhythmPanel: View
     let onOpen:      (ReviewRhythmRoute) -> Void
     let onSettings:  () -> Void
     var defaults:    UserDefaults = .standard
-    var nowOverride: Date? = nil
+    var nowOverride: Date?        = nil
     @Environment(\.planningCalendarAccess) private var access
-    @AppStorage(ReviewRhythmStore.key) private var preferencesData = Data()
+    @AppStorage(ReviewRhythmStore.key) private var preferencesData          = Data()
     @AppStorage(ReviewRhythmStore.dismissalsKey) private var dismissalsData = Data()
-    @AppStorage(DailyPlanStore.key) private var dailyData = Data()
-    @AppStorage(WeeklyReviewStore.key) private var weeklyData = Data()
+    @AppStorage(DailyPlanStore.key) private var dailyData                   = Data()
+    @AppStorage(WeeklyReviewStore.key) private var weeklyData               = Data()
     private var calendar: Calendar
     {
         access?.document.calendar ?? .current
@@ -690,7 +690,7 @@ struct ReviewRhythmSettingsView: View
 
     @Environment(\.dismiss) private var dismiss
     @State private var preferences = ReviewRhythmStore.load()
-    @State private var saving = false
+    @State private var saving      = false
     @State private var error: String?
 
 

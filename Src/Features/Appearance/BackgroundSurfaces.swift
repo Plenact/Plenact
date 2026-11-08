@@ -128,15 +128,15 @@ extension ItemAccent
             uiColor: UIColor
             {
                 traits in
-                let tint = UIColor(self.color).resolvedColor(with: traits)
-                let base = UIColor.systemBackground.resolvedColor(with: traits)
-                var red: CGFloat = 0
-                var green: CGFloat = 0
-                var blue: CGFloat = 0
-                var alpha: CGFloat = 0
-                var baseRed: CGFloat = 0
+                let tint               = UIColor(self.color).resolvedColor(with: traits)
+                let base               = UIColor.systemBackground.resolvedColor(with: traits)
+                var red: CGFloat       = 0
+                var green: CGFloat     = 0
+                var blue: CGFloat      = 0
+                var alpha: CGFloat     = 0
+                var baseRed: CGFloat   = 0
                 var baseGreen: CGFloat = 0
-                var baseBlue: CGFloat = 0
+                var baseBlue: CGFloat  = 0
                 tint.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
                 base.getRed(&baseRed, green: &baseGreen, blue: &baseBlue, alpha: &alpha)
                 let amount: CGFloat = increasedContrast ? 0.10 : 0.16
@@ -656,7 +656,7 @@ struct CollectionBackgroundSurface: View
 
 
     var background:     CollectionBackground? = nil
-    var draftPhoto:     Data? = nil
+    var draftPhoto:     Data?                 = nil
     private var colors: [Color]
     {
 

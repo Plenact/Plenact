@@ -85,7 +85,7 @@ enum StudioArtworkStore
 
 
         let prepared = try CollectionBackgroundPhotoStore.preparedPhoto(data)
-        let name = UUID().uuidString + ".jpg"
+        let name     = UUID().uuidString + ".jpg"
         try prepared.write(to: directory().appendingPathComponent(name), options: .atomic)
         return name
     }
@@ -217,7 +217,7 @@ struct StudioSurfaceView: View
     {
 
 
-        let first = Self.color(surface.color)
+        let first  = Self.color(surface.color)
         let second = Self.color(surface.secondaryColor)
         switch surface.material
         {

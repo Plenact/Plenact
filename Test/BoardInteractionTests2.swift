@@ -50,8 +50,8 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(
+        let window   = UIWindow(windowScene: scene)
+        let host     = UIHostingController(
             rootView: TodayShortcutGrid(
                 pinned: WorkspaceBrowseIndex.lists(in: [owner]),
                 onOpen:
@@ -107,8 +107,8 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(rootView: TodayPlanView())
+        let window   = UIWindow(windowScene: scene)
+        let host     = UIHostingController(rootView: TodayPlanView())
         window.rootViewController = host
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.makeKeyAndVisible()
@@ -161,8 +161,8 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(rootView: PlenactLoadingView(animatesLogo: false))
+        let window   = UIWindow(windowScene: scene)
+        let host     = UIHostingController(rootView: PlenactLoadingView(animatesLogo: false))
         window.rootViewController = host
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.makeKeyAndVisible()
@@ -227,8 +227,8 @@ extension PlenactBoardDocumentTests
     func testWeekTodayHighlightRendersInPanoramicWithoutChangingCards() async throws
     {
 
-        let date = Date.now
-        let week = DatedPlanningWeek.make(for: date)
+        let date   = Date.now
+        let week   = DatedPlanningWeek.make(for: date)
         let target = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date)])
         let access = PlanningCalendarAccess(
             document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [],
@@ -256,7 +256,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -264,7 +264,7 @@ extension PlenactBoardDocumentTests
         }
 
         let owner = UUID()
-        let key = BoardViewportMemory.prefix + owner.uuidString
+        let key   = BoardViewportMemory.prefix + owner.uuidString
         defer
         {
             UserDefaults.standard.removeObject(forKey: key)
@@ -321,14 +321,14 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
             previous?.makeKeyAndVisible()
         }
 
-        let owner = UUID()
+        let owner   = UUID()
         let fixture = ["Monday", "Tuesday", "Wednesday"].enumerated().map
         {
             index, title in
@@ -377,7 +377,7 @@ extension PlenactBoardDocumentTests
         {
 
             let column = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
-            let scale = BoardTabletSizing.scale(
+            let scale  = BoardTabletSizing.scale(
                 viewportWidth: viewport, columnWidth: column, isTablet: true, enabled: true)
             XCTAssertGreaterThan(scale, 1)
             let preview = (viewport - column * scale) / 2 - 17 * scale
@@ -412,7 +412,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -571,7 +571,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -644,8 +644,8 @@ extension PlenactBoardDocumentTests
         }
 
         let short = try XCTUnwrap(results["short"])
-        let long = try XCTUnwrap(results["long"])
-        let rtl = try XCTUnwrap(results["rtl"])
+        let long  = try XCTUnwrap(results["long"])
+        let rtl   = try XCTUnwrap(results["rtl"])
         for frames in [short, long, rtl]
         {
 
@@ -680,7 +680,7 @@ extension PlenactBoardDocumentTests
     func testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition() async throws
     {
 
-        let suite = "HeaderReadingTests." + UUID().uuidString
+        let suite    = "HeaderReadingTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -693,7 +693,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -725,7 +725,7 @@ extension PlenactBoardDocumentTests
         let long =
                         "Make room for today because there is more to this title than fits in the header, and every word should remain readable."
         var overflow: [Bool] = []
-        let host = UIHostingController(
+        let host             = UIHostingController(
             rootView: VStack(spacing: 20)
             {
 
@@ -742,7 +742,7 @@ extension PlenactBoardDocumentTests
         window.rootViewController = host;
         window.makeKeyAndVisible()
         try await Task.sleep(for: .milliseconds(200))
-        let native = scrolls(host.view)
+        let native    = scrolls(host.view)
         let scrolling = try XCTUnwrap(native.first
             {
                 $0.contentSize.width > $0.bounds.width + 1
@@ -777,7 +777,7 @@ extension PlenactBoardDocumentTests
     func testLongListAndBoardHeadersExposeIndependentNativeReaders() async throws
     {
 
-        let suite = "HeaderReadingTests." + UUID().uuidString
+        let suite    = "HeaderReadingTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -790,7 +790,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -819,9 +819,9 @@ extension PlenactBoardDocumentTests
                 ?? []) + view.subviews.flatMap(scrolls)
         }
 
-        let title = "On the Table, and all the meaningful possibilities that I want to make room for today"
+        let title    = "On the Table, and all the meaningful possibilities that I want to make room for today"
         let subtitle = "Ideas taking shape, plans becoming action, and the rest of this subtitle is readable too"
-        var list = KanbanList(id: 8, title: title, cards: [])
+        var list     = KanbanList(id: 8, title: title, cards: [])
         list.subtitleOverride = subtitle
         let header = BoardHeader(
             settings: .constant(BoardDisplaySettings()), presentation: .constant(.standard),
@@ -933,7 +933,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -953,7 +953,7 @@ extension PlenactBoardDocumentTests
                     descriptionOverride: "Retained writing")
                 item.displayFormat = format
                 let original = item
-                let sheet = ItemAppearanceSheet(
+                let sheet    = ItemAppearanceSheet(
                     title: item.word, appearance: nil,
                     onOpenLayout:
                     {
@@ -1120,7 +1120,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -1232,8 +1232,8 @@ extension PlenactBoardDocumentTests
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let previous   = scene.windows.first(where: \.isKeyWindow)
+        let window     = UIWindow(windowScene: scene)
         let controller = UIViewController();
         window.rootViewController = controller;
         window.makeKeyAndVisible()
@@ -1310,15 +1310,15 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let suite = "Plenact.CollectionWidthTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Isolated test preferences      */
-        let scene = try XCTUnwrap(
+        let suite    = "Plenact.CollectionWidthTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
+        let scene    = try XCTUnwrap(
             UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)                                             /* Active scene for UI hosting     */
         let previous = scene.windows.first(where: \.isKeyWindow)  /* Previously focused window       */
-        let window = UIWindow(windowScene: scene)                 /* Temporary window for UI hosting */
+        let window   = UIWindow(windowScene: scene)               /* Temporary window for UI hosting */
 
         defer
         {
@@ -1466,8 +1466,8 @@ extension PlenactBoardDocumentTests
                 }
 
 
-                let listWidth = try XCTUnwrap(measured[.list])    /* Proposed List width  */
-                let boardWidth = try XCTUnwrap(measured[.board])  /* Proposed Board width */
+                let listWidth          = try XCTUnwrap(measured[.list])  /* Proposed List width  */
+                let boardWidth         = try XCTUnwrap(measured[.board]) /* Proposed Board width */
                 let expectedDifference =
                 preset == .standard ? max(0, width - 28 - 360) : 0 /* Expected width difference */
 
@@ -1566,8 +1566,8 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let suite = "Plenact.BoardRelayoutTests.\(UUID().uuidString)"  /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
+        let suite    = "Plenact.BoardRelayoutTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Isolated test preferences      */
 
         defer
         {
@@ -1583,19 +1583,19 @@ extension PlenactBoardDocumentTests
 
         archived.isArchived = true
 
-        var archives = [archived]                             /* Archived-card collection               */
-        var saved: Set<Int> = [lists[0].archivedCards[0].id]  /* Persisted value under verification     */
-        let focusedListID = lists[3].id                       /* Focused List identifier                */
+        var archives         = [archived]                     /* Archived-card collection               */
+        var saved: Set<Int>  = [lists[0].archivedCards[0].id] /* Persisted value under verification     */
+        let focusedListID    = lists[3].id                    /* Focused List identifier                */
         var targetList: Int? = focusedListID                  /* List identity to focus after relayout  */
         var targetCard: Int?                                  /* Card identity to reveal after relayout */
         var visibleListID: Int?                               /* Visible List identifier                */
         let revealedTarget = expectation(
             description: "Reveal the requested middle list")  /* Card revealed by edge navigation       */
-        var didRevealTarget = false                           /* Whether navigation revealed its target */
-        let originalLists = lists                             /* List snapshots before movement         */
+        var didRevealTarget  = false                          /* Whether navigation revealed its target */
+        let originalLists    = lists                          /* List snapshots before movement         */
         let originalArchives = archives                       /* Archive snapshots before movement      */
-        let originalSaved = saved                             /* Saved-card identifiers before movement */
-        let view = ContentView(                               /* Hosted view under test                 */
+        let originalSaved    = saved                          /* Saved-card identifiers before movement */
+        let view             = ContentView(                   /* Hosted view under test                 */
             lists: Binding(get:
                 {
                     lists
@@ -1658,13 +1658,13 @@ extension PlenactBoardDocumentTests
         .defaultAppStorage(defaults)
 
         let controller = UIHostingController(rootView: view) /* Hosted controller for layout assertions */
-        let scene = try XCTUnwrap(
+        let scene      = try XCTUnwrap(
             UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)                                                      /* Active scene for UI hosting     */
         let previousKeyWindow = scene.windows.first(where: \.isKeyWindow)  /* Previously active key window    */
-        let window = UIWindow(windowScene: scene)                          /* Temporary window for UI hosting */
+        let window            = UIWindow(windowScene: scene)               /* Temporary window for UI hosting */
 
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = controller
@@ -1925,7 +1925,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)                                             /* Active scene for UI hosting     */
         let previous = scene.windows.first(where: \.isKeyWindow)  /* Previously focused window       */
-        let window = UIWindow(windowScene: scene)                 /* Temporary window for UI hosting */
+        let window   = UIWindow(windowScene: scene)               /* Temporary window for UI hosting */
 
         defer
         {
@@ -2125,7 +2125,7 @@ extension PlenactBoardDocumentTests
                     != nil
                 })
             let starContainer = try XCTUnwrap(starSource.view)
-            let starMarker = try XCTUnwrap(importanceMarker(in: starContainer))
+            let starMarker    = try XCTUnwrap(importanceMarker(in: starContainer))
             XCTAssertGreaterThan(starMarker.bounds.width, 0)
             let starPoint = starMarker.convert(
                 CGPoint(x: starMarker.bounds.midX, y: starMarker.bounds.midY), to: starContainer)

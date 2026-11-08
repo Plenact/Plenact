@@ -166,7 +166,7 @@ enum TodayListSelection
         }
 
 
-        let nextID = (lists.map(\.id).max() ?? -1) + 1 /* Fresh ID reserved across active and archived lists */
+        let nextID  = (lists.map(\.id).max() ?? -1) + 1 /* Fresh ID reserved across active and archived lists */
         let dayList = KanbanList(
             id: nextID, title: title, cards: []) /* New empty list for the actual weekday              */
 
@@ -585,7 +585,7 @@ struct PinnedListDayContent: View
     let onClose:           () -> Void
     var returnDestinationTitle = "Today"
     @Environment(\.planningCalendarAccess) private var access
-    @State private var labels = LabelLibraryStore.load()
+    @State private var labels    = LabelLibraryStore.load()
     @State private var reverting = false
 
 

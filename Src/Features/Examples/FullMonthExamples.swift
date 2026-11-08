@@ -61,7 +61,7 @@ struct FullMonthExampleStore: Sendable
     {
 
 
-        var version = 1
+        var version   = 1
         var createdAt = Date()
         let hashes: [String: String]
     }
@@ -79,7 +79,7 @@ struct FullMonthExampleStore: Sendable
     static func live() throws -> Self
     {
 
-        let fm = FileManager.default
+        let fm      = FileManager.default
         let library = try fm.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         return Self(
             root: library.appendingPathComponent("PlenactDatasetBackup", isDirectory: true),
@@ -295,7 +295,7 @@ struct FullMonthExampleStore: Sendable
         }
 
         let domain = defaults.persistentDomain(forName: domainName) ?? [:]
-        let data = try PropertyListSerialization.data(fromPropertyList: domain, format: .binary, options: 0)
+        let data   = try PropertyListSerialization.data(fromPropertyList: domain, format: .binary, options: 0)
         try data.write(to: staging.appendingPathComponent("Defaults.plist"), options: .atomic)
         for (name, source) in [("Documents", documents), ("ApplicationSupport", support)]
         {
@@ -318,7 +318,7 @@ struct FullMonthExampleStore: Sendable
         try JSONEncoder().encode(manifest).write(to: staging.appendingPathComponent("Manifest.json"), options: .atomic)
         try verify(staging)
         try fm.moveItem(at: staging, to: destination)
-        var local = destination
+        var local  = destination
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
         try local.setResourceValues(values)
@@ -709,9 +709,9 @@ struct FullMonthExample: Sendable
     static func make(now: Date = .now, calendar: Calendar = .current) -> Self
     {
 
-        let today = calendar.startOfDay(for: now)
-        let month = calendar.dateInterval(of: .month, for: today)!
-        let days = calendar.range(of: .day, in: .month, for: today)!
+        let today    = calendar.startOfDay(for: now)
+        let month    = calendar.dateInterval(of: .month, for: today)!
+        let days     = calendar.range(of: .day, in: .month, for: today)!
         var document = PlanningCalendarDocument(
             currentWeekKey: PlanningDate.weekKey(today, calendar: calendar),
             firstWeekday: calendar.firstWeekday, weeks: [])
@@ -719,25 +719,25 @@ struct FullMonthExample: Sendable
         for offset in 0 ..< days.count
         {
 
-            let date = calendar.date(byAdding: .day, value: offset, to: month.start)!
-            var week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: calendar)
+            let date   = calendar.date(byAdding: .day, value: offset, to: month.start)!
+            var week   = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: calendar)
             let listID = week.dayListIDs[PlanningDate.key(date, calendar: calendar)]!
-            let index = week.collection.lists.firstIndex
+            let index  = week.collection.lists.firstIndex
             {
                 $0.id == listID
             }!
-            let past = date < today
+            let past    = date < today
             let isToday = calendar.isDate(date, inSameDayAs: today)
-            let count = past ? 3 + offset % 3 : (isToday ? 4 : (offset % 4 == 0 ? 1 : 0))
-            let titles = SampleData.cardTitlesByDay[(calendar.component(.weekday, from: date) + 5) % 7]
+            let count   = past ? 3 + offset % 3 : (isToday ? 4 : (offset % 4 == 0 ? 1 : 0))
+            let titles  = SampleData.cardTitlesByDay[(calendar.component(.weekday, from: date) + 5) % 7]
             week.collection.lists[index].cards = (0 ..< count).map
             {
                 item in
                 let timed = item == 1 || (!past && !isToday)
                 let start = calendar.date(bySettingHour: 9 + item * 2, minute: 0, second: 0, of: date)!
-                let end = calendar.date(byAdding: .minute, value: 45, to: start)!
-                let note = item == 3
-                let card = KanbanCard(
+                let end   = calendar.date(byAdding: .minute, value: 45, to: start)!
+                let note  = item == 3
+                let card  = KanbanCard(
                     id: nextID, word: note ? "A moment from today" : titles[item % titles.count],
                     listTitle: week.collection.lists[index].title,
                     isTitleChecked: (past && item != 2) || (isToday && item == 0),

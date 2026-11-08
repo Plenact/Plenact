@@ -433,21 +433,21 @@ struct CardDetailView: View
     @State var coverAttachmentID:  UUID?              /* Explicit cover selection; nil means disabled   */
     @State var selectedCoverPhoto: PhotosPickerItem?  /* One photo explicitly selected for a cover      */
     @State var coverImportID:      UUID?              /* Superseded requests cannot enable an old cover */
-    @State var showsCoverPicker = false               /* Visual chooser for already attached photos     */
-    @State var showsCoverLibrary = false              /* Offline category-based illustration chooser    */
+    @State var showsCoverPicker                       = false /* Visual chooser for already attached photos     */
+    @State var showsCoverLibrary                      = false /* Offline category-based illustration chooser    */
     @State var selectedPhotoItems: [PhotosPickerItem] =
     []                                                      /* Photos selected from the system photo library                */
     @State var commentDraft = ""                            /* Text currently entered in the comment composer               */
     @State var dismissedActivityIDs: Set<String>            /* IDs of activity entries that have been dismissed by the user */
     @State var activityFilter:       ActivityFilter = .all  /* The currently selected activity filter for the card          */
-    @State var showingAttachmentNotice = false              /* Whether an attachment notice is presented                    */
-    @State var attachmentNoticeMessage = ""                 /* Explanation shown for failed or unavailable sources          */
-    @State var showingDeleteConfirmation = false            /* Whether permanent card deletion awaits confirmation          */
-    @State var hasMovedCard = false                         /* Stops editor callbacks from writing back to the old owner    */
-    @State var hasDeletedCard = false                       /* Prevents stale snapshots after confirmed deletion            */
+    @State var showingAttachmentNotice              = false /* Whether an attachment notice is presented                    */
+    @State var attachmentNoticeMessage              = ""    /* Explanation shown for failed or unavailable sources          */
+    @State var showingDeleteConfirmation            = false /* Whether permanent card deletion awaits confirmation          */
+    @State var hasMovedCard                         = false /* Stops editor callbacks from writing back to the old owner    */
+    @State var hasDeletedCard                       = false /* Prevents stale snapshots after confirmed deletion            */
     @State var displayFormat: ItemDisplayFormat
     @State var presentation:  ItemPresentation      /* Current Card or Note rendering mode                      */
-    @State var showsNoteDetails = false             /* Visibility of supplementary Note fields                  */
+    @State var showsNoteDetails     = false         /* Visibility of supplementary Note fields                  */
     @State var hasEditedDescription = false         /* Whether the body draft should replace the stored value   */
     @State var recordID:                    Int     /* Current identity after any collection-local reassignment */
     @State var currentListTitle:            String  /* Owning list name updated after Note movement             */

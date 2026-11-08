@@ -55,7 +55,7 @@ struct LibraryCollectionRow: View
     let color:    Color   /* Collection accent, not its only identifying cue */
     let count:    Int     /* Active non-divider card count                   */
     var preview:  String = ""
-    var scrollsPreview = false
+    var scrollsPreview   = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Adapt text arrangement for accessibility sizes */
 

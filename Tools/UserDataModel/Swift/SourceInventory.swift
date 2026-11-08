@@ -12,7 +12,7 @@ import SwiftSyntax
 final class Inventory: SyntaxVisitor
 {
     var models: [[String: Any]] = []
-    var keys: Set<String> = []
+    var keys: Set<String>       = []
 
     /// @fcn Inventory.owner
     /// @brief Qualify nested source types independently of similarly named store documents
@@ -21,7 +21,7 @@ final class Inventory: SyntaxVisitor
     func owner(_ node: some SyntaxProtocol) -> String
     {
         var names: [String] = []
-        var parent = node.parent
+        var parent          = node.parent
         while let current = parent
         {
             if let value = current.as(StructDeclSyntax.self)
@@ -52,7 +52,7 @@ final class Inventory: SyntaxVisitor
             return
         }
         var fields: [[String: String]] = []
-        var cases: [String] = []
+        var cases: [String]            = []
         for member in members
         {
             if let declaration = member.decl.as(EnumCaseDeclSyntax.self)
@@ -124,12 +124,12 @@ final class Inventory: SyntaxVisitor
     }
 }
 
-let root = URL(fileURLWithPath: CommandLine.arguments[1])
-let paths = FileManager.default.enumerator(at: root.appendingPathComponent("Src"), includingPropertiesForKeys: nil)!
+let root                       = URL(fileURLWithPath: CommandLine.arguments[1])
+let paths                      = FileManager.default.enumerator(at: root.appendingPathComponent("Src"), includingPropertiesForKeys: nil)!
 var inventory: [[String: Any]] = []
 for case let file as URL in paths where file.pathExtension == "swift"
 {
-    let text = try String(contentsOf: file, encoding: .utf8)
+    let text    = try String(contentsOf: file, encoding: .utf8)
     let visitor = Inventory(viewMode: .sourceAccurate)
     visitor.walk(Parser.parse(source: text))
     inventory.append(["file": String(file.path.dropFirst(root.path.count + 1)),

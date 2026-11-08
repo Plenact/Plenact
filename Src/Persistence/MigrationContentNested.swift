@@ -24,7 +24,7 @@ extension MigrationContentValues
     {
 
         let source = try Self.lowerUUID(value)
-        let key = scope + ":" + kind + ":" + source
+        let key    = scope + ":" + kind + ":" + source
         guard usedNested.insert(key).inserted else
         {
             throw Failure.invalid("duplicate_nested_" + kind)
@@ -79,12 +79,12 @@ extension MigrationContentValues
 
         try values.map { list in
             let identifier = try nested("checklist", list["id"], scope: scope)
-            let items = try (list["items"] as! [[String: Any]]).map { item -> [String: Any] in
-                let identifier = try nested("checklist_item", item["id"], scope: scope)
-                var linkedOwner = owner
+            let items      = try (list["items"] as! [[String: Any]]).map { item -> [String: Any] in
+                let identifier            = try nested("checklist_item", item["id"], scope: scope)
+                var linkedOwner           = owner
                 var linkedCollection: Any = NSNull()
-                let originalItem = try Self.lowerUUID(item["id"])
-                let calendarOverride = calendarOwnerScopes.contains(owner) ? checklistWeekOverrides[originalItem] : nil
+                let originalItem          = try Self.lowerUUID(item["id"])
+                let calendarOverride      = calendarOwnerScopes.contains(owner) ? checklistWeekOverrides[originalItem] : nil
                 if let original = calendarOverride ?? (item["linkedCollectionID"] as? String)?.lowercased()
                 {
                     if originalCollectionIDs[owner] == original
@@ -103,7 +103,7 @@ extension MigrationContentValues
                     linkedCollection = try reference("collection", target)
                 }
                 let source = item["content"] as! [String: Any]
-                let kind = source["kind"] as! String
+                let kind   = source["kind"] as! String
                 var content: [String: Any]
                 switch kind
                 {

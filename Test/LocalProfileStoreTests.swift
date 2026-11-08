@@ -226,7 +226,7 @@ final class LocalProfileStoreTests: XCTestCase
     {
 
 
-        let data = Data([1, 2, 3, 4])                          /* Synthetic avatar-image bytes */
+        let data     = Data([1, 2, 3, 4])                      /* Synthetic avatar-image bytes */
         let fileName = try ProfileAvatarPhotoStore.save(data)  /* Stored avatar filename       */
 
         defer
@@ -311,7 +311,7 @@ final class LocalProfileStoreTests: XCTestCase
         XCTAssertEqual(croppedImage.size, CGSize(width: 512, height: 512))
 
         let colorImage = try XCTUnwrap(CIImage(data: data)) /* Core Image representation of the avatar crop */
-        let average = try XCTUnwrap(
+        let average    = try XCTUnwrap(
             colorImage.applyingFilter(
                                 "CIAreaAverage",
                                 parameters: [ /* Average color sample for the exported crop   */

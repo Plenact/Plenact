@@ -354,12 +354,12 @@ struct ChecklistBlock: View
     @State private var typeDraft: KanbanChecklistItem?
     @State private var requestedType = ChecklistItemType.standard
 
-    @State private var newItemText = ""
-    @State private var confirmsDeletion = false
-    @State private var isRenaming = false          /* Whether the checklist title is currently being renamed          */
-    @State private var titleDraft = ""             /* The draft text for the checklist title being edited             */
+    @State private var newItemText        = ""
+    @State private var confirmsDeletion   = false
+    @State private var isRenaming         = false  /* Whether the checklist title is currently being renamed          */
+    @State private var titleDraft         = ""     /* The draft text for the checklist title being edited             */
     @State private var hideCompletedItems = false  /* Checklist completed-item filter                                 */
-    @State private var isCollapsed = false         /* Whether the checklist's items are currently collapsed from view */
+    @State private var isCollapsed        = false  /* Whether the checklist's items are currently collapsed from view */
 
     ///
     /// @fcn        ChecklistBlock.allItemsAreCompleted

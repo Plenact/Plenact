@@ -34,8 +34,8 @@ struct PersonalListNoteDraft
 
 
     var destinationID: UUID     /* Personal List selected for the unsaved Note */
-    var title = ""              /* Editable Note heading                       */
-    var body = ""               /* Editable Note content preserved as entered  */
+    var title           = ""    /* Editable Note heading                       */
+    var body            = ""    /* Editable Note content preserved as entered  */
     let createdAt: Date = .now  /* Draft creation time retained through saving */
 
     var normalizedTitle: String
@@ -183,9 +183,9 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     var color:                 ProfileColor            /* Collection accent color                     */
     var lists:                 [KanbanList]            /* Lists and cards owned by the collection     */
     var savedCardIDs:          Set<Int>                /* Bookmarked cards retained by the collection */
-    var isArchived:            Bool? = nil             /* Optional archive state for older saved data */
+    var isArchived:            Bool?            = nil  /* Optional archive state for older saved data */
     var boardAppearance:       BoardAppearance? = nil  /* Independent persisted List color defaults   */
-    var collectionDescription: String? = nil
+    var collectionDescription: String?          = nil
 
     /// The three shortcut Lists share their focused layout across Today and Plans.
     var preferredFocusedListID: Int?
@@ -512,7 +512,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
             } .max() ?? -1)
         + 1                                 /* Next identity beyond all retained collection records */
         var destination = lists[listIndex]  /* Column snapshot receiving the new Note               */
-        var note = destination.makeItem(
+        var note        = destination.makeItem(
             id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt,
             presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences) /* New record carrying the draft's content and creation time */
 
@@ -650,7 +650,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
                 $0.lowercased()
             })                /* Existing names compared without case distinctions */
         var candidate = base  /* Proposed name retried until unique                */
-        var number = 2        /* Numeric suffix for resolving name collisions      */
+        var number    = 2     /* Numeric suffix for resolving name collisions      */
 
         while titles.contains(candidate.lowercased())
         {

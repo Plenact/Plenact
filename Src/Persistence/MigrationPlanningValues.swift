@@ -101,10 +101,10 @@ struct MigrationPlanningValues
 
             return try priorityResolver(raw)
         }
-        let owner = try MigrationContentValues.lowerUUID(raw["ownerID"])
-        let collection = try context.id("collection", owner: "source_collections", legacy: owner)
+        let owner         = try MigrationContentValues.lowerUUID(raw["ownerID"])
+        let collection    = try context.id("collection", owner: "source_collections", legacy: owner)
         let discriminator = (raw["sourceCreatedAt"] as? NSNumber).map { String($0.doubleValue) }
-        let card = try context.id("card", owner: owner, legacy: String(raw["cardID"] as! Int), discriminator: discriminator)
+        let card          = try context.id("card", owner: owner, legacy: String(raw["cardID"] as! Int), discriminator: discriminator)
         return ["source_collection_id": try context.reference("collection", collection),
             "card_id": try context.reference("card", card), "title": raw["title"]!, "source_location": raw["location"]!,
             "source_created_at_utc": try timestamp(raw["sourceCreatedAt"], path: card + "/historical-creation")]
@@ -119,7 +119,7 @@ struct MigrationPlanningValues
     func priorities(_ value: Any) throws -> [[String: Any]]
     {
 
-        let raw = value as! [[String: Any]]
+        let raw               = value as! [[String: Any]]
         var seen: Set<String> = []
         return try raw.map { item in
             let key = (try MigrationContentValues.lowerUUID(item["ownerID"])) + ":" + String(item["cardID"] as! Int)
@@ -213,8 +213,8 @@ struct MigrationPlanningValues
             {
                 throw MigrationContentValues.Failure.invalid("planning_decision_identity")
             }
-            let source = raw["action"] as! [String: Any]
-            let key = source.keys.first!
+            let source                = raw["action"] as! [String: Any]
+            let key                   = source.keys.first!
             var action: [String: Any] = ["kind": key == "keepTomorrow" ? "keep_tomorrow" : key]
             if key == "date"
             {

@@ -95,9 +95,9 @@ struct PortableMediaPlacement
         }
         usage(export, path: "")
         var filenames: [String: String] = [:]
-        var output: [String: Data] = [:]
-        var total = 0
-        let available = Set(assets.compactMap { $0["id"] as? String })
+        var output: [String: Data]      = [:]
+        var total                       = 0
+        let available                   = Set(assets.compactMap { $0["id"] as? String })
         guard Set(areas.keys).isSubset(of: available), Set(overrides.keys).isSubset(of: available),
               overrides.values.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." && !$0.contains("/") && !$0.contains("\\") }) else
         {
@@ -118,10 +118,10 @@ struct PortableMediaPlacement
             {
                 throw PortablePackageReview.Failure.integrity
             }
-            let original = payload["original_name"] as? String ?? ""
-            let suffix = (original as NSString).pathExtension.lowercased()
+            let original   = payload["original_name"] as? String ?? ""
+            let suffix     = (original as NSString).pathExtension.lowercased()
             let safeSuffix = !suffix.isEmpty && suffix.count <= 12 && suffix.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) }
-            let name = overrides[id] ?? (id.lowercased() + "." + (safeSuffix ? suffix : "bin"))
+            let name       = overrides[id] ?? (id.lowercased() + "." + (safeSuffix ? suffix : "bin"))
             filenames[id] = name
             for area in destinations
             {
@@ -200,7 +200,7 @@ struct PortableMediaPlacement
     {
 
         let manager = FileManager.default
-        var actual = Set<String>()
+        var actual  = Set<String>()
         for area in LegacyWorkspaceExport.mediaRoots
         {
             let base = root.appendingPathComponent(area)
@@ -223,7 +223,7 @@ struct PortableMediaPlacement
             }
             for case let child as String in iterator
             {
-                let url = base.appendingPathComponent(child)
+                let url  = base.appendingPathComponent(child)
                 let kind = try manager.attributesOfItem(atPath: url.path)[.type] as? FileAttributeType
                 if kind == .typeDirectory
                 {

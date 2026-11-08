@@ -1030,9 +1030,9 @@ struct AddItemTextColorSection: View
                                         set:
                                         {
                                             color in
-                                            var red: CGFloat = 0
+                                            var red: CGFloat   = 0
                                             var green: CGFloat = 0
-                                            var blue: CGFloat = 0
+                                            var blue: CGFloat  = 0
                                             var alpha: CGFloat = 0
                                             guard UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha) else
                                             {
@@ -1204,7 +1204,7 @@ struct ListIconColorPicker: View
 
 
     @Binding var selection: ProfileColor?
-    var fixedColor:         ProfileColor? = nil
+    var fixedColor:         ProfileColor?            = nil
     private let presets:    [(String, ProfileColor)] = [
         ("Teal", .teal), ("Blue", .blue), ("Green", .green), ("Orange", .orange),
         ("Coral", .coral), ("Graphite", .graphite), ("White", .white),

@@ -109,8 +109,8 @@ enum BoardCardMovement
         }
 
 
-        var updated = lists                                 /* Board snapshot changed only after movement validation */
-        var card = updated[source].cards.remove(at: index)  /* Record removed from its source for reinsertion        */
+        var updated = lists                                   /* Board snapshot changed only after movement validation */
+        var card    = updated[source].cards.remove(at: index) /* Record removed from its source for reinsertion        */
         let insertion: Int                                  /* Destination offset after removing the source record   */
 
         if let beforeCardID
@@ -541,8 +541,8 @@ enum PersonalCollectionNoteMovement
         }
 
 
-        var source = collections[sourceIndex]            /* Source collection snapshot receiving the removal   */
-        var destination = collections[destinationIndex]  /* Destination collection snapshot receiving the Note */
+        var source        = collections[sourceIndex]      /* Source collection snapshot receiving the removal   */
+        var destination   = collections[destinationIndex] /* Destination collection snapshot receiving the Note */
         let sourceMatches = source.lists.indices.flatMap
         {
 
@@ -841,7 +841,7 @@ enum CrossBoardCardMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var newID = card.id
+        var newID    = card.id
         let reserved = Set(targetLists.flatMap(\.allCards).map(\.id))
         if !sameBoard && reserved.contains(newID)
         {

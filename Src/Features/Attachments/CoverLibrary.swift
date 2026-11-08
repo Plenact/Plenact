@@ -598,7 +598,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     {
 
         let normalized = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-        let terms = normalized.components(separatedBy: CharacterSet.alphanumerics.inverted).filter
+        let terms      = normalized.components(separatedBy: CharacterSet.alphanumerics.inverted).filter
         {
             !$0.isEmpty
         }
@@ -854,7 +854,7 @@ struct CardCoverPreview: View
 
     let attachment: KanbanAttachment  /* Explicitly selected photo                                    */
     var height:     CGFloat = 128     /* Fixed preview height, independent of source image dimensions */
-    var unavailableTitle = "Cover unavailable"
+    var unavailableTitle    = "Cover unavailable"
     @State private var image: UIImage?      /* Downsampled image for this presentation */
     @State private var unavailable = false  /* Explicit missing/invalid-image feedback */
 

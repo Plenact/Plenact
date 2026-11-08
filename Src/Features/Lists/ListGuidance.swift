@@ -29,20 +29,20 @@ struct SessionListGuidance: View
 
     }
 
-    var toggleRequest:        Int = 0
+    var toggleRequest:        Int            = 0
     var onPresentationChange: (Bool) -> Void =
     {
         _ in
     }
 
     @State private var reportedInitialPresentation = false
-    @State private var automaticRevealAttempted = false
-    @State private var handledToggleRequest = 0
+    @State private var automaticRevealAttempted    = false
+    @State private var handledToggleRequest        = 0
     @State private var entryWasEmpty: Bool
-    @State private var isVisible = false
-    @State private var hasPreparedLayout = false
+    @State private var isVisible            = false
+    @State private var hasPreparedLayout    = false
     @State private var guideHeight: CGFloat = 220
-    @State private var showsReadingView = false
+    @State private var showsReadingView     = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
 

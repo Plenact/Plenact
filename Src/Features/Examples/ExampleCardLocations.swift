@@ -19,11 +19,11 @@ enum ExampleCardLocations
 {
 
 
-    static let gym = "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902"
-    static let work = "Mercury Marine Plant 33, 505 Marion Road, Oshkosh, WI 54901"
-    static let migrationKey = "Plenact.ExampleCardLocations.Applied.v1"
-    static let backupKey = "Plenact.ExampleCardLocations.Backup.v1"
-    private static let boardKey = "Plenact.Board.v1"
+    static let gym                    = "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902"
+    static let work                   = "Mercury Marine Plant 33, 505 Marion Road, Oshkosh, WI 54901"
+    static let migrationKey           = "Plenact.ExampleCardLocations.Applied.v1"
+    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v1"
+    private static let boardKey       = "Plenact.Board.v1"
     private static let collectionsKey = "Plenact.PersonalCollections.v1"
 
     ///
@@ -175,9 +175,9 @@ enum ExampleCardLocations
             return nil
         }
 
-        let updatedLists = updating(lists)
+        let updatedLists       = updating(lists)
         let updatedCollections = updating(collections)
-        var updatedCalendar = calendar
+        var updatedCalendar    = calendar
         for index in updatedCalendar.weeks.indices
         {
 
@@ -204,7 +204,7 @@ enum ExampleCardLocations
         }
 
         try PlanningRoutineStore.validate(library)
-        let encoder = JSONEncoder()
+        let encoder      = JSONEncoder()
         let replacements = [
             boardKey: try encoder.encode(updatedLists),
             PlanningCalendarStore.key: try encoder.encode(updatedCalendar),

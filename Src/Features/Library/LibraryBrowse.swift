@@ -234,8 +234,8 @@ enum LibraryPlateSelection
     ) -> [LibraryPlateItem]
     {
 
-        let today = calendar.startOfDay(for: now)
-        let horizon = calendar.date(byAdding: .day, value: 7, to: today) ?? today
+        let today                     = calendar.startOfDay(for: now)
+        let horizon                   = calendar.date(byAdding: .day, value: 7, to: today) ?? today
         var items: [LibraryPlateItem] = []
         for collection in collections where collection.isActive
         {
@@ -247,7 +247,7 @@ enum LibraryPlateSelection
                 {
 
                     let marked = important.contains(LibraryRecentItem(collectionID: collection.id, cardID: card.id))
-                    var due = card.dueDate
+                    var due    = card.dueDate
                     // A time without a date cannot be assigned an urgency day.
                     if !card.dueDateKind.includesDate
                     {
@@ -448,7 +448,7 @@ struct LibraryLabelMatchesView: View
     {
 
         let owners = WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? [])
-        let all =
+        let all    =
         WorkspaceBrowseIndex.labels(in: owners, catalog: LabelLibraryStore.load()).first
         {
             $0.id == label.id

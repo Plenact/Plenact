@@ -65,7 +65,7 @@ enum MigrationTestPackage
     static func prepare(_ preview: MigrationPreview) throws -> FileWrapper
     {
 
-        let files = preview.files
+        let files  = preview.files
         let source = LegacyWorkspaceBackup(files: files, storeCount: 0, mediaCount: 0, reviewCodes: [])
         _ = try MigrationBackupReader.values(in: source)
         let report = try json("Report.json", files: files)
@@ -75,7 +75,7 @@ enum MigrationTestPackage
             throw Failure.invalidEvidence
         }
         let pending = ["content_blocker", "settings_blocker", "studio_blocker", "planning_blocker"]
-        let counts = ["missing_original_file_count", "asset_review_item_count", "settings_review_item_count",
+        let counts  = ["missing_original_file_count", "asset_review_item_count", "settings_review_item_count",
             "appearance_review_item_count", "unresolved_label_reference_count", "planning_unavailable_reference_count"]
         guard pending.allSatisfy({ report[$0] is NSNull }),
               counts.allSatisfy({ (report[$0] as? Int) == 0 }),
@@ -94,10 +94,10 @@ enum MigrationTestPackage
         {
             throw Failure.unsupportedStore
         }
-        let settings = try json("SettingsPreview.json", files: files)
-        let studio = try json("StudioPreview.json", files: files)
+        let settings   = try json("SettingsPreview.json", files: files)
+        let studio     = try json("StudioPreview.json", files: files)
         let appearance = try json("AppearancePreview.json", files: files)
-        let assets = try json("AssetPreview.json", files: files)
+        let assets     = try json("AssetPreview.json", files: files)
         guard settings["ready_for_binding"] as? Bool == true,
               studio["canonical_mapping_complete"] as? Bool == true,
               studio["format_version"] as? Int == 2,
@@ -115,7 +115,7 @@ enum MigrationTestPackage
             }
             return record
         }
-        let originalRecords = records
+        let originalRecords        = records
         var bound: [[String: Any]] = []
         for (kind, draft) in [("user_preferences", settings["preferences"]), ("user_profile", settings["profile"]),
             ("studio_settings", studio["studio_settings"])]
@@ -151,22 +151,22 @@ enum MigrationTestPackage
                 }
                 // UUIDv5 uses the same synthetic account namespace and name as the independent assembler.
                 var namespace = UUID(uuidString: accountID)!.uuid
-                var name = withUnsafeBytes(of: &namespace) { Data($0) }
+                var name      = withUnsafeBytes(of: &namespace) { Data($0) }
                 name.append(Data(("content_selection:" + card).utf8))
                 var bytes = Array(Insecure.SHA1.hash(data: name).prefix(16))
                 bytes[6] = (bytes[6] & 0x0f) | 0x50
                 bytes[8] = (bytes[8] & 0x3f) | 0x80
                 let hex = Array(bytes.map { String(format: "%02x", $0) }.joined())
-                let id = String(hex[0..<8]) + "-" + String(hex[8..<12]) + "-" + String(hex[12..<16])
+                let id  = String(hex[0..<8]) + "-" + String(hex[8..<12]) + "-" + String(hex[12..<16])
                     + "-" + String(hex[16..<20]) + "-" + String(hex[20..<32])
                 bound.append(document("content_selection", id: id, workspace: workspace, payload:
                     ["account_id": accountID, "card_id": card, "bookmarked": bookmarked, "importance": importance]))
             }
         }
         var blobs: [String: FileWrapper] = [:]
-        var mappings: [[String: Any]] = []
-        var inventory = Set<String>()
-        var assetIDs = Set<String>()
+        var mappings: [[String: Any]]    = []
+        var inventory                    = Set<String>()
+        var assetIDs                     = Set<String>()
         for entry in entries
         {
             guard let id = entry["asset_id"] as? String, let path = entry["source_path"] as? String,
@@ -176,7 +176,7 @@ enum MigrationTestPackage
                 throw Failure.reviewRequired
             }
             let bytes = try MigrationBackupReader.file(path, in: files)
-            let hash = MigrationBackupReader.digest(bytes)
+            let hash  = MigrationBackupReader.digest(bytes)
             guard entry["sha256"] as? String == hash, entry["byte_length"] as? String == String(bytes.count) else
             {
                 throw Failure.invalidEvidence
@@ -192,7 +192,7 @@ enum MigrationTestPackage
             bound.append(document("asset", id: id, workspace: workspace, payload: payload))
         }
         let preflightData = try MigrationBackupReader.file("NativePreflight.json", in: files)
-        let preflight = try JSONSerialization.jsonObject(with: preflightData) as? [String: Any]
+        let preflight     = try JSONSerialization.jsonObject(with: preflightData) as? [String: Any]
         guard let declared = preflight?["media"] as? [[String: Any]],
               Set(declared.compactMap { $0["path"] as? String }) == inventory else
         {
@@ -209,12 +209,12 @@ enum MigrationTestPackage
             ["display_name": "Synthetic migration test owner", "account_kind": "personal", "created_at_utc": "2026-10-25T00:00:00.000Z"]))
         records.append(document("workspace", id: workspace, workspace: workspace, payload:
             ["owner_account_id": accountID, "display_name": "Synthetic migration test workspace", "calendar_system": "gregorian", "state": "active"]))
-        let export = try assemble(records, workspace: workspace, appearance: appearance)
+        let export                  = try assemble(records, workspace: workspace, appearance: appearance)
         let evidence: [String: Any] = ["settings": settings, "studio": studio, "selections": selection,
             "assets": assets, "appearance": appearance, "replaced_asset_placeholders": replaced]
         let assembly: [String: Any] = ["format": "plenact.synthetic-assembly-test", "format_version": 1,
             "ownership_verified": false, "cloud_upload_allowed": false, "workspace_export": export, "evidence": evidence]
-        let assemblyData = try data(assembly)
+        let assemblyData                   = try data(assembly)
         var manifestFiles: [[String: Any]] = [["path": "Assembly.json", "byte_length": assemblyData.count,
             "sha256": MigrationBackupReader.digest(assemblyData)]]
         for (name, file) in blobs
@@ -264,7 +264,7 @@ enum MigrationTestPackage
     private static func assemble(_ records: [[String: Any]], workspace: String, appearance: [String: Any]) throws -> [String: Any]
     {
 
-        let contentKinds = ["collection": "collections", "list": "lists", "card": "cards"]
+        let contentKinds  = ["collection": "collections", "list": "lists", "card": "cards"]
         let planningKinds = ["calendar_index": "calendar_indexes", "calendar_week": "weeks", "daily_plan": "daily_plans",
             "weekly_review": "weekly_reviews", "periodic_review": "periodic_reviews", "planning_template": "templates",
             "template_library": "template_libraries", "review_rhythm": "review_rhythms", "asset": "assets"]
@@ -273,7 +273,7 @@ enum MigrationTestPackage
         let one = ["account": "account", "workspace": "workspace", "user_preferences": "user_preferences",
             "studio_settings": "studio_settings", "today_shortcuts": "today_shortcuts", "workspace_display_preferences": "display_preferences"]
         var content: [String: Any] = ["user_data_model_version": "1.0", "payload_schema_version": 1, "workspace_id": workspace]
-        var planning = content
+        var planning               = content
         planning["account_id"] = accountID
         var base: [String: Any] = ["user_data_model_version": "1.0", "payload_schema_version": 1, "tombstones": []]
         for key in contentKinds.values

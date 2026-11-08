@@ -15,19 +15,19 @@ final class MigrationContentValues
 {
 
     var journal: MigrationIdentityJournal                  /* Candidate identities; saved only after the slice succeeds */
-    var known: Set<String> = []                            /* Canonical record IDs supplied by converted source records */
-    var unavailable: [String: [String: Any]] = [:]          /* Typed explicit unavailable-reference documents            */
-    var precisionEvidence: [[String: Any]] = []            /* Original epoch values not exactly representable in ms     */
-    var usedNested: Set<String> = []
-    var attachmentTargets: [String: String] = [:]
-    var originalCards: [String: [String: Any]] = [:]
-    var cardTargets: [String: String] = [:]                /* Original owner + numeric Card identity                    */
-    var assetTargets: [String: String] = [:] /* Export-only verified source-path aliases; normal migration uses its journal */
-    var originalCollectionIDs: [String: String] = [:]
+    var known: Set<String>                          = []    /* Canonical record IDs supplied by converted source records */
+    var unavailable: [String: [String: Any]]        = [:]   /* Typed explicit unavailable-reference documents            */
+    var precisionEvidence: [[String: Any]]          = []    /* Original epoch values not exactly representable in ms     */
+    var usedNested: Set<String>                     = []
+    var attachmentTargets: [String: String]         = [:]
+    var originalCards: [String: [String: Any]]      = [:]
+    var cardTargets: [String: String]               = [:]   /* Original owner + numeric Card identity                    */
+    var assetTargets: [String: String]              = [:]   /* Export-only verified source-path aliases; normal migration uses its journal */
+    var originalCollectionIDs: [String: String]     = [:]
     var ownerScopesByCollection: [String: [String]] = [:]
-    var collectionTargets: [String: String] = [:]          /* Original Collection UUID -> canonical UUID                 */
-    var calendarOwnerScopes: Set<String> = []
-    var checklistWeekOverrides: [String: String] = [:]
+    var collectionTargets: [String: String]         = [:]   /* Original Collection UUID -> canonical UUID                 */
+    var calendarOwnerScopes: Set<String>            = []
+    var checklistWeekOverrides: [String: String]    = [:]
     var timeZoneID: String                                 /* Explicit caller-confirmed original timezone                */
     let mediaDigests: [String: String]                     /* Exact preserved-file identities                           */
 

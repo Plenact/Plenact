@@ -111,9 +111,9 @@ enum SampleData
             KanbanChecklistItem(title: $0)
         }  /* Standard nested actions */
 
-        let checklist = KanbanChecklist(title: title, items: nestedItems)  /* Nested checklist   */
+        let checklist  = KanbanChecklist(title: title, items: nestedItems) /* Nested checklist   */
         let sampleDate = Date(timeIntervalSince1970: 1_790_467_200)        /* Stable sample date */
-        let comments = [
+        let comments   = [
             KanbanComment(author: "Plenact Demo", body: comment, createdAt: sampleDate)
         ] /* Sample discussion       */
 
@@ -334,7 +334,7 @@ enum SampleData
 
 
             let targetListIndex = (listIndex + 1) % initializedLists.count /* Next Board list */
-            let targetCards = baseLists[targetListIndex].cards.filter
+            let targetCards     = baseLists[targetListIndex].cards.filter
             {
                 !$0.isSectionDivider
             }  /* Link targets    */

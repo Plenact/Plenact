@@ -438,7 +438,7 @@ struct CardPhotoGallery: View
     let onRemove:                (KanbanAttachment) -> Void
     let onSetCover:              (UUID) -> Void
 
-    @ScaledMetric(relativeTo: .body) private var photoWidth = 220
+    @ScaledMetric(relativeTo: .body) private var photoWidth  = 220
     @ScaledMetric(relativeTo: .body) private var photoHeight = 180
     @State private var captionPhoto: KanbanAttachment?
     @State private var removalPhoto: KanbanAttachment?

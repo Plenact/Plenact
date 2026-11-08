@@ -21,9 +21,9 @@ struct ExampleLoadUndoSnapshot: Codable, Equatable
     let lists:            [KanbanList]  /* Board lists to restore                   */
     let todayListID:      Int?          /* Previously selected Today list, when set */
     var week:             DatedPlanningWeek? = nil
-    var savedCardIDs:     Set<Int>? = nil
-    var importantCardIDs: Set<Int>? = nil
-    var importanceLevels: [Int: Int]? = nil
+    var savedCardIDs:     Set<Int>?          = nil
+    var importantCardIDs: Set<Int>?          = nil
+    var importanceLevels: [Int: Int]?        = nil
 }
 
 

@@ -42,7 +42,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -50,7 +50,7 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let list = KanbanList(id: 1, title: "Color examples", cards: [])
+        let list  = KanbanList(id: 1, title: "Color examples", cards: [])
         let cards = [
             list.makeItem(
                 id: 1, title: "Random header only",
@@ -197,7 +197,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -254,7 +254,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -262,10 +262,10 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let before = UserDefaults.standard.data(forKey: DailyPlanStore.key)
+        let before   = UserDefaults.standard.data(forKey: DailyPlanStore.key)
         let calendar = Calendar.current
-        let day = calendar.startOfDay(for: .now)
-        let cards = (0 ..< 5).map
+        let day      = calendar.startOfDay(for: .now)
+        let cards    = (0 ..< 5).map
         {
             i in
             KanbanCard(
@@ -327,7 +327,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -335,9 +335,9 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let beforePlans = UserDefaults.standard.data(forKey: DailyPlanStore.key)
+        let beforePlans  = UserDefaults.standard.data(forKey: DailyPlanStore.key)
         let beforeRhythm = UserDefaults.standard.data(forKey: ReviewRhythmStore.dismissalsKey)
-        let completed = [
+        let completed    = [
             KanbanCard(id: 1, word: "Make time for family", listTitle: "Today", isTitleChecked: true, checklists: [])
         ]
         let tomorrow = KanbanList(
@@ -420,7 +420,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -433,8 +433,8 @@ extension PlenactBoardDocumentTests
             KanbanCard(id: $0, word: "Focus task \($0)", listTitle: "Today", checklists: [])
         }
 
-        let list = KanbanList(id: 1, title: "Today", cards: cards)
-        let prefs = LocalProfilePreferences(todayFocusItemCount: 4)
+        let list    = KanbanList(id: 1, title: "Today", cards: cards)
+        let prefs   = LocalProfilePreferences(todayFocusItemCount: 4)
         let entries = prefs.todayFocusEntries(in: cards)
         XCTAssertEqual(entries.count, 9)
         let host = UIHostingController(
@@ -527,7 +527,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -650,7 +650,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -714,7 +714,7 @@ extension PlenactBoardDocumentTests
     func testPeriodicReviewRendersSetupAndAllStepsWithoutWriting() async throws
     {
 
-        let name = "PlenactTests.PeriodicRender." + UUID().uuidString
+        let name     = "PlenactTests.PeriodicRender." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer
         {
@@ -726,7 +726,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -754,7 +754,7 @@ extension PlenactBoardDocumentTests
             }
 
             let bytes = defaults.data(forKey: PeriodicReviewStore.key)
-            let host = UIHostingController(
+            let host  = UIHostingController(
                 rootView: PeriodicReviewView(
                     calendar: .current, defaults: defaults, initialReviewID: step < 0 ? nil : baseline?.id))
             window.rootViewController = host;
@@ -792,7 +792,7 @@ extension PlenactBoardDocumentTests
     func testReviewRhythmInvitationsAndSettingsRenderWithoutWritingOrRequestingPermission() async throws
     {
 
-        let suite = "ReviewRhythmRender." + UUID().uuidString
+        let suite    = "ReviewRhythmRender." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -810,7 +810,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -874,17 +874,17 @@ extension PlenactBoardDocumentTests
     func testDailyHistoryRendersCurrentPastAndEmptyDaysWithoutWriting() async throws
     {
 
-        let name = "PlenactTests.DailyHistoryRender." + UUID().uuidString
+        let name     = "PlenactTests.DailyHistoryRender." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer
         {
             defaults.removePersistentDomain(forName: name)
         }
 
-        let calendar = Calendar.current
-        let today = Date.now
+        let calendar  = Calendar.current
+        let today     = Date.now
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-        let missing = calendar.date(byAdding: .day, value: -2, to: today)!
+        let missing   = calendar.date(byAdding: .day, value: -2, to: today)!
         for date in [today, yesterday]
         {
 
@@ -903,7 +903,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -950,7 +950,7 @@ extension PlenactBoardDocumentTests
     func testCheckInRendersWithoutSavingOrChangingSources() async throws
     {
 
-        let week = DatedPlanningWeek.make(for: .now)
+        let week   = DatedPlanningWeek.make(for: .now)
         let access = PlanningCalendarAccess(
             document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [],
             saveWeek:
@@ -977,7 +977,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -985,7 +985,7 @@ extension PlenactBoardDocumentTests
         }
 
         var saves = 0
-        let host = UIHostingController(
+        let host  = UIHostingController(
             rootView: TodayCheckInView(
                 plan: .constant(DailyPlan(date: .now)), date: .now,
                 onSave:
@@ -1027,7 +1027,7 @@ extension PlenactBoardDocumentTests
     func testEveningReviewRendersAllStepsWithoutSaving() async throws
     {
 
-        let week = DatedPlanningWeek.make(for: .now)
+        let week   = DatedPlanningWeek.make(for: .now)
         let access = PlanningCalendarAccess(
             document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [],
             saveWeek:
@@ -1054,7 +1054,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -1116,9 +1116,9 @@ extension PlenactBoardDocumentTests
     func testTodayVisionRendersMorningAndRealityStepsWithoutSaving() async throws
     {
 
-        let week = DatedPlanningWeek.make(for: .now)
+        let week     = DatedPlanningWeek.make(for: .now)
         let document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
-        let access = PlanningCalendarAccess(
+        let access   = PlanningCalendarAccess(
             document: document, library: [], saveWeek:
             {
                 _ in
@@ -1143,7 +1143,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -1206,7 +1206,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -1268,7 +1268,7 @@ extension PlenactBoardDocumentTests
 
                 list.setSingleListViewMode(mode)
                 let target = try XCTUnwrap(list.cards.last)
-                let view = TodayListDetailView(
+                let view   = TodayListDetailView(
                     lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
                     savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose:
                     {
@@ -1375,7 +1375,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -1422,7 +1422,7 @@ extension PlenactBoardDocumentTests
                 KanbanCard(id: 2, word: "Note", listTitle: "First", checklists: [], presentation: .note)
             ]
             let lists = [KanbanList(id: 0, title: "First", cards: cards), KanbanList(id: 1, title: "Second", cards: [])]
-            let host = UIHostingController(
+            let host  = UIHostingController(
                 rootView: ContentView(
                     lists: .constant(lists), allowsAddingLists: false,
                     retainedAttachmentLists:
@@ -1561,8 +1561,8 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(
+        let window   = UIWindow(windowScene: scene)
+        let host     = UIHostingController(
             rootView: LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12)
             {
 
@@ -1632,15 +1632,15 @@ extension PlenactBoardDocumentTests
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let owner = PersonalCollection(title: "Garden plans", kind: .board)
+        let previous   = scene.windows.first(where: \.isKeyWindow)
+        let owner      = PersonalCollection(title: "Garden plans", kind: .board)
         var appearance = BoardAppearance()
         appearance.collectionBackground = CollectionBackground(preset: .sage)
         for dated in [false, true]
         {
 
             let window = UIWindow(windowScene: scene)
-            let host = UIHostingController(
+            let host   = UIHostingController(
                 rootView: ContentView(
                     lists: .constant(owner.lists), boardTitle: dated ? "Plenact" : "Garden plans",
                     boardSubtitle: dated ? "This Week" : "Board", onClose:
@@ -1696,7 +1696,7 @@ extension PlenactBoardDocumentTests
     func testBoardViewportMemoryRoundTripsAndKeepsOwnersSeparate() throws
     {
 
-        let suite = "Plenact.ViewportTests." + UUID().uuidString
+        let suite    = "Plenact.ViewportTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -1739,7 +1739,7 @@ extension PlenactBoardDocumentTests
     func testViewportProbeRestoresNativeOffsetsInBothDirections() async throws
     {
 
-        let suite = "Plenact.ScrollRestoreTests." + UUID().uuidString
+        let suite    = "Plenact.ScrollRestoreTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -1800,7 +1800,7 @@ extension PlenactBoardDocumentTests
             {
 
                 let memory = BoardViewportMemory(owner: owner, defaults: defaults)
-                let host = UIHostingController(
+                let host   = UIHostingController(
                     rootView: ScrollView(horizontal ? .horizontal : .vertical)
                     {
 
@@ -1861,7 +1861,7 @@ extension PlenactBoardDocumentTests
     {
 
         let owner = UUID()
-        let key = BoardViewportMemory.prefix + owner.uuidString
+        let key   = BoardViewportMemory.prefix + owner.uuidString
         defer
         {
             UserDefaults.standard.removeObject(forKey: key)
@@ -1917,7 +1917,7 @@ extension PlenactBoardDocumentTests
         {
 
             let window = UIWindow(windowScene: scene)
-            let host = UIHostingController(
+            let host   = UIHostingController(
                 rootView: ContentView(
                     lists: .constant(lists), boardTitle: "Viewport test",
                     onListsChanged:
@@ -2004,13 +2004,13 @@ extension PlenactBoardDocumentTests
         var note = KanbanCard(id: 93, word: "Garden reflections", listTitle: "Garden", presentation: .note)
         note.descriptionOverride = "A few ideas for next season, with space for something new."
         let originals = [card, note]
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene     = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(
+        let window   = UIWindow(windowScene: scene)
+        let host     = UIHostingController(
             rootView: VStack(spacing: 16)
             {
 
@@ -2090,7 +2090,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -2098,11 +2098,11 @@ extension PlenactBoardDocumentTests
             previous?.makeKey()
         }
 
-        var list = KanbanList(id: 4, title: "In the Queue", cards: [])
-        let labels = LabelLibraryStore.load()
-        var reveals = 0
+        var list                 = KanbanList(id: 4, title: "In the Queue", cards: [])
+        let labels               = LabelLibraryStore.load()
+        var reveals              = 0
         var footerStates: [Bool] = []
-        let host = UIHostingController(
+        let host                 = UIHostingController(
             rootView: SessionListGuidance(
                 list: list, labels: labels, onReveal:
                 {

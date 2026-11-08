@@ -30,9 +30,9 @@ struct CardLabelsSheet: View
     @Environment(\.dismiss) private var dismiss                   /* Dismiss action for sheet */
     @State private var library:          LabelLibrary             /* Draft label library      */
     @State private var selectedLabelIDs: [String]                 /* Currently selected IDs   */
-    @State private var labelNameDraft = ""                        /* Draft name for new label */
-    @State private var categorySelection = ""                     /* Currently selected cat.  */
-    @State private var newCategoryDraft = ""                      /* Draft name for new cat.  */
+    @State private var labelNameDraft                  = ""       /* Draft name for new label */
+    @State private var categorySelection               = ""       /* Currently selected cat.  */
+    @State private var newCategoryDraft                = ""       /* Draft name for new cat.  */
     @State private var selectedColor: KanbanLabelColor = .yellow  /* Currently selected color */
 
     private let newCategoryID = "__new_category__" /* Picker sentinel for creating a category */

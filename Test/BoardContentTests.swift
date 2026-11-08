@@ -43,7 +43,7 @@ extension PlenactBoardDocumentTests
         let appearance = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
         XCTAssertNil(appearance.cardBackground)
         XCTAssertTrue(appearance.isEmpty)
-        let name = "RandomCardColorTests." + UUID().uuidString
+        let name     = "RandomCardColorTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
         defer
         {
@@ -153,7 +153,7 @@ extension PlenactBoardDocumentTests
     func testDefaultWeekUsesValidDayAreaTagsWithoutRewritingCustomTags() throws
     {
 
-        let labels = LabelLibrary.starter.includingDayAreas
+        let labels   = LabelLibrary.starter.includingDayAreas
         let template = PlanningRoutineLibrary.jmr
         XCTAssertTrue(
             template.collection.lists.flatMap(\.cards).allSatisfy
@@ -170,7 +170,7 @@ extension PlenactBoardDocumentTests
                 }
 
             })
-        let suite = "DayDistribution." + UUID().uuidString
+        let suite    = "DayDistribution." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -296,7 +296,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -304,7 +304,7 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let suite = "CornerBackLayout." + UUID().uuidString
+        let suite    = "CornerBackLayout." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -312,7 +312,7 @@ extension PlenactBoardDocumentTests
         }
 
         var heights: [String: CGFloat] = [:]
-        var activations = 0
+        var activations                = 0
         for (name, enabled, hasBack, toolbar) in [
             ("off", false, true, CGFloat(0)), ("on", true, true, 0),
             ("root", true, false, 0), ("toolbar", true, true, 56)
@@ -368,7 +368,7 @@ extension PlenactBoardDocumentTests
     func testCornerBackResolvesLegacyProfileAndHonorsExplicitPreference() throws
     {
 
-        let suite = "CornerBackLegacy." + UUID().uuidString
+        let suite    = "CornerBackLegacy." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -377,7 +377,7 @@ extension PlenactBoardDocumentTests
 
         var preferences = LocalProfilePreferences()
         preferences.enablesLowerCornerBack = true
-        let profile = LocalProfile(displayName: "Synthetic", preferences: preferences)
+        let profile     = LocalProfile(displayName: "Synthetic", preferences: preferences)
         let profileData = try JSONEncoder().encode(profile)
         defaults.set(profileData, forKey: LocalProfileStore.storageKey)
         XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
@@ -420,7 +420,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -463,7 +463,7 @@ extension PlenactBoardDocumentTests
         {
 
             let owner = UUID()
-            let key = BoardViewportMemory.prefix + owner.uuidString
+            let key   = BoardViewportMemory.prefix + owner.uuidString
             defer
             {
                 UserDefaults.standard.removeObject(forKey: key)
@@ -531,7 +531,7 @@ extension PlenactBoardDocumentTests
     {
 
         let reveal = CreatedContentReveal()
-        let first = KanbanList(id: 4, title: "Monday", cards: []).makeItem(
+        let first  = KanbanList(id: 4, title: "Monday", cards: []).makeItem(
             id: 10, title: "New Card", createdAt: Date(timeIntervalSince1970: 100))
         let collision = KanbanList(id: 4, title: "Other Board", cards: []).makeItem(
             id: 10, title: "Different Card", createdAt: Date(timeIntervalSince1970: 200))
@@ -577,7 +577,7 @@ extension PlenactBoardDocumentTests
 
             let morning = try XCTUnwrap(calendar.date(byAdding: .day, value: day, to: anchor))
             let evening = try XCTUnwrap(calendar.date(bySettingHour: 23, minute: 59, second: 59, of: morning))
-            let slogan = TodaySloganCatalog.slogan(on: morning, calendar: calendar)
+            let slogan  = TodaySloganCatalog.slogan(on: morning, calendar: calendar)
             XCTAssertEqual(slogan, TodaySloganCatalog.slogan(on: evening, calendar: calendar))
             seen.insert(slogan)
         }
@@ -627,7 +627,7 @@ extension PlenactBoardDocumentTests
 
         let legacy = LabelLibrary(categories: [], labels: [])
         XCTAssertEqual(legacy.includingReference.labels, [LabelLibrary.referenceLabel])
-        let custom = KanbanLabel(id: "my-reference", name: "Reference", categoryID: "custom", color: .blue)
+        let custom  = KanbanLabel(id: "my-reference", name: "Reference", categoryID: "custom", color: .blue)
         let library = LabelLibrary(categories: [], labels: [custom])
         XCTAssertEqual(library.includingReference.labels, [custom])
         XCTAssertEqual(library.includingReference.referenceLabelID, custom.id)
@@ -647,7 +647,7 @@ extension PlenactBoardDocumentTests
     func testSessionGuidanceMigrationPreservesCustomizedWelcomeCards() throws
     {
 
-        let suite = "SessionGuidance." + UUID().uuidString
+        let suite    = "SessionGuidance." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -658,7 +658,7 @@ extension PlenactBoardDocumentTests
         {
 
             let original = DefaultListTutorial.makeStarter(title: title, includesWelcomeCard: true)
-            var edited = original
+            var edited   = original
             edited.lists[0].cards[0].word += " personalized"
             var completed = original
             completed.lists[0].cards[0].isTitleChecked = true
@@ -700,7 +700,7 @@ extension PlenactBoardDocumentTests
         ]
         {
 
-            let suite = "Plenact.ExistingInstallTests." + UUID().uuidString
+            let suite    = "Plenact.ExistingInstallTests." + UUID().uuidString
             let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
             defer
             {
@@ -730,15 +730,15 @@ extension PlenactBoardDocumentTests
     {
 
         let catalog = LabelLibrary.starter
-        let label = try XCTUnwrap(catalog.labels.first)
-        let date = try XCTUnwrap(PlanningDate.date("2026-10-15"))
-        var week = DatedPlanningWeek.make(for: date)
-        var card = KanbanCard(id: 5, word: "Week card", listTitle: week.collection.lists[0].title)
+        let label   = try XCTUnwrap(catalog.labels.first)
+        let date    = try XCTUnwrap(PlanningDate.date("2026-10-15"))
+        var week    = DatedPlanningWeek.make(for: date)
+        var card    = KanbanCard(id: 5, word: "Week card", listTitle: week.collection.lists[0].title)
         card.labelIDs = [label.id, label.id]
         week.collection.lists[0].cards = [card]
         week.collection.lists[0].archivedCards = [card.replacingLocation(id: 88, listTitle: "Archive")]
         var library = PersonalCollection(title: "Notes", kind: .list)
-        var note = card.replacingLocation(id: 5, listTitle: library.title)
+        var note    = card.replacingLocation(id: 5, listTitle: library.title)
         note.presentation = .note
         library.lists[0].cards = [note]
         var archived = PersonalCollection(title: "Old", kind: .board)
@@ -748,8 +748,8 @@ extension PlenactBoardDocumentTests
         hidden.isArchived = true
         library.lists.append(hidden)
         let document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
-        let owners = WorkspaceBrowseIndex.owners(document: document, library: [library, archived])
-        let usage = try XCTUnwrap(WorkspaceBrowseIndex.labels(in: owners, catalog: catalog).first
+        let owners   = WorkspaceBrowseIndex.owners(document: document, library: [library, archived])
+        let usage    = try XCTUnwrap(WorkspaceBrowseIndex.labels(in: owners, catalog: catalog).first
             {
                 $0.id == label.id
             })
@@ -780,14 +780,14 @@ extension PlenactBoardDocumentTests
     func testTodayShortcutPinsKeepOrderOwnerAndSixItemLimit()
     {
 
-        let first = WorkspaceListReference(ownerID: UUID(), listID: 0)
+        let first  = WorkspaceListReference(ownerID: UUID(), listID: 0)
         let second = WorkspaceListReference(ownerID: UUID(), listID: 0)
         let extras = (1 ... 8).map
         {
             WorkspaceListReference(ownerID: first.ownerID, listID: $0)
         }
 
-        let pins = [first, second, first] + extras
+        let pins    = [first, second, first] + extras
         let decoded = TodayListPins.decode(TodayListPins.encode(pins))
         XCTAssertEqual(decoded.count, 6)
         XCTAssertEqual(Array(decoded.prefix(2)), [first, second])
@@ -809,7 +809,7 @@ extension PlenactBoardDocumentTests
     func testWelcomeCueLaunchAndFourHourReturnPolicy()
     {
 
-        let name = "PlenactTests.WelcomePolicy." + UUID().uuidString
+        let name     = "PlenactTests.WelcomePolicy." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer
         {
@@ -817,7 +817,7 @@ extension PlenactBoardDocumentTests
         }
 
         let start = Date(timeIntervalSince1970: 1_700_000_000)
-        let cue = TodayWelcomeCue(defaults: defaults)
+        let cue   = TodayWelcomeCue(defaults: defaults)
         cue.becameActive(at: start)
         XCTAssertTrue(cue.pending);
         XCTAssertEqual(cue.requestID, 1)
@@ -980,8 +980,8 @@ extension PlenactBoardDocumentTests
 
             var calendar = Calendar(identifier: .gregorian)
             calendar.firstWeekday = firstWeekday
-            let date = try XCTUnwrap(PlanningDate.date("2026-10-13"))
-            var week = DatedPlanningWeek.make(for: date, calendar: calendar)
+            let date  = try XCTUnwrap(PlanningDate.date("2026-10-13"))
+            var week  = DatedPlanningWeek.make(for: date, calendar: calendar)
             let dayID = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date, calendar: calendar)])
             let index = try XCTUnwrap(week.collection.lists.firstIndex
                 {
@@ -992,14 +992,14 @@ extension PlenactBoardDocumentTests
             ]
             let document = PlanningCalendarDocument(
                 currentWeekKey: week.startKey, firstWeekday: firstWeekday, weeks: [week])
-            let original = document
+            let original  = document
             let selection = try XCTUnwrap(PlanningDaySelection.resolve(date, document: document))
             XCTAssertEqual(selection.listID, dayID)
             XCTAssertEqual(selection.week, week)
             for offset in -9 ... 9
             {
 
-                let target = try XCTUnwrap(calendar.date(byAdding: .day, value: offset, to: date))
+                let target   = try XCTUnwrap(calendar.date(byAdding: .day, value: offset, to: date))
                 let selected = try XCTUnwrap(PlanningDaySelection.resolve(target, document: document))
                 XCTAssertEqual(selected.week.startKey, PlanningDate.weekKey(target, calendar: calendar))
                 XCTAssertEqual(selected.week.dayListIDs[PlanningDate.key(target, calendar: calendar)], selected.listID)
@@ -1061,7 +1061,7 @@ extension PlenactBoardDocumentTests
     {
 
         var collection = PersonalCollection(title: "Profiles", kind: .board)
-        var card = KanbanCard(id: 65, word: "Keep my title", listTitle: collection.lists[0].title)
+        var card       = KanbanCard(id: 65, word: "Keep my title", listTitle: collection.lists[0].title)
         card.descriptionOverride = "Keep my writing"
         card.appearance = ItemAppearance()
         card.appearance?.cardDetail = .detailed
@@ -1138,11 +1138,11 @@ extension PlenactBoardDocumentTests
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!;
         calendar.firstWeekday = 1
-        let saturday = try XCTUnwrap(PlanningDate.date("2026-10-17", calendar: calendar))
-        let oldSunday = try XCTUnwrap(PlanningDate.date("2026-10-11", calendar: calendar))
+        let saturday   = try XCTUnwrap(PlanningDate.date("2026-10-17", calendar: calendar))
+        let oldSunday  = try XCTUnwrap(PlanningDate.date("2026-10-11", calendar: calendar))
         let nextSunday = try XCTUnwrap(PlanningDate.date("2026-10-18", calendar: calendar))
-        let titles = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        let lists = titles.enumerated().map
+        let titles     = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        let lists      = titles.enumerated().map
         {
             KanbanList(id: $0.offset, title: $0.element, cards: [])
         }
@@ -1190,12 +1190,12 @@ extension PlenactBoardDocumentTests
     func testMondayStartOnSundayKeepsConsecutiveDatesAndFollowingSundaySeparate() throws
     {
 
-        let today = try XCTUnwrap(PlanningDate.date("2026-10-11"))
+        let today    = try XCTUnwrap(PlanningDate.date("2026-10-11"))
         var calendar = Calendar.current
         calendar.firstWeekday = 1
         var original = DatedPlanningWeek.make(for: today, calendar: calendar)
         let sundayID = try XCTUnwrap(original.list(on: today)?.id)
-        let index = try XCTUnwrap(original.collection.lists.firstIndex
+        let index    = try XCTUnwrap(original.collection.lists.firstIndex
             {
                 $0.id == sundayID
             })
@@ -1218,7 +1218,7 @@ extension PlenactBoardDocumentTests
             dates, ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"])
         XCTAssertEqual(current.collection.lists.last?.cards.first?.word, "October 11 plans")
         let followingSunday = try XCTUnwrap(PlanningDate.date("2026-10-18"))
-        let following = try XCTUnwrap(document.week(for: followingSunday))
+        let following       = try XCTUnwrap(document.week(for: followingSunday))
         XCTAssertEqual(following.startKey, "2026-10-12")
         XCTAssertTrue(try XCTUnwrap(following.list(on: followingSunday)).cards.isEmpty)
         XCTAssertEqual(following.dayListIDs.count, 7)
@@ -1239,11 +1239,11 @@ extension PlenactBoardDocumentTests
     {
 
         let calendar = Calendar.current
-        let due = try XCTUnwrap(
+        let due      = try XCTUnwrap(
             calendar.date(from: DateComponents(year: 2026, month: 10, day: 11, hour: 17, minute: 46)))
-        let sameDay = calendar.startOfDay(for: due)
+        let sameDay  = calendar.startOfDay(for: due)
         let nextWeek = try XCTUnwrap(calendar.date(byAdding: .day, value: 7, to: sameDay))
-        var card = KanbanCard(
+        var card     = KanbanCard(
             id: 0, word: "Task", listTitle: "Renamed list", dueDate: due,
             showsDueDateInList: true, dueDateKind: .date)
         XCTAssertNil(card.dueDateBadge(on: sameDay))
@@ -1282,7 +1282,7 @@ extension PlenactBoardDocumentTests
     func testOverflowReadingPreferenceSwitchesMountedReaderWithoutChangingText() async throws
     {
 
-        let suite = "OverflowReaderRender." + UUID().uuidString
+        let suite    = "OverflowReaderRender." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -1296,7 +1296,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -1325,9 +1325,9 @@ extension PlenactBoardDocumentTests
                 ?? []) + view.subviews.flatMap(scrolls)
         }
 
-        let title = "A long title that can be read with a horizontal slide when this preference is enabled"
+        let title            = "A long title that can be read with a horizontal slide when this preference is enabled"
         var overflow: [Bool] = []
-        let host = UIHostingController(
+        let host             = UIHostingController(
             rootView: SlideableHeaderText(
                 text: title,
                 onOverflowChange:
@@ -1372,11 +1372,11 @@ extension PlenactBoardDocumentTests
     func testLibraryLongNamesStayCompactAndExpandForAccessibility() async throws
     {
 
-        let title = Array(repeating: "On the Table", count: 8).joined(separator: ", ")
-        let row = LibraryCollectionRow(title: title, subtitle: "List", icon: "list.bullet", color: .red, count: 7)
-        let standard = UIHostingController(rootView: row.environment(\.dynamicTypeSize, .large))
-        let accessible = UIHostingController(rootView: row.environment(\.dynamicTypeSize, .accessibility3))
-        let standardSize = standard.sizeThatFits(in: CGSize(width: 300, height: 1000))
+        let title          = Array(repeating: "On the Table", count: 8).joined(separator: ", ")
+        let row            = LibraryCollectionRow(title: title, subtitle: "List", icon: "list.bullet", color: .red, count: 7)
+        let standard       = UIHostingController(rootView: row.environment(\.dynamicTypeSize, .large))
+        let accessible     = UIHostingController(rootView: row.environment(\.dynamicTypeSize, .accessibility3))
+        let standardSize   = standard.sizeThatFits(in: CGSize(width: 300, height: 1000))
         let accessibleSize = accessible.sizeThatFits(in: CGSize(width: 300, height: 3000))
         XCTAssertLessThan(standardSize.height, 100, "Two-line names must not dominate the directory")
         XCTAssertGreaterThan(accessibleSize.height, standardSize.height, "Accessibility names retain expanded reading")
@@ -1403,7 +1403,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -1454,7 +1454,7 @@ extension PlenactBoardDocumentTests
                     }
                 )
                 var emitted: [KanbanCard] = []
-                let controller = UIHostingController(
+                let controller            = UIHostingController(
                     rootView: NavigationStack
                     {
 
@@ -1695,7 +1695,7 @@ extension PlenactBoardDocumentTests
         XCTAssertFalse(appearance.isEmpty)
         XCTAssertTrue(appearance.hidesSubtitle(" \n "))
         XCTAssertFalse(appearance.hidesSubtitle("A useful subtitle"))
-        var card = KanbanCard(id: 42, word: "Plan", listTitle: "Today", subtitleOverride: "", appearance: appearance)
+        var card     = KanbanCard(id: 42, word: "Plan", listTitle: "Today", subtitleOverride: "", appearance: appearance)
         let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
         XCTAssertEqual(restored.appearance, appearance)
         XCTAssertTrue(restored.appearance?.hidesSubtitle(restored.subtitle) == true)

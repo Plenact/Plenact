@@ -40,7 +40,7 @@ extension PlenactBoardDocumentTests
     func testSectionMoveJournalRestoresImportanceAndSupportsLegacyRecovery() throws
     {
 
-        let suite = "SectionMoveJournal." + UUID().uuidString
+        let suite    = "SectionMoveJournal." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -86,7 +86,7 @@ extension PlenactBoardDocumentTests
     func testWeeklyReviewCalendarBoundariesPersistenceAndRecovery() throws
     {
 
-        let name = "PlenactTests.Weekly." + UUID().uuidString
+        let name     = "PlenactTests.Weekly." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer
         {
@@ -96,7 +96,7 @@ extension PlenactBoardDocumentTests
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!;
         calendar.firstWeekday = 2
-        let date = calendar.date(from: DateComponents(year: 2026, month: 10, day: 18))!
+        let date   = calendar.date(from: DateComponents(year: 2026, month: 10, day: 18))!
         var review = WeeklyReviewRecord(date: date, calendar: calendar)
         XCTAssertEqual(review.startKey, "2026-10-12")
         var days = DailyPlanStore.Document()
@@ -143,7 +143,7 @@ extension PlenactBoardDocumentTests
     func testEveningReviewTransactionRecoversInterruptedAndFailedWrites() throws
     {
 
-        let name = "PlenactTests.Review." + UUID().uuidString
+        let name     = "PlenactTests.Review." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer
         {
@@ -221,8 +221,8 @@ extension PlenactBoardDocumentTests
     func testFullMonthBackupRejectsCorruptionAndRecoversInterruptedSwitch() throws
     {
 
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let name = "PlenactTests.Month." + UUID().uuidString
+        let folder   = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let name     = "PlenactTests.Month." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer
         {
@@ -238,7 +238,7 @@ extension PlenactBoardDocumentTests
         try Data([1]).write(to: file)
         defaults.set("user data", forKey: "Plenact.Protected")
         try store.loadExample(FullMonthExample.make())
-        let snapshot = store.root.appendingPathComponent("UserData")
+        let snapshot    = store.root.appendingPathComponent("UserData")
         let transaction = store.root.appendingPathComponent("Transition")
         try FileManager.default.copyItem(at: snapshot, to: transaction)
         defaults.set("partial switch", forKey: "Plenact.Protected")

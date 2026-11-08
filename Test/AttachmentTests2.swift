@@ -98,8 +98,8 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let suite = "Plenact.CoverLayoutTests.\(UUID().uuidString)"   /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))  /* Isolated test preferences      */
+        let suite    = "Plenact.CoverLayoutTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
 
         defer
         {
@@ -110,7 +110,7 @@ extension PlenactBoardDocumentTests
 
 
         let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden) /* Synthetic photo fixture       */
-        let card = KanbanCard(
+        let card  = KanbanCard(
             id: 1, word: "Garden", listTitle: "Local", checklists: [], /* Card value under verification */
             attachments: [photo], coverAttachmentID: photo.id, subtitleOverride: "",
             appearance: ItemAppearance(accent: .green, icon: .home, background: .teal))

@@ -50,9 +50,9 @@ enum PortableRichCardExport
         baseline: PortableWorkspaceCandidate) throws -> (files: FileWrapper, names: [String: String])
     {
 
-        let report = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+        let report    = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
         let inventory = report["media"] as! [[String: Any]]
-        let paths = Set(inventory.map { $0["path"] as! String })
+        let paths     = Set(inventory.map { $0["path"] as! String })
         // A removed attachment may leave no live file. Its exact original remains in the verified snapshot.
         // The caller has already rejected missing live references via the native backup review codes.
         for (path, bytes) in baseline.media.files where paths.contains(path)
@@ -62,25 +62,25 @@ enum PortableRichCardExport
                 throw PortablePackageReview.Failure.integrity
             }
         }
-        var assembly = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: snapshot)) as! [String: Any]
-        var export = assembly["workspace_export"] as! [String: Any]
-        var base = export["base_workspace"] as! [String: Any]
-        var planning = base["planning"] as! [String: Any]
-        var content = planning["content"] as! [String: Any]
-        var assets = planning["assets"] as! [[String: Any]]
-        var external = content["external_references"] as! [[String: Any]]
-        var evidence = assembly["evidence"] as! [String: Any]
+        var assembly      = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: snapshot)) as! [String: Any]
+        var export        = assembly["workspace_export"] as! [String: Any]
+        var base          = export["base_workspace"] as! [String: Any]
+        var planning      = base["planning"] as! [String: Any]
+        var content       = planning["content"] as! [String: Any]
+        var assets        = planning["assets"] as! [[String: Any]]
+        var external      = content["external_references"] as! [[String: Any]]
+        var evidence      = assembly["evidence"] as! [String: Any]
         var assetEvidence = evidence["assets"] as! [String: Any]
-        var entries = assetEvidence["entries"] as! [[String: Any]]
-        var manifest = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Manifest.json", in: snapshot)) as! [String: Any]
-        var mappings = manifest["originals"] as! [[String: Any]]
-        var blobs = snapshot.fileWrappers!["Originals"]!.fileWrappers!
-        var names = baseline.media.filenames
+        var entries       = assetEvidence["entries"] as! [[String: Any]]
+        var manifest      = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Manifest.json", in: snapshot)) as! [String: Any]
+        var mappings      = manifest["originals"] as! [[String: Any]]
+        var blobs         = snapshot.fileWrappers!["Originals"]!.fileWrappers!
+        var names         = baseline.media.filenames
         for path in paths.subtracting(baseline.media.files.keys).sorted()
         {
             let bytes = try MigrationBackupReader.file(path, in: backup.files)
-            let hash = MigrationBackupReader.digest(bytes)
-            let name = (path as NSString).lastPathComponent
+            let hash  = MigrationBackupReader.digest(bytes)
+            let name  = (path as NSString).lastPathComponent
             // PencilKit originals require a paired derivation adapter; never label them as generic files.
             guard (name as NSString).pathExtension.lowercased() != "drawing" else
             {
@@ -92,7 +92,7 @@ enum PortableRichCardExport
             {
                 throw PortableEditedExport.Failure.inconsistent
             }
-            let detected = MigrationAssetPreview.signature(bytes)
+            let detected             = MigrationAssetPreview.signature(bytes)
             let entry: [String: Any] = ["asset_id": id, "source_path": path, "kind": detected.0,
                 "mime_type": detected.1, "original_name": name, "content_state": "described",
                 "byte_length": String(bytes.count), "sha256": hash, "source_format": NSNull(),

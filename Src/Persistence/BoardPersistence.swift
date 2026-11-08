@@ -94,7 +94,7 @@ enum KanbanBoardPersistence
     {
 
 
-        let activity = DatabaseActivity.shared              /* Shared persistence progress and failure reporter */
+        let activity  = DatabaseActivity.shared             /* Shared persistence progress and failure reporter */
         let operation = activity.begin("Loading Board...")  /* Progress identity for the pending Board load     */
 
         defer
@@ -189,7 +189,7 @@ enum KanbanBoardPersistence
     {
 
 
-        let activity = DatabaseActivity.shared             /* Shared persistence progress and failure reporter */
+        let activity  = DatabaseActivity.shared            /* Shared persistence progress and failure reporter */
         let operation = activity.begin("Saving Board...")  /* Progress identity for the queued Board save      */
 
         // A serial queue preserves snapshot order even when edits arrive faster than encoding.

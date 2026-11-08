@@ -89,7 +89,7 @@ struct BoardGalleryView: View
     }
 
     var showsListHeadings = true
-    var boardAppearance = BoardAppearance()
+    var boardAppearance   = BoardAppearance()
     @Environment(\.dynamicTypeSize) private var typeSize
     private var columns: [GridItem]
     {
@@ -213,7 +213,7 @@ struct BoardGalleryTile: View
 
     let card:       KanbanCard
     var appearance: ItemAppearance? = nil
-    var boardAppearance = BoardAppearance()
+    var boardAppearance             = BoardAppearance()
     private var excerpt: String
     {
 

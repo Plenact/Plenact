@@ -22,7 +22,7 @@ struct QuickNoteComposer: View
 {
 
 
-    @State private var keyboardContextID = UUID()
+    @State private var keyboardContextID     = UUID()
     @StateObject private var attachmentDraft = CreationAttachmentDraft()
     @Binding var lists: [KanbanList] /* Current destination lists */
     let onSave:         (Int, String, String, String, ItemPresentation?, [String]?) -> Void
@@ -33,23 +33,23 @@ struct QuickNoteComposer: View
     let onSaveCapture:                ((QuickCaptureSubmission) -> Bool)?
     @State private var drawings:      [DrawingCaptureDraft] = []
     @State private var drawingToEdit: DrawingCaptureDraft?
-    @State private var offeredDrawing = false
+    @State private var offeredDrawing                      = false
     @State private var photos:         [QuickCapturePhoto] = []
-    @State private var photoSelection: [PhotosPickerItem] = []
-    @State private var showsPhotoSources = false
-    @State private var showsPhotoLibrary = false
-    @State private var showsCamera = false
-    @State private var offeredPhotoSources = false
-    @State private var importingPhotos = false
+    @State private var photoSelection: [PhotosPickerItem]  = []
+    @State private var showsPhotoSources                   = false
+    @State private var showsPhotoLibrary                   = false
+    @State private var showsCamera                         = false
+    @State private var offeredPhotoSources                 = false
+    @State private var importingPhotos                     = false
     @State private var mediaError: String?
-    @StateObject private var voice = QuickCaptureVoice()
+    @StateObject private var voice                             = QuickCaptureVoice()
     @State private var voiceSaveOption: VoiceCaptureSaveOption = .both
-    @State private var replaceRecording = false
-    @State private var hasStartDate = false
-    @State private var hasStopDate = false
-    @State private var startDate = Date.now
-    @State private var stopDate = Date.now
-    @State private var includesDateTime = false
+    @State private var replaceRecording                        = false
+    @State private var hasStartDate                            = false
+    @State private var hasStopDate                             = false
+    @State private var startDate                               = Date.now
+    @State private var stopDate                                = Date.now
+    @State private var includesDateTime                        = false
     @Environment(\.scenePhase) private var scenePhase
     private var schedule: QuickCaptureSchedule
     {
@@ -75,9 +75,9 @@ struct QuickNoteComposer: View
     @Environment(\.dismiss) private var dismiss /* Close the full-size editor */
 
     @State private var presentation: ItemPresentation
-    @State private var createdAt = Date.now
-    @State private var subtitle = ""
-    @State private var title = ""            /* New card title                   */
+    @State private var createdAt   = Date.now
+    @State private var subtitle    = ""
+    @State private var title       = ""      /* New card title                   */
     @State private var description = ""      /* Optional card detail             */
     @State private var selectedListID: Int?  /* Destination selected in the form */
     @State private var actions:        [KanbanChecklistItem]
@@ -450,7 +450,7 @@ struct QuickNoteComposer: View
             return
         }
 
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        let status  = AVCaptureDevice.authorizationStatus(for: .video)
         var allowed = status == .authorized
         if status == .notDetermined
         {

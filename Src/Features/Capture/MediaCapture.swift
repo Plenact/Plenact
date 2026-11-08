@@ -23,8 +23,8 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 {
 
 
-    @Published private(set) var isRecording = false
-    @Published private(set) var isStarting = false
+    @Published private(set) var isRecording    = false
+    @Published private(set) var isStarting     = false
     @Published private(set) var isTranscribing = false
     @Published private(set) var recordingURL: URL?
     @Published var transcript = ""
@@ -182,7 +182,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
         isTranscribing = true;
         errorMessage = nil
         generation += 1
-        let token = generation
+        let token  = generation
         let status = await withCheckedContinuation
         {
             continuation in
@@ -222,8 +222,8 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
         speechTask = recognizer.recognitionTask(with: request)
         {
             [weak self] result, error in
-            let text = result?.bestTranscription.formattedString
-            let final = result?.isFinal == true
+            let text   = result?.bestTranscription.formattedString
+            let final  = result?.isFinal == true
             let failed = error != nil
             Task
             {

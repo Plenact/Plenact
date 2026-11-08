@@ -139,11 +139,11 @@ struct BoardViewportState: Codable, Equatable
 {
 
 
-    var scale: Double = 1
-    var panoramic = false
-    var gallery = false
-    var presentation:  String? = nil
-    var visibleListID: Int? = nil
+    var scale: Double                   = 1
+    var panoramic                       = false
+    var gallery                         = false
+    var presentation:  String?          = nil
+    var visibleListID: Int?             = nil
     var offsets:       [String: Double] = [:]
 }
 
@@ -473,14 +473,14 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
 
         private var memory: BoardViewportMemory?
-        private var key = ""
+        private var key        = ""
         private var horizontal = false
         private weak var scroll: UIScrollView?
         private var observation: NSKeyValueObservation?
         private var restored = false
         private var desired: Double?
-        private var attempts = 0
-        private var finding = false
+        private var attempts     = 0
+        private var finding      = false
         private var resetRequest = 0
 
 
@@ -733,12 +733,12 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             if let desired = memory?.state.offsets[key] ?? desired, !(horizontal && memory?.horizontalRestoreAllowed == false), !scroll.isDragging
             {
 
-                let inset = horizontal ? scroll.adjustedContentInset.left : scroll.adjustedContentInset.top
+                let inset    = horizontal ? scroll.adjustedContentInset.left : scroll.adjustedContentInset.top
                 let endInset = horizontal ? scroll.adjustedContentInset.right : scroll.adjustedContentInset.bottom
-                let content = horizontal ? scroll.contentSize.width : scroll.contentSize.height
-                let length = horizontal ? scroll.bounds.width : scroll.bounds.height
-                let value = min(CGFloat(desired), max(0, content - length + inset + endInset)) - inset
-                var point = scroll.contentOffset
+                let content  = horizontal ? scroll.contentSize.width : scroll.contentSize.height
+                let length   = horizontal ? scroll.bounds.width : scroll.bounds.height
+                let value    = min(CGFloat(desired), max(0, content - length + inset + endInset)) - inset
+                var point    = scroll.contentOffset
                 if horizontal
                 {
                     point.x = value
@@ -814,9 +814,9 @@ final class BoardDragGeometryCache
 
 
     var centers:  [Int: CGFloat] = [:]
-    var cards:    [Int: CGRect] = [:]
-    var lists:    [Int: CGRect] = [:]
-    var viewport: CGRect = .zero
+    var cards:    [Int: CGRect]  = [:]
+    var lists:    [Int: CGRect]  = [:]
+    var viewport: CGRect         = .zero
 }
 
 
@@ -879,7 +879,7 @@ struct BoardPinchState
 
 
     var magnification: CGFloat = 1
-    var active = false
+    var active                 = false
 }
 
 

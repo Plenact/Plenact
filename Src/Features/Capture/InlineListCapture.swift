@@ -21,8 +21,8 @@ struct ListCreationDraft: Codable, Equatable
 {
 
 
-    var title = ""
-    var subtitle = ""
+    var title       = ""
+    var subtitle    = ""
     var description = ""
 
 
@@ -272,7 +272,7 @@ struct InlineListCapture: View
     let list:           KanbanList
     @Binding var draft: InlineListCaptureDraft
     var textColor:      Color = .primary
-    var isPresented = true
+    var isPresented           = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let onCreate:                      (QuickCaptureSubmission) -> Bool
     let onOpenComposer:                () -> Void

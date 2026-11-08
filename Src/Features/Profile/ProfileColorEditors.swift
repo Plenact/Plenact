@@ -867,9 +867,9 @@ enum AvatarPhotoCrop
     {
 
 
-        let scale = max(side / imageSize.width, side / imageSize.height) * zoom  /* Aspect-fill crop scale           */
-        let horizontalLimit = max(0, (imageSize.width * scale - side) / 2)       /* Maximum horizontal crop movement */
-        let verticalLimit = max(0, (imageSize.height * scale - side) / 2)        /* Maximum vertical crop movement   */
+        let scale           = max(side / imageSize.width, side / imageSize.height) * zoom /* Aspect-fill crop scale           */
+        let horizontalLimit = max(0, (imageSize.width * scale - side) / 2)                /* Maximum horizontal crop movement */
+        let verticalLimit   = max(0, (imageSize.height * scale - side) / 2)               /* Maximum vertical crop movement   */
 
         return CGSize(
             width: min(max(offset.width, -horizontalLimit), horizontalLimit),
@@ -911,7 +911,7 @@ enum AvatarPhotoCrop
         let offset = constrainedOffset(
             offset, imageSize: image.size, side: side, zoom: zoom)  /* Bounded crop translation                 */
         let outputScale = 512 / side                                /* Convert viewport points to output pixels */
-        let format = UIGraphicsImageRendererFormat()                /* Square JPEG renderer settings            */
+        let format      = UIGraphicsImageRendererFormat()           /* Square JPEG renderer settings            */
 
         format.scale = 1
         format.opaque = true
@@ -949,11 +949,11 @@ struct AvatarPhotoCropView: View
     let onUsePhoto: (Data) -> Void                           /* Callback receiving the cropped JPEG */
     @Environment(\.dismiss) private var dismiss              /* Crop-sheet dismissal action         */
     @State private var zoom:                 CGFloat = 1     /* Current image zoom                  */
-    @State private var offset:               CGSize = .zero  /* Current image translation           */
+    @State private var offset:               CGSize  = .zero /* Current image translation           */
     @State private var cropSide:             CGFloat = 1     /* Current square crop viewport side   */
-    @GestureState private var drag:          CGSize = .zero  /* In-progress drag translation        */
+    @GestureState private var drag:          CGSize  = .zero /* In-progress drag translation        */
     @GestureState private var magnification: CGFloat = 1     /* In-progress pinch scale             */
-    @State private var cropFailed = false                    /* Whether crop rendering failed       */
+    @State private var cropFailed                    = false /* Whether crop rendering failed       */
 
 
     ///
@@ -973,8 +973,8 @@ struct AvatarPhotoCropView: View
     {
 
 
-        let currentZoom = min(max(zoom * magnification, 1), 6)  /* Zoom including the in-progress pinch */
-        let currentOffset = AvatarPhotoCrop.constrainedOffset(  /* Drag-adjusted, bounded crop position */
+        let currentZoom   = min(max(zoom * magnification, 1), 6) /* Zoom including the in-progress pinch */
+        let currentOffset = AvatarPhotoCrop.constrainedOffset(   /* Drag-adjusted, bounded crop position */
             CGSize(width: offset.width + drag.width, height: offset.height + drag.height),
             imageSize: image.size, side: side, zoom: currentZoom
         )
@@ -1831,7 +1831,7 @@ struct RGBChannelControl: View
             {
                 _, newValue in
                 let validCharacters = Set("0123456789ABCDEF") /* Accepted hexadecimal digits */
-                let normalized = String(
+                let normalized      = String(
                     newValue.uppercased().filter
                     {
                         validCharacters.contains($0)
@@ -1922,7 +1922,7 @@ struct ProfileColorMapSurface: View
         GeometryReader
         {
             geometry in
-            let width = max(geometry.size.width, 1)    /* Safe color-map width  */
+            let width  = max(geometry.size.width, 1)   /* Safe color-map width  */
             let height = max(geometry.size.height, 1)  /* Safe color-map height */
 
             ZStack

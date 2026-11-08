@@ -545,8 +545,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return true
         }
 
-        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)  /* Title without surrounding spaces */
-        let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−")               /* Accepted divider dash characters */
+        let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Title without surrounding spaces */
+        let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−")                /* Accepted divider dash characters */
 
         guard !trimmedTitle.isEmpty,
         trimmedTitle.unicodeScalars.allSatisfy(

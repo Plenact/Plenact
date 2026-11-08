@@ -100,11 +100,11 @@ enum DrawingImageExport
     {
 
         let bounds = drawing.bounds
-        let rect =
+        let rect   =
         bounds.isNull || bounds.isEmpty
         ? CGRect(x: 0, y: 0, width: 600, height: 800) : bounds.insetBy(dx: -24, dy: -24)
-        let scale = min(2, maximumDimension / max(rect.width, rect.height))
-        let ink = drawing.image(from: rect, scale: scale)
+        let scale  = min(2, maximumDimension / max(rect.width, rect.height))
+        let ink    = drawing.image(from: rect, scale: scale)
         let format = UIGraphicsImageRendererFormat()
         format.scale = scale
         format.opaque = !transparent
@@ -193,7 +193,7 @@ enum DrawingAttachmentStore
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let png = try DrawingImageExport.data(draft.drawing, format: .png)
+        let png     = try DrawingImageExport.data(draft.drawing, format: .png)
         let preview = try CardAttachmentStore.saveMedia(png, kind: .photo, fileExtension: "png")
         guard let previewURL = CardAttachmentStore.fileURL(for: preview) else
         {
@@ -421,7 +421,7 @@ final class DrawingCanvasView: PKCanvasView
 {
 
 
-    private let picker = PKToolPicker()
+    private let picker   = PKToolPicker()
     private var lastSize = CGSize.zero
 
 
@@ -630,7 +630,7 @@ struct DrawingCaptureEditor: View
     let initial:                    DrawingCaptureDraft
     let onSave:                     (DrawingCaptureDraft) -> Bool
     @StateObject private var state: DrawingCanvasState
-    @State private var showsClear = false
+    @State private var showsClear   = false
     @State private var showsDiscard = false
     @State private var errorMessage:    String?
     @State private var exportFile:      DrawingExportFile?

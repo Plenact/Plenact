@@ -41,8 +41,8 @@ enum PlanRichText
 
 
         var text:     String
-        var bold:     Bool = false
-        var italic:   Bool = false
+        var bold:     Bool    = false
+        var italic:   Bool    = false
         var color:    String? = nil
         var fontName: String? = nil
         var fontSize: Double? = nil
@@ -234,8 +234,8 @@ enum PlanRichText
             for run in runs
             {
 
-                var part = AttributedString(run.text)
-                let family = run.fontName == "System" ? nil : run.fontName
+                var part       = AttributedString(run.text)
+                let family     = run.fontName == "System" ? nil : run.fontName
                 var font: Font =
                 family.map
                 {
@@ -292,8 +292,8 @@ struct RichTextEditor: UIViewRepresentable
     let placeholder:   String
     @Binding var text: String
     var focus:         Binding<Bool>? = nil
-    var minimumHeight: CGFloat = 80
-    var verticalInset: CGFloat = 6
+    var minimumHeight: CGFloat        = 80
+    var verticalInset: CGFloat        = 6
 
 
     ///
@@ -443,7 +443,7 @@ struct RichTextEditor: UIViewRepresentable
         weak var view: UITextView?
         weak var hint: UILabel?
         private var focusUpdatePending = false
-        private var applyingFocus = false
+        private var applyingFocus      = false
 
 
         ///
@@ -601,9 +601,9 @@ struct RichTextEditor: UIViewRepresentable
                 return
             }
 
-            let previous = NSAttributedString(attributedString: view.attributedText)
+            let previous     = NSAttributedString(attributedString: view.attributedText)
             let oldSelection = view.selectedRange
-            let oldTyping = view.typingAttributes
+            let oldTyping    = view.typingAttributes
             view.undoManager?.registerUndo(withTarget: self)
             {
 
@@ -637,9 +637,9 @@ struct RichTextEditor: UIViewRepresentable
                 return
             }
 
-            let previous = NSAttributedString(attributedString: view.attributedText)
+            let previous  = NSAttributedString(attributedString: view.attributedText)
             let selection = view.selectedRange
-            let typing = view.typingAttributes
+            let typing    = view.typingAttributes
             view.undoManager?.registerUndo(withTarget: self)
             {
 
@@ -692,8 +692,8 @@ struct RichTextEditor: UIViewRepresentable
             {
                 attributes in
                 var attributes = attributes
-                let font = (attributes[.font] as? UIFont) ?? .preferredFont(forTextStyle: .body)
-                var traits = font.fontDescriptor.symbolicTraits
+                let font       = (attributes[.font] as? UIFont) ?? .preferredFont(forTextStyle: .body)
+                var traits     = font.fontDescriptor.symbolicTraits
                 if enabled
                 {
                     traits.insert(trait)
@@ -730,8 +730,8 @@ struct RichTextEditor: UIViewRepresentable
             {
                 attributes in
                 var attributes = attributes
-                let old = (attributes[.font] as? UIFont) ?? .preferredFont(forTextStyle: .body)
-                let pointSize = size.map
+                let old        = (attributes[.font] as? UIFont) ?? .preferredFont(forTextStyle: .body)
+                let pointSize  = size.map
                 {
                     CGFloat($0)
                 }

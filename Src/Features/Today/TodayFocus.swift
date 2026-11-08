@@ -113,12 +113,12 @@ struct TodayFocusSection: View
         entries.map(\.card)
     }
 
-    var includesImportant = false
-    var includesBookmarked = false
-    var includesUpNext = false
-    var filtersChangedAt:  Date? = nil
-    var bookmarkedCardIDs: Set<Int> = []
-    var importantCardIDs:  Set<Int> = []
+    var includesImportant                             = false
+    var includesBookmarked                            = false
+    var includesUpNext                                = false
+    var filtersChangedAt:  Date?                      = nil
+    var bookmarkedCardIDs: Set<Int>                   = []
+    var importantCardIDs:  Set<Int>                   = []
     var onChangeFilters:   (Bool, Bool, Bool) -> Void =
     {
         _, _, _ in
@@ -198,7 +198,7 @@ struct TodayFocusSection: View
     @State private var showsFilterChooser = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsSelectionContext = true
-    @State private var contextRevision = UUID()
+    @State private var contextRevision       = UUID()
     private var filterColor: Color
     {
 
@@ -1215,7 +1215,7 @@ private struct TodayFocusSelectionStyle: ButtonStyle
     {
 
         let highlighted = configuration.isPressed || isSelected
-        let gold = Color(red: 0.90, green: 0.69, blue: 0.27)
+        let gold        = Color(red: 0.90, green: 0.69, blue: 0.27)
         configuration.label
             .compositingGroup()
             .shadow(color: gold.opacity(highlighted && !reduceMotion ? 0.4 : 0), radius: 2)

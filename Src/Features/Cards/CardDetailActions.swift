@@ -557,7 +557,7 @@ extension CardDetailView
 
 
                 let contentType = photoItem.supportedContentTypes.first /* Preferred selected-media type        */
-                let isVideo = photoItem.supportedContentTypes.contains
+                let isVideo     = photoItem.supportedContentTypes.contains
                 {  /* Whether the selection is video media */
 
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
@@ -565,7 +565,7 @@ extension CardDetailView
 
 
                 let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo /* Stored media category            */
-                let fileExtension =
+                let fileExtension                   =
                 contentType?.preferredFilenameExtension
                 ?? (isVideo ? "mov" : "jpg") /* File type used for local storage */
 
@@ -726,7 +726,7 @@ extension CardDetailView
         if let images = pasteboard.images, !images.isEmpty
         {
 
-            let previous = attachments
+            let previous                     = attachments
             var imported: [KanbanAttachment] = []
             do
             {
@@ -1504,13 +1504,13 @@ extension CardDetailView
 
 
         let currentDate = field == .start ? startDate : dueDate /* Date currently stored for the selected field */
-        let timeOnly = workingCardSnapshot.usesTimeOnlySchedule(on: listedOnDate)
-        let iconName =
+        let timeOnly    = workingCardSnapshot.usesTimeOnlySchedule(on: listedOnDate)
+        let iconName    =
         timeOnly
         ? (field == .start ? "clock" : "checkmark.circle")
         : (field == .start ? "calendar" : "calendar.badge.clock")
-        let title = timeOnly ? (field == .start ? "Start" : "Finish") : field.title
-        let kind = field == .start ? startDateKind : dueDateKind
+        let title     = timeOnly ? (field == .start ? "Start" : "Finish") : field.title
+        let kind      = field == .start ? startDateKind : dueDateKind
         let dateLabel = currentDate.map
         {
             (timeOnly ? CardDateKind.time : kind).label(for: $0)
@@ -1725,7 +1725,7 @@ extension CardDetailView
         }
 
 
-        let checklist = checklists[checklistIndex] /* Current checklist snapshot      */
+        let checklist            = checklists[checklistIndex] /* Current checklist snapshot      */
         let allItemsAreCompleted =
         !checklist.items.isEmpty
         && checklist.completedItemIndices.count == checklist.items.count /* Whether all items are complete  */
@@ -1897,7 +1897,7 @@ extension CardDetailView
         }
 
 
-        let checklist = checklists[checklistIndex]                 /* Checklist being updated               */
+        let checklist            = checklists[checklistIndex]      /* Checklist being updated               */
         var completedItemIndices = checklist.completedItemIndices  /* Mutable set of completed item indices */
 
         // Toggle the completion state of the specified item within the checklist
@@ -2233,8 +2233,8 @@ extension CardDetailView
                 }
 
                 let previous = checklists
-                var items = checklists[index].items
-                var updated = item
+                var items    = checklists[index].items
+                var updated  = item
                 if case .linkedCard = updated.content, updated.linkedCollectionID == nil
                 {
 
@@ -2277,11 +2277,11 @@ extension CardDetailView
     func saveDisplayAppearance(_ updated: ItemAppearance?, format: ItemDisplayFormat) -> Bool
     {
 
-        let previousAppearance = appearance
-        let previousFormat = displayFormat
+        let previousAppearance   = appearance
+        let previousFormat       = displayFormat
         let previousPresentation = presentation
-        let previousDescription = descriptionText
-        let previousDetails = showsNoteDetails
+        let previousDescription  = descriptionText
+        let previousDetails      = showsNoteDetails
         dismissEditing()
         appearance = updated
         displayFormat = format

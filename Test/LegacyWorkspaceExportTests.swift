@@ -24,9 +24,9 @@ final class LegacyWorkspaceExportTests: XCTestCase
     private func fixture(_ body: (UserDefaults, String, URL) throws -> Void) throws
     {
 
-        let domain = "Plenact.ExportTests." + UUID().uuidString
+        let domain   = "Plenact.ExportTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let root     = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer
         {

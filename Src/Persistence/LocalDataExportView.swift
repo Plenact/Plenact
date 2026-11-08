@@ -72,26 +72,26 @@ struct LocalDataExportView: View
     @Environment(\.portableWorkspaceImport) private var editableImportAccess
     @State private var originalTimeZoneID = "" /* Explicit original context; never default to this device’s clock */
     @State private var packageDocument: LegacyBackupDocument?
-    @State private var savingPackage = false
+    @State private var savingPackage           = false
     @State private var choosingPortablePackage = false
     @State private var portableReview: ReviewedPortablePackage?
     @State private var installedPortable: ReviewedPortablePackage?
-    @State private var canUndoPortable = false
+    @State private var canUndoPortable         = false
     @State private var confirmsPortableInstall = false
-    @State private var confirmsEditableImport = false
-    @State private var confirmsEditableUndo = false
+    @State private var confirmsEditableImport  = false
+    @State private var confirmsEditableUndo    = false
     @State private var editedDocument: LegacyBackupDocument?
     @State private var savingEdited = false
     @State private var editedExportError: String?
     @State private var showsEditedExportError = false
-    @State private var choosingRestore = false
-    @State private var confirmsRestore = false
+    @State private var choosingRestore        = false
+    @State private var confirmsRestore        = false
     @State private var reviewedRestore: ReviewedLocalBackup?
     @State private var preview: MigrationPreview? /* Explicitly partial conversion summary */
     @State private var document: LegacyBackupDocument? /* Immutable Files transfer snapshot */
     @State private var backup:    LegacyWorkspaceBackup? /* Retained only during this screen */
     @State private var preparing = false                 /* Prevent repeated capture requests */
-    @State private var saving = false                    /* System Files destination chooser */
+    @State private var saving    = false                 /* System Files destination chooser */
     @State private var message: String?                  /* Local status without raw values   */
 
 
@@ -376,7 +376,7 @@ struct LocalDataExportView: View
         { result in
             do
             {
-                let url = try result.get()
+                let url    = try result.get()
                 let access = url.startAccessingSecurityScopedResource()
                 defer
                 {
@@ -400,7 +400,7 @@ struct LocalDataExportView: View
             portableReview = nil
             do
             {
-                let url = try result.get()
+                let url    = try result.get()
                 let access = url.startAccessingSecurityScopedResource()
                 defer
                 {

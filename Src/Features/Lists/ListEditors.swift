@@ -25,8 +25,8 @@ struct InlineBoardListTitle: View
     let onSave:               (String) -> Bool
     let onFinish:             () -> Void
     @State private var title: String
-    @State private var focused = false
-    @State private var finished = false
+    @State private var focused                                            = false
+    @State private var finished                                           = false
     @ScaledMetric(relativeTo: .headline) private var titleHeight: CGFloat = 36
 
 
@@ -125,9 +125,9 @@ struct ListTitleField: UIViewRepresentable
     @Binding var text:       String
     @Binding var focused:    Bool
     let selectsInitialTitle: Bool
-    var returnKeyType:       UIReturnKeyType = .next
+    var returnKeyType:       UIReturnKeyType  = .next
     var textStyle:           UIFont.TextStyle = .body
-    var identifier = "list-editor-title"
+    var identifier                            = "list-editor-title"
     let onNext: () -> Void
 
 

@@ -26,9 +26,9 @@ enum MigrationAppearanceModel
         context: MigrationContentValues) throws -> [String: Any]
     {
 
-        let workspace = context.journal.previewWorkspaceID.uuidString.lowercased()
+        let workspace       = context.journal.previewWorkspaceID.uuidString.lowercased()
         var appearance: Any = NSNull()
-        var library: Any = NSNull()
+        var library: Any    = NSNull()
         if let globalWeek
         {
             let id = try context.id("workspace_appearance", owner: "workspace_metadata", legacy: "Plenact.WeekAppearance.v1")

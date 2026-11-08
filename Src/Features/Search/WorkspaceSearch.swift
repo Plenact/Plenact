@@ -28,7 +28,7 @@ struct TodaySearchResult: Identifiable
     let cardTitle:  String  /* Matching card title                            */
     let listTitle:  String  /* Containing list title                          */
     let detail:     String  /* Supporting detail shown under the title        */
-    var ownerID:    UUID? = nil
+    var ownerID:    UUID?   = nil
     var weekKey:    String? = nil
     var ownerTitle: String? = nil
 
@@ -174,7 +174,7 @@ enum TodaySearchIndex
                     [$0.author, PlanRichText.plain($0.body)]
                 }  /* Searchable discussion authors and content   */
 
-                let users = card.members.map(\.displayName) /* Searchable assignee names                   */
+                let users  = card.members.map(\.displayName) /* Searchable assignee names                   */
                 let labels = library.labels.filter
                 {
 

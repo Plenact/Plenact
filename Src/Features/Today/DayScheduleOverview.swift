@@ -61,9 +61,9 @@ struct DayScheduleOverview: View
     let cards:    [KanbanCard]
     let labels:   LabelLibrary
     let day:      Date
-    var calendar: Calendar = .current
-    @State private var showsDetails = false
-    @State private var showsPlan = false
+    var calendar: Calendar                               = .current
+    @State private var showsDetails                      = false
+    @State private var showsPlan                         = false
     @AppStorage(DailyPlanStore.key) private var planData = Data()
     private var summary: DayTimeDistribution
     {
@@ -438,11 +438,11 @@ struct DayTimeDistribution
 
         taskCount = tasks.count
         completedCount = tasks.filter(\.isTitleChecked).count
-        let dayStart = calendar.startOfDay(for: day)
-        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        let dayStart                   = calendar.startOfDay(for: day)
+        let dayEnd                     = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
         var buckets: [String: Segment] = [:]
-        var intervals: [(Date, Date)] = []
-        var untimed = 0
+        var intervals: [(Date, Date)]  = []
+        var untimed                    = 0
 
 
         ///
@@ -503,7 +503,7 @@ struct DayTimeDistribution
 
             intervals.append((clippedStart, clippedEnd))
             let duration = clippedEnd.timeIntervalSince(clippedStart)
-            let tags = Set(card.labelIDs).sorted().compactMap
+            let tags     = Set(card.labelIDs).sorted().compactMap
             {
                 id in
                 labels.labels.first
@@ -513,7 +513,7 @@ struct DayTimeDistribution
 
             }
 
-            let count = max(tags.count, 1)
+            let count                                       = max(tags.count, 1)
             let parts: [(String, String, KanbanLabelColor)] =
             tags.isEmpty
             ? [("day.uncategorized", "Uncategorized", .gray)] : tags.map
@@ -543,7 +543,7 @@ struct DayTimeDistribution
         }
 
         var latestEnd = Date.distantPast
-        var overlap = false
+        var overlap   = false
         for (start, end) in intervals.sorted(by:
             {
                 $0.0 < $1.0

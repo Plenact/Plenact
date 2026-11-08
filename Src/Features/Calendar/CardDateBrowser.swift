@@ -78,7 +78,7 @@ struct TodayCalendarView: View
     {  /* Locale weekday headings ordered by the calendar */
 
         let calendar = Calendar.current                           /* User's local calendar */
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols  /* Locale weekday labels */
+        let symbols  = calendar.veryShortStandaloneWeekdaySymbols /* Locale weekday labels */
 
         return (0 ..< symbols.count).map
         {
@@ -367,10 +367,10 @@ struct TodayCalendarView: View
     {
 
 
-        let calendar = Calendar.current                                    /* User's local calendar   */
+        let calendar   = Calendar.current                                  /* User's local calendar   */
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)  /* Selected day state      */
-        let isToday = calendar.isDateInToday(date)                         /* Current day state       */
-        let cardCount = cards(on: date).count                              /* Dated cards on this day */
+        let isToday    = calendar.isDateInToday(date)                      /* Current day state       */
+        let cardCount  = cards(on: date).count                             /* Dated cards on this day */
 
         return Button
         {

@@ -86,7 +86,7 @@ struct PortableEditableContent
             throw Failure.invalid
         }
         var aliases = retainedAliases
-        var next = (aliases.values.max() ?? 0) + 1
+        var next    = (aliases.values.max() ?? 0) + 1
         for id in targets.sorted() where aliases[id] == nil
         {
             guard next < Int.max else
@@ -472,7 +472,7 @@ struct PortableEditableContent
             return try JSONSerialization.jsonObject(with: JSONEncoder().encode(value))
         }
         var bookmarks: [Int] = []
-        var seenSelections = Set<String>()
+        var seenSelections   = Set<String>()
         for selection in selections
         {
             guard selection["record_type"] as? String == "content_selection", let body = selection["payload"] as? [String: Any],

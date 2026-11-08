@@ -138,7 +138,7 @@ struct MigrationPreview
             throw Failure.invalidLabels
         }
         var categoryIDs: [String: String] = [:]
-        var documents: [[String: Any]] = []
+        var documents: [[String: Any]]    = []
         for category in library.categories
         {
             let record = try document(type: "label_category", source: category.id,
@@ -220,7 +220,7 @@ struct MigrationPreview
             throw Failure.invalidSnapshot
         }
         let baseline = try MigrationIdentityStore.read(at: journalURL)
-        var journal = try baseline.map(MigrationIdentityJournal.decode) ?? MigrationIdentityJournal()
+        var journal  = try baseline.map(MigrationIdentityJournal.decode) ?? MigrationIdentityJournal()
         if backup.files.fileWrappers?["Migration"] != nil
         {
             let retained = try MigrationIdentityJournal.decode(
@@ -237,7 +237,7 @@ struct MigrationPreview
         let usesDefaultLabels = values["Plenact.LabelLibrary.v1"] == nil &&
             ["Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1", "Plenact.PlanningTemplates.v1"].contains(where: { values[$0] != nil })
         let defaultCatalog = usesDefaultLabels ? try JSONEncoder().encode(LabelLibrary.starter.includingDayAreas) : nil
-        var records = try labels(values["Plenact.LabelLibrary.v1"] ?? defaultCatalog, journal: &journal)
+        var records        = try labels(values["Plenact.LabelLibrary.v1"] ?? defaultCatalog, journal: &journal)
         records.append(contentsOf: try displays(values, journal: &journal))
         var content: MigrationContentConverter.Result?
         var blockedContentReason: String?
@@ -248,7 +248,7 @@ struct MigrationPreview
             {
                 do
                 {
-                    let sourceReport = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+                    let sourceReport              = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
                     var digests: [String: String] = [:]
                     for entry in sourceReport["media"] as! [[String: Any]]
                     {
@@ -285,7 +285,7 @@ struct MigrationPreview
         var settingsJournal = journal
         do
         {
-            let source = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+            let source  = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
             let digests = Dictionary(uniqueKeysWithValues: (source["media"] as! [[String: Any]]).map {
                 ($0["path"] as! String, $0["sha256"] as! String)
             })
@@ -314,7 +314,7 @@ struct MigrationPreview
         var studioJournal = journal
         do
         {
-            let source = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+            let source  = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
             let digests = Dictionary(uniqueKeysWithValues: (source["media"] as! [[String: Any]]).map {
                 ($0["path"] as! String, $0["sha256"] as! String)
             })
@@ -365,8 +365,8 @@ struct MigrationPreview
         let assets = try MigrationAssetPreview.prepare(backup: backup,
             records: records + (settings?.assetRecords ?? []) + (studio?.assetRecords ?? []) + (studio?.appearanceRecords ?? []), journal: &journal)
         let encoderOptions: JSONSerialization.WritingOptions = [.prettyPrinted, .sortedKeys]
-        let encodedRecords = try records.map { try JSONSerialization.data(withJSONObject: $0, options: encoderOptions) }
-        var supported = Set(displayKeys.keys).union(["Plenact.LabelLibrary.v1"])
+        let encodedRecords                                   = try records.map { try JSONSerialization.data(withJSONObject: $0, options: encoderOptions) }
+        var supported                                        = Set(displayKeys.keys).union(["Plenact.LabelLibrary.v1"])
         if content?.boardConverted == true
         {
             supported.insert("Plenact.Board.v1")
@@ -382,7 +382,7 @@ struct MigrationPreview
         let local = values.keys.filter {
             deviceKeys.contains($0) || $0.hasPrefix("Plenact.BoardViewport.v1.") || $0.hasPrefix("plenact.creationDraft.")
         }.sorted()
-        let recovery = values.keys.filter { LegacyStoreValidation.recoveryKeys.contains($0) }.sorted()
+        let recovery  = values.keys.filter { LegacyStoreValidation.recoveryKeys.contains($0) }.sorted()
         let remaining = values.keys.filter {
             !supported.contains($0) && !local.contains($0) && !recovery.contains($0)
         }.sorted()

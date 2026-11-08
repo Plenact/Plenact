@@ -123,7 +123,7 @@ final class CreationAttachmentDraft: ObservableObject
     @Published var entries:   [Entry] = []
     @Published var sheet:     Sheet?
     @Published var selection: [PhotosPickerItem] = []
-    @Published var isImporting = false
+    @Published var isImporting                   = false
     @Published var notice: String?
 
 

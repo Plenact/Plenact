@@ -135,7 +135,7 @@ struct ContentView: View
     let personalCollectionID:    UUID?               /* Owning personal collection; nil for the Week workspace  */
     let appearanceBinding:       Binding<BoardAppearance?>?
     @AppStorage(BoardAppearance.weekStorageKey) var weekAppearanceData = Data()
-    @State var showsBoardAppearance = false
+    @State var showsBoardAppearance                                    = false
     @State var focusedDayListID: Int?
 
     var storedBoardAppearance: BoardAppearance
@@ -165,7 +165,7 @@ struct ContentView: View
     var currentBoardAppearance: BoardAppearance
     {
 
-        var appearance = storedBoardAppearance
+        var appearance     = storedBoardAppearance
         let isPlanningWeek =
         personalCollectionID == nil
         || planningCalendarAccess?.document.weeks.contains(where:
@@ -252,7 +252,7 @@ struct ContentView: View
 
     @State var showsSharedSearch = false
     @State var showsWeekSelector = false
-    @State var showsCalendar = false                            /* Calendar sheet presentation state         */
+    @State var showsCalendar     = false                        /* Calendar sheet presentation state         */
     @State var calendarCardTarget: (listID: Int, cardID: Int)?  /* Selection opened after Calendar dismissal */
     /// Controls presentation of archived lists.
     @State var showsArchivedLists = false /* Archived-list browser presentation state */
@@ -261,9 +261,9 @@ struct ContentView: View
     @State var listToMove:      KanbanList?
     @State var namingNewListID: Int?
     @Environment(\.planningDirectItemReturn) var directItemReturn
-    @State var openedDirectItem = false
-    @State var navigationPath = NavigationPath()  /* Card-detail destinations in the Board navigation stack       */
-    @State var boardBoundaryJumpRequest = 0       /* Trigger distinguishing repeated boundary-navigation requests */
+    @State var openedDirectItem         = false
+    @State var navigationPath           = NavigationPath() /* Card-detail destinations in the Board navigation stack       */
+    @State var boardBoundaryJumpRequest = 0                /* Trigger distinguishing repeated boundary-navigation requests */
     @State var boardBoundaryJumpTarget:
     BoardListReordering.BoardListBoundary? /* First or last list boundary requested for navigation         */
     /// Last visible list identity sent through `onListViewed`.
@@ -273,7 +273,7 @@ struct ContentView: View
     /// List identity currently being dragged for reordering.
     @State var draggedListID: Int? /* List identity participating in active reordering */
     /// Measured horizontal centers keyed by list identity.
-    @State var dragGeometry = BoardDragGeometryCache()
+    @State var dragGeometry         = BoardDragGeometryCache()
     @State var dragGeometryRevision = 0
     // /* Measured horizontal centers keyed by list identity */
     /// Current horizontal location of an active list drag.
@@ -283,11 +283,11 @@ struct ContentView: View
     @State var listDragInitialCenter: CGFloat?    // Center before the temporary drag overview.
     @State var listDragTilt:          Double = 0
     @State var viewportMemory:        BoardViewportMemory
-    @State var isPanoramic = false
-    @State var isGallery = false
-    @State var todayHighlightDate = Date.now
+    @State var isPanoramic         = false
+    @State var isGallery           = false
+    @State var todayHighlightDate  = Date.now
     @State var boardScale: CGFloat = 1
-    @GestureState var boardPinch = BoardPinchState()
+    @GestureState var boardPinch   = BoardPinchState()
     var boardZoomScale: CGFloat
     {
 
@@ -344,11 +344,11 @@ struct ContentView: View
     @Environment(\.dynamicTypeSize) var dynamicTypeSize  /* Text-size category informing Board dimensions            */
     @Environment(\.scenePhase) var scenePhase            /* Scene lifecycle used to cancel interrupted drag sessions */
     /// Locally persisted choice between Standard and Overview Board layouts.
-    @State var presentation = BoardPresentation.standard  /* Persisted Standard or Overview layout selection  */
-    @State var labelLibrary = LabelLibraryStore.load()    /* Label library containing all available labels    */
-    @State var displaySettings = BoardDisplaySettings()   /* Board display settings                           */
-    @State var memberColors: [String: Color] = [:]        /* Mapping of member names to their assigned colors */
-    @State var currentUserName = "Justin Reina"           /* Current user's name                              */
+    @State var presentation                  = BoardPresentation.standard /* Persisted Standard or Overview layout selection  */
+    @State var labelLibrary                  = LabelLibraryStore.load()   /* Label library containing all available labels    */
+    @State var displaySettings               = BoardDisplaySettings()     /* Board display settings                           */
+    @State var memberColors: [String: Color] = [:]                        /* Mapping of member names to their assigned colors */
+    @State var currentUserName               = "Justin Reina"             /* Current user's name                              */
 
 
     ///

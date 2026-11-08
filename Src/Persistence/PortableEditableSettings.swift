@@ -86,7 +86,7 @@ extension PortableEditableContent
             throw Failure.unsupported
         }
         let payload = try owned(document, kind: "user_profile", accountID: accountID)
-        var raw = try mapped(payload, fields: ["account_id": "_account", "source_profile_id": "_source",
+        var raw     = try mapped(payload, fields: ["account_id": "_account", "source_profile_id": "_source",
             "source_created_at_utc": "createdAt", "display_name": "displayName", "email": "email", "context": "context",
             "avatar_color": "avatarColor", "avatar_icon": "avatarIcon", "avatar_foreground_color": "avatarForegroundColor",
             "avatar_asset_id": "avatarPhotoFileName"])
@@ -109,9 +109,9 @@ extension PortableEditableContent
     func labelLibrary() throws -> LabelLibrary
     {
 
-        let categories = records.filter { $0["record_type"] as? String == "label_category" }
-        let labels = records.filter { $0["record_type"] as? String == "label" }
-        let known = Set(categories.compactMap { $0["id"] as? String })
+        let categories       = records.filter { $0["record_type"] as? String == "label_category" }
+        let labels           = records.filter { $0["record_type"] as? String == "label" }
+        let known            = Set(categories.compactMap { $0["id"] as? String })
         let nativeCategories = try categories.map { record -> [String: Any] in
             guard let body = record["payload"] as? [String: Any] else
             {
@@ -162,7 +162,7 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
             let collection = try record(owner, kind: "collection")
-            let list = try record(listID, kind: "list")
+            let list       = try record(listID, kind: "list")
             guard (list["payload"] as? [String: Any])?["collection_id"] as? String == owner,
                   ((collection["payload"] as? [String: Any])?["list_ids"] as? [String])?.contains(listID) == true else
             {
@@ -182,7 +182,7 @@ extension PortableEditableContent
     func importance(_ selections: [[String: Any]], accountID: String) throws -> [LibraryImportanceItem]
     {
 
-        var seen = Set<String>()
+        var seen                            = Set<String>()
         var output: [LibraryImportanceItem] = []
         for selection in selections
         {
@@ -236,11 +236,11 @@ extension PortableEditableContent
             return nil
         }
         let payload = try owned(document, kind: "studio_settings", accountID: accountID)
-        var raw = try mapped(payload, fields: ["account_id": "_account", "views": "views", "default_card_surface": "defaultCardSurface",
+        var raw     = try mapped(payload, fields: ["account_id": "_account", "views": "views", "default_card_surface": "defaultCardSurface",
             "default_note_surface": "defaultNoteSurface", "varies_new_surfaces": "variesNewSurfaces", "varies_new_headers": "variesNewHeaders", "palette": "palette"])
         raw.removeValue(forKey: "_account")
         var views: [String: Any] = [:]
-        let destinations = ["today": "Today", "week": "Week", "plans": "Plans", "activity": "Activity",
+        let destinations         = ["today": "Today", "week": "Week", "plans": "Plans", "activity": "Activity",
             "calendar": "Calendar", "search": "Search", "settings": "Settings"]
         for view in try array(payload["views"])
         {

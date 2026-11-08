@@ -99,7 +99,7 @@ enum MigrationContentConverter
         let context = MigrationContentValues(journal: journal, timeZoneID: timeZoneID, mediaDigests: mediaDigests)
         context.known = Set(existing.compactMap { $0["id"] as? String })
         var owners: [Owner] = []
-        var boardConverted = false
+        var boardConverted  = false
         var currentScope: String?
         if let raw = values["Plenact.CalendarWeeks.v1"]
         {
@@ -124,11 +124,11 @@ enum MigrationContentConverter
                     throw MigrationContentValues.Failure.projectionConflict
                 }
                 let originalCalendar = try JSONSerialization.jsonObject(with: raw as! Data) as! [String: Any]
-                let originalWeek = (originalCalendar["weeks"] as! [[String: Any]]).first { $0["startKey"] as? String == document.currentWeekKey }!
-                let originalLists = (originalWeek["collection"] as! [String: Any])["lists"]!
-                let originalBoard = try JSONSerialization.jsonObject(with: rawBoard as! Data)
-                let left = try JSONSerialization.data(withJSONObject: MigrationContentGuard.comparable(originalLists), options: .sortedKeys)
-                let right = try JSONSerialization.data(withJSONObject: MigrationContentGuard.comparable(originalBoard), options: .sortedKeys)
+                let originalWeek     = (originalCalendar["weeks"] as! [[String: Any]]).first { $0["startKey"] as? String == document.currentWeekKey }!
+                let originalLists    = (originalWeek["collection"] as! [String: Any])["lists"]!
+                let originalBoard    = try JSONSerialization.jsonObject(with: rawBoard as! Data)
+                let left             = try JSONSerialization.data(withJSONObject: MigrationContentGuard.comparable(originalLists), options: .sortedKeys)
+                let right            = try JSONSerialization.data(withJSONObject: MigrationContentGuard.comparable(originalBoard), options: .sortedKeys)
                 guard left == right else
                 {
                     throw MigrationContentValues.Failure.projectionConflict
@@ -251,9 +251,9 @@ enum MigrationContentConverter
         for owner in owners
         {
             context.timeZoneID = owner.timeZoneID
-            let origin = owner.namespace
-            let collectionID = context.collectionTargets[origin]!
-            let raw = try MigrationContentValues.object(owner.collection)
+            let origin            = owner.namespace
+            let collectionID      = context.collectionTargets[origin]!
+            let raw               = try MigrationContentValues.object(owner.collection)
             var listIDs: [String] = []
             for list in owner.collection.lists
             {
@@ -290,7 +290,7 @@ enum MigrationContentConverter
         records.append(contentsOf: metadata)
         let selections = MigrationSelectionPreview.prepare(values: values,
             owners: owners.map { ($0.namespace, $0.collection) }, currentScope: currentScope, targets: context.cardTargets)
-        let unavailable = context.unavailable.keys.sorted().map { context.unavailable[$0]! }
+        let unavailable          = context.unavailable.keys.sorted().map { context.unavailable[$0]! }
         let graph: [String: Any] = ["user_data_model_version": "1.0", "payload_schema_version": 1,
             "workspace_id": context.journal.previewWorkspaceID.uuidString.lowercased(),
             "collections": records.filter { $0["record_type"] as? String == "collection" },
@@ -336,9 +336,9 @@ enum MigrationContentConverter
                 raw["itemPresentation"] = kind
             }
         }
-        let target = context.cardTargets[owner + ":" + String(card.id)]!
+        let target      = context.cardTargets[owner + ":" + String(card.id)]!
         let attachments = try context.attachments(raw["attachments"] as? [[String: Any]], scope: target)
-        var cover: Any = NSNull()
+        var cover: Any  = NSNull()
         if let original = card.coverAttachmentID
         {
             guard let mapped = context.attachmentTargets[target + ":" + original.uuidString.lowercased()] else
@@ -373,8 +373,8 @@ enum MigrationContentConverter
             ["order": (source["order"] as! [String]).map { $0 == "quickActions" ? "quick_actions" : $0 },
                 "hidden": (source["hidden"] as! [String]).map { $0 == "quickActions" ? "quick_actions" : $0 }.sorted()]
         } as Any? ?? NSNull()
-        let startKind = card.startDateKind == .dateAndTime ? "date_and_time" : card.startDateKind.rawValue
-        let dueKind = card.dueDateKind == .dateAndTime ? "date_and_time" : card.dueDateKind.rawValue
+        let startKind              = card.startDateKind == .dateAndTime ? "date_and_time" : card.startDateKind.rawValue
+        let dueKind                = card.dueDateKind == .dateAndTime ? "date_and_time" : card.dueDateKind.rawValue
         let payload: [String: Any] = ["list_id": list, "archived": archived, "title": card.word,
             "is_divider": card.isDivider, "completed": card.isTitleChecked, "editing_locked": card.isEditingLocked,
             "presentation": raw["itemPresentation"] ?? card.presentation.rawValue, "display_format": raw["listDisplayFormat"] ?? NSNull(),
@@ -425,12 +425,12 @@ enum MigrationSelectionPreview
         currentScope: String?, targets: [String: String]) -> Result
     {
 
-        var issues: [String] = []
-        var entries: [[String: Any]] = []
-        var levels: [String: Int] = [:]
+        var issues: [String]            = []
+        var entries: [[String: Any]]    = []
+        var levels: [String: Int]       = [:]
         var unresolved: [[String: Any]] = []
-        var importanceInvalid = false
-        var uncertain: Set<String> = []
+        var importanceInvalid           = false
+        var uncertain: Set<String>      = []
         if let value = values["Plenact.LibraryImportant.v1"]
         {
             do
@@ -441,12 +441,12 @@ enum MigrationSelectionPreview
                 {
                     throw MigrationContentValues.Failure.invalid("importance_shape")
                 }
-                let source = try JSONDecoder().decode([LibraryImportanceItem].self, from: data)
+                let source            = try JSONDecoder().decode([LibraryImportanceItem].self, from: data)
                 var seen: Set<String> = []
                 for item in source
                 {
                     let owner = item.collectionID.uuidString.lowercased()
-                    let key = owner + ":" + String(item.cardID)
+                    let key   = owner + ":" + String(item.cardID)
                     guard seen.insert(key).inserted, (0...5).contains(item.level ?? 1) else
                     {
                         throw MigrationContentValues.Failure.invalid("importance_duplicate_or_range")
@@ -506,7 +506,7 @@ enum MigrationSelectionPreview
             }
             for card in cardIDs.sorted()
             {
-                let key = scope + ":" + String(card)
+                let key    = scope + ":" + String(card)
                 let target = targets[key]
                 if target == nil
                 {

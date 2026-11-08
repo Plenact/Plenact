@@ -147,9 +147,9 @@ struct AccountSettingsView: View
 
     @Environment(\.planningCalendarAccess) private var planningAccess
     @AppStorage(TodayListPins.key) private var listPinData = Data()
-    @State private var showsShortcutEditor = false
-    @State private var firstWeekday = 1
-    @State private var didLoadWeekStart = false
+    @State private var showsShortcutEditor                 = false
+    @State private var firstWeekday                        = 1
+    @State private var didLoadWeekStart                    = false
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal       */
 
     @State private var profileID:                    UUID                          /* Draft profile ID       */
@@ -179,9 +179,9 @@ struct AccountSettingsView: View
     @State private var todayFocusHidesCompleted:     Bool
     @State private var todayFocusItemCount:          Int
     @State private var showsNavigationLabels:        Bool /* Draft navigation captions */
-    @State private var showsReviewRhythmSettings = false
-    @State private var confirmsRemoval = false       /* Removal confirmation                        */
-    @State private var isChoosingAvatarIcon = false  /* Whether the nested avatar picker is visible */
+    @State private var showsReviewRhythmSettings              = false
+    @State private var confirmsRemoval                        = false /* Removal confirmation                        */
+    @State private var isChoosingAvatarIcon                   = false /* Whether the nested avatar picker is visible */
     @State private var profileSheetDetent: PresentationDetent =
     .large                                       /* Current profile-sheet height        */
     @State private var avatarPhotoData: Data?    /* Draft avatar photo bytes            */
@@ -800,14 +800,14 @@ struct PlanSettingsView: View
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.planningCalendarAccess) private var access
-    @State private var preferences = PlanPreferencesStore.load()
-    @State private var firstWeekday = 1
-    @State private var loaded = false
-    @State private var showsTemplates = false
-    @State private var opensLibraryAfterTemplates = false
-    @State private var confirmsTemplateNavigation = false
-    @State private var showsShortcuts = false
-    @State private var showsReviewRhythmSettings = false
+    @State private var preferences                     = PlanPreferencesStore.load()
+    @State private var firstWeekday                    = 1
+    @State private var loaded                          = false
+    @State private var showsTemplates                  = false
+    @State private var opensLibraryAfterTemplates      = false
+    @State private var confirmsTemplateNavigation      = false
+    @State private var showsShortcuts                  = false
+    @State private var showsReviewRhythmSettings       = false
     @AppStorage(TodayListPins.key) private var pinData = Data()
     let lists:         [KanbanList]
     let onSaveProfile: (LocalProfile) -> Void

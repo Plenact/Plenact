@@ -93,7 +93,7 @@ struct SlideableHeaderText: View
 
 
     let text:             String
-    var onTap:            (() -> Void)? = nil
+    var onTap:            (() -> Void)?  = nil
     var onOverflowChange: (Bool) -> Void =
     {
         _ in
@@ -109,7 +109,7 @@ struct SlideableHeaderText: View
 
     @Environment(\.layoutDirection) private var readingDirection
     @Namespace private var readingSpace
-    @State private var textFrame:     CGRect = .zero
+    @State private var textFrame:     CGRect  = .zero
     @State private var ellipsisWidth: CGFloat = 18
     @State private var textWidth:     CGFloat = 0
     @State private var viewportWidth: CGFloat = 0
@@ -441,14 +441,14 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
             $0 + $1.element.width
         }
 
-        let gapCount = max(0, subviews.count - 1)
+        let gapCount  = max(0, subviews.count - 1)
         let available = width ?? (controlsWidth + ideal[title].width + CGFloat(gapCount) * regularSpacing)
-        let gap = WorkspaceHeaderSpacing.gap(
+        let gap       = WorkspaceHeaderSpacing.gap(
             availableWidth: available, titleIdealWidth: ideal[title].width,
             controlsWidth: controlsWidth, gapCount: gapCount, regularSpacing: regularSpacing)
         let titleWidth = max(0, available - controlsWidth - CGFloat(gapCount) * gap)
-        var sizes = ideal
-        let titleSize = subviews[title].sizeThatFits(ProposedViewSize(width: titleWidth, height: nil))
+        var sizes      = ideal
+        let titleSize  = subviews[title].sizeThatFits(ProposedViewSize(width: titleWidth, height: nil))
         sizes[title] = CGSize(width: titleWidth, height: titleSize.height)
         return (sizes, gap, available)
     }
@@ -489,13 +489,13 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
     {
 
-        let layout = arrangement(width: bounds.width, subviews: subviews)
+        let layout          = arrangement(width: bounds.width, subviews: subviews)
         var offset: CGFloat = 0
         for index in subviews.indices
         {
 
             let size = layout.sizes[index]
-            let x =
+            let x    =
             layoutDirection == .rightToLeft
             ? bounds.maxX - offset - size.width / 2
             : bounds.minX + offset + size.width / 2

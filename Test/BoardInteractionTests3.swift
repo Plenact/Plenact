@@ -35,9 +35,9 @@ extension PlenactBoardDocumentTests
     func testCardMapSearchTracksQueriesSelectionAndFailureStates() async
     {
 
-        let place = CardLocationSearchResult(name: "Coffee Shop", address: "123 Main St", latitude: 41.88, longitude: -87.63)
+        let place             = CardLocationSearchResult(name: "Coffee Shop", address: "123 Main St", latitude: 41.88, longitude: -87.63)
         var queries: [String] = []
-        let model = CardLocationSearchModel(query: "  Coffee \n")
+        let model             = CardLocationSearchModel(query: "  Coffee \n")
         {
 
         query, _ in
@@ -85,10 +85,10 @@ extension PlenactBoardDocumentTests
     func testCardMapSearchIgnoresResponsesFromAnOlderQuery() async
     {
 
-        let oldStarted = expectation(description: "Older request started")
-        let newStarted = expectation(description: "Newer request started")
+        let oldStarted                                                                = expectation(description: "Older request started")
+        let newStarted                                                                = expectation(description: "Newer request started")
         var pending: [String: CheckedContinuation<[CardLocationSearchResult], Error>] = [:]
-        let model = CardLocationSearchModel(query: "Old")
+        let model                                                                     = CardLocationSearchModel(query: "Old")
         {
 
         query, _ in
@@ -227,7 +227,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -246,7 +246,7 @@ extension PlenactBoardDocumentTests
         }
 
         var selections: [String] = []
-        let host = UIHostingController(rootView: NavigationStack
+        let host                 = UIHostingController(rootView: NavigationStack
             {
 
                 CardLocationSearchView(query: "Coffee", model: model)
@@ -326,8 +326,8 @@ extension PlenactBoardDocumentTests
     {
 
         let original = KanbanCard(id: 1301, word: "Gym", listTitle: "Today")
-        var list = KanbanList(id: 13, title: "Today", cards: [original])
-        var located = original
+        var list     = KanbanList(id: 13, title: "Today", cards: [original])
+        var located  = original
         located.location = "123 Fitness Lane"
         list.cards[0] = located
         XCTAssertTrue(list.cards[0].editHistory?.last?.changes.contains
@@ -339,7 +339,7 @@ extension PlenactBoardDocumentTests
         let copied = list.cards[0].replacingLocation(id: 1302, listTitle: "Tomorrow")
         XCTAssertEqual(copied.location, located.location)
         XCTAssertEqual(copied.editHistory, list.cards[0].editHistory)
-        var lists = [list]
+        var lists    = [list]
         var dateEdit = original
         dateEdit.startDate = .now
         dateEdit.startDateKind = .time
@@ -373,7 +373,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(LocalProfilePreferences().preferredMapsApp, .apple)
         XCTAssertEqual(try JSONDecoder().decode(LocalProfilePreferences.self,
                 from: Data("{}".utf8)).preferredMapsApp, .apple)
-        let suite = "MapsPreference." + UUID().uuidString
+        let suite    = "MapsPreference." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -408,7 +408,7 @@ extension PlenactBoardDocumentTests
             for place in ["Café + Tea & Books #2", "123 Main St\nChicago, IL", "https://example.com/?x=1&y=2"]
             {
 
-                let url = try XCTUnwrap(provider.placeURL(for: place))
+                let url        = try XCTUnwrap(provider.placeURL(for: place))
                 let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
                 XCTAssertEqual(components.scheme, "https")
                 XCTAssertEqual(components.host, provider == .apple ? "maps.apple.com" : "www.google.com")
@@ -454,7 +454,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -466,7 +466,7 @@ extension PlenactBoardDocumentTests
         var saves = 0
         var edits = 0
         var opens = 0
-        let rows = NavigationStack
+        let rows  = NavigationStack
         {
 
             Form
@@ -542,10 +542,10 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(LocalProfilePreferences().keepsDayListsInTimeOrder)
         XCTAssertTrue(try JSONDecoder().decode(LocalProfilePreferences.self,
                 from: Data("{}".utf8)).keepsDayListsInTimeOrder)
-        let manual = LocalProfilePreferences(keepsDayListsInTimeOrder: false)
+        let manual  = LocalProfilePreferences(keepsDayListsInTimeOrder: false)
         let decoded = try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONEncoder().encode(manual))
         XCTAssertFalse(decoded.keepsDayListsInTimeOrder)
-        let suite = "DayTimeOrder." + UUID().uuidString
+        let suite    = "DayTimeOrder." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -641,9 +641,9 @@ extension PlenactBoardDocumentTests
         late.startDateKind = .time
         let untimed = KanbanCard(id: 3, word: "Untimed", listTitle: "Today", checklists: [])
         let divider = KanbanCard(id: 4, word: "--- Another section", listTitle: "Today", isDivider: true)
-        let input = [untimed, late, early, divider, untimed.replacingLocation(id: 5, listTitle: "Today"),
+        let input   = [untimed, late, early, divider, untimed.replacingLocation(id: 5, listTitle: "Today"),
             early.replacingLocation(id: 6, listTitle: "Today")]
-        let day = KanbanList(id: 10, title: "Today", cards: input)
+        let day      = KanbanList(id: 10, title: "Today", cards: input)
         let personal = KanbanList(id: 11, title: "Personal", cards: input)
         var archived = KanbanList(id: 12, title: "Archived", cards: input)
         archived.isArchived = true
@@ -670,7 +670,7 @@ extension PlenactBoardDocumentTests
     {
         let original = KanbanCard(
             id: 765, word: "Before editing", listTitle: "Today", createdAt: Date(timeIntervalSince1970: 100))
-        var lists = [KanbanList(id: 1, title: "Today", cards: [original])]
+        var lists  = [KanbanList(id: 1, title: "Today", cards: [original])]
         var edited = original
         edited.startDate = Date(timeIntervalSince1970: 10000)
         edited.startDateKind = .time
@@ -735,8 +735,8 @@ extension PlenactBoardDocumentTests
 
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let previous            = scene.windows.first(where: \.isKeyWindow)
+        let window              = UIWindow(windowScene: scene)
         let originalPreferences = UserDefaults.standard.data(forKey: PlanPreferencesStore.key)
         defer
         {
@@ -850,7 +850,7 @@ extension PlenactBoardDocumentTests
 
 
         let welcomeCue = TodayWelcomeCue()
-        let host = UIHostingController(rootView: makeToday().environmentObject(welcomeCue))
+        let host       = UIHostingController(rootView: makeToday().environmentObject(welcomeCue))
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = host
         window.makeKeyAndVisible()
@@ -875,7 +875,7 @@ extension PlenactBoardDocumentTests
         func rowsImage() throws -> Data
         {
 
-            let rows = try XCTUnwrap(collection(in: host.view))
+            let rows  = try XCTUnwrap(collection(in: host.view))
             let image = UIGraphicsImageRenderer(bounds: rows.bounds).image
             {
 
@@ -986,10 +986,10 @@ extension PlenactBoardDocumentTests
     func testStudioNativeEditorRendersReadableMaterialControls() async throws
     {
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(rootView: NavigationStack
+        let window   = UIWindow(windowScene: scene)
+        let host     = UIHostingController(rootView: NavigationStack
         {
             StudioSurfaceEditor(surface: .constant(StudioSurface(material: .canvas, readability: 0.4)))
         })
@@ -1094,7 +1094,7 @@ extension PlenactBoardDocumentTests
     func testStudioWorkspaceSettingsUseAnIsolatedPreferencesDomain() throws
     {
 
-        let suite = "Plenact.Studio.Tests." + UUID().uuidString
+        let suite    = "Plenact.Studio.Tests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         XCTAssertEqual(StudioSettings.load(from: defaults), StudioSettings())
@@ -1126,7 +1126,7 @@ extension PlenactBoardDocumentTests
             context.fill(CGRect(x: 0, y: 0, width: 80, height: 60))
         }
         let name = try StudioArtworkStore.importImage(XCTUnwrap(image.pngData()))
-        let url = try StudioArtworkStore.directory().appendingPathComponent(name)
+        let url  = try StudioArtworkStore.directory().appendingPathComponent(name)
         defer { try? FileManager.default.removeItem(at: url) }
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
         XCTAssertNotNil(StudioArtworkStore.image(name))
@@ -1169,8 +1169,8 @@ extension PlenactBoardDocumentTests
     {
 
         var board = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
-        var list = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
-        var card = ItemAppearance()
+        var list  = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+        var card  = ItemAppearance()
         XCTAssertNil(board.subtitleItalic)
         XCTAssertNil(list.subtitleItalic)
         XCTAssertFalse(board.resolvedSubtitleItalic(card: card, list: list))
@@ -1207,7 +1207,7 @@ extension PlenactBoardDocumentTests
     func testSubtitleOverridesSurviveCardAndListPersistence() throws
     {
 
-        var card = KanbanCard(id: 1, word: "Task", listTitle: "Work", subtitleOverride: "A softer subtitle")
+        var card       = KanbanCard(id: 1, word: "Task", listTitle: "Work", subtitleOverride: "A softer subtitle")
         var appearance = ItemAppearance()
         appearance.subtitleItalic = false
         card.appearance = appearance
@@ -1237,7 +1237,7 @@ extension PlenactBoardDocumentTests
     {
 
         let original = KanbanCard(id: 1, word: "A", listTitle: "Work", checklists: [])
-        var next = original
+        var next     = original
         next.word = "AB"
         let first = next.recordingEdits(from: original, at: Date(timeIntervalSince1970: 100))
         next.word = "ABC"
@@ -1268,7 +1268,7 @@ extension PlenactBoardDocumentTests
     {
 
         let original = KanbanCard(id: 12, word: "Before", listTitle: "Work", checklists: [])
-        var list = KanbanList(id: 7, title: "Work", cards: [original])
+        var list     = KanbanList(id: 7, title: "Work", cards: [original])
         XCTAssertNil(list.cards[0].editHistory, "Insertion must not invent earlier history")
         var edited = original
         edited.word = "After"
@@ -1309,14 +1309,14 @@ extension PlenactBoardDocumentTests
     {
 
         let original = KanbanCard(id: 3, word: "Legacy", listTitle: "Work", checklists: [])
-        let data = try JSONEncoder().encode(original)
-        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let data     = try JSONEncoder().encode(original)
+        let object   = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertNil(object["editHistory"])
         XCTAssertNil(try JSONDecoder().decode(KanbanCard.self, from: data).editHistory)
         var edited = original
         edited.word = "Renamed"
         let prepared = edited.recordingEdits(from: original, at: Date(timeIntervalSince1970: 100))
-        var list = KanbanList(id: 8, title: "Work", cards: [original])
+        var list     = KanbanList(id: 8, title: "Work", cards: [original])
         list.cards[0] = prepared
         XCTAssertEqual(list.cards[0].editHistory, prepared.editHistory)
         list.cards.reverse()
@@ -1349,7 +1349,7 @@ extension PlenactBoardDocumentTests
     func testActivityBrowserScrollsWithinVisibleBounds() async throws
     {
 
-        let suite = "Plenact.ActivityLayoutTests." + UUID().uuidString
+        let suite    = "Plenact.ActivityLayoutTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defaults.set(Data("[]".utf8), forKey: ActivityRecentStore.key)
         defer
@@ -1361,14 +1361,14 @@ extension PlenactBoardDocumentTests
         {
             KanbanCard(id: $0, word: "Saved fixture \($0)", listTitle: "Fixture", checklists: [])
         }
-        let list = KanbanList(id: 987, title: "Fixture", cards: cards)
+        let list  = KanbanList(id: 987, title: "Fixture", cards: cards)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
         {
             $0 as? UIWindowScene
         }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(rootView: SavedCardsView(
+        let window   = UIWindow(windowScene: scene)
+        let host     = UIHostingController(rootView: SavedCardsView(
             planningDocument: nil,
             lists: [list],
             savedCardIDs: Set(cards.map(\.id)),
@@ -1456,8 +1456,8 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(declaration["UTTypeConformsTo"] as? [String], ["public.data"])
 
         var points: [CGPoint] = []  /* Sample layout coordinates */
-        var ended = 0               /* Completed drag state      */
-        let source = BoardCardDragSource(
+        var ended             = 0   /* Completed drag state      */
+        let source            = BoardCardDragSource(
             token: "synthetic-session", /* Source state before the operation */
             onBegan:
             {
@@ -1471,9 +1471,9 @@ extension PlenactBoardDocumentTests
             {
                 ended += 1
             })
-        let coordinator = source.makeCoordinator()   /* Drop coordinator under test */
-        let point = CGPoint(x: 150, y: 320)          /* Synthetic drop coordinate   */
-        let provider = coordinator.begin(at: point)  /* Native drag-item provider   */
+        let coordinator = source.makeCoordinator()     /* Drop coordinator under test */
+        let point       = CGPoint(x: 150, y: 320)      /* Synthetic drop coordinate   */
+        let provider    = coordinator.begin(at: point) /* Native drag-item provider   */
 
         XCTAssertEqual(points, [point])
         XCTAssertTrue(coordinator.isDragging)
@@ -1539,7 +1539,7 @@ extension PlenactBoardDocumentTests
     {
 
 
-        var ended = 0 /* Completed drag state              */
+        var ended  = 0 /* Completed drag state              */
         let source = BoardCardDragSource(
             token: "synthetic-session", onBegan:
             {
@@ -1553,7 +1553,7 @@ extension PlenactBoardDocumentTests
                 ended += 1
             })
         let coordinator = source.makeCoordinator()                  /* Drop coordinator under test */
-        let container = UIView()                                    /* Target drop container       */
+        let container   = UIView()                                  /* Target drop container       */
         let interaction = UIDragInteraction(delegate: coordinator)  /* Captured drag interaction   */
 
         container.addInteraction(interaction)
@@ -1623,8 +1623,8 @@ extension PlenactBoardDocumentTests
             for reportedInset: CGFloat in [0, 21, 34]
             {
 
-                let height = layout.height
-                let inset = max(reportedInset, layout.safeAreaAllowance)
+                let height  = layout.height
+                let inset   = max(reportedInset, layout.safeAreaAllowance)
                 let content = ZStack(alignment: .top)
                 {
 
@@ -1642,20 +1642,20 @@ extension PlenactBoardDocumentTests
                 let renderer = ImageRenderer(content: content)
                 renderer.scale = 1
                 let image = try XCTUnwrap(renderer.uiImage?.cgImage)
-                let data = try XCTUnwrap(image.dataProvider?.data)
+                let data  = try XCTUnwrap(image.dataProvider?.data)
                 let bytes = try XCTUnwrap(CFDataGetBytePtr(data))
                 XCTAssertEqual(image.bitsPerPixel, 32)
                 for y in [Int((layout.backgroundTopInset + height) / 2), Int(height + inset) - 2]
                 {
 
-                    let offset = y * image.bytesPerRow + 100 * 4
+                    let offset    = y * image.bytesPerRow + 100 * 4
                     let uncovered = bytes[offset] < 25 && bytes[offset + 1] > 230 && bytes[offset + 2] < 25
                     XCTAssertFalse(uncovered, "Toolbar background is missing at y=\(y), bottom inset=\(inset)")
                 }
                 if layout.backgroundTopInset > 0
                 {
 
-                    let offset = Int(layout.backgroundTopInset / 2) * image.bytesPerRow + 100 * 4
+                    let offset      = Int(layout.backgroundTopInset / 2) * image.bytesPerRow + 100 * 4
                     let clearTopGap = bytes[offset] < 25 && bytes[offset + 1] > 230 && bytes[offset + 2] < 25
                     XCTAssertTrue(clearTopGap, "The preset overlap gap must remain transparent")
                 }

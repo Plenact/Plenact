@@ -83,11 +83,11 @@ extension PortableEditableContent
         {
             throw Failure.invalid
         }
-        var weeks: [DatedPlanningWeek] = []
+        var weeks: [DatedPlanningWeek]     = []
         var metadataOwners: [String: UUID] = [:]
-        var usedCollections = Set<String>()
-        var usedDays = Set<String>()
-        var calendar = Calendar(identifier: .gregorian)
+        var usedCollections                = Set<String>()
+        var usedDays                       = Set<String>()
+        var calendar                       = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         for id in weekIDs
         {
@@ -112,7 +112,7 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
             var dates: [String: String] = [:]
-            var days: [String: Int] = [:]
+            var days: [String: Int]     = [:]
             for mapping in try array(value["day_lists"])
             {
                 guard Set(mapping.keys) == ["date", "list_id"], let day = mapping["date"] as? String,
@@ -244,12 +244,12 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
-            let first = try civil(anchor)
+            let first    = try civil(anchor)
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(secondsFromGMT: 0)!
             var weekdays: [String: Int] = [:]
             var dates: [String: String] = [:]
-            var usedLists = Set<String>()
+            var usedLists               = Set<String>()
             for mapping in try array(payload["weekdays"])
             {
                 guard Set(mapping.keys) == ["weekday", "list_id"], let day = mapping["weekday"] as? Int,
@@ -259,8 +259,8 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
                 weekdays[String(day)] = number
-                let offset = (day - calendar.component(.weekday, from: first) + 7) % 7
-                let date = calendar.date(byAdding: .day, value: offset, to: first)!
+                let offset    = (day - calendar.component(.weekday, from: first) + 7) % 7
+                let date      = calendar.date(byAdding: .day, value: offset, to: first)!
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd"
                 formatter.calendar = calendar
@@ -284,7 +284,7 @@ extension PortableEditableContent
             raw["collection"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(nativeOwner))
             if let focus = payload["example_focus"] as? [String: Any]
             {
-                let owned = Set(nativeOwner.lists.flatMap { $0.cards + $0.archivedCards }.map(\.id))
+                let owned       = Set(nativeOwner.lists.flatMap { $0.cards + $0.archivedCards }.map(\.id))
                 var mappedFocus = try mapped(focus, fields: ["important": "important", "bookmarked": "bookmarked", "all_day": "allDay"])
                 for key in mappedFocus.keys
                 {

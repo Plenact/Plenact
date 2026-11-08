@@ -595,7 +595,7 @@ struct CardSectionLayout: Hashable, Codable, Sendable
 {
 
 
-    var order:    [CardSection] = CardSection.allCases
+    var order:    [CardSection]    = CardSection.allCases
     var hidden:   Set<CardSection> = []
     var sections: [CardSection]
     {

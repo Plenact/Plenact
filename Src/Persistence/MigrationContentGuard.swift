@@ -153,7 +153,7 @@ enum MigrationContentGuard
             {
                 if let original = content[active], let mirror = object[retained], !(mirror is NSNull)
                 {
-                    let left = try JSONSerialization.data(withJSONObject: original, options: [.fragmentsAllowed, .sortedKeys])
+                    let left  = try JSONSerialization.data(withJSONObject: original, options: [.fragmentsAllowed, .sortedKeys])
                     let right = try JSONSerialization.data(withJSONObject: mirror, options: [.fragmentsAllowed, .sortedKeys])
                     guard left == right else
                     {

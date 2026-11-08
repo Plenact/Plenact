@@ -280,10 +280,10 @@ extension PortableEditableContent
     func planningDocuments() throws -> PortablePlanningDocuments
     {
 
-        var daily: [String: Any] = [:]
-        var weekly: [String: Any] = [:]
+        var daily: [String: Any]    = [:]
+        var weekly: [String: Any]   = [:]
         var periodic: [String: Any] = [:]
-        let reflections = ["step": "step", "highlights": "highlights", "learned": "learned", "direction": "direction",
+        let reflections             = ["step": "step", "highlights": "highlights", "learned": "learned", "direction": "direction",
             "risks": "risks", "priorities": "priorities", "updated_at_utc": "updatedAt", "completed_at_utc": "completedAt"]
         for document in records
         {

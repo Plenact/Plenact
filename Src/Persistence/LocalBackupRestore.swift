@@ -71,9 +71,9 @@ enum LocalBackupRestore
         {
             throw Failure.unsafe
         }
-        let manager = FileManager.default
+        let manager    = FileManager.default
         let attributes = try manager.attributesOfItem(atPath: url.path)
-        let kind = attributes[.type] as? FileAttributeType
+        let kind       = attributes[.type] as? FileAttributeType
         if kind == .typeDirectory
         {
             var children: [String: FileWrapper] = [:]
@@ -139,7 +139,7 @@ enum LocalBackupRestore
     {
 
         var remaining = LegacyWorkspaceExport.maximumBytes
-        let files = try readTree(url, remaining: &remaining)
+        let files     = try readTree(url, remaining: &remaining)
         guard files.isDirectory,
               let report = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: files)) as? [String: Any],
               let stores = report["store_count"] as? Int, let media = report["media_count"] as? Int,
@@ -147,8 +147,8 @@ enum LocalBackupRestore
         {
             throw Failure.reviewRequired
         }
-        let backup = LegacyWorkspaceBackup(files: files, storeCount: stores, mediaCount: media, reviewCodes: issues)
-        let values = try MigrationBackupReader.values(in: backup)
+        let backup                   = LegacyWorkspaceBackup(files: files, storeCount: stores, mediaCount: media, reviewCodes: issues)
+        let values                   = try MigrationBackupReader.values(in: backup)
         var actualMedia: Set<String> = []
         for area in LegacyWorkspaceExport.mediaRoots
         {
@@ -182,9 +182,9 @@ enum LocalBackupRestore
         {
             throw Failure.invalid
         }
-        let board = try JSONDecoder().decode([KanbanList].self, from: boardData)
+        let board    = try JSONDecoder().decode([KanbanList].self, from: boardData)
         let calendar = try JSONDecoder().decode(PlanningCalendarDocument.self, from: calendarData)
-        let current = calendar.weeks.filter { $0.startKey == calendar.currentWeekKey }
+        let current  = calendar.weeks.filter { $0.startKey == calendar.currentWeekKey }
         guard calendar.version == 1, (1...7).contains(calendar.firstWeekday),
               Set(calendar.weeks.map(\.startKey)).count == calendar.weeks.count,
               Set(calendar.weeks.map(\.id)).count == calendar.weeks.count,
@@ -200,7 +200,7 @@ enum LocalBackupRestore
         }
         if files.fileWrappers?["MigrationPreview"] != nil
         {
-            let data = try MigrationBackupReader.file("MigrationPreview/IdentityJournal.json", in: files)
+            let data      = try MigrationBackupReader.file("MigrationPreview/IdentityJournal.json", in: files)
             let candidate = try MigrationIdentityJournal.decode(data)
             guard let preview = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("MigrationPreview/Report.json", in: files)) as? [String: Any],
                   preview["source_preferences_sha256"] as? String == MigrationBackupReader.digest(try boardPreferences(files)),
@@ -213,7 +213,7 @@ enum LocalBackupRestore
             if let journal
             {
                 let original = try MigrationIdentityJournal.decode(journal)
-                let mapped = Dictionary(uniqueKeysWithValues: candidate.entries.map { ($0.source, $0.target) })
+                let mapped   = Dictionary(uniqueKeysWithValues: candidate.entries.map { ($0.source, $0.target) })
                 guard original.sourceInstallationID == candidate.sourceInstallationID,
                       original.previewWorkspaceID == candidate.previewWorkspaceID,
                       original.entries.allSatisfy({ mapped[$0.source] == $0.target }) else
@@ -313,7 +313,7 @@ enum LocalBackupRestore
             }
         }
         let portable = try PortableRuntimeEvidence.backupFiles(report: sourceReport, files: backup.files)
-        let runtime = root.appendingPathComponent(PortableRuntimeEvidence.area)
+        let runtime  = root.appendingPathComponent(PortableRuntimeEvidence.area)
         if manager.fileExists(atPath: runtime.path)
         {
             try manager.removeItem(at: runtime)

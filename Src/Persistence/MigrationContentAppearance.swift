@@ -38,7 +38,7 @@ extension MigrationContentValues
         }
         if kind == "color", let token = value as? String
         {
-            let data = try JSONSerialization.data(withJSONObject: token, options: .fragmentsAllowed)
+            let data  = try JSONSerialization.data(withJSONObject: token, options: .fragmentsAllowed)
             let color = try JSONDecoder().decode(ProfileColor.self, from: data)
             return ["red": color.red, "green": color.green, "blue": color.blue, "legacy_token": token]
         }

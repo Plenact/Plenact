@@ -376,17 +376,18 @@ struct PeriodicReviewView: View
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
     @State private var document = PeriodicReviewStore.Document() /* Source document snapshot */
     @State private var weekly   = WeeklyReviewStore.Document() /* Weekly review state */
-    @State private var draft:    PeriodicReviewRecord? /* Local editing draft */
-    @State private var baseline: PeriodicReviewRecord? /* Original state for comparison */
-    @State private var title = "" /* User-facing title */
+    @State private var title    = "" /* User-facing title */
     @State private var start: Date /* Range start */
     @State private var end:   Date /* Range end */
-    @State private var objectiveTitle = "" /* Objective title */
-    @State private var error: String? /* Reported operation failure */
+    @State private var objectiveTitle  = "" /* Objective title */
     @State private var loaded          = false /* Initial load completed      */
     @State private var loadFailed      = false /* Load failed */
     @State private var confirmsDiscard = false /* Confirms discard */
     @State private var showsPicker     = false /* Picker visibility */
+
+    @State private var draft:    PeriodicReviewRecord? /* Local editing draft */
+    @State private var baseline: PeriodicReviewRecord? /* Original state for comparison */
+    @State private var error: String? /* Reported operation failure */
 
 
     ///

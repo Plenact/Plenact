@@ -70,12 +70,13 @@ struct PlanningTemplateLibraryRows: View
     var onOpenLibrary: (() -> Void)? = nil                    /* Open library callback         */
     var defaults: UserDefaults       = .standard              /* Preference storage domain     */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations   */
-    @State private var library: PlanningRoutineLibrary?       /* Retained library contents     */
     @State private var sourceDate = Date.now                  /* Source date                   */
     @State var editing:  PlanningRoutineTemplate?             /* Current editing destination   */
+    @State var deleting: PlanningRoutineTemplate?             /* Item awaiting deletion        */
+
+    @State private var library: PlanningRoutineLibrary?       /* Retained library contents     */
     @State private var applying: PlanningRoutineTemplate?     /* Template awaiting application */
     @State private var completedWeek: ManualWeekOpening?      /* Completed week                */
-    @State var deleting: PlanningRoutineTemplate?             /* Item awaiting deletion        */
     @State private var message:  String?                      /* User-facing status message    */
 
 
@@ -1112,11 +1113,12 @@ struct PlanningTemplateApplyView: View
         Date.now
     @State private var mode:                PlanningTemplateApplication.Mode = /* Requested operation mode */
         .add
+    @State private var exampleImportantIDs: Set<Int> = []      /* Example important i ds        */
+    @State private var confirmsReplace               = false                 /* Confirms replace              */
+
     @State private var baseline:            DatedPlanningWeek? /* Original state for comparison */
     @State private var preview:             DatedPlanningWeek? /* Prepared template preview     */
-    @State private var exampleImportantIDs: Set<Int> = []      /* Example important i ds        */
     @State private var message:             String?            /* User-facing status message    */
-    @State private var confirmsReplace = false                 /* Confirms replace              */
 
 
     ///

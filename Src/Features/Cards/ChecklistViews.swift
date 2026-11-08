@@ -355,8 +355,9 @@ struct ChecklistBlock: View
     let focusFirstItem:           Bool        /* Whether the first item should be focused when the checklist is rendered */
     let onFirstItemFocused:       () -> Void  /* The action invoked when the first item receives focus                   */
     var onChangeType:             ((KanbanChecklistItem) -> Bool)? = nil /* Change type callback */
+    @State private var requestedType                               = ChecklistItemType.standard /* Requested type */
+
     @State private var typeDraft: KanbanChecklistItem? /* Type draft */
-    @State private var requestedType = ChecklistItemType.standard /* Requested type */
 
     @State private var newItemText        = "" /* Pending checklist item text */
     @State private var confirmsDeletion   = false /* Confirms deletion */

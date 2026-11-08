@@ -147,8 +147,9 @@ struct CollectionFilterPopover: View
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
     @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver /* Voice over */
-    @State private var pendingSelection: LibraryBrowseFilter? /* Pending selection */
     @State private var opacity = 1.0 /* Surface opacity */
+
+    @State private var pendingSelection: LibraryBrowseFilter? /* Pending selection */
 
     var body: some View /* Collection Filter layout */
     {

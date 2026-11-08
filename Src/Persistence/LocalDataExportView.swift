@@ -73,28 +73,29 @@ struct LocalDataExportView: View
 
     @Environment(\.localBackupRestore) private var restoreAccess /* Restore access */
     @Environment(\.portableWorkspaceImport) private var editableImportAccess /* Editable import access */
-    @State private var originalTimeZoneID = "" /* Explicit original context; never default to this device’s clock */
-    @State private var packageDocument: LegacyBackupDocument? /* Package document */
+    @State private var originalTimeZoneID      = "" /* Explicit original context; never default to this device’s clock */
     @State private var savingPackage           = false /* Saving package */
     @State private var choosingPortablePackage = false /* Choosing portable package */
-    @State private var portableReview: ReviewedPortablePackage? /* Portable review */
-    @State private var installedPortable: ReviewedPortablePackage? /* Installed portable */
     @State private var canUndoPortable         = false /* Undo Portable availability */
     @State private var confirmsPortableInstall = false /* Confirms portable install */
     @State private var confirmsEditableImport  = false /* Confirms editable import */
     @State private var confirmsEditableUndo    = false /* Confirms editable undo */
+    @State private var savingEdited            = false /* Saving edited */
+    @State private var showsEditedExportError  = false /* Edited Export Error visibility */
+    @State private var choosingRestore         = false /* Choosing restore */
+    @State private var confirmsRestore         = false /* Confirms restore */
+    @State private var preparing               = false                 /* Prevent repeated capture requests */
+    @State private var saving                  = false                 /* System Files destination chooser */
+
+    @State private var packageDocument: LegacyBackupDocument? /* Package document */
+    @State private var portableReview: ReviewedPortablePackage? /* Portable review */
+    @State private var installedPortable: ReviewedPortablePackage? /* Installed portable */
     @State private var editedDocument: LegacyBackupDocument? /* Edited document */
-    @State private var savingEdited = false /* Saving edited */
     @State private var editedExportError: String? /* Edited export error */
-    @State private var showsEditedExportError = false /* Edited Export Error visibility */
-    @State private var choosingRestore        = false /* Choosing restore */
-    @State private var confirmsRestore        = false /* Confirms restore */
     @State private var reviewedRestore: ReviewedLocalBackup? /* Reviewed restore */
     @State private var preview: MigrationPreview? /* Explicitly partial conversion summary */
     @State private var document: LegacyBackupDocument? /* Immutable Files transfer snapshot */
     @State private var backup:    LegacyWorkspaceBackup? /* Retained only during this screen */
-    @State private var preparing = false                 /* Prevent repeated capture requests */
-    @State private var saving    = false                 /* System Files destination chooser */
     @State private var message: String?                  /* Local status without raw values   */
 
 

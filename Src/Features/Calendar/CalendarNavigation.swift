@@ -237,13 +237,14 @@ struct PlanningCalendarWeekView: View
     var initialBoardListID: Int? = nil /* Initial board list ID */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @State private var targetListID: Int? /* Target list ID */
-    @State private var targetCardID: Int? /* Target card ID */
     @State private var didOpenInitialTarget = false /* Open Initial Target completion flag */
     @State private var showsDay             = false /* Day visibility */
+    @State private var isRevertingEdit      = false /* Guard against recursive saves */
+    @State private var labels               = LabelLibraryStore.load() /* Available label definitions */
+
+    @State private var targetListID: Int? /* Target list ID */
+    @State private var targetCardID: Int? /* Target card ID */
     @State private var dayID: Int? /* Day ID */
-    @State private var isRevertingEdit = false /* Guard against recursive saves */
-    @State private var labels          = LabelLibraryStore.load() /* Available label definitions */
 
     private var isStored: Bool /* Stored state */
     {
@@ -684,10 +685,11 @@ struct PlanningSearchLibraryView: View
     let onLeaveForHome:    () -> Void /* Leave for home callback */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @State private var targetListID: Int? /* Target list ID */
-    @State private var targetCardID: Int? /* Target card ID */
     @State private var isRevertingEdit      = false /* Guard against recursive saves */
     @State private var didOpenInitialTarget = false /* Open Initial Target completion flag */
+
+    @State private var targetListID: Int? /* Target list ID */
+    @State private var targetCardID: Int? /* Target card ID */
 
     var body: some View /* Planning Search Library layout */
     {

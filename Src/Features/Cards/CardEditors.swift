@@ -600,8 +600,9 @@ struct ChecklistItemTypeEditor: View
     let candidates:             [KanbanCard]                  /* Eligible operation targets     */
     let onSave:                 (KanbanChecklistItem) -> Bool /* Persist the edited value       */
     @State private var type:    ChecklistItemType             /* Content type discriminator     */
-    @State private var cardID:  Int?                          /* Owner-local Card identifier    */
     @State private var urlText: String                        /* URL text                       */
+
+    @State private var cardID:  Int?                          /* Owner-local Card identifier    */
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
 
 

@@ -84,23 +84,25 @@ struct TodayHomeView: View
     let onDeleteList:           (Int) -> Bool       /* Report successful confirmed Week list removal */
     let quickCreateRequest:     Int                 /* Center-bar requests for the Today composer    */
 
+    @State private var showsAccountSettings                                   = false /* Account & Settings sheet presentation */
+
     @State private var selectedTodayListID: Int?                  /* Board list selected for today's plan  */
     @State private var listPickerMode:      TodayListPickerMode?  /* Active list picker presentation mode  */
-    @State private var showsAccountSettings                                   = false /* Account & Settings sheet presentation */
     @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = /* Focus important data */
         Data()
     @Environment(\.workspaceBottomBarHeight) private var focusToolbarHeight /* Focus toolbar height */
-    @State private var removedFocusBookmark: Int? /* Removed focus bookmark */
-    @State private var bookmarkNoticeRevision = UUID() /* Bookmark notice revision */
-    @State private var focusDate              = Date.now /* Focus date */
-    @State private var focusFiltersChangedAt:  Date? /* Focus filters changed at */
+    @State private var bookmarkNoticeRevision          = UUID() /* Bookmark notice revision */
+    @State private var focusDate                       = Date.now /* Focus date */
     @State private var perspectiveSectionTop:  CGFloat = 0 /* Perspective section top */
     @State private var shortcutsSectionBottom: CGFloat = 0 /* Shortcuts section bottom */
+    @State private var showsTodayList                  = false /* Focused single-list presentation         */
+    @State private var showsTodayPlan                  = false /* Today Plan visibility */
+    @State private var perspectivePlanDate: Date       = .now /* Perspective plan date */
+    @State private var showsPerspectivePlan            = false /* Perspective Plan visibility */
+
+    @State private var removedFocusBookmark: Int? /* Removed focus bookmark */
+    @State private var focusFiltersChangedAt:  Date? /* Focus filters changed at */
     @State private var openedFocusCard:        KanbanCard? /* Opened focus card */
-    @State private var showsTodayList               = false /* Focused single-list presentation         */
-    @State private var showsTodayPlan               = false /* Today Plan visibility */
-    @State private var perspectivePlanDate: Date    = .now /* Perspective plan date */
-    @State private var showsPerspectivePlan         = false /* Perspective Plan visibility */
     @ObservedObject private var reviewNotifications = /* Review notifications */
         ReviewRhythmNotifications.shared
     @State private var reviewRoute: ReviewRhythmRoute?       /* Review route                      */
@@ -109,17 +111,18 @@ struct TodayHomeView: View
     @AppStorage(TodayListPins.key) private var listPinData = Data() /* List pin data   */
     @State private var openedShortcut: WorkspaceListReference?      /* Opened shortcut */
 
+    @State private var quickCaptureTitle                 = ""    /* Draft title for inline card capture          */
+    @State private var quickComposerInitialTitle         = ""    /* Quick-capture title handed to full editor    */
+    @State private var showsQuickNoteEditor              = false /* Full-size quick card editor presentation     */
+    @State private var showsTemplates                    = false /* Templates visibility */
+    @State private var showsPlanSettings                 = false /* Plan Settings visibility */
+    @State private var opensTemplateLibraryAfterSettings = false /* Opens template library after */
+
     @State private var focusedListID: Int?             /* Current-day list selected when opening Focus */
-    @State private var quickCaptureTitle         = ""    /* Draft title for inline card capture          */
-    @State private var quickComposerInitialTitle = ""    /* Quick-capture title handed to full editor    */
-    @State private var showsQuickNoteEditor      = false /* Full-size quick card editor presentation     */
-    @State private var showsTemplates            = false /* Templates visibility */
     @State private var pendingTemplate:             QuickCaptureTemplate? /* Pending template */
     @State private var composerInitialPresentation: ItemPresentation? /* Composer initial presentation */
     @State private var composerTemplate:            QuickCaptureTemplate? /* Composer template */
     @State private var captureAction:               TodayCaptureAction? /* Capture action */
-    @State private var showsPlanSettings                 = false /* Plan Settings visibility */
-    @State private var opensTemplateLibraryAfterSettings = false /* Opens template library after */
     @Environment(\.openTemplateLibrary) private var openTemplateLibrary /* Open template library */
     @State private var showsSearch                    = false                    /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false                    /* Deferred center-plus request             */

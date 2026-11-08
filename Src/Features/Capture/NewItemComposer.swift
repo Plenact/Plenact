@@ -32,8 +32,9 @@ struct QuickNoteComposer: View
     @State private var acceptsDraftEdits = true /* Accepts draft edits */
     let onSaveCapture:                ((QuickCaptureSubmission) -> Bool)? /* Save capture callback */
     @State private var drawings:      [DrawingCaptureDraft] = [] /* Editable drawing originals */
+    @State private var offeredDrawing                       = false /* Offered drawing */
+
     @State private var drawingToEdit: DrawingCaptureDraft? /* Drawing to edit */
-    @State private var offeredDrawing                      = false /* Offered drawing */
     @State private var photos:         [QuickCapturePhoto] = /* Photo selections or gallery entries */
         []
     @State private var photoSelection: [PhotosPickerItem]  = []    /* Photo selection          */
@@ -82,8 +83,9 @@ struct QuickNoteComposer: View
     @State private var subtitle    = ""                      /* Supporting item text             */
     @State private var title       = ""                      /* New card title                   */
     @State private var description = ""                      /* Optional card detail             */
-    @State private var selectedListID: Int?                  /* Destination selected in the form */
     @State private var actions:        [KanbanChecklistItem] /* Available item operations        */
+
+    @State private var selectedListID: Int?                  /* Destination selected in the form */
 
 
     ///

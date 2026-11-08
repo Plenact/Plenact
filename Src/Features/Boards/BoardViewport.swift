@@ -165,8 +165,9 @@ final class BoardViewportMemory
     let key:                 String                 /* Lookup or persistence key       */
     private let defaults:    UserDefaults           /* Preference storage domain       */
     var state:               BoardViewportState     /* Current operation state         */
-    private var pendingSave: DispatchWorkItem?      /* Pending save                    */
     var horizontalRestoreAllowed = true             /* Horizontal restore allowed      */
+
+    private var pendingSave: DispatchWorkItem?      /* Pending save                    */
 
 
     ///
@@ -485,16 +486,18 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     {
 
 
-        private var memory: BoardViewportMemory?        /* Owner-scoped viewport state  */
         private var key        = ""                     /* Lookup or persistence key    */
         private var horizontal = false                  /* Horizontal scrolling axis    */
+
+        private var memory: BoardViewportMemory?        /* Owner-scoped viewport state  */
         private weak var scroll: UIScrollView?          /* Native scroll view           */
-        private var observation: NSKeyValueObservation? /* Active change observation    */
-        private var restored = false                    /* Recovered state under review */
-        private var desired: Double?                    /* Requested scroll destination */
+        private var restored     = false                    /* Recovered state under review */
         private var attempts     = 0                    /* Restore or retry count       */
         private var finding      = false                /* Finding state flag           */
         private var resetRequest = 0                    /* Reset request                */
+
+        private var observation: NSKeyValueObservation? /* Active change observation    */
+        private var desired: Double?                    /* Requested scroll destination */
 
 
         ///

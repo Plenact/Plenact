@@ -999,9 +999,10 @@ struct LocalProfilePreferences: Hashable, Codable
     ) -> [TodayFocusEntry]
     {
 
+        var entries: [TodayFocusEntry] = [] /* Entries being processed */
+
         var sectionID: Int?                 /* Section ID              */
         var heading: String?                /* Section heading text    */
-        var entries: [TodayFocusEntry] = [] /* Entries being processed */
 
         for card in cards
         {

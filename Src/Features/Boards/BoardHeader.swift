@@ -258,11 +258,13 @@ struct BoardHeader: View
     @State private var titleOverflows    = false /* Title overflows */
     @State private var subtitleOverflows = false /* Subtitle overflows */
     @State private var showsBoardOptions = false /* Board Options visibility */
-    @State private var pendingBoardAction: BoardOptionsAction? /* Pending board action */
-    @State private var showingSettings = false /* Controls the visibility of the board settings sheet */
+    @State private var showingSettings   = false /* Controls the visibility of the board settings sheet */
+
     /// Controls confirmation before archiving the complete board
     @State private var confirmsArchiveBoard = false /* Whole-Board archive confirmation state */
     @State private var confirmsDeleteBoard  = false /* Permanent Board deletion confirmation  */
+
+    @State private var pendingBoardAction: BoardOptionsAction? /* Pending board action */
 
 
     ///

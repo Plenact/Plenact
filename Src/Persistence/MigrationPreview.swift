@@ -344,9 +344,10 @@ struct MigrationPreview
             }
         }
 
+        var settingsJournal = journal                  /* Settings journal            */
+
         var settings: MigrationSettingsPreview.Result? /* Workspace settings snapshot */
         var settingsBlocker: String?                   /* Settings blocker            */
-        var settingsJournal = journal                  /* Settings journal            */
 
         do
         {
@@ -388,9 +389,10 @@ struct MigrationPreview
 
         }
 
+        var studioJournal = journal                /* Studio journal         */
+
         var studio: MigrationStudioPreview.Result? /* Studio operation value */
         var studioBlocker: String?                 /* Studio blocker         */
-        var studioJournal = journal                /* Studio journal         */
 
         do
         {
@@ -432,9 +434,10 @@ struct MigrationPreview
 
         }
 
+        var planningJournal = journal                  /* Planning journal          */
+
         var planning: MigrationPlanningPreview.Result? /* Planning store projection */
         var planningBlocker: String?                   /* Planning blocker          */
-        var planningJournal = journal                  /* Planning journal          */
 
         do
         {

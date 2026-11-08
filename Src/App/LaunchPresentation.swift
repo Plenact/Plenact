@@ -330,13 +330,14 @@ final class TodayWelcomeCue: ObservableObject
         "Plenact.Welcome.lastDeparture.v1"
     static let returnInterval: TimeInterval = 4 * 60 * 60 /* Return interval               */
     @Published private(set) var requestID   = 0           /* Request ID                    */
-    @Published private(set) var target: Target?           /* Target under consideration    */
     @Published private(set) var illuminated = false       /* Illuminated state flag        */
     private(set) var pending                = false       /* Operation awaiting completion */
     private var hasActivated                = false       /* Activated availability        */
-    private var departure: Date?                          /* Departure reference date      */
-    private var generation = 0                            /* Current navigation generation */
+    private var generation                  = 0                            /* Current navigation generation */
     private let defaults: UserDefaults                    /* Preference storage domain     */
+
+    @Published private(set) var target: Target?           /* Target under consideration    */
+    private var departure: Date?                          /* Departure reference date      */
 
 
     ///

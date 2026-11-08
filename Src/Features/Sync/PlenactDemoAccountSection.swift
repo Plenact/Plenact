@@ -36,8 +36,9 @@ struct PlenactDemoAccountSection: View
     @State private var remoteSnapshot:       PlenactBoardSnapshotResponse?  /* Last fetched server snapshot    */
     @State private var remoteDraft:          PlenactBoardDocument?          /* Editable remote-only Board copy */
 
-    @State private var currentRevision: Int64?  /* Last fetched server revision                */
     @State private var activeOperationCount = 0 /* Number of in-flight demo service operations */
+
+    @State private var currentRevision: Int64?  /* Last fetched server revision                */
 
     ///
     /// @fcn        PlenactDemoAccountSection.isWorking

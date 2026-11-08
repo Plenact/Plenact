@@ -21,18 +21,20 @@ struct TodayListDetailView: View
 
 
     @State private var keyboardDetailPath: [KanbanCard] = [] /* Keyboard detail path */
+    @State private var confirmsCheckmarkReset           = false /* Confirms checkmark reset */
+
     @State private var checkmarkReset:     ListCheckmarkReset? /* Checkmark reset */
-    @State private var confirmsCheckmarkReset = false /* Confirms checkmark reset */
     @Environment(\.cardMovementSource) private var dayMovementSource /* Day movement source */
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess /* Planning calendar access */
     @Environment(\.planningHomeExit) private var planningHomeExit /* Planning home exit */
-    @State private var focusedViewportMemory: BoardViewportMemory? /* Focused viewport memory */
-    @State private var showsDaySearch        = false /* Day Search visibility */
-    @State private var guidanceToggleRequest = 0 /* Guidance toggle request */
-    @State private var guidanceFooterVisible: Bool? /* Guidance footer visible */
-    @State private var showsDaySelector = false /* Day Selector visibility */
-    @State private var selectedDay: PlanningDaySelection? /* Selected day */
+    @State private var showsDaySearch                 = false /* Day Search visibility */
+    @State private var guidanceToggleRequest          = 0 /* Guidance toggle request */
+    @State private var showsDaySelector               = false /* Day Selector visibility */
     var onSelectDay:                ((Date) -> Void)? = nil /* Select day callback */
+
+    @State private var focusedViewportMemory: BoardViewportMemory? /* Focused viewport memory */
+    @State private var guidanceFooterVisible: Bool? /* Guidance footer visible */
+    @State private var selectedDay: PlanningDaySelection? /* Selected day */
 
 
     @Binding var lists: [KanbanList] /* Shared local Board snapshot */
@@ -91,17 +93,18 @@ struct TodayListDetailView: View
         return (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance()
     }
 
-    @State private var isEditingList       = false /* Editing List state */
-    @State private var isEditingAppearance = false /* Editing Appearance state */
-    @State private var showsNewCard        = false /* New Card visibility */
-    @State private var inlineCaptureDraft  = InlineListCaptureDraft() /* Inline capture draft */
-    @State private var deletingCard: KanbanCard? /* Deleting card */
-    @State private var editMode:     EditMode = .inactive /* Whether Today rows expose native reorder controls */
-    @State private var cardDragToken          = UUID().uuidString /* Card drag token */
-    @State private var draggedCardID:    Int? /* Dragged card ID */
-    @State private var cardDragLocation: CGPoint? /* Card drag location */
+    @State private var isEditingList                   = false /* Editing List state */
+    @State private var isEditingAppearance             = false /* Editing Appearance state */
+    @State private var showsNewCard                    = false /* New Card visibility */
+    @State private var inlineCaptureDraft              = InlineListCaptureDraft() /* Inline capture draft */
+    @State private var editMode:     EditMode          = .inactive /* Whether Today rows expose native reorder controls */
+    @State private var cardDragToken                   = UUID().uuidString /* Card drag token */
     @State private var cardFrames:       [Int: CGRect] = [:] /* Card frames */
     @State private var cardViewport:     CGRect        = .zero /* Card viewport */
+
+    @State private var deletingCard: KanbanCard? /* Deleting card */
+    @State private var draggedCardID:    Int? /* Dragged card ID */
+    @State private var cardDragLocation: CGPoint? /* Card drag location */
     @Environment(\.scenePhase) private var scenePhase /* Scene phase */
 
     private var cardDropTarget: BoardCardDropTarget? /* Card drop target */

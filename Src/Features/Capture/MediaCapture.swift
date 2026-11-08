@@ -26,13 +26,14 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     @Published private(set) var isRecording    = false    /* Recording state               */
     @Published private(set) var isStarting     = false    /* Starting state                */
     @Published private(set) var isTranscribing = false    /* Transcribing state            */
-    @Published private(set) var recordingURL: URL?        /* Recording URL                 */
-    @Published var transcript = ""                        /* Recognized speech text        */
+    @Published var transcript                  = ""                        /* Recognized speech text        */
     @Published var errorMessage: String?                  /* User-facing failure message   */
+    private var generation = 0                            /* Current navigation generation */
+
+    @Published private(set) var recordingURL: URL?        /* Recording URL                 */
     private var recorder:        AVAudioRecorder?         /* Audio recording controller    */
     private var speechTask:      SFSpeechRecognitionTask? /* Speech task                   */
     private var timeout:         Task<Void, Never>?       /* Foreground return threshold   */
-    private var generation = 0                            /* Current navigation generation */
 
 
     ///

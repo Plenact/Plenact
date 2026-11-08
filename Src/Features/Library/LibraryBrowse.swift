@@ -456,8 +456,9 @@ struct LibraryLabelMatchesView: View
     let label: KanbanLabel                                    /* Resolved display label         */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @State private var openedCard: PlanningSearchResult?      /* Opened card                    */
     @State private var query = ""                             /* Search text                    */
+
+    @State private var openedCard: PlanningSearchResult?      /* Opened card                    */
 
     private var matches: [PlanningSearchResult] /* Matching source entries */
     {

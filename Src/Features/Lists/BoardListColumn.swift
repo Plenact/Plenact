@@ -23,8 +23,9 @@ struct KanbanListView: View
 {
 
 
-    @State private var checkmarkReset: ListCheckmarkReset?         /* Checkmark reset          */
     @State private var confirmsCheckmarkReset = false              /* Confirms checkmark reset */
+
+    @State private var checkmarkReset: ListCheckmarkReset?         /* Checkmark reset          */
     @Environment(\.boardViewportMemory) private var viewportMemory /* Viewport memory          */
 
     @Environment(\.cardMovementSource) private var draftCollectionID /* Draft collection ID */
@@ -176,10 +177,11 @@ struct KanbanListView: View
     }
 
 
-    @State private var activeSheet: ActiveSheet? /* The currently active sheet presented modally        */
     /// Opens card creation after the active list-actions sheet has dismissed
     @State private var opensNewCardAfterDismissal = false  /* Deferred creation request after another sheet closes */
     @State private var isWatching                 = false  /* Indicates whether the user is watching the list      */
+
+    @State private var activeSheet: ActiveSheet? /* The currently active sheet presented modally        */
 
     private var effectiveAppearance: ItemAppearance /* Effective appearance */
     {
@@ -197,11 +199,12 @@ struct KanbanListView: View
     }
 
     @State private var editMode:     EditMode = .inactive  /* Indicates whether the list is in edit mode */
-    @State private var deletingCard: KanbanCard?           /* Swipe deletion awaiting confirmation       */
     /// Measured height of the list header used to size its card collection
     @State private var headerHeight: CGFloat = 72 /* Measured list-header height with an initial estimate */
     /// Measured card heights keyed by stable card identity
     @State private var measuredCardHeights: [Int: CGFloat] = [:] /* Actual card-row heights keyed by identity */
+
+    @State private var deletingCard: KanbanCard?           /* Swipe deletion awaiting confirmation       */
     /// Dynamic Type scaling factor applied to card content
     @ScaledMetric(relativeTo: .body) private var cardScale = /* Card scale */
     1.0 /* Text-size scale applied to minimum card dimensions */

@@ -27,9 +27,10 @@ struct ArchivedCollectionContentsView: View
     let onDeleteBoard:       () -> Bool            /* Parent reports saved collection removal */
     let onRestoreBoard:      () -> Void            /* Parent saves restoration                */
     @Environment(\.dismiss) private var dismiss    /* Return to Saved                         */
+    @State private var confirmsDeleteBoard = false /* Entire collection removal confirmation  */
+
     @State private var deletingList: KanbanList?   /* Nested list awaiting removal            */
     @State private var deletingCard: KanbanCard?   /* Retained card awaiting removal          */
-    @State private var confirmsDeleteBoard = false /* Entire collection removal confirmation  */
 
 
     ///
@@ -509,8 +510,9 @@ struct ArchivedListContentsView: View
     let listID:                      Int           /* Archived list identity           */
     let onDeleteCard:                (Int) -> Void /* Owner removes confirmed cards    */
     let onDeleteList:                () -> Void    /* Owner removes the confirmed list */
-    @State private var deletingCard: KanbanCard?   /* Card awaiting permanent removal  */
     @State private var confirmsDeleteList = false  /* Complete retained list deletion  */
+
+    @State private var deletingCard: KanbanCard?   /* Card awaiting permanent removal  */
     @Environment(\.dismiss) private var dismiss    /* Close a deleted list             */
 
     ///

@@ -27,7 +27,7 @@ final class NoteNavigationProbe: ObservableObject
 
 
     @Published var path: [KanbanCard] = []
-    var visibleNotes:    Set<UUID> = []
+    var visibleNotes:    Set<UUID>    = []
     var noteIsVisible:   Bool
     {
         !visibleNotes.isEmpty

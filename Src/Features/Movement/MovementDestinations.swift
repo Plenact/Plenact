@@ -21,11 +21,11 @@ struct CardMovementAccess
 {
 
 
-    var destinations:      [CardMoveDestination] = []
-    var move:              ((KanbanCard, UUID?, CardMoveDestination) -> Bool)? = nil
-    var moveToDate:        ((KanbanCard, UUID?, Date) -> Bool)? = nil
+    var destinations:      [CardMoveDestination]                                     = []
+    var move:              ((KanbanCard, UUID?, CardMoveDestination) -> Bool)?       = nil
+    var moveToDate:        ((KanbanCard, UUID?, Date) -> Bool)?                      = nil
     var moveSection:       ((KanbanCard, UUID?, CardMoveDestination, Bool) -> Bool)? = nil
-    var moveSectionToDate: ((KanbanCard, UUID?, Date, Bool) -> Bool)? = nil
+    var moveSectionToDate: ((KanbanCard, UUID?, Date, Bool) -> Bool)?                = nil
 }
 
 
@@ -125,10 +125,10 @@ struct SectionMoveSheet: View
     @Environment(\.planningCalendarAccess) private var planning
     @Environment(\.dismiss) private var dismiss
     @State private var chooseDate = false
-    @State private var date = Date()
+    @State private var date       = Date()
     @State private var destination: CardMoveDestination?
     @State private var shiftDates = false
-    @State private var failed = false
+    @State private var failed     = false
     private var destinations: [CardMoveDestination]
     {
 
@@ -139,7 +139,7 @@ struct SectionMoveSheet: View
             {
                 $0.startKey == planning?.document.currentWeekKey
             }?.id
-            let ownerID = item.collectionID ?? current
+            let ownerID  = item.collectionID ?? current
             let sourceID = source ?? current
             guard ownerID == sourceID else
             {
@@ -369,9 +369,9 @@ struct CardDestinationMenu: View
 
     }
 
-    var locationTitle: String? = nil
+    var locationTitle: String?          = nil
     @State private var showsSectionMove = false
-    @State private var showsDatePicker = false
+    @State private var showsDatePicker  = false
     @State private var selectedMoveDate = Date()
 
     @Environment(\.cardMovementAccess) private var access

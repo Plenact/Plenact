@@ -6,7 +6,7 @@
 //
 // @author     Justin Reina, Firmware/Systems Engineering
 // @created    9/24/26
-// @last rev   10/6/26
+// @last rev   10/8/26
 //
 // @notes      This template favors readability, maintainability, and debug support over compactness
 //             The result is intentionally practical for human review and long-term support
@@ -16,6 +16,8 @@
 //             Type headers describe the declaration and include a focused @section Purpose
 //             Include @throws for throwing functions and @pre, @post, or @note where relevant
 //             Add concise trailing /* ... */ descriptors to let/var declarations, including locals
+//             Vertically align = in consecutive let/var declarations at the same indentation
+//             Keep blank lines and intervening statements as alignment-group boundaries
 //             Vertically align both /* and */ markers in consecutive trailing block-comment groups
 //             Use two empty physical lines before class/struct/enum/protocol and function/init definitions
 //             Place those blank lines before doc-comment blocks so comments remain attached

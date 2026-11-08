@@ -91,19 +91,19 @@ enum MigrationAssetPreview
     {
 
         _ = try MigrationBackupReader.values(in: backup)
-        let report = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
-        let media = report["media"] as! [[String: Any]]
-        var paths: [String: String] = [:]
+        let report                             = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+        let media                              = report["media"] as! [[String: Any]]
+        var paths: [String: String]            = [:]
         var available: [String: [String: Any]] = [:]
-        var usages: [String: [[String: Any]]] = [:]
-        var roles: [String: Set<String>] = [:]
-        var parents: [String: Set<String>] = [:]
-        var issues: Set<String> = []
+        var usages: [String: [[String: Any]]]  = [:]
+        var roles: [String: Set<String>]       = [:]
+        var parents: [String: Set<String>]     = [:]
+        var issues: Set<String>                = []
         for entry in media
         {
-            let path = entry["path"] as! String
+            let path   = entry["path"] as! String
             let digest = entry["sha256"] as! String
-            let id = try journal.resolve(MigrationSourceIdentity(recordType: "asset", owner: "owned_media",
+            let id     = try journal.resolve(MigrationSourceIdentity(recordType: "asset", owner: "owned_media",
                 legacyID: path, discriminator: digest)).uuidString.lowercased()
             paths[id] = path
             available[id] = entry
@@ -145,7 +145,7 @@ enum MigrationAssetPreview
                 for key in object.keys.sorted()
                 {
                     let child = object[key]!
-                    let next = path + "/" + key
+                    let next  = path + "/" + key
                     if ["asset_id", "drawing_asset_id", "photo_asset_id", "avatar_asset_id"].contains(key), let asset = child as? String
                     {
                         let role = key == "drawing_asset_id" ? "drawing_original" :
@@ -202,7 +202,7 @@ enum MigrationAssetPreview
         for child in proposed.keys
         {
             var visited: Set<String> = []
-            var current: String? = child
+            var current: String?     = child
             while let node = current
             {
                 if !visited.insert(node).inserted
@@ -217,13 +217,13 @@ enum MigrationAssetPreview
         var entries: [[String: Any]] = []
         for id in paths.keys.sorted()
         {
-            let path = paths[id]!
-            let filename = String(path.split(separator: "/").last ?? "")
-            let stored = available[id]
+            let path        = paths[id]!
+            let filename    = String(path.split(separator: "/").last ?? "")
+            let stored      = available[id]
             let sourceRoles = roles[id] ?? []
-            let bytes = try stored.map { _ in try MigrationBackupReader.file(path, in: backup.files) }
-            let detected = bytes.map(signature) ?? ("binary", "application/octet-stream")
-            let drawing = sourceRoles == ["drawing_original"]
+            let bytes       = try stored.map { _ in try MigrationBackupReader.file(path, in: backup.files) }
+            let detected    = bytes.map(signature) ?? ("binary", "application/octet-stream")
+            let drawing     = sourceRoles == ["drawing_original"]
             if sourceRoles.count > 1 || (!drawing && detected.0 != "binary" && !sourceRoles.isEmpty && !sourceRoles.contains(detected.0))
             {
                 issues.insert("asset_type_requires_review:" + id)

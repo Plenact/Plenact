@@ -86,10 +86,10 @@ struct ProfileColor: Hashable, Codable
     {
 
 
-        let hue = (hue - floor(hue)) * 6             /* Wrapped hue sector            */
-        let saturation = min(max(saturation, 0), 1)  /* Clamped saturation            */
-        let brightness = min(max(brightness, 0), 1)  /* Clamped brightness            */
-        let chroma = brightness * saturation         /* Saturation-scaled color range */
+        let hue          = (hue - floor(hue)) * 6     /* Wrapped hue sector            */
+        let saturation   = min(max(saturation, 0), 1) /* Clamped saturation            */
+        let brightness   = min(max(brightness, 0), 1) /* Clamped brightness            */
+        let chroma       = brightness * saturation    /* Saturation-scaled color range */
         let intermediate =
         chroma * (1 - abs(hue.truncatingRemainder(dividingBy: 2) - 1))  /* Secondary RGB component              */
         let components: (Double, Double, Double)                        /* RGB values for the active hue sector */
@@ -123,16 +123,16 @@ struct ProfileColor: Hashable, Codable
     }
 
 
-    static let teal = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal")            /* Teal palette color     */
-    static let blue = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue")            /* Blue palette color     */
-    static let green = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green")         /* Green palette color    */
-    static let orange = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange")          /* Orange palette color   */
+    static let teal     = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal")        /* Teal palette color     */
+    static let blue     = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue")        /* Blue palette color     */
+    static let green    = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green")      /* Green palette color    */
+    static let orange   = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange")        /* Orange palette color   */
     static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite")  /* Graphite palette color */
-    static let white = Self(red: 1, green: 1, blue: 1, legacyToken: "white")              /* White palette color    */
+    static let white    = Self(red: 1, green: 1, blue: 1, legacyToken: "white")           /* White palette color    */
     static let charcoal = Self(
         red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal")                   /* Charcoal palette color */
     static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon")     /* Lemon palette color    */
-    static let sky = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky")      /* Sky palette color      */
+    static let sky   = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky")    /* Sky palette color      */
     static let coral = Self(red: 0.96, green: 0.37, blue: 0.31, legacyToken: "coral")  /* Coral palette color    */
 
 
@@ -176,7 +176,7 @@ struct ProfileColor: Hashable, Codable
 
         let maximum = max(red, green, blue)  /* Brightest RGB channel                               */
         let minimum = min(red, green, blue)  /* Darkest RGB channel                                 */
-        let delta = maximum - minimum        /* RGB channel range used to derive hue and saturation */
+        let delta   = maximum - minimum      /* RGB channel range used to derive hue and saturation */
         let hue: Double                      /* Hue angle selected from the dominant RGB channel    */
 
         if delta == 0
@@ -544,7 +544,7 @@ struct TodayFocusEntry: Identifiable
             return value
         }
 
-        let start = resolved(card.startDate, kind: card.startDateKind, end: false)
+        let start  = resolved(card.startDate, kind: card.startDateKind, end: false)
         let finish = resolved(card.dueDate, kind: card.dueDateKind, end: true)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
         if let start, start >= dayEnd
@@ -689,8 +689,8 @@ enum DayListTimeOrder
     static func cards(_ cards: [KanbanCard], calendar: Calendar = .current) -> [KanbanCard]
     {
 
-        let day = calendar.startOfDay(for: .now)
-        var result: [KanbanCard] = []
+        let day                   = calendar.startOfDay(for: .now)
+        var result: [KanbanCard]  = []
         var section: [KanbanCard] = []
 
         ///
@@ -706,7 +706,7 @@ enum DayListTimeOrder
             {
 
             lhs, rhs in
-                let left = time(for: lhs.element, on: day, calendar: calendar)
+                let left  = time(for: lhs.element, on: day, calendar: calendar)
                 let right = time(for: rhs.element, on: day, calendar: calendar)
                 switch (left, right)
                 {
@@ -1223,7 +1223,7 @@ struct LocalProfile: Identifiable, Hashable, Codable
 
         let components = displayName.split(whereSeparator: \.isWhitespace)  /* Name components */
         let characters = components.prefix(2).compactMap(\.first)           /* Initial letters */
-        let initials = String(characters).uppercased()                      /* Avatar initials */
+        let initials   = String(characters).uppercased()                    /* Avatar initials */
 
         return initials.isEmpty ? "P" : initials
     }

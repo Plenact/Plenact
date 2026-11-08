@@ -36,35 +36,35 @@ struct BoardListsView: View
     let retainedWeekLists: [KanbanList] /* Week references protect shared attachments */
 
     @Binding var collections: [PersonalCollection] /* Shared device-local collections             */
-    var newListRequest = 0
-    var templateLibraryRequest = 0
+    var newListRequest                                              = 0
+    var templateLibraryRequest                                      = 0
     var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? = nil
     let registerListNewNote:      ((() -> Void)?) -> Void  /* Registers the directory's scoped Note action    */
     let onOpenSaved:              () -> Void               /* Select the existing canonical Saved destination */
-    var onLoadExampleWeek:        (() -> Bool)? = nil
-    var onUndoExampleWeek:        (() -> Bool)? = nil
-    var onLoadExampleMonth:       (() -> Void)? = nil
-    var onRestoreUserData:        (() -> Void)? = nil
-    var hasUserDataBackup = false
+    var onLoadExampleWeek:        (() -> Bool)?                  = nil
+    var onUndoExampleWeek:        (() -> Bool)?                  = nil
+    var onLoadExampleMonth:       (() -> Void)?                  = nil
+    var onRestoreUserData:        (() -> Void)?                  = nil
+    var hasUserDataBackup                                        = false
     var savedPersonalCardTarget:        PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation  */
-    var onClearSavedPersonalCardTarget: () -> Void =
+    var onClearSavedPersonalCardTarget: () -> Void               =
     {
 
     }  /* Acknowledge a handled or invalid Saved request */
 
     @State private var archivingCollection:         PersonalCollection? /* Collection awaiting archive confirmation       */
     @FocusState private var isLibrarySearchFocused: Bool
-    @State private var showsRecentShelf = false
-    @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
-    @State private var recentItems = LibraryRecentStore.load()
-    @AppStorage(LibraryRecentStore.key) private var libraryRecentData = Data()
-    @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews = false
+    @State private var showsRecentShelf                                                           = false
+    @AppStorage("Plenact.LibraryImportant.v1") private var importantData                          = Data()
+    @State private var recentItems                                                                = LibraryRecentStore.load()
+    @AppStorage(LibraryRecentStore.key) private var libraryRecentData                             = Data()
+    @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews     = false
     @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = false
-    @State private var showsCollectionFilter = false
-    @State var browseFilter:                                      LibraryBrowseFilter = .all /* Initial scope may be supplied by Library navigation */
-    @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat = 110
-    @State var searchText = "" /* Directory search query                     */
-    @State private var importanceExampleDrafts: Set<UUID> = []
+    @State private var showsCollectionFilter                                                      = false
+    @State var browseFilter:                                      LibraryBrowseFilter             = .all /* Initial scope may be supplied by Library navigation */
+    @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat                         = 110
+    @State var searchText                                                                         = ""   /* Directory search query                     */
+    @State private var importanceExampleDrafts: Set<UUID>                                         = []
     @State private var editingCollection:       PersonalCollection?  /* Collection draft being edited              */
     @State private var openedCollection:        PersonalCollection?  /* Collection board presented full-screen     */
     @State private var boardTargetListID:       Int?                 /* Exact collection list requested from Saved */
@@ -637,7 +637,7 @@ struct BoardListsView: View
 
 
         var snapshot = collections /* Collection snapshot carrying both sides of the Note move */
-        let moved =
+        let moved    =
         try PersonalCollectionNoteMovement.move( /* Note returned with its destination-local identity        */
             noteID: noteID, from: sourceID, to: destinationID, in: &snapshot
         )

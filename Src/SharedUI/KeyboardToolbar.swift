@@ -238,7 +238,7 @@ struct KeyboardCardActions
     var next:             (() -> Void)? = nil
     var attachment:       (() -> Void)? = nil
     var checklist:        (() -> Void)? = nil
-    var showsUpperBorder: Bool? = nil
+    var showsUpperBorder: Bool?         = nil
 }
 
 
@@ -271,8 +271,8 @@ final class PlenactKeyboard
 {
 
 
-    static let shared = PlenactKeyboard()
-    private var observers:        [NSObjectProtocol] = []
+    static let shared                                           = PlenactKeyboard()
+    private var observers:        [NSObjectProtocol]            = []
     private var contexts:         [(UUID, KeyboardCardActions)] = []
     private weak var activeInput: UIView?
     var actions:                  KeyboardCardActions
@@ -456,8 +456,8 @@ final class PlenactKeyboardToolbar: UIView
 
     private weak var input: UIView?
     private let formatting: KeyboardFormatting?
-    private let keyboardBackdrop = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
-    private let upperEdge = CAShapeLayer()
+    private let keyboardBackdrop                                 = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+    private let upperEdge                                        = CAShapeLayer()
     private var buttonViews:       [(UIBarButtonItem, UIButton)] = []
     private var undoButton:        UIBarButtonItem?
     private var redoButton:        UIBarButtonItem?
@@ -637,10 +637,10 @@ final class PlenactKeyboardToolbar: UIView
     {
 
         contextualButtons = []
-        let exit = contextual("Return from Card or Note", symbol: "chevron.left", key: \.exit)
+        let exit     = contextual("Return from Card or Note", symbol: "chevron.left", key: \.exit)
         let previous = contextual("Previous item in this list", symbol: "arrow.left", key: \.previous)
-        let next = contextual("Next item in this list", symbol: "arrow.right", key: \.next)
-        let undo = action("Undo text edit", symbol: "arrow.uturn.backward")
+        let next     = contextual("Next item in this list", symbol: "arrow.right", key: \.next)
+        let undo     = action("Undo text edit", symbol: "arrow.uturn.backward")
         {
             [weak self] in
             self?.performUndo(redo: false)
@@ -655,8 +655,8 @@ final class PlenactKeyboardToolbar: UIView
         undoButton = undo;
         redoButton = redo
         let attachment = contextual("Add attachment", symbol: "paperclip", key: \.attachment)
-        let checklist = contextual("Add checklist", symbol: "checklist", key: \.checklist)
-        let format = UIBarButtonItem(image: UIImage(systemName: "textformat"), menu: formattingMenu())
+        let checklist  = contextual("Add checklist", symbol: "checklist", key: \.checklist)
+        let format     = UIBarButtonItem(image: UIImage(systemName: "textformat"), menu: formattingMenu())
         format.accessibilityLabel = "Font and formatting";
         format.width = 30;
         format.isEnabled = formatting != nil

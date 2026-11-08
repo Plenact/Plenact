@@ -53,11 +53,11 @@ final class ChecklistMigrationTests: XCTestCase
     func testChecklistTypingKeepsNativeKeyboardFocus() async throws
     {
 
-        let model = EditingModel()
-        let host = UIHostingController(rootView: EditingRow(model: model))
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let model    = EditingModel()
+        let host     = UIHostingController(rootView: EditingRow(model: model))
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
         window.rootViewController = host
         window.makeKeyAndVisible()
@@ -146,8 +146,8 @@ final class ChecklistMigrationTests: XCTestCase
                         ]
                         """ /* Revision 0 board fixture */
 
-        let lists = try JSONDecoder().decode([KanbanList].self, from: Data(legacyJSON.utf8))  /* Migrated board   */
-        let checklist = try XCTUnwrap(lists.first?.cards.first?.checklists.first)             /* Nested checklist */
+        let lists     = try JSONDecoder().decode([KanbanList].self, from: Data(legacyJSON.utf8)) /* Migrated board   */
+        let checklist = try XCTUnwrap(lists.first?.cards.first?.checklists.first)                /* Nested checklist */
 
         XCTAssertEqual(checklist.items.map(\.title), ["Sort clothes", "Start washer", "Fold clothes"])
         XCTAssertEqual(checklist.completedItemIndices, [1])
@@ -202,7 +202,7 @@ final class ChecklistMigrationTests: XCTestCase
     {
 
 
-        let firstID = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!   /* First action ID  */
+        let firstID  = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!  /* First action ID  */
         let secondID = UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!  /* Second action ID */
 
         let items = [ /* Source actions   */
@@ -251,9 +251,9 @@ final class ChecklistMigrationTests: XCTestCase
         )
 
         let encoded = try JSONEncoder().encode(checklist) /* Current JSON     */
-        let object = try XCTUnwrap(
+        let object  = try XCTUnwrap(
             JSONSerialization.jsonObject(with: encoded) as? [String: Any])           /* JSON object      */
-        let items = try XCTUnwrap(object["items"] as? [[String: Any]])               /* Encoded actions  */
+        let items   = try XCTUnwrap(object["items"] as? [[String: Any]])             /* Encoded actions  */
         let decoded = try JSONDecoder().decode(KanbanChecklist.self, from: encoded)  /* Round-trip value */
 
         XCTAssertEqual(items.first? ["title"] as? String, "Go do laundry")
@@ -361,7 +361,7 @@ final class ChecklistMigrationTests: XCTestCase
             }
 
 
-            let actions = card.checklists.flatMap(\.items) /* Card checklist actions          */
+            let actions       = card.checklists.flatMap(\.items) /* Card checklist actions          */
             let linkedCardIDs = actions.compactMap
             {
             item -> Int? in /* Resolved linked-card target IDs */
@@ -508,7 +508,7 @@ final class ChecklistMigrationTests: XCTestCase
 
 
         let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"  /* Stable demo user ID            */
-        let card = KanbanCard(                               /* Card with directory assignment */
+        let card   = KanbanCard(                             /* Card with directory assignment */
             id: 10,
             word: "Prepare the week",
             listTitle: "Monday",

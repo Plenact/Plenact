@@ -250,12 +250,12 @@ enum DaySections
             return cards
         }
 
-        let start = starts[position]
-        let end = position + 1 < starts.count ? starts[position + 1] : cards.count
+        let start  = starts[position]
+        let end    = position + 1 < starts.count ? starts[position + 1] : cards.count
         let target =
         offset < 0 ? starts[position - 1] : (position + 2 < starts.count ? starts[position + 2] : cards.count)
         var result = cards
-        let block = Array(cards[start ..< end])
+        let block  = Array(cards[start ..< end])
         result.removeSubrange(start ..< end)
         result.insert(contentsOf: block, at: target > start ? target - block.count : target)
         return result

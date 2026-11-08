@@ -24,7 +24,7 @@ struct PersonalListExamplesView: View
     var onLoadExampleWeek:     (() -> Bool)? = nil
     var onUndoExampleWeek:     (() -> Bool)? = nil
     let onSelect:              (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
-    var onSelectMixedTemplate: ((MixedListTemplate) -> Void)? = nil
+    var onSelectMixedTemplate: ((MixedListTemplate) -> Void)?    = nil
     var onSelectBoardExample:  ((PersonalBoardExample) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss /* Cancel the chooser without selecting */
     @State private var confirmsLoadWeek = false

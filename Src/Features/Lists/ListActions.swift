@@ -56,18 +56,18 @@ struct KanbanListActionsSheet: View
     let onArchiveList:             () -> Void     /* Action to perform when archiving the entire list */
     let onDeleteList:              () -> Void     /* Permanently remove this list after confirmation  */
     var onEditList:                ((String, String, ItemPresentation) -> Bool)? = nil
-    var onAppearance:              ((ItemAppearance?) -> Bool)? = nil
-    var inheritedAddItemTextColor: Color = .primary
-    var onOpenDayView:             (() -> Void)? = nil
-    @State private var isEditingAppearance = false
-    @State private var isEditingList = false
+    var onAppearance:              ((ItemAppearance?) -> Bool)?                  = nil
+    var inheritedAddItemTextColor: Color                                         = .primary
+    var onOpenDayView:             (() -> Void)?                                 = nil
+    @State private var isEditingAppearance                                       = false
+    @State private var isEditingList                                             = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var sheetHeight: PresentationDetent = .height(624)
     @Environment(\.dismiss) private var dismiss    /* Dismiss action for list operations             */
     @State private var showsArchivedCards = false  /* Archive browser opened from the compact footer */
-    @State private var confirmingArchive = false   /* Archive confirmation presentation state        */
-    @State private var confirmingDelete = false    /* Permanent list deletion confirmation           */
+    @State private var confirmingArchive  = false  /* Archive confirmation presentation state        */
+    @State private var confirmingDelete   = false  /* Permanent list deletion confirmation           */
 
 
     ///
@@ -536,7 +536,7 @@ struct CopyListDestinationSheet: View
     {
 
         var updated = week
-        let copy = ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
+        let copy    = ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
         updated.collection.lists.append(copy)
         if access.saveWeek(updated)
         {

@@ -14,7 +14,7 @@ import Foundation
 enum MigrationPlanningPreview
 {
 
-    static let stores = ["Plenact.DailyPlans.v1", "Plenact.WeeklyReviews.v1", "Plenact.PeriodicReviews.v1", "Plenact.ReviewRhythm.v1"]
+    static let stores                        = ["Plenact.DailyPlans.v1", "Plenact.WeeklyReviews.v1", "Plenact.PeriodicReviews.v1", "Plenact.ReviewRhythm.v1"]
     static let fields: [String: Set<String>] = [
         "daily": ["id", "timeZoneID", "intention", "constraints", "concerns", "priorities", "updatedAt", "checkIn", "checkIns", "eveningReview", "visionStep", "visionCompletedAt"],
         "weekly": ["id", "startKey", "timeZoneID", "firstWeekday", "step", "highlights", "learned", "direction", "constraints", "risks", "priorities", "decisions", "updatedAt", "completedAt"],
@@ -144,13 +144,13 @@ enum MigrationPlanningPreview
                 context.known.insert(target)
             }
         }
-        let mapper = MigrationPlanningValues(context: context, priorityResolver: priorityResolver)
+        let mapper                  = MigrationPlanningValues(context: context, priorityResolver: priorityResolver)
         var output: [[String: Any]] = []
-        var converted: [String] = []
+        var converted: [String]     = []
         if let value = values[stores[0]]
         {
             let document = try load(value, as: DailyPlanStore.Document.self, family: "daily", container: "plans")
-            let plans = document["plans"] as! [String: Any]
+            let plans    = document["plans"] as! [String: Any]
             for key in plans.keys.sorted()
             {
                 let source = plans[key] as! [String: Any]
@@ -159,7 +159,7 @@ enum MigrationPlanningPreview
                     throw MigrationContentValues.Failure.invalid("planning_daily_key")
                 }
                 try mapper.dateAndZone(key, zone: source["timeZoneID"] as! String)
-                let id = try context.id("daily_plan", owner: stores[0], legacy: key, discriminator: source["timeZoneID"] as? String)
+                let id                     = try context.id("daily_plan", owner: stores[0], legacy: key, discriminator: source["timeZoneID"] as? String)
                 var payload: [String: Any] = ["date": key, "time_zone": source["timeZoneID"]!,
                     "intention": source["intention"]!, "constraints": source["constraints"]!, "concerns": source["concerns"]!,
                     "priorities": try mapper.priorities(source["priorities"]!),
@@ -176,12 +176,12 @@ enum MigrationPlanningPreview
         if let value = values[stores[1]]
         {
             let document = try load(value, as: WeeklyReviewStore.Document.self, family: "weekly", container: "records")
-            let entries = document["records"] as! [String: Any]
+            let entries  = document["records"] as! [String: Any]
             for key in entries.keys.sorted()
             {
-                let source = entries[key] as! [String: Any]
-                let date = source["startKey"] as! String
-                let zone = source["timeZoneID"] as! String
+                let source  = entries[key] as! [String: Any]
+                let date    = source["startKey"] as! String
+                let zone    = source["timeZoneID"] as! String
                 let weekday = source["firstWeekday"] as! Int
                 try mapper.dateAndZone(date, zone: zone)
                 var calendar = Calendar(identifier: .gregorian)
@@ -191,7 +191,7 @@ enum MigrationPlanningPreview
                 {
                     throw MigrationContentValues.Failure.invalid("planning_weekly_key_or_start")
                 }
-                let id = try context.id("weekly_review", owner: stores[1], legacy: key)
+                let id      = try context.id("weekly_review", owner: stores[1], legacy: key)
                 var payload = try mapper.review(source, path: id)
                 payload["source_review_key"] = key
                 payload["start_date"] = date
@@ -206,10 +206,10 @@ enum MigrationPlanningPreview
         if let value = values[stores[2]]
         {
             let document = try load(value, as: PeriodicReviewStore.Document.self, family: "periodic", container: "records")
-            let entries = document["records"] as! [String: Any]
+            let entries  = document["records"] as! [String: Any]
             for key in entries.keys.sorted()
             {
-                let source = entries[key] as! [String: Any]
+                let source   = entries[key] as! [String: Any]
                 let original = try MigrationContentValues.lowerUUID(source["id"])
                 guard let uuid = UUID(uuidString: key), uuid.uuidString == key, original == key.lowercased(),
                       let title = source["title"] as? String, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -219,7 +219,7 @@ enum MigrationPlanningPreview
                 }
                 try mapper.dateAndZone(start, zone: source["timeZoneID"] as! String)
                 _ = try MigrationCalendarTemplates.date(end)
-                let id = try context.id("periodic_review", owner: stores[2], legacy: original)
+                let id      = try context.id("periodic_review", owner: stores[2], legacy: original)
                 var payload = try mapper.review(source, path: id)
                 payload["title"] = title
                 payload["start_date"] = start

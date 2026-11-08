@@ -77,11 +77,11 @@ enum MigrationCalendarTemplates
     {
 
         var records: [[String: Any]] = []
-        var calendar = Calendar(identifier: .gregorian)
+        var calendar                 = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         if let data = values["Plenact.CalendarWeeks.v1"] as? Data
         {
-            let source = try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
+            let source      = try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
             let zoneContext = MigrationContentValues(journal: context.journal, timeZoneID: originalTimeZoneID, mediaDigests: [:])
             _ = try MigrationContentDates.convert(1_600_000_000, kind: "date", context: zoneContext, path: "calendar-zone")
             let raw = try JSONSerialization.jsonObject(with: data) as! [String: Any]
@@ -110,7 +110,7 @@ enum MigrationCalendarTemplates
                 var days: [[String: Any]] = []
                 for key in week.dayListIDs.keys.sorted()
                 {
-                    let day = try date(key)
+                    let day      = try date(key)
                     let distance = calendar.dateComponents([.day], from: start, to: day).day ?? -1
                     guard (0..<7).contains(distance), let sourceList = week.dayListIDs[key] else
                     {
@@ -127,7 +127,7 @@ enum MigrationCalendarTemplates
                     "day_lists": days, "explicitly_saved": week.explicitlySaved]))
             }
             var links: [[String: Any]] = []
-            let liveCards = Set(context.cardTargets.filter { key, _ in
+            let liveCards              = Set(context.cardTargets.filter { key, _ in
                 context.calendarOwnerScopes.contains(key.components(separatedBy: ":").first ?? "")
             }.values)
             for item in (source.checklistLinkWeeks ?? [:]).keys.sorted(by: { $0.uuidString < $1.uuidString })

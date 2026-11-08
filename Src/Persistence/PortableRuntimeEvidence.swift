@@ -14,7 +14,7 @@ import Foundation
 enum PortableRuntimeEvidence
 {
 
-    static let area = "Library/Application Support/PlenactPortableRuntime"
+    static let area               = "Library/Application Support/PlenactPortableRuntime"
     static let names: Set<String> = ["CanonicalPackage.bin", "IdentityAliases.json", "NativeStores.plist"]
 
 
@@ -27,13 +27,13 @@ enum PortableRuntimeEvidence
     {
 
         let directory = root.appendingPathComponent(area)
-        let manager = FileManager.default
+        let manager   = FileManager.default
         if !manager.fileExists(atPath: directory.path)
         {
             return [:]
         }
         var remaining = LegacyWorkspaceExport.maximumBytes
-        let files = try LocalBackupRestore.readTree(directory, remaining: &remaining)
+        let files     = try LocalBackupRestore.readTree(directory, remaining: &remaining)
         guard files.isDirectory, Set(files.fileWrappers?.keys.map { $0 } ?? []) == names else
         {
             throw PortablePackageReview.Failure.invalid

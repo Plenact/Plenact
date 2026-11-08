@@ -317,19 +317,19 @@ struct SavedCardsView: View
         revisitDestination.wrappedValue
     }
 
-    @AppStorage(ActivityRecentStore.key) private var recentData = Data()
-    @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers = true
+    @AppStorage(ActivityRecentStore.key) private var recentData                        = Data()
+    @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers                 = true
     @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards = false
     @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion
     @Environment(\.appReturnResetRequest) private var appReturnResetRequest
-    @State private var query = ""
-    @State private var showsSearch = false
+    @State private var query         = ""
+    @State private var showsSearch   = false
     @State private var confirmsClear = false
     @State private var historicalTarget: ActivityRecentResult?
     @State private var focus:            ActivityFocus = .saved
     @State private var selectedLabelID:  String?
     @State private var activityHeaderHeight: CGFloat = 0
-    @State private var focusLabelLibrary = LabelLibraryStore.load()
+    @State private var focusLabelLibrary             = LabelLibraryStore.load()
     private var focusCalendar: Calendar
     {
         planningDocument?.calendar ?? .current
@@ -689,7 +689,7 @@ struct SavedCardsView: View
             }
 
             let current = week.startKey == planningDocument?.currentWeekKey
-            let source = current ? lists : week.collection.lists
+            let source  = current ? lists : week.collection.lists
             guard
             let list = source.first(where:
                 {
@@ -1313,12 +1313,12 @@ struct SavedCardsView: View
             GeometryReader
             {
                 geometry in
-                let hasBrowser = revisit != .recent
-                let browserAllowance: CGFloat = hasBrowser ? 128 : 0
+                let hasBrowser                 = revisit != .recent
+                let browserAllowance: CGFloat  = hasBrowser ? 128 : 0
                 let selectorAllowance: CGFloat = revisit == nil ? 60 : 0
                 // Keep the browser above the toolbar when the tab extends beneath its safe-area inset.
                 let bottomClearance = geometry.safeAreaInsets.bottom + 5
-                let headerLimit = max(0, geometry.size.height - bottomClearance - 40 - browserAllowance - selectorAllowance - 16)
+                let headerLimit     = max(0, geometry.size.height - bottomClearance - 40 - browserAllowance - selectorAllowance - 16)
                 VStack(alignment: .leading, spacing: 16)
                 {
 

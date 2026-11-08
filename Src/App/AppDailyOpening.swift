@@ -16,7 +16,7 @@ enum AppDailyOpening
 {
 
     static let domain = "com.plenact.app.device-navigation"
-    static let key = "lastDailyWeekOpening"
+    static let key    = "lastDailyWeekOpening"
 
 
     /// @fcn AppDailyOpening.claim
@@ -286,8 +286,8 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
     {
 
         var visible: ((Bool) -> Void)?
-        var armed = false
-        let observer = TouchObserver()
+        var armed                             = false
+        let observer                          = TouchObserver()
         var notifications: [NSObjectProtocol] = []
         weak var observedWindow: UIWindow?
 

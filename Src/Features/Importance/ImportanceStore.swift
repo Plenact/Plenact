@@ -126,7 +126,7 @@ enum LibraryImportanceSelection
             || names.contains(card.word.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
             {
 
-                let title = card.word.lowercased()
+                let title              = card.word.lowercased()
                 let demonstrationLevel = demonstrationLevel(for: title)
                 result = settingLevel(cardID: card.id, collectionID: owner.id, level: demonstrationLevel, data: result)
             }

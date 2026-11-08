@@ -42,7 +42,7 @@ struct AppReturnSession
     {
 
         let active = Set(lists.map(\.id))
-        let dated = week?.dayListIDs.sorted { $0.key < $1.key }.map(\.value) ?? []
+        let dated  = week?.dayListIDs.sorted { $0.key < $1.key }.map(\.value) ?? []
         return dated.first { active.contains($0) } ?? lists.first?.id
     }
 
@@ -311,8 +311,8 @@ extension AppRootView
     {
 
         let fromBackground = appReturnSession.hasBackgroundDeparture
-        let protected = hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture
-        let reset = appReturnSession.becameActive(at: .now, protected: protected)
+        let protected      = hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture
+        let reset          = appReturnSession.becameActive(at: .now, protected: protected)
         guard hasLoadedBoard, !protected else
         {
 

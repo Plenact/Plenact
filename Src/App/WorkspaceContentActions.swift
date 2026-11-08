@@ -196,12 +196,12 @@ extension AppRootView
     {
 
 
-        let nextListID = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID    */
+        let nextListID     = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID    */
         let existingTitles = Set(lists.map
             {
                 $0.title.lowercased()
             })                  /* Existing normalized titles */
-        var title = "New List"  /* First candidate list title */
+        var title  = "New List" /* First candidate list title */
         var suffix = 2          /* Duplicate-title suffix     */
 
         while existingTitles.contains(title.lowercased())

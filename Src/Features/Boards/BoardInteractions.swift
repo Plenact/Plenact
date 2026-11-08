@@ -522,7 +522,7 @@ struct BoardCardDragSource: UIViewRepresentable
         weak var container: UIView?              /* Collection cell hosting the native drag interaction */
         var interaction:    UIDragInteraction?   /* Native interaction retained through an active drag  */
         private(set) var isDragging = false      /* Whether a native drag session is in progress        */
-        var isDetached = false                   /* Whether SwiftUI has dismantled the source probe     */
+        var isDetached              = false      /* Whether SwiftUI has dismantled the source probe     */
 
 
         ///

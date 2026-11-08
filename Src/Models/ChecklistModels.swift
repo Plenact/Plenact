@@ -128,7 +128,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
 
 
         let container = try decoder.container(keyedBy: CodingKeys.self)  /* Persisted fields */
-        let kind = try container.decode(Kind.self, forKey: .kind)        /* Action kind      */
+        let kind      = try container.decode(Kind.self, forKey: .kind)   /* Action kind      */
 
         switch kind
         {
@@ -255,9 +255,9 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     }
 
     var retainedDetail:     KanbanChecklistActionDetail? = nil
-    var retainedCardID:     Int? = nil
-    var retainedURL:        URL? = nil
-    var linkedCollectionID: UUID? = nil
+    var retainedCardID:     Int?                         = nil
+    var retainedURL:        URL?                         = nil
+    var linkedCollectionID: UUID?                        = nil
 
 
     ///
@@ -550,9 +550,9 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     {
 
 
-        let container = try decoder.container(keyedBy: CodingKeys.self)  /* Persisted fields */
-        let id = try container.decode(UUID.self, forKey: .id)            /* Checklist ID     */
-        let title = try container.decode(String.self, forKey: .title)    /* Checklist title  */
+        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Persisted fields */
+        let id        = try container.decode(UUID.self, forKey: .id)      /* Checklist ID     */
+        let title     = try container.decode(String.self, forKey: .title) /* Checklist title  */
 
         if var currentItems = try? container.decode([KanbanChecklistItem].self, forKey: .items)
         {  /* Current actions */
@@ -578,7 +578,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
         }
 
 
-        let legacyTitles = try container.decode([String].self, forKey: .items) /* Legacy action text */
+        let legacyTitles           = try container.decode([String].self, forKey: .items) /* Legacy action text */
         let legacyCompletedIndices =
         try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) ?? [] /* Legacy completion  */
         let migratedItems = legacyTitles.enumerated().map

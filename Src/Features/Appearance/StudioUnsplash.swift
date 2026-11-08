@@ -51,7 +51,7 @@ enum StudioUnsplash
 
 
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
-        let cleaned = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned              = key.trimmingCharacters(in: .whitespacesAndNewlines)
         if cleaned.isEmpty
         {
             SecItemDelete(query as CFDictionary);
@@ -127,7 +127,7 @@ enum StudioUnsplash
 
         var url = URLComponents(string: "https://api.unsplash.com/search/photos")!
         url.queryItems = [URLQueryItem(name: "query", value: query), URLQueryItem(name: "per_page", value: "20")]
-        let data = try await request(url.url!)
+        let data   = try await request(url.url!)
         let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         return (object? ["results"] as? [[String: Any]] ?? []).compactMap
         {
@@ -171,10 +171,10 @@ struct StudioUnsplashPicker: View
 
 
     let onSelect: (StudioRemotePhoto) -> Void
-    @State private var query = ""
-    @State private var key = StudioUnsplash.key()
+    @State private var query                       = ""
+    @State private var key                         = StudioUnsplash.key()
     @State private var photos: [StudioRemotePhoto] = []
-    @State private var isBusy = false
+    @State private var isBusy                      = false
     @State private var error:       String?
     @State private var requestTask: Task<Void, Never>?
     @Environment(\.dismiss) private var dismiss

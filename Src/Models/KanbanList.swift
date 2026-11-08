@@ -268,7 +268,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     {
 
 
-        let isDivider = KanbanCard.isDividerTitle(title) /* Whether the title creates a section separator */
+        let isDivider    = KanbanCard.isDividerTitle(title) /* Whether the title creates a section separator */
         let presentation =
         isDivider
         ? ItemPresentation.card
@@ -762,12 +762,12 @@ extension KanbanCard
             return result
         }
 
-        let excluded: Set<String> = ["id", "listTitle", "createdAt", "editHistory"]
-        let keys = Set(before.keys).union(after.keys).subtracting(excluded).sorted()
+        let excluded: Set<String>     = ["id", "listTitle", "createdAt", "editHistory"]
+        let keys                      = Set(before.keys).union(after.keys).subtracting(excluded).sorted()
         var changes: [CardEditChange] = []
         for key in keys
         {
-            let left = before[key] as? NSObject
+            let left  = before[key] as? NSObject
             let right = after[key] as? NSObject
             if left == right
             {

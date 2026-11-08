@@ -104,8 +104,8 @@ enum TodaySloganCatalog
         var local = Calendar(identifier: .gregorian)
         local.timeZone = calendar.timeZone
         let anchor = local.date(from: DateComponents(year: 2026, month: 10, day: 15))!
-        let days = local.dateComponents([.day], from: anchor, to: local.startOfDay(for: date)).day ?? 0
-        let index = ((days % slogans.count) + slogans.count) % slogans.count
+        let days   = local.dateComponents([.day], from: anchor, to: local.startOfDay(for: date)).day ?? 0
+        let index  = ((days % slogans.count) + slogans.count) % slogans.count
         return slogans[index]
     }
 
@@ -226,7 +226,7 @@ enum TodaySloganMotion
         // When released completely offscreen, restart at the invisible right edge
         // after the reading pause instead of spending minutes crossing blank space.
         let resumeStart = start > viewport || start < -textWidth ? viewport : start
-        let proposed = resumeStart - elapsed * 35.1
+        let proposed    = resumeStart - elapsed * 35.1
         if proposed >= -textWidth
         {
             return proposed
@@ -274,9 +274,9 @@ struct InteractiveSloganPreview: View
     let onTap:     () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var textWidth: CGFloat = 0
-    @State private var visible = false
-    @State private var anchorDate = Date()
+    @State private var textWidth: CGFloat      = 0
+    @State private var visible                 = false
+    @State private var anchorDate              = Date()
     @State private var anchorOffset:  CGFloat? = nil
     @State private var dragStart:     CGFloat? = nil
     @State private var draggedOffset: CGFloat? = nil
@@ -301,7 +301,7 @@ struct InteractiveSloganPreview: View
             return draggedOffset
         }
 
-        let start = anchorOffset ?? width
+        let start   = anchorOffset ?? width
         let elapsed = max(0, date.timeIntervalSince(anchorDate) - (anchorOffset == nil ? 0.4 : 0))
         return TodaySloganMotion.position(elapsed: elapsed, start: start, viewport: width, textWidth: textWidth)
     }

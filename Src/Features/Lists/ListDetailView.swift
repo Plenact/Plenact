@@ -27,7 +27,7 @@ struct TodayListDetailView: View
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
     @Environment(\.planningHomeExit) private var planningHomeExit
     @State private var focusedViewportMemory: BoardViewportMemory?
-    @State private var showsDaySearch = false
+    @State private var showsDaySearch        = false
     @State private var guidanceToggleRequest = 0
     @State private var guidanceFooterVisible: Bool?
     @State private var showsDaySelector = false
@@ -49,12 +49,12 @@ struct TodayListDetailView: View
 
     @Environment(\.layoutDirection) private var headerLayoutDirection
     @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = Data()
-    var boardAppearance:        BoardAppearance? = nil
-    var returnDestinationTitle: String = "Today"
-    var boardViewActionTitle:   String = "Switch to Week View"
-    var focusesFirstUncheckedTask = false
-    var representedDate: Date? = nil
-    @State private var didApplyInitialTaskFocus = false
+    var boardAppearance:        BoardAppearance?                               = nil
+    var returnDestinationTitle: String                                         = "Today"
+    var boardViewActionTitle:   String                                         = "Switch to Week View"
+    var focusesFirstUncheckedTask                                              = false
+    var representedDate: Date?                                                 = nil
+    @State private var didApplyInitialTaskFocus                                = false
 
 
     private var effectiveBoardAppearance: BoardAppearance
@@ -84,17 +84,17 @@ struct TodayListDetailView: View
         return (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance()
     }
 
-    @State private var isEditingList = false
+    @State private var isEditingList       = false
     @State private var isEditingAppearance = false
-    @State private var showsNewCard = false
-    @State private var inlineCaptureDraft = InlineListCaptureDraft()
+    @State private var showsNewCard        = false
+    @State private var inlineCaptureDraft  = InlineListCaptureDraft()
     @State private var deletingCard: KanbanCard?
     @State private var editMode:     EditMode = .inactive /* Whether Today rows expose native reorder controls */
-    @State private var cardDragToken = UUID().uuidString
+    @State private var cardDragToken          = UUID().uuidString
     @State private var draggedCardID:    Int?
     @State private var cardDragLocation: CGPoint?
     @State private var cardFrames:       [Int: CGRect] = [:]
-    @State private var cardViewport:     CGRect = .zero
+    @State private var cardViewport:     CGRect        = .zero
     @Environment(\.scenePhase) private var scenePhase
 
     private var cardDropTarget: BoardCardDropTarget?
@@ -420,7 +420,7 @@ struct TodayListDetailView: View
     private var headerColor: Color
     {
 
-        let chosen = effectiveBoardAppearance.resolved(focusedList?.appearance).background
+        let chosen   = effectiveBoardAppearance.resolved(focusedList?.appearance).background
         let fallback = representedDate == nil ? DefaultListTutorial.defaultBanner(for: focusedList?.title ?? "") : nil
         return (chosen ?? fallback)?.darkHeaderColor
         ?? Color(red: 109.0 / 255, green: 139.0 / 255, blue: 152.0 / 255)  // Muted blue (#6D8B98)
@@ -899,7 +899,7 @@ struct TodayListDetailView: View
 
                                     $0.startKey == planningCalendarAccess?.document.currentWeekKey
                                 }?.id
-                                let owner = (dayMovementSource ?? currentWeekID)?.uuidString ?? "week.current"
+                                let owner    = (dayMovementSource ?? currentWeekID)?.uuidString ?? "week.current"
                                 let location = representedDate.map
                                 {
                                     PlanningDate.key($0)

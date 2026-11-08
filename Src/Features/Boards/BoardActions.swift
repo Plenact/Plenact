@@ -548,7 +548,7 @@ extension ContentView
                 $0.title.lowercased()
             })                     /* Normalized current titles */
         var newTitle = "New List"  /* First candidate list name */
-        var suffix = 2             /* Duplicate-title suffix    */
+        var suffix   = 2           /* Duplicate-title suffix    */
 
         while existingTitles.contains(newTitle.lowercased())
         {
@@ -671,7 +671,7 @@ extension ContentView
     {
 
 
-        var snapshot = lists + archivedLists  /* Complete Board snapshot for checked removal  */
+        var snapshot  = lists + archivedLists /* Complete Board snapshot for checked removal  */
         var bookmarks = savedCardIDs          /* Saved identities pruned with removed records */
 
         BoardContentDeletion.card(cardID, in: &snapshot, savedCardIDs: &bookmarks)
@@ -693,7 +693,7 @@ extension ContentView
     {
 
 
-        var snapshot = lists + archivedLists  /* Complete Board snapshot for checked removal  */
+        var snapshot  = lists + archivedLists /* Complete Board snapshot for checked removal  */
         var bookmarks = savedCardIDs          /* Saved identities pruned with removed records */
 
         BoardContentDeletion.list(id, in: &snapshot, savedCardIDs: &bookmarks)
@@ -995,8 +995,8 @@ extension ContentView
             return
         }  /* Measured center of the dragged list                 */
 
-        let direction = value.location.x > center ? 1 : -1  /* Neighbor direction selected by the pointer position */
-        let destination = source + direction                /* Adjacent list position considered for swapping      */
+        let direction   = value.location.x > center ? 1 : -1 /* Neighbor direction selected by the pointer position */
+        let destination = source + direction                 /* Adjacent list position considered for swapping      */
 
         guard lists.indices.contains(destination),
         let targetCenter = dragGeometry.centers[
@@ -1118,7 +1118,7 @@ extension ContentView
 
         var updatedList = lists[listIndex] /* Mutable list copy */
 
-        var sortedCards: [KanbanCard] = []     /* Cards emitted in sorted order */
+        var sortedCards: [KanbanCard]    = []  /* Cards emitted in sorted order */
         var currentSection: [KanbanCard] = []  /* Cards before the next divider */
 
         // Iterate through each card in the list, grouping them by sections and sorting within each section

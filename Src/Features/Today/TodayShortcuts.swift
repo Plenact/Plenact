@@ -40,7 +40,7 @@ enum TodayListPins
     static func loadInitialCollections(from defaults: UserDefaults = .standard) -> [PersonalCollection]
     {
 
-        let existing = PersonalCollectionStore.load(from: defaults)
+        let existing  = PersonalCollectionStore.load(from: defaults)
         let savedKeys = ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, key]
         guard savedKeys.allSatisfy(
             {

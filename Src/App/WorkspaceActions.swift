@@ -153,8 +153,8 @@ extension AppRootView
         var currentLists = lists
         for index in document.weeks.indices
         {
-            let week = document.weeks[index]
-            let source = week.startKey == document.currentWeekKey ? lists : week.collection.lists
+            let week    = document.weeks[index]
+            let source  = week.startKey == document.currentWeekKey ? lists : week.collection.lists
             let ordered = DayListTimeOrder.lists(
                 source, dayListIDs: Set(week.dayListIDs.values), calendar: document.calendar)
             document.weeks[index].collection.lists = ordered
@@ -278,7 +278,7 @@ extension AppRootView
             let newWeek =
             document.week(for: .now) == nil
             ? try PlanningRoutineStore.newWeek(for: .now, calendar: document.calendar) : nil
-            let next = document.rollForward(to: .now, currentLists: lists, saved: savedCardIDs, newWeek: newWeek)
+            let next         = document.rollForward(to: .now, currentLists: lists, saved: savedCardIDs, newWeek: newWeek)
             let importantIDs =
             newWeek == nil
             ? Set<Int>() : try PlanningRoutineStore.newWeekImportantIDs(for: .now, calendar: document.calendar)
@@ -366,7 +366,7 @@ extension AppRootView
                 return nil
             }
 
-            let prepared = try PlanningRoutineStore.newWeek(for: date, calendar: document.calendar)
+            let prepared     = try PlanningRoutineStore.newWeek(for: date, calendar: document.calendar)
             let importantIDs = try PlanningRoutineStore.newWeekImportantIDs(for: date, calendar: document.calendar)
             return savePlanningWeek(prepared, exampleImportantIDs: importantIDs) ? prepared : nil
         }
@@ -588,7 +588,7 @@ extension AppRootView
         }
 
         let libraryIDs = Set(collections.map(\.id))
-        let library = owners.filter
+        let library    = owners.filter
         {
             libraryIDs.contains($0.id)
         }
@@ -686,9 +686,9 @@ extension AppRootView
                 return false
             }
 
-            let sourceID = source ?? currentID
+            let sourceID      = source ?? currentID
             let destinationID = destination.collectionID ?? currentID
-            var owners = sectionOwners(in: document)
+            var owners        = sectionOwners(in: document)
             guard
             let sourceList = owners.first(where:
                 {
@@ -770,11 +770,11 @@ extension AppRootView
                 afterImportance = data
             }
 
-            let beforePlans = UserDefaults.standard.data(forKey: DailyPlanStore.key)
-            let plans = try DailyPlanStore.load()
+            let beforePlans    = UserDefaults.standard.data(forKey: DailyPlanStore.key)
+            let plans          = try DailyPlanStore.load()
             let relocatedPlans = DailyPlanStore.relocatingSection(receipt, in: plans)
-            let plansChanged = plans.plans != relocatedPlans.plans
-            let afterPlans = plansChanged ? try JSONEncoder().encode(relocatedPlans) : beforePlans
+            let plansChanged   = plans.plans != relocatedPlans.plans
+            let afterPlans     = plansChanged ? try JSONEncoder().encode(relocatedPlans) : beforePlans
             try saveSectionOwners(owners, document: document, importance: afterImportance, dailyPlans: afterPlans)
             CreatedContentReveal.shared.request(listID: destination.listID, card: receipt.heading)
             TransferConfirmationPresenter.shared.showUndo(
@@ -965,7 +965,7 @@ extension AppRootView
             }
 
             let defaults = UserDefaults.standard
-            let keys = [
+            let keys     = [
                 PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1",
                                         "Plenact.SavedCardIDs.v1"
             ]
@@ -1328,7 +1328,7 @@ extension AppRootView
             return try DailyReviewTransaction.perform
             {
 
-                let result = try mutateReviewItem(live, action: action, anchor: draft.startKey)
+                let result  = try mutateReviewItem(live, action: action, anchor: draft.startKey)
                 var updated = draft
                 updated.decisions.append(
                     DailyReviewDecision(
@@ -1383,10 +1383,10 @@ extension AppRootView
     ) -> DailyPlan?
     {
 
-        let previousDocument = calendarDocument
-        let previousLists = lists
+        let previousDocument    = calendarDocument
+        let previousLists       = lists
         let previousCollections = collections
-        let previousSaved = savedCardIDs
+        let previousSaved       = savedCardIDs
         do
         {
 
@@ -1405,9 +1405,9 @@ extension AppRootView
             return try DailyReviewTransaction.perform
             {
 
-                let result = try mutateReviewItem(live, action: action, anchor: draft.id)
+                let result      = try mutateReviewItem(live, action: action, anchor: draft.id)
                 var updatedPlan = draft
-                let original = DailyPlanPriority(live)
+                let original    = DailyPlanPriority(live)
                 let destination = DailyPlanPriority(result)
                 if let index = updatedPlan.priorities.firstIndex(where:
                     {
@@ -1490,7 +1490,7 @@ extension AppRootView
         }
 
         let before = Set(target.cards.map(\.id))
-        let route = CardMoveDestination(
+        let route  = CardMoveDestination(
             collectionID: owner.id, listID: target.id, title: owner.title, group: "Plans", columnTitle: target.title)
         guard movePlanningCard(live.card, source: live.collectionID, destination: route),
         let updatedOwner = collections.first(where:
@@ -1539,18 +1539,18 @@ extension AppRootView
         do
         {
 
-            var document = documentOverride ?? calendarDocument
+            var document  = documentOverride ?? calendarDocument
             let currentID = document?.weeks.first
             {
                 $0.startKey == document?.currentWeekKey
             }?.id
-            let normalizedSource = source == currentID ? nil : source
+            let normalizedSource      = source == currentID ? nil : source
             let normalizedDestination = CardMoveDestination(
                 collectionID: destination.collectionID == currentID ? nil : destination.collectionID,
                 listID: destination.listID, title: destination.title, group: destination.group)
-            var updatedWeek = lists
+            var updatedWeek  = lists
             var updatedSaved = savedCardIDs
-            let dated = (document?.weeks ?? []).filter
+            let dated        = (document?.weeks ?? []).filter
             {
                 $0.id != currentID
             }
@@ -1559,7 +1559,7 @@ extension AppRootView
             try CrossBoardCardMovement.move(
                 card, from: normalizedSource, to: normalizedDestination,
                 week: &updatedWeek, collections: &combined, saved: &updatedSaved)
-            let libraryIDs = Set(collections.map(\.id))
+            let libraryIDs     = Set(collections.map(\.id))
             let updatedLibrary = combined.filter
             {
                 libraryIDs.contains($0.id)
@@ -1613,7 +1613,7 @@ extension AppRootView
             }
 
             let defaults = UserDefaults.standard
-            let keys = [
+            let keys     = [
                 PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1",
                                         "Plenact.SavedCardIDs.v1"
             ]
@@ -1737,7 +1737,7 @@ extension AppRootView
             try KanbanBoardPersistence.saveListsChecked(lists)
             try PersonalCollectionStore.saveChecked(collections)
             SavedCardPersistence.save(savedCardIDs)
-            let store = try FullMonthExampleStore.live()
+            let store   = try FullMonthExampleStore.live()
             let example = FullMonthExample.make(calendar: calendarDocument?.calendar ?? .current)
             try await Task.detached(priority: .userInitiated)
             {
@@ -1885,7 +1885,7 @@ extension AppRootView
                 !$0.isArchived
             }, date: .now)?.id
         let importanceData = UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) ?? Data()
-        let levels = Dictionary(
+        let levels         = Dictionary(
             uniqueKeysWithValues: importance.map
             {
                 id in
@@ -1905,9 +1905,9 @@ extension AppRootView
         do
         {
 
-            let template = PlanningRoutineLibrary.seeded.templates[0]
+            let template     = PlanningRoutineLibrary.seeded.templates[0]
             let importantIDs = PlanningTemplateApplication.exampleImportantIDs(template, in: current)
-            let example = try PlanningTemplateApplication.apply(
+            let example      = try PlanningTemplateApplication.apply(
                 template, to: current, date: date, calendar: document.calendar, mode: .replace)
             return savePlanningWeek(example, exampleImportantIDs: importantIDs, replaceImportant: true)
         }
@@ -2075,7 +2075,7 @@ extension AppRootView
     {
 
 
-        let geometry = bottomToolbarLayout
+        let geometry   = bottomToolbarLayout
         let isSelected = selectedDestination == destination /* Current tab selection */
 
         return Button
@@ -2563,7 +2563,7 @@ extension AppRootView
     {
 
 
-        var snapshot = lists          /* Week snapshot for checked deletion         */
+        var snapshot  = lists         /* Week snapshot for checked deletion         */
         var bookmarks = savedCardIDs  /* Bookmarks pruned alongside removed content */
 
         BoardContentDeletion.list(id, in: &snapshot, savedCardIDs: &bookmarks)
@@ -2633,7 +2633,7 @@ extension AppRootView
     {
 
 
-        var snapshot = lists          /* Week snapshot for checked deletion         */
+        var snapshot  = lists         /* Week snapshot for checked deletion         */
         var bookmarks = savedCardIDs  /* Bookmarks pruned alongside removed content */
 
         BoardContentDeletion.card(id, in: &snapshot, savedCardIDs: &bookmarks)

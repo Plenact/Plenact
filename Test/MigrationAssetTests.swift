@@ -27,9 +27,9 @@ final class MigrationAssetTests: XCTestCase
     private func fixture(missing: Bool = false, cycle: Bool = false, _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
 
-        let domain = "Plenact.AssetTests." + UUID().uuidString
+        let domain   = "Plenact.AssetTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        let root     = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer
         {
@@ -37,7 +37,7 @@ final class MigrationAssetTests: XCTestCase
             try? FileManager.default.removeItem(at: root)
         }
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2))
-        let png = renderer.pngData { context in
+        let png      = renderer.pngData { context in
             UIColor.blue.setFill()
             context.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
         }
@@ -126,7 +126,7 @@ final class MigrationAssetTests: XCTestCase
                 XCTAssertEqual(entry["byte_length"] as? String, String(original.count))
                 XCTAssertEqual(original, try MigrationBackupReader.file(path, in: preview.files))
             }
-            let drawing = try XCTUnwrap(byPath["Documents/CardAttachments/sketch.drawing"])
+            let drawing  = try XCTUnwrap(byPath["Documents/CardAttachments/sketch.drawing"])
             let rendered = try XCTUnwrap(byPath["Documents/CardAttachments/sketch.png"])
             XCTAssertEqual(drawing["kind"] as? String, "drawing_original")
             XCTAssertEqual(rendered["derived_from_asset_id"] as? String, drawing["asset_id"] as? String)
@@ -152,8 +152,8 @@ final class MigrationAssetTests: XCTestCase
                 attachment.lifetime = .keepAlways
                 add(attachment)
             }
-            let files = try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
-            let records = try files.sorted { $0.key < $1.key }.map { try JSONSerialization.jsonObject(with: XCTUnwrap($0.value.regularFileContents)) }
+            let files      = try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
+            let records    = try files.sorted { $0.key < $1.key }.map { try JSONSerialization.jsonObject(with: XCTUnwrap($0.value.regularFileContents)) }
             let attachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: records, options: .sortedKeys), uniformTypeIdentifier: "public.json")
             attachment.name = "Media-Records.json"
             attachment.lifetime = .keepAlways
@@ -195,7 +195,7 @@ final class MigrationAssetTests: XCTestCase
         {
             try fixture { backup, url in
                 let documents = try XCTUnwrap(backup.files.fileWrappers?["Documents"])
-                let media = try XCTUnwrap(documents.fileWrappers?["CardAttachments"])
+                let media     = try XCTUnwrap(documents.fileWrappers?["CardAttachments"])
                 if variant == 0
                 {
                     let old = try XCTUnwrap(media.fileWrappers?["photo.png"])
@@ -230,7 +230,7 @@ final class MigrationAssetTests: XCTestCase
             XCTAssertEqual(preview.verifiedAssetCount, 9)
             XCTAssertGreaterThanOrEqual(preview.assetIssueCount, 2)
             let document = try assetDocument(preview)
-            let issues = try XCTUnwrap(document["issues"] as? [String])
+            let issues   = try XCTUnwrap(document["issues"] as? [String])
             XCTAssertTrue(issues.contains { $0.hasPrefix("asset_derivation_cycle:") })
             let entries = try XCTUnwrap(document["entries"] as? [[String: Any]])
             for entry in entries where ["sketch.png", "sketch.drawing"].contains(entry["original_name"] as? String ?? "")

@@ -74,12 +74,12 @@ extension PlenactBoardDocumentTests
         var list = KanbanList(id: 7, title: "New List 2", cards: [])
         list.subtitleOverride = "Initial subtitle"
         let original = list
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -106,7 +106,7 @@ extension PlenactBoardDocumentTests
         }
 
         var saveCalls = 0
-        let host = UIHostingController(
+        let host      = UIHostingController(
             rootView: ListInfoEditorSheet(list: list, focusesTitleOnAppear: true)
             {
                 _, _, _ in
@@ -164,7 +164,7 @@ extension PlenactBoardDocumentTests
         for viewport: CGFloat in [320, 360, 393, 414, 424]
         {
 
-            let width = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
+            let width     = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
             let sideInset = (viewport - width) / 2
             XCTAssertEqual(
                 sideInset - 17, 15, accuracy: 0.001,
@@ -195,8 +195,8 @@ extension PlenactBoardDocumentTests
 
         let date = try XCTUnwrap(
             calendar.date(from: DateComponents(year: 2026, month: 10, day: 6)))  /* Date value for boundary checks        */
-        let monday = KanbanList(id: 1, title: "Monday", cards: [])               /* Monday List fixture for weekday focus */
-        let tuesday = KanbanList(id: 2, title: "Tuesday", cards: [])             /* Tuesday planning fixture              */
+        let monday   = KanbanList(id: 1, title: "Monday", cards: [])             /* Monday List fixture for weekday focus */
+        let tuesday  = KanbanList(id: 2, title: "Tuesday", cards: [])            /* Tuesday planning fixture              */
         var archived = tuesday                                                   /* Archived value for restoration checks */
 
         archived.isArchived = true

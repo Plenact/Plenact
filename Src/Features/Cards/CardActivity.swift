@@ -377,7 +377,7 @@ struct ItemReactionPicker: View
     let onChoose: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var custom = ""
-    private let choices = [
+    private let choices       = [
             "❤️", "👍", "🎉", "😊", "✨", "💪", "🔥", "🙌", "🤔", "🙏", "👏", "😂", "😍", "🥰", "🌱", "☀️", "😅", "😮", "😔", "💡", "🎯", "🫶",
             "😎", "✅"
     ]

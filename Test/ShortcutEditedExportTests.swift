@@ -34,13 +34,13 @@ extension MigrationStudioTests
         {
             backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package = try MigrationTestPackage.prepare(preview)
+            let preview   = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package   = try MigrationTestPackage.prepare(preview)
             var candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(package.fileWrappers?["PortableTestPackage"])))
-            let root = url.deletingLastPathComponent().appendingPathComponent("ShortcutContainer")
-            let stage = url.deletingLastPathComponent().appendingPathComponent("ShortcutStage")
-            let domain = "Plenact.ShortcutExportTests." + UUID().uuidString
+            let root     = url.deletingLastPathComponent().appendingPathComponent("ShortcutContainer")
+            let stage    = url.deletingLastPathComponent().appendingPathComponent("ShortcutStage")
+            let domain   = "Plenact.ShortcutExportTests." + UUID().uuidString
             let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
             defer
             {
@@ -61,8 +61,8 @@ extension MigrationStudioTests
                 let personal = try JSONDecoder().decode([PersonalCollection].self,
                     from: XCTUnwrap(defaults.data(forKey: "Plenact.PersonalCollections.v1")))[0]
                 let retainedWeek = calendar.weeks[0]
-                let weekPins = retainedWeek.collection.lists.map { WorkspaceListReference(ownerID: retainedWeek.id, listID: $0.id) }
-                let personalPin = WorkspaceListReference(ownerID: personal.id, listID: personal.lists[0].id)
+                let weekPins     = retainedWeek.collection.lists.map { WorkspaceListReference(ownerID: retainedWeek.id, listID: $0.id) }
+                let personalPin  = WorkspaceListReference(ownerID: personal.id, listID: personal.lists[0].id)
                 let pins: [WorkspaceListReference]
                 switch phase
                 {
@@ -78,7 +78,7 @@ extension MigrationStudioTests
                 case 4:
                     pins = []
                 default:
-                    let date = Date(timeIntervalSince1970: 1793620800)
+                    let date    = Date(timeIntervalSince1970: 1793620800)
                     let newWeek = try PlanningRoutineStore.newWeek(for: date, calendar: calendar.calendar, defaults: defaults)
                     calendar.upsert(newWeek)
                     calendar.currentWeekKey = newWeek.startKey
@@ -89,21 +89,21 @@ extension MigrationStudioTests
                         personalPin, weekPins[0]]
                 }
                 defaults.set(TodayListPins.encode(pins), forKey: TodayListPins.key)
-                let source = try XCTUnwrap(defaults.persistentDomain(forName: domain))
-                let runtime = try PortableRuntimeEvidence.capture(root: root)
-                let frozen = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+                let source   = try XCTUnwrap(defaults.persistentDomain(forName: domain))
+                let runtime  = try PortableRuntimeEvidence.capture(root: root)
+                let frozen   = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
                 let exported = try PortableEditedExport.prepare(frozen)
-                let bytes = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: exported)
+                let bytes    = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: exported)
                 XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen)))
                 XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
                 XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
                 XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
                     try MigrationBackupReader.file("EditedNativeBackup/Preferences.plist", in: exported))
-                let actual = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
-                let export = actual["workspace_export"] as! [String: Any]
-                var base = export["base_workspace"] as! [String: Any]
+                let actual   = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+                let export   = actual["workspace_export"] as! [String: Any]
+                var base     = export["base_workspace"] as! [String: Any]
                 let shortcut = try XCTUnwrap(base["today_shortcuts"] as? [String: Any])
-                let id = try XCTUnwrap(shortcut["id"] as? String)
+                let id       = try XCTUnwrap(shortcut["id"] as? String)
                 if let singletonID
                 {
 
@@ -122,7 +122,7 @@ extension MigrationStudioTests
                 {
 
                     let priorExport = previous["workspace_export"] as! [String: Any]
-                    var priorBase = priorExport["base_workspace"] as! [String: Any]
+                    var priorBase   = priorExport["base_workspace"] as! [String: Any]
                     base["today_shortcuts"] = NSNull()
                     priorBase["today_shortcuts"] = NSNull()
                     let changedGroups = Set(base.keys).union(priorBase.keys).filter
@@ -149,9 +149,9 @@ extension MigrationStudioTests
                 previous = actual
                 output = exported
             }
-            let saved = try XCTUnwrap(defaults.data(forKey: TodayListPins.key))
-            let pins = try JSONDecoder().decode([WorkspaceListReference].self, from: saved)
-            let raw = try XCTUnwrap(JSONSerialization.jsonObject(with: saved) as? [[String: Any]])
+            let saved   = try XCTUnwrap(defaults.data(forKey: TodayListPins.key))
+            let pins    = try JSONDecoder().decode([WorkspaceListReference].self, from: saved)
+            let raw     = try XCTUnwrap(JSONSerialization.jsonObject(with: saved) as? [[String: Any]])
             var unknown = raw[0]
             unknown["futureField"] = true
             var wrongOwner = raw[0]
@@ -167,7 +167,7 @@ extension MigrationStudioTests
             {
 
                 defaults.set(try JSONSerialization.data(withJSONObject: invalid), forKey: TodayListPins.key)
-                let before = try XCTUnwrap(defaults.persistentDomain(forName: domain))
+                let before  = try XCTUnwrap(defaults.persistentDomain(forName: domain))
                 let runtime = try PortableRuntimeEvidence.capture(root: root)
                 XCTAssertThrowsError(try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)))
                 XCTAssertTrue(NSDictionary(dictionary: before).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
@@ -185,7 +185,7 @@ extension MigrationStudioTests
                 attachment.lifetime = .keepAlways
                 add(attachment)
             }
-            let wrappers = try XCTUnwrap(output?.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
+            let wrappers  = try XCTUnwrap(output?.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
             let originals = try Dictionary(uniqueKeysWithValues: wrappers.map { name, file in
 
                 ("Originals/" + name, try XCTUnwrap(file.regularFileContents).base64EncodedString())

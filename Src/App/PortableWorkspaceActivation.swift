@@ -78,9 +78,9 @@ extension AppRootView
             }
             else if let package = pendingPortableImport, let domain = Bundle.main.bundleIdentifier
             {
-                let candidate = try PortableWorkspaceCandidate.prepare(package)
-                let aliases = ["GMT": "Etc/UTC", "UTC": "Etc/UTC", "Etc/GMT": "Etc/UTC"]
-                let deviceZone = aliases[TimeZone.current.identifier] ?? TimeZone.current.identifier
+                let candidate    = try PortableWorkspaceCandidate.prepare(package)
+                let aliases      = ["GMT": "Etc/UTC", "UTC": "Etc/UTC", "Etc/GMT": "Etc/UTC"]
+                let deviceZone   = aliases[TimeZone.current.identifier] ?? TimeZone.current.identifier
                 let originalZone = aliases[candidate.timeZoneID] ?? candidate.timeZoneID
                 guard originalZone == deviceZone else
                 {

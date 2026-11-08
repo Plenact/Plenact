@@ -54,7 +54,7 @@ struct PortableWorkspaceCandidate
             "weekly_reviews": "weekly_review", "periodic_reviews": "periodic_review", "templates": "planning_template",
             "template_libraries": "template_library", "review_rhythms": "review_rhythm", "assets": "asset"]
         let contentMany = ["collections": "collection", "lists": "list", "cards": "card"]
-        let singletons = ["account": "account", "workspace": "workspace", "user_preferences": "user_preferences",
+        let singletons  = ["account": "account", "workspace": "workspace", "user_preferences": "user_preferences",
             "studio_settings": "studio_settings", "today_shortcuts": "today_shortcuts", "display_preferences": "workspace_display_preferences"]
         guard Set(base.keys) == Set(baseMany.keys).union(singletons.keys).union(["user_data_model_version", "payload_schema_version", "planning", "tombstones"]),
               Set(planning.keys) == Set(planningMany.keys).union(["user_data_model_version", "payload_schema_version", "workspace_id", "account_id", "content"]),
@@ -89,7 +89,7 @@ struct PortableWorkspaceCandidate
                 throw PortableEditableContent.Failure.invalid
             }
         }
-        let media = try PortableMediaPlacement.prepare(package, filenames: mediaFilenames)
+        let media   = try PortableMediaPlacement.prepare(package, filenames: mediaFilenames)
         let adapter = try PortableEditableContent(records: records, assetFiles: media.filenames, retainedAliases: retainedAliases,
             deletedCardIDs: PortableLocalDeletions.ids(in: export))
         let selections = try adapter.array(base["content_selections"])
@@ -100,15 +100,15 @@ struct PortableWorkspaceCandidate
             throw PortableEditableContent.Failure.unsupported
         }
         let weekRecords = try adapter.array(planning["weeks"])
-        let zones = Set(weekRecords.compactMap { ($0["payload"] as? [String: Any])?["time_zone"] as? String })
+        let zones       = Set(weekRecords.compactMap { ($0["payload"] as? [String: Any])?["time_zone"] as? String })
         guard zones.count == 1, let zone = zones.first else
         {
             // Retain canonical per-Week zones; the legacy active root currently has one runtime calendar.
             throw PortableEditableContent.Failure.unsupported
         }
         let templateRecords = try adapter.array(planning["templates"])
-        let calendarOwners = Set(weekRecords.compactMap { ($0["payload"] as? [String: Any])?["collection_id"] as? String })
-        let templateOwners = templateRecords.compactMap { ($0["payload"] as? [String: Any])?["collection_id"] as? String }
+        let calendarOwners  = Set(weekRecords.compactMap { ($0["payload"] as? [String: Any])?["collection_id"] as? String })
+        let templateOwners  = templateRecords.compactMap { ($0["payload"] as? [String: Any])?["collection_id"] as? String }
         guard Set(templateOwners).count == templateOwners.count, calendarOwners.isDisjoint(with: templateOwners) else
         {
             throw PortableEditableContent.Failure.unsupported
@@ -120,15 +120,15 @@ struct PortableWorkspaceCandidate
             }
             return !calendarOwners.contains(id) && !templateOwners.contains(id)
         }.map { try adapter.collection($0, selections: selections, accountID: accountID, timeZoneID: zone, listDates: [:]) }
-        let templates = try adapter.templateLibrary(accountID: accountID)
+        let templates   = try adapter.templateLibrary(accountID: accountID)
         let preferences = try adapter.preferences(base["user_preferences"] as? [String: Any], accountID: accountID)
-        let profiles = try adapter.array(base["profiles"])
+        let profiles    = try adapter.array(base["profiles"])
         guard profiles.count <= 1 else
         {
             throw PortableEditableContent.Failure.invalid
         }
-        let profile = try adapter.profile(profiles.first, preferences: preferences, accountID: accountID)
-        let plans = try adapter.planningDocuments()
+        let profile               = try adapter.profile(profiles.first, preferences: preferences, accountID: accountID)
+        let plans                 = try adapter.planningDocuments()
         var values: [String: Any] = [:]
 
         /// @fcn PortableWorkspaceCandidate.put
@@ -231,10 +231,10 @@ struct PortableWorkspaceCandidate
                 try? FileManager.default.removeItem(at: root)
             }
         }
-        let stores = try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
+        let stores                 = try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
         let aliases: [String: Any] = ["format_version": 1, "workspace_id": workspaceID, "time_zone": timeZoneID, "numeric_ids": numericIDs]
-        let aliasesData = try JSONSerialization.data(withJSONObject: aliases, options: .sortedKeys)
-        let retained = root.appendingPathComponent("Library/Application Support/PlenactPortableRuntime", isDirectory: true)
+        let aliasesData            = try JSONSerialization.data(withJSONObject: aliases, options: .sortedKeys)
+        let retained               = root.appendingPathComponent("Library/Application Support/PlenactPortableRuntime", isDirectory: true)
         try FileManager.default.createDirectory(at: retained, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         for (name, data) in [("NativeStores.plist", stores), ("CanonicalPackage.bin", snapshot), ("IdentityAliases.json", aliasesData)]
         {

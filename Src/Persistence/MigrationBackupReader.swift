@@ -92,7 +92,7 @@ enum MigrationBackupReader
             throw Failure.pendingRecovery
         }
         let portableRuntime = try PortableRuntimeEvidence.backupFiles(report: report, files: backup.files)
-        let preferences = try file("Preferences.plist", in: backup.files)
+        let preferences     = try file("Preferences.plist", in: backup.files)
         guard digest(preferences) == report["preferences_sha256"] as? String,
               let values = try PropertyListSerialization.propertyList(from: preferences, format: nil) as? [String: Any],
               values.count == report["store_count"] as? Int,
@@ -126,7 +126,7 @@ enum MigrationBackupReader
             }
         }
         var actual: Set<String> = []
-        var total = preferences.count + portableRuntime.values.reduce(0, { $0 + $1.count })
+        var total               = preferences.count + portableRuntime.values.reduce(0, { $0 + $1.count })
         guard total <= LegacyWorkspaceExport.maximumBytes else
         {
             throw Failure.invalidBackup

@@ -28,8 +28,8 @@ struct PlanningCalendarView: View
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @ScaledMetric(relativeTo: .subheadline) private var todayDateFontSize: CGFloat = 17
-    @State private var month = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
-    @State private var selectedDate = Calendar.current.startOfDay(for: .now)
+    @State private var month                                                       = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+    @State private var selectedDate                                                = Calendar.current.startOfDay(for: .now)
     @State private var route: PlanningWeekRoute?
     @State private var showsSearch = false
 
@@ -73,7 +73,7 @@ struct PlanningCalendarView: View
             return []
         }
 
-        let leading = calendar.dateComponents([.day], from: start, to: first).day ?? 0
+        let leading  = calendar.dateComponents([.day], from: start, to: first).day ?? 0
         let rowCount = (leading + count + 6) / 7
         return (0 ..< rowCount).map
         {
@@ -91,7 +91,7 @@ struct PlanningCalendarView: View
     {
 
         let calendar = displayCalendar
-        let values = calendar.veryShortStandaloneWeekdaySymbols
+        let values   = calendar.veryShortStandaloneWeekdaySymbols
         return (0 ..< 7).map
         {
             values[(calendar.firstWeekday - 1 + $0) % 7]
@@ -372,7 +372,7 @@ struct PlanningCalendarView: View
             ForEach(rows.indices, id: \.self)
             {
                 index in
-                let dates = rows[index]
+                let dates   = rows[index]
                 let rowWeek = dates.first.map
                 {
                     week(on: $0)
@@ -455,7 +455,7 @@ struct PlanningCalendarView: View
     {
 
         let selected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
-        let count = items(on: date).count
+        let count    = items(on: date).count
         return Button
         {
 
@@ -880,7 +880,7 @@ struct PlanningWeekSelector: View
                         ForEach(rows.indices, id: \.self)
                         {
                             row in
-                            let dates = rows[row]
+                            let dates       = rows[row]
                             let highlighted =
                             dates.first.map
                             {
@@ -895,7 +895,7 @@ struct PlanningWeekSelector: View
                                 {
                                     date in
                                     let selected = document.calendar.isDate(date, inSameDayAs: selectedDate)
-                                    let inMonth = document.calendar.isDate(
+                                    let inMonth  = document.calendar.isDate(
                                         date, equalTo: referenceDate, toGranularity: .month)
                                     let count = PlanningCalendarContent.items(
                                         on: date, document: document, sources: sources

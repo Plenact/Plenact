@@ -212,18 +212,18 @@ struct BoardAppearance: Hashable, Codable, Sendable
 {
 
 
-    static let weekStorageKey = "Plenact.WeekAppearance.v1"
-    var bannerBackground:     ItemAccent? = nil
-    var listBackground:       KanbanListTint? = nil
-    var cardBackground:       KanbanListTint? = nil
-    var cardDetail:           BoardCardDetail? = nil
+    static let weekStorageKey                       = "Plenact.WeekAppearance.v1"
+    var bannerBackground:     ItemAccent?           = nil
+    var listBackground:       KanbanListTint?       = nil
+    var cardBackground:       KanbanListTint?       = nil
+    var cardDetail:           BoardCardDetail?      = nil
     var collectionBackground: CollectionBackground? = nil
     var cardTitleColor:       ListPreviewTextColor? = nil
     var cardTextColor:        ListPreviewTextColor? = nil
-    var addItemTextColor:     ProfileColor? = nil
-    var studioSurface:       StudioSurface? = nil
-    var studioCardSurface:   StudioSurface? = nil
-    var subtitleItalic:      Bool? = nil  /* Board default; missing preserves regular subtitles */
+    var addItemTextColor:     ProfileColor?         = nil
+    var studioSurface:       StudioSurface?         = nil
+    var studioCardSurface:   StudioSurface?         = nil
+    var subtitleItalic:      Bool?                  = nil /* Board default; missing preserves regular subtitles */
 
 
     ///
@@ -460,22 +460,22 @@ struct ItemAppearance: Hashable, Codable, Sendable
 
     var accent:                        ItemAccent?
     var icon:                          PersonalCollectionIcon?
-    var background:                    ItemAccent? = nil
-    var listBackground:                KanbanListTint? = nil
-    var cardBackground:                KanbanListTint? = nil
+    var background:                    ItemAccent?           = nil
+    var listBackground:                KanbanListTint?       = nil
+    var cardBackground:                KanbanListTint?       = nil
     var cardTitleColor:                ListPreviewTextColor? = nil
     var cardTextColor:                 ListPreviewTextColor? = nil
-    var addItemTextColor:              ProfileColor? = nil
-    var sectionCollapsed:              Bool? = nil
-    var hideEmptySubtitle:             Bool? = nil
-    var studioSurface:                StudioSurface? = nil
-    var studioCardSurface:            StudioSurface? = nil
-    var subtitleItalic:               Bool? = nil  /* nil inherits; false explicitly requests regular type */
-    var cardDetail:                    BoardCardDetail? = nil
-    var listViewMode:                  SingleListViewMode? = nil
-    var iconColor:                     ProfileColor? = nil
-    var showsIconInHeader:             Bool? = nil
-    var listBackgroundOpacity:         Double? = nil
+    var addItemTextColor:              ProfileColor?         = nil
+    var sectionCollapsed:              Bool?                 = nil
+    var hideEmptySubtitle:             Bool?                 = nil
+    var studioSurface:                StudioSurface?         = nil
+    var studioCardSurface:            StudioSurface?         = nil
+    var subtitleItalic:               Bool?                  = nil /* nil inherits; false explicitly requests regular type */
+    var cardDetail:                    BoardCardDetail?      = nil
+    var listViewMode:                  SingleListViewMode?   = nil
+    var iconColor:                     ProfileColor?         = nil
+    var showsIconInHeader:             Bool?                 = nil
+    var listBackgroundOpacity:         Double?               = nil
     var resolvedListBackgroundOpacity: Double
     {
 
@@ -528,7 +528,7 @@ enum NewCardAppearanceDefaults
 {
 
 
-    static let headerPalette:     [ItemAccent] = [.teal, .blue, .purple, .rose, .orange, .green, .coral]
+    static let headerPalette:     [ItemAccent]     = [.teal, .blue, .purple, .rose, .orange, .green, .coral]
     static let backgroundPalette: [KanbanListTint] = [.blue, .green, .orange, .red]
 
 

@@ -104,10 +104,10 @@ struct ImportantItemIndicator: View
 
 
     let cardID:  Int
-    var ownerID: UUID? = nil
+    var ownerID: UUID?                                                   = nil
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
-    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData    = Data()
+    @AppStorage(LocalProfileStore.storageKey) private var profileData    = Data()
     @Environment(\.cardMovementSource) private var source
     @Environment(\.libraryImportance) private var importance
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

@@ -56,10 +56,10 @@ extension PlenactBoardDocumentTests
             KanbanCard(id: id, word: title, listTitle: "Source", checklists: [])
         }
 
-        var source = PersonalCollection(title: "Source", kind: .board, icon: .project, color: .blue)
-        var target = PersonalCollection(title: "Target", kind: .list, icon: .notes, color: .teal)
+        var source   = PersonalCollection(title: "Source", kind: .board, icon: .project, color: .blue)
+        var target   = PersonalCollection(title: "Target", kind: .list, icon: .notes, color: .teal)
         var observer = PersonalCollection(title: "Links", kind: .board, icon: .project, color: .blue)
-        var heading = card(1, "--- Morning")
+        var heading  = card(1, "--- Morning")
         heading.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
         var member = card(2, "Breakfast")
         member.attachments = [KanbanAttachment(url: URL(string: "https://example.com/breakfast"), mediaKind: .link)]
@@ -69,7 +69,7 @@ extension PlenactBoardDocumentTests
         let externalLink = KanbanChecklistItem(title: "Outside", content: .linkedCard(cardID: 6))
         member.checklists = [KanbanChecklist(title: "Links", items: [internalLink, externalLink])]
         var watcher = card(8, "Watch")
-        var nested = KanbanChecklistItem(title: "Nested", content: .linkedCard(cardID: 2))
+        var nested  = KanbanChecklistItem(title: "Nested", content: .linkedCard(cardID: 2))
         nested.linkedCollectionID = source.id
         watcher.checklists = [
             KanbanChecklist(
@@ -100,9 +100,9 @@ extension PlenactBoardDocumentTests
             KanbanList(id: 20, title: "Target", cards: [card(2, "Existing")], archivedCards: [card(4, "Archived")])
         ]
         observer.lists = [KanbanList(id: 30, title: "Links", cards: [], archivedCards: [watcher])]
-        var owners = [source, target, observer]
+        var owners   = [source, target, observer]
         let original = owners
-        let receipt = try SectionTransfer.move(
+        let receipt  = try SectionTransfer.move(
             heading: heading,
             source: WorkspaceListReference(ownerID: source.id, listID: 10),
             destination: WorkspaceListReference(ownerID: target.id, listID: 20), owners: &owners)
@@ -171,10 +171,10 @@ extension PlenactBoardDocumentTests
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         let fromDay = try XCTUnwrap(PlanningDate.date("2026-10-31", calendar: calendar))
-        let toDay = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
-        var owner = PersonalCollection(title: "Week", kind: .board, icon: .project, color: .blue)
+        let toDay   = try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
+        var owner   = PersonalCollection(title: "Week", kind: .board, icon: .project, color: .blue)
         let heading = KanbanCard(id: 1, word: "--- Build", listTitle: "Saturday", checklists: [])
-        var dated = KanbanCard(id: 2, word: "Work", listTitle: "Saturday", checklists: [])
+        var dated   = KanbanCard(id: 2, word: "Work", listTitle: "Saturday", checklists: [])
         dated.startDate = calendar.date(bySettingHour: 9, minute: 15, second: 0, of: fromDay)
         dated.startDateKind = .dateAndTime
         dated.dueDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: fromDay))
@@ -187,11 +187,11 @@ extension PlenactBoardDocumentTests
             KanbanList(id: 10, title: "Saturday", cards: [heading, dated, timed]),
             KanbanList(id: 11, title: "Monday", cards: [])
         ]
-        var owners = [owner]
-        let source = WorkspaceListReference(ownerID: owner.id, listID: 10)
-        let target = WorkspaceListReference(ownerID: owner.id, listID: 11)
+        var owners   = [owner]
+        let source   = WorkspaceListReference(ownerID: owner.id, listID: 10)
+        let target   = WorkspaceListReference(ownerID: owner.id, listID: 11)
         let original = owners
-        let receipt = try SectionTransfer.move(
+        let receipt  = try SectionTransfer.move(
             heading: heading, source: source, destination: target, owners: &owners,
             sourceDay: fromDay, destinationDay: toDay, shiftDates: true, calendar: calendar)
         XCTAssertTrue(owners[0].lists[0].cards.isEmpty)
@@ -240,7 +240,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -251,8 +251,8 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let heading = KanbanCard(id: 1, word: "--- Morning", listTitle: "Monday", checklists: [])
-        var moves = 0
+        let heading  = KanbanCard(id: 1, word: "--- Morning", listTitle: "Monday", checklists: [])
+        var moves    = 0
         let movement = CardMovementAccess(
             destinations: [CardMoveDestination(collectionID: UUID(), listID: 2, title: "On the Table", group: "Plans")],
             moveSection:
@@ -451,7 +451,7 @@ extension PlenactBoardDocumentTests
     func testSectionExampleUpgradePreservesExistingRoutinesAndStoredBytes() throws
     {
 
-        let suite = "DaySectionExamples." + UUID().uuidString
+        let suite    = "DaySectionExamples." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -472,7 +472,7 @@ extension PlenactBoardDocumentTests
         library.bundledRoutineRevision = 2
         library.templates[0].name = "My own week"
         let original = library.templates
-        let bytes = try JSONEncoder().encode(library)
+        let bytes    = try JSONEncoder().encode(library)
         defaults.set(bytes, forKey: PlanningRoutineStore.key)
         let upgraded = try PlanningRoutineStore.load(from: defaults)
         XCTAssertEqual(Array(upgraded.templates.prefix(original.count)), original)
@@ -501,8 +501,8 @@ extension PlenactBoardDocumentTests
                 {
                     !$0.isTitleChecked
                 })
-            let day = try XCTUnwrap(PlanningDate.date("2026-11-09", calendar: example.calendar))
-            let blank = DatedPlanningWeek.make(for: day, calendar: example.calendar)
+            let day     = try XCTUnwrap(PlanningDate.date("2026-11-09", calendar: example.calendar))
+            let blank   = DatedPlanningWeek.make(for: day, calendar: example.calendar)
             let applied = try PlanningTemplateApplication.apply(
                 example, to: blank, date: day, calendar: example.calendar, mode: .add)
             let listID = try XCTUnwrap(applied.dayListIDs[PlanningDate.key(day, calendar: example.calendar)])
@@ -536,7 +536,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -544,7 +544,7 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let cards = try XCTUnwrap(PlanningRoutineLibrary.sectionExamples.first?.collection.lists.first).cards
+        let cards  = try XCTUnwrap(PlanningRoutineLibrary.sectionExamples.first?.collection.lists.first).cards
         var writes = 0
         for scheme in [ColorScheme.light, .dark]
         {
@@ -656,7 +656,7 @@ extension PlenactBoardDocumentTests
         }
 
         let enabled = LocalProfilePreferences(randomizesNewCardHeaders: true, randomizesNewCardBackgrounds: true)
-        let batch = list.makeItems(startingAt: 10, titles: "First\nSecond\nThird", creationPreferences: enabled)
+        let batch   = list.makeItems(startingAt: 10, titles: "First\nSecond\nThird", creationPreferences: enabled)
         XCTAssertEqual(batch.count, 3)
         XCTAssertTrue(batch.allSatisfy
             {
@@ -727,7 +727,7 @@ extension PlenactBoardDocumentTests
             secondHeading, item(6, "Undated"), item(7, "Another time", 25), repeatedHeading,
             item(8, "Repeated section", 1)
         ]
-        let original = cards
+        let original    = cards
         var preferences = LocalProfilePreferences(
             todayFocusItemCount: 0,
             todayFocusOrder: .chronological, todayFocusGroupsBySection: true, keepsDayListsInTimeOrder: false)
@@ -843,7 +843,7 @@ extension PlenactBoardDocumentTests
         ]
         list.cards[3].displayFormat = .picture
         let original = list
-        let groups = BoardGalleryGroup.groups(in: list)
+        let groups   = BoardGalleryGroup.groups(in: list)
         XCTAssertEqual(groups.flatMap(\.cards).map(\.id), [1, 3, 4, 6])
         XCTAssertEqual(groups.compactMap(\.divider).map(\.id), [2, 5])
         XCTAssertEqual(groups.compactMap
@@ -874,7 +874,7 @@ extension PlenactBoardDocumentTests
     func testNamedDividersPreserveIdentityAndLegacySeparators() throws
     {
 
-        let list = KanbanList(id: 3, title: "Plans", cards: [])
+        let list  = KanbanList(id: 3, title: "Plans", cards: [])
         var named = list.makeItem(id: 42, title: "--- Ideas")
         XCTAssertTrue(named.isSectionDivider)
         XCTAssertEqual(named.word, "Ideas")
@@ -920,7 +920,7 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(legacyJSON["listDisplayFormat"])
         XCTAssertEqual(
             try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(legacy)).displayFormat, .divider)
-        let photo = KanbanAttachment(fileName: "display-example.jpg", caption: "Retained caption")
+        let photo    = KanbanAttachment(fileName: "display-example.jpg", caption: "Retained caption")
         var original = legacy
         original.attachments = [photo]
         original.coverAttachmentID = photo.id
@@ -975,10 +975,10 @@ extension PlenactBoardDocumentTests
     func testKeyboardNeighborsStayWithinActiveListAndSkipDividers()
     {
 
-        let a = KanbanCard(id: 1, word: "A", listTitle: "Today", checklists: [])
+        let a       = KanbanCard(id: 1, word: "A", listTitle: "Today", checklists: [])
         let divider = KanbanCard(id: 2, word: "Section", listTitle: "Today", isDivider: true, checklists: [])
-        let b = KanbanCard(id: 3, word: "B", listTitle: "Today", checklists: [], presentation: .note)
-        let lists = [
+        let b       = KanbanCard(id: 3, word: "B", listTitle: "Today", checklists: [], presentation: .note)
+        let lists   = [
             KanbanList(id: 1, title: "Today", cards: [a, divider, b]), KanbanList(id: 2, title: "Other", cards: [])
         ]
         XCTAssertNil(CardKeyboardNeighbors.resolve(a, in: lists).previous)
@@ -1059,8 +1059,8 @@ extension PlenactBoardDocumentTests
             legacyCard.checklists.flatMap(\.items).map(\.isCompleted))
 
         list.newItemPresentation = .note
-        let note = list.makeItem(id: 3, title: "Thought")  /* Newly created Note value */
-        let divider = list.makeItem(id: 4, title: "---")   /* Section-divider fixture  */
+        let note    = list.makeItem(id: 3, title: "Thought") /* Newly created Note value */
+        let divider = list.makeItem(id: 4, title: "---")     /* Section-divider fixture  */
 
         XCTAssertEqual(list.cards, [existing])
         XCTAssertEqual(note.presentation, .note)
@@ -1116,8 +1116,8 @@ extension PlenactBoardDocumentTests
     {
 
         let divider = KanbanCard(id: 2, word: "---", listTitle: "A", isDivider: true, checklists: [])
-        let card = KanbanCard(id: 1, word: "Synthetic", listTitle: "A", checklists: [])
-        var lists = [
+        let card    = KanbanCard(id: 1, word: "Synthetic", listTitle: "A", checklists: [])
+        var lists   = [
             KanbanList(id: 10, title: "A", cards: [divider, card]),
             KanbanList(id: 20, title: "B", cards: [])
         ]
@@ -1154,7 +1154,7 @@ extension PlenactBoardDocumentTests
         completed.isTitleChecked = true
         completed.attachments = [KanbanAttachment(fileName: "synthetic-archive.jpg", mediaKind: .photo)]
 
-        let active = KanbanCard(id: 500, word: "Active", listTitle: "Monday") /* Active Card before archival   */
+        let active  = KanbanCard(id: 500, word: "Active", listTitle: "Monday") /* Active Card before archival   */
         let divider = KanbanCard(
             id: 501, word: "Divider", listTitle: "Monday", isDivider: true, isTitleChecked: true) /* Section-divider fixture       */
         var list = KanbanList(

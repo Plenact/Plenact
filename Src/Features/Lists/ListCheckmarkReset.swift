@@ -62,7 +62,7 @@ struct ListCheckmarkReset: Equatable
     {
 
         let previous = values(in: list)
-        let cards = transform(list.cards)
+        let cards    = transform(list.cards)
         {
             _, _ in
             false
@@ -140,7 +140,7 @@ struct ListCheckmarkReset: Equatable
             }
 
             var card = original
-            let key = "card/\(card.id)/\(card.createdAt?.timeIntervalSince1970 ?? 0)"
+            let key  = "card/\(card.id)/\(card.createdAt?.timeIntervalSince1970 ?? 0)"
             card.isTitleChecked = change(key, card.isTitleChecked)
             card.checklists = transform(card.checklists, path: key, change: change)
             return card
@@ -174,7 +174,7 @@ struct ListCheckmarkReset: Equatable
                 {
                     original in
                     var item = original
-                    let key = path + "/\(checklist.id)/\(item.id)"
+                    let key  = path + "/\(checklist.id)/\(item.id)"
                     item.isCompleted = change(key, item.isCompleted)
                     if case .actionDetail(var detail) = item.content
                     {

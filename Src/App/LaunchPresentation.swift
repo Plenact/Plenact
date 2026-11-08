@@ -90,7 +90,7 @@ struct PlenactLaunchProgress: Equatable
     }
 
     var stage: PlenactLaunchStage = .restore
-    var finished = false
+    var finished                  = false
 
 
     ///
@@ -229,8 +229,8 @@ struct PlenactLoadingView: View
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var animatesLogo = true
-    var fadesShadow = false
-    var progress = PlenactLaunchProgress()
+    var fadesShadow  = false
+    var progress     = PlenactLaunchProgress()
 
     var body: some View
     {
@@ -321,13 +321,13 @@ final class TodayWelcomeCue: ObservableObject
         case profile, plan
     }
 
-    static let lastDepartureKey = "Plenact.Welcome.lastDeparture.v1"
+    static let lastDepartureKey             = "Plenact.Welcome.lastDeparture.v1"
     static let returnInterval: TimeInterval = 4 * 60 * 60
-    @Published private(set) var requestID = 0
+    @Published private(set) var requestID   = 0
     @Published private(set) var target: Target?
     @Published private(set) var illuminated = false
-    private(set) var pending = false
-    private var hasActivated = false
+    private(set) var pending                = false
+    private var hasActivated                = false
     private var departure: Date?
     private var generation = 0
     private let defaults: UserDefaults
@@ -610,7 +610,7 @@ struct TodayWelcomeGlow: ViewModifier
 
 
     let highlighted: Bool
-    var circular = false
+    var circular         = false
     private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44)
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

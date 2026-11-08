@@ -24,14 +24,14 @@ struct PlenactDemoAccountSection: View
 {
 
 
-    @State private var remoteSession = PlenactSessionStore.load()  /* Restored authenticated session      */
-    @State private var username = ""                               /* Login handle draft                  */
-    @State private var password = ""                               /* Short-lived login password          */
-    @State private var newMemberUsername = ""                      /* Invited member handle draft         */
-    @State private var newMemberDisplayName = ""                   /* Invited member display-name draft   */
-    @State private var newMemberPassword = ""                      /* Short-lived invited-member password */
+    @State private var remoteSession        = PlenactSessionStore.load() /* Restored authenticated session      */
+    @State private var username             = ""                         /* Login handle draft                  */
+    @State private var password             = ""                         /* Short-lived login password          */
+    @State private var newMemberUsername    = ""                         /* Invited member handle draft         */
+    @State private var newMemberDisplayName = ""                         /* Invited member display-name draft   */
+    @State private var newMemberPassword    = ""                         /* Short-lived invited-member password */
 
-    @State private var manualAssigneeDrafts: [Int: String] = [:]            /* Per-card manual assignment text */
+    @State private var manualAssigneeDrafts: [Int: String]       = [:]      /* Per-card manual assignment text */
     @State private var directory:            [PlenactRemoteUser] = []       /* Authenticated user directory    */
     @State private var remoteSnapshot:       PlenactBoardSnapshotResponse?  /* Last fetched server snapshot    */
     @State private var remoteDraft:          PlenactBoardDocument?          /* Editable remote-only Board copy */
@@ -52,9 +52,9 @@ struct PlenactDemoAccountSection: View
     }  /* Whether a demo operation is active    */
 
     @State private var needsConflictReload = false  /* Stale-draft reload requirement        */
-    @State private var alertMessage = ""            /* Current alert text                    */
-    @State private var showsAlert = false           /* Shared-demo alert presentation state  */
-    @State private var confirmsSeed = false         /* Initial SampleData confirmation state */
+    @State private var alertMessage        = ""     /* Current alert text                    */
+    @State private var showsAlert          = false  /* Shared-demo alert presentation state  */
+    @State private var confirmsSeed        = false  /* Initial SampleData confirmation state */
 
     ///
     /// @fcn        PlenactDemoAccountSection.canInitializeSampleBoard
@@ -557,7 +557,7 @@ struct PlenactDemoAccountSection: View
         {
 
 
-            let client = try PlenactAPIClient()                 /* Configured HTTPS API client */
+            let client   = try PlenactAPIClient()               /* Configured HTTPS API client */
             let response = try await client.publishSampleData(  /* Initial SampleData response */
                 token: remoteSession.accessToken,
                 user: remoteSession.user,

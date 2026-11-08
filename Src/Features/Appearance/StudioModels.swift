@@ -52,15 +52,15 @@ struct StudioSurface: Codable, Hashable, Sendable
 {
 
 
-    var material:         StudioMaterial = .paper
-    var color:            String = "EDE3CA"
-    var secondaryColor:   String = "C4DADB"
-    var strength:         Double = 0.65
-    var readability:      Double = 0.55
-    var verticalPosition: Double = 0.5
-    var zoom:             Double = 1
-    var showsInPreviews:  Bool = true
-    var photoFileName:    String? = nil
+    var material:         StudioMaterial     = .paper
+    var color:            String             = "EDE3CA"
+    var secondaryColor:   String             = "C4DADB"
+    var strength:         Double             = 0.65
+    var readability:      Double             = 0.55
+    var verticalPosition: Double             = 0.5
+    var zoom:             Double             = 1
+    var showsInPreviews:  Bool               = true
+    var photoFileName:    String?            = nil
     var remotePhoto:      StudioRemotePhoto? = nil
 }
 
@@ -76,8 +76,8 @@ struct StudioArtwork: Codable, Identifiable, Hashable, Sendable
     var id = UUID()
     var name:           String
     var surface:        StudioSurface
-    var header:         ItemAccent? = nil
-    var italicSubtitle: Bool? = nil
+    var header:         ItemAccent?           = nil
+    var italicSubtitle: Bool?                 = nil
     var titleColor:     ListPreviewTextColor? = nil
     var textColor:      ListPreviewTextColor? = nil
 }
@@ -109,14 +109,14 @@ struct StudioSettings: Codable, Equatable
 {
 
 
-    static let key = "Plenact.Studio.Settings.v1"
-    static let libraryKey = "Plenact.Studio.Artwork.v1"
+    static let key                                  = "Plenact.Studio.Settings.v1"
+    static let libraryKey                           = "Plenact.Studio.Artwork.v1"
     var views:              [String: StudioSurface] = [:]
-    var defaultCardSurface: StudioSurface? = nil
-    var defaultNoteSurface: StudioSurface? = nil
-    var variesNewSurfaces = false
-    var variesNewHeaders = false
-    var palette: [String] = ["EDE3CA", "DDE8D8", "DCE7EE", "E9DDEB", "F0DDD3"]
+    var defaultCardSurface: StudioSurface?          = nil
+    var defaultNoteSurface: StudioSurface?          = nil
+    var variesNewSurfaces                           = false
+    var variesNewHeaders                            = false
+    var palette: [String]                           = ["EDE3CA", "DDE8D8", "DCE7EE", "E9DDEB", "F0DDD3"]
 
 
     /// @fcn StudioSettings.load(from:)

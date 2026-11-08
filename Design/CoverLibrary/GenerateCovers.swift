@@ -33,10 +33,10 @@ struct Cover: Decodable
     let context:  String?
 }
 
-let source = URL(fileURLWithPath: CommandLine.arguments[1])
-let output = URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)
-let covers = try JSONDecoder().decode([Cover].self, from: Data(contentsOf: source))
-let categories = ["home", "nature", "work", "food", "travel", "creativity", "health", "rest"]
+let source               = URL(fileURLWithPath: CommandLine.arguments[1])
+let output               = URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)
+let covers               = try JSONDecoder().decode([Cover].self, from: Data(contentsOf: source))
+let categories           = ["home", "nature", "work", "food", "travel", "creativity", "health", "rest"]
 let palettes: [[String]] = [
     ["F4E5D3", "CA7459", "4D7778"], ["E2F0E6", "45966D", "E5B454"],
     ["E0EAF3", "476A89", "75B0B1"], ["F8EBD6", "D98745", "649672"],
@@ -182,11 +182,11 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 for (index, cover) in covers.enumerated()
 {
 
-    let category = categories.firstIndex(of: cover.category)!
-    let palette = palettes[category]
+    let category   = categories.firstIndex(of: cover.category)!
+    let palette    = palettes[category]
     let background = color(palette[0]);
-    let primary = color(palette[1]);
-    let accent = color(palette[2])
+    let primary    = color(palette[1]);
+    let accent     = color(palette[2])
     guard let context = CGContext(data: nil, width: 960, height: 480, bitsPerComponent: 8, bytesPerRow: 960 * 4,
         space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else
     {

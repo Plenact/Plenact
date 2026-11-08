@@ -31,8 +31,8 @@ struct PlanningCalendarAccess
     ((PlanningSearchResult, DailyReviewAction, WeeklyReviewRecord, WeeklyReviewRecord?) -> WeeklyReviewRecord?)? =
     nil
     var applyDailyReview: ((PlanningSearchResult, DailyReviewAction, DailyPlan, DailyPlan?) -> DailyPlan?)? = nil
-    var moveForDailyPlan: ((PlanningSearchResult, WorkspaceListReference) -> PlanningSearchResult?)? = nil
-    var setFirstWeekday:  (Int) -> Bool =
+    var moveForDailyPlan: ((PlanningSearchResult, WorkspaceListReference) -> PlanningSearchResult?)?        = nil
+    var setFirstWeekday:  (Int) -> Bool                                                                     =
     {
         _ in
         false
@@ -43,8 +43,8 @@ struct PlanningCalendarAccess
         _ in
     }
 
-    var moveList:         ((Int, UUID, UUID?) -> Bool)? = nil
-    var openWeekOnDay:    ((DatedPlanningWeek, Date) -> Void)? = nil
+    var moveList:         ((Int, UUID, UUID?) -> Bool)?            = nil
+    var openWeekOnDay:    ((DatedPlanningWeek, Date) -> Void)?     = nil
     var saveExampleWeek:  ((DatedPlanningWeek, Set<Int>) -> Bool)? = nil
     var allRetainedLists: [KanbanList]
     {
@@ -219,17 +219,17 @@ struct PlanningCalendarWeekView: View
     let initialDayID:   Int?
     let initialCardID:  Int?
     let onLeaveForHome: () -> Void
-    var isWeekTab = false
+    var isWeekTab                = false
     var initialBoardListID: Int? = nil
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var targetListID: Int?
     @State private var targetCardID: Int?
     @State private var didOpenInitialTarget = false
-    @State private var showsDay = false
+    @State private var showsDay             = false
     @State private var dayID: Int?
     @State private var isRevertingEdit = false
-    @State private var labels = LabelLibraryStore.load()
+    @State private var labels          = LabelLibraryStore.load()
     private var isStored: Bool
     {
         access?.document.weeks.contains
@@ -357,7 +357,7 @@ struct PlanningCalendarWeekView: View
                 do
                 {
 
-                    let date = PlanningDate.date(week.startKey, calendar: access.document.calendar)!
+                    let date     = PlanningDate.date(week.startKey, calendar: access.document.calendar)!
                     let prepared = try PlanningRoutineStore.newWeek(for: date, calendar: access.document.calendar)
                     guard access.saveWeek(prepared) else
                     {
@@ -635,7 +635,7 @@ struct PlanningSearchLibraryView: View
     @Environment(\.dismiss) private var dismiss
     @State private var targetListID: Int?
     @State private var targetCardID: Int?
-    @State private var isRevertingEdit = false
+    @State private var isRevertingEdit      = false
     @State private var didOpenInitialTarget = false
     var body: some View
     {
@@ -870,7 +870,7 @@ struct PlanningSelectedDayView: View
     let onClose:                () -> Void
     let onSelectDay:            (Date) -> Void
     @State private var week:    DatedPlanningWeek
-    @State private var labels = LabelLibraryStore.load()
+    @State private var labels          = LabelLibraryStore.load()
     @State private var isRevertingEdit = false
     @Environment(\.planningCalendarAccess) private var access
 

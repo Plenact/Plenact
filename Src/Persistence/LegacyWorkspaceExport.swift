@@ -82,9 +82,9 @@ enum LegacyWorkspaceExport
     private static func inventory(root: URL) throws -> [String: Data]
     {
 
-        let manager = FileManager.default /* File access stays within the supplied source container */
-        var result: [String: Data] = [:]   /* Complete media inventory, including unreferenced originals */
-        var size = 0                      /* Running memory bound */
+        let manager                = FileManager.default /* File access stays within the supplied source container */
+        var result: [String: Data] = [:]                 /* Complete media inventory, including unreferenced originals */
+        var size                   = 0                   /* Running memory bound */
         for area in mediaRoots
         {
             var directory = root
@@ -174,7 +174,7 @@ enum LegacyWorkspaceExport
     private static func insert(_ data: Data, path: String, directory: FileWrapper)
     {
 
-        let parts = path.split(separator: "/").map(String.init)
+        let parts  = path.split(separator: "/").map(String.init)
         var parent = directory
         for part in parts.dropLast()
         {
@@ -213,10 +213,10 @@ enum LegacyWorkspaceExport
         let migrationURL = root.resolvingSymlinksInPath()
             .appendingPathComponent("Library/Application Support/PlenactMigration/source-identities-v1.json")
         let migrationJournal = try MigrationIdentityStore.read(at: migrationURL)
-        let portableRuntime = try PortableRuntimeEvidence.capture(root: root)
-        let original = defaults.persistentDomain(forName: domain) ?? [:]
-        let values = original.filter { LegacyStoreValidation.includes($0.key) }
-        let preferences = try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
+        let portableRuntime  = try PortableRuntimeEvidence.capture(root: root)
+        let original         = defaults.persistentDomain(forName: domain) ?? [:]
+        let values           = original.filter { LegacyStoreValidation.includes($0.key) }
+        let preferences      = try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
         guard preferences.count + (migrationJournal?.count ?? 0) <= maximumBytes else
         {
             throw Failure.tooLarge

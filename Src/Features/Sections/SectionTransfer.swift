@@ -136,9 +136,9 @@ enum SectionTransfer
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        let original = owners
+        let original    = owners
         let sourceCards = owners[from].lists[fromList].cards
-        let end =
+        let end         =
         sourceCards.indices.dropFirst(start + 1).first
         {
             sourceCards[$0].sectionHeading != nil
@@ -146,15 +146,15 @@ enum SectionTransfer
 
         ?? sourceCards.count
         let block = Array(sourceCards[start ..< end])
-        let ids = Set(block.map(\.id))
+        let ids   = Set(block.map(\.id))
         guard ids.count == block.count else
         {
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let sameOwner = source.ownerID == destination.ownerID
-        let reserved = Set(owners[to].lists.flatMap(\.allCards).map(\.id))
-        var next = max(reserved.max() ?? -1, ids.max() ?? -1)
+        let sameOwner           = source.ownerID == destination.ownerID
+        let reserved            = Set(owners[to].lists.flatMap(\.allCards).map(\.id))
+        var next                = max(reserved.max() ?? -1, ids.max() ?? -1)
         var mapping: [Int: Int] = [:]
         for card in block
         {
@@ -292,7 +292,7 @@ enum SectionTransfer
         }
 
         var snapshot = owners
-        let moved = block.map
+        let moved    = block.map
         {
             card -> KanbanCard in
             var result = card.replacingLocation(id: mapping[card.id]!, listTitle: snapshot[to].lists[toList].title)

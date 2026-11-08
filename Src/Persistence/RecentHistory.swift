@@ -62,8 +62,8 @@ enum RecentSearchStore
     {
 
 
-        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)  /* Normalized query to remember            */
-        var searches = load(from: defaults)                               /* Recent queries updated in recency order */
+        let term     = query.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized query to remember            */
+        var searches = load(from: defaults)                                  /* Recent queries updated in recency order */
 
         guard !term.isEmpty else
         {

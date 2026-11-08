@@ -20,7 +20,7 @@ enum DailyReviewTransaction
 {
 
 
-    static let key = "Plenact.DailyReviewTransaction.v1"
+    static let key  = "Plenact.DailyReviewTransaction.v1"
     static let keys = [
         PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1",
         DailyPlanStore.key, WeeklyReviewStore.key

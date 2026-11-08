@@ -36,7 +36,7 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
     var savedLocation: String
     {
 
-        let title = CardLocation.normalized(name)
+        let title   = CardLocation.normalized(name)
         let address = CardLocation.normalized(address)
         if let title, let address, title.caseInsensitiveCompare(address) != .orderedSame
         {
@@ -164,7 +164,7 @@ final class CardLocationSearchModel: ObservableObject
     }
 
     @Published private(set) var results: [CardLocationSearchResult] = []
-    @Published private(set) var phase: Phase = .idle
+    @Published private(set) var phase: Phase                        = .idle
     @Published var selectedID: UUID?
     private let searcher: Searcher
     private var revision = UUID()
@@ -303,7 +303,7 @@ final class CardLocationSearchModel: ObservableObject
             request.region = region
         }
 
-        let search = MKLocalSearch(request: request)
+        let search   = MKLocalSearch(request: request)
         let response = try await withTaskCancellationHandler
         {
 

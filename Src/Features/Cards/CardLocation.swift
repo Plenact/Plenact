@@ -116,7 +116,7 @@ struct CardLocationRow: View
 
 
     let location: String?
-    var canEdit = false
+    var canEdit            = false
     var onEdit: () -> Void =
     {
 

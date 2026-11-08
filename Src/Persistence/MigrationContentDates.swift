@@ -60,7 +60,7 @@ enum MigrationContentDates
             throw MigrationContentValues.Failure.invalid("subminute_timezone_offset")
         }
         let wireEpoch = floor(epoch * 1000) / 1000
-        let local = Date(timeIntervalSince1970: wireEpoch + Double(offset))
+        let local     = Date(timeIntervalSince1970: wireEpoch + Double(offset))
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -82,7 +82,7 @@ enum MigrationContentDates
         var occurrence = "unique"
         for i in 1..<transitions.count
         {
-            let delta = transitions[i - 1][1] - transitions[i][1]
+            let delta   = transitions[i - 1][1] - transitions[i][1]
             let instant = Double(transitions[i][0])
             if delta > 0, wireEpoch >= instant - Double(delta), wireEpoch < instant + Double(delta)
             {
@@ -91,7 +91,7 @@ enum MigrationContentDates
             }
         }
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-        let sign = offset < 0 ? "-" : "+"
+        let sign    = offset < 0 ? "-" : "+"
         let minutes = abs(offset) / 60
         return ["kind": kind, "local_date_time": formatter.string(from: local),
             "time_zone": context.timeZoneID, "tzdb_version": rules.tzdb_version,

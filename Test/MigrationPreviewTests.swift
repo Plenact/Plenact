@@ -26,9 +26,9 @@ final class MigrationPreviewTests: XCTestCase
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
 
-        let domain = "Plenact.MigrationTests." + UUID().uuidString
+        let domain   = "Plenact.MigrationTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        let root     = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defaults.setPersistentDomain(values, forName: domain)
         defer
@@ -78,8 +78,8 @@ final class MigrationPreviewTests: XCTestCase
     func testIdentitySurvivesRestartAndPreservesOwnerDiscriminators() throws
     {
 
-        var journal = MigrationIdentityJournal()
-        let source = MigrationSourceIdentity(recordType: "card", owner: "collection-A", legacyID: "7", discriminator: nil)
+        var journal  = MigrationIdentityJournal()
+        let source   = MigrationSourceIdentity(recordType: "card", owner: "collection-A", legacyID: "7", discriminator: nil)
         let identity = try journal.resolve(source)
         var reopened = try MigrationIdentityJournal.decode(journal.encoded())
         XCTAssertEqual(try reopened.resolve(source), identity)
@@ -148,15 +148,15 @@ final class MigrationPreviewTests: XCTestCase
         let source = try library()
         try fixture(["Plenact.LabelLibrary.v1": source, "Plenact.ActivityShowsCovers": false,
             "Plenact.BoardPresentation.v1": "overview", "Plenact.Board.v1": Data("[]".utf8)]) { backup, url in
-            let first = try MigrationPreview.prepare(backup: backup, journalURL: url)
+            let first  = try MigrationPreview.prepare(backup: backup, journalURL: url)
             let second = try MigrationPreview.prepare(backup: backup, journalURL: url)
             XCTAssertEqual(first.recordCount, 3)
             let documents = try records(first)
-            let repeated = try records(second)
+            let repeated  = try records(second)
             XCTAssertEqual(try JSONSerialization.data(withJSONObject: documents, options: .sortedKeys),
                 try JSONSerialization.data(withJSONObject: repeated, options: .sortedKeys))
             let category = try XCTUnwrap(documents[0]["payload"] as? [String: Any])
-            let label = try XCTUnwrap(documents[1]["payload"] as? [String: Any])
+            let label    = try XCTUnwrap(documents[1]["payload"] as? [String: Any])
             XCTAssertEqual(category["name"] as? String, "  Personal 🪴  ")
             XCTAssertEqual(label["category_id"] as? String, documents[0]["id"] as? String)
             XCTAssertNotEqual(documents[0]["id"] as? String, documents[1]["id"] as? String)
@@ -354,9 +354,9 @@ final class MigrationPreviewTests: XCTestCase
     {
 
         try fixture(["Plenact.LabelLibrary.v1": library()]) { backup, url in
-            let first = try MigrationPreview.prepare(backup: backup, journalURL: url)
+            let first    = try MigrationPreview.prepare(backup: backup, journalURL: url)
             let baseline = try XCTUnwrap(MigrationIdentityStore.read(at: url))
-            let domain = "Plenact.MigrationResumeTests." + UUID().uuidString
+            let domain   = "Plenact.MigrationResumeTests." + UUID().uuidString
             let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
             defaults.setPersistentDomain(try MigrationBackupReader.values(in: backup), forName: domain)
             defer

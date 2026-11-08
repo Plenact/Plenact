@@ -205,7 +205,7 @@ struct LabelLibrary: Hashable, Codable
         KanbanLabelCategory(id: "home", name: "Home")
     ]
     static let referenceCategory = KanbanLabelCategory(id: "plenact-reference", name: "Reference")
-    static let referenceLabel = KanbanLabel(
+    static let referenceLabel    = KanbanLabel(
         id: "plenact-reference", name: "Reference", categoryID: "plenact-reference", color: .purple)
 
     /// Keep the built-in tutorial label available without changing existing user labels.

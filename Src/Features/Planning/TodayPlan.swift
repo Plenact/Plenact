@@ -90,16 +90,16 @@ struct DailyPlan: Codable, Equatable, Identifiable
 
     let id:         String
     let timeZoneID: String
-    var intention = ""
-    var constraints = ""
-    var concerns = ""
-    var priorities:        [DailyPlanPriority] = []
-    var updatedAt:         Date? = nil
-    var checkIn:           DailyCheckIn? = nil
+    var intention                               = ""
+    var constraints                             = ""
+    var concerns                                = ""
+    var priorities:        [DailyPlanPriority]  = []
+    var updatedAt:         Date?                = nil
+    var checkIn:           DailyCheckIn?        = nil
     var checkIns:          [DailyCheckInEntry]? = nil
-    var eveningReview:     DailyEveningReview? = nil
-    var visionStep:        Int? = nil
-    var visionCompletedAt: Date? = nil
+    var eveningReview:     DailyEveningReview?  = nil
+    var visionStep:        Int?                 = nil
+    var visionCompletedAt: Date?                = nil
 
 
     ///
@@ -149,7 +149,7 @@ enum DailyPlanStore
     {
 
 
-        var version = 1
+        var version                    = 1
         var plans: [String: DailyPlan] = [:]
     }
 
@@ -349,7 +349,7 @@ enum DailyPlanStore
         var saved = plan
         saved.updatedAt = .now
         document.plans[saved.id] = saved
-        let data = try JSONEncoder().encode(document)
+        let data     = try JSONEncoder().encode(document)
         let previous = defaults.object(forKey: key)
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
@@ -393,15 +393,15 @@ struct TodayPlanView: View
     @State private var loaded = false
     @State private var loadError: String?
     @State private var saveError: String?
-    @State private var showsPicker = false
-    @State private var showsNewPriority = false
-    @State private var showsVision = false
-    @State private var showsReview = false
-    @State private var showsCheckIn = false
-    @State private var showsDailyReview = false
-    @State private var showsWeeklyReview = false
+    @State private var showsPicker         = false
+    @State private var showsNewPriority    = false
+    @State private var showsVision         = false
+    @State private var showsReview         = false
+    @State private var showsCheckIn        = false
+    @State private var showsDailyReview    = false
+    @State private var showsWeeklyReview   = false
     @State private var showsPeriodicReview = false
-    @State private var confirmsDiscard = false
+    @State private var confirmsDiscard     = false
     @State private var openedItem:  PlanningSearchResult?
     private let opensEveningReview: Bool
 
@@ -1260,7 +1260,7 @@ enum DailyPriorityCreation
             return nil
         }
 
-        let id = (owner.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
+        let id   = (owner.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
         var card = KanbanCard(
             id: id, word: title, listTitle: owner.lists[index].title,
             checklists: [], comments: [], members: [], labelIDs: [], attachments: attachments,
@@ -1312,10 +1312,10 @@ struct NewDailyPriorityView: View
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     let onCreate: (PlanningSearchResult) -> Void
-    @StateObject private var attachmentDraft = CreationAttachmentDraft()
-    @State private var keyboardContextID = UUID()
-    @State private var title = ""
-    @State private var bodyText = ""
+    @StateObject private var attachmentDraft          = CreationAttachmentDraft()
+    @State private var keyboardContextID              = UUID()
+    @State private var title                          = ""
+    @State private var bodyText                       = ""
     @State private var presentation: ItemPresentation = .card
     @State private var destination:  WorkspaceListReference?
     @State private var initialized = false

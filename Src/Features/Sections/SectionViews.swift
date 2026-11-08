@@ -111,7 +111,7 @@ struct DaySectionRow: View
                 Button
                 {
 
-                    var updated = card
+                    var updated    = card
                     var appearance = updated.appearance ?? ItemAppearance()
                     appearance.sectionCollapsed = appearance.sectionCollapsed != true
                     updated.appearance = appearance
@@ -206,7 +206,7 @@ struct DaySectionRow: View
     private func setColor(_ color: ItemAccent?)
     {
 
-        var updated = card
+        var updated    = card
         var appearance = updated.appearance ?? ItemAppearance()
         appearance.accent = color
         updated.appearance = appearance.isEmpty ? nil : appearance

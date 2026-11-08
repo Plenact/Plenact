@@ -37,7 +37,7 @@ extension PlenactBoardDocumentTests
     func testPlanPreferencesSaveWithoutCreatingProfileAndShareProfileEdits() throws
     {
 
-        let suite = "PlanSettingsTests." + UUID().uuidString
+        let suite    = "PlanSettingsTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer
         {
@@ -78,7 +78,7 @@ extension PlenactBoardDocumentTests
             for presentation in [ItemPresentation.card, .note]
             {
 
-                var list = KanbanList(id: 7, title: title, cards: [], newItemPresentation: presentation)
+                var list  = KanbanList(id: 7, title: title, cards: [], newItemPresentation: presentation)
                 var draft = InlineListCaptureDraft(title: "  First thought  ")
                 XCTAssertFalse(draft.submit(to: list)
                     {
@@ -154,7 +154,7 @@ extension PlenactBoardDocumentTests
     {
 
         var collection = PersonalCollection(title: "Personal", kind: .list)
-        let schedule = QuickCaptureSchedule(start: .now, stop: .now.addingTimeInterval(3600), includesTime: true)
+        let schedule   = QuickCaptureSchedule(start: .now, stop: .now.addingTimeInterval(3600), includesTime: true)
         try collection.addNote(
             title: "Card", body: "Details", presentation: .card,
             actions: ["First", "Second"], schedule: schedule)
@@ -162,7 +162,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(card.checklists.flatMap(\.items).map(\.title), ["First", "Second"])
         XCTAssertEqual(card.startDate, schedule.start)
         XCTAssertEqual(card.dueDate, schedule.stop)
-        let before = collection
+        let before  = collection
         let invalid = QuickCaptureSchedule(start: .now, stop: .distantPast, includesTime: true)
         XCTAssertThrowsError(try collection.addNote(title: "Invalid", body: "", schedule: invalid))
         XCTAssertEqual(collection, before)
@@ -189,10 +189,10 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         let lists = [KanbanList(id: 0, title: "Monday", cards: [])]
-        let host = UIHostingController(
+        let host  = UIHostingController(
             rootView: QuickNoteComposer(lists: .constant(lists), initialListID: 0)
             {
                 _, _, _, _, _, _ in
@@ -322,7 +322,7 @@ extension PlenactBoardDocumentTests
         {
 
             var source = PersonalCollection(title: title, kind: .board, icon: .home, color: .green)
-            var card = KanbanCard(
+            var card   = KanbanCard(
                 id: 8, word: "Keep this note", listTitle: "Garden", descriptionOverride: "Original writing")
             card.displayFormat = .note
             card.checklists = [
@@ -330,14 +330,14 @@ extension PlenactBoardDocumentTests
                     title: "Link", items: [KanbanChecklistItem(title: "Archived", content: .linkedCard(cardID: 9))])
             ]
             let archive = KanbanCard(id: 9, word: "Archived", listTitle: "Garden")
-            var list = KanbanList(
+            var list    = KanbanList(
                 id: 4, title: "Garden", cards: [card], archivedCards: [archive], newItemPresentation: .note)
             list.subtitleOverride = "Seasonal notes"
             list.appearance = ItemAppearance(accent: .green)
             source.lists = [list]
             source.savedCardIDs = [8, 9]
             var collections = [source]
-            let result = try CrossBoardListMovement.detach(listID: list.id, from: source.id, collections: &collections)
+            let result      = try CrossBoardListMovement.detach(listID: list.id, from: source.id, collections: &collections)
             XCTAssertEqual(collections.count, 2)
             XCTAssertTrue(collections[0].lists.isEmpty)
             XCTAssertTrue(collections[0].savedCardIDs.isEmpty)
@@ -436,8 +436,8 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        let host = UIHostingController(
+        let window   = UIWindow(windowScene: scene)
+        let host     = UIHostingController(
             rootView: ListItemComposer(list: KanbanList(id: 1, title: "List", cards: []), draftKey: key)
             {
                 _ in
@@ -554,8 +554,8 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
-        var card = KanbanCard(
+        let window   = UIWindow(windowScene: scene)
+        var card     = KanbanCard(
             id: 42, word: "Comment focus", listTitle: "Monday", checklists: [], comments: [],
             descriptionOverride: "Description")
         card.sectionLayout = CardSectionLayout(
@@ -637,7 +637,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -645,7 +645,7 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let author = UUID()
+        let author    = UUID()
         let reactions = [
             ItemEmojiReaction(emoji: "❤️", authorID: author), ItemEmojiReaction(emoji: "🎉", authorID: author)
         ]
@@ -731,7 +731,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -757,9 +757,9 @@ extension PlenactBoardDocumentTests
             [view] + view.subviews.flatMap(descendants)
         }
 
-        var allowsSave = false
+        var allowsSave  = false
         var finishCalls = 0
-        let host = UIHostingController(
+        let host        = UIHostingController(
             rootView: InlineBoardListTitle(
                 list: lists[0],
                 onSave:
@@ -839,7 +839,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
             window.isHidden = true;
@@ -966,8 +966,8 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let timestamp = Date(timeIntervalSince1970: 1_791_422_000)   /* Fixed creation timestamp      */
-        var list = KanbanList(id: 1, title: "Synthetic", cards: [])  /* List state under verification */
+        let timestamp = Date(timeIntervalSince1970: 1_791_422_000)       /* Fixed creation timestamp      */
+        var list      = KanbanList(id: 1, title: "Synthetic", cards: []) /* List state under verification */
         list.newItemPresentation = .note
         let note = list.makeItem(id: 2, title: "Dated Note", createdAt: timestamp) /* Newly created Note value */
 
@@ -989,10 +989,10 @@ extension PlenactBoardDocumentTests
 
         XCTAssertEqual(card.replacingLocation(id: 8, listTitle: "Moved").createdAt, timestamp)
 
-        let before = Date.now                                     /* Timestamp before the operation */
+        let before  = Date.now                                    /* Timestamp before the operation */
         let newCard = list.makeItem(id: 3, title: "Created now")  /* Newly created Card value       */
-        let after = Date.now                                      /* Timestamp after the operation  */
-        let actual = try XCTUnwrap(newCard.createdAt)             /* Observed creation timestamp    */
+        let after   = Date.now                                    /* Timestamp after the operation  */
+        let actual  = try XCTUnwrap(newCard.createdAt)            /* Observed creation timestamp    */
 
         XCTAssertGreaterThanOrEqual(actual, before)
         XCTAssertLessThanOrEqual(actual, after)
@@ -1018,8 +1018,8 @@ extension PlenactBoardDocumentTests
     {
 
         var collection = PersonalCollection(title: "Ideas", kind: .list)
-        let createdAt = try XCTUnwrap(PlanningDate.date("2026-10-13"))
-        let body = "First paragraph\n\nSecond paragraph  "
+        let createdAt  = try XCTUnwrap(PlanningDate.date("2026-10-13"))
+        let body       = "First paragraph\n\nSecond paragraph  "
         try collection.addNote(
             title: "A card", body: body, createdAt: createdAt, presentation: .card, subtitle: " Useful context ")
         try collection.addNote(title: "A note", body: body, createdAt: createdAt, presentation: .note)
@@ -1089,8 +1089,8 @@ extension PlenactBoardDocumentTests
 
         XCTAssertEqual(collection.lists[0].archivedCards, [archived])
 
-        var board = PersonalCollection(title: "Not a list", kind: .board)  /* Board state under verification          */
-        let boardBefore = board                                            /* Board state before the attempted change */
+        var board       = PersonalCollection(title: "Not a list", kind: .board) /* Board state under verification          */
+        let boardBefore = board                                                 /* Board state before the attempted change */
 
         XCTAssertThrowsError(try board.addNote(title: "No", body: ""))
         XCTAssertEqual(board, boardBefore)
@@ -1126,7 +1126,7 @@ extension PlenactBoardDocumentTests
                 $0 as? UIWindowScene
             } .first)                                             /* Active scene for UI hosting     */
         let previous = scene.windows.first(where: \.isKeyWindow)  /* Previously focused window       */
-        let window = UIWindow(windowScene: scene)                 /* Temporary window for UI hosting */
+        let window   = UIWindow(windowScene: scene)               /* Temporary window for UI hosting */
 
         var newNoteAction: (() -> Void)? /* New Note action under test */
 

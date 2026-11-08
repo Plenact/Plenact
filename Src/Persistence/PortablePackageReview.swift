@@ -112,10 +112,10 @@ enum PortablePackageReview
     static func review(at url: URL) throws -> ReviewedPortablePackage
     {
 
-        let nested = url.appendingPathComponent("PortableTestPackage", isDirectory: true)
-        let selected = FileManager.default.fileExists(atPath: nested.path) ? nested : url
+        let nested    = url.appendingPathComponent("PortableTestPackage", isDirectory: true)
+        let selected  = FileManager.default.fileExists(atPath: nested.path) ? nested : url
         var remaining = LegacyWorkspaceExport.maximumBytes
-        let files = try LocalBackupRestore.readTree(selected, remaining: &remaining)
+        let files     = try LocalBackupRestore.readTree(selected, remaining: &remaining)
         return try review(files: files)
     }
 
@@ -190,7 +190,7 @@ enum PortablePackageReview
         {
             throw Failure.relationships
         }
-        let contentGroups = ["collections": "collection", "lists": "list", "cards": "card"]
+        let contentGroups  = ["collections": "collection", "lists": "list", "cards": "card"]
         let planningGroups = ["calendar_indexes": "calendar_index", "weeks": "calendar_week", "daily_plans": "daily_plan",
             "weekly_reviews": "weekly_review", "periodic_reviews": "periodic_review", "templates": "planning_template",
             "template_libraries": "template_library", "review_rhythms": "review_rhythm", "assets": "asset"]
@@ -249,10 +249,10 @@ enum PortablePackageReview
                 throw Failure.relationships
             }
         }
-        let assets = planning["assets"] as! [[String: Any]]
+        let assets     = planning["assets"] as! [[String: Any]]
         var seenAssets = Set<String>()
-        var seenPaths = Set<String>()
-        var usedBlobs = Set<String>()
+        var seenPaths  = Set<String>()
+        var usedBlobs  = Set<String>()
         for mapping in mappings
         {
             guard Set(mapping.keys) == ["asset_id", "source_path", "blob"],
@@ -267,7 +267,7 @@ enum PortablePackageReview
                 throw Failure.relationships
             }
             let bytes = try MigrationBackupReader.file(blob, in: files)
-            let hash = MigrationBackupReader.digest(bytes)
+            let hash  = MigrationBackupReader.digest(bytes)
             guard blob == "Originals/" + hash + ".bin", payload["sha256"] as? String == hash,
                   payload["byte_length"] as? String == String(bytes.count) else
             {
@@ -306,7 +306,7 @@ enum PortablePackageReview
         }
         for record in records
         {
-            let kind = record["record_type"] as? String
+            let kind    = record["record_type"] as? String
             let payload = record["payload"] as! [String: Any]
             for (field, expected) in [("list_ids", "list"), ("card_ids", "card")]
             {

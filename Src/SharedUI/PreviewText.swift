@@ -140,13 +140,13 @@ struct GentleCollectionPreview: View
 
 
     let text: String
-    var scrolls = false
-    var textFont:        Font = .caption
-    var textColor:       Color = .secondary
+    var scrolls                 = false
+    var textFont:        Font   = .caption
+    var textColor:       Color  = .secondary
     var pointsPerSecond: Double = 14
     var startPause:      Double = 2.5
     var endPause:        Double = 2.5
-    var travelsAcross = false
+    var travelsAcross           = false
 
 
     ///
@@ -161,8 +161,8 @@ struct GentleCollectionPreview: View
     @State private var textWidth:     CGFloat = 0
     @State private var viewportWidth: CGFloat = 0
     @State private var offset:        CGFloat = 0
-    @State private var opacity:       Double = 1
-    @State private var visible = false
+    @State private var opacity:       Double  = 1
+    @State private var visible                = false
     private struct Loop: Hashable
     {
 
@@ -256,7 +256,7 @@ struct GentleCollectionPreview: View
             }
 
             let distance = loop.distance
-            let seconds = max(4, Double(distance) / max(1, pointsPerSecond))
+            let seconds  = max(4, Double(distance) / max(1, pointsPerSecond))
             do
             {
 

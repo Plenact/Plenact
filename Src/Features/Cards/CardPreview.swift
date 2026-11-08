@@ -109,11 +109,11 @@ struct KanbanCardView: View
     let card:                KanbanCard             /* The kanban card being displayed                               */
     let height:              CGFloat                /* Minimum card height; content may grow                         */
     let displaySettings:     BoardDisplaySettings   /* Settings controlling which elements of the card are displayed */
-    var cardBackground:      KanbanListTint? = nil  /* Board-scoped tint, independent of item banner metadata        */
-    var compactCards:        Bool = false
+    var cardBackground:      KanbanListTint?       = nil /* Board-scoped tint, independent of item banner metadata        */
+    var compactCards:        Bool                  = false
     var titleColor:          ListPreviewTextColor? = nil
     var supportingTextColor: ListPreviewTextColor? = nil
-    var listedOnDate:        Date? = nil // Assigned day from the list, independent of its editable title.
+    var listedOnDate:        Date?                 = nil // Assigned day from the list, independent of its editable title.
     /// Layout preset used to select compact card dimensions.
     var presentation: BoardPresentation = .standard  /* Board layout controlling the card row's density     */
     let labelLibrary: LabelLibrary                   /* Shared label catalog used to resolve card label IDs */
@@ -134,9 +134,9 @@ struct KanbanCardView: View
     }
 
 
-    @State private var renameDraft = ""            /* Draft text for the rename operation                        */
-    @State private var isRenaming = false          /* Flag indicating if the rename operation is active          */
-    @State private var isEditingInfo = false       /* Flag indicating if the card info editing mode is active    */
+    @State private var renameDraft        = ""     /* Draft text for the rename operation                        */
+    @State private var isRenaming         = false  /* Flag indicating if the rename operation is active          */
+    @State private var isEditingInfo      = false  /* Flag indicating if the card info editing mode is active    */
     @State private var isConfirmingDelete = false  /* Flag indicating if the delete confirmation dialog is shown */
     /// Current Dynamic Type size used to adapt the compact card layout.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Text-size category used for adaptive card content */

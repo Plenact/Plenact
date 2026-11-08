@@ -64,10 +64,10 @@ struct PlanningTemplateLibraryRows: View
 {
 
 
-    var query = ""
-    var showsTemplateListings = true
+    var query                        = ""
+    var showsTemplateListings        = true
     var onOpenLibrary: (() -> Void)? = nil
-    var defaults: UserDefaults = .standard
+    var defaults: UserDefaults       = .standard
     @Environment(\.planningCalendarAccess) private var access
     @State private var library: PlanningRoutineLibrary?
     @State private var sourceDate = Date.now
@@ -1025,7 +1025,7 @@ struct PlanningTemplateApplyView: View
     let template: PlanningRoutineTemplate
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
-    @State private var date = Date.now
+    @State private var date                                                  = Date.now
     @State private var mode:                PlanningTemplateApplication.Mode = .add
     @State private var baseline:            DatedPlanningWeek?
     @State private var preview:             DatedPlanningWeek?
@@ -1390,8 +1390,8 @@ enum LibraryTemplateCapture
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var next = source
-        let nextID = (source.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
+        var next    = source
+        let nextID  = (source.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
         var created = source.collection.lists[index].makeItems(
             startingAt: nextID, titles: capture.title,
             description: capture.body, subtitle: capture.subtitle, presentation: capture.presentation,

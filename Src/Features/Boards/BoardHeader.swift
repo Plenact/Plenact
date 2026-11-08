@@ -224,30 +224,30 @@ struct BoardHeader: View
     /// Navigates to the last active list when more than one list exists.
     let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
 
-    var listViewMode:    Binding<SingleListViewMode>? = nil
-    var titleAppearance: ItemAppearance? = nil
-    var onAppearance:    (() -> Void)? = nil
-    var onListActions:   (() -> Void)? = nil
-    var onSearch:        (() -> Void)? = nil
-    var onToggleZoom:    (() -> Void)? = nil
-    var onToggleGallery: (() -> Void)? = nil
-    var isGallery = false
-    var isPanoramic: Bool = false
-    var zoomPercentage = 62
-    var onResetZoom:                (() -> Void)? = nil
+    var listViewMode:    Binding<SingleListViewMode>?                             = nil
+    var titleAppearance: ItemAppearance?                                          = nil
+    var onAppearance:    (() -> Void)?                                            = nil
+    var onListActions:   (() -> Void)?                                            = nil
+    var onSearch:        (() -> Void)?                                            = nil
+    var onToggleZoom:    (() -> Void)?                                            = nil
+    var onToggleGallery: (() -> Void)?                                            = nil
+    var isGallery                                                                 = false
+    var isPanoramic: Bool                                                         = false
+    var zoomPercentage                                                            = 62
+    var onResetZoom:                (() -> Void)?                                 = nil
     var onAdjustZoom:               ((AccessibilityAdjustmentDirection) -> Void)? = nil
-    var calendarAccessibilityTitle: String = "Open this month"
-    var onSubtitleTap:              (() -> Void)? = nil
+    var calendarAccessibilityTitle: String                                        = "Open this month"
+    var onSubtitleTap:              (() -> Void)?                                 = nil
     let onAddList:                  () -> Void /* Callback for adding a new list                      */
 
-    @State private var titleOverflows = false
+    @State private var titleOverflows    = false
     @State private var subtitleOverflows = false
     @State private var showsBoardOptions = false
     @State private var pendingBoardAction: BoardOptionsAction?
     @State private var showingSettings = false /* Controls the visibility of the board settings sheet */
     /// Controls confirmation before archiving the complete board.
     @State private var confirmsArchiveBoard = false  /* Whole-Board archive confirmation state */
-    @State private var confirmsDeleteBoard = false   /* Permanent Board deletion confirmation  */
+    @State private var confirmsDeleteBoard  = false  /* Permanent Board deletion confirmation  */
 
 
     ///
@@ -585,7 +585,7 @@ struct BoardSettingsView: View
     let onDeleteMember:   (String) -> Void          /* Remove a member from all assigned cards     */
     let onSetMemberColor: (String, Color) -> Void   /* Update a member's shared icon color         */
 
-    @State private var memberNameDraft = ""      /* Draft name for renaming a member             */
+    @State private var memberNameDraft  = ""     /* Draft name for renaming a member             */
     @State private var isRenamingMember = false  /* Flag indicating if member rename in progress */
 
     @State private var editingMember:       String?             /* Currently edited member name      */
@@ -1055,10 +1055,10 @@ struct BoardOptionsPopover: View
     let canArchive:    Bool
     let canDelete:     Bool
     let deleteTitle:   String
-    var hasGallery = false
-    var isGallery = false
-    var canResetZoom = false
-    var hasListActions = false
+    var hasGallery                                 = false
+    var isGallery                                  = false
+    var canResetZoom                               = false
+    var hasListActions                             = false
     var listViewMode: Binding<SingleListViewMode>? = nil
     let onAction:     (BoardOptionsAction) -> Void
 

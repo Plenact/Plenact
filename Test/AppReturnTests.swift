@@ -20,7 +20,7 @@ final class AppReturnTests: XCTestCase
     func testRootNavigationValueSize()
     {
 
-        let bodyBytes = MemoryLayout<AppRootView.Body>.size
+        let bodyBytes       = MemoryLayout<AppRootView.Body>.size
         let navigationBytes = MemoryLayout.size(ofValue: AppRootView().navigationContent)
         print("ROOT_BODY_BYTES", bodyBytes)
         print("ROOT_NAVIGATION_BYTES", navigationBytes)
@@ -34,7 +34,7 @@ final class AppReturnTests: XCTestCase
     func testDailyOverviewDeadlineAndCancellation()
     {
 
-        let now = ContinuousClock.now
+        let now      = ContinuousClock.now
         var overview = DailyWeekOverview()
         overview.arm()
         let first = overview.id!
@@ -59,7 +59,7 @@ final class AppReturnTests: XCTestCase
     func testDailyOverviewObservesOnlyItsOwnWindow()
     {
 
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
+        let window     = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
         let controller = DailyOverviewProbe.Controller()
         window.rootViewController = controller
         window.isHidden = false
@@ -96,7 +96,7 @@ final class AppReturnTests: XCTestCase
     func testDailyOverviewFadeRespectsReduceMotion()
     {
 
-        let fade = DailyOverviewFade()
+        let fade     = DailyOverviewFade()
         var selected = false
         fade.transition(in: nil, reduceMotion: true)
         {
@@ -116,7 +116,7 @@ final class AppReturnTests: XCTestCase
     func testFreshActivationAndShortReturnPreserveContext()
     {
 
-        let now = ContinuousClock.now
+        let now     = ContinuousClock.now
         var session = AppReturnSession()
         XCTAssertFalse(session.becameActive(at: now, protected: false))
         session.leftForBackground(at: now, protected: false)
@@ -131,7 +131,7 @@ final class AppReturnTests: XCTestCase
     func testTimeoutIsConsumedOnceAndDuplicateDepartureDoesNotExtendIt()
     {
 
-        let now = ContinuousClock.now
+        let now     = ContinuousClock.now
         var session = AppReturnSession()
         session.leftForBackground(at: now, protected: false)
         session.leftForBackground(at: now.advanced(by: .seconds(240)), protected: false)
@@ -174,8 +174,8 @@ final class AppReturnTests: XCTestCase
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
             calendar.firstWeekday = firstWeekday
-            let week = DatedPlanningWeek.make(for: date, calendar: calendar)
-            let first = try XCTUnwrap(week.dayListIDs[week.startKey])
+            let week    = DatedPlanningWeek.make(for: date, calendar: calendar)
+            let first   = try XCTUnwrap(week.dayListIDs[week.startKey])
             let undated = KanbanList(id: 900, title: "Undated", cards: [])
             let visible = [undated] + week.collection.lists.reversed()
             XCTAssertEqual(AppReturnSession.firstListID(in: week, lists: visible), first)
@@ -193,12 +193,12 @@ final class AppReturnTests: XCTestCase
     func testDailyOpeningIsOncePerLocalDayAcrossNewStoreInstances() throws
     {
 
-        let domain = "Plenact.DailyOpeningTests." + UUID().uuidString
+        let domain   = "Plenact.DailyOpeningTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
         defer { defaults.removePersistentDomain(forName: domain) }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
-        let date = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-11-07T18:00:00Z"))
+        let date   = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-11-07T18:00:00Z"))
         let source = Data([0, 255, 1])
         defaults.set(source, forKey: "syntheticUserData")
         XCTAssertTrue(AppDailyOpening.claim(at: date, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
@@ -217,14 +217,14 @@ final class AppReturnTests: XCTestCase
     func testDailyOpeningChangesAtLocalMidnightNotUTCMidnight() throws
     {
 
-        let domain = "Plenact.DailyBoundaryTests." + UUID().uuidString
+        let domain   = "Plenact.DailyBoundaryTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
         defer { defaults.removePersistentDomain(forName: domain) }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
         let formatter = ISO8601DateFormatter()
-        let before = try XCTUnwrap(formatter.date(from: "2026-11-08T05:59:59Z"))
-        let after = before.addingTimeInterval(1)
+        let before    = try XCTUnwrap(formatter.date(from: "2026-11-08T05:59:59Z"))
+        let after     = before.addingTimeInterval(1)
         XCTAssertTrue(AppDailyOpening.claim(at: before, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
         XCTAssertEqual(defaults.string(forKey: AppDailyOpening.key), "2026-11-07")
         XCTAssertTrue(AppDailyOpening.claim(at: after, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
@@ -240,7 +240,7 @@ final class AppReturnTests: XCTestCase
     func testProtectedOrUnavailableMorningIsDeferredWithoutClaimingTheDay() throws
     {
 
-        let domain = "Plenact.DeferredDailyTests." + UUID().uuidString
+        let domain   = "Plenact.DeferredDailyTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
         defer { defaults.removePersistentDomain(forName: domain) }
         let date = Date(timeIntervalSince1970: 1794074400)
@@ -262,14 +262,14 @@ final class AppReturnTests: XCTestCase
     func testRepeatedDSTHourDoesNotCreateAnotherDailyOpening() throws
     {
 
-        let domain = "Plenact.DailyDSTTests." + UUID().uuidString
+        let domain   = "Plenact.DailyDSTTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
         defer { defaults.removePersistentDomain(forName: domain) }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
         let formatter = ISO8601DateFormatter()
-        let first = try XCTUnwrap(formatter.date(from: "2026-11-01T06:30:00Z"))
-        let repeated = try XCTUnwrap(formatter.date(from: "2026-11-01T07:30:00Z"))
+        let first     = try XCTUnwrap(formatter.date(from: "2026-11-01T06:30:00Z"))
+        let repeated  = try XCTUnwrap(formatter.date(from: "2026-11-01T07:30:00Z"))
         XCTAssertTrue(AppDailyOpening.claim(at: first, calendar: calendar, protected: false, targetAvailable: true, defaults: defaults))
         XCTAssertFalse(AppDailyOpening.claim(at: repeated, calendar: calendar,
             protected: false, targetAvailable: true, defaults: defaults))
@@ -282,7 +282,7 @@ final class AppReturnTests: XCTestCase
     func testViewportResetPreservesOtherOwnersAndPresentation() throws
     {
 
-        let domain = "Plenact.ReturnViewportTests." + UUID().uuidString
+        let domain   = "Plenact.ReturnViewportTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
         defer { defaults.removePersistentDomain(forName: domain) }
         let bytes = Data([0, 1, 255])
@@ -316,9 +316,9 @@ final class AppReturnTests: XCTestCase
     func testResetRepositionsMountedNativeScrollViews() async throws
     {
 
-        let domain = "Plenact.ReturnScrollTests." + UUID().uuidString
+        let domain   = "Plenact.ReturnScrollTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         defer
         {
@@ -344,7 +344,7 @@ final class AppReturnTests: XCTestCase
                 .frame(width: 260, height: 230)
                 .environment(\.appReturnResetRequest, request)
             }
-            let host = UIHostingController(rootView: screen(0))
+            let host   = UIHostingController(rootView: screen(0))
             let window = UIWindow(windowScene: scene)
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             window.rootViewController = host
@@ -393,10 +393,10 @@ final class AppReturnTests: XCTestCase
     func testWeekReturnResetsTheActualBoardToFirstListTop() async throws
     {
 
-        let domain = "Plenact.ReturnBoardTests." + UUID().uuidString
+        let domain   = "Plenact.ReturnBoardTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
-        let owner = UUID()
-        let memory = BoardViewportMemory(owner: owner.uuidString, defaults: defaults)
+        let owner    = UUID()
+        let memory   = BoardViewportMemory(owner: owner.uuidString, defaults: defaults)
         memory.state.scale = 0.62
         memory.state.panoramic = true
         memory.state.presentation = "standard"
@@ -411,9 +411,9 @@ final class AppReturnTests: XCTestCase
                 KanbanCard(id: index * 100 + $0, word: "Synthetic Card " + String($0), listTitle: "Day " + String(index))
             })
         }
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
-        let window = UIWindow(windowScene: scene)
+        let window   = UIWindow(windowScene: scene)
         defer
         {
 
@@ -479,11 +479,11 @@ final class AppReturnTests: XCTestCase
     func testSceneWindowProbeRecognizesPresentedEditors() async throws
     {
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
+        let scene     = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous  = scene.windows.first(where: \.isKeyWindow)
         let reference = AppReturnWindow()
-        let host = UIHostingController(rootView: Color.clear.background(AppReturnWindowProbe(reference: reference)))
-        let window = UIWindow(windowScene: scene)
+        let host      = UIHostingController(rootView: Color.clear.background(AppReturnWindowProbe(reference: reference)))
+        let window    = UIWindow(windowScene: scene)
         window.rootViewController = host
         window.makeKeyAndVisible()
         defer

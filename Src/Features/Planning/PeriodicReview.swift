@@ -41,11 +41,11 @@ struct ReviewObjective: Codable, Equatable, Identifiable
 {
 
 
-    var id = UUID()
-    var title = ""
+    var id                      = UUID()
+    var title                   = ""
     var status: ObjectiveStatus = .active
-    var progress = ""
-    var nextStep = ""
+    var progress                = ""
+    var nextStep                = ""
 }
 
 
@@ -65,13 +65,13 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
     let startKey:   String
     let endKey:     String
     let timeZoneID: String
-    var step = 0
-    var highlights = ""
-    var learned = ""
-    var direction = ""
-    var risks = ""
-    var startingObjectives: [ReviewObjective] = []
-    var objectives:         [ReviewObjective] = []
+    var step                                    = 0
+    var highlights                              = ""
+    var learned                                 = ""
+    var direction                               = ""
+    var risks                                   = ""
+    var startingObjectives: [ReviewObjective]   = []
+    var objectives:         [ReviewObjective]   = []
     var priorities:         [DailyPlanPriority] = []
     var updatedAt:          Date?
     var completedAt:        Date?
@@ -165,7 +165,7 @@ enum PeriodicReviewStore
     struct Document: Codable, Equatable
     {
 
-        var version = 1;
+        var version                                 = 1;
         var records: [String: PeriodicReviewRecord] = [:]
     }
 
@@ -320,7 +320,7 @@ enum PeriodicReviewStore
         var saved = draft;
         saved.updatedAt = .now
         document.records[saved.id.uuidString] = saved
-        let data = try JSONEncoder().encode(document)
+        let data     = try JSONEncoder().encode(document)
         let previous = defaults.object(forKey: key)
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
@@ -361,7 +361,7 @@ struct PeriodicReviewView: View
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var document = PeriodicReviewStore.Document()
-    @State private var weekly = WeeklyReviewStore.Document()
+    @State private var weekly   = WeeklyReviewStore.Document()
     @State private var draft:    PeriodicReviewRecord?
     @State private var baseline: PeriodicReviewRecord?
     @State private var title = ""
@@ -369,10 +369,10 @@ struct PeriodicReviewView: View
     @State private var end:   Date
     @State private var objectiveTitle = ""
     @State private var error: String?
-    @State private var loaded = false
-    @State private var loadFailed = false
+    @State private var loaded          = false
+    @State private var loadFailed      = false
     @State private var confirmsDiscard = false
-    @State private var showsPicker = false
+    @State private var showsPicker     = false
 
 
     ///

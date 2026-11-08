@@ -14,7 +14,7 @@ struct StudioSettingsView: View
 {
 
 
-    @State private var draft = StudioSettings.load()
+    @State private var draft   = StudioSettings.load()
     @State private var palette = StudioSettings.load().palette.joined(separator: ", ")
     @State private var error: String?
     @State private var showsLibrary = false

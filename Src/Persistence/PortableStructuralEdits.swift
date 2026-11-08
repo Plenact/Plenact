@@ -51,7 +51,7 @@ enum PortableCreationIdentity
             aliases[UUID().uuidString.lowercased()] = number
         }
         object["numeric_ids"] = aliases
-        let bytes = try JSONSerialization.data(withJSONObject: object, options: .sortedKeys)
+        let bytes  = try JSONSerialization.data(withJSONObject: object, options: .sortedKeys)
         let target = root.appendingPathComponent(PortableRuntimeEvidence.area + "/IdentityAliases.json")
         guard try Data(contentsOf: target) == evidence["IdentityAliases.json"] else
         {
@@ -95,7 +95,7 @@ enum PortableStructuralEdits
     {
 
         var result: [String: PersonalCollection] = [:]
-        var owners: [PersonalCollection] = []
+        var owners: [PersonalCollection]         = []
         if let bytes = values["Plenact.CalendarWeeks.v1"] as? Data
         {
             owners += try JSONDecoder().decode(PlanningCalendarDocument.self, from: bytes).weeks.map(\.collection)
@@ -249,7 +249,7 @@ enum PortableStructuralEdits
         context.cardTargets = cardTargets
         context.known.formUnion(cardTargets.values)
         let content = planning["content"] as! [String: Any]
-        let owners = (content["collections"] as! [[String: Any]]).map { $0["id"] as! String }
+        let owners  = (content["collections"] as! [[String: Any]]).map { $0["id"] as! String }
         context.originalCollectionIDs = Dictionary(uniqueKeysWithValues: owners.map { ($0, $0) })
         context.collectionTargets = context.originalCollectionIDs
         context.ownerScopesByCollection = Dictionary(uniqueKeysWithValues: owners.map { ($0, [$0]) })
@@ -286,10 +286,10 @@ enum PortableStructuralEdits
         {
             return (assembly, current, aliases)
         }
-        var calendar = try JSONDecoder().decode(PlanningCalendarDocument.self, from: bytes)
+        var calendar    = try JSONDecoder().decode(PlanningCalendarDocument.self, from: bytes)
         let oldCalendar = try JSONDecoder().decode(PlanningCalendarDocument.self, from: oldBytes)
-        let oldOwners = Set(oldCalendar.weeks.map { $0.collection.id })
-        let incoming = calendar.weeks.filter { !oldOwners.contains($0.collection.id) }
+        let oldOwners   = Set(oldCalendar.weeks.map { $0.collection.id })
+        let incoming    = calendar.weeks.filter { !oldOwners.contains($0.collection.id) }
         guard !incoming.isEmpty else
         {
             return (assembly, current, aliases)
@@ -308,22 +308,22 @@ enum PortableStructuralEdits
             throw PortableEditedExport.Failure.unsupported
         }
         var assembly = assembly
-        var export = assembly["workspace_export"] as! [String: Any]
-        var base = export["base_workspace"] as! [String: Any]
+        var export   = assembly["workspace_export"] as! [String: Any]
+        var base     = export["base_workspace"] as! [String: Any]
         var planning = base["planning"] as! [String: Any]
-        var content = planning["content"] as! [String: Any]
+        var content  = planning["content"] as! [String: Any]
         guard let indexes = planning["calendar_indexes"] as? [[String: Any]], indexes.count == 1 else
         {
             throw PortableEditedExport.Failure.inconsistent
         }
-        let oldIndex = indexes[0]
-        var aliases = aliases
-        var comparison = current
+        let oldIndex                       = indexes[0]
+        var aliases                        = aliases
+        var comparison                     = current
         var cardMaps: [String: [Int: Int]] = [:]
         var listMaps: [String: [Int: Int]] = [:]
         for week in incoming
         {
-            let owner = week.collection.id.uuidString.lowercased()
+            let owner   = week.collection.id.uuidString.lowercased()
             let context = try self.context(workspace: baseline.workspaceID, zone: baseline.timeZoneID,
                 owner: owner, target: owner, card: nil, base: base, media: baseline.media,
                 cardTargets: [:], values: [:])
@@ -337,7 +337,7 @@ enum PortableStructuralEdits
                 mediaDigests: context.mediaDigests, existing: known, journal: context.journal)
             var journal = try JSONSerialization.jsonObject(with: first.journal.encoded()) as! [String: Any]
             var entries = journal["entries"] as! [[String: Any]]
-            let seeded = Set(context.journal.entries.map { $0.target.uuidString.lowercased() })
+            let seeded  = Set(context.journal.entries.map { $0.target.uuidString.lowercased() })
             for index in entries.indices
             {
                 if seeded.contains((entries[index]["target"] as! String).lowercased())
@@ -373,7 +373,7 @@ enum PortableStructuralEdits
                 }
             }
             journal["entries"] = entries
-            let stable = try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: journal))
+            let stable    = try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: journal))
             let converted = try MigrationContentConverter.convert(values: source, timeZoneID: baseline.timeZoneID,
                 mediaDigests: context.mediaDigests, existing: known, journal: stable)
             guard !converted.records.contains(where: { $0["record_type"] as? String == "unavailable_reference" }) else
@@ -388,7 +388,7 @@ enum PortableStructuralEdits
                 {
                     throw PortableEditedExport.Failure.inconsistent
                 }
-                let id = entry.target.uuidString.lowercased()
+                let id      = entry.target.uuidString.lowercased()
                 let maximum = aliases.values.max() ?? 0
                 guard maximum < Int.max - 1 else
                 {
@@ -448,9 +448,9 @@ enum PortableStructuralEdits
                 }
                 return value
             }
-            var raw = try JSONSerialization.jsonObject(with: JSONEncoder().encode(week)) as! [String: Any]
+            var raw        = try JSONSerialization.jsonObject(with: JSONEncoder().encode(week)) as! [String: Any]
             var collection = raw["collection"] as! [String: Any]
-            var lists = collection["lists"] as! [[String: Any]]
+            var lists      = collection["lists"] as! [[String: Any]]
             for index in lists.indices
             {
                 lists[index]["id"] = listMap[lists[index]["id"] as! Int]!
@@ -518,9 +518,9 @@ enum PortableStructuralEdits
             }
             comparison[TodayListPins.key] = try JSONSerialization.data(withJSONObject: pins, options: .sortedKeys)
         }
-        var index = oldIndex
+        var index   = oldIndex
         var payload = index["payload"] as! [String: Any]
-        let weeks = planning["weeks"] as! [[String: Any]]
+        let weeks   = planning["weeks"] as! [[String: Any]]
         payload["current_week_start_date"] = calendar.currentWeekKey
         payload["week_ids"] = try calendar.weeks.map { source -> String in
             guard let record = weeks.first(where: { ($0["payload"] as? [String: Any])?["collection_id"] as? String == source.collection.id.uuidString.lowercased() }) else
@@ -594,10 +594,10 @@ enum PortableStructuralEdits
 
             return assembly
         }
-        let library = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: bytes)
+        let library  = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: bytes)
         let previous = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: old)
         let retained = Set(previous.templates.map(\.id))
-        let live = Set(library.templates.map(\.id))
+        let live     = Set(library.templates.map(\.id))
         guard live.count == library.templates.count else
         {
 
@@ -609,14 +609,14 @@ enum PortableStructuralEdits
 
             return assembly
         }
-        var assembly = assembly
-        var export = assembly["workspace_export"] as! [String: Any]
-        var base = export["base_workspace"] as! [String: Any]
-        var planning = base["planning"] as! [String: Any]
-        var content = planning["content"] as! [String: Any]
+        var assembly   = assembly
+        var export     = assembly["workspace_export"] as! [String: Any]
+        var base       = export["base_workspace"] as! [String: Any]
+        var planning   = base["planning"] as! [String: Any]
+        var content    = planning["content"] as! [String: Any]
         let removedIDs = Set(removed.map { $0.uuidString.lowercased() })
-        let owners = Set(previous.templates.filter { removed.contains($0.id) }.map { $0.collection.id.uuidString.lowercased() })
-        var deleted = removedIDs.union(owners)
+        let owners     = Set(previous.templates.filter { removed.contains($0.id) }.map { $0.collection.id.uuidString.lowercased() })
+        var deleted    = removedIDs.union(owners)
         for record in content["lists"] as! [[String: Any]]
         {
 
@@ -673,7 +673,7 @@ enum PortableStructuralEdits
             throw PortableEditedExport.Failure.unsupported
         }
         // New captures can borrow source numbers. Only retained surviving owners are transfer evidence.
-        var surviving = current
+        var surviving       = current
         var retainedLibrary = library
         retainedLibrary.templates.removeAll { !retained.contains($0.id) }
         surviving[key] = try JSONEncoder().encode(retainedLibrary)
@@ -772,7 +772,7 @@ enum PortableStructuralEdits
 
             return (assembly, current, aliases)
         }
-        let library = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: bytes)
+        let library  = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: bytes)
         let previous = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: oldBytes)
         let retained = Set(previous.templates.map(\.id))
         guard Set(library.templates.map(\.id)).count == library.templates.count,
@@ -787,31 +787,31 @@ enum PortableStructuralEdits
 
             return (assembly, current, aliases)
         }
-        var assembly = assembly
-        var export = assembly["workspace_export"] as! [String: Any]
-        var base = export["base_workspace"] as! [String: Any]
-        var planning = base["planning"] as! [String: Any]
-        var content = planning["content"] as! [String: Any]
+        var assembly  = assembly
+        var export    = assembly["workspace_export"] as! [String: Any]
+        var base      = export["base_workspace"] as! [String: Any]
+        var planning  = base["planning"] as! [String: Any]
+        var content   = planning["content"] as! [String: Any]
         var libraries = planning["template_libraries"] as! [[String: Any]]
         guard libraries.count == 1 else
         {
 
             throw PortableEditedExport.Failure.unsupported
         }
-        var rawLibrary = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+        var rawLibrary   = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
         var rawTemplates = rawLibrary["templates"] as! [[String: Any]]
-        var aliases = aliases
-        var comparison = current
+        var aliases      = aliases
+        var comparison   = current
         for template in incoming
         {
 
-            let id = template.id.uuidString.lowercased()
+            let id          = template.id.uuidString.lowercased()
             let sourceOwner = template.collection.id.uuidString.lowercased()
-            let scope = "template:" + id + ":" + sourceOwner
-            let owner = try PortableRichCardExport.identity(namespace: baseline.workspaceID, name: "template_owner:" + id)
-            let context = try self.context(workspace: baseline.workspaceID, zone: template.timeZoneID,
+            let scope       = "template:" + id + ":" + sourceOwner
+            let owner       = try PortableRichCardExport.identity(namespace: baseline.workspaceID, name: "template_owner:" + id)
+            let context     = try self.context(workspace: baseline.workspaceID, zone: template.timeZoneID,
                 owner: owner, target: owner, card: nil, base: base, media: baseline.media, cardTargets: [:], values: current)
-            let index = rawTemplates.firstIndex { ($0["id"] as? String)?.lowercased() == id }!
+            let index                 = rawTemplates.firstIndex { ($0["id"] as? String)?.lowercased() == id }!
             let source: [String: Any] = [key: try JSONSerialization.data(withJSONObject:
                 ["version": 1, "templates": [rawTemplates[index]]])]
             let known = (base["labels"] as! [[String: Any]]) + (planning["assets"] as! [[String: Any]])
@@ -819,7 +819,7 @@ enum PortableStructuralEdits
                 mediaDigests: context.mediaDigests, existing: known, journal: context.journal)
             var journal = try JSONSerialization.jsonObject(with: first.journal.encoded()) as! [String: Any]
             var entries = journal["entries"] as! [[String: Any]]
-            let seeded = Set(context.journal.entries.map { $0.target.uuidString.lowercased() })
+            let seeded  = Set(context.journal.entries.map { $0.target.uuidString.lowercased() })
             for index in entries.indices
             {
 
@@ -864,7 +864,7 @@ enum PortableStructuralEdits
                 }
             }
             journal["entries"] = entries
-            let stable = try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: journal))
+            let stable    = try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: journal))
             let converted = try MigrationContentConverter.convert(values: source, timeZoneID: template.timeZoneID,
                 mediaDigests: context.mediaDigests, existing: known, journal: stable)
             guard !converted.records.contains(where: { $0["record_type"] as? String == "unavailable_reference" }) else
@@ -872,8 +872,8 @@ enum PortableStructuralEdits
 
                 throw PortableEditedExport.Failure.unsupported
             }
-            var lists: [Int: Int] = [:]
-            var cards: [Int: Int] = [:]
+            var lists: [Int: Int]          = [:]
+            var cards: [Int: Int]          = [:]
             var cardTargets: [Int: String] = [:]
             for entry in stable.entries where ["list", "card"].contains(entry.source.recordType)
             {
@@ -975,9 +975,9 @@ enum PortableStructuralEdits
                 }
                 return value
             }
-            var raw = rawTemplates[index]
+            var raw        = rawTemplates[index]
             var collection = raw["collection"] as! [String: Any]
-            var rawLists = collection["lists"] as! [[String: Any]]
+            var rawLists   = collection["lists"] as! [[String: Any]]
             for index in rawLists.indices
             {
 
@@ -1088,8 +1088,8 @@ enum PortableStructuralEdits
         if let bytes = current["Plenact.LocalProfile.v1"] as? Data
         {
             let profile = try JSONDecoder().decode(LocalProfile.self, from: bytes)
-            let raw = try MigrationContentValues.object(profile)
-            let source = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+            let raw     = try MigrationContentValues.object(profile)
+            let source  = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
             guard Set(source.keys).isSubset(of: ["id", "createdAt", "displayName", "email", "context",
                 "avatarColor", "avatarIcon", "avatarForegroundColor", "avatarPhotoFileName", "preferences"]) else
             {
@@ -1132,7 +1132,7 @@ enum PortableStructuralEdits
             for (native, canonical) in profileFields
             {
                 let before = previousRaw[native] ?? NSNull()
-                let after = raw[native] ?? NSNull()
+                let after  = raw[native] ?? NSNull()
                 if !profiles.isEmpty && NSDictionary(dictionary: ["value": before]).isEqual(to: ["value": after])
                 {
                     continue
@@ -1151,7 +1151,7 @@ enum PortableStructuralEdits
             profiles = [document]
             base["profiles"] = profiles
         }
-        let keys = ["Plenact.Studio.Settings.v1", "Plenact.Studio.Artwork.v1", "Plenact.WeekAppearance.v1"]
+        let keys    = ["Plenact.Studio.Settings.v1", "Plenact.Studio.Artwork.v1", "Plenact.WeekAppearance.v1"]
         let changed = Set(try keys.filter { key in
             guard let value = current[key] as? Data else
             {
@@ -1172,11 +1172,11 @@ enum PortableStructuralEdits
             }
             return
         }
-        var journal = try JSONSerialization.jsonObject(with: context.journal.encoded()) as! [String: Any]
-        var entries = journal["entries"] as! [[String: Any]]
-        let studioID = (base["studio_settings"] as? [String: Any])?["id"] as? String
+        var journal      = try JSONSerialization.jsonObject(with: context.journal.encoded()) as! [String: Any]
+        var entries      = journal["entries"] as! [[String: Any]]
+        let studioID     = (base["studio_settings"] as? [String: Any])?["id"] as? String
         let appearanceID = (export["workspace_appearance"] as? [String: Any])?["id"] as? String
-        let libraryID = (export["artwork_library"] as? [String: Any])?["id"] as? String
+        let libraryID    = (export["artwork_library"] as? [String: Any])?["id"] as? String
         for (kind, owner, legacy, retained) in [
             ("studio_settings", "workspace_metadata", keys[0], studioID),
             ("workspace_appearance", "workspace_metadata", keys[2], appearanceID),
@@ -1195,10 +1195,10 @@ enum PortableStructuralEdits
         }
         journal["formatVersion"] = 3
         journal["entries"] = entries
-        var seeded = try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: journal))
+        var seeded  = try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: journal))
         let records = (base["artwork"] as! [[String: Any]]) + ((base["planning"] as! [String: Any])["assets"] as! [[String: Any]])
-        let values = current.filter { keys.contains($0.key) }
-        let result = try MigrationStudioPreview.prepare(values: values, records: records,
+        let values  = current.filter { keys.contains($0.key) }
+        let result  = try MigrationStudioPreview.prepare(values: values, records: records,
             mediaDigests: context.mediaDigests, journal: &seeded, assetTargets: context.assetTargets)
         guard result.issueCount == 0,
               !result.records.contains(where: { $0["record_type"] as? String == "unavailable_reference" }),
@@ -1236,31 +1236,31 @@ enum PortableStructuralEdits
         baseline: PortableWorkspaceCandidate) throws -> [String: Any]
     {
 
-        var assembly = assembly
-        var export = assembly["workspace_export"] as! [String: Any]
-        var base = export["base_workspace"] as! [String: Any]
-        var planning = base["planning"] as! [String: Any]
-        var content = planning["content"] as! [String: Any]
-        var collections = content["collections"] as! [[String: Any]]
-        var lists = content["lists"] as! [[String: Any]]
-        var cards = content["cards"] as! [[String: Any]]
-        let native = try self.collections(current)
+        var assembly       = assembly
+        var export         = assembly["workspace_export"] as! [String: Any]
+        var base           = export["base_workspace"] as! [String: Any]
+        var planning       = base["planning"] as! [String: Any]
+        var content        = planning["content"] as! [String: Any]
+        var collections    = content["collections"] as! [[String: Any]]
+        var lists          = content["lists"] as! [[String: Any]]
+        var cards          = content["cards"] as! [[String: Any]]
+        let native         = try self.collections(current)
         let previousNative = try self.collections(baseline.values)
         guard Set(native.keys) == Set(collections.compactMap { $0["id"] as? String }) else
         {
             throw PortableEditedExport.Failure.structureChanged
         }
-        let reverse = Dictionary(uniqueKeysWithValues: aliases.map { ($0.value, $0.key) })
-        let existingLists = Dictionary(uniqueKeysWithValues: lists.map { ($0["id"] as! String, $0) })
-        let existingCards = Dictionary(uniqueKeysWithValues: cards.map { ($0["id"] as! String, $0) })
-        var seenLists = Set<String>()
-        var seenCards = Set<String>()
+        let reverse                   = Dictionary(uniqueKeysWithValues: aliases.map { ($0.value, $0.key) })
+        let existingLists             = Dictionary(uniqueKeysWithValues: lists.map { ($0["id"] as! String, $0) })
+        let existingCards             = Dictionary(uniqueKeysWithValues: cards.map { ($0["id"] as! String, $0) })
+        var seenLists                 = Set<String>()
+        var seenCards                 = Set<String>()
         var targets: [String: String] = [:]
         for record in cards
         {
-            let id = record["id"] as! String
-            let body = record["payload"] as! [String: Any]
-            let list = existingLists[body["list_id"] as! String]!
+            let id    = record["id"] as! String
+            let body  = record["payload"] as! [String: Any]
+            let list  = existingLists[body["list_id"] as! String]!
             let owner = (list["payload"] as! [String: Any])["collection_id"] as! String
             if let number = aliases[id]
             {
@@ -1296,15 +1296,15 @@ enum PortableStructuralEdits
         }
         for collectionIndex in collections.indices
         {
-            let owner = collections[collectionIndex]["id"] as! String
-            let snapshot = native[owner]!
+            let owner        = collections[collectionIndex]["id"] as! String
+            let snapshot     = native[owner]!
             var ownerPayload = collections[collectionIndex]["payload"] as! [String: Any]
             guard let previousOwner = previousNative[owner], previousOwner.kind == snapshot.kind else
             {
                 throw PortableEditedExport.Failure.structureChanged
             }
-            let beforeOwner = try MigrationContentValues.object(previousOwner)
-            let afterOwner = try MigrationContentValues.object(snapshot)
+            let beforeOwner  = try MigrationContentValues.object(previousOwner)
+            let afterOwner   = try MigrationContentValues.object(snapshot)
             let ownerContext = try self.context(workspace: baseline.workspaceID, zone: baseline.timeZoneID,
                 owner: owner, target: owner, card: nil, base: base, media: baseline.media,
                 cardTargets: targets, values: current)
@@ -1349,7 +1349,7 @@ enum PortableStructuralEdits
                 }
                 else
                 {
-                    let raw = try MigrationContentValues.object(list)
+                    let raw     = try MigrationContentValues.object(list)
                     let context = MigrationContentValues(journal: MigrationIdentityJournal(), timeZoneID: baseline.timeZoneID, mediaDigests: [:])
                     payload = ["collection_id": owner, "title": list.title,
                         "subtitle_override": raw["subtitleOverride"] ?? NSNull(), "archived": list.isArchived,
@@ -1367,7 +1367,7 @@ enum PortableStructuralEdits
                         throw PortableEditedExport.Failure.inconsistent
                     }
                     let before = try MigrationContentValues.object(original)
-                    let after = try MigrationContentValues.object(list)
+                    let after  = try MigrationContentValues.object(list)
                     let fields = ["title": "title", "subtitleOverride": "subtitle_override",
                         "isArchived": "archived", "defaultItemPresentation": "default_item_presentation",
                         "appearance": "appearance"]
@@ -1422,7 +1422,7 @@ enum PortableStructuralEdits
                         let target = reverse[card.id]!
                         if let index = cards.firstIndex(where: { $0["id"] as? String == target })
                         {
-                            var body = cards[index]["payload"] as! [String: Any]
+                            var body         = cards[index]["payload"] as! [String: Any]
                             let previousList = body["list_id"] as! String
                             guard (existingLists[previousList]?["payload"] as? [String: Any])?["collection_id"] as? String == owner else
                             {
@@ -1432,8 +1432,8 @@ enum PortableStructuralEdits
                             {
                                 throw PortableEditedExport.Failure.inconsistent
                             }
-                            let before = try PortableEditedExport.nativeJSON(JSONEncoder().encode(original)) as! [String: Any]
-                            let after = try PortableEditedExport.nativeJSON(JSONEncoder().encode(card)) as! [String: Any]
+                            let before  = try PortableEditedExport.nativeJSON(JSONEncoder().encode(original)) as! [String: Any]
+                            let after   = try PortableEditedExport.nativeJSON(JSONEncoder().encode(card)) as! [String: Any]
                             var changed = Set(before.keys).union(after.keys).filter {
                                 !NSDictionary(dictionary: ["value": before[$0] ?? NSNull()]).isEqual(to: ["value": after[$0] ?? NSNull()])
                             }
@@ -1477,7 +1477,7 @@ enum PortableStructuralEdits
                         {
                             guard let created = card.createdAt,
                                   !existingCards.values.contains(where: { record in
-                                      let value = (record["payload"] as? [String: Any])?["source_created_at_utc"] as? String
+                                      let value     = (record["payload"] as? [String: Any])?["source_created_at_utc"] as? String
                                       let formatter = ISO8601DateFormatter()
                                       formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
                                       return value.flatMap(formatter.date(from:)).map { abs($0.timeIntervalSince(created)) < 0.001 } == true
@@ -1504,7 +1504,7 @@ enum PortableStructuralEdits
                 }
             }
         }
-        var selections = base["content_selections"] as! [[String: Any]]
+        var selections            = base["content_selections"] as! [[String: Any]]
         var levels: [String: Int] = [:]
         if let bytes = current["Plenact.LibraryImportant.v1"] as? Data
         {
@@ -1523,17 +1523,17 @@ enum PortableStructuralEdits
         {
 
             let collection = native[owner]!
-            let actual = Set(collection.lists.flatMap(\.allCards).map(\.id))
+            let actual     = Set(collection.lists.flatMap(\.allCards).map(\.id))
             guard collection.savedCardIDs.isSubset(of: actual) else
             {
                 throw PortableEditedExport.Failure.inconsistent
             }
             for number in actual.sorted()
             {
-                let target = reverse[number]!
+                let target     = reverse[number]!
                 let bookmarked = collection.savedCardIDs.contains(number)
                 let importance = levels[owner + ":" + String(number)] ?? 0
-                let index = selections.firstIndex { ($0["payload"] as? [String: Any])?["card_id"] as? String == target }
+                let index      = selections.firstIndex { ($0["payload"] as? [String: Any])?["card_id"] as? String == target }
                 if index != nil || bookmarked || importance > 0
                 {
                     let id = try index.map { selections[$0]["id"] as! String } ?? PortableRichCardExport.identity(
@@ -1559,7 +1559,7 @@ enum PortableStructuralEdits
             .isEqual(to: MigrationContentValues.object(JSONDecoder().decode(LocalProfilePreferences.self, from: oldBytes)))
         {
             let preferences = try JSONDecoder().decode(LocalProfilePreferences.self, from: bytes)
-            let raw = try MigrationContentValues.object(preferences)
+            let raw         = try MigrationContentValues.object(preferences)
             guard var record = base["user_preferences"] as? [String: Any],
                   var payload = record["payload"] as? [String: Any],
                   var fields = payload["preferences"] as? [String: Any] else
@@ -1595,12 +1595,12 @@ enum PortableStructuralEdits
 
             let calendar = try JSONDecoder().decode(PlanningCalendarDocument.self, from: currentBytes)
             let previous = try JSONDecoder().decode(PlanningCalendarDocument.self, from: previousBytes)
-            var weeks = planning["weeks"] as! [[String: Any]]
+            var weeks    = planning["weeks"] as! [[String: Any]]
             for index in weeks.indices
             {
 
                 var payload = weeks[index]["payload"] as! [String: Any]
-                let owner = payload["collection_id"] as! String
+                let owner   = payload["collection_id"] as! String
                 guard let old = previous.weeks.first(where: { $0.collection.id.uuidString.lowercased() == owner }),
                       let edited = calendar.weeks.first(where: { $0.collection.id.uuidString.lowercased() == owner }) else
                 {

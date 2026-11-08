@@ -75,13 +75,13 @@ enum MigrationStudioPreview
                 context.known.insert(target)
             }
         }
-        var studio: Any = NSNull()
-        var week: Any = NSNull()
+        var studio: Any                   = NSNull()
+        var week: Any                     = NSNull()
         var assetRecords: [[String: Any]] = []
-        var output: [[String: Any]] = []
-        var artworkIDs: [String] = []
-        let issues: [String] = []
-        var prepared = 0
+        var output: [[String: Any]]       = []
+        var artworkIDs: [String]          = []
+        let issues: [String]              = []
+        var prepared                      = 0
         if let value = values["Plenact.Studio.Settings.v1"]
         {
             guard let data = value as? Data,
@@ -171,12 +171,12 @@ enum MigrationStudioPreview
                 _ = try surface(item, context: context)
             }
             let appearance = try context.appearance(MigrationContentValues.object(saved), kind: "board_appearance")
-            let id = try context.id("workspace_display_preferences", owner: "legacy_global_week_appearance", legacy: "Plenact.WeekAppearance.v1")
+            let id         = try context.id("workspace_display_preferences", owner: "legacy_global_week_appearance", legacy: "Plenact.WeekAppearance.v1")
             week = ["id": id, "appearance": appearance]
             assetRecords.append(["record_type": "week_appearance_preview", "id": id, "payload": appearance])
             prepared += 1
         }
-        let global = (week as? [String: Any])?["appearance"] as? [String: Any]
+        let global             = (week as? [String: Any])?["appearance"] as? [String: Any]
         let appearanceDocument = try MigrationAppearanceModel.prepare(globalWeek: global, artworkIDs: artworkIDs,
             artworkPresent: values["Plenact.Studio.Artwork.v1"] != nil, context: context)
         let appearanceRecords = [appearanceDocument["workspace_appearance"], appearanceDocument["artwork_library"]]

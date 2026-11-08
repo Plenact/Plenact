@@ -32,14 +32,14 @@ struct TodaySearchView: View
     let onDeleteList:    (Int) -> Bool       /* Confirmed canonical list deletion result */
 
     var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? = nil
-    var onSelectResult: ((TodaySearchResult) -> Void)? = nil
+    var onSelectResult: ((TodaySearchResult) -> Void)?                                     = nil
 
     @Environment(\.dismiss) private var dismiss                   /* Close the search sheet             */
     @FocusState private var searchFieldFocused: Bool              /* Search field focus state           */
-    @State private var query = ""                                 /* User-entered search text           */
-    @State private var scope: TodaySearchScope = .all             /* Selected local-search scope        */
-    @State private var recentSearches = RecentSearchStore.load()  /* Device-local recent terms          */
-    @State private var labelLibrary = LabelLibraryStore.load()    /* Definitions used for label matches */
+    @State private var query                   = ""                       /* User-entered search text           */
+    @State private var scope: TodaySearchScope = .all                     /* Selected local-search scope        */
+    @State private var recentSearches          = RecentSearchStore.load() /* Device-local recent terms          */
+    @State private var labelLibrary            = LabelLibraryStore.load() /* Definitions used for label matches */
 
 
     ///

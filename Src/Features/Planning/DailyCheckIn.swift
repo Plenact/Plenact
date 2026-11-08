@@ -37,7 +37,7 @@ enum TodayVisionSelection
     ) -> [PlanningSearchResult]
     {
 
-        let key = PlanningDate.key(date, calendar: calendar)
+        let key       = PlanningDate.key(date, calendar: calendar)
         let datedList = access.document.week(for: date, calendar: calendar).flatMap
         {
             week in
@@ -109,13 +109,13 @@ struct TodayVisionView: View
     let onSave:        () -> Bool
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
-    @State private var step = 0
+    @State private var step        = 0
     @State private var showsPicker = false
-    @State private var showsNew = false
+    @State private var showsNew    = false
     @State private var transfer: PlanningSearchResult?
-    @State private var transferError = false
+    @State private var transferError  = false
     @State private var planSaveFailed = false
-    @State private var saving = false
+    @State private var saving         = false
     private var calendar: Calendar
     {
 
@@ -220,7 +220,7 @@ struct TodayVisionView: View
         }
         ;
         saving = true
-        let previousStep = plan.visionStep
+        let previousStep       = plan.visionStep
         let previousCompletion = plan.visionCompletedAt
         plan.visionStep = step == 2 ? nil : step + 1
         if step == 2
@@ -617,8 +617,8 @@ struct DailyCheckIn: Codable, Equatable
 
 
     var focus: DailyPlanPriority? = nil
-    var changed = ""
-    var savedAt: Date? = nil
+    var changed                   = ""
+    var savedAt: Date?            = nil
 }
 
 
@@ -656,8 +656,8 @@ struct CheckInMood: Codable, Equatable
     static func custom(emoji: String, label: String) -> CheckInMood?
     {
 
-        let emoji = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
-        let label = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let emoji   = emoji.trimmingCharacters(in: .whitespacesAndNewlines)
+        let label   = label.trimmingCharacters(in: .whitespacesAndNewlines)
         let scalars = emoji.unicodeScalars
         let isEmoji =
         scalars.contains
@@ -822,8 +822,8 @@ extension DailyPlan
     )
     {
 
-        var entries = checkInHistory
-        let focus = DailyCheckInProgress.focus(plan: self, sources: sources)
+        var entries  = checkInHistory
+        let focus    = DailyCheckInProgress.focus(plan: self, sources: sources)
         let progress = DailyCheckInProgress.counts(plan: self, sources: sources)
         entries.append(
             .init(
@@ -1334,8 +1334,8 @@ struct TodayCheckInView: View
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
     @State private var showsPicker = false
-    @State private var showsNew = false
-    @State private var saveFailed = false
+    @State private var showsNew    = false
+    @State private var saveFailed  = false
     private var sources: [PlanningSearchResult]
     {
         access?.searchableItems ?? []
@@ -1346,10 +1346,10 @@ struct TodayCheckInView: View
         plan.checkIn ?? DailyCheckIn()
     }
 
-    @State private var changed = ""
+    @State private var changed                       = ""
     @State private var moodChoice: CheckInMoodChoice = .none
-    @State private var customEmoji = ""
-    @State private var customFeeling = ""
+    @State private var customEmoji                   = ""
+    @State private var customFeeling                 = ""
     private var selectedMood: CheckInMood?
     {
 

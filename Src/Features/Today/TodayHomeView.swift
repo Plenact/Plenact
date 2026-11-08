@@ -26,7 +26,7 @@ struct TodayHomeView: View
 
     @ScaledMetric(relativeTo: .subheadline) private var browseIconSize: CGFloat = 30
     @ScaledMetric(relativeTo: .subheadline) private var browseTextSize: CGFloat = 18.75
-    @AppStorage(PlanPreferencesStore.key) private var planPreferencesData = Data()
+    @AppStorage(PlanPreferencesStore.key) private var planPreferencesData       = Data()
     @EnvironmentObject private var welcomeCue: TodayWelcomeCue
     @Environment(\.accessibilityReduceMotion) private var reduceWelcomeMotion
     @Environment(\.planningCalendarAccess) private var planningCalendarAccess
@@ -82,42 +82,42 @@ struct TodayHomeView: View
 
     @State private var selectedTodayListID: Int?                  /* Board list selected for today's plan  */
     @State private var listPickerMode:      TodayListPickerMode?  /* Active list picker presentation mode  */
-    @State private var showsAccountSettings = false               /* Account & Settings sheet presentation */
+    @State private var showsAccountSettings                                   = false /* Account & Settings sheet presentation */
     @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = Data()
     @Environment(\.workspaceBottomBarHeight) private var focusToolbarHeight
     @State private var removedFocusBookmark: Int?
     @State private var bookmarkNoticeRevision = UUID()
-    @State private var focusDate = Date.now
+    @State private var focusDate              = Date.now
     @State private var focusFiltersChangedAt:  Date?
     @State private var perspectiveSectionTop:  CGFloat = 0
     @State private var shortcutsSectionBottom: CGFloat = 0
     @State private var openedFocusCard:        KanbanCard?
-    @State private var showsTodayList = false /* Focused single-list presentation         */
-    @State private var showsTodayPlan = false
-    @State private var perspectivePlanDate: Date = .now
-    @State private var showsPerspectivePlan = false
+    @State private var showsTodayList               = false /* Focused single-list presentation         */
+    @State private var showsTodayPlan               = false
+    @State private var perspectivePlanDate: Date    = .now
+    @State private var showsPerspectivePlan         = false
     @ObservedObject private var reviewNotifications = ReviewRhythmNotifications.shared
     @State private var reviewRoute: ReviewRhythmRoute?
-    @State private var showsReviewRhythmSettings = false
+    @State private var showsReviewRhythmSettings           = false
     @AppStorage(TodayListPins.key) private var listPinData = Data()
     @State private var openedShortcut: WorkspaceListReference?
 
     @State private var focusedListID: Int?             /* Current-day list selected when opening Focus */
-    @State private var quickCaptureTitle = ""          /* Draft title for inline card capture          */
-    @State private var quickComposerInitialTitle = ""  /* Quick-capture title handed to full editor    */
-    @State private var showsQuickNoteEditor = false    /* Full-size quick card editor presentation     */
-    @State private var showsTemplates = false
+    @State private var quickCaptureTitle         = ""    /* Draft title for inline card capture          */
+    @State private var quickComposerInitialTitle = ""    /* Quick-capture title handed to full editor    */
+    @State private var showsQuickNoteEditor      = false /* Full-size quick card editor presentation     */
+    @State private var showsTemplates            = false
     @State private var pendingTemplate:             QuickCaptureTemplate?
     @State private var composerInitialPresentation: ItemPresentation?
     @State private var composerTemplate:            QuickCaptureTemplate?
     @State private var captureAction:               TodayCaptureAction?
-    @State private var showsPlanSettings = false
+    @State private var showsPlanSettings                 = false
     @State private var opensTemplateLibraryAfterSettings = false
     @Environment(\.openTemplateLibrary) private var openTemplateLibrary
-    @State private var showsSearch = false                      /* Local Board search presentation          */
-    @State private var presentComposerAfterListChoice = false   /* Deferred center-plus request             */
-    @State private var labelLibrary = LabelLibraryStore.load()  /* Local categorized label definitions      */
-    @State private var isContentScrolled = false                /* If content is passing beneath the header */
+    @State private var showsSearch                    = false                    /* Local Board search presentation          */
+    @State private var presentComposerAfterListChoice = false                    /* Deferred center-plus request             */
+    @State private var labelLibrary                   = LabelLibraryStore.load() /* Local categorized label definitions      */
+    @State private var isContentScrolled              = false                    /* If content is passing beneath the header */
 
 
     ///
@@ -475,7 +475,7 @@ struct TodayHomeView: View
         let owners = WorkspaceBrowseIndex.owners(
             document: planningCalendarAccess?.document, library: planningCalendarAccess?.library ?? [])
         let available = WorkspaceBrowseIndex.lists(in: owners)
-        let pinned = TodayListPins.decode(listPinData).compactMap
+        let pinned    = TodayListPins.decode(listPinData).compactMap
         {
             reference in
             available.first
@@ -711,7 +711,7 @@ struct TodayHomeView: View
             return
         }
 
-        let result = TodayListSelection.ensureCurrentDayList(lists: lists + archivedLists)
+        let result      = TodayListSelection.ensureCurrentDayList(lists: lists + archivedLists)
         let activeLists = result.lists.filter
         {
             !$0.isArchived
@@ -808,8 +808,8 @@ struct TodayHomeView: View
 
 
                     // Read live workspace inputs directly; the clock only advances time-based selection.
-                    let focusLists = lists
-                    let focusBookmarks = savedCardIDs
+                    let focusLists        = lists
+                    let focusBookmarks    = savedCardIDs
                     let importantFocusIDs =
                     planningCalendarAccess?.document.weeks.first(where:
                         {
@@ -933,8 +933,8 @@ struct TodayHomeView: View
                     TimelineView(.everyMinute)
                     {
                         context in
-                        let calendar = planningCalendarAccess?.document.calendar ?? .current
-                        let tomorrow = calendar.date(byAdding: .day, value: 1, to: context.date) ?? context.date
+                        let calendar     = planningCalendarAccess?.document.calendar ?? .current
+                        let tomorrow     = calendar.date(byAdding: .day, value: 1, to: context.date) ?? context.date
                         let tomorrowList = planningCalendarAccess?.document.weeks.compactMap
                         {
                             $0.list(on: tomorrow)

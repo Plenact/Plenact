@@ -92,7 +92,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     func demonstratingFocus() -> Self
     {
 
-        var copy = self
+        var copy  = self
         var focus = PlanningExampleFocus()
         for list in collection.lists
         {
@@ -294,8 +294,8 @@ struct PlanningRoutineLibrary: Codable, Equatable
     var templates:     [PlanningRoutineTemplate]
     var defaultWeekID: UUID?
     /// Optional for older v1 libraries; records the one-time addition/default selection of Jmr.
-    var bundledRoutineRevision: Int? = nil
-    static let jmrID = UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840003")!
+    var bundledRoutineRevision: Int?        = nil
+    static let jmrID                        = UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840003")!
     static let jmr: PlanningRoutineTemplate =
     {
 
@@ -303,7 +303,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 2
         let anchor = PlanningDate.date("2026-10-12", calendar: calendar)!
-        var week = DatedPlanningWeek.make(for: anchor, calendar: calendar)
+        var week   = DatedPlanningWeek.make(for: anchor, calendar: calendar)
         typealias Slot = (title: String, startHour: Int, startMinute: Int, stopHour: Int, stopMinute: Int)
         let weekdays: [Slot] = [
             ("Wake", 4, 0, 4, 30),
@@ -328,9 +328,9 @@ struct PlanningRoutineLibrary: Codable, Equatable
         {
 
             let weekday = calendar.component(.weekday, from: day)
-            let slots = weekday == 7 ? saturday : (weekday == 1 ? sunday : weekdays)
-            let listID = week.dayListIDs[PlanningDate.key(day, calendar: calendar)]!
-            let index = week.collection.lists.firstIndex
+            let slots   = weekday == 7 ? saturday : (weekday == 1 ? sunday : weekdays)
+            let listID  = week.dayListIDs[PlanningDate.key(day, calendar: calendar)]!
+            let index   = week.collection.lists.firstIndex
             {
                 $0.id == listID
             }!
@@ -376,7 +376,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 2
-        let day = PlanningDate.date("2026-10-12", calendar: calendar)!
+        let day                                                          = PlanningDate.date("2026-10-12", calendar: calendar)!
         let examples: [(String, UUID, [(String, ItemAccent, [String])])] = [
             (
                                 "A day in chapters", UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840011")!,
@@ -406,9 +406,9 @@ struct PlanningRoutineLibrary: Codable, Equatable
         return examples.map
         {
             name, id, sections in
-            var week = DatedPlanningWeek.make(for: day, calendar: calendar)
+            var week   = DatedPlanningWeek.make(for: day, calendar: calendar)
             let listID = week.dayListIDs[PlanningDate.key(day, calendar: calendar)]!
-            let index = week.collection.lists.firstIndex
+            let index  = week.collection.lists.firstIndex
             {
                 $0.id == listID
             }!
@@ -445,9 +445,9 @@ struct PlanningRoutineLibrary: Codable, Equatable
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         calendar.firstWeekday = 2
-        let anchor = PlanningDate.date("2026-10-12", calendar: calendar)!
+        let anchor  = PlanningDate.date("2026-10-12", calendar: calendar)!
         let example = DatedPlanningWeek.make(for: anchor, lists: SampleData.lists, calendar: calendar)
-        var work = try! PlanningRoutineTemplate.capture(name: "Work Week", week: example, calendar: calendar)
+        var work    = try! PlanningRoutineTemplate.capture(name: "Work Week", week: example, calendar: calendar)
         work.id = UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840001")!
         var vacation = try! PlanningRoutineTemplate.capture(
             name: "Vacation Day", week: example, day: anchor, calendar: calendar)
@@ -714,7 +714,7 @@ enum PlanningRoutineStore
         }
 
         try validate(value)
-        let data = try JSONEncoder().encode(value)
+        let data     = try JSONEncoder().encode(value)
         let previous = defaults.data(forKey: key)
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
@@ -811,7 +811,7 @@ enum PlanningRoutineStore
     {
 
         let library = try load(from: defaults)
-        let blank = DatedPlanningWeek.make(for: date, calendar: calendar)
+        let blank   = DatedPlanningWeek.make(for: date, calendar: calendar)
         guard let template = library.templates.first(where:
             {
                 $0.id == library.defaultWeekID
@@ -905,12 +905,12 @@ enum PlanningTemplateApplication
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var result = original
-        let targetDays = PlanningDate.days(in: original.startKey, calendar: calendar)
-        let anchor = PlanningDate.date(template.anchorKey, calendar: template.calendar)!
-        let sourceStart = template.calendar.startOfDay(for: anchor)
-        var nextCard = (original.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
-        let cards = template.collection.lists.flatMap(\.cards)
+        var result              = original
+        let targetDays          = PlanningDate.days(in: original.startKey, calendar: calendar)
+        let anchor              = PlanningDate.date(template.anchorKey, calendar: template.calendar)!
+        let sourceStart         = template.calendar.startOfDay(for: anchor)
+        var nextCard            = (original.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
+        let cards               = template.collection.lists.flatMap(\.cards)
         var mapping: [Int: Int] = [:]
         for card in cards
         {
@@ -956,7 +956,7 @@ enum PlanningTemplateApplication
             else
             {
 
-                let weekday = template.calendar.component(.weekday, from: value)
+                let weekday     = template.calendar.component(.weekday, from: value)
                 let sameWeekday = targetDays.first
                 {
                     calendar.component(.weekday, from: $0) == weekday

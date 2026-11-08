@@ -434,9 +434,9 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
         board.boardAppearance = BoardAppearance(
             bannerBackground: .teal, listBackground: .neutral, cardBackground: .neutral,
             cardDetail: self == .life ? .compact : .detailed)
-        let accents: [ItemAccent] = [.green, .blue, .orange, .purple, .rose, .teal]
+        let accents: [ItemAccent]   = [.green, .blue, .orange, .purple, .rose, .teal]
         let tints: [KanbanListTint] = [.green, .blue, .orange, .neutral, .red]
-        var nextID = 0
+        var nextID                  = 0
         board.lists = topics.enumerated().map
         {
             listIndex, topic in
@@ -734,7 +734,7 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
     func makeCollection(existingTitles: [String]) -> PersonalCollection
     {
 
-        let title = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
+        let title      = PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
         var collection = PersonalCollection(title: title, kind: .list, icon: .notes, color: .teal)
         collection.collectionDescription = summary
         collection.lists[0].cards = items.enumerated().map

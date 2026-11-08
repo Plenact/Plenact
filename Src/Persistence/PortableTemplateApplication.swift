@@ -40,8 +40,8 @@ enum PortableTemplateApplication
         }
         let originalLists = Set(original.collection.lists.map(\.id))
         let originalCards = Set(original.collection.lists.flatMap(\.allCards).map(\.id))
-        let lists = preview.collection.lists.map(\.id)
-        let cards = preview.collection.lists.flatMap(\.allCards).map(\.id)
+        let lists         = preview.collection.lists.map(\.id)
+        let cards         = preview.collection.lists.flatMap(\.allCards).map(\.id)
         guard Set(lists).count == lists.count, Set(cards).count == cards.count,
               importantIDs.isSubset(of: Set(cards)) else
         {
@@ -50,7 +50,7 @@ enum PortableTemplateApplication
         }
         let newLists = lists.filter { !originalLists.contains($0) }
         let newCards = cards.filter { !originalCards.contains($0) }
-        let count = newLists.count + newCards.count
+        let count    = newLists.count + newCards.count
         guard count > 0 else
         {
 
@@ -62,7 +62,7 @@ enum PortableTemplateApplication
 
             throw PortableEditedExport.Failure.unsupported
         }
-        let start = try PortableCreationIdentity.reserve(proposed: maximum + 1, count: count, root: root)
+        let start   = try PortableCreationIdentity.reserve(proposed: maximum + 1, count: count, root: root)
         let listMap = Dictionary(uniqueKeysWithValues: newLists.enumerated().map { ($0.element, start + $0.offset) })
         let cardMap = Dictionary(uniqueKeysWithValues: newCards.enumerated().map { ($0.element, start + newLists.count + $0.offset) })
         /// @fcn PortableTemplateApplication.reserve.references
@@ -98,9 +98,9 @@ enum PortableTemplateApplication
             }
             return value
         }
-        var raw = try JSONSerialization.jsonObject(with: JSONEncoder().encode(preview)) as! [String: Any]
+        var raw        = try JSONSerialization.jsonObject(with: JSONEncoder().encode(preview)) as! [String: Any]
         var collection = raw["collection"] as! [String: Any]
-        var rawLists = collection["lists"] as! [[String: Any]]
+        var rawLists   = collection["lists"] as! [[String: Any]]
         for index in rawLists.indices
         {
 
@@ -203,7 +203,7 @@ enum PortableTemplateApplication
             try JSONDecoder().decode([LibraryImportanceItem].self, from: $0)
         } ?? []
         let retainedIDs = Set(retained.filter { $0.collectionID == week.id }.map(\.cardID))
-        let kept = zip(items, raw).filter
+        let kept        = zip(items, raw).filter
         {
 
             $0.0.collectionID != week.id || actual.contains($0.0.cardID) || retainedIDs.contains($0.0.cardID)

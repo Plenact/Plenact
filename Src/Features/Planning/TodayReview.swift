@@ -83,11 +83,11 @@ struct DailyEveningReview: Codable, Equatable
 
     var step = 0
     var completedAt: Date?
-    var helped = ""
-    var difficult = ""
-    var tomorrow = ""
+    var helped                              = ""
+    var difficult                           = ""
+    var tomorrow                            = ""
     var decisions:    [DailyReviewDecision] = []
-    var achievements: [DailyPlanPriority] = []
+    var achievements: [DailyPlanPriority]   = []
 }
 
 
@@ -123,7 +123,7 @@ enum TodayReviewSelection
     ) -> [PlanningSearchResult]
     {
 
-        let day = access.document.week(for: date, calendar: calendar)
+        let day    = access.document.week(for: date, calendar: calendar)
         let listID = day?.dayListIDs[PlanningDate.key(date, calendar: calendar)]
         let tables = Set(
             access.library.filter
@@ -318,7 +318,7 @@ struct TodayReviewView: View
     {
 
         let previous = plan.eveningReview
-        var updated = review
+        var updated  = review
         updated.step = min(2, step + 1)
         if step == 2
         {
@@ -781,13 +781,13 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
     let startKey:     String
     let timeZoneID:   String
     let firstWeekday: Int
-    var step = 0
-    var highlights = ""
-    var learned = ""
-    var direction = ""
-    var constraints = ""
-    var risks = ""
-    var priorities:  [DailyPlanPriority] = []
+    var step                               = 0
+    var highlights                         = ""
+    var learned                            = ""
+    var direction                          = ""
+    var constraints                        = ""
+    var risks                              = ""
+    var priorities:  [DailyPlanPriority]   = []
     var decisions:   [DailyReviewDecision] = []
     var updatedAt:   Date?
     var completedAt: Date?
@@ -882,7 +882,7 @@ enum WeeklyReviewStore
     struct Document: Codable
     {
 
-        var version = 1;
+        var version                               = 1;
         var records: [String: WeeklyReviewRecord] = [:]
     }
 
@@ -966,7 +966,7 @@ enum WeeklyReviewStore
         saved.updatedAt = .now
         document.records[saved.id] = saved
         let data = try JSONEncoder().encode(document)
-        let old = defaults.object(forKey: key)
+        let old  = defaults.object(forKey: key)
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
         {
@@ -1007,12 +1007,12 @@ struct WeeklyReviewView: View
     @State private var selectedDate: Date
     @State private var draft:        WeeklyReviewRecord
     @State private var baseline:     WeeklyReviewRecord?
-    @State private var daily = DailyPlanStore.Document()
+    @State private var daily                         = DailyPlanStore.Document()
     @State private var records: [WeeklyReviewRecord] = []
-    @State private var loaded = false
-    @State private var loadFailed = false
+    @State private var loaded                        = false
+    @State private var loadFailed                    = false
     @State private var error: String?
-    @State private var showsPicker = false
+    @State private var showsPicker     = false
     @State private var confirmsDiscard = false
     @State private var pending:    PlanningSearchResult?
     @State private var action:     DailyReviewAction?

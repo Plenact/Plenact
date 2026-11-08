@@ -25,14 +25,14 @@ extension MigrationStudioTests
 
         try retainedTemplateFixture { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package = try MigrationTestPackage.prepare(preview)
+            let preview       = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package       = try MigrationTestPackage.prepare(preview)
             let originalFiles = try XCTUnwrap(package.fileWrappers?["PortableTestPackage"])
-            let candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: originalFiles))
-            let root = url.deletingLastPathComponent().appendingPathComponent("TemplateItemContainer")
-            let stage = url.deletingLastPathComponent().appendingPathComponent("TemplateItemStage")
-            let domain = "Plenact.TemplateItemTests." + UUID().uuidString
-            let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+            let candidate     = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: originalFiles))
+            let root          = url.deletingLastPathComponent().appendingPathComponent("TemplateItemContainer")
+            let stage         = url.deletingLastPathComponent().appendingPathComponent("TemplateItemStage")
+            let domain        = "Plenact.TemplateItemTests." + UUID().uuidString
+            let defaults      = try XCTUnwrap(UserDefaults(suiteName: domain))
             defer
             {
 
@@ -40,18 +40,18 @@ extension MigrationStudioTests
             }
             try candidate.stage(at: stage)
             try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
-            let previous = try PlanningRoutineStore.load(from: defaults)
-            let key = PlanningRoutineStore.key
+            let previous       = try PlanningRoutineStore.load(from: defaults)
+            let key            = PlanningRoutineStore.key
             let originalSource = defaults.data(forKey: key)
-            let originalList = previous.templates[0].collection.lists[0]
-            let allLists = previous.templates[0].collection.lists
-            let instant = Date(timeIntervalSince1970: 1793102400.123)
-            var cancelled = originalList
+            let originalList   = previous.templates[0].collection.lists[0]
+            let allLists       = previous.templates[0].collection.lists
+            let instant        = Date(timeIntervalSince1970: 1793102400.123)
+            var cancelled      = originalList
             try PlanningTemplateItemCreation.append(.card, to: &cancelled, allLists: allLists, root: root, createdAt: instant)
             let cancelledID = try XCTUnwrap(cancelled.cards.last?.id)
             XCTAssertEqual(defaults.data(forKey: key), originalSource)
             var library = previous
-            var list = originalList
+            var list    = originalList
             try PlanningTemplateItemCreation.append(.card, to: &list, allLists: allLists, root: root, createdAt: instant)
             list.cards[list.cards.count - 1].word = "New retained template Card"
             let cardID = try XCTUnwrap(list.cards.last?.id)
@@ -64,31 +64,31 @@ extension MigrationStudioTests
             XCTAssertTrue(Set(candidate.numericIDs.values).isDisjoint(with: [cancelledID, cardID, noteID]))
             library.templates[0].collection.lists[0] = list
             try PlanningRoutineStore.save(library, baseline: previous, to: defaults)
-            let source = try XCTUnwrap(defaults.persistentDomain(forName: domain))
-            let runtime = try PortableRuntimeEvidence.capture(root: root)
-            let aliasObject = try JSONSerialization.jsonObject(with: XCTUnwrap(runtime["IdentityAliases.json"])) as! [String: Any]
-            let aliases = aliasObject["numeric_ids"] as! [String: Int]
-            let cardTarget = try XCTUnwrap(aliases.first { $0.value == cardID }?.key)
-            let noteTarget = try XCTUnwrap(aliases.first { $0.value == noteID }?.key)
+            let source          = try XCTUnwrap(defaults.persistentDomain(forName: domain))
+            let runtime         = try PortableRuntimeEvidence.capture(root: root)
+            let aliasObject     = try JSONSerialization.jsonObject(with: XCTUnwrap(runtime["IdentityAliases.json"])) as! [String: Any]
+            let aliases         = aliasObject["numeric_ids"] as! [String: Int]
+            let cardTarget      = try XCTUnwrap(aliases.first { $0.value == cardID }?.key)
+            let noteTarget      = try XCTUnwrap(aliases.first { $0.value == noteID }?.key)
             let cancelledTarget = try XCTUnwrap(aliases.first { $0.value == cancelledID }?.key)
-            let listTarget = try XCTUnwrap(aliases.first { $0.value == list.id }?.key)
-            let frozen = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let output = try PortableEditedExport.prepare(frozen)
-            let bytes = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+            let listTarget      = try XCTUnwrap(aliases.first { $0.value == list.id }?.key)
+            let frozen          = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+            let output          = try PortableEditedExport.prepare(frozen)
+            let bytes           = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen)))
             XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
             XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
             XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
                 try MigrationBackupReader.file("EditedNativeBackup/Preferences.plist", in: output))
-            var expected = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: originalFiles)) as! [String: Any]
-            let actual = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
-            var export = expected["workspace_export"] as! [String: Any]
-            var base = export["base_workspace"] as! [String: Any]
-            var planning = base["planning"] as! [String: Any]
-            var content = planning["content"] as! [String: Any]
-            let actualBase = (actual["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            var expected      = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: originalFiles)) as! [String: Any]
+            let actual        = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+            var export        = expected["workspace_export"] as! [String: Any]
+            var base          = export["base_workspace"] as! [String: Any]
+            var planning      = base["planning"] as! [String: Any]
+            var content       = planning["content"] as! [String: Any]
+            let actualBase    = (actual["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
             let actualContent = (actualBase["planning"] as! [String: Any])["content"] as! [String: Any]
-            let additions = (actualContent["cards"] as! [[String: Any]]).filter { [cardTarget, noteTarget].contains($0["id"] as! String) }
+            let additions     = (actualContent["cards"] as! [[String: Any]]).filter { [cardTarget, noteTarget].contains($0["id"] as! String) }
             XCTAssertEqual(additions.count, 2)
             XCTAssertFalse((actualContent["cards"] as! [[String: Any]]).contains { $0["id"] as? String == cancelledTarget })
             for record in additions
@@ -101,8 +101,8 @@ extension MigrationStudioTests
                 XCTAssertNotNil(body["source_created_at_utc"] as? String)
             }
             content["cards"] = (content["cards"] as! [[String: Any]]) + additions
-            var lists = content["lists"] as! [[String: Any]]
-            let index = try XCTUnwrap(lists.firstIndex { $0["id"] as? String == listTarget })
+            var lists   = content["lists"] as! [[String: Any]]
+            let index   = try XCTUnwrap(lists.firstIndex { $0["id"] as? String == listTarget })
             var payload = lists[index]["payload"] as! [String: Any]
             payload["card_ids"] = (payload["card_ids"] as! [String]) + [cardTarget, noteTarget]
             lists[index]["payload"] = payload
@@ -115,7 +115,7 @@ extension MigrationStudioTests
             XCTAssertTrue(NSDictionary(dictionary: expected).isEqual(to: actual))
             let rebuilt = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(output.fileWrappers?["PortableTestPackage"])), retainedAliases: aliases)
-            let restored = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: XCTUnwrap(rebuilt.values[key] as? Data))
+            let restored      = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: XCTUnwrap(rebuilt.values[key] as? Data))
             let restoredItems = restored.templates[0].collection.lists[0].cards
             XCTAssertEqual(restoredItems.suffix(2).map(\.word), ["New retained template Card", "New retained template Note"])
             XCTAssertEqual(restoredItems.suffix(2).map(\.presentation), [.card, .note])
@@ -127,7 +127,7 @@ extension MigrationStudioTests
             try fresh.install(from: freshStage, root: root, defaults: defaults, domain: domain)
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in:
                 PortableEditedExport.prepare(LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root))))
-            let aliasURL = root.appendingPathComponent(PortableRuntimeEvidence.area + "/IdentityAliases.json")
+            let aliasURL     = root.appendingPathComponent(PortableRuntimeEvidence.area + "/IdentityAliases.json")
             let validAliases = try Data(contentsOf: aliasURL)
             try Data("{}".utf8).write(to: aliasURL)
             var failedDraft = originalList
@@ -144,7 +144,7 @@ extension MigrationStudioTests
                 attachment.lifetime = .keepAlways
                 add(attachment)
             }
-            let wrappers = try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
+            let wrappers  = try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
             let originals = try Dictionary(uniqueKeysWithValues: wrappers.map { name, file in
 
                 ("Originals/" + name, try XCTUnwrap(file.regularFileContents).base64EncodedString())
@@ -166,15 +166,15 @@ extension MigrationStudioTests
 
         try retainedTemplateFixture { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package = try MigrationTestPackage.prepare(preview)
-            let originalFiles = try XCTUnwrap(package.fileWrappers?["PortableTestPackage"])
-            let initial = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: originalFiles))
+            let preview        = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package        = try MigrationTestPackage.prepare(preview)
+            let originalFiles  = try XCTUnwrap(package.fileWrappers?["PortableTestPackage"])
+            let initial        = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: originalFiles))
             let initialLibrary = try JSONDecoder().decode(PlanningRoutineLibrary.self,
                 from: XCTUnwrap(initial.values[PlanningRoutineStore.key] as? Data))
             let targetNumber = initialLibrary.templates[0].collection.lists[0].cards[0].id
-            let target = try XCTUnwrap(initial.numericIDs.first { $0.value == targetNumber }?.key)
-            let assembly = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: originalFiles)) as! [String: Any]
+            let target       = try XCTUnwrap(initial.numericIDs.first { $0.value == targetNumber }?.key)
+            let assembly     = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: originalFiles)) as! [String: Any]
             for focused in [false, true]
             {
 
@@ -182,12 +182,12 @@ extension MigrationStudioTests
                 if focused
                 {
 
-                    var export = baselineAssembly["workspace_export"] as! [String: Any]
-                    var base = export["base_workspace"] as! [String: Any]
-                    var planning = base["planning"] as! [String: Any]
+                    var export    = baselineAssembly["workspace_export"] as! [String: Any]
+                    var base      = export["base_workspace"] as! [String: Any]
+                    var planning  = base["planning"] as! [String: Any]
                     var templates = planning["templates"] as! [[String: Any]]
-                    let index = try XCTUnwrap(templates.firstIndex { $0["id"] as? String == initialLibrary.templates[0].id.uuidString.lowercased() })
-                    var payload = templates[index]["payload"] as! [String: Any]
+                    let index     = try XCTUnwrap(templates.firstIndex { $0["id"] as? String == initialLibrary.templates[0].id.uuidString.lowercased() })
+                    var payload   = templates[index]["payload"] as! [String: Any]
                     payload["example_focus"] = ["important": [String](), "bookmarked": [target], "all_day": [String]()]
                     templates[index]["payload"] = payload
                     planning["templates"] = templates
@@ -196,12 +196,12 @@ extension MigrationStudioTests
                     baselineAssembly["workspace_export"] = export
                 }
                 let baselineFiles = try PortableLocalDeletions.package(snapshot: originalFiles, assembly: baselineAssembly)
-                let candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: baselineFiles),
+                let candidate     = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: baselineFiles),
                     retainedAliases: initial.numericIDs)
-                let suffix = focused ? "Focused" : "Plain"
-                let root = url.deletingLastPathComponent().appendingPathComponent("TemplateItemDeletion" + suffix)
-                let stage = url.deletingLastPathComponent().appendingPathComponent("TemplateItemDeletionStage" + suffix)
-                let domain = "Plenact.TemplateItemDeletionTests." + UUID().uuidString
+                let suffix   = focused ? "Focused" : "Plain"
+                let root     = url.deletingLastPathComponent().appendingPathComponent("TemplateItemDeletion" + suffix)
+                let stage    = url.deletingLastPathComponent().appendingPathComponent("TemplateItemDeletionStage" + suffix)
+                let domain   = "Plenact.TemplateItemDeletionTests." + UUID().uuidString
                 let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
                 defer
                 {
@@ -211,13 +211,13 @@ extension MigrationStudioTests
                 try candidate.stage(at: stage)
                 try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
                 let previous = try PlanningRoutineStore.load(from: defaults)
-                var library = previous
+                var library  = previous
                 XCTAssertEqual(library.templates[0].collection.lists[0].cards.count, 1)
                 library.templates[0].collection.lists[0].cards.removeAll()
                 try PlanningRoutineStore.save(library, baseline: previous, to: defaults)
-                let source = try XCTUnwrap(defaults.persistentDomain(forName: domain))
+                let source  = try XCTUnwrap(defaults.persistentDomain(forName: domain))
                 let runtime = try PortableRuntimeEvidence.capture(root: root)
-                let frozen = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+                let frozen  = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
                 if focused
                 {
 
@@ -227,14 +227,14 @@ extension MigrationStudioTests
                     continue
                 }
                 let output = try PortableEditedExport.prepare(frozen)
-                let bytes = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+                let bytes  = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
                 XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen)))
                 XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
                 XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
                 XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
                     try MigrationBackupReader.file("EditedNativeBackup/Preferences.plist", in: output))
                 var expected = baselineAssembly
-                var export = expected["workspace_export"] as! [String: Any]
+                var export   = expected["workspace_export"] as! [String: Any]
                 export["local_card_deletions"] = [target]
                 expected["workspace_export"] = export
                 let actual = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
@@ -262,7 +262,7 @@ extension MigrationStudioTests
                     attachment.lifetime = .keepAlways
                     add(attachment)
                 }
-                let wrappers = try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
+                let wrappers  = try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
                 let originals = try Dictionary(uniqueKeysWithValues: wrappers.map { name, file in
 
                     ("Originals/" + name, try XCTUnwrap(file.regularFileContents).base64EncodedString())
@@ -307,13 +307,13 @@ extension MigrationStudioTests
 
         try retainedTemplateFixture { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package = try MigrationTestPackage.prepare(preview)
+            let preview   = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package   = try MigrationTestPackage.prepare(preview)
             let candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files:
                 XCTUnwrap(package.fileWrappers?["PortableTestPackage"])))
-            let root = url.deletingLastPathComponent().appendingPathComponent("RolloverReplacementContainer")
-            let stage = url.deletingLastPathComponent().appendingPathComponent("RolloverReplacementStage")
-            let domain = "Plenact.RolloverReplacementTests." + UUID().uuidString
+            let root     = url.deletingLastPathComponent().appendingPathComponent("RolloverReplacementContainer")
+            let stage    = url.deletingLastPathComponent().appendingPathComponent("RolloverReplacementStage")
+            let domain   = "Plenact.RolloverReplacementTests." + UUID().uuidString
             let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
             defer
             {
@@ -322,14 +322,14 @@ extension MigrationStudioTests
             }
             try candidate.stage(at: stage)
             try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
-            var document = try XCTUnwrap(PlanningCalendarStore.load(from: defaults))
-            let retained = document.weeks[0]
-            let date = Date(timeIntervalSince1970: 1793620800)
-            let generated = try PlanningRoutineStore.newWeek(for: date, calendar: document.calendar, defaults: defaults)
-            let removedID = try XCTUnwrap(generated.collection.lists.flatMap(\.cards).first?.id)
-            var template = try PlanningRoutineStore.load(from: defaults).templates[0]
+            var document   = try XCTUnwrap(PlanningCalendarStore.load(from: defaults))
+            let retained   = document.weeks[0]
+            let date       = Date(timeIntervalSince1970: 1793620800)
+            let generated  = try PlanningRoutineStore.newWeek(for: date, calendar: document.calendar, defaults: defaults)
+            let removedID  = try XCTUnwrap(generated.collection.lists.flatMap(\.cards).first?.id)
+            var template   = try PlanningRoutineStore.load(from: defaults).templates[0]
             let templateID = template.collection.lists[0].cards[0].id
-            let targetID = (template.collection.lists.flatMap(\.allCards).map(\.id).max() ?? 0) + 1
+            let targetID   = (template.collection.lists.flatMap(\.allCards).map(\.id).max() ?? 0) + 1
             template.collection.lists[0].cards.append(KanbanCard(id: targetID,
                 word: "Rollover linked target", listTitle: "Monday", presentation: .note))
             let linked = KanbanChecklistItem(title: "Follow copied target", content: .linkedCard(cardID: targetID))
@@ -346,7 +346,7 @@ extension MigrationStudioTests
             try PlanningCalendarStore.save(document, to: defaults)
             defaults.set(try JSONEncoder().encode(week.collection.lists), forKey: "Plenact.Board.v1")
             defaults.set(week.collection.savedCardIDs.sorted(), forKey: "Plenact.SavedCardIDs.v1")
-            let oldID = retained.collection.lists[0].cards[0].id
+            let oldID      = retained.collection.lists[0].cards[0].id
             var importance = try JSONEncoder().encode([
                 LibraryImportanceItem(collectionID: retained.id, cardID: oldID, level: 4),
                 LibraryImportanceItem(collectionID: week.id, cardID: removedID, level: 3)])
@@ -358,7 +358,7 @@ extension MigrationStudioTests
             defaults.set(importance, forKey: LibraryImportanceSelection.key)
             XCTAssertThrowsError(try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                 defaults: defaults, domain: domain, root: root)))
-            let runtime = try PortableRuntimeEvidence.capture(root: root)
+            let runtime   = try PortableRuntimeEvidence.capture(root: root)
             var malformed = try XCTUnwrap(JSONSerialization.jsonObject(with: importance) as? [[String: Any]])
             malformed[0]["unknownSelectionField"] = true
             XCTAssertThrowsError(try PortableTemplateApplication.importanceForSavedWeek(week,
@@ -367,17 +367,17 @@ extension MigrationStudioTests
             malformed.append(malformed[0])
             XCTAssertThrowsError(try PortableTemplateApplication.importanceForSavedWeek(week,
                 data: JSONSerialization.data(withJSONObject: malformed), root: root))
-            let cleaned = try PortableTemplateApplication.importanceForSavedWeek(week, data: importance, root: root)
+            let cleaned    = try PortableTemplateApplication.importanceForSavedWeek(week, data: importance, root: root)
             let selections = try JSONDecoder().decode([LibraryImportanceItem].self, from: cleaned)
             XCTAssertEqual(selections.count, 2)
             XCTAssertTrue(selections.contains { $0.collectionID == retained.id && $0.cardID == oldID && $0.level == 4 })
             XCTAssertFalse(selections.contains { $0.collectionID == week.id && $0.cardID == removedID })
             XCTAssertEqual(cleaned, try PortableTemplateApplication.importanceForSavedWeek(week, data: cleaned, root: root))
             defaults.set(cleaned, forKey: LibraryImportanceSelection.key)
-            let source = try XCTUnwrap(defaults.persistentDomain(forName: domain))
-            let frozen = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let output = try PortableEditedExport.prepare(frozen)
-            let bytes = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+            let source   = try XCTUnwrap(defaults.persistentDomain(forName: domain))
+            let frozen   = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+            let output   = try PortableEditedExport.prepare(frozen)
+            let bytes    = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
             let repeated = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen))
             for (name, data) in [("RolloverLinksFirst", bytes), ("RolloverLinksRepeated", repeated)]
             {
@@ -412,8 +412,8 @@ extension MigrationStudioTests
                 from: XCTUnwrap(fresh.values[PlanningCalendarStore.key] as? Data))
             XCTAssertEqual(restored.weeks.count, 2)
             XCTAssertEqual(restored.weeks.first { $0.startKey == week.startKey }?.collection.lists.flatMap(\.cards).count, 2)
-            let restoredWeek = try XCTUnwrap(restored.weeks.first { $0.startKey == week.startKey })
-            let restoredCards = restoredWeek.collection.lists.flatMap(\.cards)
+            let restoredWeek   = try XCTUnwrap(restored.weeks.first { $0.startKey == week.startKey })
+            let restoredCards  = restoredWeek.collection.lists.flatMap(\.cards)
             let restoredSource = try XCTUnwrap(restoredCards.first { $0.word == "Retained template task" })
             let restoredTarget = try XCTUnwrap(restoredCards.first { $0.word == "Rollover linked target" })
             XCTAssertEqual(restoredSource.checklists.last?.items.first?.content, .linkedCard(cardID: restoredTarget.id))
@@ -467,7 +467,7 @@ extension MigrationStudioTests
             }
             var document = try JSONDecoder().decode(PlanningCalendarDocument.self,
                 from: XCTUnwrap(values[PlanningCalendarStore.key] as? Data))
-            var week = document.weeks[0]
+            var week     = document.weeks[0]
             let activeID = week.collection.lists[0].cards[0].id
             week.collection.lists[0].archivedCards = [KanbanCard(id: 2, word: "Retained archived task", listTitle: "Monday", checklists: [])]
             let listID = (week.collection.lists.map(\.id).max() ?? 0) + 1
@@ -488,14 +488,14 @@ extension MigrationStudioTests
             values["Plenact.SavedCardIDs.v1"] = week.collection.savedCardIDs.sorted()
         }) { backup, url in
 
-            let preview = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let package = try MigrationTestPackage.prepare(preview)
+            let preview       = try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
+            let package       = try MigrationTestPackage.prepare(preview)
             var originalFiles = try XCTUnwrap(package.fileWrappers?["PortableTestPackage"])
-            var candidate = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: originalFiles))
-            let root = url.deletingLastPathComponent().appendingPathComponent("TemplateApplicationContainer")
-            let stage = url.deletingLastPathComponent().appendingPathComponent("TemplateApplicationStage")
-            let domain = "Plenact.TemplateApplicationTests." + UUID().uuidString
-            let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+            var candidate     = try PortableWorkspaceCandidate.prepare(PortablePackageReview.review(files: originalFiles))
+            let root          = url.deletingLastPathComponent().appendingPathComponent("TemplateApplicationContainer")
+            let stage         = url.deletingLastPathComponent().appendingPathComponent("TemplateApplicationStage")
+            let domain        = "Plenact.TemplateApplicationTests." + UUID().uuidString
+            let defaults      = try XCTUnwrap(UserDefaults(suiteName: domain))
             defer
             {
 
@@ -508,9 +508,9 @@ extension MigrationStudioTests
 
                 // Establish importance after owner-qualified import, without ambiguous legacy capture owners.
                 let imported = try XCTUnwrap(PlanningCalendarStore.load(from: defaults))
-                let week = imported.weeks[0]
-                let active = week.collection.lists[0].cards[0].id
-                let undated = try XCTUnwrap(week.collection.lists.first { $0.title == "Retained undated work" }?.cards.first?.id)
+                let week     = imported.weeks[0]
+                let active   = week.collection.lists[0].cards[0].id
+                let undated  = try XCTUnwrap(week.collection.lists.first { $0.title == "Retained undated work" }?.cards.first?.id)
                 defaults.set(try JSONEncoder().encode([
                     LibraryImportanceItem(collectionID: week.id, cardID: active, level: 2),
                     LibraryImportanceItem(collectionID: week.id, cardID: week.collection.lists[1].cards[0].id, level: 3),
@@ -523,32 +523,32 @@ extension MigrationStudioTests
                 try candidate.stage(at: seededStage)
                 try candidate.install(from: seededStage, root: root, defaults: defaults, domain: domain)
             }
-            let library = try PlanningRoutineStore.load(from: defaults)
+            let library  = try PlanningRoutineStore.load(from: defaults)
             var template = try XCTUnwrap(library.templates.first { day ? $0.kind == .day : $0.kind == .week })
             let sourceID = template.collection.lists[0].cards[0].id
-            let linkID = (template.collection.lists.flatMap(\.allCards).map(\.id).max() ?? 0) + 1
+            let linkID   = (template.collection.lists.flatMap(\.allCards).map(\.id).max() ?? 0) + 1
             template.collection.lists[0].cards.append(KanbanCard(id: linkID, word: "Applied link target", listTitle: "Monday", presentation: .note))
             var linkedItem = KanbanChecklistItem(title: "Local target", content: .linkedCard(cardID: linkID))
             linkedItem.linkedCollectionID = template.collection.id
             template.collection.lists[0].cards[0].checklists.append(KanbanChecklist(title: "Copied link", items: [linkedItem]))
             template.exampleFocus = PlanningExampleFocus(important: [sourceID, linkID], bookmarked: [sourceID], allDay: [])
-            var document = try XCTUnwrap(PlanningCalendarStore.load(from: defaults))
-            let instant = Date(timeIntervalSince1970: 1793016000 + (day ? 86400 : 0))
-            let original = try XCTUnwrap(document.week(for: instant))
-            var current = original
+            var document          = try XCTUnwrap(PlanningCalendarStore.load(from: defaults))
+            let instant           = Date(timeIntervalSince1970: 1793016000 + (day ? 86400 : 0))
+            let original          = try XCTUnwrap(document.week(for: instant))
+            var current           = original
             var expectedImportant = Set<Int>()
             for iteration in 0..<(mode == .add ? 2 : 1)
             {
 
                 let beforePreview = try PortableRuntimeEvidence.capture(root: root)
-                let applied = try PlanningTemplateApplication.apply(template, to: current, date: instant,
+                let applied       = try PlanningTemplateApplication.apply(template, to: current, date: instant,
                     calendar: document.calendar, mode: mode,
                     now: Date(timeIntervalSince1970: 1793102400.123 + Double(iteration) * 3600))
                 let important = PlanningTemplateApplication.exampleImportantIDs(template, in: current)
                 XCTAssertEqual(beforePreview, try PortableRuntimeEvidence.capture(root: root))
                 let committed = try PortableTemplateApplication.reserve(applied, original: current, importantIDs: important, root: root)
-                let oldIDs = Set(current.collection.lists.flatMap(\.allCards).map(\.id))
-                let newItems = committed.week.collection.lists.flatMap(\.allCards).filter { !oldIDs.contains($0.id) }
+                let oldIDs    = Set(current.collection.lists.flatMap(\.allCards).map(\.id))
+                let newItems  = committed.week.collection.lists.flatMap(\.allCards).filter { !oldIDs.contains($0.id) }
                 XCTAssertEqual(newItems.count, 2)
                 XCTAssertTrue(Set(candidate.numericIDs.values).isDisjoint(with: Set(newItems.map(\.id))))
                 let linked = try XCTUnwrap(newItems.first { $0.word == "Retained template task" })
@@ -577,20 +577,20 @@ extension MigrationStudioTests
                 }
                 defaults.set(importance, forKey: LibraryImportanceSelection.key)
             }
-            let source = try XCTUnwrap(defaults.persistentDomain(forName: domain))
+            let source  = try XCTUnwrap(defaults.persistentDomain(forName: domain))
             let runtime = try PortableRuntimeEvidence.capture(root: root)
-            let frozen = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let output = try PortableEditedExport.prepare(frozen)
-            let bytes = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
+            let frozen  = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
+            let output  = try PortableEditedExport.prepare(frozen)
+            let bytes   = try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: output)
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen)))
             XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
             XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
             XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: frozen.files),
                 try MigrationBackupReader.file("EditedNativeBackup/Preferences.plist", in: output))
-            let old = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: originalFiles)) as! [String: Any]
-            let actual = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
-            let before = (old["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
-            let after = (actual["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            let old         = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("Assembly.json", in: originalFiles)) as! [String: Any]
+            let actual      = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+            let before      = (old["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
+            let after       = (actual["workspace_export"] as! [String: Any])["base_workspace"] as! [String: Any]
             let oldPlanning = before["planning"] as! [String: Any]
             let newPlanning = after["planning"] as! [String: Any]
             for key in before.keys where key != "planning" && key != "content_selections"
@@ -644,7 +644,7 @@ extension MigrationStudioTests
                     .flatMap(\.cards).map(\.id))
                 let aliasesByNumber = Dictionary(uniqueKeysWithValues: aliases.map { ($0.value, $0.key) })
                 let expectedDeleted = Set(removed.map { aliasesByNumber[$0]! })
-                let actualDeleted = Set((actual["workspace_export"] as! [String: Any])["local_card_deletions"] as? [String] ?? [])
+                let actualDeleted   = Set((actual["workspace_export"] as! [String: Any])["local_card_deletions"] as? [String] ?? [])
                 XCTAssertEqual(actualDeleted, expectedDeleted)
                 XCTAssertTrue(Set(rebuiltWeek.collection.lists.flatMap(\.cards).map(\.id)).isDisjoint(with: removed))
                 for list in original.collection.lists
@@ -692,13 +692,13 @@ extension MigrationStudioTests
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in:
                 PortableEditedExport.prepare(LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root))))
             let savedCalendar = try XCTUnwrap(defaults.data(forKey: PlanningCalendarStore.key))
-            var unsaved = try JSONDecoder().decode(PlanningCalendarDocument.self, from: savedCalendar)
+            var unsaved       = try JSONDecoder().decode(PlanningCalendarDocument.self, from: savedCalendar)
             unsaved.weeks[0].explicitlySaved = false
             defaults.set(try JSONEncoder().encode(unsaved), forKey: PlanningCalendarStore.key)
             XCTAssertThrowsError(try PortableEditedExport.prepare(LegacyWorkspaceExport.capture(
                 defaults: defaults, domain: domain, root: root)))
             defaults.set(savedCalendar, forKey: PlanningCalendarStore.key)
-            let runtimeURL = root.appendingPathComponent(PortableRuntimeEvidence.area + "/IdentityAliases.json")
+            let runtimeURL   = root.appendingPathComponent(PortableRuntimeEvidence.area + "/IdentityAliases.json")
             let validAliases = try Data(contentsOf: runtimeURL)
             try Data("{}".utf8).write(to: runtimeURL)
             let retryPreview = try PlanningTemplateApplication.apply(template, to: current, date: instant,
@@ -717,7 +717,7 @@ extension MigrationStudioTests
                 attachment.lifetime = .keepAlways
                 add(attachment)
             }
-            let wrappers = try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
+            let wrappers  = try XCTUnwrap(output.fileWrappers?["PortableTestPackage"]?.fileWrappers?["Originals"]?.fileWrappers)
             let originals = try Dictionary(uniqueKeysWithValues: wrappers.map { name, file in
 
                 ("Originals/" + name, try XCTUnwrap(file.regularFileContents).base64EncodedString())
@@ -737,13 +737,13 @@ extension MigrationStudioTests
     func testImportanceComparisonKeepsIdentityAndUnknownValues() throws
     {
 
-        let key = LibraryImportanceSelection.key
-        let owner = "f0000000-0000-4000-8000-000000000001"
-        let first: [String: Any] = ["collectionID": owner, "cardID": 4]
+        let key                   = LibraryImportanceSelection.key
+        let owner                 = "f0000000-0000-4000-8000-000000000001"
+        let first: [String: Any]  = ["collectionID": owner, "cardID": 4]
         let second: [String: Any] = ["collectionID": owner, "cardID": 9, "level": 3]
-        let original = try JSONSerialization.data(withJSONObject: [first, second])
-        let reversed = try JSONSerialization.data(withJSONObject: [second, first])
-        let normalized = try PortableEditedExport.nativeJSON(original, store: key)
+        let original              = try JSONSerialization.data(withJSONObject: [first, second])
+        let reversed              = try JSONSerialization.data(withJSONObject: [second, first])
+        let normalized            = try PortableEditedExport.nativeJSON(original, store: key)
         XCTAssertTrue(NSDictionary(dictionary: ["v": normalized]).isEqual(to:
             ["v": try PortableEditedExport.nativeJSON(reversed, store: key)]))
         var unknown = first

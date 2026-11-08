@@ -17,9 +17,9 @@ struct StudioSurfaceSettings: View
 
 
     @Binding var surface: StudioSurface?
-    var title = "Background artwork"
-    var header:     Binding<ItemAccent?>? = nil
-    var italic:     Binding<Bool?>? = nil
+    var title                                       = "Background artwork"
+    var header:     Binding<ItemAccent?>?           = nil
+    var italic:     Binding<Bool?>?                 = nil
     var titleColor: Binding<ListPreviewTextColor?>? = nil
     var textColor:  Binding<ListPreviewTextColor?>? = nil
 
@@ -88,11 +88,11 @@ struct StudioSurfaceEditor: View
     @State private var photo:           PhotosPickerItem?
     @State private var importsFile = false
     @State private var error: String?
-    @State private var artworkName = "My look"
-    @State private var showsLibrary = false
+    @State private var artworkName   = "My look"
+    @State private var showsLibrary  = false
     @State private var showsUnsplash = false
     @State private var applyTask: Task<Void, Never>?
-    @State private var isApplying = false
+    @State private var isApplying     = false
     @State private var savedToLibrary = false
     @Environment(\.dismiss) private var dismiss
     @AppStorage(StudioSettings.libraryKey) private var libraryData = Data()
@@ -215,11 +215,11 @@ struct StudioSurfaceEditor: View
     {
 
 
-        let chosen = draft
-        let chosenHeader = draftHeader
-        let chosenItalic = draftItalic
+        let chosen           = draft
+        let chosenHeader     = draftHeader
+        let chosenItalic     = draftItalic
         let chosenTitleColor = draftTitleColor
-        let chosenTextColor = draftTextColor
+        let chosenTextColor  = draftTextColor
         applyTask?.cancel()
         applyTask = Task
         {
@@ -540,7 +540,7 @@ struct StudioSurfaceEditor: View
             do
             {
 
-                let url = try result.get()
+                let url    = try result.get()
                 let access = url.startAccessingSecurityScopedResource()
                 defer
                 {
@@ -598,7 +598,7 @@ struct StudioLibraryView: View
 {
 
 
-    var onSelect: ((StudioArtwork) -> Void)? = nil
+    var onSelect: ((StudioArtwork) -> Void)?                = nil
     @AppStorage(StudioSettings.libraryKey) private var data = Data()
     @Environment(\.dismiss) private var dismiss
     @State private var error:    String?

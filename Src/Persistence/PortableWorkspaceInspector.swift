@@ -59,14 +59,14 @@ struct PortableWorkspaceInspector: View
     var body: some View
     {
 
-        let base = base
-        let planning = base["planning"] as? [String: Any] ?? [:]
-        let content = planning["content"] as? [String: Any] ?? [:]
-        let lists = content["lists"] as? [[String: Any]] ?? []
-        let cards = content["cards"] as? [[String: Any]] ?? []
+        let base       = base
+        let planning   = base["planning"] as? [String: Any] ?? [:]
+        let content    = planning["content"] as? [String: Any] ?? [:]
+        let lists      = content["lists"] as? [[String: Any]] ?? []
+        let cards      = content["cards"] as? [[String: Any]] ?? []
         let selections = base["content_selections"] as? [[String: Any]] ?? []
-        let artwork = base["artwork"] as? [[String: Any]] ?? []
-        let plans = planning["daily_plans"] as? [[String: Any]] ?? []
+        let artwork    = base["artwork"] as? [[String: Any]] ?? []
+        let plans      = planning["daily_plans"] as? [[String: Any]] ?? []
         Form
         {
             Section
@@ -80,10 +80,10 @@ struct PortableWorkspaceInspector: View
             {
                 ForEach(lists.indices, id: \.self)
                 { index in
-                    let list = lists[index]
+                    let list    = lists[index]
                     let payload = list["payload"] as? [String: Any] ?? [:]
-                    let ids = payload["card_ids"] as? [String] ?? []
-                    let byID = Dictionary(uniqueKeysWithValues: cards.compactMap { card -> (String, [String: Any])? in
+                    let ids     = payload["card_ids"] as? [String] ?? []
+                    let byID    = Dictionary(uniqueKeysWithValues: cards.compactMap { card -> (String, [String: Any])? in
                         guard let id = card["id"] as? String else
                         {
                             return nil

@@ -36,9 +36,9 @@ enum PlanningDate
     static func listTitle(_ title: String, on date: Date, now: Date = .now, calendar: Calendar = .current) -> String
     {
 
-        let month = calendar.component(.month, from: date)
-        let day = calendar.component(.day, from: date)
-        let year = calendar.component(.year, from: date)
+        let month  = calendar.component(.month, from: date)
+        let day    = calendar.component(.day, from: date)
+        let year   = calendar.component(.year, from: date)
         let suffix =
         year == calendar.component(.year, from: now)
         ? "\(month)/\(day)" : "\(month)/\(day)/\(String(format: "%02d", year % 100))"
@@ -213,11 +213,11 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
             return startKey
         }
 
-        let calendar = Calendar.current
-        let firstYear = calendar.component(.year, from: first)
-        let lastYear = calendar.component(.year, from: last)
+        let calendar   = Calendar.current
+        let firstYear  = calendar.component(.year, from: first)
+        let lastYear   = calendar.component(.year, from: last)
         let firstLabel = first.formatted(.dateTime.month(.abbreviated).day())
-        let lastLabel = last.formatted(.dateTime.month(.abbreviated).day())
+        let lastLabel  = last.formatted(.dateTime.month(.abbreviated).day())
         let yearSuffix = String(format: "%02d", lastYear % 100)
         if firstYear != lastYear
         {
@@ -305,7 +305,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     ) -> Self
     {
 
-        let start = PlanningDate.weekKey(date, calendar: calendar)
+        let start      = PlanningDate.weekKey(date, calendar: calendar)
         var collection = PersonalCollection(title: "Week of \(start)", kind: .board)
         collection.lists = lists ?? []
         collection.savedCardIDs = saved
@@ -452,7 +452,7 @@ struct PlanningCalendarDocument: Hashable, Codable
             upsert(previous)
         }
 
-        let key = PlanningDate.weekKey(date, calendar: calendar)
+        let key  = PlanningDate.weekKey(date, calendar: calendar)
         let next =
         weeks.first
         {
@@ -579,9 +579,9 @@ extension PlanningCalendarDocument
         }
 
         var rebuilt: [String: DatedPlanningWeek] = [:]
-        var cardIDs: [UUID: [Int: Int]] = [:]
-        var usedCardIDs = Set<Int>()
-        var nextCardID = (weeks.flatMap
+        var cardIDs: [UUID: [Int: Int]]          = [:]
+        var usedCardIDs                          = Set<Int>()
+        var nextCardID                           = (weeks.flatMap
             {
                 $0.collection.lists.flatMap(\.allCards)
             } .map(\.id).max() ?? -1) + 1
@@ -617,7 +617,7 @@ extension PlanningCalendarDocument
                 throw CocoaError(.coderReadCorrupt)
             }
 
-            let key = PlanningDate.weekKey(middle, calendar: newCalendar)
+            let key      = PlanningDate.weekKey(middle, calendar: newCalendar)
             var retained = source
             retained.startKey = key
             retained.collection.title = "Week of \(key)"
@@ -630,7 +630,7 @@ extension PlanningCalendarDocument
         for source in sources
         {
 
-            let middle = PlanningDate.days(in: source.startKey, calendar: oldCalendar) [3]
+            let middle   = PlanningDate.days(in: source.startKey, calendar: oldCalendar) [3]
             let ownerKey = PlanningDate.weekKey(middle, calendar: newCalendar)
             for list in source.collection.lists
             {
@@ -658,8 +658,8 @@ extension PlanningCalendarDocument
                 }
 
                 let occupied = Set(target.collection.lists.map(\.id))
-                let listID = occupied.contains(list.id) ? (occupied.max() ?? -1) + 1 : list.id
-                let mapping = cardIDs[source.id]!
+                let listID   = occupied.contains(list.id) ? (occupied.max() ?? -1) + 1 : list.id
+                let mapping  = cardIDs[source.id]!
 
 
                 ///
@@ -683,7 +683,7 @@ extension PlanningCalendarDocument
                         let items = checklist.items.map
                         {
                             item in
-                            var item = item
+                            var item  = item
                             let owner = checklistLinkWeeks? [item.id] ?? item.linkedCollectionID ?? source.id
                             if let retained = item.retainedCardID, let replacement = cardIDs[owner]? [retained]
                             {
@@ -936,8 +936,8 @@ enum PlanningCalendarContent
     {
 
         let calendar = document.calendar
-        let week = document.week(for: date)
-        let listID = week?.list(on: date)?.id
+        let week     = document.week(for: date)
+        let listID   = week?.list(on: date)?.id
         return sources.filter
         {
             item in

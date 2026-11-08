@@ -136,7 +136,7 @@ enum MigrationSettingsPreview
 
         let context = MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: mediaDigests)
         var profile: LocalProfile?
-        var rawProfile: [String: Any] = [:]
+        var rawProfile: [String: Any]         = [:]
         var profilePreferences: [String: Any] = [:]
         if let value = values["Plenact.LocalProfile.v1"]
         {
@@ -174,15 +174,15 @@ enum MigrationSettingsPreview
             rawPreferences = [:]
             origin = "application_defaults"
         }
-        let effective = try preferences(rawPreferences)
-        let encoded = try MigrationContentValues.object(effective)
+        let effective             = try preferences(rawPreferences)
+        let encoded               = try MigrationContentValues.object(effective)
         var mapped: [String: Any] = [:]
         for (source, target) in fields
         {
             mapped[target] = encoded[source] ?? NSNull()
         }
         mapped["today_focus_order"] = effective.todayFocusOrder == .dayList ? "day_list" : "chronological"
-        var issues: [String] = []
+        var issues: [String]       = []
         var unresolvedDefault: Any = NSNull()
         mapped["default_list_id"] = NSNull()
         if let sourceList = effective.defaultListID
@@ -203,15 +203,15 @@ enum MigrationSettingsPreview
                 unresolvedDefault = sourceList
             }
         }
-        let preferencesID = try context.id("user_preferences", owner: "workspace_metadata", legacy: "effective_user_preferences")
+        let preferencesID                   = try context.id("user_preferences", owner: "workspace_metadata", legacy: "effective_user_preferences")
         let preferencesDraft: [String: Any] = ["id": preferencesID, "payload": ["preferences": mapped]]
-        var profileDraft: Any = NSNull()
-        var assetRecords: [[String: Any]] = []
+        var profileDraft: Any               = NSNull()
+        var assetRecords: [[String: Any]]   = []
         if let profile
         {
-            let raw = try MigrationContentValues.object(profile)
-            let id = try context.id("user_profile", owner: "local_profile", legacy: profile.id.uuidString.lowercased())
-            let avatar = try context.asset(profile.avatarPhotoFileName, area: "Documents/ProfileAvatars")
+            let raw                    = try MigrationContentValues.object(profile)
+            let id                     = try context.id("user_profile", owner: "local_profile", legacy: profile.id.uuidString.lowercased())
+            let avatar                 = try context.asset(profile.avatarPhotoFileName, area: "Documents/ProfileAvatars")
             let payload: [String: Any] = ["source_profile_id": profile.id.uuidString.lowercased(),
                 "source_created_at_utc": try context.utc(raw["createdAt"]!, path: id + "/profile-created"),
                 "display_name": profile.displayName, "email": profile.email, "context": profile.context,
@@ -223,7 +223,7 @@ enum MigrationSettingsPreview
             assetRecords.append(["record_type": "user_profile_preview", "id": id, "payload": payload])
         }
         var converted: [[String: Any]] = []
-        var shortcutCount = 0
+        var shortcutCount              = 0
         if let value = values["Plenact.TodayListShortcuts.v1"]
         {
             guard let data = value as? Data,
@@ -253,7 +253,7 @@ enum MigrationSettingsPreview
         }
         converted += context.unavailable.keys.sorted().map { context.unavailable[$0]! }
         let defaultedPreferences = fields.keys.filter { rawPreferences[$0] == nil || rawPreferences[$0] is NSNull }.sorted()
-        let defaultedProfile = profile == nil ? [] : ["avatarIcon", "avatarForegroundColor"].filter {
+        let defaultedProfile     = profile == nil ? [] : ["avatarIcon", "avatarForegroundColor"].filter {
             rawProfile[$0] == nil || rawProfile[$0] is NSNull
         }
         let document: [String: Any] = ["format": "plenact.ios-settings-preview", "format_version": 1,

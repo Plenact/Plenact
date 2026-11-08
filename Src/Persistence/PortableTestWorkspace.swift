@@ -72,7 +72,7 @@ struct PortableTestWorkspace
             throw PortablePackageReview.Failure.invalid
         }
         let folder = root.appendingPathComponent(id, isDirectory: true)
-        let bytes = try Data(contentsOf: folder.appendingPathComponent("snapshot.bin"))
+        let bytes  = try Data(contentsOf: folder.appendingPathComponent("snapshot.bin"))
         guard bytes.count <= LegacyWorkspaceExport.maximumBytes,
               let receipt = try JSONSerialization.jsonObject(with: Data(contentsOf: folder.appendingPathComponent("receipt.json"))) as? [String: Any],
               Set(receipt.keys) == ["format_version", "sha256"], receipt["format_version"] as? Int == 1,
@@ -134,7 +134,7 @@ struct PortableTestWorkspace
         }
         let manager = FileManager.default
         try manager.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-        let id = UUID().uuidString.lowercased()
+        let id     = UUID().uuidString.lowercased()
         let folder = root.appendingPathComponent(id, isDirectory: true)
         try manager.createDirectory(at: folder, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         var committed = false
@@ -178,7 +178,7 @@ struct PortableTestWorkspace
         {
             throw PortablePackageReview.Failure.invalid
         }
-        let previous = try (current["undo"] as? String).map { try read($0) }
+        let previous            = try (current["undo"] as? String).map { try read($0) }
         let next: [String: Any] = ["format_version": 1, "active": current["undo"] ?? NSNull(),
             "undo": current["active"] ?? NSNull(), "can_undo": true]
         try JSONSerialization.data(withJSONObject: next, options: .sortedKeys).write(to: root.appendingPathComponent("state.json"), options: .atomic)

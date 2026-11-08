@@ -23,7 +23,7 @@ struct AppRootView: View
 
 
     @AppStorage(PlanPreferencesStore.key) var planPreferencesData = Data()
-    @StateObject var welcomeCue = TodayWelcomeCue()
+    @StateObject var welcomeCue                                   = TodayWelcomeCue()
     @Environment(\.accessibilityReduceMotion) var reduceLaunchMotion
 
     @State var isSwitchingWorkspace = false
@@ -33,25 +33,25 @@ struct AppRootView: View
     @State var pendingNativeRestore: ReviewedLocalBackup?
     @State var undoingNativeRestore = false
     @State var workspaceRecoveryError: String?
-    @State var workspaceGeneration = UUID()
-    @State var confirmsExampleMonth = false
+    @State var workspaceGeneration     = UUID()
+    @State var confirmsExampleMonth    = false
     @State var confirmsRestoreUserData = false
     @State var workspaceNotice: String?
-    @State var lists:           [KanbanList] = []                    /* Complete in-memory Week snapshot  */
-    @State var collections = TodayListPins.loadInitialCollections()  /* Device-local personal collections */
+    @State var lists:           [KanbanList] = []                                     /* Complete in-memory Week snapshot  */
+    @State var collections                   = TodayListPins.loadInitialCollections() /* Device-local personal collections */
     @State var calendarDocument:        PlanningCalendarDocument?
     @State var displayedPlanningWeek:   DatedPlanningWeek?
     @State var displayedPlanningListID: Int?
-    @ObservedObject var reviewNotifications = ReviewRhythmNotifications.shared
+    @ObservedObject var reviewNotifications                            = ReviewRhythmNotifications.shared
     @AppStorage(ReviewRhythmStore.key) var reviewRhythmPreferencesData = Data()
     @Environment(\.scenePhase) var scenePhase
-    @State var launchShadowFading = false
-    @State var launchProgress = PlenactLaunchProgress()
-    @State var hasLoadedBoard = false                              /* Whether the initial Week snapshot has loaded */
-    @State var profile = LocalProfileStore.load()                  /* Optional local identity and settings         */
-    @State private var templateLibraryRequest = 0                  /* Transient Library routing request */
-    @State var selectedDestination:       AppDestination = .today  /* Currently selected primary destination       */
-    @State var bottomNavigationSafeInset: CGFloat = 34
+    @State var launchShadowFading                        = false
+    @State var launchProgress                            = PlenactLaunchProgress()
+    @State var hasLoadedBoard                            = false                    /* Whether the initial Week snapshot has loaded */
+    @State var profile                                   = LocalProfileStore.load() /* Optional local identity and settings         */
+    @State private var templateLibraryRequest            = 0                        /* Transient Library routing request */
+    @State var selectedDestination:       AppDestination = .today                   /* Currently selected primary destination       */
+    @State var bottomNavigationSafeInset: CGFloat        = 34
     var bottomToolbarLayout:              BottomToolbarLayout
     {
 
@@ -70,30 +70,30 @@ struct AppRootView: View
         !visibleNoteIDs.isEmpty
     }
 
-    @State var dailyWeekVisible = false
-    @State var dailyOverview = DailyWeekOverview()
-    @State var dailyOverviewFade = DailyOverviewFade()
-    @State var appReturnSession = AppReturnSession()
-    @State var appReturnWindow = AppReturnWindow()
+    @State var dailyWeekVisible                  = false
+    @State var dailyOverview                     = DailyWeekOverview()
+    @State var dailyOverviewFade                 = DailyOverviewFade()
+    @State var appReturnSession                  = AppReturnSession()
+    @State var appReturnWindow                   = AppReturnWindow()
     @State var appReturnProtectionIDs: Set<UUID> = []
     @State var weekReturnTargetListID: Int?
-    @State var weekReturnResetRequest = 0
-    @State var libraryReturnResetRequest = 0
+    @State var weekReturnResetRequest     = 0
+    @State var libraryReturnResetRequest  = 0
     @State var activityReturnResetRequest = 0
-    @State var weekRootRequest = 0                         /* Explicit Week toolbar taps return to the Board root */
-    @State var savedCardIDs = SavedCardPersistence.load()  /* Device-local saved cards                            */
+    @State var weekRootRequest            = 0                           /* Explicit Week toolbar taps return to the Board root */
+    @State var savedCardIDs               = SavedCardPersistence.load() /* Device-local saved cards                            */
     @State var savedPersonalCardTarget:
     PersonalSavedCardTarget? /* Personal bookmark requested from Saved              */
-    @State var newLibraryListRequest = 0
-    @State var quickCreateRequest = 0           /* Center-bar quick-create request          */
-    @State var showsCenterNewCardSheet = false  /* Destination picker for New outside Today */
+    @State var newLibraryListRequest                      = 0
+    @State var quickCreateRequest                         = 0     /* Center-bar quick-create request          */
+    @State var showsCenterNewCardSheet                    = false /* Destination picker for New outside Today */
     @State var centerNewPresentation:    ItemPresentation = .card
     @State var centerNewListID:          Int?
     @State var toolbarCollectionRequest: PersonalCollectionKind?
     @State var showsToolbarTodayPlan = false
-    @State var showsToolbarCalendar = false
-    @State var showsToolbarSearch = false
-    @State var showsToolbarRevisit = false
+    @State var showsToolbarCalendar  = false
+    @State var showsToolbarSearch    = false
+    @State var showsToolbarRevisit   = false
     @State var activityRevisitDestination: ToolbarRevisitDestination?
 
     @State var boardTargetListID:         Int?           /* List requested by a Today-to-Board navigation     */
@@ -1059,7 +1059,7 @@ struct AppRootView: View
                     return false
                 }
 
-                var week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
+                var week   = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
                 let listID = week.prepareDay(date)
                 guard let list = week.collection.lists.first(where:
                     {
@@ -1090,7 +1090,7 @@ struct AppRootView: View
                     return false
                 }
 
-                var week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
+                var week   = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
                 let listID = week.prepareDay(date)
                 document.upsert(week)
                 return movePlanningSection(
@@ -1164,7 +1164,7 @@ struct AppRootView: View
     var bottomNavigationBar: some View
     {  /* Shared tab and quick-creation controls */
 
-        let layout = bottomToolbarLayout
+        let layout    = bottomToolbarLayout
         let isCompact = layout.horizontalLabels /* Landscape-height navigation layout */
 
         return ZStack(alignment: isCompact ? .center : .top)

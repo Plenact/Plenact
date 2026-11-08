@@ -90,9 +90,9 @@ struct KanbanListView: View
     let onListDragChanged: (DragGesture.Value?) -> Void /* Reports list-reorder gesture samples to the Board */
     /// Reports completion or cancellation of a list-reorder drag.
     let onListDragEnded:  () -> Void  /* Ends the parent Board's list-reorder session            */
-    var draggedCardID:    Int? = nil  /* Active native-drag record identity                      */
-    var dropBeforeCardID: Int? = nil  /* Card identity marking the current insertion boundary    */
-    var isCardDropTarget = false      /* Whether this list contains the current insertion target */
+    var draggedCardID:    Int?            = nil   /* Active native-drag record identity                      */
+    var dropBeforeCardID: Int?            = nil   /* Card identity marking the current insertion boundary    */
+    var isCardDropTarget                  = false /* Whether this list contains the current insertion target */
     var onMoveSection: (Int, Int) -> Void =
     {
         _, _ in
@@ -113,39 +113,39 @@ struct KanbanListView: View
         _, _, _ in
     }  /* Ends a card drag with commit intent and final pointer        */
 
-    var cardDragToken = "" /* Board-session token shared by drag sources and drop surfaces */
+    var cardDragToken                 = "" /* Board-session token shared by drag sources and drop surfaces */
     var onCardDrop: (CGPoint) -> Bool =
     {
         _ in
         false
     }  /* Commits a native drop at its global pointer position         */
 
-    var cardMoveDestinations: [KanbanList] = [] /* Lists offered by the explicit card movement menu             */
+    var cardMoveDestinations: [KanbanList]       = [] /* Lists offered by the explicit card movement menu             */
     var onMoveCardToList:     (Int, Int) -> Void =
     {
         _, _ in
     }  /* Moves a selected card to the requested list identity         */
 
     @State private var inlineCaptureDraft = InlineListCaptureDraft()
-    @State private var guidanceVisible = false
+    @State private var guidanceVisible    = false
     @State private var guidanceFooterVisible: Bool?
     var onEditList:                           ((String, String, ItemPresentation) -> Bool)? = nil
-    var isNamingNewList = false
-    var onFinishNaming: () -> Void =
+    var isNamingNewList                                                                     = false
+    var onFinishNaming: () -> Void                                                          =
     {
 
     }
 
-    var onOpenDayView: (() -> Void)? = nil
-    @State private var opensDayAfterDismissal = false
-    var boardAppearance: BoardAppearance = BoardAppearance()
+    var onOpenDayView: (() -> Void)?                  = nil
+    @State private var opensDayAfterDismissal         = false
+    var boardAppearance: BoardAppearance              = BoardAppearance()
     var onAppearance:    ((ItemAppearance?) -> Bool)? = nil
-    var isCurrentDay = false
-    var assignedDate: Date? = nil
-    var datedTitle:   String? = nil
-    var hidesPanelHeader = false
-    var listActionsRequest = 0
-    var onConsumeListActions: () -> Void =
+    var isCurrentDay                                  = false
+    var assignedDate: Date?                           = nil
+    var datedTitle:   String?                         = nil
+    var hidesPanelHeader                              = false
+    var listActionsRequest                            = 0
+    var onConsumeListActions: () -> Void              =
     {
 
     }
@@ -172,7 +172,7 @@ struct KanbanListView: View
     @State private var activeSheet: ActiveSheet? /* The currently active sheet presented modally        */
     /// Opens card creation after the active list-actions sheet has dismissed.
     @State private var opensNewCardAfterDismissal = false  /* Deferred creation request after another sheet closes */
-    @State private var isWatching = false                  /* Indicates whether the user is watching the list      */
+    @State private var isWatching                 = false  /* Indicates whether the user is watching the list      */
     private var effectiveAppearance: ItemAppearance
     {
         boardAppearance.resolved(list.appearance)

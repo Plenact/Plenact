@@ -123,7 +123,7 @@ struct RevealCreatedContent: ViewModifier
 
     let lists:         [KanbanList]
     var existingProxy: ScrollViewProxy? = nil
-    @ObservedObject private var reveal = CreatedContentReveal.shared
+    @ObservedObject private var reveal  = CreatedContentReveal.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var request: CreatedContentTarget?
     {

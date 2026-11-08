@@ -24,8 +24,8 @@ final class LocalBackupRestoreTests: XCTestCase
     private func fixture(_ body: (URL, URL, UserDefaults, String, FullMonthExampleStore) throws -> Void) throws
     {
 
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
-        let domain = "Plenact.RestoreTests." + UUID().uuidString
+        let root     = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
+        let domain   = "Plenact.RestoreTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer
@@ -38,20 +38,20 @@ final class LocalBackupRestoreTests: XCTestCase
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 2
-        let week = DatedPlanningWeek.make(for: Date(timeIntervalSince1970: 1792843200), calendar: calendar)
+        let week     = DatedPlanningWeek.make(for: Date(timeIntervalSince1970: 1792843200), calendar: calendar)
         let document = PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week])
         defaults.set(try JSONEncoder().encode(document), forKey: "Plenact.CalendarWeeks.v1")
         defaults.set(try JSONEncoder().encode(week.collection.lists), forKey: "Plenact.Board.v1")
         let originals = sourceRoot.appendingPathComponent("Documents/CardAttachments")
         try FileManager.default.createDirectory(at: originals, withIntermediateDirectories: true)
         try Data([7, 8, 9]).write(to: originals.appendingPathComponent("original.bin"))
-        let backup = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: sourceRoot)
-        let preview = try MigrationPreview.prepare(backup: backup, journalURL: root.appendingPathComponent("SourceJournal/identities.json"))
+        let backup   = try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: sourceRoot)
+        let preview  = try MigrationPreview.prepare(backup: backup, journalURL: root.appendingPathComponent("SourceJournal/identities.json"))
         let exported = root.appendingPathComponent("backup")
         try preview.files.write(to: exported, options: .atomic, originalContentsURL: nil)
         defaults.setPersistentDomain(["destinationOnly": "retained", "Plenact.Board.v1": Data("[]".utf8)], forName: domain)
         let destination = root.appendingPathComponent("destination")
-        let store = FullMonthExampleStore(root: destination.appendingPathComponent("Library/Recovery"),
+        let store       = FullMonthExampleStore(root: destination.appendingPathComponent("Library/Recovery"),
             documents: destination.appendingPathComponent("Documents"),
             support: destination.appendingPathComponent("Library/Application Support"), domainName: domain)
         try body(exported, destination, defaults, domain, store)
@@ -86,9 +86,9 @@ final class LocalBackupRestoreTests: XCTestCase
     {
 
         try fixture { source, destination, defaults, domain, store in
-            let review = try LocalBackupRestore.review(at: source)
+            let review   = try LocalBackupRestore.review(at: source)
             let original = defaults.persistentDomain(forName: domain)!
-            let folder = destination.appendingPathComponent("Documents/CardAttachments")
+            let folder   = destination.appendingPathComponent("Documents/CardAttachments")
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             let oldMedia = folder.appendingPathComponent("old.bin")
             try Data([1, 2, 3]).write(to: oldMedia)

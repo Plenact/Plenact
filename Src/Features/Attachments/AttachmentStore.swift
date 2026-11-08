@@ -267,16 +267,16 @@ enum CardAttachmentStore
     {
 
 
-        let attachmentID = UUID() /* Stable identity for the new media file */
+        let attachmentID        = UUID() /* Stable identity for the new media file */
         let normalizedExtension = fileExtension.trimmingCharacters(
             in: CharacterSet(charactersIn: ". ")) /* Clean extension input                  */
         let safeExtension =
         normalizedExtension.isEmpty
         ? (kind == .video ? "mov" : (kind == .audio ? "m4a" : "jpg"))
         : normalizedExtension                                         /* Valid file extension      */
-        let fileName = "\(attachmentID.uuidString).\(safeExtension)"  /* Unique stored filename    */
-        let directoryURL = try attachmentsDirectory()                 /* App-local media directory */
-        let fileURL = directoryURL.appendingPathComponent(
+        let fileName     = "\(attachmentID.uuidString).\(safeExtension)" /* Unique stored filename    */
+        let directoryURL = try attachmentsDirectory()                    /* App-local media directory */
+        let fileURL      = directoryURL.appendingPathComponent(
             fileName, isDirectory: false) /* Destination file URL                   */
 
         try mediaData.write(to: fileURL, options: .atomic)

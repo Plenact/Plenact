@@ -320,6 +320,7 @@ enum PortableStructuralEdits
         var aliases = aliases
         var comparison = current
         var cardMaps: [String: [Int: Int]] = [:]
+        var listMaps: [String: [Int: Int]] = [:]
         for week in incoming
         {
             let owner = week.collection.id.uuidString.lowercased()
@@ -405,7 +406,48 @@ enum PortableStructuralEdits
                 }
             }
             cardMaps[owner] = cardMap
+            listMaps[owner] = listMap
             // Only editor aliases are normalized; all authored native values remain in the comparison.
+            // Nested links use the same owner-qualified Card aliases as the copied Cards themselves.
+            /// @fcn PortableStructuralEdits.rollovers.references
+            /// @brief Translate verified same-Week links in the frozen comparison without touching history bytes
+            /// @param[in] value Newly converted native Card subtree
+            /// @return Equivalent subtree with canonical reconstruction aliases
+            /// @throws A reference missing from the explicitly converted owner mapping
+            func references(_ value: Any) throws -> Any
+            {
+
+                if var object = value as? [String: Any]
+                {
+
+                    for field in ["cardID", "retainedCardID"]
+                    {
+
+                        if let number = object[field] as? Int
+                        {
+
+                            guard let target = cardMap[number] else
+                            {
+
+                                throw PortableEditedExport.Failure.inconsistent
+                            }
+                            object[field] = target
+                        }
+                    }
+                    for field in object.keys where field != "editHistory"
+                    {
+
+                        object[field] = try references(object[field]!)
+                    }
+                    return object
+                }
+                if let array = value as? [Any]
+                {
+
+                    return try array.map(references)
+                }
+                return value
+            }
             var raw = try JSONSerialization.jsonObject(with: JSONEncoder().encode(week)) as! [String: Any]
             var collection = raw["collection"] as! [String: Any]
             var lists = collection["lists"] as! [[String: Any]]
@@ -418,6 +460,7 @@ enum PortableStructuralEdits
                     for card in cards.indices
                     {
                         cards[card]["id"] = cardMap[cards[card]["id"] as! Int]!
+                        cards[card] = try references(cards[card]) as! [String: Any]
                     }
                     lists[index][field] = cards
                 }
@@ -442,6 +485,38 @@ enum PortableStructuralEdits
                 content[field] = (content[field] as! [[String: Any]]) + converted.records.filter { $0["record_type"] as? String == kind }
             }
             planning["weeks"] = (planning["weeks"] as! [[String: Any]]) + converted.records.filter { $0["record_type"] as? String == "calendar_week" }
+        }
+        if let data = comparison[TodayListPins.key] as? Data
+        {
+
+            guard var pins = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], pins.count <= 6,
+                  pins.allSatisfy({ Set($0.keys) == ["ownerID", "listID"] }) else
+            {
+
+                throw PortableEditedExport.Failure.unsupported
+            }
+            let references = try JSONDecoder().decode([WorkspaceListReference].self, from: data)
+            guard Set(references).count == references.count else
+            {
+
+                throw PortableEditedExport.Failure.unsupported
+            }
+            for index in references.indices
+            {
+
+                let pin = references[index]
+                if let mapping = listMaps[pin.ownerID.uuidString.lowercased()]
+                {
+
+                    guard let target = mapping[pin.listID] else
+                    {
+
+                        throw PortableEditedExport.Failure.inconsistent
+                    }
+                    pins[index]["listID"] = target
+                }
+            }
+            comparison[TodayListPins.key] = try JSONSerialization.data(withJSONObject: pins, options: .sortedKeys)
         }
         var index = oldIndex
         var payload = index["payload"] as! [String: Any]
@@ -1443,8 +1518,11 @@ enum PortableStructuralEdits
                 levels[key] = item.resolvedLevel
             }
         }
-        for (owner, collection) in native
+        // Preserve retained selection order and append new owners in deterministic identity order.
+        for owner in native.keys.sorted()
         {
+
+            let collection = native[owner]!
             let actual = Set(collection.lists.flatMap(\.allCards).map(\.id))
             guard collection.savedCardIDs.isSubset(of: actual) else
             {

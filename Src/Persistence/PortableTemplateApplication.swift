@@ -143,4 +143,77 @@ enum PortableTemplateApplication
         let week = try JSONDecoder().decode(DatedPlanningWeek.self, from: JSONSerialization.data(withJSONObject: raw))
         return (week, Set(importantIDs.map { cardMap[$0] ?? $0 }))
     }
+
+    /// @fcn PortableTemplateApplication.importanceForSavedWeek
+    /// @brief Remove stale unexported importance markers only for the Week being saved
+    /// @details Retains active/archive targets and previously exported selection evidence, including
+    ///          locally deleted canonical Cards. Other owners and the retained runtime are untouched.
+    /// @param[in] week New checked Week snapshot
+    /// @param[in] data Current native importance bytes
+    /// @param[in] root App container or isolated synthetic container
+    /// @return Original bytes when unchanged, otherwise the filtered original entry objects
+    /// @throws Malformed/duplicate/unknown source entries or invalid runtime evidence
+    static func importanceForSavedWeek(_ week: DatedPlanningWeek, data: Data,
+        root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws -> Data
+    {
+
+        guard !data.isEmpty else
+        {
+
+            return data
+        }
+        let items = try JSONDecoder().decode([LibraryImportanceItem].self, from: data)
+        guard let raw = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], raw.count == items.count else
+        {
+
+            throw PortableEditedExport.Failure.inconsistent
+        }
+        var seen = Set<String>()
+        for (item, object) in zip(items, raw)
+        {
+
+            guard Set(object.keys).isSubset(of: ["collectionID", "cardID", "level"]),
+                  (1...5).contains(item.level ?? 1),
+                  seen.insert(item.collectionID.uuidString + ":" + String(item.cardID)).inserted else
+            {
+
+                throw PortableEditedExport.Failure.inconsistent
+            }
+        }
+        let actual = Set(week.collection.lists.flatMap(\.allCards).map(\.id))
+        guard items.contains(where: { $0.collectionID == week.id && !actual.contains($0.cardID) }) else
+        {
+
+            return data
+        }
+        let runtime = try PortableRuntimeEvidence.capture(root: root)
+        guard let baseline = runtime["NativeStores.plist"] else
+        {
+
+            return data
+        }
+        guard let stores = try PropertyListSerialization.propertyList(from: baseline, format: nil) as? [String: Any] else
+        {
+
+            throw PortableEditedExport.Failure.inconsistent
+        }
+        let retained = try (stores[LibraryImportanceSelection.key] as? Data).map
+        {
+
+            try JSONDecoder().decode([LibraryImportanceItem].self, from: $0)
+        } ?? []
+        let retainedIDs = Set(retained.filter { $0.collectionID == week.id }.map(\.cardID))
+        let kept = zip(items, raw).filter
+        {
+
+            $0.0.collectionID != week.id || actual.contains($0.0.cardID) || retainedIDs.contains($0.0.cardID)
+        }.map { $0.1 }
+        guard kept.count != raw.count else
+        {
+
+            return data
+        }
+        return try JSONSerialization.data(withJSONObject: kept, options: .sortedKeys)
+    }
+
 }

@@ -1,5 +1,7 @@
 # iOS native migration and export milestone
 
+**Current implementation status — November 7, 2026:** [Step 1 beta closeout](Step-1-Beta-Closeout.md) is complete for the bounded local beta and handoff to **Step 2 synthetic staging**, with v25 owner-accepted. Deferred operations and production migration/authentication/synchronization gates remain explicit. Cloud synchronization is disabled; Model 1.0 is unchanged and working 1.1 is unpublished. Earlier implementation checkpoints below are historical.
+
 **Supported User Data Model versions:** 1.0; Version 0 historical reference only.
 **Updated:** October 24, 2026.
 

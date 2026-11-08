@@ -1,5 +1,7 @@
 # Editable application import bridge
 
+**Current implementation status — November 7, 2026:** [Step 1 beta closeout](Step-1-Beta-Closeout.md) is complete for the bounded local beta and handoff to **Step 2 synthetic staging**, with v25 owner-accepted. Deferred operations and production migration/authentication/synchronization gates remain explicit. Cloud synchronization is disabled; Model 1.0 is unchanged and working 1.1 is unpublished. Earlier implementation checkpoints below are historical.
+
 **Supported User Data Model versions:** 1.0 content; working 1.1 package input.
 
 **Current status:** The Simulator can now import a supported portable package into its normal editable workspace with a full pre-import backup and undo. This remains a synthetic-owner test flow. The guarded edited export now supports Board-created Cards/Lists, movement within one existing Board/collection, List/Card ordering, and Card text, completion, scheduling, deletion, lock/display flags, nested Card content, attachment metadata/covers and history. Other edits stop export explicitly. Native backups preserve every saved change and canonical baseline evidence. This does not yet complete Step 1 or enable production ownership/synchronization.
@@ -592,3 +594,122 @@ Replace mode now has explicit end-to-end synthetic evidence through the existing
 Validation passes 76 affected native export/recovery/template checks, 112 tooling tests and independent `--template-replacement-package` contract validation with two synthetic originals. The two previously isolated keyboard-focus checks were excluded from this native run. The replacement confirmation text now distinguishes Week-wide dated-List replacement from Day-only replacement; the existing template-screen render check passes after that wording change.
 
 Pending focused owner test from accepted v22: rebuild, preview the retained custom Week template for the current Week, select Replace, Apply and confirm Replace with that template. This intentionally replaces active dated items in the editable Week; v22 preserves the prior accepted state. Apply once, then export v23 before Undo. Independently verify prior canonical records/deletion intent, new copies, originals and native recovery evidence before editable re-import. Keep v22 and earlier recovery packages. This checkpoint does not establish Day replacement, initially absent/new-Week application, cross-Board transfers or final Step 1 reconciliation. Cloud synchronization remains disabled and working Model 1.1 remains unpublished.
+
+
+## Resume: preserve the newer Week before replacement — November 7, 2026
+
+Repository inspection found a clean `feature/ios-local-backup` checkout at `e7b5fe8` before these resume notes. v22 remains the latest owner-accepted package. No v23 archive was present in the known Files storage at inspection.
+
+Read-only inspection located the app data container by bundle metadata after Simulator-service discovery reported a shutdown device. The saved calendar now retains Weeks beginning October 19, October 26 and November 2, with November 2 selected as current. It has 133 active entries across retained Weeks, compared with 105 in v22. Against the retained runtime native baseline, both earlier Weeks remain unchanged after normalizing known Set encodings. Changed baseline stores are limited to Board, calendar, importance and top-level bookmarks. This is consistent with a new 28-entry Week; the corresponding portable rollover has not yet been independently reviewed.
+
+The documented validation requirements were restored into `/private/tmp/plenact-review-2026-11-07-venv` because the earlier temporary environment had lost its configuration/dependencies. All 112 tooling tests pass in the restored environment. A recreated private read-only reviewer revalidated v22's portable schemas/references/manifests/originals and native preferences/media/runtime hashes. v22 still retains 214 canonical Cards, 37 Lists, two Weeks and five originals. No native suite or completed owner round trip was repeated, and no personal data was added to fixtures.
+
+The immediate next action supersedes the older v23 replacement instruction: launch Plenact Import Test and export the current saved workspace as v23 before any Replace or Undo. Independently compare that export with v22 to preserve and verify the newer Week. Then choose the replacement target using the verified current state and use the next archive version for the replacement checkpoint. No extra migration-preview or backup procedure is requested. Step 1 remains in progress; synchronization is disabled and working Model 1.1 remains unpublished.
+
+
+## Resume steering and Simulator disruption — November 7, 2026
+
+The owner explicitly identified the generated beta state as disposable and chose to skip the additional preservation export. The next artifact is therefore v23 for Replace on the retained Week beginning November 2, with v22 retained. This supersedes the extra pre-replacement export proposed in the preceding resume note. No additional backup/migration-preview procedure is required.
+
+During the manual preview/Replace attempt, Xcode reported its LLDB RPC server had exited and Simulator showed the device as unavailable. Read-only diagnostics found simultaneous SIGBUS/KERN_MEMORY_ERROR reports for SpringBoard, DTServiceHub, gamed, chronod and liveactivitiesd. No Plenact crash report was found in the inspected report locations. The iOS 27.2 runtime became installed during this session; a causal connection to the failures is not established. These observations indicate a Simulator/tooling disruption rather than establishing an application defect.
+
+The existing Plenact Import Test device remains available under iOS 27.0 and is shut down. Saved active entry counts remain 28 for October 19, 77 for October 26 and 28 for November 2; the replacement has not persisted. Earlier Weeks match the retained runtime baseline after known Set normalization. Inspection changed no application data, imports or recovery history.
+
+The next recovery action is user-operated: dismiss the debugger alert, quit/reopen Xcode and Simulator, select the existing Plenact Import Test device and run Plenact. Resume the pending Replace test once the app opens normally; do not repeat application if a successful replacement is subsequently saved. No Simulator erasure, cache removal, restore or code change was performed. v22 remains accepted and v23 replacement acceptance is pending.
+
+
+## New-Week replacement importance reconciliation — November 7, 2026
+
+The owner completed a Replace application into the automatically generated November 2 Week, but edited export rejected inconsistent saved references. Read-only inspection found importance entries belonging to removed Cards in that newly generated Week. Unlike the previously tested retained-Week replacement, this Week had not yet been exported.
+
+The checked Week-save path now removes missing importance targets for that owner only when they are absent from the retained native import baseline. Previously exported selection evidence (including local deletion recovery), archive/undated targets and other owners remain preserved. Unknown or duplicate source entries fail closed. Export preparation still never repairs or mutates live stores.
+
+A combined rollover/replacement regression reproduces the rejection, applies the checked-save reconciliation, and checks repeated export, source/runtime immutability, exact native backup preferences and fresh import with identical re-export. Validation passed: 77 affected native tests (the two previously excluded keyboard-focus tests remain excluded), 112 tooling tests, and independent retained-Week replacement package validation with two synthetic originals. Native log: `/private/tmp/plenact-rollover-replacement-full.log`; tooling log: `/private/tmp/plenact-rollover-replacement-python.log`. The existing saved owner workspace will require one checked replacement save after rebuilding; v22 remains the accepted checkpoint and v23 has not been accepted. Step 1 remains in progress, Model 1.0 is unchanged, and cloud synchronization remains disabled.
+
+
+## Linked checklist rollover comparison — November 7, 2026
+
+After the owner rebuilt and repeated the November 2 replacement, read-only inspection confirmed zero orphan importance targets. Export then reached a different unsupported-change guard. The copied Week contains linked checklist actions and retained Card-reference mirrors; the earlier combined rollover fixture contained only ordinary checklist text. Adding linked actions reproduced the rejection in isolated synthetic data.
+
+Rollover now translates explicit nested `cardID` and `retainedCardID` references through the same owner-qualified mapping used for Card identities, only in the frozen comparison. Opaque edit-history evidence stays untouched, unresolved references still reject export, and live source/runtime files are unchanged. The richer fixture also exposed nondeterministic append order for newly added selections from multiple owners. Iterating owners by stable identity fixes new-record order without reordering retained selection records.
+
+The regression checks repeated exports, exact source/native-backup preservation, fresh import, restored active/retained link targets and identical re-export. All 77 affected native tests passed, including eight additional same-snapshot export retries in the linked rollover case (the same two keyboard-focus tests remain excluded). Native log: `/private/tmp/plenact-rollover-links-final.log`. The next owner action is rebuild and export only; another replacement, Undo or import is unnecessary. v22 remains the accepted checkpoint.
+
+
+## Owner v23 export independently verified — November 7, 2026
+
+The supplied v23 archive passed the general portable package reader (schemas, references, manifest and original-file integrity) and independent native Preferences/media/runtime hash checks. Native review codes are empty; synthetic ownership remains unverified and cloud upload remains disabled. The private comparison reads the archives in memory and emits aggregate evidence only. No personal archive or extracted content was added to the repository.
+
+Compared with v22, v23 adds one November 2 Week, one Collection, seven Lists, 49 Cards and 14 content selections. No retained records were removed; only the calendar index payload changes to add/select the new Week. All other retained portable record payloads and the existing local-deletion overlay remain unchanged. All five previous originals are byte-for-byte preserved, with no new originals. The new Week has seven bookmarks, seven importance selections and no orphan importance references. Its native Board matches the current Week.
+
+Expected package-review counts: 425 portable records, 261 nondeleted Cards, 44 Lists and five originals. Canonical storage retains 263 Card records, including the two existing local-deletion targets. There are three retained Weeks. Numeric editor aliases and native timestamp precision can differ from the prior pre-import native backup; stable canonical records are the comparison authority.
+
+Export validation is complete for v23; owner-operated re-import acceptance remains pending. Keep v22 as the previously accepted checkpoint. Next: Undo editable workspace import, choose the unzipped v23 folder, import into the editable Simulator workspace, then verify the November 2 replacement and a copied linked checklist action. Do not repeat template application. Step 1 remains in progress.
+
+
+## Owner v23 re-import acceptance — November 7, 2026
+
+The owner reported completion after restoring the pre-import workspace, reviewing v23 and importing it into the editable Simulator workspace. Supplied screenshots confirm the expected 425 records, 261 nondeleted Cards, 44 Lists and five verified originals, the successful import receipt with cloud synchronization off, and the November 2–8 replacement Week restored in normal Board views. Monday and Saturday show the six task rows and retained divider layout, appearance and importance indicators.
+
+The owner reported the requested acceptance sequence complete. The screenshots do not show a linked checklist action opened; exact active/retained link targets are independently covered by the synthetic fresh-import regression, while v23 passed the general reference validator. No further repeat of this manual checkpoint is requested. v23 is now the latest owner-accepted export/re-import checkpoint; retain v22 and earlier recovery packages. Step 1 remains in progress, with the remaining inventory and ownership/reconciliation gates still open.
+
+
+## Day-template application boundary — November 7, 2026
+
+Two isolated regressions now cover Day-template addition and replacement into Tuesday of a retained Week. They reuse the production Apply/reservation/save/export path and the existing shared fixture rather than introducing a parallel adapter. Two additive copies and one replacement preserve other dated Lists and their bookmarks/importance, the selected day's archive, undated work, retained canonical Cards and local deletion evidence. Copied Card/Note links, source/runtime immutability, exact native recovery, fresh import and identical re-export pass. No production code change was required for this evidence checkpoint.
+
+Validation: all four selected Day/Week application/replacement tests pass; 112 tooling tests pass. Independent `DayTemplateApplicationPackage` and `DayTemplateReplacementPackage` checks pass with two synthetic originals each. The previous broad 77-test run remains the broad baseline; do not describe this focused run as a new 79-test full run. Native log: `/private/tmp/plenact-day-template-focused.log`; tooling log: `/private/tmp/plenact-day-template-python.log`.
+
+One focused owner test is pending from accepted v23: use Vacation Day → Preview & apply, destination November 3, 2026, Apply as Replace, confirm, then export v24. The other days must remain unchanged. The current build already contains the application path; no rebuild or Undo is needed before applying/exporting. Independently validate v24 against v23 before re-import. Step 1 and its remaining inventory gates remain open.
+
+
+## Template settings navigate to Library — November 7, 2026
+
+At the owner's request, Plan Settings → Day & Week Templates no longer repeats individual template rows. It keeps the existing default-Week and capture controls and presents **Open Templates in Library**. The redundant **Reload saved templates** action is also hidden in this Settings sheet and retained beside the Library listings. The action dismisses the nested template sheet, then Plan Settings, before selecting Plans/Library with the Templates filter and cleared search. Library remains the shared browsing/editing/application location; saved templates are not deleted or reclassified as Examples.
+
+Actual unsaved Plan Settings changes offer save/discard/keep-editing; an unchanged Settings draft routes directly. The checked save action is shared with the existing Save button. Navigation is transient and does not change the portable model or recovery state.
+
+The build and three existing Settings/Library/template rendering checks pass (`/private/tmp/plenact-template-settings-navigation-final.log`), including render-without-saving assertions. User-operated end-to-end navigation remains pending. Rebuild Plenact Import Test to check the new button, then continue the pending Vacation Day → November 3 Replace/export v24 test from Library → Templates. v23 remains accepted; no Undo/import is required before the new export.
+
+
+## Owner v24 Day replacement export verified — November 7, 2026
+
+The supplied v24 archive passed the general package schema/reference/manifest/original validator and native Preferences/media/runtime hash verification, with empty native review codes. The private in-memory comparison against accepted v23 confirms exactly three new Cards and two content selections, no removed canonical records, and one retained Tuesday List update (Card membership and subtitle). The seven old Tuesday entries are exactly the newly added local deletion targets; the two prior targets remain. All other retained canonical records and all five original files are unchanged. No personal archive or content was added to fixtures.
+
+One native importance marker points to an intentionally deleted retained Tuesday Card. Its identity resolves through retained runtime aliases into the explicit local-deletion overlay; this is preserved recovery evidence, distinct from the previously fixed unexported orphan markers. The complete package reference validation passes. Screenshots confirm the three Day-template items on November 3 and the neighboring Monday task/divider layout retained before export.
+
+Expected v24 review counts: 430 records, 257 nondeleted Cards, 44 Lists and five verified originals. Storage retains 266 canonical Card records, nine local deletion targets and three Weeks. Cloud synchronization remains off. Owner-operated editable re-import is pending: Undo editable workspace import, choose the unzipped v24 folder, import into editable Simulator workspace, then verify Tuesday's three items and Monday unchanged. No rebuild or repeated template application is required. v23 remains the accepted checkpoint until that focused acceptance completes.
+
+
+## Owner v24 Day replacement acceptance — November 7, 2026
+
+The owner reported the editable re-import acceptance sequence complete. Supplied screenshots confirm pre-import workspace restoration, the expected v24 review counts (430 records, 257 nondeleted Cards, 44 Lists, five originals), availability of editable import, and the three Vacation Day items restored on Tuesday November 3. No import-success alert or post-import Monday screenshot was supplied; the owner completion report establishes the completed sequence, while the earlier pre-export Monday screenshot and independent retained-record comparison establish the neighboring-day evidence.
+
+v24 is now the latest owner-accepted export/re-import checkpoint, with v23 retained as the prior checkpoint. This closes the focused Day-template replacement acceptance; no repeat of this test is requested. Day addition retains synthetic evidence and is not separately owner-accepted. Step 1 remains in progress, with remaining calendar/structural, drawing, ownership and final reconciliation/recovery gates still open. Cloud synchronization remains disabled.
+
+
+## Today shortcuts edited export — November 7, 2026
+
+The next bounded settings adapter supports **My shortcuts** after editable import: explicit empty-store creation, selected owner/List references, authored order, replacement, removal and clearing. Retained singleton identity and unchanged canonical payloads are preserved; a genuinely new singleton gets a deterministic workspace-qualified identity. Only this recognized native store is newly allowed. Missing retained stores, unknown fields, duplicate/excess pins, invalid numbers and unresolved/mismatched ownership reject export rather than being normalized by the UI helper. Explicit `[]` is supported; removing a retained store is not.
+
+The adapter resolves each List through verified numeric aliases plus its explicit Collection owner and membership. Rollover translates shortcuts into newly dated Week Lists only in the frozen comparison, alongside the existing owner-qualified List/Card mappings. Live stores and runtime files remain untouched during export. No authenticated ownership is inferred from a local profile.
+
+A synthetic isolated fixture covers new empty presence, creation, reorder, six-item selection, clearing and references spanning a new Week, an older Week and a personal Collection. It verifies stable singleton identity, authored order, unchanged other canonical groups, exact native preferences/media, frozen-source/runtime immutability, repeated export, fresh installation and identical re-export. Malformed, duplicate, unknown, missing and wrong-owner targets reject without source/runtime changes. Independent `ShortcutsPackage` validation checks the general schemas/references/manifest/originals and the three-owner ordered rollover targets, with two synthetic originals. Tooling passes 112 tests. All 80 affected native tests pass (the same two previously excluded keyboard-focus tests remain excluded). Native log: `/private/tmp/plenact-shortcuts-full.log`; tooling log: `/private/tmp/plenact-shortcuts-python.log`.
+
+One focused owner test is pending from accepted v24: rebuild Plenact Import Test, open Today → gear → My shortcuts, swap the first two Pinned rows, tap Done, then use Your data → Local backup → Export supported Card edits to Files… and save v25. My shortcuts has its own Done save. No Undo or re-import before the export. Independently compare v25 with v24 before the later re-import phase. Step 1 remains in progress; model publication and cloud synchronization stay disabled.
+
+
+## Owner v25 shortcut reorder export verified — November 7, 2026
+
+The owner supplied v25 and screenshots showing a swap of the first two Pinned shortcuts, with the third unchanged. The supplied Downloads path was unavailable; the same-version ZIP was read from the known Simulator Files storage. The separate v24 archive was no longer present in the checked locations, so comparison used the complete retained v24 import snapshot inside v25's verified native runtime evidence. The snapshot and v25 portable package both pass the general schema/reference/manifest/original validator; v25's native preference, media and runtime hashes pass with empty review codes. The retained baseline has the expected 266 canonical Cards and nine local deletion targets.
+
+Only the `today_shortcuts` record changes: singleton identity is exact, the first two of its three owner/List references swap positions, and the third remains exact. No records are added or removed. All other retained canonical values, the local deletion overlay and five original files are unchanged. Private comparison and snapshot decoding operate outside the repository and do not import or mutate the Simulator. No personal content was added to fixtures.
+
+Expected review counts remain 430 records, 257 nondeleted Cards, 44 Lists and five verified originals. Editable re-import acceptance is pending: Undo editable workspace import, review the unzipped v25 folder, import into editable Simulator workspace, then open My shortcuts and verify the swapped order without reordering it again. v24 remains the accepted checkpoint until that completes. Step 1 remains in progress and synchronization remains disabled.
+
+
+## Owner v25 shortcut reorder acceptance — November 7, 2026
+
+The owner supplied the completed Undo/review/editable-import sequence. Screenshots confirm the expected 430 records, 257 nondeleted Cards, 44 Lists and five verified originals; the successful editable import receipt explicitly states synchronization is off. The post-import My shortcuts screen confirms the first two pinned destinations retain their swapped order and the third remains in place. This closes the focused owner reorder round trip.
+
+v25 is now the latest accepted export/re-import checkpoint; retain its ZIP and recovery history. No repeat of this manual test is requested. Shortcut creation, clearing and new-Week destinations retain isolated synthetic evidence rather than separate owner acceptance. Step 1 remains in progress with the remaining calendar/structural, drawing, ownership and final reconciliation/recovery gates open. No staging, commit, publication or synchronization was performed.

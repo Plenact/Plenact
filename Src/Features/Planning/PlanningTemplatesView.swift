@@ -11,17 +11,17 @@ import SwiftUI
 
 
 ///
-/// Presents the standalone reusable-template library
+/// Presents template settings and the Library entry point
 ///
 /// @section    Purpose
-///     Reuses the same stateful rows and editing sheets as the Library filter to keep behavior and
-///     storage consistent.
+///     Retains default-Week and capture controls while directing browsing and application to Library.
 ///
 struct PlanningTemplatesView: View
 {
 
 
     @Environment(\.dismiss) private var dismiss
+    var onOpenLibrary: (() -> Void)? = nil
     var body: some View
     {
 
@@ -30,9 +30,9 @@ struct PlanningTemplatesView: View
 
             List
             {
-                PlanningTemplateLibraryRows()
+                PlanningTemplateLibraryRows(showsTemplateListings: false, onOpenLibrary: onOpenLibrary)
             }
-            .navigationTitle("Day & Week Templates")
+            .navigationTitle("Planning Templates")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
@@ -65,6 +65,8 @@ struct PlanningTemplateLibraryRows: View
 
 
     var query = ""
+    var showsTemplateListings = true
+    var onOpenLibrary: (() -> Void)? = nil
     var defaults: UserDefaults = .standard
     @Environment(\.planningCalendarAccess) private var access
     @State private var library: PlanningRoutineLibrary?
@@ -233,139 +235,162 @@ struct PlanningTemplateLibraryRows: View
 
                 }
 
-                Section("Day & Week templates")
+                Section
                 {
 
-                    let matches = library.templates.filter
+                    if showsTemplateListings
                     {
 
-                        LibraryStarterSearch.matches(
-                            query,
-                            texts: [$0.name, $0.kind.rawValue]
-                            + $0.collection.lists.flatMap
-                            {
-                                [$0.title] + $0.cards.map(\.word)
-                            })
-                    }
-
-                    if matches.isEmpty
-                    {
-                        Text("No matching Day or Week templates").foregroundStyle(.secondary)
-                    }
-
-                    ForEach(matches)
-                    {
-                        template in
-                        VStack(alignment: .leading, spacing: 10)
+                        let matches = library.templates.filter
                         {
 
-                            HStack
+                            LibraryStarterSearch.matches(
+                                query,
+                                texts: [$0.name, $0.kind.rawValue]
+                                + $0.collection.lists.flatMap
+                                {
+                                    [$0.title] + $0.cards.map(\.word)
+                                })
+                        }
+
+                        if matches.isEmpty
+                        {
+                            Text("No matching Day or Week templates").foregroundStyle(.secondary)
+                        }
+
+                        ForEach(matches)
+                        {
+                            template in
+                            VStack(alignment: .leading, spacing: 10)
                             {
 
-                                Label(template.name, systemImage: template.kind == .week ? "calendar" : "sun.max")
-                                .font(.headline)
-                                Spacer()
-                                if template.id == library.defaultWeekID
+                                HStack
                                 {
 
-                                    Text("Default").font(.caption).foregroundStyle(.secondary)
+                                    Label(template.name, systemImage: template.kind == .week ? "calendar" : "sun.max")
+                                    .font(.headline)
+                                    Spacer()
+                                    if template.id == library.defaultWeekID
+                                    {
+
+                                        Text("Default").font(.caption).foregroundStyle(.secondary)
+                                    }
+
+                                    Menu
+                                    {
+
+                                        Button("Edit template", systemImage: "pencil")
+                                        {
+                                            editing = template
+                                        }
+
+                                        Button("Duplicate", systemImage: "plus.square.on.square")
+                                        {
+
+                                            var copy = template;
+                                            copy.id = UUID();
+                                            copy.name += " Copy";
+                                            editing = copy
+                                        }
+
+                                        Button("Delete template", systemImage: "trash", role: .destructive)
+                                        {
+
+                                            deleting = template
+                                        }
+
+                                    }
+                                    label:
+                                    {
+
+                                        Image(systemName: "ellipsis").frame(width: 44, height: 44)
+                                    }
+                                    .accessibilityLabel(template.name + " actions")
                                 }
 
-                                Menu
+                                Text("\(template.kind.rawValue) · \(template.itemCount) items").font(.caption)
+                                .foregroundStyle(.secondary)
+                                Button("Preview & apply", systemImage: "calendar.badge.plus")
                                 {
-
-                                    Button("Edit template", systemImage: "pencil")
-                                    {
-                                        editing = template
-                                    }
-
-                                    Button("Duplicate", systemImage: "plus.square.on.square")
-                                    {
-
-                                        var copy = template;
-                                        copy.id = UUID();
-                                        copy.name += " Copy";
-                                        editing = copy
-                                    }
-
-                                    Button("Delete template", systemImage: "trash", role: .destructive)
-                                    {
-
-                                        deleting = template
-                                    }
-
+                                    applying = template
                                 }
-                                label:
-                                {
-
-                                    Image(systemName: "ellipsis").frame(width: 44, height: 44)
-                                }
-                                .accessibilityLabel(template.name + " actions")
-                            }
-
-                            Text("\(template.kind.rawValue) · \(template.itemCount) items").font(.caption)
-                            .foregroundStyle(.secondary)
-                            Button("Preview & apply", systemImage: "calendar.badge.plus")
-                            {
-                                applying = template
-                            }
-                            .frame(minHeight: 44)
-                        } .padding(.vertical, 4)
-                        .confirmationDialog(
-                                        "Delete this template?", isPresented: Binding(get:
-                                            {
-                                                deleting?.id == template.id
-                                            }, set:
-                                            {
-                                                if !$0
+                                .frame(minHeight: 44)
+                            } .padding(.vertical, 4)
+                            .confirmationDialog(
+                                            "Delete this template?", isPresented: Binding(get:
                                                 {
-                                                    deleting = nil
-                                                }
+                                                    deleting?.id == template.id
+                                                }, set:
+                                                {
+                                                    if !$0
+                                                    {
+                                                        deleting = nil
+                                                    }
 
-                                            }),
-                                        titleVisibility: .visible
-                        )
-                        {
-
-                            if let deleting
+                                                }),
+                                            titleVisibility: .visible
+                            )
                             {
 
-                                Button("Delete " + deleting.name, role: .destructive)
+                                if let deleting
                                 {
 
-                                    _ = update
+                                    Button("Delete " + deleting.name, role: .destructive)
                                     {
-                                        library in
-                                        library.templates.removeAll
+
+                                        _ = update
                                         {
-                                            $0.id == deleting.id
+                                            library in
+                                            library.templates.removeAll
+                                            {
+                                                $0.id == deleting.id
+                                            }
+
+                                            if library.defaultWeekID == deleting.id
+                                            {
+                                                library.defaultWeekID = nil
+                                            }
+
                                         }
 
-                                        if library.defaultWeekID == deleting.id
-                                        {
-                                            library.defaultWeekID = nil
-                                        }
-
+                                        self.deleting = nil
                                     }
 
-                                    self.deleting = nil
+                                }
+
+                                Button("Cancel", role: .cancel)
+                                {
+                                    deleting = nil
                                 }
 
                             }
-
-                            Button("Cancel", role: .cancel)
+                            message:
                             {
-                                deleting = nil
+
+                                Text("Applied days and weeks remain. Deleting the default switches new weeks to Empty week.")
                             }
-
-                        }
-                        message:
-                        {
-
-                            Text("Applied days and weeks remain. Deleting the default switches new weeks to Empty week.")
                         }
                     }
+                    else
+                    {
 
+                        Button("Open Templates in Library", systemImage: "square.stack.3d.up")
+                        {
+
+                            onOpenLibrary?()
+                        }
+                        .disabled(onOpenLibrary == nil)
+                        .accessibilityIdentifier("settings.templates.openLibrary")
+                    }
+                }
+                header:
+                {
+
+                    if showsTemplateListings
+                    {
+
+                        Text("Day & Week templates")
+                    }
                 }
 
                 if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -399,10 +424,14 @@ struct PlanningTemplateLibraryRows: View
                         )
                     }
 
-                    Section
+                    if showsTemplateListings
                     {
 
-                        Button("Reload saved templates", systemImage: "arrow.clockwise", action: reload)
+                        Section
+                        {
+
+                            Button("Reload saved templates", systemImage: "arrow.clockwise", action: reload)
+                        }
                     }
 
                 }

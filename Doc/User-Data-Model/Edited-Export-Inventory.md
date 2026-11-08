@@ -1,3 +1,24 @@
+# Current Step 1 inventory — November 7, 2026
+
+**Current accepted checkpoint: v25. Step 1 beta exit is closed for Step 2 synthetic staging; production migration/synchronization readiness remains open. Cloud synchronization is disabled.** Published Model 1.0 remains immutable; working 1.1 is unpublished. The October audit and dated updates below remain historical evidence; use this current summary together with the latest implementation and acceptance sections.
+
+The [beta closeout](Step-1-Beta-Closeout.md) defines the accepted scope, reviewed inventory, device-only exclusions, evidence and deferred work. Remaining gaps below are recorded limitations rather than an endless prerequisite queue before synthetic staging.
+
+| Area | Current evidence and boundary |
+| --- | --- |
+| Card content, nested content/media, same-Board structure, Collection/List metadata | Supported within the explicit adapters; owner-accepted checkpoints retained. Cross-Board transfers and arbitrary owner lifecycle changes remain guarded. |
+| Preferences, local profile, Studio | Supported adapters with synthetic creation/edit/clearing/media recovery. Owner acceptance covers saved preferences, profile creation and Studio variety; it does not establish every avatar/artwork UI path. |
+| Planning/reviews | Review rhythm, daily writing/check-ins, evening reviews, weekly and periodic reviews/objectives now have explicit edited-export evidence, with owner round trips through v13. These earlier audit gaps are no longer wholly pending. |
+| Templates | Retained metadata/order/default, capture/duplication, unreferenced removal, Card edits/new items/deletion have bounded adapters and owner evidence through v20. Context/weekday/focus changes, absent-library creation and reference-dependent removals remain separate limits. |
+| Template application and rollover | Week addition to a retained Week is accepted in v22. New-Week rollover followed by Week replacement is accepted in v23, including independent originals/recovery validation. Day addition/replacement passes focused synthetic tests and independent validation; Day replacement is owner-accepted in v24. |
+| Calendar and structural lifecycle | Changed first-weekday policy, retained day mappings/checklist overrides, cross-Board transfers and List/Week/Collection deletion still need explicit reference-wide reconciliation. A supported path must not be inferred from successful migration alone. |
+| Today shortcuts | Creation, order/selection changes and clearing now have a dedicated owner-qualified adapter, including new-Week rollover references. Synthetic and independent package checks pass; shortcut reorder is owner-accepted in v25. |
+| Other domains and final gates | Labels and other store edits require a field-level inventory; new drawing derivations remain unsupported. Real account/workspace binding, complete source/export reconciliation, explicit device-only exclusions, compatibility and recovery acceptance remain open. |
+
+The **Day-template replacement into Tuesday of the retained November 2 Week** checkpoint is owner-accepted in v24. Retain v23 as the prior recovery checkpoint; no completed manual tests should be repeated. The new Day tests reuse the application fixture and cover two additive applications or one replacement, retained selection/deletion evidence, archives/undated work, copied links, frozen/native/runtime preservation, fresh import and identical re-export. No production adapter changes were required. Four affected Day/Week tests and 112 tooling tests pass; both Day packages independently validate with two synthetic originals.
+
+---
+
 # Edited portable export inventory — October 26, 2026
 
 **Supported User Data Model versions:** 1.0 base and working 1.1 composition.

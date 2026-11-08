@@ -143,6 +143,49 @@ def check_native_package(directory, prefix="NativePackage"):
                 raise ContractError('template_application_fixture_focus_mismatch')
         if len({r['payload']['checklists'][0]['id'] for r in copies}) != 2:
             raise ContractError('template_application_fixture_nested_identity_reused')
+    elif prefix in ('DayTemplateApplicationPackage', 'DayTemplateReplacementPackage'):
+        planning = base['planning']
+        cards = {r['id']: r['payload'] for r in planning['content']['cards']}
+        lists = {r['id']: r['payload'] for r in planning['content']['lists']}
+        owner = planning['weeks'][0]['payload']['collection_id']
+        tuesday = {id for id, value in lists.items()
+                   if value['collection_id'] == owner and value['title'] == 'Tuesday'}
+        deleted = set(binding['workspace_export'].get('local_card_deletions', []))
+        replace = prefix == 'DayTemplateReplacementPackage'
+        expected_deleted = {'Retained Tuesday task'} if replace else set()
+        if len(deleted) != len(expected_deleted) or {cards[id]['title'] for id in deleted} != expected_deleted:
+            raise ContractError('day_template_fixture_wrong_deletion_scope')
+        preserved = {value['title'] for value in cards.values()}
+        if not {'Retained archived task', 'Retained Tuesday archive', 'Retained undated task'} <= preserved:
+            raise ContractError('day_template_fixture_missing_preserved_work')
+        copies = [value for value in cards.values() if value['list_id'] in tuesday
+                  and value['title'] == 'Retained template task']
+        targets = {id for id, value in cards.items() if value['list_id'] in tuesday
+                   and value['title'] == 'Applied link target'}
+        expected = 1 if replace else 2
+        if len(copies) != expected or len(targets) != expected:
+            raise ContractError('day_template_fixture_wrong_day_or_copy_count')
+        for value in copies:
+            link = value['checklists'][-1]['items'][0]
+            if link['content']['kind'] != 'linked_card' or link['content']['card_id'] not in targets:
+                raise ContractError('day_template_fixture_wrong_link')
+        monday = [value for id, value in cards.items() if id not in deleted
+                  and lists[value['list_id']]['collection_id'] == owner
+                  and lists[value['list_id']]['title'] == 'Monday' and not value['archived']]
+        if len(monday) != 1 or monday[0]['title'] != 'Retained template task':
+            raise ContractError('day_template_fixture_changed_neighbor_day')
+    elif prefix == 'ShortcutsPackage':
+        planning = base['planning']
+        items = base['today_shortcuts']['payload']['items']
+        if len(items) != 3 or len({item['collection_id'] for item in items}) != 3 or len(planning['weeks']) != 2:
+            raise ContractError('shortcuts_fixture_wrong_owner_count')
+        lists = {r['id']: r['payload'] for r in planning['content']['lists']}
+        if [lists[item['list_id']]['title'] for item in items] != ['Monday', 'Synthetic personal target', 'Monday']:
+            raise ContractError('shortcuts_fixture_wrong_order')
+        current = planning['calendar_indexes'][0]['payload']['current_week_start_date']
+        week = next(r['payload'] for r in planning['weeks'] if r['payload']['start_date'] == current)
+        if current != '2026-11-02' or items[0]['collection_id'] != week['collection_id']:
+            raise ContractError('shortcuts_fixture_wrong_rollover_target')
     elif prefix == 'TemplateItemDeletionPackage':
         export = binding['workspace_export']
         deleted = export.get('local_card_deletions', [])
@@ -426,6 +469,9 @@ def main():
     modes.add_argument('--weekly-review-package', action='store_true')
     modes.add_argument('--periodic-review-package', action='store_true')
     modes.add_argument('--template-metadata-package', action='store_true')
+    modes.add_argument('--shortcuts-package', action='store_true')
+    modes.add_argument('--day-template-application-package', action='store_true')
+    modes.add_argument('--day-template-replacement-package', action='store_true')
     modes.add_argument('--template-replacement-package', action='store_true')
     modes.add_argument('--template-application-package', action='store_true')
     modes.add_argument('--template-item-deletion-package', action='store_true')
@@ -434,6 +480,15 @@ def main():
     modes.add_argument('--deleted-template-package', action='store_true')
     modes.add_argument('--new-template-package', action='store_true')
     args = parser.parse_args()
+    if args.shortcuts_package:
+        count = check_native_package(args.attachments, prefix='ShortcutsPackage')
+        print(f'Shortcuts package passed independent validation: {count} original files.')
+        return
+    if args.day_template_application_package or args.day_template_replacement_package:
+        prefix = 'DayTemplateReplacementPackage' if args.day_template_replacement_package else 'DayTemplateApplicationPackage'
+        count = check_native_package(args.attachments, prefix=prefix)
+        print(f'{prefix} passed independent validation: {count} original files.')
+        return
     if args.template_replacement_package:
         count = check_native_package(args.attachments, prefix='TemplateReplacementPackage')
         print(f'Template replacement package passed independent validation: {count} original files.')

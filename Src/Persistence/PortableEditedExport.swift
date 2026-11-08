@@ -815,6 +815,92 @@ enum PortableEditedExport
     }
 
 
+    /// @fcn PortableEditedExport.shortcuts
+    /// @brief Preserve authored Today shortcut selection and order against explicit owner/List identities
+    /// @details Keeps retained singleton identity and unchanged canonical bytes; an explicitly saved new
+    ///          store gets a deterministic workspace identity. Missing, malformed or ambiguous targets reject.
+    /// @param[in] assembly Current reconciled content graph
+    /// @param[in] current Frozen native values, including rollover comparison aliases
+    /// @param[in] baseline Retained imported settings projection
+    /// @param[in] aliases Verified canonical-to-native identity mappings
+    /// @return Assembly with the checked shortcut singleton or unchanged absence
+    /// @throws Unknown fields, duplicates, excess items, missing stores or invalid owner membership
+    private static func shortcuts(assembly: [String: Any], current: [String: Any],
+        baseline: PortableWorkspaceCandidate, aliases: [String: Int]) throws -> [String: Any]
+    {
+
+        let key = TodayListPins.key
+        guard let bytes = current[key] as? Data else
+        {
+
+            guard current[key] == nil, baseline.values[key] == nil else
+            {
+
+                throw Failure.unsupported
+            }
+            return assembly
+        }
+        guard let raw = try JSONSerialization.jsonObject(with: bytes) as? [[String: Any]], raw.count <= 6,
+              raw.allSatisfy({ Set($0.keys) == ["ownerID", "listID"] }) else
+        {
+
+            throw Failure.unsupported
+        }
+        let pins = try JSONDecoder().decode([WorkspaceListReference].self, from: bytes)
+        guard Set(pins).count == pins.count else
+        {
+
+            throw Failure.unsupported
+        }
+        if let old = baseline.values[key] as? Data, equal(try nativeJSON(old), try nativeJSON(bytes))
+        {
+
+            return assembly
+        }
+        var result = assembly
+        var export = result["workspace_export"] as! [String: Any]
+        var base = export["base_workspace"] as! [String: Any]
+        let content = (base["planning"] as! [String: Any])["content"] as! [String: Any]
+        let lists = content["lists"] as! [[String: Any]]
+        let collections = content["collections"] as! [[String: Any]]
+        let items = try pins.map { pin -> [String: Any] in
+
+            let owner = pin.ownerID.uuidString.lowercased()
+            let targets = lists.filter
+            {
+
+                aliases[$0["id"] as! String] == pin.listID &&
+                    ($0["payload"] as! [String: Any])["collection_id"] as? String == owner
+            }
+            guard targets.count == 1, let target = targets.first?["id"] as? String,
+                  let collection = collections.first(where: { $0["id"] as? String == owner }),
+                  ((collection["payload"] as! [String: Any])["list_ids"] as? [String])?.contains(target) == true else
+            {
+
+                throw Failure.unsupported
+            }
+            return ["collection_id": owner, "list_id": target]
+        }
+        let retained = base["today_shortcuts"] as? [String: Any]
+        guard (baseline.values[key] != nil) == (retained != nil) else
+        {
+
+            throw Failure.inconsistent
+        }
+        let id = try retained?["id"] as? String ?? PortableRichCardExport.identity(
+            namespace: baseline.workspaceID, name: "today_shortcuts:" + key)
+        var record = retained ?? ["user_data_model_version": "1.0", "payload_schema_version": 1,
+            "record_type": "today_shortcuts", "id": id, "workspace_id": baseline.workspaceID]
+        var payload = retained?["payload"] as? [String: Any] ?? [:]
+        payload["items"] = items
+        record["payload"] = payload
+        base["today_shortcuts"] = record
+        export["base_workspace"] = base
+        result["workspace_export"] = export
+        return result
+    }
+
+
     /// @fcn PortableEditedExport.prepare
     /// @brief Export a frozen native backup using its immutable canonical import baseline
     /// @param[in] backup Current backup including runtime evidence and exact current originals
@@ -875,7 +961,7 @@ enum PortableEditedExport
         let retainedRecoveryKeys: Set<String> = ["Plenact.ExampleCardLocations.Applied.v1", "Plenact.ExampleCardLocations.Backup.v1"]
         let deviceKeys = Set(current.keys.filter { retainedRecoveryKeys.contains($0) || $0.hasPrefix("Plenact.BoardViewport.") ||
             ["Plenact.ActivityRecents.v1", "Plenact.LibraryRecents.v1", "Plenact.RecentSearches.v1", "Plenact.LocalReactionAuthor.v1", "Plenact.LastViewedList.v1", "Plenact.Welcome.lastDeparture.v1"].contains($0) })
-        let newSupportedKeys: Set<String> = ["Plenact.PeriodicReviews.v1", "Plenact.WeeklyReviews.v1", "Plenact.DailyPlans.v1", "Plenact.ReviewRhythm.v1", "Plenact.LocalProfile.v1", "Plenact.Studio.Settings.v1",
+        let newSupportedKeys: Set<String> = [TodayListPins.key, "Plenact.PeriodicReviews.v1", "Plenact.WeeklyReviews.v1", "Plenact.DailyPlans.v1", "Plenact.ReviewRhythm.v1", "Plenact.LocalProfile.v1", "Plenact.Studio.Settings.v1",
             "Plenact.Studio.Artwork.v1", "Plenact.WeekAppearance.v1"]
         guard Set(current.keys).subtracting(deviceKeys).subtracting(newSupportedKeys)
                 == Set(baseline.values.keys).subtracting(newSupportedKeys),
@@ -910,7 +996,8 @@ enum PortableEditedExport
             retainedAliases: aliases, mediaFilenames: mediaNames)
         let contentAssembly = try PortableStructuralEdits.apply(assembly: creation.assembly,
             current: current, aliases: aliases, baseline: baseline)
-        let templateAssembly = try templateMetadata(assembly: contentAssembly, current: current, baseline: baseline)
+        let shortcutAssembly = try shortcuts(assembly: contentAssembly, current: current, baseline: baseline, aliases: aliases)
+        let templateAssembly = try templateMetadata(assembly: shortcutAssembly, current: current, baseline: baseline)
         let rhythmAssembly = try reviewRhythm(assembly: templateAssembly, current: current, baseline: baseline)
         let dailyAssembly = try planningEdits(assembly: rhythmAssembly, current: current, baseline: baseline, aliases: aliases)
         let weeklyAssembly = try planningEdits(assembly: dailyAssembly, current: current, baseline: baseline, aliases: aliases, family: .weekly)

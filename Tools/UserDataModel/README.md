@@ -215,3 +215,9 @@ Use `check_synthetic_assembly.py ATTACHMENTS --new-template-package` for the iso
 ### Week-template replacement evidence
 
 `check_synthetic_assembly.py ATTACHMENTS --template-replacement-package` validates synthetic `TemplateReplacementPackage` attachments using the general contract reader, then checks replaced target records remain under the correct Week owner/local overlay, archived and undated work remain present, and new replacement copies and explicit saved intent are retained. Latest evidence has two originals. This fixture oracle is synthetic only; personal exports use private comparisons and general validation.
+
+
+`check_synthetic_assembly.py ATTACHMENTS --day-template-application-package` and `--day-template-replacement-package` independently validate the isolated Day application fixtures. In addition to complete package integrity/reference checks, the oracles check Tuesday-only copied content/links, unchanged neighboring Monday content, preserved archived/undated work, and the exact replacement deletion scope. Each uses two synthetic originals; these fixture-name oracles must never be used on personal exports.
+
+
+`check_synthetic_assembly.py ATTACHMENTS --shortcuts-package` validates the synthetic `ShortcutsPackage` through the general package reader and checks three explicit owner-qualified destinations in authored order, including a newly generated Week. The fixture has two original files. This synthetic oracle is not a validator for personal field values; personal exports require the general reader plus a private checkpoint comparison.

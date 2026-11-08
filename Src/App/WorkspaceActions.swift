@@ -456,7 +456,7 @@ extension AppRootView
                 _ = try JSONDecoder().decode([LibraryRecentItem].self, from: oldData)
             }
 
-            var importance = oldData
+            var importance = try PortableTemplateApplication.importanceForSavedWeek(week, data: oldData)
             if replaceImportant
             {
 

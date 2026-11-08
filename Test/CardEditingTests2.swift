@@ -601,6 +601,13 @@ extension PlenactBoardDocumentTests
 
             expected.word = titleEditor.text
 
+            let titleHistory = try XCTUnwrap(emitted.last?.editHistory) /* Accepted title-edit history */
+
+            XCTAssertEqual(titleHistory.flatMap(\.changes).map(\.field),
+                (fixture.editHistory ?? []).flatMap(\.changes).map(\.field) + ["word"])
+
+            expected.editHistory = titleHistory
+
             XCTAssertEqual(
                 emitted.last, expected, "Title edits must not fill an unwritten Note body with generated copy")
 
@@ -617,7 +624,11 @@ extension PlenactBoardDocumentTests
             try await Task.sleep(for: .milliseconds(150))
 
             expected.descriptionOverride = editor.text
+            expected.editHistory = try XCTUnwrap(emitted.last?.editHistory)
 
+            XCTAssertEqual(expected.editHistory?.flatMap(\.changes).map(\.field),
+                (fixture.editHistory ?? []).flatMap(\.changes).map(\.field)
+                    + ["word", "descriptionOverride"])
             XCTAssertEqual(emitted.last, expected)
         }
 

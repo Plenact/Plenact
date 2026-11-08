@@ -1751,11 +1751,20 @@ struct CardDetailView: View
 
                 .padding(.horizontal, 16)
                 .padding(.vertical, 4)
-                .itemBannerBackground(appearance)
                 .background
                 {
-                    Color(.systemGroupedBackground)
-                    StudioItemBackground(appearance: appearance, isNote: presentation == .note)
+
+                    ZStack
+                    {
+
+                        Color(.systemGroupedBackground)
+                        StudioItemBackground(appearance: appearance, isNote: presentation == .note)
+                        Color.clear.itemBannerBackground(appearance)
+                    }
+                    // Extend only the opaque backdrop; controls stay below the status area
+                    .ignoresSafeArea(.container, edges: .top)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                 }
             }
 

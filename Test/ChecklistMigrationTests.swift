@@ -8,6 +8,7 @@
 // --------------------------------------------------------------------------------------------------
 @testable import Plenact
 import XCTest
+import SwiftUI
 
 
 ///
@@ -18,6 +19,87 @@ import XCTest
 ///
 final class ChecklistMigrationTests: XCTestCase
 {
+
+
+    /// Holds synthetic live text so each keystroke redraws the checklist row.
+    @MainActor
+    private final class EditingModel: ObservableObject
+    {
+
+        @Published var text = "Original"
+    }
+
+
+    /// Hosts the actual row, including its native editor and focus binding.
+    private struct EditingRow: View
+    {
+
+        @ObservedObject var model: EditingModel
+
+        var body: some View
+        {
+
+            ChecklistItemRow(item: model.text, isCompleted: false,
+                onToggle: {}, onUpdate: { model.text = $0 }, onDelete: {},
+                shouldFocus: false, onFocusHandled: {})
+        }
+    }
+
+
+    /// @fcn ChecklistMigrationTests.testChecklistTypingKeepsNativeKeyboardFocus
+    /// @brief Keep the same native editor focused through several model-driven redraws
+    /// @throws Test failure if typing dismisses focus or loses text
+    @MainActor
+    func testChecklistTypingKeepsNativeKeyboardFocus() async throws
+    {
+
+        let model = EditingModel()
+        let host = UIHostingController(rootView: EditingRow(model: model))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer
+        {
+
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+        try await Task.sleep(for: .milliseconds(500))
+        host.view.layoutIfNeeded()
+        func editor(in view: UIView) -> UITextField?
+        {
+
+            if let field = view as? UITextField
+            {
+
+                return field
+            }
+            return view.subviews.lazy.compactMap { editor(in: $0) }.first
+        }
+        let field = try XCTUnwrap(editor(in: host.view))
+        XCTAssertTrue(field.becomeFirstResponder())
+        try await Task.sleep(for: .milliseconds(150))
+        let selection = try XCTUnwrap(field.selectedTextRange)
+        XCTAssertTrue(selection.isEmpty)
+        XCTAssertEqual(field.offset(from: field.beginningOfDocument, to: selection.start),
+            (model.text as NSString).length)
+        for text in ["A", "AB", "ABC"]
+        {
+
+            field.text = text
+            field.sendActions(for: .editingChanged)
+            try await Task.sleep(for: .milliseconds(150))
+            XCTAssertEqual(model.text, text)
+            XCTAssertTrue(field.isFirstResponder, "Typing must retain keyboard focus")
+            XCTAssertTrue(editor(in: host.view) === field)
+        }
+        field.resignFirstResponder()
+        XCTAssertFalse(field.isFirstResponder)
+    }
 
 
     ///

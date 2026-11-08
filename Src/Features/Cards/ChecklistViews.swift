@@ -933,7 +933,8 @@ struct ChecklistItemRow: View
     let onFocusHandled: () -> Void        /* The action invoked when the text field focus has been handled */
 
     @State private var horizontalOffset:   CGFloat = 0  /* Current swipe translation */
-    @FocusState private var isTextFocused: Bool         /* Text-editor focus state   */
+    // UIKit reports focus through the binding; no SwiftUI .focused modifier owns this editor.
+    @State private var isTextFocused: Bool = false      /* Native editor focus state */
 
 
     ///
@@ -1355,8 +1356,8 @@ struct ChecklistTextField: UIViewRepresentable
 
         ///
         /// @fcn        ChecklistTextField.Coordinator.textFieldDidBeginEditing
-        /// @brief      Select the existing checklist text when editing begins
-        /// @details    Marks the parent as focused and defers full-text selection to the main queue.
+        /// @brief      Place the insertion cursor after the existing checklist text when editing begins
+        /// @details    Marks the parent as focused and defers a collapsed end selection until native focus settles.
         ///
         /// @param[in]  field  Native checklist text field delivering the delegate callback
         ///
@@ -1369,12 +1370,13 @@ struct ChecklistTextField: UIViewRepresentable
             DispatchQueue.main.async
             {
                 [weak field] in
-                guard let field, field.isFirstResponder, !(field.text ?? "").isEmpty else
+                guard let field, field.isFirstResponder else
                 {
                     return
                 }
 
-                field.selectAll(nil)
+                let end = field.endOfDocument
+                field.selectedTextRange = field.textRange(from: end, to: end)
             }
 
         }

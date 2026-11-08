@@ -24,6 +24,112 @@ extension PlenactBoardDocumentTests
 {
 
 
+    /// @fcn PlenactBoardDocumentTests.testDetailHeaderCoversStatusAreaWhileScrolling
+    /// @brief Keep Card and Note body text behind the header throughout the top safe area
+    /// @throws Window, scroll-view or image failures
+    @MainActor
+    func testDetailHeaderCoversStatusAreaWhileScrolling() async throws
+    {
+
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+            { $0 as? UIWindowScene }.first) /* Automated test scene */
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window */
+        let window = UIWindow(windowScene: scene) /* Synthetic detail window */
+
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+
+        defer
+        {
+
+            window.isHidden = true
+            window.rootViewController = nil
+
+            previous?.makeKeyAndVisible()
+        }
+
+        func scrollers(_ view: UIView) -> [UIScrollView]
+        {
+
+            ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrollers)
+        }
+
+        let fixtures: [(ItemPresentation, ItemAppearance?)] = /* Plain and banner-colored details */
+        [
+            (.card, nil), (.note, nil),
+            (.card, ItemAppearance(background: .rose)), (.note, ItemAppearance(background: .rose))
+        ]
+
+        for (presentation, appearance) in fixtures
+        {
+
+            let text = (0..<90).map { "SCROLL COVERAGE \($0) — synthetic detail text" }
+                .joined(separator: "\n") /* Long synthetic body */
+            let card = KanbanCard(id: 908, word: "Header coverage", listTitle: "Synthetic",
+                checklists: [], descriptionOverride: text, presentation: presentation,
+                appearance: appearance) /* Synthetic detail record */
+            var emissions: [KanbanCard] = [] /* Edits unexpectedly emitted by scrolling */
+            let host = UIHostingController(rootView: NavigationStack
+                {
+
+                    CardDetailView(card: card, onTitleToggle: { emissions.append($0) })
+                }) /* Rendered detail surface */
+
+            window.rootViewController = host
+
+            window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(350))
+            host.view.layoutIfNeeded()
+
+            let scroll = try XCTUnwrap(scrollers(host.view).filter
+                { $0.contentSize.height > $0.bounds.height + 500 }
+                .max { $0.bounds.width * $0.bounds.height < $1.bounds.width * $1.bounds.height })
+                /* Main detail scroller */
+            let safeTop = host.view.safeAreaInsets.top /* Status-area height */
+
+            XCTAssertGreaterThan(safeTop, 20)
+
+            func topPixels() throws -> Data
+            {
+
+                let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+                {
+
+                    _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+                } /* Rendered detail frame */
+                let rect = CGRect(x: 16 * image.scale, y: image.scale,
+                    width: (host.view.bounds.width - 32) * image.scale,
+                    height: (safeTop - 2) * image.scale) /* Top strip excluding edge scroll indicators */
+                let crop = try XCTUnwrap(image.cgImage?.cropping(to: rect)) /* Status-area pixels */
+
+                return try XCTUnwrap(UIImage(cgImage: crop).pngData())
+            }
+
+            let baseline = try topPixels() /* Header before scrolling */
+
+            for offset in [CGFloat(130), 310, 570]
+            {
+
+                scroll.setContentOffset(CGPoint(x: 0, y: offset), animated: false)
+                try await Task.sleep(for: .milliseconds(150))
+                host.view.layoutIfNeeded()
+                XCTAssertEqual(try topPixels(), baseline,
+                    "\(presentation): body content must not paint in the status area at offset \(offset)")
+            }
+
+            let attachment = XCTAttachment(image: UIGraphicsImageRenderer(bounds: host.view.bounds).image
+                { _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true) })
+                /* Scrolled synthetic detail evidence */
+
+            attachment.name = "Header-safe-area-" + String(describing: presentation)
+                + (appearance == nil ? "-plain" : "-banner")
+            attachment.lifetime = .keepAlways
+
+            add(attachment)
+            XCTAssertTrue(emissions.isEmpty)
+        }
+    }
+
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testNoteListDayLayoutRendersAtPhoneAndTabletWidths
     /// @brief      Verify that note List Day Layout Renders At Phone And Tablet Widths

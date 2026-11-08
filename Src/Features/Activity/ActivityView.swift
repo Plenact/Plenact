@@ -1301,14 +1301,17 @@ struct SavedCardsView: View
                             }
                             .buttonStyle(.bordered)
                             .accessibilityLabel("Restore \(board.title)")
-                            Button("Delete", systemImage: "trash", role: .destructive)
+                            if !board.isPrimaryList
                             {
+                                Button("Delete", systemImage: "trash", role: .destructive)
+                                {
 
-                                deletingBoard = board
+                                    deletingBoard = board
 
+                                }
+                                .labelStyle(.iconOnly)
+                                .accessibilityLabel("Delete \(board.title)")
                             }
-                            .labelStyle(.iconOnly)
-                            .accessibilityLabel("Delete \(board.title)")
                         }
 
                     }
@@ -1556,7 +1559,7 @@ struct SavedCardsView: View
             Button("Delete \(deletingBoard?.kind.rawValue ?? "item")", role: .destructive)
             {
 
-                if let deletingBoard
+                if let deletingBoard, !deletingBoard.isPrimaryList
                 {  /* Archived collection awaiting permanent deletion */
 
 

@@ -292,12 +292,13 @@ struct PersonalCollectionBoardView: View
             boardTitle: collection.title,
             boardSubtitle: "",
             allowsAddingLists: collection.kind == .board,
+            allowsRemovingLists: !collection.isPrimaryList,
             fillsAvailableListWidth: collection.kind == .list,
             onClose:
             {
                 dismiss()
             },
-            onArchiveBoard:
+            onArchiveBoard: collection.isPrimaryList ? nil :
             {
 
                 do
@@ -315,7 +316,7 @@ struct PersonalCollectionBoardView: View
                 }
 
             },
-            onDeleteBoard:
+            onDeleteBoard: collection.isPrimaryList ? nil :
             {
 
                 do

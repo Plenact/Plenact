@@ -68,6 +68,7 @@ struct ContentView: View
     /// Supporting text displayed beneath the board title
     let boardSubtitle: String /* Supporting text displayed beneath the Board heading */
     /// Whether the board offers list creation
+    let allowsRemovingLists: Bool /* Whether whole Lists may be archived or deleted */
     let allowsAddingLists: Bool /* Whether the board offers list creation */
     /// Lets a single-list personal collection fill the Standard viewport without changing Overview
     let fillsAvailableListWidth: Bool /* Whether a single personal List fills the Standard viewport */
@@ -434,6 +435,7 @@ struct ContentView: View
         boardTitle: String = "Plenact",
         boardSubtitle: String = "Work Week Board",
         allowsAddingLists: Bool = true,
+        allowsRemovingLists: Bool = true,
         fillsAvailableListWidth: Bool = false,
         onClose: (() -> Void)? = nil,
         onArchiveBoard: (() -> Void)? = nil,
@@ -493,6 +495,7 @@ struct ContentView: View
         self.onListViewed = onListViewed
         self.boardTitle = boardTitle
         self.boardSubtitle = boardSubtitle
+        self.allowsRemovingLists = allowsRemovingLists
         self.allowsAddingLists = allowsAddingLists
         self.fillsAvailableListWidth = fillsAvailableListWidth
         self.onClose = onClose
@@ -899,7 +902,7 @@ struct ContentView: View
                                                             cardID in
                                                             deleteCard(cardID)
                                                         },
-                                                        canRemoveList: dayDate(for: list.id) == nil,
+                                                        canRemoveList: allowsRemovingLists && dayDate(for: list.id) == nil,
                                                         onArchiveList:
                                                         {
                                                             archiveList(with: list.id)

@@ -417,18 +417,21 @@ struct BoardListsView: View
 
                 }
 
-                Button("Archive", systemImage: "archivebox")
+                if !collection.isPrimaryList
                 {
+                    Button("Archive", systemImage: "archivebox")
+                    {
 
-                    archivingCollection = collection
+                        archivingCollection = collection
 
-                }
+                    }
 
-                Button("Delete \(collection.kind.rawValue)", systemImage: "trash", role: .destructive)
-                {
+                    Button("Delete \(collection.kind.rawValue)", systemImage: "trash", role: .destructive)
+                    {
 
-                    deletingCollection = collection
+                        deletingCollection = collection
 
+                    }
                 }
 
             }
@@ -469,36 +472,42 @@ struct BoardListsView: View
 
             }
 
-            Button("Archive Collection")
+            if !collection.isPrimaryList
             {
+                Button("Archive Collection")
+                {
 
-                archivingCollection = collection
+                    archivingCollection = collection
 
-            }
+                }
 
-            Button("Delete \(collection.kind.rawValue)")
-            {
+                Button("Delete \(collection.kind.rawValue)")
+                {
 
-                deletingCollection = collection
+                    deletingCollection = collection
 
+                }
             }
 
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false)
         {
 
-            Button("Delete", role: .destructive)
+            if !collection.isPrimaryList
             {
+                Button("Delete", role: .destructive)
+                {
 
-                deletingCollection = collection
+                    deletingCollection = collection
 
-            }
+                }
 
-            Button("Archive")
-            {
+                Button("Archive")
+                {
 
-                archivingCollection = collection
+                    archivingCollection = collection
 
+                }
             }
 
             Button("Edit")

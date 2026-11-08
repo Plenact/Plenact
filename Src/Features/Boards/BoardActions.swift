@@ -731,7 +731,7 @@ extension ContentView
     func deleteList(_ id: Int)
     {
 
-        guard dayDate(for: id) == nil else
+        guard allowsRemovingLists, dayDate(for: id) == nil else
         {
             return
         }
@@ -1348,7 +1348,7 @@ extension ContentView
     func archiveList(with listID: Int)
     {
 
-        guard dayDate(for: listID) == nil else
+        guard allowsRemovingLists, dayDate(for: listID) == nil else
         {
             return
         }

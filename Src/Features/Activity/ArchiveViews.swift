@@ -121,11 +121,14 @@ struct ArchivedCollectionContentsView: View
                         }
 
 
-                        Button("Delete List", systemImage: "trash", role: .destructive)
+                        if !collection.isPrimaryList
                         {
+                            Button("Delete List", systemImage: "trash", role: .destructive)
+                            {
 
-                            deletingList = list
+                                deletingList = list
 
+                            }
                         }
 
                     }
@@ -160,11 +163,14 @@ struct ArchivedCollectionContentsView: View
                             dismiss()
                         }
 
-                        Button("Delete \(collection.kind.rawValue)", systemImage: "trash", role: .destructive)
+                        if !collection.isPrimaryList
                         {
+                            Button("Delete \(collection.kind.rawValue)", systemImage: "trash", role: .destructive)
+                            {
 
-                            confirmsDeleteBoard = true
+                                confirmsDeleteBoard = true
 
+                            }
                         }
 
                     }
@@ -196,7 +202,7 @@ struct ArchivedCollectionContentsView: View
                 Button("Delete List", role: .destructive)
                 {
 
-                    if let deletingList
+                    if !collection.isPrimaryList, let deletingList
                     {  /* Archived list awaiting permanent deletion */
 
 
@@ -236,7 +242,7 @@ struct ArchivedCollectionContentsView: View
 
                 Button("Delete \(collection.kind.rawValue)", role: .destructive)
                 {
-                    if onDeleteBoard()
+                    if !collection.isPrimaryList, onDeleteBoard()
                     {
                         dismiss()
                     }

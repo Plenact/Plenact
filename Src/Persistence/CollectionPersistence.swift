@@ -175,7 +175,7 @@ enum PersonalCollectionStore
             {  /* Position of the active collection to archive */
 
 
-                $0.id == id && $0.isActive
+                $0.id == id && $0.isActive && !$0.isPrimaryList
             })
         else
         {
@@ -224,7 +224,7 @@ struct LibraryCollectionDeletion: Identifiable
     init(id: UUID, in collections: [PersonalCollection], at instant: ContinuousClock.Instant = .now) throws
     {
 
-        guard let index = collections.firstIndex(where: { $0.id == id }) else
+        guard let index = collections.firstIndex(where: { $0.id == id && !$0.isPrimaryList }) else
         {
 
             throw CocoaError(.validationMissingMandatoryProperty)

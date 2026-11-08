@@ -23,6 +23,68 @@ import XCTest
 extension PlenactBoardDocumentTests
 {
 
+    /// Reject shared Board removal callbacks even when invoked without the visible menus
+    @MainActor
+    func testPrimaryListColumnsRejectRemoval()
+    {
+
+        let owner  = PersonalCollection(title: "On the Table", kind: .list) /* Protected owner */
+        var lists  = owner.lists                                          /* Bound records */
+        let view   = ContentView(
+            lists: Binding(get: { lists }, set: { lists = $0 }),
+            allowsRemovingLists: false,
+            onCommitDeletion: { _, _ in XCTFail("Protected List must not reach persistence") },
+            onListsChanged: { _ in XCTFail("Protected List must not publish removal") })
+
+        view.archiveList(with: lists[0].id)
+        view.deleteList(lists[0].id)
+        XCTAssertEqual(lists, owner.lists)
+    }
+
+
+    /// Verify primary List containers reject removal while ordinary Lists and Boards retain it
+    func testPrimaryListsRejectArchiveAndDeletion() throws
+    {
+
+        let suite    = "Plenact.PrimaryListTests." + UUID().uuidString /* Isolated preferences */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))    /* Test storage */
+
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        for title in ["On the Table", "In the Queue", "Scheduled"]
+        {
+
+            var owner = PersonalCollection(title: title, kind: .list) /* Protected owner */
+
+            owner.lists[0].cards = [KanbanCard(id: 7, word: "Synthetic", listTitle: title)]
+            owner.savedCardIDs = [7]
+            try PersonalCollectionStore.saveChecked([owner], to: defaults)
+
+            XCTAssertTrue(owner.isPrimaryList)
+            XCTAssertTrue(try JSONDecoder().decode(PersonalCollection.self,
+                from: JSONEncoder().encode(owner)).isPrimaryList)
+            XCTAssertThrowsError(try PersonalCollectionStore.archiveCollection(
+                id: owner.id, in: [owner], to: defaults))
+            XCTAssertThrowsError(try LibraryCollectionDeletion(id: owner.id, in: [owner]))
+            XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [owner])
+
+            let board = PersonalCollection(title: title, kind: .board) /* Ordinary Board */
+
+            XCTAssertFalse(board.isPrimaryList)
+            XCTAssertTrue(try PersonalCollectionStore.archiveCollection(
+                id: board.id, in: [board], to: defaults)[0].isArchived == true)
+            XCTAssertNoThrow(try LibraryCollectionDeletion(id: board.id, in: [board]))
+        }
+
+        let custom = PersonalCollection(title: "Shopping", kind: .list) /* Ordinary List */
+
+        XCTAssertFalse(custom.isPrimaryList)
+        XCTAssertTrue(try PersonalCollectionStore.archiveCollection(
+            id: custom.id, in: [custom], to: defaults)[0].isArchived == true)
+        XCTAssertNoThrow(try LibraryCollectionDeletion(id: custom.id, in: [custom]))
+    }
+
+
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testListBackgroundOpacityDefaultsClampsAndPersistsIndependently

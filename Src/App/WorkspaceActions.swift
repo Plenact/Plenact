@@ -2705,6 +2705,11 @@ extension AppRootView
     func deletePersonalBoard(_ id: UUID) -> Bool
     {
 
+        guard let collection = collections.first(where: { $0.id == id }), !collection.isPrimaryList else
+        {
+            return false
+        }
+
 
         let updated = collections.filter /* Edited value to publish */
         {

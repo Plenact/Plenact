@@ -187,6 +187,13 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     var boardAppearance:       BoardAppearance? = nil  /* Independent persisted List color defaults   */
     var collectionDescription: String?          = nil /* Collection description */
 
+    /// Primary shortcut Lists retain their containers while their Cards and Notes remain editable
+    var isPrimaryList: Bool /* Built-in List removal protection */
+    {
+        kind == .list && ["On the Table", "In the Queue", "Scheduled"].contains(title)
+    }
+
+
     /// The three shortcut Lists share their focused layout across Today and Plans
     var preferredFocusedListID: Int? /* Preferred focused list ID */
     {

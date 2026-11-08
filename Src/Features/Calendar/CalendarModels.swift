@@ -185,12 +185,12 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     var dayListIDs:      [String: Int]      /* Day list i ds              */
     var explicitlySaved: Bool = false       /* Explicitly saved           */
 
-    var id:              UUID /* Record UUID */
+    var id:              UUID               /* Record UUID                */
     {
         collection.id
     }
 
-    var hasContent: Bool /* Content availability */
+    var hasContent: Bool                   /* Content availability        */
     {
         collection.lists.contains
         {
@@ -199,7 +199,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 
     }
 
-    var rangeTitle: String /* Full Week date range */
+    var rangeTitle: String                  /* Full Week date range       */
     {
 
         let days = PlanningDate.days(in: startKey) /* Dates in the selected range */

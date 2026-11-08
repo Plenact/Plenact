@@ -899,6 +899,7 @@ struct ContentView: View
                                                             cardID in
                                                             deleteCard(cardID)
                                                         },
+                                                        canRemoveList: dayDate(for: list.id) == nil,
                                                         onArchiveList:
                                                         {
                                                             archiveList(with: list.id)

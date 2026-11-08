@@ -53,6 +53,7 @@ struct KanbanListActionsSheet: View
     /// Restores an archived card by stable card identity
     let onRestoreArchivedCard:     (Int) -> Void  /* Restores a retained record by identity           */
     let onDeleteArchivedCard:      (Int) -> Void  /* Permanently remove a confirmed archived card     */
+    var canRemoveList: Bool = true /* Allows whole-list archive and deletion */
     let onArchiveList:             () -> Void     /* Action to perform when archiving the entire list */
     let onDeleteList:              () -> Void     /* Permanently remove this list after confirmation  */
     var onEditList:                ((String, String, ItemPresentation) -> Bool)? = /* Edit list callback */
@@ -310,34 +311,37 @@ struct KanbanListActionsSheet: View
                         .accessibilityLabel("Archive completed cards")
                         .help("Archive completed cards")
 
-                        Button
+                        if canRemoveList
                         {
+                            Button
+                            {
 
-                            confirmingArchive = true
+                                confirmingArchive = true
 
+                            }
+                            label:
+                            {
+
+                                footerActionLabel("Archive list", symbol: "archivebox.fill")
+                            }
+                            .accessibilityLabel("Archive list")
+                            .help("Archive list")
+
+                            Button(role: .destructive)
+                            {
+
+                                confirmingDelete = true
+
+                            }
+                            label:
+                            {
+
+                                footerActionLabel("Delete", symbol: "trash")
+                                .foregroundStyle(.red)
+                            }
+                            .accessibilityLabel("Delete List")
+                            .help("Delete List")
                         }
-                        label:
-                        {
-
-                            footerActionLabel("Archive list", symbol: "archivebox.fill")
-                        }
-                        .accessibilityLabel("Archive list")
-                        .help("Archive list")
-
-                        Button(role: .destructive)
-                        {
-
-                            confirmingDelete = true
-
-                        }
-                        label:
-                        {
-
-                            footerActionLabel("Delete", symbol: "trash")
-                            .foregroundStyle(.red)
-                        }
-                        .accessibilityLabel("Delete List")
-                        .help("Delete List")
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(Color.accentColor)

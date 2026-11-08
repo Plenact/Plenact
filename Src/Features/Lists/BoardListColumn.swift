@@ -80,6 +80,7 @@ struct KanbanListView: View
     /// Requests restoration of an archived card by identity
     let onRestoreArchivedCard: (Int) -> Void  /* Restores a retained card to the active list              */
     let onDeleteArchivedCard:  (Int) -> Void  /* Confirmed removal of a retained card                     */
+    var canRemoveList: Bool = true /* Allows whole-list archive and deletion */
     let onArchiveList:         () -> Void     /* The action invoked to archive the entire list            */
     let onDeleteList:          () -> Void     /* Confirmed removal of this list and its retained content  */
     let onDeleteCard:          (Int) -> Void  /* The action invoked to delete a card at a specified index */
@@ -1214,6 +1215,7 @@ struct KanbanListView: View
                     archivedCards: $archivedCards,
                     onRestoreArchivedCard: onRestoreArchivedCard,
                     onDeleteArchivedCard: onDeleteArchivedCard,
+                    canRemoveList: canRemoveList,
                     onArchiveList: onArchiveList,
                     onDeleteList: onDeleteList,
                     onEditList: onEditList,

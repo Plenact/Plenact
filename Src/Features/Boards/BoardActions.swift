@@ -731,6 +731,11 @@ extension ContentView
     func deleteList(_ id: Int)
     {
 
+        guard dayDate(for: id) == nil else
+        {
+            return
+        }
+
 
         var snapshot  = lists + archivedLists /* Complete Board snapshot for checked removal  */
         var bookmarks = savedCardIDs          /* Saved identities pruned with removed records */
@@ -1342,6 +1347,11 @@ extension ContentView
     ///
     func archiveList(with listID: Int)
     {
+
+        guard dayDate(for: listID) == nil else
+        {
+            return
+        }
 
 
         guard

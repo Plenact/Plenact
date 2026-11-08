@@ -385,7 +385,8 @@ struct KanbanListActionsSheet: View
             .modifier(
                 ListCheckmarkResetConfirmation(
                     list: list, session: $checkmarkReset,
-                    confirmsClear: $confirmsCheckmarkReset, onUpdateCard: onUpdateCard)
+                    confirmsClear: $confirmsCheckmarkReset, onUpdateCard: onUpdateCard,
+                    onClear: { dismiss() })
             )
             .confirmationDialog("Archive \(list.title)?", isPresented: $confirmingArchive, titleVisibility: .visible)
             {
@@ -913,6 +914,7 @@ struct ListCheckmarkResetConfirmation: ViewModifier
     @Binding var session:       ListCheckmarkReset?  /* Current operation session */
     @Binding var confirmsClear: Bool                 /* Confirms clear            */
     let onUpdateCard:           (KanbanCard) -> Void /* Update card callback      */
+    var onClear:               () -> Void = {}      /* Finish the owning menu after clearing */
 
 
     ///
@@ -953,6 +955,8 @@ struct ListCheckmarkResetConfirmation: ViewModifier
                 {
                     onUpdateCard(card)
                 }
+
+                onClear()
 
             }
 

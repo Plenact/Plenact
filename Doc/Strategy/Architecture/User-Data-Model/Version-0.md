@@ -13,12 +13,12 @@ Existing routes: login/logout through `auth.php`, user directory/account provisi
 
 ## Recorded deployment evidence
 
-[SQL records](../../Server/SQL/README.md) and the [seed record](../Database/Initial-Demo-Import-Plan.md) report migration 001 applied October 3, 2026, seven InnoDB tables, and synthetic revision 1 containing seven Lists, forty-nine Cards, and thirteen labels. Editor/member login and readback were reported. These are repository records, not fresh live verification.
+[SQL records](../../../../Server/SQL/README.md) and the [seed record](../../../Database/Initial-Demo-Import-Plan.md) report migration 001 applied October 3, 2026, seven InnoDB tables, and synthetic revision 1 containing seven Lists, forty-nine Cards, and thirteen labels. Editor/member login and readback were reported. These are repository records, not fresh live verification.
 
 Member mutation authorization, stale-write behavior, seed retry, and backup/restore still require documented end-to-end evidence. Do not rerun migration 001 because an older document says undeployed.
 
 ## Compatibility and known drift
 
-The [historical contract](../Database/Plenact-Data-Contract.md) describes date-only Cards and omits newer fields. Current Swift Codable types have evolved; some additional fields may pass through JSON snapshots without equivalent server validation. That does not establish supported cross-client compatibility.
+The [historical contract](../../../Database/Plenact-Data-Contract.md) describes date-only Cards and omits newer fields. Current Swift Codable types have evolved; some additional fields may pass through JSON snapshots without equivalent server validation. That does not establish supported cross-client compatibility.
 
 Version 0 does not synchronize the complete calendar, personal collections, reviews, settings, bookmarks, importance, or media files. Preserve its existing wire schema number and API behavior during Version 1.0 preparation. It must not silently become a private-user service.

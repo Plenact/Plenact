@@ -7,7 +7,7 @@ The immutable definition release is [Plenact User Data Model 1.0](https://github
 
 Release assets comprise the complete documentation/schema/tool ZIP, a standalone OpenAPI JSON document and `SHA256SUMS`. The ZIP includes `MODEL-MANIFEST.json` with exact per-file SHA-256 values, version/status, client targets and implementation boundary. Links outside the ZIP are pinned to the release tag. Source is available in the same tag; no external schema fetch is required to validate the bundled URN registry.
 
-Download assets from the release page, verify `SHA256SUMS`, extract to a new directory and follow [tool instructions](../../Tools/UserDataModel/README.md). Run `publication_gate.py --verify-package` on the downloaded ZIP. Hashes detect byte changes; release/checksum retrieval must use your trusted GitHub connection. This release does not include a separate cryptographic publisher signature.
+Download assets from the release page, verify `SHA256SUMS`, extract to a new directory and follow [tool instructions](../../../../Tools/UserDataModel/README.md). Run `publication_gate.py --verify-package` on the downloaded ZIP. Hashes detect byte changes; release/checksum retrieval must use your trusted GitHub connection. This release does not include a separate cryptographic publisher signature.
 
 The tag is the frozen 1.0 contract. Subsequent incompatible wire changes require a new model/type/protocol version under [Compatibility](Compatibility.md), not replacement of this release's files. Editorial corrections should be clearly identified in a new documentation release while preserving this tag.
 

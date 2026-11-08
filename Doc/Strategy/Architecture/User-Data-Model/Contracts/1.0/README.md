@@ -58,4 +58,4 @@ The [Specification](../../Specification.md) is normative together with these sch
 
 Schema `$comment` headers declare supported versions. Fixtures inherit their version/status from the manifest; invalid fixtures must be rejected, not sent as production content. URN references resolve from this bundle. Nested values and transport messages are not independently persistent records.
 
-Python checks structural and semantic rules; Swift/C#/JavaScript probes verify their stated boundaries. See [Conformance](../../Conformance.md) and [tool instructions](../../../../Tools/UserDataModel/README.md). No live data, app conversion or production API is included.
+Python checks structural and semantic rules; Swift/C#/JavaScript probes verify their stated boundaries. See [Conformance](../../Conformance.md) and [tool instructions](../../../../../../Tools/UserDataModel/README.md). No live data, app conversion or production API is included.

@@ -3,13 +3,13 @@ name: User Data Model conformance
 on:
   pull_request:
     paths:
-      - 'Doc/User-Data-Model/**'
+      - 'Doc/Strategy/Architecture/User-Data-Model/**'
       - 'Tools/UserDataModel/**'
       - '.github/workflows/user-data-model.yml'
   push:
     branches: [main]
     paths:
-      - 'Doc/User-Data-Model/**'
+      - 'Doc/Strategy/Architecture/User-Data-Model/**'
       - 'Tools/UserDataModel/**'
       - '.github/workflows/user-data-model.yml'
   workflow_dispatch:

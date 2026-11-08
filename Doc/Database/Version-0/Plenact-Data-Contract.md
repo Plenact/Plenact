@@ -6,7 +6,7 @@ The [approved review direction](../../Design/Planning-Rhythm.md) does not extend
 
 Any future remote representation needs its own approved versioned contract and authorization model. Do not attach local review history or objectives to demo transport implicitly. See [local persistence and recovery requirements](../../Design/Planning-Rhythm-Delivery.md)
 
-**Status:** Historical Version 0 demo contract (wire schema 1). Newer deployment records report the demo deployed; the date semantics and domain inventory below do not describe the complete current app. See [Version 1.0](../../User-Data-Model/README.md) for the successor definition.
+**Status:** Historical Version 0 demo contract (wire schema 1). Newer deployment records report the demo deployed; the date semantics and domain inventory below do not describe the complete current app. See [Version 1.0](../../Strategy/Architecture/User-Data-Model/README.md) for the successor definition.
 
 ## Scope
 

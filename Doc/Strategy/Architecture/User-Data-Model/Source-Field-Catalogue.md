@@ -7,7 +7,7 @@ SwiftSyntax audited 96 Codable declarations, 379 stored fields and 41 literal ke
 
 ## WorkspaceListReference
 
-Source: [Src/App/WorkspaceNavigation.swift](../../Src/App/WorkspaceNavigation.swift). Scope: **synchronized**. Target: `today-shortcuts#/properties/payload/properties/items/items`.
+Source: [Src/App/WorkspaceNavigation.swift](../../../../Src/App/WorkspaceNavigation.swift). Scope: **synchronized**. Target: `today-shortcuts#/properties/payload/properties/items/items`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -16,7 +16,7 @@ Source: [Src/App/WorkspaceNavigation.swift](../../Src/App/WorkspaceNavigation.sw
 
 ## ItemAccent
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -25,7 +25,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## KanbanListTint
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -34,7 +34,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## BoardCardDetail
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -43,7 +43,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## CollectionBackgroundPreset
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -52,7 +52,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## CollectionBackground
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/collection_background`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/collection_background`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -61,7 +61,7 @@ Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appe
 
 ## BoardAppearance
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/board_appearance`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/board_appearance`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -79,7 +79,7 @@ Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appe
 
 ## ListPreviewTextColor
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -88,7 +88,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## SingleListViewMode
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -97,7 +97,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## ItemAppearance
 
-Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/item_appearance`.
+Source: [Src/Features/Appearance/AppearanceModels.swift](../../../../Src/Features/Appearance/AppearanceModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/item_appearance`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -122,7 +122,7 @@ Source: [Src/Features/Appearance/AppearanceModels.swift](../../Src/Features/Appe
 
 ## StudioMaterial
 
-Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Appearance/StudioModels.swift](../../../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -131,7 +131,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## StudioRemotePhoto
 
-Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/remote_photo`.
+Source: [Src/Features/Appearance/StudioModels.swift](../../../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/remote_photo`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -143,7 +143,7 @@ Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearan
 
 ## StudioSurface
 
-Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/surface`.
+Source: [Src/Features/Appearance/StudioModels.swift](../../../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/surface`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -160,7 +160,7 @@ Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearan
 
 ## StudioArtwork
 
-Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `studio-artwork#/properties/payload`.
+Source: [Src/Features/Appearance/StudioModels.swift](../../../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `studio-artwork#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -174,7 +174,7 @@ Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearan
 
 ## StudioDestination
 
-Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Appearance/StudioModels.swift](../../../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -184,7 +184,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## StudioSettings
 
-Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `studio-settings#/properties/payload`.
+Source: [Src/Features/Appearance/StudioModels.swift](../../../../Src/Features/Appearance/StudioModels.swift). Scope: **synchronized**. Target: `studio-settings#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -197,7 +197,7 @@ Source: [Src/Features/Appearance/StudioModels.swift](../../Src/Features/Appearan
 
 ## KanbanAttachmentKind
 
-Source: [Src/Features/Attachments/AttachmentStore.swift](../../Src/Features/Attachments/AttachmentStore.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Attachments/AttachmentStore.swift](../../../../Src/Features/Attachments/AttachmentStore.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -209,7 +209,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## KanbanAttachment
 
-Source: [Src/Features/Attachments/AttachmentStore.swift](../../Src/Features/Attachments/AttachmentStore.swift). Scope: **synchronized**. Target: `content-types#/$defs/attachment`.
+Source: [Src/Features/Attachments/AttachmentStore.swift](../../../../Src/Features/Attachments/AttachmentStore.swift). Scope: **synchronized**. Target: `content-types#/$defs/attachment`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -224,7 +224,7 @@ Source: [Src/Features/Attachments/AttachmentStore.swift](../../Src/Features/Atta
 
 ## ExampleCoverImage
 
-Source: [Src/Features/Attachments/CoverLibrary.swift](../../Src/Features/Attachments/CoverLibrary.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Attachments/CoverLibrary.swift](../../../../Src/Features/Attachments/CoverLibrary.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -598,7 +598,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## BoardViewportState
 
-Source: [Src/Features/Boards/BoardViewport.swift](../../Src/Features/Boards/BoardViewport.swift). Scope: **device_local**. Target: `device-only state; retained by private source capture`.
+Source: [Src/Features/Boards/BoardViewport.swift](../../../../Src/Features/Boards/BoardViewport.swift). Scope: **device_local**. Target: `device-only state; retained by private source capture`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -611,7 +611,7 @@ Source: [Src/Features/Boards/BoardViewport.swift](../../Src/Features/Boards/Boar
 
 ## DatedPlanningWeek
 
-Source: [Src/Features/Calendar/CalendarModels.swift](../../Src/Features/Calendar/CalendarModels.swift). Scope: **synchronized**. Target: `calendar-week#/properties/payload`.
+Source: [Src/Features/Calendar/CalendarModels.swift](../../../../Src/Features/Calendar/CalendarModels.swift). Scope: **synchronized**. Target: `calendar-week#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -622,7 +622,7 @@ Source: [Src/Features/Calendar/CalendarModels.swift](../../Src/Features/Calendar
 
 ## PlanningCalendarDocument
 
-Source: [Src/Features/Calendar/CalendarModels.swift](../../Src/Features/Calendar/CalendarModels.swift). Scope: **synchronized**. Target: `calendar-index#/properties/payload`.
+Source: [Src/Features/Calendar/CalendarModels.swift](../../../../Src/Features/Calendar/CalendarModels.swift). Scope: **synchronized**. Target: `calendar-index#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -634,7 +634,7 @@ Source: [Src/Features/Calendar/CalendarModels.swift](../../Src/Features/Calendar
 
 ## ListCreationDraft
 
-Source: [Src/Features/Capture/InlineListCapture.swift](../../Src/Features/Capture/InlineListCapture.swift). Scope: **device_local**. Target: `device-only state; retained by private source capture`.
+Source: [Src/Features/Capture/InlineListCapture.swift](../../../../Src/Features/Capture/InlineListCapture.swift). Scope: **device_local**. Target: `device-only state; retained by private source capture`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -644,7 +644,7 @@ Source: [Src/Features/Capture/InlineListCapture.swift](../../Src/Features/Captur
 
 ## PreferredMapsApp
 
-Source: [Src/Features/Cards/CardLocation.swift](../../Src/Features/Cards/CardLocation.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Cards/CardLocation.swift](../../../../Src/Features/Cards/CardLocation.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -653,7 +653,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## FullMonthExampleStore.Manifest
 
-Source: [Src/Features/Examples/FullMonthExamples.swift](../../Src/Features/Examples/FullMonthExamples.swift). Scope: **recovery_local**. Target: `local recovery only; no synchronized representation`.
+Source: [Src/Features/Examples/FullMonthExamples.swift](../../../../Src/Features/Examples/FullMonthExamples.swift). Scope: **recovery_local**. Target: `local recovery only; no synchronized representation`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -663,7 +663,7 @@ Source: [Src/Features/Examples/FullMonthExamples.swift](../../Src/Features/Examp
 
 ## LibraryImportanceItem
 
-Source: [Src/Features/Importance/ImportanceStore.swift](../../Src/Features/Importance/ImportanceStore.swift). Scope: **synchronized**. Target: `content-selection#/properties/payload`.
+Source: [Src/Features/Importance/ImportanceStore.swift](../../../../Src/Features/Importance/ImportanceStore.swift). Scope: **synchronized**. Target: `content-selection#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -673,7 +673,7 @@ Source: [Src/Features/Importance/ImportanceStore.swift](../../Src/Features/Impor
 
 ## KanbanLabelColor
 
-Source: [Src/Features/Labels/LabelModels.swift](../../Src/Features/Labels/LabelModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Labels/LabelModels.swift](../../../../Src/Features/Labels/LabelModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -691,7 +691,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## KanbanLabelCategory
 
-Source: [Src/Features/Labels/LabelModels.swift](../../Src/Features/Labels/LabelModels.swift). Scope: **synchronized**. Target: `label-category#/properties/payload`.
+Source: [Src/Features/Labels/LabelModels.swift](../../../../Src/Features/Labels/LabelModels.swift). Scope: **synchronized**. Target: `label-category#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -700,7 +700,7 @@ Source: [Src/Features/Labels/LabelModels.swift](../../Src/Features/Labels/LabelM
 
 ## KanbanLabel
 
-Source: [Src/Features/Labels/LabelModels.swift](../../Src/Features/Labels/LabelModels.swift). Scope: **synchronized**. Target: `label#/properties/payload`.
+Source: [Src/Features/Labels/LabelModels.swift](../../../../Src/Features/Labels/LabelModels.swift). Scope: **synchronized**. Target: `label#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -711,7 +711,7 @@ Source: [Src/Features/Labels/LabelModels.swift](../../Src/Features/Labels/LabelM
 
 ## LabelLibrary
 
-Source: [Src/Features/Labels/LabelModels.swift](../../Src/Features/Labels/LabelModels.swift). Scope: **synchronized**. Target: `label + label-category records`.
+Source: [Src/Features/Labels/LabelModels.swift](../../../../Src/Features/Labels/LabelModels.swift). Scope: **synchronized**. Target: `label + label-category records`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -720,7 +720,7 @@ Source: [Src/Features/Labels/LabelModels.swift](../../Src/Features/Labels/LabelM
 
 ## DailyCheckIn
 
-Source: [Src/Features/Planning/DailyCheckIn.swift](../../Src/Features/Planning/DailyCheckIn.swift). Scope: **synchronized**. Target: `planning-types#/$defs/check_in`.
+Source: [Src/Features/Planning/DailyCheckIn.swift](../../../../Src/Features/Planning/DailyCheckIn.swift). Scope: **synchronized**. Target: `planning-types#/$defs/check_in`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -730,7 +730,7 @@ Source: [Src/Features/Planning/DailyCheckIn.swift](../../Src/Features/Planning/D
 
 ## CheckInMood
 
-Source: [Src/Features/Planning/DailyCheckIn.swift](../../Src/Features/Planning/DailyCheckIn.swift). Scope: **synchronized**. Target: `planning-types#/$defs/mood`.
+Source: [Src/Features/Planning/DailyCheckIn.swift](../../../../Src/Features/Planning/DailyCheckIn.swift). Scope: **synchronized**. Target: `planning-types#/$defs/mood`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -739,7 +739,7 @@ Source: [Src/Features/Planning/DailyCheckIn.swift](../../Src/Features/Planning/D
 
 ## DailyCheckInEntry
 
-Source: [Src/Features/Planning/DailyCheckIn.swift](../../Src/Features/Planning/DailyCheckIn.swift). Scope: **synchronized**. Target: `planning-types#/$defs/check_in_entry`.
+Source: [Src/Features/Planning/DailyCheckIn.swift](../../../../Src/Features/Planning/DailyCheckIn.swift). Scope: **synchronized**. Target: `planning-types#/$defs/check_in_entry`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -760,7 +760,7 @@ Source: [Src/Features/Planning/DailyCheckIn.swift](../../Src/Features/Planning/D
 
 ## ObjectiveStatus
 
-Source: [Src/Features/Planning/PeriodicReview.swift](../../Src/Features/Planning/PeriodicReview.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Planning/PeriodicReview.swift](../../../../Src/Features/Planning/PeriodicReview.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -769,7 +769,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## ReviewObjective
 
-Source: [Src/Features/Planning/PeriodicReview.swift](../../Src/Features/Planning/PeriodicReview.swift). Scope: **synchronized**. Target: `planning-types#/$defs/objective`.
+Source: [Src/Features/Planning/PeriodicReview.swift](../../../../Src/Features/Planning/PeriodicReview.swift). Scope: **synchronized**. Target: `planning-types#/$defs/objective`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -781,7 +781,7 @@ Source: [Src/Features/Planning/PeriodicReview.swift](../../Src/Features/Planning
 
 ## PeriodicReviewRecord
 
-Source: [Src/Features/Planning/PeriodicReview.swift](../../Src/Features/Planning/PeriodicReview.swift). Scope: **synchronized**. Target: `periodic-review#/properties/payload`.
+Source: [Src/Features/Planning/PeriodicReview.swift](../../../../Src/Features/Planning/PeriodicReview.swift). Scope: **synchronized**. Target: `periodic-review#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -803,7 +803,7 @@ Source: [Src/Features/Planning/PeriodicReview.swift](../../Src/Features/Planning
 
 ## PeriodicReviewStore.Document
 
-Source: [Src/Features/Planning/PeriodicReview.swift](../../Src/Features/Planning/PeriodicReview.swift). Scope: **legacy_storage_wrapper**. Target: `contained records synchronize; wrapper version retained in migration provenance`.
+Source: [Src/Features/Planning/PeriodicReview.swift](../../../../Src/Features/Planning/PeriodicReview.swift). Scope: **legacy_storage_wrapper**. Target: `contained records synchronize; wrapper version retained in migration provenance`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -812,7 +812,7 @@ Source: [Src/Features/Planning/PeriodicReview.swift](../../Src/Features/Planning
 
 ## PlanningExampleFocus
 
-Source: [Src/Features/Planning/PlanningTemplates.swift](../../Src/Features/Planning/PlanningTemplates.swift). Scope: **synchronized**. Target: `planning-types#/$defs/example_focus`.
+Source: [Src/Features/Planning/PlanningTemplates.swift](../../../../Src/Features/Planning/PlanningTemplates.swift). Scope: **synchronized**. Target: `planning-types#/$defs/example_focus`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -822,7 +822,7 @@ Source: [Src/Features/Planning/PlanningTemplates.swift](../../Src/Features/Plann
 
 ## PlanningRoutineTemplate
 
-Source: [Src/Features/Planning/PlanningTemplates.swift](../../Src/Features/Planning/PlanningTemplates.swift). Scope: **synchronized**. Target: `planning-template#/properties/payload`.
+Source: [Src/Features/Planning/PlanningTemplates.swift](../../../../Src/Features/Planning/PlanningTemplates.swift). Scope: **synchronized**. Target: `planning-template#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -838,7 +838,7 @@ Source: [Src/Features/Planning/PlanningTemplates.swift](../../Src/Features/Plann
 
 ## PlanningRoutineTemplate.Kind
 
-Source: [Src/Features/Planning/PlanningTemplates.swift](../../Src/Features/Planning/PlanningTemplates.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Planning/PlanningTemplates.swift](../../../../Src/Features/Planning/PlanningTemplates.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -847,7 +847,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## PlanningRoutineLibrary
 
-Source: [Src/Features/Planning/PlanningTemplates.swift](../../Src/Features/Planning/PlanningTemplates.swift). Scope: **synchronized**. Target: `template-library#/properties/payload`.
+Source: [Src/Features/Planning/PlanningTemplates.swift](../../../../Src/Features/Planning/PlanningTemplates.swift). Scope: **synchronized**. Target: `template-library#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -858,7 +858,7 @@ Source: [Src/Features/Planning/PlanningTemplates.swift](../../Src/Features/Plann
 
 ## ReviewRhythmKind
 
-Source: [Src/Features/Planning/ReviewRhythm.swift](../../Src/Features/Planning/ReviewRhythm.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Planning/ReviewRhythm.swift](../../../../Src/Features/Planning/ReviewRhythm.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -867,7 +867,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## ReviewRhythmPreferences
 
-Source: [Src/Features/Planning/ReviewRhythm.swift](../../Src/Features/Planning/ReviewRhythm.swift). Scope: **synchronized**. Target: `review-rhythm#/properties/payload`.
+Source: [Src/Features/Planning/ReviewRhythm.swift](../../../../Src/Features/Planning/ReviewRhythm.swift). Scope: **synchronized**. Target: `review-rhythm#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -881,7 +881,7 @@ Source: [Src/Features/Planning/ReviewRhythm.swift](../../Src/Features/Planning/R
 
 ## DailyPlanPriority
 
-Source: [Src/Features/Planning/TodayPlan.swift](../../Src/Features/Planning/TodayPlan.swift). Scope: **synchronized**. Target: `planning-types#/$defs/priority`.
+Source: [Src/Features/Planning/TodayPlan.swift](../../../../Src/Features/Planning/TodayPlan.swift). Scope: **synchronized**. Target: `planning-types#/$defs/priority`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -893,7 +893,7 @@ Source: [Src/Features/Planning/TodayPlan.swift](../../Src/Features/Planning/Toda
 
 ## DailyPlan
 
-Source: [Src/Features/Planning/TodayPlan.swift](../../Src/Features/Planning/TodayPlan.swift). Scope: **synchronized**. Target: `daily-plan#/properties/payload`.
+Source: [Src/Features/Planning/TodayPlan.swift](../../../../Src/Features/Planning/TodayPlan.swift). Scope: **synchronized**. Target: `daily-plan#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -912,7 +912,7 @@ Source: [Src/Features/Planning/TodayPlan.swift](../../Src/Features/Planning/Toda
 
 ## DailyPlanStore.Document
 
-Source: [Src/Features/Planning/TodayPlan.swift](../../Src/Features/Planning/TodayPlan.swift). Scope: **legacy_storage_wrapper**. Target: `contained records synchronize; wrapper version retained in migration provenance`.
+Source: [Src/Features/Planning/TodayPlan.swift](../../../../Src/Features/Planning/TodayPlan.swift). Scope: **legacy_storage_wrapper**. Target: `contained records synchronize; wrapper version retained in migration provenance`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -921,7 +921,7 @@ Source: [Src/Features/Planning/TodayPlan.swift](../../Src/Features/Planning/Toda
 
 ## DailyReviewAction
 
-Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/TodayReview.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Planning/TodayReview.swift](../../../../Src/Features/Planning/TodayReview.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -930,7 +930,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## DailyReviewDecision
 
-Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/TodayReview.swift). Scope: **synchronized**. Target: `planning-types#/$defs/review_decision`.
+Source: [Src/Features/Planning/TodayReview.swift](../../../../Src/Features/Planning/TodayReview.swift). Scope: **synchronized**. Target: `planning-types#/$defs/review_decision`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -942,7 +942,7 @@ Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/To
 
 ## DailyEveningReview
 
-Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/TodayReview.swift). Scope: **synchronized**. Target: `planning-types#/$defs/evening_review`.
+Source: [Src/Features/Planning/TodayReview.swift](../../../../Src/Features/Planning/TodayReview.swift). Scope: **synchronized**. Target: `planning-types#/$defs/evening_review`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -956,7 +956,7 @@ Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/To
 
 ## WeeklyReviewRecord
 
-Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/TodayReview.swift). Scope: **synchronized**. Target: `weekly-review#/properties/payload`.
+Source: [Src/Features/Planning/TodayReview.swift](../../../../Src/Features/Planning/TodayReview.swift). Scope: **synchronized**. Target: `weekly-review#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -977,7 +977,7 @@ Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/To
 
 ## WeeklyReviewStore.Document
 
-Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/TodayReview.swift). Scope: **legacy_storage_wrapper**. Target: `contained records synchronize; wrapper version retained in migration provenance`.
+Source: [Src/Features/Planning/TodayReview.swift](../../../../Src/Features/Planning/TodayReview.swift). Scope: **legacy_storage_wrapper**. Target: `contained records synchronize; wrapper version retained in migration provenance`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -986,7 +986,7 @@ Source: [Src/Features/Planning/TodayReview.swift](../../Src/Features/Planning/To
 
 ## ProfileColor
 
-Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/color`.
+Source: [Src/Features/Profile/ProfileModels.swift](../../../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/color`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -997,7 +997,7 @@ Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/Pr
 
 ## ProfileAvatarIcon
 
-Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Profile/ProfileModels.swift](../../../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1017,7 +1017,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## TodayFocusOrder
 
-Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Profile/ProfileModels.swift](../../../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1026,7 +1026,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## ImportanceStarStyle
 
-Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Features/Profile/ProfileModels.swift](../../../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1035,7 +1035,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## LocalProfilePreferences
 
-Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `user-preferences#/properties/payload/properties/preferences`.
+Source: [Src/Features/Profile/ProfileModels.swift](../../../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `user-preferences#/properties/payload/properties/preferences`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1061,7 +1061,7 @@ Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/Pr
 
 ## LocalProfile
 
-Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `user-profile#/properties/payload`.
+Source: [Src/Features/Profile/ProfileModels.swift](../../../../Src/Features/Profile/ProfileModels.swift). Scope: **synchronized**. Target: `user-profile#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1078,7 +1078,7 @@ Source: [Src/Features/Profile/ProfileModels.swift](../../Src/Features/Profile/Pr
 
 ## PlenactRemoteUser
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1089,7 +1089,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactRemoteSession
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **credentials_or_version_0_auth**. Target: `excluded from user-data exports`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **credentials_or_version_0_auth**. Target: `excluded from user-data exports`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1099,7 +1099,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactUserDirectoryResponse
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1107,7 +1107,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactCreatedUserResponse
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1115,7 +1115,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactLoginRequest
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **credentials_or_version_0_auth**. Target: `excluded from user-data exports`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **credentials_or_version_0_auth**. Target: `excluded from user-data exports`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1125,7 +1125,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactLogoutRequest
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1133,7 +1133,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactCreateMemberRequest
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **credentials_or_version_0_auth**. Target: `excluded from user-data exports`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **credentials_or_version_0_auth**. Target: `excluded from user-data exports`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1143,7 +1143,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactBoardWriteRequest
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1153,7 +1153,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactAssignmentRequest
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1164,7 +1164,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactAPIErrorResponse
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1173,12 +1173,12 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactAPIClient.EmptyResponse
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 
 ## PlenactBoardWriteResponse
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1187,7 +1187,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactAssignmentResponse
 
-Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactAPIClient.swift](../../../../Src/Features/Sync/PlenactAPIClient.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1196,7 +1196,7 @@ Source: [Src/Features/Sync/PlenactAPIClient.swift](../../Src/Features/Sync/Plena
 
 ## PlenactBoardDocument
 
-Source: [Src/Features/Sync/PlenactBoardDocument.swift](../../Src/Features/Sync/PlenactBoardDocument.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactBoardDocument.swift](../../../../Src/Features/Sync/PlenactBoardDocument.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1207,7 +1207,7 @@ Source: [Src/Features/Sync/PlenactBoardDocument.swift](../../Src/Features/Sync/P
 
 ## PlenactBoardSnapshotResponse
 
-Source: [Src/Features/Sync/PlenactBoardDocument.swift](../../Src/Features/Sync/PlenactBoardDocument.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
+Source: [Src/Features/Sync/PlenactBoardDocument.swift](../../../../Src/Features/Sync/PlenactBoardDocument.swift). Scope: **version_0_transport**. Target: `Version-0.md`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1219,7 +1219,7 @@ Source: [Src/Features/Sync/PlenactBoardDocument.swift](../../Src/Features/Sync/P
 
 ## KanbanChecklistActionDetail
 
-Source: [Src/Models/ChecklistModels.swift](../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/action_detail`.
+Source: [Src/Models/ChecklistModels.swift](../../../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/action_detail`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1230,7 +1230,7 @@ Source: [Src/Models/ChecklistModels.swift](../../Src/Models/ChecklistModels.swif
 
 ## KanbanChecklistActionContent
 
-Source: [Src/Models/ChecklistModels.swift](../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/ChecklistModels.swift](../../../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1242,7 +1242,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## KanbanChecklistActionContent.Kind
 
-Source: [Src/Models/ChecklistModels.swift](../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/ChecklistModels.swift](../../../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1254,7 +1254,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## KanbanChecklistItem
 
-Source: [Src/Models/ChecklistModels.swift](../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/checklist_item`.
+Source: [Src/Models/ChecklistModels.swift](../../../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/checklist_item`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1269,7 +1269,7 @@ Source: [Src/Models/ChecklistModels.swift](../../Src/Models/ChecklistModels.swif
 
 ## KanbanChecklist
 
-Source: [Src/Models/ChecklistModels.swift](../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/checklist`.
+Source: [Src/Models/ChecklistModels.swift](../../../../Src/Models/ChecklistModels.swift). Scope: **synchronized**. Target: `content-types#/$defs/checklist`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1279,7 +1279,7 @@ Source: [Src/Models/ChecklistModels.swift](../../Src/Models/ChecklistModels.swif
 
 ## CardAssigneeKind
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1289,7 +1289,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## CardAssignee
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `content-types#/$defs/assignee`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `content-types#/$defs/assignee`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1300,7 +1300,7 @@ Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Sc
 
 ## ItemPresentation
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1310,7 +1310,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## ItemDisplayFormat
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1319,7 +1319,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## CardDateKind
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1328,7 +1328,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## ItemEmojiReaction
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `content-types#/$defs/reaction`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `content-types#/$defs/reaction`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1339,7 +1339,7 @@ Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Sc
 
 ## KanbanComment
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `content-types#/$defs/comment`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `content-types#/$defs/comment`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1350,7 +1350,7 @@ Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Sc
 
 ## CardSection
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1359,7 +1359,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## CardSectionLayout
 
-Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `content-types#/$defs/section_layout`.
+Source: [Src/Models/ItemMetadata.swift](../../../../Src/Models/ItemMetadata.swift). Scope: **synchronized**. Target: `content-types#/$defs/section_layout`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1368,7 +1368,7 @@ Source: [Src/Models/ItemMetadata.swift](../../Src/Models/ItemMetadata.swift). Sc
 
 ## KanbanCard
 
-Source: [Src/Models/KanbanCard.swift](../../Src/Models/KanbanCard.swift). Scope: **synchronized**. Target: `card#/properties/payload`.
+Source: [Src/Models/KanbanCard.swift](../../../../Src/Models/KanbanCard.swift). Scope: **synchronized**. Target: `card#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1404,7 +1404,7 @@ Source: [Src/Models/KanbanCard.swift](../../Src/Models/KanbanCard.swift). Scope:
 
 ## KanbanList
 
-Source: [Src/Models/KanbanList.swift](../../Src/Models/KanbanList.swift). Scope: **synchronized**. Target: `list#/properties/payload`.
+Source: [Src/Models/KanbanList.swift](../../../../Src/Models/KanbanList.swift). Scope: **synchronized**. Target: `list#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1419,7 +1419,7 @@ Source: [Src/Models/KanbanList.swift](../../Src/Models/KanbanList.swift). Scope:
 
 ## CardEditChange
 
-Source: [Src/Models/KanbanList.swift](../../Src/Models/KanbanList.swift). Scope: **synchronized**. Target: `content-types#/$defs/history_change`.
+Source: [Src/Models/KanbanList.swift](../../../../Src/Models/KanbanList.swift). Scope: **synchronized**. Target: `content-types#/$defs/history_change`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1429,7 +1429,7 @@ Source: [Src/Models/KanbanList.swift](../../Src/Models/KanbanList.swift). Scope:
 
 ## CardEditRecord
 
-Source: [Src/Models/KanbanList.swift](../../Src/Models/KanbanList.swift). Scope: **synchronized**. Target: `content-types#/$defs/history`.
+Source: [Src/Models/KanbanList.swift](../../../../Src/Models/KanbanList.swift). Scope: **synchronized**. Target: `content-types#/$defs/history`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1439,7 +1439,7 @@ Source: [Src/Models/KanbanList.swift](../../Src/Models/KanbanList.swift). Scope:
 
 ## PersonalCollectionKind
 
-Source: [Src/Models/PersonalCollection.swift](../../Src/Models/PersonalCollection.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/PersonalCollection.swift](../../../../Src/Models/PersonalCollection.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1449,7 +1449,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## PersonalCollectionIcon
 
-Source: [Src/Models/PersonalCollection.swift](../../Src/Models/PersonalCollection.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
+Source: [Src/Models/PersonalCollection.swift](../../../../Src/Models/PersonalCollection.swift). Scope: **synchronized**. Target: `Value-Types.md#source-enum-tokens`.
 
 
 Source enum declarations (wire tokens are defined by schemas):
@@ -1465,7 +1465,7 @@ Source enum declarations (wire tokens are defined by schemas):
 
 ## PersonalCollection
 
-Source: [Src/Models/PersonalCollection.swift](../../Src/Models/PersonalCollection.swift). Scope: **synchronized**. Target: `collection#/properties/payload`.
+Source: [Src/Models/PersonalCollection.swift](../../../../Src/Models/PersonalCollection.swift). Scope: **synchronized**. Target: `collection#/properties/payload`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1482,7 +1482,7 @@ Source: [Src/Models/PersonalCollection.swift](../../Src/Models/PersonalCollectio
 
 ## ExampleLoadUndoSnapshot
 
-Source: [Src/Persistence/ExampleUndoStore.swift](../../Src/Persistence/ExampleUndoStore.swift). Scope: **recovery_local**. Target: `local recovery only; no synchronized representation`.
+Source: [Src/Persistence/ExampleUndoStore.swift](../../../../Src/Persistence/ExampleUndoStore.swift). Scope: **recovery_local**. Target: `local recovery only; no synchronized representation`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1495,7 +1495,7 @@ Source: [Src/Persistence/ExampleUndoStore.swift](../../Src/Persistence/ExampleUn
 
 ## LibraryRecentItem
 
-Source: [Src/Persistence/RecentHistory.swift](../../Src/Persistence/RecentHistory.swift). Scope: **device_local**. Target: `device-only state; retained by private source capture`.
+Source: [Src/Persistence/RecentHistory.swift](../../../../Src/Persistence/RecentHistory.swift). Scope: **device_local**. Target: `device-only state; retained by private source capture`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |
@@ -1504,7 +1504,7 @@ Source: [Src/Persistence/RecentHistory.swift](../../Src/Persistence/RecentHistor
 
 ## PlanRichText.Run
 
-Source: [Src/SharedUI/RichTextEditor.swift](../../Src/SharedUI/RichTextEditor.swift). Scope: **synchronized**. Target: `rich-text-runs#/items`.
+Source: [Src/SharedUI/RichTextEditor.swift](../../../../Src/SharedUI/RichTextEditor.swift). Scope: **synchronized**. Target: `rich-text-runs#/items`.
 
 | Stored source field | Target / retained meaning |
 | --- | --- |

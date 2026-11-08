@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from validate_contract import (CONTRACTS, ContractError, compatibility, load_json,
+from validate_contract import (ROOT, CONTRACTS, ContractError, compatibility, load_json,
                                equivalent_json, record_capabilities, run_fixtures, validate_instance)
 
 
@@ -19,7 +19,7 @@ class ContractTests(unittest.TestCase):
 
     def test_card_coding_keys_have_explicit_transport_mapping(self):
         """Fail if a new persisted Card field is absent from the reviewed mapping."""
-        source = (CONTRACTS.parents[3] / "Src/Models/KanbanCard.swift").read_text()
+        source = (ROOT / "Src/Models/KanbanCard.swift").read_text()
         keys = set(re.findall(r"case (\w+)", source.split("private enum CodingKeys: String, CodingKey")[1].split("    }")[0]))
         mapping = {
             "id": None, "listTitle": None, "word": "title", "editHistory": "edit_history",

@@ -34,7 +34,7 @@ This page is the current cross-document status reference. Dated design/handoff d
 4. Integrate durable iOS outbox/pull/conflicts, then web and Windows against the same acceptance suite.
 5. Pilot synthetic work before explicitly opted-in personal migration/synchronization. Publish deployment evidence separately from definition readiness.
 
-The [database overview](Database/README.md), [implementation plan](User-Data-Model/Integration-Plan.md) and [versioned examples](User-Data-Model/Doc/Examples/README.md) develop these boundaries.
+The [database overview](../../Database/README.md), [implementation plan](User-Data-Model/Integration-Plan.md) and [versioned examples](User-Data-Model/Doc/Examples/README.md) develop these boundaries.
 
 ## Simulator recovery test
 

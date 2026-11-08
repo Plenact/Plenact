@@ -25,7 +25,7 @@ from planning_contract import (PLANNING_SCHEMAS, validate_asset_bytes,
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CONTRACTS = ROOT / "Doc/User-Data-Model/Contracts/1.0"
+CONTRACTS = ROOT / "Doc/Strategy/Architecture/User-Data-Model/Contracts/1.0"
 MAX_JSON_BYTES = 8_388_608  # Tooling input guard, not a final API payload limit.
 
 

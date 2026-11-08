@@ -20,7 +20,7 @@ Reference verification used Python 3.9, Apple Swift 6.4, .NET SDK 8.0.426 and No
 
 ## Reproduce
 
-Use the [tool instructions](../../Tools/UserDataModel/README.md) to install dependencies and run all three probes. From the repository root:
+Use the [tool instructions](../../../../Tools/UserDataModel/README.md) to install dependencies and run all three probes. From the repository root:
 
 ```sh
 python Tools/UserDataModel/validate_contract.py

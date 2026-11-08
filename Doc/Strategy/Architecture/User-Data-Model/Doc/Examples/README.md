@@ -16,4 +16,4 @@ The SQL uses JSON columns inside relational tables, demonstrating why JSON and M
 
 The reference checker validates the JSON with the final schemas/semantic rules, extracts and compares SQL embedded documents/frames, and checks the historical schema copy. SQL has not been executed against Bluehost or certified for a specific database engine/version. A future staged database integration must verify actual DDL, constraints, isolation, permissions and recovery.
 
-See [JSON versus SQL/MySQL](../../../Database/JSON-SQL-and-MySQL.md), [physical implementation plan](../../../Database/Model-1.0-MySQL-Plan.md), [normative storage](../../Logical-Storage.md) and [current app/data plan](../../../Application-Data-Plan.md).
+See [JSON versus SQL/MySQL](../../../../../Database/JSON-SQL-and-MySQL.md), [physical implementation plan](../../../../../Database/Model-1.0-MySQL-Plan.md), [normative storage](../../Logical-Storage.md) and [current app/data plan](../../../Application-Data-Plan.md).

@@ -4,11 +4,13 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 
 ## Start here
 
-- [Current application and data plan](Application-Data-Plan.md) — secured decisions, native backup milestone, cloud/client implementation boundaries and next steps
-- [Versioned server-data examples](User-Data-Model/Doc/Examples/README.md) — synthetic SQL/database layouts and portable JSON
+- [Strategy](Strategy/README.md) — architecture, product delivery planning, and organizational references
+- [Connected multiplatform roadmap](Strategy/Architecture/Connected-Multiplatform-Roadmap.md) — current four-step plan, bounded migration closeout, Bluehost staging, offline synchronization, platform targets, and acceptance gates
+- [Current application and data plan](Strategy/Architecture/Application-Data-Plan.md) — secured decisions, native backup milestone, cloud/client implementation boundaries and next steps
+- [Versioned server-data examples](Strategy/Architecture/User-Data-Model/Doc/Examples/README.md) — synthetic SQL/database layouts and portable JSON
 - [JSON, SQL and MySQL](Database/JSON-SQL-and-MySQL.md) — representation versus storage
 
-- [Versioned User Data Model](User-Data-Model/README.md) — Version 0 cloud-connection baseline and final Version 1.0 iOS/web/Windows specification, schemas, conformance evidence and GitHub release
+- [Versioned User Data Model](Strategy/Architecture/User-Data-Model/README.md) — Version 0 cloud-connection baseline and final Version 1.0 iOS/web/Windows specification, schemas, conformance evidence and GitHub release
 
 - [Your Planning Rhythm](Design/Planning-Rhythm.md) — approved operating vision for Today's Vision, Today's Check-in, Today's Review, Weekly Review, and Periodic Review; morning, midday, and evening reviews are implemented; Weekly Review is implemented; the first Periodic Review flow is implemented
 - [Review invitations and reminders](Design/Review-Rhythm-Invitations.md) — daily/weekly invitations, Table carry decisions, Queue activation, and optional local notifications
@@ -30,7 +32,7 @@ Product, UX, architecture, demonstrations, and engineering references. Current b
 - [Users](Users/README.md) — separate shared-demo user/account direction
 - [Database](Database/README.md) — current Model 1.0 storage plan with preserved Version 0 references
 - [Server](../Server/README.md) — separate API and SQL work
-- [Organization profile source](GitHub-Organization-Profile/README.md) — repository-maintained public-facing copy; editing it does not publish remotely
+- [Organization profile source](Strategy/Organization/GitHub-Organization-Profile/README.md) — repository-maintained public-facing copy; editing it does not publish remotely
 - [Demo recordings](Demo/README.md), [coding style](Style/README.md), and [legacy source pointers](Src/README.md)
 
 ## Historical release handoffs

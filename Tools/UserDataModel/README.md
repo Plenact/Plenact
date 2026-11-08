@@ -3,9 +3,9 @@
 **Supported User Data Model versions:** 1.0 final specification.
 **Status:** Schema/semantic validator, publication gate and standalone Swift/C#/JavaScript probes. No native app migration or sync integration.
 
-The suite checks 48 schemas, 167 fixture expectations and two synthetic asset files. Swift, C# and JavaScript each preserve 67 valid examples; Python independently revalidates their outputs. See [conformance evidence](../../Doc/User-Data-Model/Conformance.md) for boundaries.
+The suite checks 48 schemas, 167 fixture expectations and two synthetic asset files. Swift, C# and JavaScript each preserve 67 valid examples; Python independently revalidates their outputs. See [conformance evidence](../../Doc/Strategy/Architecture/User-Data-Model/Conformance.md) for boundaries.
 
-See [contract coverage](../../Doc/User-Data-Model/Contracts/1.0/README.md) and [verification boundaries](../../Doc/User-Data-Model/Content-Contracts.md). Run the Python fixture validator first; the probes only consume inputs marked valid and do not replace schema or authorization checks.
+See [contract coverage](../../Doc/Strategy/Architecture/User-Data-Model/Contracts/1.0/README.md) and [verification boundaries](../../Doc/Strategy/Architecture/User-Data-Model/Content-Contracts.md). Run the Python fixture validator first; the probes only consume inputs marked valid and do not replace schema or authorization checks.
 
 ## Python validation
 
@@ -22,7 +22,7 @@ From the repository root with Swift/Foundation installed:
 
 ```sh
 swiftc Tools/UserDataModel/Swift/ContractCodecProbe.swift -o /tmp/plenact-swift-contract-probe
-/tmp/plenact-swift-contract-probe Doc/User-Data-Model/Contracts/1.0/Fixtures /tmp/plenact-swift-contract-results
+/tmp/plenact-swift-contract-probe Doc/Strategy/Architecture/User-Data-Model/Contracts/1.0/Fixtures /tmp/plenact-swift-contract-results
 /tmp/plenact-contract-checks/bin/python Tools/UserDataModel/validate_contract.py --compare-roundtrips /tmp/plenact-swift-contract-results
 ```
 
@@ -32,7 +32,7 @@ Use a .NET SDK supporting net8.0. This is a console probe, not WinUI or the Wind
 
 ```sh
 dotnet build Tools/UserDataModel/DotNet/ContractCodecProbe.csproj -p:BaseIntermediateOutputPath=/tmp/plenact-contract-dotnet-obj/ -p:OutputPath=/tmp/plenact-contract-dotnet-bin/
-dotnet /tmp/plenact-contract-dotnet-bin/ContractCodecProbe.dll Doc/User-Data-Model/Contracts/1.0/Fixtures /tmp/plenact-csharp-contract-results
+dotnet /tmp/plenact-contract-dotnet-bin/ContractCodecProbe.dll Doc/Strategy/Architecture/User-Data-Model/Contracts/1.0/Fixtures /tmp/plenact-csharp-contract-results
 /tmp/plenact-contract-checks/bin/python Tools/UserDataModel/validate_contract.py --compare-roundtrips /tmp/plenact-csharp-contract-results
 ```
 
@@ -44,7 +44,7 @@ Before each run use an empty temporary output directory, or one created by the s
 
 ## Read-only frozen-backup capture
 
-The [export milestone guide](../../Doc/User-Data-Model/Read-Only-Export.md) defines input layout, preserved values/files, classifications, issue codes and limitations. Use an explicit frozen backup; this tool does not find or stop the app for you.
+The [export milestone guide](../../Doc/Strategy/Architecture/User-Data-Model/Read-Only-Export.md) defines input layout, preserved values/files, classifications, issue codes and limitations. Use an explicit frozen backup; this tool does not find or stop the app for you.
 
 ```sh
 python Tools/UserDataModel/capture_export.py --snapshot /path/to/frozen-backup --output /path/to/new-private-capture
@@ -58,7 +58,7 @@ These commands retain legacy bytes and always declare portable conversion incomp
 Install the pinned dependencies with pnpm in `Tools/UserDataModel/Web` (the lockfile is included), then return to the repository root:
 
 ```sh
-node Tools/UserDataModel/Web/probe.cjs Doc/User-Data-Model/Contracts/1.0 /tmp/plenact-web-contract-results
+node Tools/UserDataModel/Web/probe.cjs Doc/Strategy/Architecture/User-Data-Model/Contracts/1.0 /tmp/plenact-web-contract-results
 python Tools/UserDataModel/validate_contract.py --compare-roundtrips /tmp/plenact-web-contract-results
 ```
 
@@ -84,7 +84,7 @@ The regression suite now checks every local Markdown link under `Doc`, the versi
 
 ## Expanded content and pinned-rule verification
 
-The native preview checker now accepts Collection/List/Card/unavailable-reference records in addition to the metadata slice and validates complete membership/archives/links from actual record evidence. Pinned timezone generation/checks live in `build_migration_time_zones.py`; supported local migration contexts remain Central/UTC, not the entire IANA database. See [content adapter limits](../../Doc/User-Data-Model/iOS-Content-Migration.md).
+The native preview checker now accepts Collection/List/Card/unavailable-reference records in addition to the metadata slice and validates complete membership/archives/links from actual record evidence. Pinned timezone generation/checks live in `build_migration_time_zones.py`; supported local migration contexts remain Central/UTC, not the entire IANA database. See [content adapter limits](../../Doc/Strategy/Architecture/User-Data-Model/iOS-Content-Migration.md).
 
 
 The native preview checker also exposes `validate_selection_preview(preview, records)` for the local, account-unbound selection artifact (Model 1.0 target, local format 1). It verifies the explicit pending-binding envelope, target existence, unique source owner/Card pairs, strict Boolean/integer values and bounded importance. This does not validate authenticated ownership or turn a draft into a canonical selection. The model/tooling suite now contains 71 tests.
@@ -110,12 +110,12 @@ Native validation now accepts `daily_plan`, `weekly_review`, `periodic_review` a
 
 ### Complete canonical record assembly
 
-Supported User Data Model versions: 1.0 base, 1.1 working composition. `assemble_workspace.assemble(records, external_references, tombstones)` is a pure in-memory assembly function for already-canonical records. It validates the complete export and does not authenticate an account or convert native drafts. See [scope and remaining integration](../../Doc/User-Data-Model/Export-Assembly.md). Synthetic coverage is in `test_assemble_workspace.py`; no personal data or new command-line upload/import path is introduced.
+Supported User Data Model versions: 1.0 base, 1.1 working composition. `assemble_workspace.assemble(records, external_references, tombstones)` is a pure in-memory assembly function for already-canonical records. It validates the complete export and does not authenticate an account or convert native drafts. See [scope and remaining integration](../../Doc/Strategy/Architecture/User-Data-Model/Export-Assembly.md). Synthetic coverage is in `test_assemble_workspace.py`; no personal data or new command-line upload/import path is introduced.
 
 
 ### Synthetic native-draft binding
 
-Supported User Data Model versions: 1.0 base and working 1.1 composition. `bind_synthetic_preview.bind_preview` is offline, in-memory test tooling with a fixed synthetic owner; it is not authentication or an application import API. It validates drafts and exact original bytes, retains mapping evidence and rejects unresolved selections/review issues. See [current scope](../../Doc/User-Data-Model/Export-Assembly.md).
+Supported User Data Model versions: 1.0 base and working 1.1 composition. `bind_synthetic_preview.bind_preview` is offline, in-memory test tooling with a fixed synthetic owner; it is not authentication or an application import API. It validates drafts and exact original bytes, retains mapping evidence and rejects unresolved selections/review issues. See [current scope](../../Doc/Strategy/Architecture/User-Data-Model/Export-Assembly.md).
 
 To repeat acceptance checks against explicitly supplied synthetic XCTest attachments:
 
@@ -128,10 +128,10 @@ The checker prints counts only and writes no files. Separate media, settings/pro
 
 ### Synthetic package creation and reopen
 
-Supported User Data Model versions: 1.0 base, working 1.1 composition. `synthetic_export_package.package_bytes(binding, originals)` returns a verified reproducible archive. `read_package(data)` verifies and returns the exact synthetic assembly and original-byte dictionary without disk extraction. `write_package(destination, binding, originals)` atomically creates a new file and refuses overwrite. The explicitly synthetic wrapper is required; this is not a production import or authenticated export API. See [package boundaries and remaining integration](../../Doc/User-Data-Model/Export-Assembly.md). The native-evidence acceptance command above also checks package creation and reopening.
+Supported User Data Model versions: 1.0 base, working 1.1 composition. `synthetic_export_package.package_bytes(binding, originals)` returns a verified reproducible archive. `read_package(data)` verifies and returns the exact synthetic assembly and original-byte dictionary without disk extraction. `write_package(destination, binding, originals)` atomically creates a new file and refuses overwrite. The explicitly synthetic wrapper is required; this is not a production import or authenticated export API. See [package boundaries and remaining integration](../../Doc/Strategy/Architecture/User-Data-Model/Export-Assembly.md). The native-evidence acceptance command above also checks package creation and reopening.
 
 
-The combined native package can also be checked with `check_synthetic_assembly.py --native-package <synthetic-xcresult-attachments-directory>`. This validates actual Swift-emitted assembly/manifest bytes and original blobs, including cross-language UUIDv5 selection identities. See [the Simulator manual workflow](../../Doc/User-Data-Model/Export-Assembly.md).
+The combined native package can also be checked with `check_synthetic_assembly.py --native-package <synthetic-xcresult-attachments-directory>`. This validates actual Swift-emitted assembly/manifest bytes and original blobs, including cross-language UUIDv5 selection identities. See [the Simulator manual workflow](../../Doc/Strategy/Architecture/User-Data-Model/Export-Assembly.md).
 
 
 ### Imported native workspace backups
@@ -139,7 +139,7 @@ The combined native package can also be checked with `check_synthetic_assembly.p
 Supported User Data Model versions: 1.0 base and working 1.1. Native frozen-backup format 2 retains current editor stores and `PortableRuntime` canonical baseline/identity evidence. `capture_export.py` format-one capture refuses that evidence both at backup-root and application-support locations. Do not remove it to force capture. Fresh portable export after native editing requires the pending canonical reconciliation path; the original imported package is not an updated export.
 
 
-Edited native export (supported versions: 1.0 base and working 1.1) can be checked from synthetic XCTest attachments with `check_synthetic_assembly.py ATTACHMENTS --edited-package`. This independently checks the complete edited package, manifest, original bytes, schemas, relationships and expected fixture changes. It never searches personal app containers. Current iOS edited export coverage and explicit limits are documented in `Doc/User-Data-Model/Editable-Import.md`.
+Edited native export (supported versions: 1.0 base and working 1.1) can be checked from synthetic XCTest attachments with `check_synthetic_assembly.py ATTACHMENTS --edited-package`. This independently checks the complete edited package, manifest, original bytes, schemas, relationships and expected fixture changes. It never searches personal app containers. Current iOS edited export coverage and explicit limits are documented in `Doc/Strategy/Architecture/User-Data-Model/Editable-Import.md`.
 
 
 Pending local deletion packages (working Model 1.1 overlay over unchanged 1.0 records) are independently checked with `check_synthetic_assembly.py ATTACHMENTS --deleted-package`. This checks retained canonical targets, pending intent, absence of fabricated server tombstones, full schema relationships, hashes and originals. Unknown/duplicate targets and downgrade loss are covered by `test_appearance_contract.py`.

@@ -221,7 +221,7 @@ The next responsibility is to keep making progress without making the system har
 
 ## Related records
 
-- [Editable import and owner acceptance checkpoints](../User-Data-Model/Editable-Import.md)
-- [Edited-export support inventory](../User-Data-Model/Edited-Export-Inventory.md)
-- [Integration plan](../User-Data-Model/Integration-Plan.md)
-- [Current application and data plan](../Application-Data-Plan.md)
+- [Editable import and owner acceptance checkpoints](../Strategy/Architecture/User-Data-Model/Editable-Import.md)
+- [Edited-export support inventory](../Strategy/Architecture/User-Data-Model/Edited-Export-Inventory.md)
+- [Integration plan](../Strategy/Architecture/User-Data-Model/Integration-Plan.md)
+- [Current application and data plan](../Strategy/Architecture/Application-Data-Plan.md)

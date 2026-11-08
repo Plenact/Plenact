@@ -30,7 +30,7 @@ class PublicationTests(unittest.TestCase):
             self.assertGreater(verify_package(first), 200)
             with zipfile.ZipFile(first) as archive:
                 self.assertFalse(any("node_modules" in n or "__pycache__" in n for n in archive.namelist()))
-                text = archive.read("Doc/User-Data-Model/Source-Field-Catalogue.md").decode()
+                text = archive.read("Doc/Strategy/Architecture/User-Data-Model/Source-Field-Catalogue.md").decode()
                 self.assertIn("blob/user-data-model-v1.0/Src/", text)
             with self.assertRaises(ContractError):
                 package(first)
@@ -44,7 +44,7 @@ class PublicationTests(unittest.TestCase):
             with zipfile.ZipFile(original) as source, zipfile.ZipFile(damaged, "w") as output:
                 for name in source.namelist():
                     content = source.read(name)
-                    if name == "Doc/User-Data-Model/README.md":
+                    if name == "Doc/Strategy/Architecture/User-Data-Model/README.md":
                         content += b"changed"
                     output.writestr(name, content)
             with self.assertRaises(ContractError):

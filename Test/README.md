@@ -141,7 +141,7 @@ Picture row regressions verify natural-aspect height across standard/Overview de
 
 ## Native source backup — Model 1.0 preparation
 
-`LegacyWorkspaceExportTests` passed seven focused iOS simulator tests on October 24, 2026. They use isolated preference suites and temporary synthetic media: absent/registered stores, corrupt/recovery bytes, unknown-key review, all four media roots, symlink refusal, native version/type checks and missing/unsafe references. This proves saved-source preservation boundaries, not complete portable conversion or recovery. See [iOS export milestone](../Doc/User-Data-Model/iOS-Migration-Export.md) for Files-provider and interruption acceptance.
+`LegacyWorkspaceExportTests` passed seven focused iOS simulator tests on October 24, 2026. They use isolated preference suites and temporary synthetic media: absent/registered stores, corrupt/recovery bytes, unknown-key review, all four media roots, symlink refusal, native version/type checks and missing/unsafe references. This proves saved-source preservation boundaries, not complete portable conversion or recovery. See [iOS export milestone](../Doc/Strategy/Architecture/User-Data-Model/iOS-Migration-Export.md) for Files-provider and interruption acceptance.
 
 ## Native migration preview
 
@@ -149,11 +149,11 @@ Picture row regressions verify natural-aspect height across standard/Overview de
 
 ## Simulator source recovery
 
-`LocalBackupRestoreTests` adds six isolated review/restore/undo cases. They run with 22 source-backup/migration regressions and two existing dataset recovery tests (30 total). No personal source ZIP is imported by these tests. See [owner-driven recovery acceptance](../Doc/User-Data-Model/iOS-Local-Restore-Test.md); Files and live navigation acceptance remain manual.
+`LocalBackupRestoreTests` adds six isolated review/restore/undo cases. They run with 22 source-backup/migration regressions and two existing dataset recovery tests (30 total). No personal source ZIP is imported by these tests. See [owner-driven recovery acceptance](../Doc/Strategy/Architecture/User-Data-Model/iOS-Local-Restore-Test.md); Files and live navigation acceptance remain manual.
 
 ## Expanded canonical content preview
 
-`MigrationContentTests` adds ten cases covering the complete nested content slice, all six bundled templates, independent template owners, source preservation/retries, explicit timezone context, raw projection conflict, unknown fields, prevented example seeding, pinned DST transitions, journal v1→v2 compatibility, null/empty distinctions and rejection of ambiguous source identities. The combined focused native run passes 40 tests. Actual emitted Records/ContentGraph/date-case attachments pass independent Python/schema checks; the full synthetic fixture emits 172 records. See [current content evidence](../Doc/User-Data-Model/iOS-Content-Migration.md).
+`MigrationContentTests` adds ten cases covering the complete nested content slice, all six bundled templates, independent template owners, source preservation/retries, explicit timezone context, raw projection conflict, unknown fields, prevented example seeding, pinned DST transitions, journal v1→v2 compatibility, null/empty distinctions and rejection of ambiguous source identities. The combined focused native run passes 40 tests. Actual emitted Records/ContentGraph/date-case attachments pass independent Python/schema checks; the full synthetic fixture emits 172 records. See [current content evidence](../Doc/Strategy/Architecture/User-Data-Model/iOS-Content-Migration.md).
 
 
 ## Label and personal-selection preparation
@@ -163,32 +163,32 @@ Supported User Data Model versions: 1.0. Three additional content tests cover ab
 
 ## Calendar and template metadata preparation
 
-Supported User Data Model versions: 1.0. Four additional native cases cover exact Week/template mappings and stable retry IDs, invalid calendar values, invalid template values and authoritative cross-Week checklist overrides. The focused suite now contains 47 passing native tests; independent model/tooling checks contain 74 passing tests. Actual emitted 181-, 188- and 192-record synthetic slices pass schema/relationship checks. See [metadata evidence](../Doc/User-Data-Model/iOS-Calendar-Template-Migration.md). Real exported snapshots still require owner-driven review; full workspace conversion remains pending.
+Supported User Data Model versions: 1.0. Four additional native cases cover exact Week/template mappings and stable retry IDs, invalid calendar values, invalid template values and authoritative cross-Week checklist overrides. The focused suite now contains 47 passing native tests; independent model/tooling checks contain 74 passing tests. Actual emitted 181-, 188- and 192-record synthetic slices pass schema/relationship checks. See [metadata evidence](../Doc/Strategy/Architecture/User-Data-Model/iOS-Calendar-Template-Migration.md). Real exported snapshots still require owner-driven review; full workspace conversion remains pending.
 
 
 ## Verified original files and Asset preparation
 
-Supported User Data Model versions: 1.0. `MigrationAssetTests` adds four isolated tests for exact originals, drawing dependencies, stable retry IDs, missing files, tampered/undeclared/symlink media and cyclic relationships. The focused suite now passes 51 native tests; the model/tooling suite passes 77 checks. Independent verification compares nine actual emitted original files, all content field references and four unreferenced originals. Audio/video inputs are signature probes, not playback tests. See [Asset evidence and limitations](../Doc/User-Data-Model/iOS-Asset-Migration.md).
+Supported User Data Model versions: 1.0. `MigrationAssetTests` adds four isolated tests for exact originals, drawing dependencies, stable retry IDs, missing files, tampered/undeclared/symlink media and cyclic relationships. The focused suite now passes 51 native tests; the model/tooling suite passes 77 checks. Independent verification compares nine actual emitted original files, all content field references and four unreferenced originals. Audio/video inputs are signature probes, not playback tests. See [Asset evidence and limitations](../Doc/Strategy/Architecture/User-Data-Model/iOS-Asset-Migration.md).
 
 
 ## Profile/preferences and Today shortcuts
 
-Supported User Data Model versions: 1.0. `MigrationSettingsTests` adds five isolated cases for saved/default precedence, explicit false/zero/null, stable draft identities, profile/avatar preservation, owner-qualified shortcuts, legacy compatibility and safe source review. The focused suite passes 56 native tests and 80 model/tooling checks. Actual synthetic output is independently compared with source values, journal mappings and avatar bytes. See [settings evidence](../Doc/User-Data-Model/iOS-Settings-Migration.md).
+Supported User Data Model versions: 1.0. `MigrationSettingsTests` adds five isolated cases for saved/default precedence, explicit false/zero/null, stable draft identities, profile/avatar preservation, owner-qualified shortcuts, legacy compatibility and safe source review. The focused suite passes 56 native tests and 80 model/tooling checks. Actual synthetic output is independently compared with source values, journal mappings and avatar bytes. See [settings evidence](../Doc/Strategy/Architecture/User-Data-Model/iOS-Settings-Migration.md).
 
 
 ## Studio and global appearance preparation
 
-Supported User Data Model versions: 1.0. `MigrationStudioTests` adds four isolated cases for surfaces/materials, online credit, shared originals, exact style/palette/order preservation, stable IDs, absent stores, malformed source and explicit global/order mapping gaps. The focused suite passes 60 native tests and 83 model/tooling checks. Synthetic source/output/identity/file attachments support independent verification. See [Studio evidence](../Doc/User-Data-Model/iOS-Studio-Migration.md).
+Supported User Data Model versions: 1.0. `MigrationStudioTests` adds four isolated cases for surfaces/materials, online credit, shared originals, exact style/palette/order preservation, stable IDs, absent stores, malformed source and explicit global/order mapping gaps. The focused suite passes 60 native tests and 83 model/tooling checks. Synthetic source/output/identity/file attachments support independent verification. See [Studio evidence](../Doc/Strategy/Architecture/User-Data-Model/iOS-Studio-Migration.md).
 
 
 ## Daily plans and review history
 
-Supported User Data Model versions: 1.0. `MigrationPlanningTests` adds five isolated cases for historical snapshots, all review actions, owner/creation-qualified references, deleted/reused IDs, null/empty history, independent objectives, source presence and invalid data. The focused suite passes 65 native tests; model/tooling passes 86 checks. Actual five-record planning output is independently compared against source values and record relationships within a 46-record synthetic snapshot. See [planning evidence](../Doc/User-Data-Model/iOS-Planning-Review-Migration.md).
+Supported User Data Model versions: 1.0. `MigrationPlanningTests` adds five isolated cases for historical snapshots, all review actions, owner/creation-qualified references, deleted/reused IDs, null/empty history, independent objectives, source presence and invalid data. The focused suite passes 65 native tests; model/tooling passes 86 checks. Actual five-record planning output is independently compared against source values and record relationships within a 46-record synthetic snapshot. See [planning evidence](../Doc/Strategy/Architecture/User-Data-Model/iOS-Planning-Review-Migration.md).
 
 
 ## Additive Model 1.1 appearance representation
 
-Supported User Data Model versions: 1.0 base and working 1.1. Three additional Studio cases verify exact authored library order, explicit absent/empty metadata, separate versioned record streams and non-destructive journal format-3 upgrades. The focused suite passes 68 native tests and 93 model/tooling tests. Actual new records, source values and original files validate independently; frozen 1.0 contract hashes remain unchanged. See [versioned definition](../Doc/User-Data-Model/Version-1.1.md).
+Supported User Data Model versions: 1.0 base and working 1.1. Three additional Studio cases verify exact authored library order, explicit absent/empty metadata, separate versioned record streams and non-destructive journal format-3 upgrades. The focused suite passes 68 native tests and 93 model/tooling tests. Actual new records, source values and original files validate independently; frozen 1.0 contract hashes remain unchanged. See [versioned definition](../Doc/Strategy/Architecture/User-Data-Model/Version-1.1.md).
 
 
 ### Native portable test package
@@ -232,7 +232,7 @@ Rich structural export coverage (1.0 records within working 1.1) now adds a new 
 
 ### Existing imported Card edits checkpoint
 
-Supported models: 1.0 records and working 1.1 package composition. Edited export now reconciles existing Card comments, checklists/progress, members, reactions, appearance and attachment metadata/covers while retaining identities and untouched canonical fields. Independent original-file checks, clearing and fresh import/export are covered by 52 affected native tests and 112 Python tests. See [Editable import](../Doc/User-Data-Model/Editable-Import.md) for scope and remaining Step 1 work. This does not enable cloud synchronization.
+Supported models: 1.0 records and working 1.1 package composition. Edited export now reconciles existing Card comments, checklists/progress, members, reactions, appearance and attachment metadata/covers while retaining identities and untouched canonical fields. Independent original-file checks, clearing and fresh import/export are covered by 52 affected native tests and 112 Python tests. See [Editable import](../Doc/Strategy/Architecture/User-Data-Model/Editable-Import.md) for scope and remaining Step 1 work. This does not enable cloud synchronization.
 
 
 Existing List metadata export (1.0 records, working 1.1 package) is covered in the protected editable-workspace acceptance test: rename, subtitle, new-item default and appearance; retained List/Card identities; fresh installation and byte-identical re-export; and clearing authored values. The affected native suite passes 52 tests. Its `ExistingListPackage` attachments are independently checked by the tooling's `--existing-list-package` mode.

@@ -14,4 +14,4 @@ python Tools/UserDataModel/build_migration_time_zones.py
 
 This checks exact reproducibility. Use `--write` only for intentional resource regeneration; changing the supported version/range requires updating its native support checks, tests and documentation together.
 
-Timezone facts derive from the [IANA Time Zone Database](https://www.iana.org/time-zones), distributed here through the pinned [Python tzdata package](https://tzdata.readthedocs.io/). No Python library code is bundled into the iOS application. Upstream license notices are retained at [tzdata license](../../Tools/UserDataModel/Licenses/tzdata-LICENSE.txt) and [Apache license](../../Tools/UserDataModel/Licenses/tzdata-APACHE-2.0.txt).
+Timezone facts derive from the [IANA Time Zone Database](https://www.iana.org/time-zones), distributed here through the pinned [Python tzdata package](https://tzdata.readthedocs.io/). No Python library code is bundled into the iOS application. Upstream license notices are retained at [tzdata license](../../../../Tools/UserDataModel/Licenses/tzdata-LICENSE.txt) and [Apache license](../../../../Tools/UserDataModel/Licenses/tzdata-APACHE-2.0.txt).

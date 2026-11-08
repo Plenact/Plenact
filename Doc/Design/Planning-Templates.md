@@ -1,6 +1,6 @@
 # Day and Week Templates
 
-> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Strategy/Architecture/Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
 
 Open Library → Templates (or + → Templates → Browse all templates). Manage routines here alongside the existing List templates. Jmr is the default Week routine, with distinct timed weekdays and weekends. Work Week starts from the original demo week; Vacation Day is an editable Day example. A separate Example Week can be previewed and saved as a template. Existing installations retain all planned weeks. A fresh workspace starts from Jmr; subsequent unsaved weeks use the selected default, once, on creation. Empty week disables automatic routines.
 

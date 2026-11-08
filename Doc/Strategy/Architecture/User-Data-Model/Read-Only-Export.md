@@ -7,7 +7,7 @@
 
 The remaining [account](Contracts/1.0/account.schema.json), [profile](Contracts/1.0/user-profile.schema.json), [label/category](Contracts/1.0/label.schema.json), [Studio settings](Contracts/1.0/studio-settings.schema.json), [saved artwork](Contracts/1.0/studio-artwork.schema.json), [Today shortcuts](Contracts/1.0/today-shortcuts.schema.json) and [display preferences](Contracts/1.0/workspace-display-preferences.schema.json) have final definitions. A [workspace export](Contracts/1.0/workspace-export.schema.json) joins these to planning/content/assets with ownership and reference checks. This is a synthetic target contract; no current user workspace has yet been converted into it.
 
-The [capture tool](../../Tools/UserDataModel/capture_export.py) reads a caller-supplied frozen backup directly. It does not run app loaders that might supply defaults/examples, normalize source values, execute review/recovery decisions or save migrations. Known preferences are stored in type-preserving binary-plist wrappers; embedded Data remains byte-for-byte unchanged. All files in the four app-owned media areas are copied, including unreferenced originals. Neither live app containers nor credentials are discovered automatically.
+The [capture tool](../../../../Tools/UserDataModel/capture_export.py) reads a caller-supplied frozen backup directly. It does not run app loaders that might supply defaults/examples, normalize source values, execute review/recovery decisions or save migrations. Known preferences are stored in type-preserving binary-plist wrappers; embedded Data remains byte-for-byte unchanged. All files in the four app-owned media areas are copied, including unreferenced originals. Neither live app containers nor credentials are discovered automatically.
 
 **A complete source capture is not a completed Model 1.0 conversion.** Every capture declares `portable_conversion_complete: false`. The full workspace fixture is manually constructed synthetic data, not the output of a migration adapter.
 
@@ -76,7 +76,7 @@ The full workspace validator checks shared ownership/workspace IDs, category/lab
 
 ## Reproduce synthetic checks
 
-Use the Python environment described in the [tool guide](../../Tools/UserDataModel/README.md):
+Use the Python environment described in the [tool guide](../../../../Tools/UserDataModel/README.md):
 
 ```sh
 python Tools/UserDataModel/capture_export.py --snapshot /path/to/explicit-frozen-backup --output /path/to/new-private-capture

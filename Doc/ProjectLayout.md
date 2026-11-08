@@ -1,6 +1,6 @@
 # Plenact project layout
 
-> **Data-model context — October 24, 2026:** The [current application/data plan](Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+> **Data-model context — October 24, 2026:** The [current application/data plan](Strategy/Architecture/Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
 
 Swift files are organized by feature and responsibility within the existing application target.
 Each file is limited to **1,200 source lines**, excluding comments, blank lines, and lines
@@ -239,7 +239,7 @@ Test/
 └── LegacyWorkspaceExportTests.swift  Isolated native backup regression coverage
 ```
 
-These support Model 1.0 preparation; they do not convert a complete portable workspace or enable sync. See [current implementation](User-Data-Model/iOS-Migration-Export.md).
+These support Model 1.0 preparation; they do not convert a complete portable workspace or enable sync. See [current implementation](Strategy/Architecture/User-Data-Model/iOS-Migration-Export.md).
 
 ## Migration-preview additions — October 24, 2026
 
@@ -252,7 +252,7 @@ Test/
 └── MigrationPreviewTests.swift     Identity, source integrity and canonical conversion regressions
 ```
 
-See [migration identity status](User-Data-Model/iOS-Migration-Identity.md). These files support Model 1.0 without changing the published wire definition.
+See [migration identity status](Strategy/Architecture/User-Data-Model/iOS-Migration-Identity.md). These files support Model 1.0 without changing the published wire definition.
 
 ## Reviewed source recovery additions
 
@@ -262,7 +262,7 @@ Src/App/WorkspaceBackupRestore.swift       Root-owned navigation teardown/recove
 Test/LocalBackupRestoreTests.swift         Isolated review, restore, undo and rollback regressions
 ```
 
-See [manual acceptance](User-Data-Model/iOS-Local-Restore-Test.md).
+See [manual acceptance](Strategy/Architecture/User-Data-Model/iOS-Local-Restore-Test.md).
 
 ## Native content migration additions
 
@@ -279,7 +279,7 @@ Test/
 └── MigrationContentTests.swift       Synthetic content, dates, identity and source-preservation checks
 ```
 
-See [content migration](User-Data-Model/iOS-Content-Migration.md).
+See [content migration](Strategy/Architecture/User-Data-Model/iOS-Content-Migration.md).
 
 
 Calendar/template migration addition (User Data Model 1.0):
@@ -339,7 +339,7 @@ Src/Persistence/
 └── MigrationTestPackage.swift     # Simulator-only portable package assembly
 └── PortablePackageReview.swift    # Read-only portable records and original-file review
 └── PortableEditedExport.swift     # Guarded Card edit export with retained identities and native backup
-Doc/User-Data-Model/Contracts/1.1/    # Additive working schemas and synthetic composition examples
+Doc/Strategy/Architecture/User-Data-Model/Contracts/1.1/    # Additive working schemas and synthetic composition examples
 Tools/UserDataModel/
 ├── appearance_contract.py           # Versioned composition, relationship and compatibility checks
 └── test_appearance_contract.py      # Working 1.1 definition and downgrade-safety regressions

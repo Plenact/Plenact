@@ -8,7 +8,7 @@ from pathlib import Path
 from validate_contract import ROOT, CONTRACTS, load_json, validate_instance
 
 
-EXAMPLES = ROOT / "Doc/User-Data-Model/Doc/Examples"
+EXAMPLES = ROOT / "Doc/Strategy/Architecture/User-Data-Model/Doc/Examples"
 
 
 class DocumentationExampleTests(unittest.TestCase):

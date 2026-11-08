@@ -1,6 +1,6 @@
 # A teammate for unfinished work
 
-> **Data-model context — October 24, 2026:** The [current application/data plan](../Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Strategy/Architecture/Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
 
 Plenact helps unfinished work become a conscious next choice, instead of something
 the user has to keep remembering. A plan is useful when it supports action and

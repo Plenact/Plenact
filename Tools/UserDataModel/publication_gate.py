@@ -16,7 +16,7 @@ from validate_contract import CONTRACTS, ROOT, ContractError, load_json, run_fix
 
 
 TAG = "user-data-model-v1.0"
-DOCUMENTS = ROOT / "Doc/User-Data-Model"
+DOCUMENTS = ROOT / "Doc/Strategy/Architecture/User-Data-Model"
 TOOLS = ROOT / "Tools/UserDataModel"
 ALLOWED = {".md", ".json", ".py", ".swift", ".cs", ".csproj", ".cjs", ".yaml", ".txt", ".sql"}
 

@@ -3,7 +3,7 @@
 **Supported User Data Model versions:** 1.0; Version 0 historical reference only.
 **Updated:** October 24, 2026.
 
-Start with the final [Model 1.0 specification](../User-Data-Model/Specification.md) and [current application/data plan](../Application-Data-Plan.md). The published definition supports one private owner across iOS, web and Windows, including indefinite offline work. The older shared Board demo is **Version 0**, not the current private-workspace design.
+Start with the final [Model 1.0 specification](../Strategy/Architecture/User-Data-Model/Specification.md) and [current application/data plan](../Strategy/Architecture/Application-Data-Plan.md). The published definition supports one private owner across iOS, web and Windows, including indefinite offline work. The older shared Board demo is **Version 0**, not the current private-workspace design.
 
 | Layer | Representation | Current state |
 | --- | --- | --- |
@@ -19,8 +19,8 @@ Start with the final [Model 1.0 specification](../User-Data-Model/Specification.
 - [Current data contract overview](Plenact-Data-Contract.md).
 - [JSON, SQL and MySQL](JSON-SQL-and-MySQL.md): what each layer does.
 - [MySQL implementation plan](Model-1.0-MySQL-Plan.md): physical design and acceptance boundaries.
-- [Versioned database examples](../User-Data-Model/Doc/Examples/README.md): synthetic SQL and portable JSON, with explanations.
-- [Logical storage obligations](../User-Data-Model/Logical-Storage.md): normative transaction, retention and identity invariants.
+- [Versioned database examples](../Strategy/Architecture/User-Data-Model/Doc/Examples/README.md): synthetic SQL and portable JSON, with explanations.
+- [Logical storage obligations](../Strategy/Architecture/User-Data-Model/Logical-Storage.md): normative transaction, retention and identity invariants.
 
 ## Historical Version 0
 

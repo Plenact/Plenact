@@ -1,0 +1,68 @@
+Binary file ./Demo/Using Database.mov matches
+Binary file ./Demo/.Archived/1 - Getting Started - Plenact.mov matches
+Binary file ./Demo/.Archived/3 - Begin - Plenact.mov matches
+Binary file ./Demo/.Archived/4 - With User Accounts.mov matches
+Binary file ./Demo/.Archived/2 - Cards & List Sample - Plenact.mov matches
+Binary file ./Ref/aNote/IMG_5047.PNG matches
+Binary file ./Ref/aNote/IMG_5050.PNG matches
+Binary file ./Ref/aNote/IMG_5048.PNG matches
+Binary file ./Ref/aNote/IMG_5049.PNG matches
+Binary file ./Ref/aNote/aNote Interface.jpg matches
+Binary file ./Ref/Trello/Zoom Out - Horizontal Orientation.PNG matches
+Binary file ./Ref/Trello/5 - Lists:Notes Interface Idea.PNG matches
+Binary file ./Ref/Trello/IMG_5042.PNG matches
+Binary file ./Ref/Trello/IMG_5043.PNG matches
+Binary file ./Ref/Trello/Zoom Out - Vertical Orientation.PNG matches
+Binary file ./Ref/Trello/Zoom Std - Horizontal Orientation.PNG matches
+Binary file ./Ref/Trello/Zoom Std - Vertical Orientation.jpg matches
+./User-Data-Model/Step-1-Beta-Closeout.md:110:3. **Step 4 — other clients:** connect web and subsequent clients to the tested contract. The current desktop direction is C++/Qt for Windows, macOS and Linux, superseding the earlier Windows C# recommendation; see [platform decisions](../Lessons/Platform-Languages-and-Desktop-Architecture.md). iOS remains Swift; other client work is not implemented by this milestone.
+./Connected-Multiplatform-Roadmap.md:52:| Desktop | C++ with Qt for Windows, macOS, and Linux | Supersedes the earlier C# Windows, Swift Mac, and gtkmm Linux proposals |
+./Connected-Multiplatform-Roadmap.md:58:See [platform languages and desktop architecture](Lessons/Platform-Languages-and-Desktop-Architecture.md) for the alternatives, learning costs, and desktop cost/benefit analysis. Qt Quick/QML is the preferred initial desktop interface prototype, not a fully validated release configuration. Qt modules, licensing/distribution choices, compiler baseline, packaging, and supported OS versions still require a concrete implementation decision.
+./Connected-Multiplatform-Roadmap.md:141:    DESKTOP[C++ / Qt desktop apps] --> API
+./Connected-Multiplatform-Roadmap.md:311:### 10.2 Desktop: C++ and Qt
+./Connected-Multiplatform-Roadmap.md:313:Build one shared desktop application foundation for Windows, macOS, and Linux, with platform-specific integration where justified. Prototype Qt Quick/QML against real Plenact workflows: a sizeable Board, long text, checklist editing, rich text, keyboard focus/input methods, artwork, and offline state. A trivial UI sample is not sufficient validation.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:5:**Decision:** Use C++ with Qt for the planned Windows, Mac, and Linux desktop applications.  
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:18:| Plenact-Windows | C++ and Qt | Selected desktop direction; supersedes the earlier provisional C# plan |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:19:| Plenact-Mac | C++ and Qt | Selected desktop direction; supersedes the earlier provisional SwiftUI Mac plan |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:20:| Plenact-Linux | C++ and Qt | Selected desktop direction; supersedes the earlier gtkmm proposal |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:24:For the desktop interface, Qt Quick/QML is the preferred initial prototype direction. The confirmed decision is C++/Qt across desktops; the detailed UI architecture, Qt modules, compiler baseline, and distribution configuration remain to be established.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:41:**Justin's professionally fluent language is C.** C++ familiarity and embedded experience do not imply fluency in modern C++, Qt, desktop UI programming, or cross-platform deployment. An earlier discussion overstated that fluency; this decision uses C as the actual starting point.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:49:- C++ with Qt and C++ with WinUI are different application-development approaches despite sharing a language.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:52:- A shared Qt interface still needs adaptations and tests for each operating system.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:72:For now, Android remains a native Kotlin client of the shared contract. Qt's mobile support is an available capability, not a commitment to move our mobile applications onto Qt.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:80:- C++ with gtkmm for Linux, providing a C++ path without Qt.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:86:Justin's initial hesitation about Qt came from seeing it adopted indiscriminately in a previous workplace. That was not a technical finding that Qt was unsuitable for Plenact. We revisited the framework on its merits and selected it for a specific responsibility: the shared desktop application.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:88:## 7. Qt's value proposition for Plenact
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:90:Qt supports Windows, macOS, and Linux. Qt Quick provides a declarative interface approach that can work with C++ application logic. Exact supported operating systems, architectures, compilers, and modules depend on the selected release. [Qt supported platforms](https://doc.qt.io/qt-6/supported-platforms.html), [Qt Quick introduction](https://www.qt.io/product/qt6/qml-book/ch06-controls-introduction)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:107:Qt is not the only way to share a desktop application:
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:109:- **C# with Avalonia:** offers a shared Windows, Mac, and Linux application approach. This could also reduce repeated implementation. Choosing Qt instead reflects our selected C++ learning direction and the framework we intend to prototype; shared-code benefits are not exclusive to C++ or Qt. [Avalonia platform support](https://docs.avaloniaui.net/docs/supported-platforms)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:110:- **C++ with wxWidgets:** offers a common desktop API using native platform controls. It remains a credible alternative if our Qt prototype reveals a better fit for that approach. We have not measured either framework against Plenact's rich editing and artwork needs. [wxWidgets overview](https://wxwidgets.org/about/)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:111:- **C++ with gtkmm, or C with GTK:** would provide a Linux application route, including a possible bridge from Justin's existing C fluency. We chose the shared Qt desktop direction instead of introducing a separate Linux interface implementation. [GTK language bindings](https://www.gtk.org/docs/language-bindings/)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:116:## 8. Why include Mac in the shared Qt application?
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:126:Qt styles can help presentation, but visual resemblance does not prove native interaction quality. Mac menus, shortcuts, accessibility, window behavior, file handling, and system integration still need deliberate design and testing. [Qt Quick Controls styling](https://doc.qt.io/qt-6/qtquickcontrols-styles.html)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:130:## 9. C++/Qt everywhere on desktop versus C# on Windows
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:132:This comparison assumes C++/Qt on Mac/Linux and asks whether Windows should share that application or use a separate C#/.NET/WinUI implementation.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:134:| Concern | C++/Qt across desktops | Separate C# Windows application |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:137:| Feature maintenance | Share substantial interface and behavior changes | Coordinate Windows changes with the Qt application |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:139:| Windows integration | Requires appropriate Qt/platform adaptation | More direct alignment with Microsoft's native UI framework |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:141:| Learning | Modern C++, Qt, QML, and desktop tooling | Those skills plus C#, .NET, and WinUI |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:142:| Framework dependency | More desktop functionality depends on Qt | Windows gains an independent framework path |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:152:We would reconsider if a prototype exposes a Windows requirement Qt cannot satisfy adequately, a Windows-focused team brings substantial .NET expertise, or the Windows product deliberately needs an experience whose independent development is justified.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:162:## 10. Risk and reward of concentrating desktop development in C++/Qt
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:168:| Qt/QML | Integrated desktop development and reusable UI | Framework learning and upgrade dependency | Prototype difficult workflows; pin and deliberately upgrade dependencies |
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:174:The memory-management risk is real even for an experienced C developer. C++ adds tools for managing resources, but also introduces language and library complexity. Qt has its own object-lifetime and thread-affinity rules; combining Qt ownership with standard-library ownership requires an explicit design.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:187:- **Learning:** C++, Qt/QML, build systems, UI architecture, and debugging.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:188:- **Dependencies and licensing:** selected Qt modules, third-party libraries, update policies, and any commercial arrangements.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:196:Qt offers commercial and open-source licensing options, and component terms vary. We must evaluate the actual modules and distribution approach before selecting a licensing path. This document does not determine that a particular distribution complies with a license or quote a commercial price. [Qt licensing](https://doc.qt.io/qt-6/licensing.html)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:198:Using Qt should remain a scoped choice. We should not introduce unrelated modules or move server/mobile work into Qt simply because it is available.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:203:Swift iOS/iPadOS client       Kotlin Android client       C++/Qt desktop client
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:220:3. Presentation: Qt models, view state, QML, and user interaction.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:267:Evaluate Qt Quick/QML against those actual workflows. Rich text, input methods, focus behavior, artwork, and large Boards deserve early attention because a trivial button-and-label sample will not expose their difficulty.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:271:The prototype should establish supported toolchain versions, the intended C++ standard, necessary Qt modules, platform targets, and the initial packaging approach. We have not selected those details in this conversation.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:289:- Modern C++ and Qt/QML develop shared desktop engineering skills.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:314:Possible adjustments include retaining the shared C++ domain core while changing one interface, revising the Qt UI approach, or adding a specialized platform implementation for a demonstrated requirement. Those changes have costs and should be evaluated explicitly.
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:326:- [Qt: supported platforms](https://doc.qt.io/qt-6/supported-platforms.html)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:327:- [Qt: introduction to Qt Quick Controls](https://www.qt.io/product/qt6/qml-book/ch06-controls-introduction)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:328:- [Qt: styling Qt Quick Controls](https://doc.qt.io/qt-6/qtquickcontrols-styles.html)
+./Lessons/Platform-Languages-and-Desktop-Architecture.md:329:- [Qt: licensing](https://doc.qt.io/qt-6/licensing.html)
+./Lessons/README.md:6:- [Platform languages and shared desktop architecture](Platform-Languages-and-Desktop-Architecture.md) — November 7, 2026: the C++/Qt desktop decision, mobile/web/backend directions, alternatives including C# on Windows and Swift on Mac, risk and cost analysis, and the product/learning plan.

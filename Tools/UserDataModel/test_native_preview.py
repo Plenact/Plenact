@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, reset_tzpath
 import tzdata
-from validate_contract import CONTRACTS, ContractError, load_json
+from validate_contract import ROOT, CONTRACTS, ContractError, load_json
 from validate_native_preview import validate_records
 
 
@@ -74,7 +74,7 @@ class NativePreviewValidatorTests(unittest.TestCase):
 
     def test_pinned_transition_projection_matches_reference_rules(self):
         reset_tzpath([])
-        rules = load_json(CONTRACTS.parents[3] / "Src/Persistence/MigrationTimeZoneRules.json")
+        rules = load_json(ROOT / "Src/Persistence/MigrationTimeZoneRules.json")
         self.assertEqual(rules["tzdb_version"], tzdata.IANA_VERSION)
         for name, transitions in rules["zones"].items():
             zone = ZoneInfo(name)

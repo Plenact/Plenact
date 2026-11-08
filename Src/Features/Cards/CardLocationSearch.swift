@@ -20,24 +20,24 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 {
 
 
-    let id:        UUID
-    let name:      String
-    let address:   String
-    let latitude:  Double
-    let longitude: Double
+    let id:        UUID   /* Record UUID            */
+    let name:      String /* Display or lookup name */
+    let address:   String /* Resolved place address */
+    let latitude:  Double /* Place latitude         */
+    let longitude: Double /* Place longitude        */
 
-    var coordinate: CLLocationCoordinate2D
+    var coordinate: CLLocationCoordinate2D /* Resolved map coordinate */
     {
 
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
 
-    var savedLocation: String
+    var savedLocation: String /* Saved location */
     {
 
-        let title   = CardLocation.normalized(name)
-        let address = CardLocation.normalized(address)
+        let title   = CardLocation.normalized(name)    /* User-facing title      */
+        let address = CardLocation.normalized(address) /* Resolved place address */
 
         if let title, let address, title.caseInsensitiveCompare(address) != .orderedSame
         {
@@ -91,8 +91,8 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
     init?(item: MKMapItem)
     {
 
-        let coordinate: CLLocationCoordinate2D
-        let address: String
+        let coordinate: CLLocationCoordinate2D /* Resolved map coordinate */
+        let address: String                    /* Resolved place address  */
 
         if #available(iOS 26.0, *)
         {
@@ -152,7 +152,7 @@ final class CardLocationSearchModel: ObservableObject
     }
 
 
-    @Published var query: String
+    @Published var query: String /* Search text */
     {
 
         didSet
@@ -168,13 +168,15 @@ final class CardLocationSearchModel: ObservableObject
 
     }
 
-    @Published private(set) var results: [CardLocationSearchResult] = []
-    @Published private(set) var phase: Phase                        = .idle
-    @Published var selectedID: UUID?
-    private let searcher: Searcher
-    private var revision = UUID()
+    @Published private(set) var results: [CardLocationSearchResult] = /* Collected operation results */
+        []
+    @Published private(set) var phase: Phase                        = /* Current app lifecycle phase */
+        .idle
+    @Published var selectedID: UUID? /* Selected ID            */
+    private let searcher: Searcher   /* Place lookup service   */
+    private var revision = UUID()    /* Latest search revision */
 
-    var selectedResult: CardLocationSearchResult?
+    var selectedResult: CardLocationSearchResult? /* Selected result */
     {
 
         results.first
@@ -242,14 +244,14 @@ final class CardLocationSearchModel: ObservableObject
             return
         }
 
-        let requestRevision = revision
+        let requestRevision = revision /* Request revision */
 
         phase = .searching
 
         do
         {
 
-            let matches = try await searcher(query, region)
+            let matches = try await searcher(query, region) /* Matching source entries */
 
             guard revision == requestRevision else
             {
@@ -306,7 +308,7 @@ final class CardLocationSearchModel: ObservableObject
     private static func findPlaces(_ query: String, region: MKCoordinateRegion?) async throws -> [CardLocationSearchResult]
     {
 
-        let request = MKLocalSearch.Request()
+        let request = MKLocalSearch.Request() /* Pending lookup request */
 
         request.naturalLanguageQuery = query
         request.resultTypes = [.address, .pointOfInterest]
@@ -318,8 +320,8 @@ final class CardLocationSearchModel: ObservableObject
 
         }
 
-        let search   = MKLocalSearch(request: request)
-        let response = try await withTaskCancellationHandler
+        let search   = MKLocalSearch(request: request)       /* Active content search  */
+        let response = try await withTaskCancellationHandler /* Received lookup result */
         {
 
             try await search.start()
@@ -355,13 +357,14 @@ struct CardLocationSearchView: View
 {
 
 
-    let onSelect: (String) -> Void
-    @StateObject private var model: CardLocationSearchModel
-    @State private var position: MapCameraPosition = .automatic
-    @State private var visibleRegion: MKCoordinateRegion?
-    @State private var retryRevision = 0
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let onSelect: (String) -> Void                          /* Handle the selected value       */
+    @StateObject private var model: CardLocationSearchModel /* Current data model              */
+    @State private var position: MapCameraPosition =        /* Current layout or item position */
+        .automatic
+    @State private var visibleRegion: MKCoordinateRegion? /* Visible region */
+    @State private var retryRevision = 0 /* Retry revision */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
 
     ///
@@ -392,7 +395,7 @@ struct CardLocationSearchView: View
     /// @return     (some View) result list or compact search-state feedback
     ///
     @ViewBuilder
-    private var searchFeedback: some View
+    private var searchFeedback: some View /* Search feedback */
     {
 
         switch model.phase
@@ -486,7 +489,7 @@ struct CardLocationSearchView: View
     ///             share one identity; leaving without Use this location preserves the parent draft
     /// @return     (some View) native Apple Maps search and selection workspace
     ///
-    var body: some View
+    var body: some View /* Card Location Search layout */
     {
 
         GeometryReader

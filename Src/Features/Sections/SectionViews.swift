@@ -21,9 +21,9 @@ struct NamedSectionDivider: View
 {
 
 
-    let card: KanbanCard
+    let card: KanbanCard /* Card under consideration */
 
-    var body: some View
+    var body: some View /* Named Section Divider layout */
     {
 
         HStack(spacing: 10)
@@ -59,15 +59,15 @@ struct DaySectionRow: View
 {
 
 
-    let card:     KanbanCard
-    let cards:    [KanbanCard]
-    let onUpdate: (KanbanCard) -> Void
-    let onMove:   (Int) -> Void
-    var onOpen:   (() -> Void)? = nil
-    @Environment(\.cardMovementAccess) private var movement
-    @State private var showsMove = false
+    let card:     KanbanCard                                /* Card under consideration         */
+    let cards:    [KanbanCard]                              /* Card records under consideration */
+    let onUpdate: (KanbanCard) -> Void                      /* Publish item edits               */
+    let onMove:   (Int) -> Void                             /* Move the selected item           */
+    var onOpen:   (() -> Void)? = nil                       /* Open the selected destination    */
+    @Environment(\.cardMovementAccess) private var movement /* Owner-qualified transfer context */
+    @State private var showsMove = false                    /* Move visibility                  */
 
-    @ViewBuilder private var heading: some View
+    @ViewBuilder private var heading: some View /* Section heading text */
     {
 
         if let onOpen
@@ -91,7 +91,7 @@ struct DaySectionRow: View
 
     }
 
-    private var headings: [KanbanCard]
+    private var headings: [KanbanCard] /* Ordered section headings */
     {
         cards.filter
         {
@@ -100,7 +100,7 @@ struct DaySectionRow: View
 
     }
 
-    var body: some View
+    var body: some View /* Day Section layout */
     {
 
         HStack(spacing: 0)
@@ -113,8 +113,9 @@ struct DaySectionRow: View
                 Button
                 {
 
-                    var updated    = card
-                    var appearance = updated.appearance ?? ItemAppearance()
+                    var updated    = card /* Edited value to publish     */
+                    var appearance =      /* Resolved appearance choices */
+                        updated.appearance ?? ItemAppearance()
 
                     appearance.sectionCollapsed = appearance.sectionCollapsed != true
                     updated.appearance = appearance
@@ -212,8 +213,8 @@ struct DaySectionRow: View
     private func setColor(_ color: ItemAccent?)
     {
 
-        var updated    = card
-        var appearance = updated.appearance ?? ItemAppearance()
+        var updated    = card                                   /* Edited value to publish     */
+        var appearance = updated.appearance ?? ItemAppearance() /* Resolved appearance choices */
 
         appearance.accent = color
         updated.appearance = appearance.isEmpty ? nil : appearance
@@ -235,8 +236,8 @@ struct DaySectionRail: ViewModifier
 {
 
 
-    let cardID: Int
-    let cards:  [KanbanCard]
+    let cardID: Int          /* Owner-local Card identifier      */
+    let cards:  [KanbanCard] /* Card records under consideration */
 
 
     ///

@@ -16,6 +16,8 @@
 //             Type headers describe the declaration and include a focused @section Purpose
 //             Include @throws for throwing functions and @pre, @post, or @note where relevant
 //             Add concise trailing /* ... */ descriptors to let/var declarations, including locals
+//             Describe each declaration’s role briefly; target 100 columns including its inline comment
+//             Wrap long initializers when helpful and preserve useful existing descriptions
 //             Omit final periods from prose comment descriptions; retain punctuation within paragraphs
 //             Preserve meaningful abbreviations, URLs, ellipses, code examples, and ! or ? endings
 //             Vertically align = in consecutive let/var declarations at the same indentation
@@ -64,11 +66,11 @@ enum AppMetadata
 {
 
 
-    static let projectName  = "ProjectName"   /* Example project name        */
-    static let organization = "Company Name"  /* Example owning organization */
-    static let author       = "Justin Reina"  /* Example project author      */
-    static let created      = "2026-09-24"    /* Example creation date       */
-    static let lastRevision = "2026-09-24"    /* Example revision date       */
+    static let projectName  = "ProjectName"  /* Example project name        */
+    static let organization = "Company Name" /* Example owning organization */
+    static let author       = "Justin Reina" /* Example project author      */
+    static let created      = "2026-09-24"   /* Example creation date       */
+    static let lastRevision = "2026-09-24"   /* Example revision date       */
 
 }
 
@@ -105,7 +107,7 @@ enum AppError: LocalizedError, Sendable
     ///
     /// @note   Keep output concise and actionable for support/debug workflows
     ///
-    var errorDescription: String?
+    var errorDescription: String? /* Readable failure explanation */
     {  /* Example localized error description */
 
 
@@ -146,10 +148,10 @@ struct Item: Identifiable, Codable, Sendable
 {
 
 
-    let id:        UUID     /* Example item identity                   */
-    let title:     String   /* Example display title                   */
-    let detail:    String?  /* Example optional secondary content      */
-    let createdAt: Date     /* Example creation or retrieval timestamp */
+    let id:        UUID    /* Example item identity                   */
+    let title:     String  /* Example display title                   */
+    let detail:    String? /* Example optional secondary content      */
+    let createdAt: Date    /* Example creation or retrieval timestamp */
 
 
     ///
@@ -255,8 +257,8 @@ final class ItemListViewModel: ObservableObject
 {
 
 
-    @Published private(set) var items: [Item] = []     /* Example current item collection */
-    @Published private(set) var isLoading     = false  /* Example loading-state indicator */
+    @Published private(set) var items: [Item] = []    /* Example current item collection */
+    @Published private(set) var isLoading     = false /* Example loading-state indicator */
 
     @Published private(set) var errorMessage: String?       /* Example current error message */
 

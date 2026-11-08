@@ -38,17 +38,20 @@ extension PlenactBoardDocumentTests
     func testListAppearanceChangesOnlyCanonicalMetadataAndResetsToNil() throws
     {
 
-        let photo = KanbanAttachment(exampleImage: .camping, caption: "A day outdoors")
-        let card  = KanbanCard(
+        let photo = /* Photo selection or source */
+            KanbanAttachment(exampleImage: .camping, caption: "A day outdoors")
+        let card  = KanbanCard( /* Synthetic card fixture */
             id: 1, word: "Walk", listTitle: "Monday", attachments: [photo], coverAttachmentID: photo.id)
-        let archivedCard = card.replacingLocation(id: 2, listTitle: "Monday")
-        var lists        = [KanbanList(id: 0, title: "Monday", cards: [card], archivedCards: [archivedCard])]
-        let original     = lists
-        let appearance   = ItemAppearance(accent: .teal, icon: .home, background: .blue, listBackground: .green)
+        let archivedCard = card.replacingLocation(id: 2, listTitle: "Monday") /* Archived card */
+        var lists        = /* Ordered List records */
+            [KanbanList(id: 0, title: "Monday", cards: [card], archivedCards: [archivedCard])]
+        let original     = lists /* Baseline before changes     */
+        let appearance   =       /* Resolved appearance choices */
+            ItemAppearance(accent: .teal, icon: .home, background: .blue, listBackground: .green)
 
         XCTAssertTrue(setListAppearance(0, appearance: appearance, in: &lists))
 
-        var expected = original
+        var expected = original /* Expected operation result */
 
         expected[0].appearance = appearance
 
@@ -59,7 +62,7 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(setListAppearance(0, appearance: ItemAppearance(), in: &lists))
         XCTAssertNil(lists[0].appearance)
 
-        let retained = lists
+        let retained = lists /* State retained for recovery */
 
         DatabaseActivity.shared.dismissError()
         defer
@@ -70,7 +73,7 @@ extension PlenactBoardDocumentTests
         XCTAssertFalse(setListAppearance(99, appearance: appearance, in: &lists))
         XCTAssertEqual(lists, retained)
 
-        var archived = retained[0]
+        var archived = retained[0] /* Archived records or state */
 
         archived.isArchived = true
         lists = [archived]
@@ -80,7 +83,7 @@ extension PlenactBoardDocumentTests
 
         lists = [retained[0], retained[0]]
 
-        let duplicated = lists
+        let duplicated = lists /* Duplicated comparison fixture */
 
         XCTAssertFalse(setListAppearance(0, appearance: appearance, in: &lists))
         XCTAssertEqual(lists, duplicated)
@@ -101,12 +104,13 @@ extension PlenactBoardDocumentTests
     func testPictureRowsHaveNoFooterOrInternalPaddingAtBothBoardDensities() async throws
     {
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -117,9 +121,11 @@ extension PlenactBoardDocumentTests
             previous?.makeKey()
         }
 
-        let photo     = KanbanAttachment(mediaKind: .photo, exampleImage: .flowerBouquet, caption: "Flowers in the garden")
-        let thumbnail = try CardAttachmentStore.coverThumbnail(for: photo)
-        let ratio     = thumbnail.size.width / thumbnail.size.height
+        let photo     = /* Photo selection or source */
+            KanbanAttachment(mediaKind: .photo, exampleImage: .flowerBouquet, caption: "Flowers in the garden")
+        let thumbnail = /* Thumbnail comparison fixture */
+            try CardAttachmentStore.coverThumbnail(for: photo)
+        let ratio     = thumbnail.size.width / thumbnail.size.height /* Ratio comparison fixture */
 
         for density in BoardPresentation.allCases
         {
@@ -127,13 +133,13 @@ extension PlenactBoardDocumentTests
             for title in ["", "A long retained title that must not add a footer to this Picture row"]
             {
 
-                var card = KanbanCard(
+                var card = KanbanCard( /* Synthetic card fixture */
                     id: 81, word: title, listTitle: "Ideas", attachments: [photo], coverAttachmentID: photo.id)
 
                 card.displayFormat = .picture
 
-                let original = card
-                let row      = KanbanCardView(
+                let original = card            /* Baseline before changes     */
+                let row      = KanbanCardView( /* Rendered or stored item row */
                     card: card, height: density.minimumCardHeight, displaySettings: BoardDisplaySettings(),
                     presentation: density, labelLibrary: .starter,
                     onUpdateCard:
@@ -155,7 +161,7 @@ extension PlenactBoardDocumentTests
                     }
                 )
                 .environment(\.dynamicTypeSize, .accessibility3)
-                let host = UIHostingController(rootView: row)
+                let host = UIHostingController(rootView: row) /* Synthetic SwiftUI host */
 
                 host.safeAreaRegions = []  // Measure the row itself, without window safe-area insets
                 window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
@@ -167,7 +173,8 @@ extension PlenactBoardDocumentTests
                 for width: CGFloat in [320, 430]
                 {
 
-                    let size = host.sizeThatFits(in: CGSize(width: width, height: 10_000))
+                    let size = /* Content or layout size */
+                        host.sizeThatFits(in: CGSize(width: width, height: 10_000))
 
                     XCTAssertEqual(size.width, width, accuracy: 1)
                     XCTAssertEqual(
@@ -175,13 +182,14 @@ extension PlenactBoardDocumentTests
                                                                 "Only the image and existing outer row margins should determine Picture size")
                 }
 
-                let image = UIGraphicsImageRenderer(size: window.bounds.size).image
+                let image = /* Image used by this operation */
+                    UIGraphicsImageRenderer(size: window.bounds.size).image
                 {
                     _ in
                     window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                 }
 
-                let attachment = XCTAttachment(image: image)
+                let attachment = XCTAttachment(image: image) /* Synthetic test evidence */
 
                 attachment.name = "Picture-full-row-\(density.rawValue)-\(title.isEmpty ? "blank" : "retained-title")"
                 attachment.lifetime = .keepAlways
@@ -208,20 +216,23 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let card    = KanbanCard(id: 10, word: "Synthetic", listTitle: "Thursday", descriptionOverride: "Retained body")
-        let divider = KanbanCard(id: 11, word: "---", listTitle: "Thursday", isDivider: true, checklists: [])
-        let archive = KanbanCard(id: 12, word: "Retained archive", listTitle: "Thursday", presentation: .note)
-        var list    = KanbanList(
+        let card    = /* Synthetic card fixture */
+            KanbanCard(id: 10, word: "Synthetic", listTitle: "Thursday", descriptionOverride: "Retained body")
+        let divider = /* Structural section divider */
+            KanbanCard(id: 11, word: "---", listTitle: "Thursday", isDivider: true, checklists: [])
+        let archive = /* Archive Card example */
+            KanbanCard(id: 12, word: "Retained archive", listTitle: "Thursday", presentation: .note)
+        var list    = KanbanList( /* Synthetic list fixture */
             id: 4, title: "Thursday", cards: [card, divider], archivedCards: [archive], newItemPresentation: .note)
-        let original = list
+        let original = list /* Baseline before changes */
 
         XCTAssertThrowsError(try list.edit(title: " \n ", subtitle: "Do not save"))
         XCTAssertEqual(list, original)
         try list.edit(title: "  My plans  ", subtitle: "  A calm place to begin  ")
 
-        var expectedCard    = card
-        var expectedDivider = divider
-        var expectedArchive = archive
+        var expectedCard    = card    /* Expected card    */
+        var expectedDivider = divider /* Expected divider */
+        var expectedArchive = archive /* Expected archive */
 
         expectedCard.listTitle = "My plans"
         expectedDivider.listTitle = "My plans"
@@ -238,7 +249,8 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(list.subtitle, "")
         XCTAssertEqual(try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list)).subtitle, "")
 
-        var collection = PersonalCollection(title: "Synthetic", kind: .list)
+        var collection = /* Synthetic collection fixture */
+            PersonalCollection(title: "Synthetic", kind: .list)
 
         collection.lists = [list]
 
@@ -261,17 +273,18 @@ extension PlenactBoardDocumentTests
     func testVoiceSaveOptionsKeepOnlySelectedContentAndPreserveRichWriting() throws
     {
 
-        let rich =
+        let rich = /* Rich comparison fixture */
         PlanRichText.prefix
         + (try JSONEncoder().encode([PlanRichText.Run(text: "Keep this writing", bold: true)]))
         .base64EncodedString()
-        let transcript = "  My reviewed spoken thought  "
+        let transcript = "  My reviewed spoken thought  " /* Recognized speech text */
 
         XCTAssertEqual(VoiceCaptureSaveOption.audio.body(existing: rich, transcript: transcript), rich)
         for option in [VoiceCaptureSaveOption.text, .both]
         {
 
-            let body = option.body(existing: rich, transcript: transcript)
+            let body = /* Note or description text */
+                option.body(existing: rich, transcript: transcript)
 
             XCTAssertEqual(PlanRichText.plain(body), "Keep this writing\n\nMy reviewed spoken thought")
             XCTAssertEqual(PlanRichText.runs(body)?.first?.bold, true)
@@ -299,15 +312,15 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let data = Data(
+        let data = Data( /* Encoded or loaded bytes */
                         #"{"id":1,"title":"Legacy","cards":[{"id":2,"word":"Retain","listTitle":"Legacy","checklists":[]}]}"#.utf8) /* JSON fixture bytes for the compatibility check */
-        let list = try JSONDecoder().decode(
+        let list = try JSONDecoder().decode( /* Synthetic list fixture */
             KanbanList.self, from: data) /* Decoded List fixture                           */
 
         XCTAssertEqual(list.newItemPresentation, .card)
         XCTAssertEqual(list.cards[0].presentation, .card)
 
-        let json = try XCTUnwrap(
+        let json = try XCTUnwrap( /* JSON representation */
             JSONSerialization.jsonObject(with: JSONEncoder().encode(list)) as? [String: Any])  /* Encoded JSON representation   */
         let cards = try XCTUnwrap(json["cards"] as? [[String: Any]])                           /* Card records under inspection */
 
@@ -317,9 +330,9 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(list.cards[0].createdAt)
         XCTAssertNil(cards[0] ["createdAt"])
 
-        let invalidCard = Data(
+        let invalidCard = Data( /* Invalid card */
                         #"{"id":2,"word":"Invalid","listTitle":"Legacy","itemPresentation":"unsupported"}"#.utf8) /* Unsupported Card fixture                   */
-        let invalidList = Data(
+        let invalidList = Data( /* Invalid list */
                         #"{"id":1,"title":"Invalid","cards":[],"defaultItemPresentation":"unsupported"}"#.utf8) /* Unsupported list-presentation JSON fixture */
 
         XCTAssertThrowsError(try JSONDecoder().decode(KanbanCard.self, from: invalidCard))
@@ -340,13 +353,14 @@ extension PlenactBoardDocumentTests
     func testMultilineEntriesPreserveOrderIgnoreBlankLinesAndCreateDistinctCards() throws
     {
 
-        let input = " A\r\nB\n\n C \rD\nA\n"
+        let input = " A\r\nB\n\n C \rD\nA\n" /* Source operation input */
 
         XCTAssertEqual(MultilineEntry.titles(input), ["A", "B", "C", "D", "A"])
         XCTAssertTrue(MultilineEntry.titles(" \n\t\r\n").isEmpty)
 
-        let list  = KanbanList(id: 1, title: "Saturday", cards: [])
-        let cards = list.makeItems(startingAt: 20, titles: input, description: "Shared details", subtitle: "Subtitle")
+        let list  = KanbanList(id: 1, title: "Saturday", cards: []) /* Synthetic list fixture */
+        let cards = /* Card records under consideration */
+            list.makeItems(startingAt: 20, titles: input, description: "Shared details", subtitle: "Subtitle")
 
         XCTAssertEqual(cards.map(\.word), ["A", "B", "C", "D", "A"])
         XCTAssertEqual(cards.map(\.id), [20, 21, 22, 23, 24])
@@ -355,11 +369,12 @@ extension PlenactBoardDocumentTests
                 $0.descriptionOverride == "Shared details" && $0.subtitle == "Subtitle"
             })
 
-        let decoded = try JSONDecoder().decode([KanbanCard].self, from: JSONEncoder().encode(cards))
+        let decoded = /* Decoded input value */
+            try JSONDecoder().decode([KanbanCard].self, from: JSONEncoder().encode(cards))
 
         XCTAssertEqual(decoded, cards)
 
-        let items = MultilineEntry.titles(input).map
+        let items = MultilineEntry.titles(input).map /* Items being processed */
         {
             KanbanChecklistItem(title: $0)
         }
@@ -412,12 +427,12 @@ extension PlenactBoardDocumentTests
             })
         await fulfillment(of: [success], timeout: 2)
 
-        var invalid = KanbanCard(
+        var invalid = KanbanCard( /* Input expected to be rejected */
             id: 1, word: "Invalid", listTitle: "List", checklists: []) /* Malformed fixture input */
 
         invalid.dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
 
-        let rejected = expectation(
+        let rejected = expectation( /* Rejected comparison fixture */
             description: "No cleanup after failed write") /* Expectation that failed writes skip completion cleanup */
 
         rejected.isInverted = true
@@ -452,18 +467,18 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let week     = SampleData.lists /* Archived weekly-board fixture         */
-        var archived = PersonalCollection(
+        let week     = SampleData.lists    /* Archived weekly-board fixture */
+        var archived = PersonalCollection( /* Archived records or state     */
             title: "Archived fixture", kind: .board) /* Archived value for restoration checks */
 
         archived.isArchived = true
 
-        let restored = PersonalCollection(
+        let restored = PersonalCollection( /* Recovered state under review */
             title: "Week Board (Restored)", kind: .board) /* Restored value under verification               */
-        let personal = PersonalCollection(
+        let personal = PersonalCollection( /* Personal collection fixture */
             title: "Personal fixture", kind: .list)       /* Personal List fixture filtered from demo Boards */
-        let collections = [personal, restored, archived]  /* Saved personal-collection state                 */
-        let scene       = try XCTUnwrap(
+        let collections = [personal, restored, archived] /* Saved personal-collection state */
+        let scene       = try XCTUnwrap(                 /* Owning window scene             */
             UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
@@ -516,7 +531,7 @@ extension PlenactBoardDocumentTests
 
             var current = fixtures /* Current collections displayed by the Library */
 
-            let controller = UIHostingController(
+            let controller = UIHostingController( /* Native view controller */
                 rootView: BoardListsView( /* Hosted controller for layout assertions */
                     retainedWeekLists: week,
                     collections: Binding(get:
@@ -548,7 +563,7 @@ extension PlenactBoardDocumentTests
 
             let list = try XCTUnwrap(collectionView(in: controller.view)) /* List state under verification */
 
-            let count = (0 ..< list.numberOfSections).reduce(0)
+            let count = (0 ..< list.numberOfSections).reduce(0) /* Number of entries */
             {  /* Number of matching values */
 
 
@@ -588,12 +603,12 @@ extension PlenactBoardDocumentTests
                 subtitle: "Board · 3 lists", icon: "square.stack.3d.up", color: .blue, count: 12
             )
 
-            let standard = UIHostingController(
+            let standard = UIHostingController( /* Standard comparison fixture */
                 rootView: row.environment(\.dynamicTypeSize, .large)
             ) /* Standard Card baseline */
             .sizeThatFits(in: CGSize(width: width, height: 10_000))
 
-            let accessible = UIHostingController(
+            let accessible = UIHostingController( /* Accessible comparison fixture */
                 rootView: row.environment(\.dynamicTypeSize, .accessibility5)
             ) /* Accessibility-sized layout */
             .sizeThatFits(in: CGSize(width: width, height: 10_000))
@@ -735,7 +750,7 @@ extension PlenactBoardDocumentTests
         defaults.set(week, forKey: "Plenact.Board.v1")
         defaults.set(collections, forKey: "Plenact.PersonalCollections.v1")
 
-        let preference = AppStorage(
+        let preference = AppStorage( /* Preference comparison fixture */
             wrappedValue: BoardPresentation.standard, BoardPresentation.storageKey, store: defaults) /* Persisted display preference */
 
         XCTAssertEqual(preference.wrappedValue, .standard)
@@ -744,7 +759,7 @@ extension PlenactBoardDocumentTests
 
         XCTAssertEqual(defaults.string(forKey: BoardPresentation.storageKey), "overview")
 
-        let reopened = AppStorage(
+        let reopened = AppStorage( /* Instance reloaded from storage */
             wrappedValue: BoardPresentation.standard, BoardPresentation.storageKey, store: defaults) /* Value loaded after reopening storage */
 
         XCTAssertEqual(reopened.wrappedValue, .overview)
@@ -769,14 +784,14 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let card = KanbanCard(
+        let card = KanbanCard( /* Synthetic card fixture */
             id: 101, word: "Review the week ahead", listTitle: "Synthetic list") /* Card value under verification */
 
         for preset in BoardPresentation.allCases
         {
 
 
-            let controller = UIHostingController(
+            let controller = UIHostingController( /* Native view controller */
                 rootView: KanbanCardView( /* Hosted controller for layout assertions */
                     card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
                     presentation: preset, labelLibrary: .starter,
@@ -797,10 +812,10 @@ extension PlenactBoardDocumentTests
                     }
                 ).environment(\.dynamicTypeSize, .large))
 
-            let width: CGFloat = preset == .standard ? 360 : 240 /* Proposed layout width          */
-            let shortProposal  = controller.sizeThatFits(
+            let width: CGFloat = preset == .standard ? 360 : 240 /* Proposed layout width */
+            let shortProposal  = controller.sizeThatFits(        /* Short proposal        */
                 in: CGSize(width: width, height: 300)) /* Compact-height layout proposal */
-            let tallProposal = controller.sizeThatFits(
+            let tallProposal = controller.sizeThatFits( /* Tall proposal */
                 in: CGSize(width: width, height: 900)) /* Tall layout proposal           */
 
             XCTAssertEqual(shortProposal.height, tallProposal.height, accuracy: 1)
@@ -824,9 +839,9 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let card = KanbanCard(
+        let card = KanbanCard( /* Synthetic card fixture */
             id: 102, word: "Review the week ahead", listTitle: "Synthetic list") /* Card value under verification   */
-        let scene = try XCTUnwrap(
+        let scene = try XCTUnwrap( /* Owning window scene */
             UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
@@ -877,7 +892,7 @@ extension PlenactBoardDocumentTests
         {
 
 
-            let view = NavigationStack
+            let view = NavigationStack /* View being rendered */
             {  /* Hosted view under test */
 
                 List
@@ -929,7 +944,7 @@ extension PlenactBoardDocumentTests
             controller.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(100))
 
-            let collection = try XCTUnwrap(
+            let collection = try XCTUnwrap( /* Synthetic collection fixture */
                 collectionView(in: controller.view))                /* Collection state under verification */
             let row = try XCTUnwrap(collection.visibleCells.first)  /* Rendered collection row             */
 
@@ -981,12 +996,12 @@ extension PlenactBoardDocumentTests
 
 
         let card  = KanbanCard(id: 1, word: "Synthetic", listTitle: "Source") /* Card value under verification  */
-        var lists = [
+        var lists = [ /* Ordered List records */
             KanbanList(id: 10, title: "Source", cards: [card]), /* Board lists under verification */
             KanbanList(id: 20, title: "Destination", cards: [])
         ]
-        var ends   = 0 /* Drag completion events            */
-        let source = BoardCardDragSource(
+        var ends   = 0                    /* Drag completion events          */
+        let source = BoardCardDragSource( /* Source value for this operation */
             token: "local-board", onBegan:
             {
                 _ in
@@ -1005,8 +1020,8 @@ extension PlenactBoardDocumentTests
 
         item.localObject = source
 
-        var points: [CGPoint] = [] /* Sample layout coordinates */
-        let drop              = BoardCardDropSurface(
+        var points: [CGPoint] = []                    /* Sample layout coordinates */
+        let drop              = BoardCardDropSurface( /* Pending drop location     */
             token: "local-board", onChanged:
             {
                 points.append($0)
@@ -1041,7 +1056,7 @@ extension PlenactBoardDocumentTests
 
             }
         ).makeCoordinator()
-        let foreign = BoardCardDropSurface(
+        let foreign = BoardCardDropSurface( /* Foreign comparison fixture */
             token: "another-board", onChanged:
             {
                 _ in
@@ -1117,12 +1132,13 @@ extension PlenactBoardDocumentTests
 
         XCTAssertTrue(DatabaseActivity.shared.isWorking)
 
-        let restored = await KanbanBoardPersistence.loadListsInBackground(
+        let restored = /* Recovered state under review */
+            await KanbanBoardPersistence.loadListsInBackground(
             suiteName: suite) /* Restored value under verification */
 
         XCTAssertEqual(restored, last)
 
-        let data = try XCTUnwrap(
+        let data = try XCTUnwrap( /* Stored preference bytes */
             defaults.data(forKey: "Plenact.Board.v1")) /* JSON fixture bytes for the compatibility check */
 
         XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: data), last)
@@ -1170,7 +1186,8 @@ extension PlenactBoardDocumentTests
             [KanbanList(id: 1, title: "Saved", cards: [invalidCard])], suiteName: suite
         )
 
-        let restored = await KanbanBoardPersistence.loadListsInBackground(
+        let restored = /* Recovered state under review */
+            await KanbanBoardPersistence.loadListsInBackground(
             suiteName: suite) /* Restored value under verification */
 
         XCTAssertEqual(restored, original)
@@ -1360,9 +1377,9 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let maximumBody = Data(
+        let maximumBody = Data( /* Maximum body */
             repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes) /* Allowed request-body size */
-        let oversizedBody = Data(
+        let oversizedBody = Data( /* Oversized body */
             repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes + 1) /* Oversized request payload */
 
         XCTAssertTrue(PlenactAPIClient.isJSONBodyWithinLimit(maximumBody))

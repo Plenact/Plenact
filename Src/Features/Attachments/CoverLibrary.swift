@@ -38,7 +38,7 @@ enum CoverCategory: String, CaseIterable, Identifiable
     /// @brief      Identify a category filter
     /// @return     (String) stable category label
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }  /* Stable category identity */
@@ -50,7 +50,7 @@ enum CoverCategory: String, CaseIterable, Identifiable
     /// @details    Categories describe artwork only, not card ownership or semantics
     /// @return     ([ExampleCoverImage]) explicit curated category membership
     ///
-    var images: [ExampleCoverImage]
+    var images: [ExampleCoverImage] /* Decoded image values */
     {
 
         switch self
@@ -536,12 +536,12 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     /// @brief      Provide a readable artwork label without embedded image text
     /// @return     (String) human-readable name
     ///
-    var title: String
+    var title: String /* User-facing title */
     {
         rawValue.replacingOccurrences(of: "-", with: " ").capitalized
     }  /* Readable artwork name */
 
-    private static let tagCatalog: [String: [String]] =
+    private static let tagCatalog: [String: [String]] = /* Tag catalog */
     {
 
         guard
@@ -557,7 +557,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
         return tags
     }()
 
-    var tags: [String]
+    var tags: [String] /* Search or category tags */
     {
         Self.tagCatalog[rawValue] ?? rawValue.components(separatedBy: "-")
     }
@@ -598,15 +598,19 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     func matches(_ query: String) -> Bool
     {
 
-        let normalized = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-        let terms      = normalized.components(separatedBy: CharacterSet.alphanumerics.inverted).filter
+        let normalized = /* Comparison-normalized value */
+            query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        let terms      = /* Normalized search terms */
+            normalized.components(separatedBy: CharacterSet.alphanumerics.inverted).filter
         {
             !$0.isEmpty
         }
 
-        let searchable = ([title] + tags).joined(separator: " ").folding(
+        let searchable = /* Indexed searchable text */
+            ([title] + tags).joined(separator: " ").folding(
             options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-        let words = searchable.components(separatedBy: CharacterSet.alphanumerics.inverted).filter
+        let words = /* Display text values */
+            searchable.components(separatedBy: CharacterSet.alphanumerics.inverted).filter
         {
             !$0.isEmpty
         }
@@ -630,7 +634,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     /// @details    Only known resource names can be resolved; no remote downloads occur
     /// @return     (URL?) bundled PNG location
     ///
-    var url: URL?
+    var url: URL? /* Resource location */
     {  /* Bundled artwork resource URL */
 
         Bundle.main.url(forResource: rawValue, withExtension: "png", subdirectory: "CardCoverImages")
@@ -651,7 +655,7 @@ struct CardCoverLibrary: View
 
     let selectedImage: ExampleCoverImage?           /* Current library cover, if any                    */
     let onSelect:      (ExampleCoverImage) -> Bool  /* Owner validates and publishes an explicit choice */
-    @State private var query = ""
+    @State private var query = "" /* Search text */
     @State private var category: CoverCategory?           /* nil shows All Covers                       */
     @Environment(\.dynamicTypeSize) private var textSize  /* Use a single column for accessibility text */
     @Environment(\.dismiss) private var dismiss           /* Cancel or close a successful selection     */
@@ -662,7 +666,7 @@ struct CardCoverLibrary: View
     /// @details    No selection or attachment is created until a person taps an illustration
     /// @return     (some View) adaptive offline library
     ///
-    private var albumPicker: some View
+    private var albumPicker: some View /* Album picker */
     {
 
         Picker("Cover album", selection: $category)
@@ -683,7 +687,7 @@ struct CardCoverLibrary: View
         .accessibilityIdentifier("coverLibrary.album")
     }
 
-    private var searchField: some View
+    private var searchField: some View /* Search field */
     {
 
         HStack(spacing: 6)
@@ -717,14 +721,14 @@ struct CardCoverLibrary: View
     }
 
 
-    private var filteredImages: [ExampleCoverImage]
+    private var filteredImages: [ExampleCoverImage] /* Filtered images */
     {
 
         ExampleCoverImage.search(query, in: category)
     }
 
 
-    var body: some View
+    var body: some View /* Card Cover Library layout */
     {  /* Offline cover library interface */
 
         NavigationStack
@@ -856,7 +860,7 @@ struct CardCoverPreview: View
 
     let attachment: KanbanAttachment  /* Explicitly selected photo                                    */
     var height:     CGFloat = 128     /* Fixed preview height, independent of source image dimensions */
-    var unavailableTitle    = "Cover unavailable"
+    var unavailableTitle    = "Cover unavailable" /* Unavailable title */
     @State private var image: UIImage?      /* Downsampled image for this presentation */
     @State private var unavailable = false  /* Explicit missing/invalid-image feedback */
 
@@ -866,7 +870,7 @@ struct CardCoverPreview: View
     /// @details    Task identity/cancellation prevents a previous image from replacing a changed cover
     /// @return     (some View) decorative cropped image or visible unavailable notice
     ///
-    var body: some View
+    var body: some View /* Card Cover Preview layout */
     {  /* Loaded cover preview or fallback */
 
         GeometryReader
@@ -911,7 +915,7 @@ struct CardCoverPreview: View
             image = nil
             unavailable = false
 
-            let result = await Task.detached(priority: .utility)
+            let result = await Task.detached(priority: .utility) /* Result being assembled */
             {  /* Background thumbnail decode result */
 
                 Result
@@ -960,10 +964,10 @@ struct CardCoverPicker: View
 {
 
 
-    let photos:     [KanbanAttachment]           /* Current attached photo choices       */
-    let selectedID: UUID?                        /* Current cover, if explicitly enabled */
-    let onSelect:   (UUID) -> Void               /* Owner validates and saves selection  */
-    @Environment(\.dismiss) private var dismiss  /* Cancel or return after choosing      */
+    let photos:     [KanbanAttachment]          /* Current attached photo choices       */
+    let selectedID: UUID?                       /* Current cover, if explicitly enabled */
+    let onSelect:   (UUID) -> Void              /* Owner validates and saves selection  */
+    @Environment(\.dismiss) private var dismiss /* Cancel or return after choosing      */
 
     ///
     /// @fcn        CardCoverPicker.body
@@ -971,7 +975,7 @@ struct CardCoverPicker: View
     /// @details    Cancel does not mutate a card; choosing a row reuses its existing attachment
     /// @return     (some View) navigable cover-photo chooser
     ///
-    var body: some View
+    var body: some View /* Card Cover Picker layout */
     {  /* Attached-photo cover choices */
 
         NavigationStack

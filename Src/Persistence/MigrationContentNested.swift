@@ -23,8 +23,8 @@ extension MigrationContentValues
     func nested(_ kind: String, _ value: Any?, scope: String) throws -> String
     {
 
-        let source = try Self.lowerUUID(value)
-        let key    = scope + ":" + kind + ":" + source
+        let source = try Self.lowerUUID(value)         /* Source value for this operation */
+        let key    = scope + ":" + kind + ":" + source /* Lookup or persistence key       */
 
         guard usedNested.insert(key).inserted else
         {
@@ -80,14 +80,18 @@ extension MigrationContentValues
 
         try values.map { list in
 
-            let identifier = try nested("checklist", list["id"], scope: scope)
-            let items      = try (list["items"] as! [[String: Any]]).map { item -> [String: Any] in
+            let identifier = /* Record identity value */
+                try nested("checklist", list["id"], scope: scope)
+            let items      = /* Items being processed */
+                try (list["items"] as! [[String: Any]]).map { item -> [String: Any] in
 
-                let identifier            = try nested("checklist_item", item["id"], scope: scope)
-                var linkedOwner           = owner
-                var linkedCollection: Any = NSNull()
-                let originalItem          = try Self.lowerUUID(item["id"])
-                let calendarOverride      = calendarOwnerScopes.contains(owner) ? checklistWeekOverrides[originalItem] : nil
+                let identifier            = /* Record identity value */
+                    try nested("checklist_item", item["id"], scope: scope)
+                var linkedOwner           = owner                          /* Linked owner      */
+                var linkedCollection: Any = NSNull()                       /* Linked collection */
+                let originalItem          = try Self.lowerUUID(item["id"]) /* Original item     */
+                let calendarOverride      =                                /* Calendar override */
+                    calendarOwnerScopes.contains(owner) ? checklistWeekOverrides[originalItem] : nil
 
                 if let original = calendarOverride ?? (item["linkedCollectionID"] as? String)?.lowercased()
                 {
@@ -110,15 +114,16 @@ extension MigrationContentValues
 
                     }
 
-                    let target = try collectionTargets[linkedOwner] ?? id("collection", owner: "source_collections", legacy: linkedOwner)
+                    let target = /* Target under consideration */
+                        try collectionTargets[linkedOwner] ?? id("collection", owner: "source_collections", legacy: linkedOwner)
 
                     linkedCollection = try reference("collection", target)
 
                 }
 
-                let source = item["content"] as! [String: Any]
-                let kind   = source["kind"] as! String
-                var content: [String: Any]
+                let source = item["content"] as! [String: Any] /* Source value for this operation */
+                let kind   = source["kind"] as! String         /* Content kind discriminator      */
+                var content: [String: Any]                     /* Content being processed         */
 
                 switch kind
                 {
@@ -141,7 +146,7 @@ extension MigrationContentValues
                 default: throw Failure.invalid("action_kind")
                 }
 
-                var retained: Any = NSNull()
+                var retained: Any = NSNull() /* State retained for recovery */
 
                 if let saved = item["retainedDetail"] as? [String: Any]
                 {
@@ -207,7 +212,8 @@ extension MigrationContentValues
         }
         return try values.map { value -> [String: Any] in
 
-            let target = try nested("attachment", value["id"], scope: scope)
+            let target = /* Target under consideration */
+                try nested("attachment", value["id"], scope: scope)
 
             attachmentTargets[scope + ":" + (try Self.lowerUUID(value["id"]))] = target
 
@@ -236,9 +242,11 @@ extension MigrationContentValues
         }
         return try values.map { value -> [String: Any] in
 
-            let changes = (value["changes"] as! [[String: Any]]).map { change -> [String: Any] in
+            let changes = /* Requested content edits */
+                (value["changes"] as! [[String: Any]]).map { change -> [String: Any] in
 
-                var result: [String: Any] = ["field": change["field"]!]
+                var result: [String: Any] = /* Accumulated output value */
+                    ["field": change["field"]!]
 
                 for (source, target) in [("previousValue", "previous_value"), ("newValue", "new_value")]
                 {

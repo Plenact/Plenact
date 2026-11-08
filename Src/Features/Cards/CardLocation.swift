@@ -22,14 +22,14 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
 
     case apple, google
 
-    var id: String
+    var id: String /* Record or view identity */
     {
 
         rawValue
     }
 
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         self == .apple ? "Apple Maps" : "Google Maps"
@@ -54,7 +54,7 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
             return nil
         }
 
-        var components = URLComponents()
+        var components = URLComponents() /* Parsed value components */
 
         components.scheme = "https"
         components.host = self == .apple ? "maps.apple.com" : "www.google.com"
@@ -117,15 +117,16 @@ struct CardLocationRow: View
 {
 
 
-    let location: String?
-    var canEdit            = false
-    var onEdit: () -> Void =
+    let location: String?          /* Resolved place metadata */
+    var canEdit            = false /* Edit availability       */
+    var onEdit: () -> Void =       /* Edit callback           */
     {
 
     }
 
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
-    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData = /* Preferences data */
+        Data()
+    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data() /* Profile data */
 
 
     ///
@@ -135,10 +136,10 @@ struct CardLocationRow: View
     ///             addresses without changing the stored Card when a place is opened
     /// @return     (some View) an optional metadata row with provider-aware place navigation
     ///
-    var body: some View
+    var body: some View /* Card Location layout */
     {
 
-        let maps = PlanPreferencesStore.resolved(
+        let maps = PlanPreferencesStore.resolved( /* Preferred maps provider */
             preferencesData: preferencesData, profileData: profileData).preferredMapsApp
 
         if let location = CardLocation.normalized(location), let url = maps.placeURL(for: location)
@@ -213,11 +214,11 @@ struct CardLocationEditorSheet: View
 {
 
 
-    let onSave: (String?) -> Bool
-    private let hasLocation: Bool
-    @State private var text: String
-    @State private var saveFailed = false
-    @Environment(\.dismiss) private var dismiss
+    let onSave: (String?) -> Bool               /* Persist the edited value       */
+    private let hasLocation: Bool               /* Location availability          */
+    @State private var text: String             /* Text being processed           */
+    @State private var saveFailed = false       /* Save failed                    */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
 
     ///
@@ -273,7 +274,7 @@ struct CardLocationEditorSheet: View
     ///             permission. Map selection fills this draft; Save remains the content boundary
     /// @return     (some View) native form for editing the Card's location
     ///
-    var body: some View
+    var body: some View /* Card Location Editor layout */
     {
 
         NavigationStack
@@ -382,7 +383,7 @@ struct MapsAppSettingsSection: View
 {
 
 
-    @Binding var selection: PreferredMapsApp
+    @Binding var selection: PreferredMapsApp /* Current selection state */
 
 
     ///
@@ -391,7 +392,7 @@ struct MapsAppSettingsSection: View
     /// @details    Apple Maps is the default; the selected provider owns all subsequent map actions
     /// @return     (some View) a settings section bound to the surrounding preference draft
     ///
-    var body: some View
+    var body: some View /* Maps App Settings layout */
     {
 
         Section("Maps")

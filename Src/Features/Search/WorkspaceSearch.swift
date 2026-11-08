@@ -23,14 +23,14 @@ struct TodaySearchResult: Identifiable
 {
 
 
-    let listID:     Int     /* Board list opened when this result is selected */
-    let cardID:     Int?    /* Stable card identity, or nil for a list result */
-    let cardTitle:  String  /* Matching card title                            */
-    let listTitle:  String  /* Containing list title                          */
-    let detail:     String  /* Supporting detail shown under the title        */
-    var ownerID:    UUID?   = nil
-    var weekKey:    String? = nil
-    var ownerTitle: String? = nil
+    let listID:     Int           /* Board list opened when this result is selected */
+    let cardID:     Int?          /* Stable card identity, or nil for a list result */
+    let cardTitle:  String        /* Matching card title                            */
+    let listTitle:  String        /* Containing list title                          */
+    let detail:     String        /* Supporting detail shown under the title        */
+    var ownerID:    UUID?   = nil /* Record owner identifier                        */
+    var weekKey:    String? = nil /* Week key                                       */
+    var ownerTitle: String? = nil /* Owner title                                    */
 
 
     ///
@@ -41,7 +41,7 @@ struct TodaySearchResult: Identifiable
     /// @return     (String) composite result identity
     /// @post       Result contents remain unchanged
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
 
                 "\(ownerID?.uuidString ?? "week"):\(listID):\(cardID.map(String.init) ?? "list")"
@@ -73,7 +73,7 @@ enum TodaySearchScope: String, CaseIterable, Identifiable
     /// @return     (String) scope raw value
     /// @post       The selected scope is unchanged
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }  /* Stable search-scope identity */
@@ -113,7 +113,7 @@ enum TodaySearchIndex
     {
 
 
-        let term = query.trimmingCharacters(
+        let term = query.trimmingCharacters( /* Normalized search term */
             in: .whitespacesAndNewlines) /* Nonblank text matched against the chosen scope */
 
         guard !term.isEmpty else
@@ -162,26 +162,26 @@ enum TodaySearchIndex
                 }
 
 
-                let checklistText = card.checklists.flatMap
+                let checklistText = card.checklists.flatMap /* Checklist text */
                 {
 
                     [$0.title] + $0.items.map(\.title)
                 }  /* Searchable checklist and action titles      */
 
-                let commentText = card.comments.flatMap
+                let commentText = card.comments.flatMap /* Comment text */
                 {
 
                     [$0.author, PlanRichText.plain($0.body)]
                 }  /* Searchable discussion authors and content   */
 
-                let users  = card.members.map(\.displayName) /* Searchable assignee names                   */
-                let labels = library.labels.filter
+                let users  = card.members.map(\.displayName) /* Searchable assignee names   */
+                let labels = library.labels.filter           /* Available label definitions */
                 {
 
                     card.labelIDs.contains($0.id)
                 }  /* Definitions of labels assigned to this card */
 
-                let labelText = labels.flatMap
+                let labelText = labels.flatMap /* Label text */
                 {
                 label in /* Searchable label and category names         */
                     [label.name] + library.categories.filter
@@ -320,7 +320,7 @@ enum LibrarySearchIndex
             {
                 match in
 
-                var result = match
+                var result = match /* Accumulated output value */
 
                 result.ownerID = collection.id
                 result.ownerTitle = collection.title
@@ -366,7 +366,7 @@ enum PlanningSharedSearchIndex
     ) -> [TodaySearchResult]
     {
 
-        let sources: [(UUID, String?, String, [KanbanList])] =
+        let sources: [(UUID, String?, String, [KanbanList])] = /* Source records or files */
         access.document.weeks.map
         {
 
@@ -393,7 +393,7 @@ enum PlanningSharedSearchIndex
             {
                 match in
 
-                var result = match
+                var result = match /* Accumulated output value */
 
                 result.ownerID = ownerID;
                 result.weekKey = weekKey;

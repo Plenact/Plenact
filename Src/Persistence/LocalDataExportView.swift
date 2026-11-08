@@ -14,7 +14,7 @@ import UniformTypeIdentifiers
 struct LegacyBackupDocument: FileDocument
 {
 
-    static var readableContentTypes: [UTType] { [.folder] }
+    static var readableContentTypes: [UTType] { [.folder] } /* Readable content types */
 
     private let serialized: Data /* Immutable Sendable snapshot; reconstruct a fresh wrapper per save */
 
@@ -71,25 +71,25 @@ struct LegacyBackupDocument: FileDocument
 struct LocalDataExportView: View
 {
 
-    @Environment(\.localBackupRestore) private var restoreAccess
-    @Environment(\.portableWorkspaceImport) private var editableImportAccess
+    @Environment(\.localBackupRestore) private var restoreAccess /* Restore access */
+    @Environment(\.portableWorkspaceImport) private var editableImportAccess /* Editable import access */
     @State private var originalTimeZoneID = "" /* Explicit original context; never default to this device’s clock */
-    @State private var packageDocument: LegacyBackupDocument?
-    @State private var savingPackage           = false
-    @State private var choosingPortablePackage = false
-    @State private var portableReview: ReviewedPortablePackage?
-    @State private var installedPortable: ReviewedPortablePackage?
-    @State private var canUndoPortable         = false
-    @State private var confirmsPortableInstall = false
-    @State private var confirmsEditableImport  = false
-    @State private var confirmsEditableUndo    = false
-    @State private var editedDocument: LegacyBackupDocument?
-    @State private var savingEdited = false
-    @State private var editedExportError: String?
-    @State private var showsEditedExportError = false
-    @State private var choosingRestore        = false
-    @State private var confirmsRestore        = false
-    @State private var reviewedRestore: ReviewedLocalBackup?
+    @State private var packageDocument: LegacyBackupDocument? /* Package document */
+    @State private var savingPackage           = false /* Saving package */
+    @State private var choosingPortablePackage = false /* Choosing portable package */
+    @State private var portableReview: ReviewedPortablePackage? /* Portable review */
+    @State private var installedPortable: ReviewedPortablePackage? /* Installed portable */
+    @State private var canUndoPortable         = false /* Undo Portable availability */
+    @State private var confirmsPortableInstall = false /* Confirms portable install */
+    @State private var confirmsEditableImport  = false /* Confirms editable import */
+    @State private var confirmsEditableUndo    = false /* Confirms editable undo */
+    @State private var editedDocument: LegacyBackupDocument? /* Edited document */
+    @State private var savingEdited = false /* Saving edited */
+    @State private var editedExportError: String? /* Edited export error */
+    @State private var showsEditedExportError = false /* Edited Export Error visibility */
+    @State private var choosingRestore        = false /* Choosing restore */
+    @State private var confirmsRestore        = false /* Confirms restore */
+    @State private var reviewedRestore: ReviewedLocalBackup? /* Reviewed restore */
     @State private var preview: MigrationPreview? /* Explicitly partial conversion summary */
     @State private var document: LegacyBackupDocument? /* Immutable Files transfer snapshot */
     @State private var backup:    LegacyWorkspaceBackup? /* Retained only during this screen */
@@ -101,7 +101,7 @@ struct LocalDataExportView: View
     /// @fcn LocalDataExportView.body
     /// @brief Present backup scope, preparation, review and explicit saving
     /// @return The local backup workflow
-    var body: some View
+    var body: some View /* Backup and export controls */
     {
 
         Form
@@ -300,7 +300,7 @@ struct LocalDataExportView: View
                         do
                         {
 
-                            let store = try PortableTestWorkspace.live()
+                            let store = try PortableTestWorkspace.live() /* Persistence boundary */
 
                             installedPortable = try store.undo()
                             canUndoPortable = try store.canUndo()
@@ -401,8 +401,9 @@ struct LocalDataExportView: View
             do
             {
 
-                let url    = try result.get()
-                let access = url.startAccessingSecurityScopedResource()
+                let url    = try result.get() /* Resource location             */
+                let access =                  /* Security-scoped access result */
+                    url.startAccessingSecurityScopedResource()
 
                 defer
                 {
@@ -433,8 +434,9 @@ struct LocalDataExportView: View
             do
             {
 
-                let url    = try result.get()
-                let access = url.startAccessingSecurityScopedResource()
+                let url    = try result.get() /* Resource location             */
+                let access =                  /* Security-scoped access result */
+                    url.startAccessingSecurityScopedResource()
 
                 defer
                 {
@@ -464,7 +466,7 @@ struct LocalDataExportView: View
             do
             {
 
-                let store = try PortableTestWorkspace.live()
+                let store = try PortableTestWorkspace.live() /* Persistence boundary */
 
                 installedPortable = try store.active()
                 canUndoPortable = try store.canUndo()
@@ -488,7 +490,7 @@ struct LocalDataExportView: View
                         return
                     }
 
-                    let store = try PortableTestWorkspace.live()
+                    let store = try PortableTestWorkspace.live() /* Persistence boundary */
 
                     installedPortable = try store.install(portableReview)
                     canUndoPortable = try store.canUndo()
@@ -654,7 +656,8 @@ struct LocalDataExportView: View
                     throw LegacyWorkspaceExport.Failure.missingDomain
                 }
 
-                let backup = try LegacyWorkspaceExport.capture(defaults: .standard, domain: domain,
+                let backup = /* Recoverable native snapshot */
+                    try LegacyWorkspaceExport.capture(defaults: .standard, domain: domain,
                     root: URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true))
 
                 editedDocument = try LegacyBackupDocument(files: PortableEditedExport.prepare(backup))
@@ -700,7 +703,8 @@ struct LocalDataExportView: View
             do
             {
 
-                let files = try MigrationTestPackage.prepare(preview)
+                let files = /* Files used by this operation */
+                    try MigrationTestPackage.prepare(preview)
 
                 packageDocument = try LegacyBackupDocument(files: files)
                 message = "Portable test package prepared. Save it to Files for independent review. No data was installed or uploaded."
@@ -742,11 +746,14 @@ struct LocalDataExportView: View
             do
             {
 
-                let support = try FileManager.default.url(for: .applicationSupportDirectory,
+                let support = /* Supported operation capability */
+                    try FileManager.default.url(for: .applicationSupportDirectory,
                     in: .userDomainMask, appropriateFor: nil, create: true).resolvingSymlinksInPath()
-                let journal = support.appendingPathComponent("PlenactMigration", isDirectory: true)
+                let journal = /* Migration identity journal */
+                    support.appendingPathComponent("PlenactMigration", isDirectory: true)
                     .appendingPathComponent("source-identities-v1.json")
-                let prepared = try MigrationPreview.prepare(backup: backup, journalURL: journal,
+                let prepared = /* Prepared operation input */
+                    try MigrationPreview.prepare(backup: backup, journalURL: journal,
                     timeZoneID: originalTimeZoneID.isEmpty ? nil : originalTimeZoneID)
 
                 document = try LegacyBackupDocument(files: prepared.files)
@@ -804,7 +811,8 @@ struct LocalDataExportView: View
                     throw LegacyWorkspaceExport.Failure.missingDomain
                 }
 
-                let prepared = try LegacyWorkspaceExport.capture(defaults: .standard, domain: domain,
+                let prepared = /* Prepared operation input */
+                    try LegacyWorkspaceExport.capture(defaults: .standard, domain: domain,
                     root: URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true))
 
                 document = try LegacyBackupDocument(files: prepared.files)

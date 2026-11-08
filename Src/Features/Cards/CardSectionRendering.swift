@@ -62,7 +62,7 @@ extension CardDetailView
                     dismissEditing()
                     showsNoteDetails.toggle()
 
-                    let target =
+                    let target = /* Target under consideration */
                     showsNoteDetails
                     ? "note.detailsStart"
                     : "plenact.noteEditor" /* Scroll anchor selected by Note detail visibility */
@@ -208,7 +208,7 @@ extension CardDetailView
             if presentation == .card
             {
 
-                let visibleAttachments = workingCardSnapshot
+                let visibleAttachments = workingCardSnapshot /* Visible attachments */
                 .attachmentsExcludingCover /* Gallery records excluding the featured cover */
 
                 if !visibleAttachments.isEmpty

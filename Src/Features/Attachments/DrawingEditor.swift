@@ -28,9 +28,9 @@ struct DrawingCaptureDraft: Identifiable
 {
 
 
-    let id:      UUID
-    let drawing: PKDrawing
-    let preview: UIImage
+    let id:      UUID      /* Record UUID                   */
+    let drawing: PKDrawing /* Drawing content and originals */
+    let preview: UIImage   /* Prepared content preview      */
 
 
     ///
@@ -100,13 +100,14 @@ enum DrawingImageExport
     static func image(_ drawing: PKDrawing, transparent: Bool, maximumDimension: CGFloat = 4096) -> UIImage
     {
 
-        let bounds = drawing.bounds
-        let rect   =
+        let bounds = drawing.bounds /* Available layout bounds    */
+        let rect   =                /* Measured drawing rectangle */
         bounds.isNull || bounds.isEmpty
         ? CGRect(x: 0, y: 0, width: 600, height: 800) : bounds.insetBy(dx: -24, dy: -24)
-        let scale  = min(2, maximumDimension / max(rect.width, rect.height))
-        let ink    = drawing.image(from: rect, scale: scale)
-        let format = UIGraphicsImageRendererFormat()
+        let scale  = /* Current layout scale */
+            min(2, maximumDimension / max(rect.width, rect.height))
+        let ink    = drawing.image(from: rect, scale: scale) /* Drawing stroke content        */
+        let format = UIGraphicsImageRendererFormat()         /* Selected format or identifier */
 
         format.scale = scale
         format.opaque = !transparent
@@ -148,7 +149,8 @@ enum DrawingImageExport
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let image = image(drawing, transparent: format == .png && transparent)
+        let image = /* Image used by this operation */
+            image(drawing, transparent: format == .png && transparent)
 
         guard let data = format == .png ? image.pngData() : image.jpegData(compressionQuality: 0.95) else
         {
@@ -197,15 +199,18 @@ enum DrawingAttachmentStore
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let png     = try DrawingImageExport.data(draft.drawing, format: .png)
-        let preview = try CardAttachmentStore.saveMedia(png, kind: .photo, fileExtension: "png")
+        let png     = /* Encoded preview image */
+            try DrawingImageExport.data(draft.drawing, format: .png)
+        let preview = /* Prepared content preview */
+            try CardAttachmentStore.saveMedia(png, kind: .photo, fileExtension: "png")
 
         guard let previewURL = CardAttachmentStore.fileURL(for: preview) else
         {
             throw CocoaError(.fileWriteUnknown)
         }
 
-        let strokesURL = previewURL.deletingPathExtension().appendingPathExtension("drawing")
+        let strokesURL = /* Strokes URL */
+            previewURL.deletingPathExtension().appendingPathExtension("drawing")
 
         do
         {
@@ -219,7 +224,7 @@ enum DrawingAttachmentStore
             throw error
         }
 
-        var attachment = KanbanAttachment(
+        var attachment = KanbanAttachment( /* Owned attachment content */
             id: previous?.id ?? preview.id, fileName: preview.fileName,
             mediaKind: .photo, addedAt: previous?.addedAt ?? preview.addedAt, caption: previous?.caption)
 
@@ -250,7 +255,8 @@ enum DrawingAttachmentStore
             throw CocoaError(.fileReadNoSuchFile)
         }
 
-        let data = try Data(contentsOf: previewURL.deletingLastPathComponent().appendingPathComponent(name))
+        let data = /* Loaded original file bytes */
+            try Data(contentsOf: previewURL.deletingLastPathComponent().appendingPathComponent(name))
 
         return DrawingCaptureDraft(id: attachment.id, drawing: try PKDrawing(data: data))
     }
@@ -270,10 +276,10 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 {
 
 
-    let canvas = DrawingCanvasView()
-    @Published var hasMarks: Bool
-    @Published var canUndo = false
-    @Published var canRedo = false
+    let canvas = DrawingCanvasView() /* Editable drawing surface */
+    @Published var hasMarks: Bool    /* Marks availability       */
+    @Published var canUndo = false   /* Undo availability        */
+    @Published var canRedo = false   /* Redo availability        */
 
 
     ///
@@ -384,7 +390,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     func clear()
     {
 
-        let previous = canvas.drawing
+        let previous = canvas.drawing /* Previous value for comparison */
 
         canvas.undoManager?.registerUndo(withTarget: self)
         {
@@ -411,7 +417,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     private func restore(_ drawing: PKDrawing)
     {
 
-        let previous = canvas.drawing
+        let previous = canvas.drawing /* Previous value for comparison */
 
         canvas.undoManager?.registerUndo(withTarget: self)
         {
@@ -439,8 +445,8 @@ final class DrawingCanvasView: PKCanvasView
 {
 
 
-    private let picker   = PKToolPicker()
-    private var lastSize = CGSize.zero
+    private let picker   = PKToolPicker() /* Native selection control */
+    private var lastSize = CGSize.zero    /* Last size                */
 
 
     ///
@@ -514,7 +520,8 @@ final class DrawingCanvasView: PKCanvasView
 
         lastSize = bounds.size
 
-        let fit = min(bounds.width / 1200, bounds.height / 1600)
+        let fit = /* Size fitted to the available space */
+            min(bounds.width / 1200, bounds.height / 1600)
 
         minimumZoomScale = fit
         zoomScale = fit
@@ -535,7 +542,7 @@ struct DrawingCanvas: UIViewRepresentable
 {
 
 
-    let state: DrawingCanvasState
+    let state: DrawingCanvasState /* Current operation state */
 
 
     ///
@@ -583,8 +590,8 @@ struct DrawingExportFile: Identifiable
 {
 
 
-    let id = UUID()
-    let url: URL
+    let id = UUID() /* Record UUID       */
+    let url: URL    /* Resource location */
 
 }
 
@@ -600,7 +607,7 @@ struct DrawingShareSheet: UIViewControllerRepresentable
 {
 
 
-    let url: URL
+    let url: URL /* Resource location */
 
 
     ///
@@ -649,15 +656,15 @@ struct DrawingCaptureEditor: View
 {
 
 
-    let initial:                    DrawingCaptureDraft
-    let onSave:                     (DrawingCaptureDraft) -> Bool
-    @StateObject private var state: DrawingCanvasState
-    @State private var showsClear   = false
-    @State private var showsDiscard = false
-    @State private var errorMessage:    String?
-    @State private var exportFile:      DrawingExportFile?
-    @State private var exportDirectory: URL?
-    @Environment(\.dismiss) private var dismiss
+    let initial:                    DrawingCaptureDraft /* Initial operation state */
+    let onSave:                     (DrawingCaptureDraft) -> Bool /* Persist the edited value */
+    @StateObject private var state: DrawingCanvasState /* Current operation state */
+    @State private var showsClear   = false /* Clear visibility */
+    @State private var showsDiscard = false /* Discard visibility */
+    @State private var errorMessage:    String? /* User-facing failure message */
+    @State private var exportFile:      DrawingExportFile? /* Export file */
+    @State private var exportDirectory: URL? /* Export directory */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
 
     ///
@@ -680,7 +687,7 @@ struct DrawingCaptureEditor: View
 
     }
 
-    private var changed: Bool
+    private var changed: Bool /* Value with requested edits */
     {
         state.canvas.drawing.dataRepresentation() != initial.drawing.dataRepresentation()
     }
@@ -703,18 +710,21 @@ struct DrawingCaptureEditor: View
         do
         {
 
-            let data = try DrawingImageExport.data(state.canvas.drawing, format: format, transparent: transparent)
+            let data = /* Encoded or loaded bytes */
+                try DrawingImageExport.data(state.canvas.drawing, format: format, transparent: transparent)
 
             cleanExport()
 
-            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
+            let directory = /* Working directory location */
+                FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "Plenact-Drawing-" + UUID().uuidString, isDirectory: true)
 
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
             exportDirectory = directory
 
-            let url = directory.appendingPathComponent("Drawing." + (format == .png ? "png" : "jpg"))
+            let url = /* Resolved file location */
+                directory.appendingPathComponent("Drawing." + (format == .png ? "png" : "jpg"))
 
             try data.write(to: url, options: .atomic)
 
@@ -753,7 +763,7 @@ struct DrawingCaptureEditor: View
 
     }
 
-    var body: some View
+    var body: some View /* Drawing Capture Editor layout */
     {
 
         NavigationStack
@@ -846,7 +856,8 @@ struct DrawingCaptureEditor: View
                     Button("Done")
                     {
 
-                        let draft = DrawingCaptureDraft(id: initial.id, drawing: state.canvas.drawing)
+                        let draft = /* Local editing draft */
+                            DrawingCaptureDraft(id: initial.id, drawing: state.canvas.drawing)
 
                         if onSave(draft)
                         {

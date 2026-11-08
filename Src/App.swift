@@ -29,7 +29,7 @@ struct Plenact: App
 {
 
 
-    @State private var recoveryError: String?
+    @State private var recoveryError: String? /* Workspace recovery failure */
 
 
     ///
@@ -72,7 +72,7 @@ struct Plenact: App
     ///
     /// @post       Each window installs its own AppRootView navigation shell
     ///
-    var body: some Scene
+    var body: some Scene /* App scene hierarchy */
     {  /* Root window scene */
 
 
@@ -142,7 +142,7 @@ extension PersonalCollectionIcon
     /// @return     (String) icon display title
     /// @post       No collection state is changed
     ///
-    var title: String
+    var title: String /* User-facing title */
     {  /* User-facing name of the collection icon */
 
         switch self

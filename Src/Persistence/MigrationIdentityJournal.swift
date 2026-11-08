@@ -15,7 +15,7 @@ struct MigrationSourceIdentity: Codable, Hashable
 {
 
     let recordType:    String  /* Canonical target record type                       */
-    let owner:         String  /* Stable source-owner namespace, never display text   */
+    let owner:         String  /* Stable source-owner namespace, never display text  */
     let legacyID:      String  /* Original identifier represented without coercion   */
     let discriminator: String? /* Source creation discriminator where actually known */
 
@@ -28,7 +28,7 @@ struct MigrationSourceIdentity: Codable, Hashable
 struct MigrationIdentityEntry: Codable, Equatable
 {
 
-    let source: MigrationSourceIdentity /* Exact source provenance */
+    let source: MigrationSourceIdentity /* Exact source provenance  */
     let target: UUID                    /* Stable portable identity */
 
 }
@@ -120,7 +120,7 @@ struct MigrationIdentityJournal: Codable
             return existing
         }
 
-        let target = UUID()
+        let target = UUID() /* Target under consideration */
 
         entries.append(MigrationIdentityEntry(source: source, target: target))
 
@@ -138,7 +138,8 @@ struct MigrationIdentityJournal: Codable
     private static func validate(_ source: MigrationSourceIdentity) throws
     {
 
-        let types: Set<String> = ["account", "workspace", "collection", "list", "card", "label",
+        let types: Set<String> = /* Supported record types */
+            ["account", "workspace", "collection", "list", "card", "label",
             "label_category", "calendar_week", "calendar_index", "daily_plan", "weekly_review",
             "periodic_review", "planning_template", "template_library", "review_rhythm", "asset",
             "content_selection", "user_profile", "user_preferences", "studio_settings", "studio_artwork",
@@ -162,7 +163,7 @@ struct MigrationIdentityJournal: Codable
     func encoded() throws -> Data
     {
 
-        let encoder = JSONEncoder()
+        let encoder = JSONEncoder() /* JSON encoding configuration */
 
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
 
@@ -203,7 +204,8 @@ struct MigrationIdentityJournal: Codable
             }
         }
 
-        let journal = try JSONDecoder().decode(MigrationIdentityJournal.self, from: data)
+        let journal = /* Migration identity journal */
+            try JSONDecoder().decode(MigrationIdentityJournal.self, from: data)
 
         guard Set(journal.entries.map(\.source)).count == journal.entries.count,
               Set(journal.entries.map(\.target)).count == journal.entries.count,
@@ -213,7 +215,8 @@ struct MigrationIdentityJournal: Codable
             throw Failure.corrupt
         }
 
-        let uuidPattern = "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        let uuidPattern = /* UUID pattern */
+            "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
 
         for identifier in [journal.sourceInstallationID, journal.previewWorkspaceID] + journal.entries.map(\.target)
         {
@@ -254,14 +257,15 @@ enum MigrationIdentityStore
     static func read(at url: URL) throws -> Data?
     {
 
-        var current = url
+        var current = url /* Current operation snapshot */
 
         while current.path != "/"
         {
             if FileManager.default.fileExists(atPath: current.path)
             {
 
-                let attributes = try FileManager.default.attributesOfItem(atPath: current.path)
+                let attributes = /* Attributed-text settings */
+                    try FileManager.default.attributesOfItem(atPath: current.path)
 
                 guard attributes[.type] as? FileAttributeType != .typeSymbolicLink else
                 {
@@ -279,7 +283,8 @@ enum MigrationIdentityStore
             return nil
         }
 
-        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        let attributes = /* Attributed-text settings */
+            try FileManager.default.attributesOfItem(atPath: url.path)
 
         guard attributes[.type] as? FileAttributeType == .typeRegular,
               (attributes[.size] as? NSNumber)?.intValue ?? Int.max <= 32 * 1024 * 1024 else
@@ -307,15 +312,17 @@ enum MigrationIdentityStore
             throw MigrationIdentityJournal.Failure.conflictingWrite
         }
 
-        let data = try journal.encoded()
+        let data = try journal.encoded() /* Encoded or loaded bytes */
 
         _ = try MigrationIdentityJournal.decode(data)
 
         if let expected
         {
 
-            let original = try MigrationIdentityJournal.decode(expected)
-            let retained = Dictionary(uniqueKeysWithValues: journal.entries.map { ($0.source, $0.target) })
+            let original = /* Baseline before changes */
+                try MigrationIdentityJournal.decode(expected)
+            let retained = /* State retained for recovery */
+                Dictionary(uniqueKeysWithValues: journal.entries.map { ($0.source, $0.target) })
 
             guard original.formatVersion <= journal.formatVersion,
                   original.sourceInstallationID == journal.sourceInstallationID,

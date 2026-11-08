@@ -45,7 +45,8 @@ enum MigrationBackupReader
     static func file(_ path: String, in root: FileWrapper) throws -> Data
     {
 
-        let parts = path.split(separator: "/", omittingEmptySubsequences: false)
+        let parts = /* Parsed value components */
+            path.split(separator: "/", omittingEmptySubsequences: false)
 
         guard !parts.isEmpty, !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }),
               !path.contains("\\") else
@@ -53,7 +54,7 @@ enum MigrationBackupReader
             throw Failure.invalidBackup
         }
 
-        var wrapper = root
+        var wrapper = root /* File or view wrapper */
 
         for part in parts
         {
@@ -82,7 +83,7 @@ enum MigrationBackupReader
     static func values(in backup: LegacyWorkspaceBackup) throws -> [String: Any]
     {
 
-        let reportData = try file("NativePreflight.json", in: backup.files)
+        let reportData = try file("NativePreflight.json", in: backup.files) /* Report data */
 
         guard let report = try JSONSerialization.jsonObject(with: reportData) as? [String: Any],
               report["format"] as? String == "plenact.ios-frozen-backup",
@@ -98,8 +99,10 @@ enum MigrationBackupReader
             throw Failure.pendingRecovery
         }
 
-        let portableRuntime = try PortableRuntimeEvidence.backupFiles(report: report, files: backup.files)
-        let preferences     = try file("Preferences.plist", in: backup.files)
+        let portableRuntime = /* Portable runtime */
+            try PortableRuntimeEvidence.backupFiles(report: report, files: backup.files)
+        let preferences     = /* Planning and display choices */
+            try file("Preferences.plist", in: backup.files)
 
         guard digest(preferences) == report["preferences_sha256"] as? String,
               let values = try PropertyListSerialization.propertyList(from: preferences, format: nil) as? [String: Any],
@@ -120,7 +123,7 @@ enum MigrationBackupReader
             throw Failure.invalidBackup
         }
 
-        var seen: Set<String> = []
+        var seen: Set<String> = [] /* Identities already encountered */
 
         for entry in media
         {
@@ -130,7 +133,7 @@ enum MigrationBackupReader
                 throw Failure.invalidBackup
             }
 
-            let bytes = try file(path, in: backup.files)
+            let bytes = try file(path, in: backup.files) /* Serialized or original bytes */
 
             guard digest(bytes) == entry["sha256"] as? String, bytes.count == entry["byte_length"] as? Int else
             {
@@ -138,8 +141,9 @@ enum MigrationBackupReader
             }
         }
 
-        var actual: Set<String> = []
-        var total               = preferences.count + portableRuntime.values.reduce(0, { $0 + $1.count })
+        var actual: Set<String> = [] /* Observed operation result */
+        var total               =    /* Total matching entries    */
+            preferences.count + portableRuntime.values.reduce(0, { $0 + $1.count })
 
         guard total <= LegacyWorkspaceExport.maximumBytes else
         {
@@ -186,7 +190,7 @@ enum MigrationBackupReader
         for area in LegacyWorkspaceExport.mediaRoots
         {
 
-            var wrapper: FileWrapper? = backup.files
+            var wrapper: FileWrapper? = backup.files /* File or view wrapper */
 
             for part in area.split(separator: "/")
             {

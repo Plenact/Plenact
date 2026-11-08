@@ -22,7 +22,7 @@ struct PreviewTextWidthKey: PreferenceKey
 {
 
 
-    static let defaultValue: CGFloat = 0
+    static let defaultValue: CGFloat = 0 /* Fallback environment value */
 
 
     ///
@@ -55,7 +55,7 @@ struct PreviewViewportWidthKey: PreferenceKey
 {
 
 
-    static let defaultValue: CGFloat = 0
+    static let defaultValue: CGFloat = 0 /* Fallback environment value */
 
 
     ///
@@ -89,7 +89,7 @@ struct PreviewVisibility: ViewModifier
 {
 
 
-    @Binding var visible: Bool
+    @Binding var visible: Bool /* Current visibility state */
 
 
     ///
@@ -149,14 +149,14 @@ struct GentleCollectionPreview: View
 {
 
 
-    let text: String
-    var scrolls                 = false
-    var textFont:        Font   = .caption
-    var textColor:       Color  = .secondary
-    var pointsPerSecond: Double = 14
-    var startPause:      Double = 2.5
-    var endPause:        Double = 2.5
-    var travelsAcross           = false
+    let text: String                         /* Text being processed        */
+    var scrolls                 = false      /* Mounted native scroll views */
+    var textFont:        Font   = .caption   /* Text font                   */
+    var textColor:       Color  = .secondary /* Text color                  */
+    var pointsPerSecond: Double = 14         /* Points per second           */
+    var startPause:      Double = 2.5        /* Start pause                 */
+    var endPause:        Double = 2.5        /* End pause                   */
+    var travelsAcross           = false      /* Travels across              */
 
 
     ///
@@ -166,25 +166,25 @@ struct GentleCollectionPreview: View
     ///     Combines text, travel distance, and activity state so changes restart the appropriate
     ///     animation task
     ///
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var textWidth:     CGFloat = 0
-    @State private var viewportWidth: CGFloat = 0
-    @State private var offset:        CGFloat = 0
-    @State private var opacity:       Double  = 1
-    @State private var visible                = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    @Environment(\.dynamicTypeSize) private var typeSize /* Type size */
+    @State private var textWidth:     CGFloat = 0 /* Text width */
+    @State private var viewportWidth: CGFloat = 0 /* Viewport width */
+    @State private var offset:        CGFloat = 0 /* Current position offset */
+    @State private var opacity:       Double  = 1 /* Surface opacity */
+    @State private var visible                = false /* Current visibility state */
 
     private struct Loop: Hashable
     {
 
 
-        let text:     String
-        let distance: CGFloat
-        let active:   Bool
+        let text:     String  /* Text being processed              */
+        let distance: CGFloat /* Distance between layout positions */
+        let active:   Bool    /* Active operation state            */
 
     }
 
-    private var loop: Loop
+    private var loop: Loop /* Current retry iteration */
     {
 
         Loop(
@@ -192,7 +192,7 @@ struct GentleCollectionPreview: View
             active: scrolls && !reduceMotion && !typeSize.isAccessibilitySize && visible && viewportWidth > 0)
     }
 
-    var body: some View
+    var body: some View /* Gentle Collection Preview layout */
     {
 
         Group
@@ -257,7 +257,7 @@ struct GentleCollectionPreview: View
         .task(id: loop)
         {
 
-            var reset = Transaction();
+            var reset = Transaction(); /* Requested state reset */
 
             reset.disablesAnimations = true
 
@@ -274,8 +274,9 @@ struct GentleCollectionPreview: View
                 return
             }
 
-            let distance = loop.distance
-            let seconds  = max(4, Double(distance) / max(1, pointsPerSecond))
+            let distance = loop.distance /* Distance between layout positions */
+            let seconds  =               /* Elapsed time in seconds           */
+                max(4, Double(distance) / max(1, pointsPerSecond))
 
             do
             {

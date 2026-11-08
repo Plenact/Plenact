@@ -20,36 +20,40 @@ struct PlanningCalendarAccess
 {
 
 
-    var document:        PlanningCalendarDocument
-    var library:         [PersonalCollection]
-    var saveWeek:        (DatedPlanningWeek) -> Bool
-    var openCurrentWeek: () -> Void
-    var openToday:       () -> Void
-    var openLibraryCard: (PersonalSavedCardTarget) -> Void
-    var saveLibrary:     (PersonalCollection) -> Bool
-    var applyWeeklyReview:
+    var document:        PlanningCalendarDocument          /* Working calendar document    */
+    var library:         [PersonalCollection]              /* Retained library contents    */
+    var saveWeek:        (DatedPlanningWeek) -> Bool       /* Save week callback           */
+    var openCurrentWeek: () -> Void                        /* Open current week callback   */
+    var openToday:       () -> Void                        /* Open today callback          */
+    var openLibraryCard: (PersonalSavedCardTarget) -> Void /* Open library card callback   */
+    var saveLibrary:     (PersonalCollection) -> Bool      /* Save library callback        */
+    var applyWeeklyReview:                                 /* Apply weekly review callback */
     ((PlanningSearchResult, DailyReviewAction, WeeklyReviewRecord, WeeklyReviewRecord?) -> WeeklyReviewRecord?)? =
     nil
-    var applyDailyReview: ((PlanningSearchResult, DailyReviewAction, DailyPlan, DailyPlan?) -> DailyPlan?)? = nil
-    var moveForDailyPlan: ((PlanningSearchResult, WorkspaceListReference) -> PlanningSearchResult?)?        = nil
-    var setFirstWeekday:  (Int) -> Bool                                                                     =
+    var applyDailyReview: ((PlanningSearchResult, DailyReviewAction, DailyPlan, DailyPlan?) -> DailyPlan?)? = /* Apply daily review callback */
+        nil
+    var moveForDailyPlan: ((PlanningSearchResult, WorkspaceListReference) -> PlanningSearchResult?)?        = /* Move for daily plan callback */
+        nil
+    var setFirstWeekday:  (Int) -> Bool                                                                     = /* Change the calendar week boundary */
     {
         _ in
         false
     }
 
-    var openWeek: (DatedPlanningWeek) -> Void =
+    var openWeek: (DatedPlanningWeek) -> Void = /* Open week callback */
     {
         _ in
     }
 
-    var moveList:         ((Int, UUID, UUID?) -> Bool)?            = nil
-    var openWeekOnDay:    ((DatedPlanningWeek, Date) -> Void)?     = nil
-    var saveExampleWeek:  ((DatedPlanningWeek, Set<Int>) -> Bool)? = nil
+    var moveList:         ((Int, UUID, UUID?) -> Bool)?            = nil /* Move list callback */
+    var openWeekOnDay:    ((DatedPlanningWeek, Date) -> Void)?     = /* Open week on day callback */
+        nil
+    var saveExampleWeek:  ((DatedPlanningWeek, Set<Int>) -> Bool)? = /* Save example week callback */
+        nil
 
-    var completeManualWeek: ((ManualWeekOpening) -> Void)? = nil
+    var completeManualWeek: ((ManualWeekOpening) -> Void)? = nil /* Complete manual week callback */
 
-    var allRetainedLists: [KanbanList]
+    var allRetainedLists: [KanbanList] /* All retained lists */
     {
         document.weeks.flatMap
         {
@@ -58,7 +62,7 @@ struct PlanningCalendarAccess
         + library.flatMap(\.lists)
     }
 
-    var searchableItems: [PlanningSearchResult]
+    var searchableItems: [PlanningSearchResult] /* Searchable items */
     {
 
         document.weeks.flatMap
@@ -124,7 +128,7 @@ struct PlanningCalendarAccessKey: EnvironmentKey
 {
 
 
-    static let defaultValue: PlanningCalendarAccess? = nil
+    static let defaultValue: PlanningCalendarAccess? = nil /* Fallback environment value */
 
 }
 
@@ -140,7 +144,7 @@ struct PlanningDisplayedWeekKey: EnvironmentKey
 {
 
 
-    static let defaultValue: String? = nil
+    static let defaultValue: String? = nil /* Fallback environment value */
 
 }
 
@@ -155,7 +159,7 @@ extension EnvironmentValues
 {
 
 
-    var planningDisplayedWeekKey: String?
+    var planningDisplayedWeekKey: String? /* Planning displayed week key */
     {
 
         get
@@ -172,7 +176,7 @@ extension EnvironmentValues
 
     }
 
-    var planningCalendarAccess: PlanningCalendarAccess?
+    var planningCalendarAccess: PlanningCalendarAccess? /* Planning calendar access */
     {
 
         get
@@ -202,11 +206,11 @@ struct PlanningWeekRoute: Identifiable
 {
 
 
-    var week:   DatedPlanningWeek
-    var dayID:  Int? = nil
-    var cardID: Int? = nil
+    var week:   DatedPlanningWeek /* Dated Week under consideration */
+    var dayID:  Int? = nil        /* Day ID                         */
+    var cardID: Int? = nil        /* Owner-local Card identifier    */
 
-    var id:     UUID
+    var id:     UUID /* Record UUID */
     {
         week.id
     }
@@ -225,23 +229,23 @@ struct PlanningCalendarWeekView: View
 {
 
 
-    @State var week:    DatedPlanningWeek
-    let initialDayID:   Int?
-    let initialCardID:  Int?
-    let onLeaveForHome: () -> Void
-    var isWeekTab                = false
-    var initialBoardListID: Int? = nil
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var targetListID: Int?
-    @State private var targetCardID: Int?
-    @State private var didOpenInitialTarget = false
-    @State private var showsDay             = false
-    @State private var dayID: Int?
-    @State private var isRevertingEdit = false
-    @State private var labels          = LabelLibraryStore.load()
+    @State var week:    DatedPlanningWeek /* Dated Week under consideration */
+    let initialDayID:   Int? /* Initial day ID */
+    let initialCardID:  Int? /* Initial card ID */
+    let onLeaveForHome: () -> Void /* Leave for home callback */
+    var isWeekTab                = false /* Week Tab state */
+    var initialBoardListID: Int? = nil /* Initial board list ID */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var targetListID: Int? /* Target list ID */
+    @State private var targetCardID: Int? /* Target card ID */
+    @State private var didOpenInitialTarget = false /* Open Initial Target completion flag */
+    @State private var showsDay             = false /* Day visibility */
+    @State private var dayID: Int? /* Day ID */
+    @State private var isRevertingEdit = false /* Guard against recursive saves */
+    @State private var labels          = LabelLibraryStore.load() /* Available label definitions */
 
-    private var isStored: Bool
+    private var isStored: Bool /* Stored state */
     {
         access?.document.weeks.contains
         {
@@ -250,12 +254,12 @@ struct PlanningCalendarWeekView: View
         == true
     }
 
-    private var isCurrent: Bool
+    private var isCurrent: Bool /* Current state */
     {
         week.startKey == access?.document.currentWeekKey
     }
 
-    var body: some View
+    var body: some View /* Dated Week workspace */
     {
 
         ContentView(
@@ -272,7 +276,7 @@ struct PlanningCalendarWeekView: View
             {
                 lists, saved in
 
-                var next = week;
+                var next = week; /* Candidate next state */
 
                 next.collection.lists = lists;
                 next.collection.savedCardIDs = saved
@@ -311,7 +315,7 @@ struct PlanningCalendarWeekView: View
                         Button("Save empty week", systemImage: "square.and.arrow.down")
                         {
 
-                            var next = week;
+                            var next = week; /* Candidate next state */
 
                             next.explicitlySaved = true
 
@@ -377,8 +381,10 @@ struct PlanningCalendarWeekView: View
                 do
                 {
 
-                    let date     = PlanningDate.date(week.startKey, calendar: access.document.calendar)!
-                    let prepared = try PlanningRoutineStore.newWeek(for: date, calendar: access.document.calendar)
+                    let date     = /* Date used by this operation */
+                        PlanningDate.date(week.startKey, calendar: access.document.calendar)!
+                    let prepared = /* Prepared operation input */
+                        try PlanningRoutineStore.newWeek(for: date, calendar: access.document.calendar)
 
                     guard access.saveWeek(prepared) else
                     {
@@ -513,7 +519,7 @@ struct PlanningCalendarWeekView: View
                     {
                         cardID in
 
-                        var next = week
+                        var next = week /* Candidate next state */
 
                         BoardContentDeletion.card(
                             cardID, in: &next.collection.lists, savedCardIDs: &next.collection.savedCardIDs)
@@ -558,7 +564,7 @@ struct PlanningDirectItemReturnKey: EnvironmentKey
 {
 
 
-    static let defaultValue: (() -> Void)? = nil
+    static let defaultValue: (() -> Void)? = nil /* Fallback environment callback */
 
 }
 
@@ -574,7 +580,7 @@ extension EnvironmentValues
 {
 
 
-    var planningDirectItemReturn: (() -> Void)?
+    var planningDirectItemReturn: (() -> Void)? /* Planning direct item return callback */
     {
 
         get
@@ -605,7 +611,7 @@ struct PlanningHomeExitKey: EnvironmentKey
 {
 
 
-    static let defaultValue: (() -> Void)? = nil
+    static let defaultValue: (() -> Void)? = nil /* Fallback environment callback */
 
 }
 
@@ -621,7 +627,7 @@ extension EnvironmentValues
 {
 
 
-    var planningHomeExit: (() -> Void)?
+    var planningHomeExit: (() -> Void)? /* Planning home exit callback */
     {
 
         get
@@ -651,9 +657,9 @@ struct PlanningSearchRoute: Identifiable
 {
 
 
-    let result: TodaySearchResult
+    let result: TodaySearchResult /* Result being assembled */
 
-    var id:     String
+    var id:     String /* Record or view identity */
     {
         result.id
     }
@@ -672,18 +678,18 @@ struct PlanningSearchLibraryView: View
 {
 
 
-    @State var collection: PersonalCollection
-    let initialListID:     Int
-    let initialCardID:     Int?
-    let onLeaveForHome:    () -> Void
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var targetListID: Int?
-    @State private var targetCardID: Int?
-    @State private var isRevertingEdit      = false
-    @State private var didOpenInitialTarget = false
+    @State var collection: PersonalCollection /* Personal collection record */
+    let initialListID:     Int /* Initial list ID */
+    let initialCardID:     Int? /* Initial card ID */
+    let onLeaveForHome:    () -> Void /* Leave for home callback */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var targetListID: Int? /* Target list ID */
+    @State private var targetCardID: Int? /* Target card ID */
+    @State private var isRevertingEdit      = false /* Guard against recursive saves */
+    @State private var didOpenInitialTarget = false /* Open Initial Target completion flag */
 
-    var body: some View
+    var body: some View /* Planning Search Library layout */
     {
 
         ContentView(
@@ -698,7 +704,7 @@ struct PlanningSearchLibraryView: View
             {
                 lists, saved in
 
-                var updated = collection;
+                var updated = collection; /* Edited value to publish */
 
                 updated.lists = lists;
                 updated.savedCardIDs = saved
@@ -796,14 +802,14 @@ struct PlanningChecklistLink: View
 {
 
 
-    let itemID:  UUID
-    let cardID:  Int
-    let title:   String
-    var ownerID: UUID? = nil
-    @Environment(\.planningCalendarAccess) private var access
-    @State private var showsCard = false
+    let itemID:  UUID                                         /* Item ID                     */
+    let cardID:  Int                                          /* Owner-local Card identifier */
+    let title:   String                                       /* User-facing title           */
+    var ownerID: UUID? = nil                                  /* Record owner identifier     */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
+    @State private var showsCard = false                      /* Card visibility             */
 
-    private var destination: (DatedPlanningWeek, Int)?
+    private var destination: (DatedPlanningWeek, Int)? /* Destination for the operation */
     {
 
         guard let owner = access?.document.checklistLinkWeeks? [itemID] ?? ownerID,
@@ -827,7 +833,7 @@ struct PlanningChecklistLink: View
         return (week, list.id)
     }
 
-    var body: some View
+    var body: some View /* Planning Checklist Link layout */
     {
 
         Button
@@ -877,9 +883,9 @@ struct PlanningDaySelection
 {
 
 
-    let date:   Date
-    let week:   DatedPlanningWeek
-    let listID: Int
+    let date:   Date              /* Date used by this operation    */
+    let week:   DatedPlanningWeek /* Dated Week under consideration */
+    let listID: Int               /* Owner-local List identifier    */
 
 
     ///
@@ -896,8 +902,9 @@ struct PlanningDaySelection
     static func resolve(_ date: Date, document: PlanningCalendarDocument) -> Self?
     {
 
-        let date = document.calendar.startOfDay(for: date)
-        let week = document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
+        let date = document.calendar.startOfDay(for: date) /* Date used by this operation    */
+        let week =                                         /* Dated Week under consideration */
+            document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
 
         guard let id = week.dayListIDs[PlanningDate.key(date, calendar: document.calendar)],
         week.collection.lists.contains(where:
@@ -926,15 +933,15 @@ struct PlanningSelectedDayView: View
 {
 
 
-    let selection:              PlanningDaySelection
-    let currentUserName:        String
-    let returnDestinationTitle: String
-    let onClose:                () -> Void
-    let onSelectDay:            (Date) -> Void
-    @State private var week:    DatedPlanningWeek
-    @State private var labels          = LabelLibraryStore.load()
-    @State private var isRevertingEdit = false
-    @Environment(\.planningCalendarAccess) private var access
+    let selection:              PlanningDaySelection /* Current selection state */
+    let currentUserName:        String /* Current user name */
+    let returnDestinationTitle: String /* Return destination title */
+    let onClose:                () -> Void /* Close the current surface */
+    let onSelectDay:            (Date) -> Void /* Select day callback */
+    @State private var week:    DatedPlanningWeek /* Dated Week under consideration */
+    @State private var labels          = LabelLibraryStore.load() /* Available label definitions */
+    @State private var isRevertingEdit = false /* Guard against recursive saves */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
 
 
     ///
@@ -967,7 +974,7 @@ struct PlanningSelectedDayView: View
     }
 
 
-    var body: some View
+    var body: some View /* Planning Selected Day layout */
     {
 
         TodayListDetailView(
@@ -986,7 +993,7 @@ struct PlanningSelectedDayView: View
             {
                 cardID in
 
-                var next = week
+                var next = week /* Candidate next state */
 
                 BoardContentDeletion.card(
                     cardID, in: &next.collection.lists, savedCardIDs: &next.collection.savedCardIDs)
@@ -1016,7 +1023,8 @@ struct PlanningSelectedDayView: View
             do
             {
 
-                let prepared = try PlanningRoutineStore.newWeek(for: selection.date, calendar: access.document.calendar)
+                let prepared = /* Prepared operation input */
+                    try PlanningRoutineStore.newWeek(for: selection.date, calendar: access.document.calendar)
 
                 guard access.saveWeek(prepared) else
                 {

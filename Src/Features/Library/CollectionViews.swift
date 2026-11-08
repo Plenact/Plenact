@@ -23,7 +23,7 @@ extension PersonalCollection
 
 
     /// Match the default On the Table identity to its banner without changing custom colors
-    var libraryIdentityColor: Color
+    var libraryIdentityColor: Color /* Library identity color */
     {
 
         if kind == .list, title == "On the Table", color == .coral
@@ -49,13 +49,13 @@ struct LibraryCollectionRow: View
 {
 
 
-    let title:    String  /* User-owned collection or Week Board title       */
-    let subtitle: String  /* Collection kind and active-list context         */
-    let icon:     String  /* SF Symbol representing the organizing space     */
-    let color:    Color   /* Collection accent, not its only identifying cue */
-    let count:    Int     /* Active non-divider card count                   */
-    var preview:  String = ""
-    var scrollsPreview   = false
+    let title:    String         /* User-owned collection or Week Board title       */
+    let subtitle: String         /* Collection kind and active-list context         */
+    let icon:     String         /* SF Symbol representing the organizing space     */
+    let color:    Color          /* Collection accent, not its only identifying cue */
+    let count:    Int            /* Active non-divider card count                   */
+    var preview:  String = ""    /* Prepared content preview                        */
+    var scrollsPreview   = false /* Scrolls preview                                 */
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Adapt text arrangement for accessibility sizes */
 
@@ -67,7 +67,7 @@ struct LibraryCollectionRow: View
     /// @return     (some View) content-fitting directory row with combined accessibility text
     /// @post       Rendering does not modify the owning Board or collection
     ///
-    var body: some View
+    var body: some View /* Library Collection layout */
     {  /* Adaptive collection directory row with a labeled card count */
 
 
@@ -87,7 +87,7 @@ struct LibraryCollectionRow: View
             .background(color.opacity(0.22), in: RoundedRectangle(cornerRadius: 12))
             .accessibilityHidden(true)
 
-            let layout =
+            let layout = /* Resolved layout configuration */
             dynamicTypeSize.isAccessibilitySize /* Accessible arrangement of the collection name and count */
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
             : AnyLayout(HStackLayout(spacing: 12))
@@ -142,15 +142,15 @@ struct CollectionFilterPopover: View
 {
 
 
-    let selection: LibraryBrowseFilter
-    let onSelect:  (LibraryBrowseFilter) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
-    @State private var pendingSelection: LibraryBrowseFilter?
-    @State private var opacity = 1.0
+    let selection: LibraryBrowseFilter /* Current selection state */
+    let onSelect:  (LibraryBrowseFilter) -> Void /* Handle the selected value */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver /* Voice over */
+    @State private var pendingSelection: LibraryBrowseFilter? /* Pending selection */
+    @State private var opacity = 1.0 /* Surface opacity */
 
-    var body: some View
+    var body: some View /* Collection Filter layout */
     {
 
         VStack(spacing: 0)
@@ -252,17 +252,17 @@ struct PersonalCollectionBoardView: View
     let availablePersonalLists:     [PersonalCollection]  /* Personal Lists offered as Note destinations    */
     let onArchive:                  () throws -> Void     /* Persist archival of this collection            */
     let onDelete:                   () throws -> Void     /* Persist permanent removal of this collection   */
-    let onCommitDeletion:
+    let onCommitDeletion: /* Commit deletion callback */
     (PersonalCollection) throws -> Void /* Save nested deletion against current shared state        */
-    let onCreateNote:
+    let onCreateNote: /* Create note callback */
     (UUID, QuickCaptureSubmission, Date) throws ->
     Void /* Checked creation callback for a destination List         */
-    let onMoveNote:
+    let onMoveNote: /* Move note callback */
     (KanbanCard, UUID, UUID) throws -> KanbanCard       /* Checked movement callback returning the relocated Note   */
     let onUpdateMovedNote:  (UUID, KanbanCard) -> Bool  /* Persists edits in the Note's current collection          */
     let onArchiveMovedNote: (UUID, KanbanCard) -> Bool  /* Archives the Note in its current collection              */
     let onDeleteMovedNote:  (UUID, KanbanCard) -> Bool  /* Permanently removes the Note from its current collection */
-    let onToggleMovedNoteBookmark:
+    let onToggleMovedNoteBookmark: /* Toggle moved note bookmark callback */
     (UUID, Int, Bool) -> Bool                        /* Persists the Note's collection-local saved state     */
     let registerNewNote: ((() -> Void)?) -> Void     /* Registers or clears the presented List's Note action */
     @Environment(\.dismiss) private var dismiss      /* Close the collection board                           */
@@ -279,7 +279,7 @@ struct PersonalCollectionBoardView: View
     /// @post       Successful archive dismisses after onArchive returns; failure reports an error
     ///             and keeps the Board open
     ///
-    var body: some View
+    var body: some View /* Personal Collection Board layout */
     {  /* Collection Board wired to canonical persistence callbacks */
 
         ContentView(
@@ -470,7 +470,7 @@ struct PersonalCollectionSettingsView: View
     /// @return     (String) normalized collection title
     /// @post       The draft remains unchanged
     ///
-    private var trimmedTitle: String
+    private var trimmedTitle: String /* Trimmed title */
     {
 
         draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -507,7 +507,7 @@ struct PersonalCollectionSettingsView: View
     /// @return     (some View) navigation form with draft-bound settings and toolbar actions
     /// @post       Changes remain local until Save invokes the parent callback
     ///
-    var body: some View
+    var body: some View /* Personal Collection Settings layout */
     {  /* Collection name, kind, icon, and color form */
 
         NavigationStack
@@ -563,7 +563,8 @@ struct PersonalCollectionSettingsView: View
                                                                             {
                                                                                 value in
 
-                                                                                var appearance = draft.lists[0].appearance ?? ItemAppearance()
+                                                                                var appearance = /* Resolved appearance choices */
+                                                                                    draft.lists[0].appearance ?? ItemAppearance()
 
                                                                                 appearance.showsIconInHeader = value
                                                                                 draft.lists[0].appearance = appearance
@@ -618,7 +619,8 @@ struct PersonalCollectionSettingsView: View
                                 {
                                     value in
 
-                                    var appearance = draft.lists[0].appearance ?? ItemAppearance()
+                                    var appearance = /* Resolved appearance choices */
+                                        draft.lists[0].appearance ?? ItemAppearance()
 
                                     appearance.listBackgroundOpacity = value
                                     draft.lists[0].appearance = appearance
@@ -650,7 +652,8 @@ struct PersonalCollectionSettingsView: View
                                 {
                                     value in
 
-                                    var appearance = draft.lists[0].appearance ?? ItemAppearance()
+                                    var appearance = /* Resolved appearance choices */
+                                        draft.lists[0].appearance ?? ItemAppearance()
 
                                     appearance.iconColor = value
                                     draft.lists[0].appearance = appearance

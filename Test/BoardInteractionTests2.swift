@@ -38,7 +38,8 @@ extension PlenactBoardDocumentTests
     func testTodayShortcutGridRendersTwoRowsWithoutOpeningOrEditing() async throws
     {
 
-        var owner = PersonalCollection(title: "Projects", kind: .board)
+        var owner = /* Owning collection or Week */
+            PersonalCollection(title: "Projects", kind: .board)
 
         owner.lists = (0 ..< 6).map
         {
@@ -46,13 +47,14 @@ extension PlenactBoardDocumentTests
             KanbanList(id: $0, title: ["On the Table", "Garden", "Shopping", "Reading", "Ideas", "Home"] [$0], cards: [])
         }
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
-        let host     = UIHostingController(
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
+        let host     = UIHostingController(                      /* Synthetic SwiftUI host */
             rootView: TodayShortcutGrid(
                 pinned: WorkspaceBrowseIndex.lists(in: [owner]),
                 onOpen:
@@ -77,13 +79,15 @@ extension PlenactBoardDocumentTests
         try await Task.sleep(for: .milliseconds(150))
         host.view.layoutIfNeeded()
 
-        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+        let image = /* Image used by this operation */
+            UIGraphicsImageRenderer(bounds: host.view.bounds).image
         {
             _ in
             host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
 
-        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-shortcuts-preview.png")
+        let path = /* Filesystem or navigation path */
+            FileManager.default.temporaryDirectory.appendingPathComponent("plenact-shortcuts-preview.png")
 
         try XCTUnwrap(image.pngData()).write(to: path)
         print("Shortcuts preview: " + path.path)
@@ -104,18 +108,20 @@ extension PlenactBoardDocumentTests
     func testTodayPlanRendersWithoutChangingStoredPlans() async throws
     {
 
-        let before = UserDefaults.standard.dictionaryRepresentation().filter
+        let before = /* State before the operation */
+            UserDefaults.standard.dictionaryRepresentation().filter
         {
             $0.key.hasPrefix("Plenact.")
         }
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
-        let host     = UIHostingController(rootView: TodayPlanView())
+        let previous = scene.windows.first(where: \.isKeyWindow)      /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)                   /* Synthetic scene window */
+        let host     = UIHostingController(rootView: TodayPlanView()) /* Synthetic SwiftUI host */
 
         window.rootViewController = host
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
@@ -132,18 +138,21 @@ extension PlenactBoardDocumentTests
         try await Task.sleep(for: .milliseconds(150))
         host.view.layoutIfNeeded()
 
-        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+        let image = /* Image used by this operation */
+            UIGraphicsImageRenderer(bounds: host.view.bounds).image
         {
             _ in
             host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
 
-        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-today-plan.png")
+        let path = /* Filesystem or navigation path */
+            FileManager.default.temporaryDirectory.appendingPathComponent("plenact-today-plan.png")
 
         try XCTUnwrap(image.pngData()).write(to: path)
         print("Today plan: " + path.path)
 
-        let after = UserDefaults.standard.dictionaryRepresentation().filter
+        let after = /* State after the operation */
+            UserDefaults.standard.dictionaryRepresentation().filter
         {
             $0.key.hasPrefix("Plenact.")
         }
@@ -171,13 +180,15 @@ extension PlenactBoardDocumentTests
         XCTAssertNotNil(UIColor(named: "LaunchBackground"))
         XCTAssertNotNil(Bundle.main.url(forResource: "PlenactLaunch", withExtension: "storyboardc"))
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
-        let host     = UIHostingController(rootView: PlenactLoadingView(animatesLogo: false))
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
+        let host     =                                           /* Synthetic SwiftUI host */
+            UIHostingController(rootView: PlenactLoadingView(animatesLogo: false))
 
         window.rootViewController = host
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
@@ -195,19 +206,21 @@ extension PlenactBoardDocumentTests
         try await Task.sleep(for: .milliseconds(120))
         host.view.layoutIfNeeded()
 
-        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+        let image = /* Image used by this operation */
+            UIGraphicsImageRenderer(bounds: host.view.bounds).image
         {
             _ in
             host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
 
-        let data = try XCTUnwrap(image.pngData())
-        let path = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-loading-preview.png")
+        let data = try XCTUnwrap(image.pngData()) /* Encoded or loaded bytes       */
+        let path =                                /* Filesystem or navigation path */
+            FileManager.default.temporaryDirectory.appendingPathComponent("plenact-loading-preview.png")
 
         try data.write(to: path)
         print("Loading preview: " + path.path)
 
-        let launch = try XCTUnwrap(
+        let launch = try XCTUnwrap( /* Launch comparison fixture */
             UIStoryboard(name: "PlenactLaunch", bundle: .main).instantiateInitialViewController())
 
         launch.loadViewIfNeeded()
@@ -216,13 +229,15 @@ extension PlenactBoardDocumentTests
 
         launch.view.layoutIfNeeded()
 
-        let staticImage = UIGraphicsImageRenderer(bounds: launch.view.bounds).image
+        let staticImage = /* Static image */
+            UIGraphicsImageRenderer(bounds: launch.view.bounds).image
         {
             context in
             launch.view.layer.render(in: context.cgContext)
         }
 
-        let staticPath = FileManager.default.temporaryDirectory.appendingPathComponent(
+        let staticPath = /* Static path */
+            FileManager.default.temporaryDirectory.appendingPathComponent(
                         "plenact-static-launch-preview.png")
 
         try XCTUnwrap(staticImage.pngData()).write(to: staticPath)
@@ -231,7 +246,7 @@ extension PlenactBoardDocumentTests
         for size in [CGSize(width: 393, height: 852), CGSize(width: 852, height: 393)]
         {
 
-            let fitted = host.sizeThatFits(in: size)
+            let fitted = host.sizeThatFits(in: size) /* Fitted comparison fixture */
 
             XCTAssertTrue(fitted.width.isFinite && fitted.height.isFinite)
             XCTAssertEqual(fitted.width, size.width, accuracy: 1)
@@ -255,10 +270,11 @@ extension PlenactBoardDocumentTests
     func testWeekTodayHighlightRendersInPanoramicWithoutChangingCards() async throws
     {
 
-        let date   = Date.now
-        let week   = DatedPlanningWeek.make(for: date)
-        let target = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date)])
-        let access = PlanningCalendarAccess(
+        let date   = Date.now                          /* Date used by this operation */
+        let week   = DatedPlanningWeek.make(for: date) /* Synthetic week fixture      */
+        let target =                                   /* Target under consideration  */
+            try XCTUnwrap(week.dayListIDs[PlanningDate.key(date)])
+        let access = PlanningCalendarAccess( /* Scoped workspace operations */
             document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [],
             saveWeek:
             {
@@ -279,12 +295,13 @@ extension PlenactBoardDocumentTests
                 _ in
                 false
             })
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -294,15 +311,15 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let owner = UUID()
-        let key   = BoardViewportMemory.prefix + owner.uuidString
+        let owner = UUID()                                        /* Owning collection or Week */
+        let key   = BoardViewportMemory.prefix + owner.uuidString /* Lookup or persistence key */
 
         defer
         {
             UserDefaults.standard.removeObject(forKey: key)
         }
 
-        var state = BoardViewportState()
+        var state = BoardViewportState() /* Current operation state */
 
         state.scale = 0.62;
         state.panoramic = true;
@@ -312,7 +329,7 @@ extension PlenactBoardDocumentTests
 
         UserDefaults.standard.set(try JSONEncoder().encode(state), forKey: key)
 
-        let host = UIHostingController(
+        let host = UIHostingController( /* Synthetic SwiftUI host */
             rootView: ContentView(
                 lists: .constant(week.collection.lists), boardTargetListID: .constant(target), onListsChanged:
                 {
@@ -327,13 +344,15 @@ extension PlenactBoardDocumentTests
         try await Task.sleep(for: .milliseconds(400))
         host.view.layoutIfNeeded()
 
-        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+        let image = /* Image used by this operation */
+            UIGraphicsImageRenderer(bounds: host.view.bounds).image
         {
             _ in
             host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
 
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-week-today-highlight.png")
+        let url = /* Temporary fixture file URL */
+            FileManager.default.temporaryDirectory.appendingPathComponent("plenact-week-today-highlight.png")
 
         try XCTUnwrap(image.pngData()).write(to: url)
         print("TODAY_HIGHLIGHT_RENDER=\(url.path)")
@@ -355,12 +374,13 @@ extension PlenactBoardDocumentTests
     func testTabletBoardRendersProportionalLists() async throws
     {
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -370,8 +390,9 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let owner   = UUID()
-        let fixture = ["Monday", "Tuesday", "Wednesday"].enumerated().map
+        let owner   = UUID() /* Owning collection or Week */
+        let fixture =        /* Synthetic test workspace  */
+            ["Monday", "Tuesday", "Wednesday"].enumerated().map
         {
             index, title in
             KanbanList(
@@ -383,7 +404,7 @@ extension PlenactBoardDocumentTests
                 })
         }
 
-        let host = UIHostingController(
+        let host = UIHostingController( /* Synthetic SwiftUI host */
             rootView: ContentView(lists: .constant(fixture), onListsChanged:
                 {
                     _ in
@@ -395,13 +416,15 @@ extension PlenactBoardDocumentTests
         try await Task.sleep(for: .milliseconds(400))
         host.view.layoutIfNeeded()
 
-        let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+        let image = /* Image used by this operation */
+            UIGraphicsImageRenderer(bounds: host.view.bounds).image
         {
             _ in
             host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
 
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("plenact-tablet-board-scale.png")
+        let url = /* Temporary fixture file URL */
+            FileManager.default.temporaryDirectory.appendingPathComponent("plenact-tablet-board-scale.png")
 
         try XCTUnwrap(image.pngData()).write(to: url)
         print("TABLET_BOARD_RENDER=\(url.path)")
@@ -422,13 +445,15 @@ extension PlenactBoardDocumentTests
         for viewport: CGFloat in [744, 820, 1180]
         {
 
-            let column = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
-            let scale  = BoardTabletSizing.scale(
+            let column = /* Column comparison fixture */
+                BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
+            let scale  = BoardTabletSizing.scale( /* Current layout scale */
                 viewportWidth: viewport, columnWidth: column, isTablet: true, enabled: true)
 
             XCTAssertGreaterThan(scale, 1)
 
-            let preview = (viewport - column * scale) / 2 - 17 * scale
+            let preview = /* Prepared content preview */
+                (viewport - column * scale) / 2 - 17 * scale
 
             XCTAssertEqual(preview, viewport * 0.05 + 13.5, accuracy: 0.01)
             XCTAssertEqual(column * scale / column, scale, accuracy: 0.001)
@@ -456,12 +481,13 @@ extension PlenactBoardDocumentTests
     func testBoardOptionsPopoverLayoutDoesNotInvokeDestructiveActions() async throws
     {
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -475,7 +501,7 @@ extension PlenactBoardDocumentTests
         for size in [DynamicTypeSize.large, .accessibility3]
         {
 
-            let menu = BoardOptionsPopover(
+            let menu = BoardOptionsPopover( /* Menu comparison fixture */
                 canJumpFirst: true, canJumpLast: true, hasAppearance: true,
                 canArchive: true, canDelete: true, deleteTitle: "Delete Board", hasGallery: true, canResetZoom: true
             )
@@ -484,7 +510,7 @@ extension PlenactBoardDocumentTests
                 XCTFail("Presenting options must not perform an action")
             }
 
-            let host = UIHostingController(
+            let host = UIHostingController( /* Synthetic SwiftUI host */
                 rootView:
                 menu
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
@@ -497,13 +523,14 @@ extension PlenactBoardDocumentTests
             host.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(150))
 
-            let image = UIGraphicsImageRenderer(size: window.bounds.size).image
+            let image = /* Image used by this operation */
+                UIGraphicsImageRenderer(size: window.bounds.size).image
             {
                 _ in
                 window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
             }
 
-            let snapshot = XCTAttachment(image: image)
+            let snapshot = XCTAttachment(image: image) /* Working state snapshot */
 
             snapshot.name = "BoardOptions-\(size)"
             snapshot.lifetime = .keepAlways
@@ -559,7 +586,8 @@ extension PlenactBoardDocumentTests
         for viewport: CGFloat in [320, 393, 852]
         {
 
-            let width = BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
+            let width = /* Measured layout width */
+                BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
 
             for scale in [BoardPanoramicZoom.minimum, BoardPanoramicZoom.initial, BoardPanoramicZoom.maximum]
             {
@@ -624,12 +652,13 @@ extension PlenactBoardDocumentTests
     func testAdaptiveHeaderRetainsControlTargetsAndGivesLongTextTheGapSpace() async throws
     {
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -640,7 +669,7 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        var results: [String: [Int: CGRect]] = [:]
+        var results: [String: [Int: CGRect]] = [:] /* Collected operation results */
 
         for (name, title, direction) in [
             ("short", "Day", LayoutDirection.leftToRight),
@@ -679,7 +708,8 @@ extension PlenactBoardDocumentTests
 
             }
 
-            let view = AdaptiveWorkspaceHeaderLayout(regularSpacing: 12, layoutDirection: direction)
+            let view = /* View being rendered */
+                AdaptiveWorkspaceHeaderLayout(regularSpacing: 12, layoutDirection: direction)
             {
 
                 control(0)
@@ -700,7 +730,7 @@ extension PlenactBoardDocumentTests
                 control(3);
                 control(4)
             } .frame(width: 360).coordinateSpace(name: "headerFixture")
-            let host = UIHostingController(rootView: view)
+            let host = UIHostingController(rootView: view) /* Synthetic SwiftUI host */
 
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             window.rootViewController = host;
@@ -709,9 +739,9 @@ extension PlenactBoardDocumentTests
             try await Task.sleep(for: .milliseconds(180))
         }
 
-        let short = try XCTUnwrap(results["short"])
-        let long  = try XCTUnwrap(results["long"])
-        let rtl   = try XCTUnwrap(results["rtl"])
+        let short = try XCTUnwrap(results["short"]) /* Short comparison fixture */
+        let long  = try XCTUnwrap(results["long"])  /* Long comparison fixture  */
+        let rtl   = try XCTUnwrap(results["rtl"])   /* Rtl comparison fixture   */
 
         for frames in [short, long, rtl]
         {
@@ -747,8 +777,9 @@ extension PlenactBoardDocumentTests
     func testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition() async throws
     {
 
-        let suite    = "HeaderReadingTests." + UUID().uuidString
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let suite    = "HeaderReadingTests." + UUID().uuidString /* Isolated preference domain  */
+        let defaults =                                           /* Preference store under test */
+            try XCTUnwrap(UserDefaults(suiteName: suite))
 
         defer
         {
@@ -757,12 +788,13 @@ extension PlenactBoardDocumentTests
 
         PlanPreferencesStore.save(LocalProfilePreferences(scrollsOverflowingTitles: true), to: defaults)
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -794,10 +826,10 @@ extension PlenactBoardDocumentTests
             ?? view.subviews.flatMap(scrolls)
         }
 
-        let long =
+        let long = /* Long display text */
                         "Make room for today because there is more to this title than fits in the header, and every word should remain readable."
-        var overflow: [Bool] = []
-        let host             = UIHostingController(
+        var overflow: [Bool] = []                   /* Overflow lookup entries */
+        let host             = UIHostingController( /* Synthetic SwiftUI host  */
             rootView: VStack(spacing: 20)
             {
 
@@ -817,8 +849,8 @@ extension PlenactBoardDocumentTests
         window.makeKeyAndVisible()
         try await Task.sleep(for: .milliseconds(200))
 
-        let native    = scrolls(host.view)
-        let scrolling = try XCTUnwrap(native.first
+        let native    = scrolls(host.view)         /* Native workspace representation */
+        let scrolling = try XCTUnwrap(native.first /* Scrolling comparison fixture    */
             {
                 $0.contentSize.width > $0.bounds.width + 1
             })
@@ -831,7 +863,7 @@ extension PlenactBoardDocumentTests
                 !$0.isScrollEnabled && $0.contentSize.width <= $0.bounds.width + 1
             })
 
-        let end = max(0, scrolling.contentSize.width - scrolling.bounds.width)
+        let end = max(0, scrolling.contentSize.width - scrolling.bounds.width) /* Range end */
 
         scrolling.setContentOffset(CGPoint(x: end, y: 0), animated: false)
         try await Task.sleep(for: .milliseconds(200))
@@ -855,8 +887,9 @@ extension PlenactBoardDocumentTests
     func testLongListAndBoardHeadersExposeIndependentNativeReaders() async throws
     {
 
-        let suite    = "HeaderReadingTests." + UUID().uuidString
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let suite    = "HeaderReadingTests." + UUID().uuidString /* Isolated preference domain  */
+        let defaults =                                           /* Preference store under test */
+            try XCTUnwrap(UserDefaults(suiteName: suite))
 
         defer
         {
@@ -865,12 +898,13 @@ extension PlenactBoardDocumentTests
 
         PlanPreferencesStore.save(LocalProfilePreferences(scrollsOverflowingTitles: true), to: defaults)
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -902,13 +936,15 @@ extension PlenactBoardDocumentTests
                 ?? []) + view.subviews.flatMap(scrolls)
         }
 
-        let title    = "On the Table, and all the meaningful possibilities that I want to make room for today"
-        let subtitle = "Ideas taking shape, plans becoming action, and the rest of this subtitle is readable too"
-        var list     = KanbanList(id: 8, title: title, cards: [])
+        let title    = /* User-facing title */
+            "On the Table, and all the meaningful possibilities that I want to make room for today"
+        let subtitle = /* Supporting item text */
+            "Ideas taking shape, plans becoming action, and the rest of this subtitle is readable too"
+        var list     = KanbanList(id: 8, title: title, cards: []) /* Synthetic list fixture */
 
         list.subtitleOverride = subtitle
 
-        let header = BoardHeader(
+        let header = BoardHeader( /* Resolved header appearance */
             settings: .constant(BoardDisplaySettings()), presentation: .constant(.standard),
             activeMembers: [], memberColors: [:], onRenameMember:
             {
@@ -967,7 +1003,8 @@ extension PlenactBoardDocumentTests
         ]
         {
 
-            let host = UIHostingController(rootView: view.defaultAppStorage(defaults))
+            let host = /* Synthetic SwiftUI host */
+                UIHostingController(rootView: view.defaultAppStorage(defaults))
 
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             window.rootViewController = host;
@@ -977,7 +1014,7 @@ extension PlenactBoardDocumentTests
 
             // A top-edge native scroll view can extend into the container safe area;
             // its single-line content height identifies the reader, not its UIKit bounds
-            let readers = scrolls(host.view).filter
+            let readers = scrolls(host.view).filter /* Filtered readers entries */
             {
 
                 $0.contentSize.width > $0.bounds.width + 1 && $0.contentSize.height < 70
@@ -989,13 +1026,15 @@ extension PlenactBoardDocumentTests
                 XCTAssertTrue(reader.isScrollEnabled)
             }
 
-            let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
+            let image = /* Image used by this operation */
+                UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
                 _ in
                 host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
             }
 
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent(
+            let url = /* Temporary fixture file URL */
+                FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "plenact-sliding-header-\(name).png")
 
             try XCTUnwrap(image.pngData()).write(to: url);
@@ -1018,12 +1057,13 @@ extension PlenactBoardDocumentTests
     func testHostedMixedDisplayFormatsAndPicturePlaceholdersDoNotMutateRecords() async throws
     {
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -1040,14 +1080,14 @@ extension PlenactBoardDocumentTests
             for format in ItemDisplayFormat.allCases
             {
 
-                var item = KanbanCard(
+                var item = KanbanCard( /* Item under consideration */
                     id: 73, word: "A long example title for a mixed List", listTitle: "Ideas",
                     descriptionOverride: "Retained writing")
 
                 item.displayFormat = format
 
-                let original = item
-                let sheet    = ItemAppearanceSheet(
+                let original = item                 /* Baseline before changes    */
+                let sheet    = ItemAppearanceSheet( /* Active editor presentation */
                     title: item.word, appearance: nil,
                     onOpenLayout:
                     {
@@ -1066,7 +1106,8 @@ extension PlenactBoardDocumentTests
                     return false
                 }
 
-                let controller = UIHostingController(rootView: sheet.environment(\.dynamicTypeSize, textSize))
+                let controller = /* Native view controller */
+                    UIHostingController(rootView: sheet.environment(\.dynamicTypeSize, textSize))
 
                 window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
                 window.rootViewController = controller
@@ -1075,20 +1116,21 @@ extension PlenactBoardDocumentTests
                 controller.view.layoutIfNeeded()
                 try await Task.sleep(for: .milliseconds(150))
 
-                let image = UIGraphicsImageRenderer(size: window.bounds.size).image
+                let image = /* Image used by this operation */
+                    UIGraphicsImageRenderer(size: window.bounds.size).image
                 {
                     _ in
                     window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                 }
 
-                let attachment = XCTAttachment(image: image)
+                let attachment = XCTAttachment(image: image) /* Synthetic test evidence */
 
                 attachment.name = "Display-\(format.rawValue)-\(textSize)"
                 attachment.lifetime = .keepAlways
 
                 add(attachment)
 
-                let detail = UIHostingController(
+                let detail = UIHostingController( /* Owned action detail */
                     rootView: NavigationStack
                     {
 
@@ -1107,7 +1149,7 @@ extension PlenactBoardDocumentTests
                 if format == .title || format == .text
                 {
 
-                    let row = KanbanCardView(
+                    let row = KanbanCardView( /* Rendered or stored item row */
                         card: item, height: 100, displaySettings: BoardDisplaySettings(), labelLibrary: .starter,
                         onUpdateCard:
                         {
@@ -1126,20 +1168,22 @@ extension PlenactBoardDocumentTests
                         {
                             XCTFail("Writing must not complete")
                         })
-                    let host = UIHostingController(rootView: row.padding().environment(\.dynamicTypeSize, textSize))
+                    let host = /* Synthetic SwiftUI host */
+                        UIHostingController(rootView: row.padding().environment(\.dynamicTypeSize, textSize))
 
                     window.rootViewController = host
 
                     host.view.layoutIfNeeded()
                     try await Task.sleep(for: .milliseconds(150))
 
-                    let image = UIGraphicsImageRenderer(size: window.bounds.size).image
+                    let image = /* Image used by this operation */
+                        UIGraphicsImageRenderer(size: window.bounds.size).image
                     {
                         _ in
                         window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                     }
 
-                    let snapshot = XCTAttachment(image: image)
+                    let snapshot = XCTAttachment(image: image) /* Working state snapshot */
 
                     snapshot.name = "WritingRow-\(format.rawValue)-\(textSize)"
                     snapshot.lifetime = .keepAlways
@@ -1155,12 +1199,12 @@ extension PlenactBoardDocumentTests
         for cover in [nil, ExampleCoverImage.garden]
         {
 
-            let photo = cover.map
+            let photo = cover.map /* Photo selection or source */
             {
                 KanbanAttachment(mediaKind: .photo, exampleImage: $0)
             }
 
-            var picture = KanbanCard(
+            var picture = KanbanCard( /* Picture Card example */
                 id: 74, word: "Example picture", listTitle: "Ideas", attachments: photo.map
                 {
                     [$0]
@@ -1169,7 +1213,7 @@ extension PlenactBoardDocumentTests
 
             picture.displayFormat = .picture
 
-            let row = KanbanCardView(
+            let row = KanbanCardView( /* Rendered or stored item row */
                 card: picture, height: 100, displaySettings: BoardDisplaySettings(), labelLibrary: .starter,
                 onUpdateCard:
                 {
@@ -1188,20 +1232,21 @@ extension PlenactBoardDocumentTests
                     XCTFail("Layout must not complete")
                 }
             )
-            let host = UIHostingController(rootView: row)
+            let host = UIHostingController(rootView: row) /* Synthetic SwiftUI host */
 
             window.rootViewController = host
 
             host.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(300))
 
-            let image = UIGraphicsImageRenderer(size: window.bounds.size).image
+            let image = /* Image used by this operation */
+                UIGraphicsImageRenderer(size: window.bounds.size).image
             {
                 _ in
                 window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
             }
 
-            let attachment = XCTAttachment(image: image)
+            let attachment = XCTAttachment(image: image) /* Synthetic test evidence */
 
             attachment.name = cover == nil ? "Picture-placeholder" : "Picture-natural-aspect"
             attachment.lifetime = .keepAlways
@@ -1227,16 +1272,18 @@ extension PlenactBoardDocumentTests
     {
 
 
-        var list = KanbanList(id: 4, title: "Synthetic plans", cards: [])
+        var list = /* Synthetic list fixture */
+            KanbanList(id: 4, title: "Synthetic plans", cards: [])
 
         list.subtitleOverride = "A synthetic subtitle"
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)
-        let window   = UIWindow(windowScene: scene)
+        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
 
         defer
         {
@@ -1297,7 +1344,7 @@ extension PlenactBoardDocumentTests
 
         }
 
-        let controller = UIHostingController(
+        let controller = UIHostingController( /* Native view controller */
             rootView: ListInfoEditorSheet(list: list)
             {
                 _, _ in
@@ -1344,7 +1391,7 @@ extension PlenactBoardDocumentTests
 
         PlenactKeyboard.shared.install()
 
-        let field = UITextField();
+        let field = UITextField(); /* Native input field */
 
         field.keyboardType = .emailAddress
 
@@ -1352,19 +1399,20 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(field.inputAccessoryView is PlenactKeyboardToolbar)
         XCTAssertEqual(field.keyboardType, .emailAddress)
 
-        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
+        let scene = /* Owning window scene */
+            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous   = scene.windows.first(where: \.isKeyWindow)
-        let window     = UIWindow(windowScene: scene)
-        let controller = UIViewController();
+        let previous   = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
+        let window     = UIWindow(windowScene: scene)              /* Synthetic scene window */
+        let controller = UIViewController();                       /* Native view controller */
 
         window.rootViewController = controller;
 
         window.makeKeyAndVisible()
 
-        let token = UUID()
+        let token = UUID() /* Retained operation token */
 
         PlenactKeyboard.shared.setContext(
             token, actions: KeyboardCardActions(exit:
@@ -1395,7 +1443,7 @@ extension PlenactBoardDocumentTests
         for width: CGFloat in [320, 393, 820]
         {
 
-            let toolbar = PlenactKeyboardToolbar(
+            let toolbar = PlenactKeyboardToolbar( /* Available editor controls */
                 input: field, formatting: KeyboardFormatting(toggle:
                     {
                         _ in
@@ -1412,13 +1460,15 @@ extension PlenactBoardDocumentTests
             controller.view.addSubview(toolbar);
             toolbar.layoutIfNeeded()
 
-            let image = UIGraphicsImageRenderer(bounds: toolbar.bounds).image
+            let image = /* Image used by this operation */
+                UIGraphicsImageRenderer(bounds: toolbar.bounds).image
             {
                 _ in
                 toolbar.drawHierarchy(in: toolbar.bounds, afterScreenUpdates: true)
             }
 
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent(
+            let url = /* Temporary fixture file URL */
+                FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "plenact-keyboard-\(Int(width)).png")
 
             try XCTUnwrap(image.pngData()).write(to: url)
@@ -1446,7 +1496,7 @@ extension PlenactBoardDocumentTests
 
         let suite    = "Plenact.CollectionWidthTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
-        let scene    = try XCTUnwrap(
+        let scene    = try XCTUnwrap( /* Owning window scene */
             UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
@@ -1510,14 +1560,14 @@ extension PlenactBoardDocumentTests
                 {
 
 
-                    var fixture = PersonalCollection(
+                    var fixture = PersonalCollection( /* Synthetic test workspace */
                         title: "Synthetic collection", kind: kind) /* Synthetic collection fixture */
 
                     fixture.lists = [SampleData.lists[0]]
 
                     let original = fixture /* Pre-operation value for preservation checks */
 
-                    let controller = UIHostingController(
+                    let controller = UIHostingController( /* Native view controller */
                         rootView: PersonalCollectionBoardView( /* Hosted controller for layout assertions */
                             collection: Binding(get:
                                 {
@@ -1604,7 +1654,7 @@ extension PlenactBoardDocumentTests
 
                 let listWidth          = try XCTUnwrap(measured[.list])  /* Proposed List width  */
                 let boardWidth         = try XCTUnwrap(measured[.board]) /* Proposed Board width */
-                let expectedDifference =
+                let expectedDifference =                                 /* Expected difference  */
                 preset == .standard ? max(0, width - 28 - 360) : 0 /* Expected width difference */
 
                 XCTAssertEqual(listWidth - boardWidth, expectedDifference, accuracy: 1)
@@ -1627,7 +1677,7 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let card = KanbanCard(
+        let card = KanbanCard( /* Synthetic card fixture */
             id: 100, word: "Prepare a plan", listTitle: "Synthetic list") /* Card value under verification */
 
 
@@ -1727,13 +1777,13 @@ extension PlenactBoardDocumentTests
         var targetList: Int? = focusedListID                  /* List identity to focus after relayout  */
         var targetCard: Int?                                  /* Card identity to reveal after relayout */
         var visibleListID: Int?                               /* Visible List identifier                */
-        let revealedTarget = expectation(
+        let revealedTarget = expectation( /* Revealed target */
             description: "Reveal the requested middle list")  /* Card revealed by edge navigation       */
-        var didRevealTarget  = false                          /* Whether navigation revealed its target */
-        let originalLists    = lists                          /* List snapshots before movement         */
-        let originalArchives = archives                       /* Archive snapshots before movement      */
-        let originalSaved    = saved                          /* Saved-card identifiers before movement */
-        let view             = ContentView(                   /* Hosted view under test                 */
+        var didRevealTarget  = false        /* Whether navigation revealed its target */
+        let originalLists    = lists        /* List snapshots before movement         */
+        let originalArchives = archives     /* Archive snapshots before movement      */
+        let originalSaved    = saved        /* Saved-card identifiers before movement */
+        let view             = ContentView( /* Hosted view under test                 */
             lists: Binding(get:
                 {
                     lists
@@ -1809,7 +1859,7 @@ extension PlenactBoardDocumentTests
         .defaultAppStorage(defaults)
 
         let controller = UIHostingController(rootView: view) /* Hosted controller for layout assertions */
-        let scene      = try XCTUnwrap(
+        let scene      = try XCTUnwrap( /* Owning window scene */
             UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
@@ -1928,14 +1978,14 @@ extension PlenactBoardDocumentTests
 
                 }
             )
-            let controller = UIHostingController(
+            let controller = UIHostingController( /* Native view controller */
                 rootView: header.titleSwipeArea) /* Hosted controller for layout assertions */
 
             for width in [CGFloat(180), 280, 600]
             {
 
 
-                let size = controller.sizeThatFits(
+                let size = controller.sizeThatFits( /* Content or layout size */
                     in: CGSize(width: width, height: 200)) /* Proposed layout dimensions */
 
                 XCTAssertEqual(size.width, width, accuracy: 0.5, "Blank header space must belong to the swipe area")
@@ -1984,7 +2034,7 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let lists = [
+        let lists = [ /* Ordered List records */
             KanbanList(
                 id: 10, title: "A",
                 cards: [ /* Board lists under verification */
@@ -1993,11 +2043,11 @@ extension PlenactBoardDocumentTests
                     KanbanCard(id: 3, word: "C", listTitle: "A")
                 ]), KanbanList(id: 20, title: "Empty", cards: [])
         ]
-        let listFrames = [
+        let listFrames = [ /* List frames */
             10: CGRect(x: 100, y: 50, width: 200, height: 600), /* Rendered List frame map */
             20: CGRect(x: 320, y: 50, width: 180, height: 160)
         ]
-        let frames = [
+        let frames = [ /* Frames lookup entries */
             1: CGRect(x: 100, y: 130, width: 200, height: 100), /* Measured layout frames */
             2: CGRect(x: 100, y: 238, width: 200, height: 100),
             3: CGRect(x: 100, y: 346, width: 200, height: 100)
@@ -2066,14 +2116,14 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let list = KanbanList(
+        let list = KanbanList( /* Synthetic list fixture */
             id: 1, title: "Synthetic",
             cards: [ /* List state under verification */
                 KanbanCard(id: 10, word: "A card with a longer title", listTitle: "Synthetic"),
                 KanbanCard(id: 11, word: "", listTitle: "Synthetic", isDivider: true),
                 KanbanCard(id: 12, word: "Another card", listTitle: "Synthetic")
             ])
-        let scene = try XCTUnwrap(
+        let scene = try XCTUnwrap( /* Owning window scene */
             UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
@@ -2243,9 +2293,9 @@ extension PlenactBoardDocumentTests
             controller.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(100))
 
-            let collection = try XCTUnwrap(
+            let collection = try XCTUnwrap( /* Synthetic collection fixture */
                 collectionView(in: controller.view)) /* Collection state under verification */
-            let itemCount = (0 ..< collection.numberOfSections).reduce(0)
+            let itemCount = (0 ..< collection.numberOfSections).reduce(0) /* Item count */
             {  /* Expected item count                 */
 
                 $0 + collection.numberOfItems(inSection: $1)
@@ -2254,7 +2304,7 @@ extension PlenactBoardDocumentTests
 
             XCTAssertEqual(itemCount, 5, "Three content rows, the collapsed guidance placeholder, and Add card")
 
-            let dragSources = collection.visibleCells.flatMap
+            let dragSources = collection.visibleCells.flatMap /* Drag sources */
             {
             cell in /* Registered drag-source views */
                 cell.contentView.interactions.compactMap
@@ -2271,7 +2321,7 @@ extension PlenactBoardDocumentTests
 
             XCTAssertFalse(dragSources.isEmpty, "Visible card bodies must have a native drag source")
 
-            let starSource = try XCTUnwrap(
+            let starSource = try XCTUnwrap( /* Star source */
                 dragSources.first
                 {
                     source in
@@ -2281,14 +2331,15 @@ extension PlenactBoardDocumentTests
                     }
                     != nil
                 })
-            let starContainer = try XCTUnwrap(starSource.view)
-            let starMarker    = try XCTUnwrap(importanceMarker(in: starContainer))
+            let starContainer = try XCTUnwrap(starSource.view) /* Star container */
+            let starMarker    = try XCTUnwrap(importanceMarker(in: starContainer)) /* Star marker */
 
             XCTAssertGreaterThan(starMarker.bounds.width, 0)
 
-            let starPoint = starMarker.convert(
+            let starPoint = starMarker.convert( /* Star point */
                 CGPoint(x: starMarker.bounds.midX, y: starMarker.bounds.midY), to: starContainer)
-            let dragOwner = try XCTUnwrap(starSource.delegate as? BoardCardDragSource.Coordinator)
+            let dragOwner = /* Drag owner */
+                try XCTUnwrap(starSource.delegate as? BoardCardDragSource.Coordinator)
 
             XCTAssertFalse(
                 dragOwner.canBegin(at: starPoint, in: starContainer), "Holding the stars must not lift the Card")
@@ -2297,7 +2348,8 @@ extension PlenactBoardDocumentTests
                                         "The Card body must remain draggable")
             XCTAssertFalse(dragOwner.isDragging)
 
-            let dividerCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 2, section: 0)))
+            let dividerCell = /* Divider cell */
+                try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 2, section: 0)))
 
             XCTAssertTrue(
                 dividerCell.contentView.interactions.contains

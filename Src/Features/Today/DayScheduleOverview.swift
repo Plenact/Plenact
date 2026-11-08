@@ -43,7 +43,7 @@ enum WeekDayHighlight
         return calendar.isDate(assignedDate, inSameDayAs: now)
     }
 
-    static let gold = Color(red: 0.72, green: 0.49, blue: 0.12)
+    static let gold = Color(red: 0.72, green: 0.49, blue: 0.12) /* Gold operation value */
 
 }
 
@@ -59,37 +59,37 @@ struct DayScheduleOverview: View
 {
 
 
-    let cards:    [KanbanCard]
-    let labels:   LabelLibrary
-    let day:      Date
-    var calendar: Calendar                               = .current
-    @State private var showsDetails                      = false
-    @State private var showsPlan                         = false
-    @AppStorage(DailyPlanStore.key) private var planData = Data()
+    let cards:    [KanbanCard] /* Card records under consideration */
+    let labels:   LabelLibrary /* Available label definitions */
+    let day:      Date /* Day under consideration */
+    var calendar: Calendar                               = .current /* Date calculation calendar */
+    @State private var showsDetails                      = false /* Details visibility */
+    @State private var showsPlan                         = false /* Plan visibility */
+    @AppStorage(DailyPlanStore.key) private var planData = Data() /* Plan data */
 
-    private var summary: DayTimeDistribution
+    private var summary: DayTimeDistribution /* Aggregate operation results */
     {
 
         DayTimeDistribution(cards: cards, labels: labels, day: day, calendar: calendar)
     }
 
-    private var intention: String
+    private var intention: String /* Saved daily intention */
     {
 
         ((try? DailyPlanStore.load().plans[PlanningDate.key(day, calendar: calendar)]?.intention) ?? "")
         .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var planTitle: String
+    private var planTitle: String /* Plan title */
     {
 
         calendar.isDateInToday(day) ? "Open today’s plan" : "Open day’s plan"
     }
 
-    var body: some View
+    var body: some View /* Day Schedule Overview layout */
     {
 
-        let data = summary
+        let data = summary /* Encoded or loaded bytes */
 
         VStack(alignment: .leading, spacing: 12)
         {
@@ -265,7 +265,7 @@ struct DayScheduleOverview: View
                 {
                     segment in
 
-                    let start = data.segments.prefix
+                    let start = data.segments.prefix /* Range start */
                     {
                         $0.id != segment.id
                     } .reduce(0)
@@ -273,8 +273,8 @@ struct DayScheduleOverview: View
                         $0 + $1.planned
                     }
                     / data.total
-                    let end = start + segment.planned / data.total
-                    let gap = min(0.004, (end - start) / 4)
+                    let end = start + segment.planned / data.total /* Range end */
+                    let gap = min(0.004, (end - start) / 4) /* Spacing between visible items */
 
                     Circle().trim(from: start + gap, to: end - gap)
                     .stroke(segment.color.color, style: StrokeStyle(lineWidth: 20, lineCap: .butt))
@@ -375,21 +375,21 @@ struct DayTimeDistribution
     {
 
 
-        let id:        String
-        let title:     String
-        let color:     KanbanLabelColor
-        var planned:   TimeInterval
-        var completed: TimeInterval
+        let id:        String           /* Record or view identity    */
+        let title:     String           /* User-facing title          */
+        let color:     KanbanLabelColor /* Resolved color value       */
+        var planned:   TimeInterval     /* Items with saved schedules */
+        var completed: TimeInterval     /* Completion state           */
 
     }
 
-    let segments:       [Segment]
-    let taskCount:      Int
-    let completedCount: Int
-    let untimedCount:   Int
-    let hasOverlaps:    Bool
+    let segments:       [Segment] /* Visible schedule intervals */
+    let taskCount:      Int       /* Task count                 */
+    let completedCount: Int       /* Completed count            */
+    let untimedCount:   Int       /* Untimed count              */
+    let hasOverlaps:    Bool      /* Overlaps availability      */
 
-    var total:          TimeInterval
+    var total:          TimeInterval /* Total matching entries */
     {
         segments.reduce(0)
         {
@@ -398,7 +398,7 @@ struct DayTimeDistribution
 
     }
 
-    var completedTime: TimeInterval
+    var completedTime: TimeInterval /* Completed time */
     {
         segments.reduce(0)
         {
@@ -421,8 +421,8 @@ struct DayTimeDistribution
     static func durationLabel(_ seconds: TimeInterval) -> String
     {
 
-        let minutes = Int((seconds / 60).rounded())
-        let hours = minutes / 60, remainder = minutes % 60
+        let minutes = Int((seconds / 60).rounded())        /* Minute count or offset            */
+        let hours = minutes / 60, remainder = minutes % 60 /* Whole hours and remaining minutes */
 
         return hours == 0 ? "\(remainder)m" : (remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m")
     }
@@ -444,7 +444,7 @@ struct DayTimeDistribution
     init(cards: [KanbanCard], labels: LabelLibrary, day: Date, calendar: Calendar)
     {
 
-        let tasks = cards.filter
+        let tasks = cards.filter /* Linked priority tasks */
         {
             $0.displayFormat == .card
         }
@@ -452,11 +452,12 @@ struct DayTimeDistribution
         taskCount = tasks.count
         completedCount = tasks.filter(\.isTitleChecked).count
 
-        let dayStart                   = calendar.startOfDay(for: day)
-        let dayEnd                     = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-        var buckets: [String: Segment] = [:]
-        var intervals: [(Date, Date)]  = []
-        var untimed                    = 0
+        let dayStart                   = calendar.startOfDay(for: day) /* Day start */
+        let dayEnd                     =                               /* Day end   */
+            calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        var buckets: [String: Segment] = [:] /* Items grouped by schedule     */
+        var intervals: [(Date, Date)]  = []  /* Schedule interval bounds      */
+        var untimed                    = 0   /* Items without scheduled times */
 
 
         ///
@@ -481,7 +482,8 @@ struct DayTimeDistribution
             if kind == .time
             {
 
-                let parts = calendar.dateComponents([.hour, .minute, .second], from: date)
+                let parts = /* Parsed value components */
+                    calendar.dateComponents([.hour, .minute, .second], from: date)
 
                 return calendar.date(
                     bySettingHour: parts.hour ?? 0, minute: parts.minute ?? 0,
@@ -512,7 +514,8 @@ struct DayTimeDistribution
 
             }
 
-            let clippedStart = max(start, dayStart), clippedEnd = min(end, dayEnd)
+            let clippedStart = /* Interval clipped to the day */
+                max(start, dayStart), clippedEnd = min(end, dayEnd)
 
             guard clippedEnd > clippedStart else
             {
@@ -524,8 +527,9 @@ struct DayTimeDistribution
 
             intervals.append((clippedStart, clippedEnd))
 
-            let duration = clippedEnd.timeIntervalSince(clippedStart)
-            let tags     = Set(card.labelIDs).sorted().compactMap
+            let duration = /* Elapsed or scheduled duration */
+                clippedEnd.timeIntervalSince(clippedStart)
+            let tags     = Set(card.labelIDs).sorted().compactMap /* Search or category tags */
             {
                 id in
                 labels.labels.first
@@ -535,8 +539,9 @@ struct DayTimeDistribution
 
             }
 
-            let count                                       = max(tags.count, 1)
-            let parts: [(String, String, KanbanLabelColor)] =
+            let count                                       = /* Number of entries */
+                max(tags.count, 1)
+            let parts: [(String, String, KanbanLabelColor)] = /* Parsed value components */
             tags.isEmpty
             ? [("day.uncategorized", "Uncategorized", .gray)] : tags.map
             {
@@ -546,7 +551,8 @@ struct DayTimeDistribution
             for (id, title, color) in parts
             {
 
-                var segment = buckets[id] ?? Segment(id: id, title: title, color: color, planned: 0, completed: 0)
+                var segment = /* Current schedule interval */
+                    buckets[id] ?? Segment(id: id, title: title, color: color, planned: 0, completed: 0)
 
                 segment.planned += duration / Double(count)
 
@@ -569,8 +575,8 @@ struct DayTimeDistribution
             $0.planned == $1.planned ? $0.id < $1.id : $0.planned > $1.planned
         }
 
-        var latestEnd = Date.distantPast
-        var overlap   = false
+        var latestEnd = Date.distantPast /* Latest end                  */
+        var overlap   = false            /* Intersecting schedule range */
 
         for (start, end) in intervals.sorted(by:
             {

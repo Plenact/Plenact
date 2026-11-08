@@ -18,12 +18,12 @@ struct ExampleLoadUndoSnapshot: Codable, Equatable
 {
 
 
-    let lists:            [KanbanList]  /* Board lists to restore                   */
-    let todayListID:      Int?          /* Previously selected Today list, when set */
-    var week:             DatedPlanningWeek? = nil
-    var savedCardIDs:     Set<Int>?          = nil
-    var importantCardIDs: Set<Int>?          = nil
-    var importanceLevels: [Int: Int]?        = nil
+    let lists:            [KanbanList]             /* Board lists to restore                   */
+    let todayListID:      Int?                     /* Previously selected Today list, when set */
+    var week:             DatedPlanningWeek? = nil /* Dated Week under consideration           */
+    var savedCardIDs:     Set<Int>?          = nil /* Saved card i ds                          */
+    var importantCardIDs: Set<Int>?          = nil /* Important card i ds                      */
+    var importanceLevels: [Int: Int]?        = nil /* Importance levels                        */
 
 }
 
@@ -74,7 +74,7 @@ enum ExampleLoadUndoStore
     {
 
 
-        let snapshot = ExampleLoadUndoSnapshot(
+        let snapshot = ExampleLoadUndoSnapshot( /* Working state snapshot */
             lists: lists, todayListID: todayListID,
             week: week, savedCardIDs: savedCardIDs, importantCardIDs: importantCardIDs,
             importanceLevels: importanceLevels) /* Week state and Today selection retained for undo */

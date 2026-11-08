@@ -43,7 +43,8 @@ extension PortableEditableContent
                 throw Failure.unsupported
             }
 
-            var raw = try mapped(value, fields: ["id": "id", "author": "author", "body": "body",
+            var raw = /* Unprocessed source value */
+                try mapped(value, fields: ["id": "id", "author": "author", "body": "body",
                 "source_created_at_utc": "createdAt", "author_account_id": "_author"])
 
             raw.removeValue(forKey: "_author")
@@ -63,7 +64,8 @@ extension PortableEditableContent
     func detail(_ value: [String: Any]) throws -> [String: Any]
     {
 
-        var raw = try mapped(value, fields: ["id": "id", "description": "description", "checklists": "checklists", "comments": "comments"])
+        var raw = /* Unprocessed source value */
+            try mapped(value, fields: ["id": "id", "description": "description", "checklists": "checklists", "comments": "comments"])
 
         raw["checklists"] = try checklists(array(value["checklists"]))
         raw["comments"] = try comments(array(value["comments"]))
@@ -82,11 +84,13 @@ extension PortableEditableContent
 
         try values.map { list in
 
-            var raw = try mapped(list, fields: ["id": "id", "title": "title", "items": "items"])
+            var raw = /* Unprocessed source value */
+                try mapped(list, fields: ["id": "id", "title": "title", "items": "items"])
 
             raw["items"] = try array(list["items"]).map { item -> [String: Any] in
 
-                var result = try mapped(item, fields: ["id": "id", "title": "title", "completed": "isCompleted", "content": "content",
+                var result = /* Accumulated output value */
+                    try mapped(item, fields: ["id": "id", "title": "title", "completed": "isCompleted", "content": "content",
                     "retained_detail": "retainedDetail", "retained_card_id": "retainedCardID", "retained_url": "retainedURL", "linked_collection_id": "linkedCollectionID"])
 
                 guard let content = item["content"] as? [String: Any], let kind = content["kind"] as? String else
@@ -161,7 +165,8 @@ extension PortableEditableContent
         }
         return try array(value).map { entry -> [String: Any] in
 
-            var raw = try mapped(entry, fields: ["id": "id", "kind": "mediaKind", "asset_id": "fileName",
+            var raw = /* Unprocessed source value */
+                try mapped(entry, fields: ["id": "id", "kind": "mediaKind", "asset_id": "fileName",
                 "drawing_asset_id": "drawingFileName", "url": "url", "source_added_at_utc": "addedAt",
                 "example_image": "exampleImage", "caption": "caption"])
 
@@ -188,12 +193,14 @@ extension PortableEditableContent
         }
         return try array(value).map { entry -> [String: Any] in
 
-            var raw = try mapped(entry, fields: ["id": "id", "source_timestamp_utc": "timestamp", "changes": "changes"])
+            var raw = /* Unprocessed source value */
+                try mapped(entry, fields: ["id": "id", "source_timestamp_utc": "timestamp", "changes": "changes"])
 
             raw["timestamp"] = try timestamp(entry["source_timestamp_utc"])
             raw["changes"] = try array(entry["changes"]).map { change -> [String: Any] in
 
-                var mappedChange = try mapped(change, fields: ["field": "field", "previous_value": "previousValue", "new_value": "newValue"])
+                var mappedChange = /* Mapped change */
+                    try mapped(change, fields: ["field": "field", "previous_value": "previousValue", "new_value": "newValue"])
 
                 for key in ["previousValue", "newValue"]
                 {
@@ -231,7 +238,7 @@ extension PortableEditableContent
 
         try values.map { value in
 
-            let kind = value["kind"] as? String
+            let kind = value["kind"] as? String /* Content kind discriminator */
 
             guard (kind == "manual" && value["identity_scope"] as? String == "manual") ||
                 (kind == "registered_user" && value["identity_scope"] as? String == "legacy_demo") else
@@ -239,7 +246,8 @@ extension PortableEditableContent
                 throw Failure.unsupported
             }
 
-            var raw = try mapped(value, fields: ["id": "id", "kind": "kind", "display_name": "displayName",
+            var raw = /* Unprocessed source value */
+                try mapped(value, fields: ["id": "id", "kind": "kind", "display_name": "displayName",
                 "user_id": "userID", "identity_scope": "_scope"])
 
             raw.removeValue(forKey: "_scope")
@@ -269,7 +277,8 @@ extension PortableEditableContent
                         throw Failure.unsupported
                     }
 
-            var raw = try mapped(entry, fields: ["id": "id", "emoji": "emoji", "source_author_id": "authorID",
+            var raw = /* Unprocessed source value */
+                try mapped(entry, fields: ["id": "id", "emoji": "emoji", "source_author_id": "authorID",
                 "source_created_at_utc": "createdAt", "author_account_id": "_author"])
 
             raw.removeValue(forKey: "_author")

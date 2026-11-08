@@ -27,13 +27,13 @@ struct CardLabelsSheet: View
 
     let onSave: (LabelLibrary, [String]) -> Void /* Callback returning the edited catalog and assignments */
 
-    @Environment(\.dismiss) private var dismiss                   /* Dismiss action for sheet */
-    @State private var library:          LabelLibrary             /* Draft label library      */
-    @State private var selectedLabelIDs: [String]                 /* Currently selected IDs   */
-    @State private var labelNameDraft                  = ""       /* Draft name for new label */
-    @State private var categorySelection               = ""       /* Currently selected cat   */
-    @State private var newCategoryDraft                = ""       /* Draft name for new cat   */
-    @State private var selectedColor: KanbanLabelColor = .yellow  /* Currently selected color */
+    @Environment(\.dismiss) private var dismiss                  /* Dismiss action for sheet */
+    @State private var library:          LabelLibrary            /* Draft label library      */
+    @State private var selectedLabelIDs: [String]                /* Currently selected IDs   */
+    @State private var labelNameDraft                  = ""      /* Draft name for new label */
+    @State private var categorySelection               = ""      /* Currently selected cat   */
+    @State private var newCategoryDraft                = ""      /* Draft name for new cat   */
+    @State private var selectedColor: KanbanLabelColor = .yellow /* Currently selected color */
 
     private let newCategoryID = "__new_category__" /* Picker sentinel for creating a category */
 
@@ -44,7 +44,7 @@ struct CardLabelsSheet: View
     ///
     /// @return     (String) normalized label-name draft
     ///
-    private var trimmedLabelName: String
+    private var trimmedLabelName: String /* Trimmed label name */
     {  /* Normalized new-label name */
 
         labelNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -58,7 +58,7 @@ struct CardLabelsSheet: View
     ///
     /// @return     (String) normalized category-name draft
     ///
-    private var trimmedCategoryName: String
+    private var trimmedCategoryName: String /* Trimmed category name */
     {  /* Normalized new-category name */
 
         newCategoryDraft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -73,7 +73,7 @@ struct CardLabelsSheet: View
     ///
     /// @return     (Bool) true when the current form can create a label
     ///
-    private var canCreateLabel: Bool
+    private var canCreateLabel: Bool /* Create Label availability */
     {  /* Form validity for label creation */
 
         guard !trimmedLabelName.isEmpty else
@@ -251,7 +251,7 @@ struct CardLabelsSheet: View
     /// @pre        The catalog and selected label IDs have been initialized
     /// @post       Save returns the edited catalog and assignments; Cancel discards them
     ///
-    var body: some View
+    var body: some View /* Card Labels layout */
     {  /* Categorized label browser and editor */
 
 
@@ -271,7 +271,7 @@ struct CardLabelsSheet: View
                     {
 
 
-                        let categoryLabels = library.labels.filter
+                        let categoryLabels = library.labels.filter /* Category labels */
                         {
 
                             $0.categoryID == category.id

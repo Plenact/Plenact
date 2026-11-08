@@ -26,10 +26,10 @@ struct PlenactBoardDocument: Codable, Equatable
 
     static let currentSchemaVersion = 1 /* Current supported Board document shape */
 
-    var schemaVersion: Int           /* Board JSON schema version */
-    var boardKey:      String        /* Stable shared Board key   */
-    var lists:         [KanbanList]  /* Ordered lists and cards   */
-    var labelLibrary:  LabelLibrary  /* Reusable label catalog    */
+    var schemaVersion: Int          /* Board JSON schema version */
+    var boardKey:      String       /* Stable shared Board key   */
+    var lists:         [KanbanList] /* Ordered lists and cards   */
+    var labelLibrary:  LabelLibrary /* Reusable label catalog    */
 
 
     ///
@@ -85,7 +85,7 @@ struct PlenactBoardDocument: Codable, Equatable
     /// @pre        lists, cards, and assignments contain the document's current snapshot data
     /// @post       The document remains unchanged
     ///
-    var validationMessage: String?
+    var validationMessage: String? /* Validation message */
     {  /* Snapshot validation result */
 
 
@@ -98,8 +98,8 @@ struct PlenactBoardDocument: Codable, Equatable
         }
 
 
-        var listIDs: Set<Int> = []  /* Unique list identifiers */
-        var cardIDs: Set<Int> = []  /* Unique Board card IDs   */
+        var listIDs: Set<Int> = [] /* Unique list identifiers */
+        var cardIDs: Set<Int> = [] /* Unique Board card IDs   */
 
         for list in lists
         {
@@ -152,7 +152,7 @@ struct PlenactBoardDocument: Codable, Equatable
                 {
 
 
-                    let displayName = assignee.displayName.trimmingCharacters(
+                    let displayName = assignee.displayName.trimmingCharacters( /* Display name */
                         in: .whitespacesAndNewlines) /* Normalized assignee label */
 
                     guard !displayName.isEmpty else
@@ -216,11 +216,11 @@ struct PlenactBoardSnapshotResponse: Decodable
 {
 
 
-    let revision:       Int64                 /* Current immutable revision */
-    let document:       PlenactBoardDocument  /* Complete Board content     */
-    let storedAtUTC:    String                /* Server storage timestamp   */
-    let storedByUserID: String                /* Verified storage actor     */
-    let storageOrigin:  String                /* Controlled write origin    */
+    let revision:       Int64                /* Current immutable revision */
+    let document:       PlenactBoardDocument /* Complete Board content     */
+    let storedAtUTC:    String               /* Server storage timestamp   */
+    let storedByUserID: String               /* Verified storage actor     */
+    let storageOrigin:  String               /* Controlled write origin    */
 
 
     ///

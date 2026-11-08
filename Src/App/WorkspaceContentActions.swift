@@ -200,8 +200,8 @@ extension AppRootView
     {
 
 
-        let nextListID     = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID    */
-        let existingTitles = Set(lists.map
+        let nextListID     = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
+        let existingTitles = Set(lists.map                     /* Existing titles         */
             {
                 $0.title.lowercased()
             })                  /* Existing normalized titles */
@@ -275,13 +275,13 @@ extension AppRootView
         }
 
 
-        let nextCardID = (lists.flatMap
+        let nextCardID = (lists.flatMap /* Next card ID */
             {
                 $0.allCards.map(\.id)
             } .max() ?? -1) + 1             /* Board-wide next card ID       */
         var updatedList = lists[listIndex]  /* Mutable destination-list copy */
 
-        var created = updatedList.makeItems(
+        var created = updatedList.makeItems( /* Newly created value */
             startingAt: nextCardID, titles: title, description: description.isEmpty ? nil : description,
             subtitle: subtitle, presentation: presentation, actions: actions
         )
@@ -314,7 +314,7 @@ extension AppRootView
             DaySections.reveal(first.id, in: &updatedList.cards)
         }
 
-        var updatedLists = lists
+        var updatedLists = lists /* Updated lists */
 
         updatedLists[listIndex] = updatedList
 

@@ -23,40 +23,40 @@ struct BottomToolbarLayout
 {
 
 
-    var height:             CGFloat
-    var safeAreaAllowance:  CGFloat
-    var rowSpacing:         CGFloat
-    var horizontalPadding:  CGFloat
-    var topPadding:         CGFloat
-    var bottomPadding:      CGFloat
-    var tabsOffset:         CGFloat
-    var newOffset:          CGFloat
-    var tabMinimumHeight:   CGFloat
-    var tabIconSize:        CGFloat
-    var newButtonSize:      CGFloat
-    var newIconSize:        CGFloat
-    var tabLabelSpacing:    CGFloat
-    var newLabelSpacing:    CGFloat
-    var backgroundTopInset: CGFloat
-    var horizontalLabels:   Bool
-    var labelStyle:         Font.TextStyle
+    var height:             CGFloat        /* Measured layout height */
+    var safeAreaAllowance:  CGFloat        /* Safe area allowance    */
+    var rowSpacing:         CGFloat        /* Row spacing            */
+    var horizontalPadding:  CGFloat        /* Horizontal padding     */
+    var topPadding:         CGFloat        /* Top padding            */
+    var bottomPadding:      CGFloat        /* Bottom padding         */
+    var tabsOffset:         CGFloat        /* Tabs offset            */
+    var newOffset:          CGFloat        /* New offset             */
+    var tabMinimumHeight:   CGFloat        /* Tab minimum height     */
+    var tabIconSize:        CGFloat        /* Tab icon size          */
+    var newButtonSize:      CGFloat        /* New button size        */
+    var newIconSize:        CGFloat        /* New icon size          */
+    var tabLabelSpacing:    CGFloat        /* Tab label spacing      */
+    var newLabelSpacing:    CGFloat        /* New label spacing      */
+    var backgroundTopInset: CGFloat        /* Background top inset   */
+    var horizontalLabels:   Bool           /* Horizontal labels      */
+    var labelStyle:         Font.TextStyle /* Label style            */
 
     // iPhone layouts: edits here do not affect iPad
-    static let phoneRegular = Self(
+    static let phoneRegular = Self( /* Phone regular */
         height: 74, safeAreaAllowance: 34, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4,
         tabsOffset: 25, newOffset: 14, tabMinimumHeight: 54, tabIconSize: 23, newButtonSize: 68, newIconSize: 24,
         tabLabelSpacing: 4, newLabelSpacing: 6, backgroundTopInset: 28, horizontalLabels: false, labelStyle: .caption)
-    static let phoneCompact = Self(
+    static let phoneCompact = Self( /* Phone compact */
         height: 52, safeAreaAllowance: 0, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4,
         tabsOffset: 0, newOffset: 0, tabMinimumHeight: 44, tabIconSize: 23, newButtonSize: 44, newIconSize: 24,
         tabLabelSpacing: 6, newLabelSpacing: 6, backgroundTopInset: 0, horizontalLabels: true, labelStyle: .caption)
 
     // iPad layouts: independently configurable, including compact-height windows
-    static let padRegular = Self(
+    static let padRegular = Self( /* Pad regular */
         height: 84, safeAreaAllowance: 34, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4,
         tabsOffset: 25, newOffset: 14, tabMinimumHeight: 59, tabIconSize: 28, newButtonSize: 78, newIconSize: 29,
         tabLabelSpacing: 4, newLabelSpacing: 6, backgroundTopInset: 20, horizontalLabels: false, labelStyle: .caption)
-    static let padCompact = Self(
+    static let padCompact = Self( /* Pad compact */
         height: 86, safeAreaAllowance: 0, rowSpacing: 4, horizontalPadding: 12, topPadding: 4, bottomPadding: 4,
         tabsOffset: 0, newOffset: 0, tabMinimumHeight: 78, tabIconSize: 28, newButtonSize: 78, newIconSize: 29,
         tabLabelSpacing: 6, newLabelSpacing: 6, backgroundTopInset: 0, horizontalLabels: true, labelStyle: .caption)
@@ -111,8 +111,8 @@ struct BottomToolbarLayout
 struct BottomToolbarBackground: View
 {
 
-    let topInset:    CGFloat  /* Transparent overlap above the paper surface */
-    let bottomInset: CGFloat  /* Explicit coverage below the control frame   */
+    let topInset:    CGFloat /* Transparent overlap above the paper surface */
+    let bottomInset: CGFloat /* Explicit coverage below the control frame   */
 
 
     ///
@@ -124,7 +124,7 @@ struct BottomToolbarBackground: View
     ///
     /// @return     (some View) decorative navigation background
     ///
-    var body: some View
+    var body: some View /* Bottom Toolbar Background layout */
     {
 
         GeometryReader

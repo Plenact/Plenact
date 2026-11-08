@@ -23,11 +23,11 @@ struct QuickCaptureTemplatesView: View
 {
 
 
-    let onSelect: (QuickCaptureTemplate) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var filter: ItemPresentation?
+    let onSelect: (QuickCaptureTemplate) -> Void /* Handle the selected value      */
+    @Environment(\.dismiss) private var dismiss  /* Close the current presentation */
+    @State private var filter: ItemPresentation? /* Active inclusion filter        */
 
-    var body: some View
+    var body: some View /* Quick Capture Templates layout */
     {
 
         NavigationStack
@@ -174,9 +174,9 @@ struct ContentCreationKindPicker: View
 {
 
 
-    @Binding var presentation: ItemPresentation
+    @Binding var presentation: ItemPresentation /* Current presentation style */
 
-    var body:                  some View
+    var body:                  some View /* Content Creation Kind Picker layout */
     {
 
         Picker("Create as", selection: $presentation)
@@ -202,12 +202,12 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
 
 
     case note, checklist, photo, voice, drawing
-    var id: Self
+    var id: Self /* Record or view identity */
     {
         self
     }
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         switch self
@@ -231,7 +231,7 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
 
     }
 
-    var symbol: String
+    var symbol: String /* Selected symbol name */
     {
 
         switch self
@@ -255,7 +255,7 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
 
     }
 
-    var presentation: ItemPresentation
+    var presentation: ItemPresentation /* Current presentation style */
     {
         self == .note ? .note : .card
     }
@@ -274,9 +274,9 @@ struct TodayCaptureActions: View
 {
 
 
-    let onSelect: (TodayCaptureAction) -> Void
+    let onSelect: (TodayCaptureAction) -> Void /* Handle the selected value */
 
-    var body:     some View
+    var body:     some View /* Today Capture Actions layout */
     {
 
         HStack(spacing: 8)
@@ -319,9 +319,9 @@ struct QuickCaptureSchedule: Equatable
 {
 
 
-    var start: Date?
-    var stop:  Date?
-    var includesTime = false
+    var start: Date?         /* Range start    */
+    var stop:  Date?         /* Range endpoint */
+    var includesTime = false /* Includes time  */
 
 
     ///
@@ -359,7 +359,8 @@ struct QuickCaptureSchedule: Equatable
     func apply(to card: inout KanbanCard, calendar: Calendar = .current)
     {
 
-        let kind: CardDateKind = includesTime ? .dateAndTime : .date
+        let kind: CardDateKind = /* Content kind discriminator */
+            includesTime ? .dateAndTime : .date
 
         card.startDate = start.map
         {
@@ -390,14 +391,14 @@ struct QuickCaptureSubmission
 {
 
 
-    let listID:       Int
-    let title:        String
-    let body:         String
-    let subtitle:     String
-    let presentation: ItemPresentation
-    let actions:      [String]?
-    let attachments:  [KanbanAttachment]
-    let schedule:     QuickCaptureSchedule?
+    let listID:       Int                   /* Owner-local List identifier */
+    let title:        String                /* User-facing title           */
+    let body:         String                /* Note or description text    */
+    let subtitle:     String                /* Supporting item text        */
+    let presentation: ItemPresentation      /* Current presentation style  */
+    let actions:      [String]?             /* Available item operations   */
+    let attachments:  [KanbanAttachment]    /* Owned attachment records    */
+    let schedule:     QuickCaptureSchedule? /* Item date and time settings */
 
 }
 
@@ -413,17 +414,17 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
 
 
     case audio = "Audio", text = "Text", both = "Both"
-    var id: Self
+    var id: Self /* Record or view identity */
     {
         self
     }
 
-    var savesAudio: Bool
+    var savesAudio: Bool /* Saves audio */
     {
         self != .text
     }
 
-    var savesText: Bool
+    var savesText: Bool /* Saves text */
     {
         self != .audio
     }
@@ -443,14 +444,16 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
     func body(existing: String, transcript: String) -> String
     {
 
-        let text = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = /* Text being processed */
+            transcript.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard savesText, !text.isEmpty else
         {
             return existing
         }
 
-        let result = NSMutableAttributedString(attributedString: PlanRichText.attributed(existing))
+        let result = /* Result being assembled */
+            NSMutableAttributedString(attributedString: PlanRichText.attributed(existing))
 
         result.append(NSAttributedString(string: (result.length == 0 ? "" : "\n\n") + text))
         return PlanRichText.encode(result)
@@ -473,13 +476,13 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
     case usefulStep, smallPlan, errands, idea, reference, reflection
     case blankCard, blankNote
 
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
 
 
-    var presentation: ItemPresentation
+    var presentation: ItemPresentation /* Current presentation style */
     {
 
         switch self
@@ -494,7 +497,7 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
     }
 
 
-    var title: String
+    var title: String /* User-facing title */
     {
 
         switch self
@@ -521,7 +524,7 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
     }
 
 
-    var summary: String
+    var summary: String /* Aggregate operation results */
     {
 
         switch self
@@ -546,7 +549,7 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
     }
 
 
-    var body: String
+    var body: String /* Note or description text */
     {
 
         switch self
@@ -571,7 +574,7 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
     }
 
 
-    var actions: [String]
+    var actions: [String] /* Available item operations */
     {
 
         switch self

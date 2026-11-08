@@ -53,10 +53,10 @@ final class CreationAttachmentDraft: ObservableObject
             case drawing(DrawingCaptureDraft)
         }
 
-        let id = UUID()
-        let content: Content
+        let id = UUID()      /* Record UUID             */
+        let content: Content /* Content being processed */
 
-        var title:   String
+        var title:   String /* User-facing title */
         {
 
             switch content
@@ -72,7 +72,7 @@ final class CreationAttachmentDraft: ObservableObject
 
         }
 
-        var symbol: String
+        var symbol: String /* Selected symbol name */
         {
 
             switch content
@@ -103,7 +103,7 @@ final class CreationAttachmentDraft: ObservableObject
 
 
         case sources, link, drawing(DrawingCaptureDraft)
-        var id: String
+        var id: String /* Record or view identity */
         {
 
             switch self
@@ -121,11 +121,11 @@ final class CreationAttachmentDraft: ObservableObject
 
     }
 
-    @Published var entries:   [Entry] = []
-    @Published var sheet:     Sheet?
-    @Published var selection: [PhotosPickerItem] = []
-    @Published var isImporting                   = false
-    @Published var notice: String?
+    @Published var entries:   [Entry] = []               /* Entries being processed        */
+    @Published var sheet:     Sheet?                     /* Active editor presentation     */
+    @Published var selection: [PhotosPickerItem] = []    /* Current selection state        */
+    @Published var isImporting                   = false /* Importing state                */
+    @Published var notice: String?                       /* Status or confirmation surface */
 
 
     ///
@@ -211,7 +211,7 @@ final class CreationAttachmentDraft: ObservableObject
             return
         }
 
-        let selected = selection
+        let selected = selection /* Current selection */
 
         isImporting = true
         sheet = nil
@@ -238,7 +238,7 @@ final class CreationAttachmentDraft: ObservableObject
 
                 try Task.checkCancellation()
 
-                let video = item.supportedContentTypes.contains
+                let video = item.supportedContentTypes.contains /* Selected video attachment */
                 {
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
                 }
@@ -293,7 +293,7 @@ final class CreationAttachmentDraft: ObservableObject
             throw CocoaError(.fileReadUnknown)
         }
 
-        var stored: [KanbanAttachment] = []
+        var stored: [KanbanAttachment] = [] /* Value loaded from persistence */
 
         do
         {
@@ -350,9 +350,9 @@ struct CreationAttachmentList: View
 {
 
 
-    @ObservedObject var draft: CreationAttachmentDraft
+    @ObservedObject var draft: CreationAttachmentDraft /* Local editing draft */
 
-    var body:                  some View
+    var body:                  some View /* Creation Attachment List layout */
     {
 
         VStack(alignment: .leading, spacing: 12)
@@ -422,7 +422,7 @@ struct CreationAttachmentPresentation: ViewModifier
 {
 
 
-    @ObservedObject var draft: CreationAttachmentDraft
+    @ObservedObject var draft: CreationAttachmentDraft /* Local editing draft */
 
 
     ///

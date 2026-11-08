@@ -30,7 +30,7 @@ struct TodayPaperBackground: View
     /// @return     (some View) noninteractive full-surface background
     /// @post       Rendering does not affect app or navigation state
     ///
-    var body: some View
+    var body: some View /* Today Paper Background layout */
     {  /* Noninteractive paper texture behind Today surfaces */
 
         GeometryReader
@@ -61,7 +61,7 @@ struct TodayPanelSurface: ViewModifier
 {
 
 
-    var backgroundOpacity: Double = 1
+    var backgroundOpacity: Double = 1 /* Background opacity */
 
 
     ///

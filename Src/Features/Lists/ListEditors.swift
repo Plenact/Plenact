@@ -21,13 +21,15 @@ struct InlineBoardListTitle: View
 {
 
 
-    let list:                 KanbanList
-    let onSave:               (String) -> Bool
-    let onFinish:             () -> Void
-    @State private var title: String
-    @State private var focused                                            = false
-    @State private var finished                                           = false
-    @ScaledMetric(relativeTo: .headline) private var titleHeight: CGFloat = 36
+    let list:                 KanbanList /* List under consideration */
+    let onSave:               (String) -> Bool /* Persist the edited value */
+    let onFinish:             () -> Void /* Finish callback */
+    @State private var title: String /* User-facing title */
+    @State private var focused                                            = /* Current focus selection */
+        false
+    @State private var finished                                           = /* Operation completion state */
+        false
+    @ScaledMetric(relativeTo: .headline) private var titleHeight: CGFloat = 36 /* Title height */
 
 
     ///
@@ -52,7 +54,7 @@ struct InlineBoardListTitle: View
     }
 
 
-    var body: some View
+    var body: some View /* Inline Board List Title layout */
     {
 
         ListTitleField(
@@ -99,7 +101,8 @@ struct InlineBoardListTitle: View
             return
         }
 
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = /* Trimmed operation value */
+            title.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard onSave(trimmed.isEmpty ? list.title : trimmed) else
         {
@@ -129,13 +132,13 @@ struct ListTitleField: UIViewRepresentable
 {
 
 
-    @Binding var text:       String
-    @Binding var focused:    Bool
-    let selectsInitialTitle: Bool
-    var returnKeyType:       UIReturnKeyType  = .next
-    var textStyle:           UIFont.TextStyle = .body
-    var identifier                            = "list-editor-title"
-    let onNext: () -> Void
+    @Binding var text:       String                                 /* Text being processed    */
+    @Binding var focused:    Bool                                   /* Current focus selection */
+    let selectsInitialTitle: Bool                                   /* Selects initial title   */
+    var returnKeyType:       UIReturnKeyType  = .next               /* Return key type         */
+    var textStyle:           UIFont.TextStyle = .body               /* Text style              */
+    var identifier                            = "list-editor-title" /* Record identity value   */
+    let onNext: () -> Void                                          /* Next callback           */
 
 
     ///
@@ -164,7 +167,7 @@ struct ListTitleField: UIViewRepresentable
     func makeUIView(context: Context) -> UITextField
     {
 
-        let field = UITextField()
+        let field = UITextField() /* Native input field */
 
         field.placeholder = "List title"
         field.font = .preferredFont(forTextStyle: textStyle)
@@ -209,7 +212,7 @@ struct ListTitleField: UIViewRepresentable
 
         }
 
-        let coordinator = context.coordinator
+        let coordinator = context.coordinator /* Native view lifecycle bridge */
 
         DispatchQueue.main.async
         {
@@ -246,8 +249,8 @@ struct ListTitleField: UIViewRepresentable
     {
 
 
-        var parent: ListTitleField
-        private var selectedInitialTitle = false
+        var parent: ListTitleField               /* Latest representable bindings */
+        private var selectedInitialTitle = false /* Selected initial title        */
 
 
         ///
@@ -381,14 +384,14 @@ struct ListInfoEditorSheet: View
 {
 
 
-    let onSave:                       (String, String, ItemPresentation) -> Bool
-    private let focusesTitleOnAppear: Bool
-    @State private var titleFocused = false
-    @FocusState private var subtitleFocused: Bool
-    @State private var defaultPresentation:  ItemPresentation
-    @Environment(\.dismiss) private var dismiss
-    @State private var title:    String
-    @State private var subtitle: String
+    let onSave:                       (String, String, ItemPresentation) -> Bool /* Persist the edited value */
+    private let focusesTitleOnAppear: Bool /* Focuses title on appear */
+    @State private var titleFocused = false /* Title focused */
+    @FocusState private var subtitleFocused: Bool /* Subtitle focused */
+    @State private var defaultPresentation:  ItemPresentation /* Default presentation */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var title:    String /* User-facing title */
+    @State private var subtitle: String /* Supporting item text */
 
 
     ///
@@ -442,7 +445,7 @@ struct ListInfoEditorSheet: View
     }
 
 
-    var body: some View
+    var body: some View /* List Info Editor layout */
     {
 
 

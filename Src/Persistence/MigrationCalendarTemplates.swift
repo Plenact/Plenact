@@ -27,14 +27,14 @@ enum MigrationCalendarTemplates
             throw MigrationContentValues.Failure.invalid("calendar_date_key")
         }
 
-        let parts = key.split(separator: "-").compactMap { Int($0) }
+        let parts = key.split(separator: "-").compactMap { Int($0) } /* Parsed value components */
 
         guard parts.count == 3, (1900...2100).contains(parts[0]) else
         {
             throw MigrationContentValues.Failure.invalid("calendar_date_range")
         }
 
-        var calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
@@ -81,25 +81,30 @@ enum MigrationCalendarTemplates
     static func convert(values: [String: Any], context: MigrationContentValues, originalTimeZoneID: String) throws -> [[String: Any]]
     {
 
-        var records: [[String: Any]] = []
-        var calendar                 = Calendar(identifier: .gregorian)
+        var records: [[String: Any]] = [] /* Records being processed   */
+        var calendar                 =    /* Date calculation calendar */
+            Calendar(identifier: .gregorian)
 
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         if let data = values["Plenact.CalendarWeeks.v1"] as? Data
         {
 
-            let source      = try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
-            let zoneContext = MigrationContentValues(journal: context.journal, timeZoneID: originalTimeZoneID, mediaDigests: [:])
+            let source      = /* Source value for this operation */
+                try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
+            let zoneContext = /* Zone context */
+                MigrationContentValues(journal: context.journal, timeZoneID: originalTimeZoneID, mediaDigests: [:])
 
             _ = try MigrationContentDates.convert(1_600_000_000, kind: "date", context: zoneContext, path: "calendar-zone")
 
-            let raw = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+            let raw = /* Unprocessed source value */
+                try JSONSerialization.jsonObject(with: data) as! [String: Any]
 
             if let links = raw["checklistLinkWeeks"] as? [String]
             {
 
-                let keys = stride(from: 0, to: links.count, by: 2).map { links[$0].lowercased() }
+                let keys = /* Keys used by this operation */
+                    stride(from: 0, to: links.count, by: 2).map { links[$0].lowercased() }
 
                 guard links.count % 2 == 0, Set(keys).count == keys.count else
                 {
@@ -107,19 +112,19 @@ enum MigrationCalendarTemplates
                 }
             }
 
-            var weekTargets: [UUID: String] = [:]
+            var weekTargets: [UUID: String] = [:] /* Week targets */
 
             for week in source.weeks
             {
 
-                let scope = week.collection.id.uuidString.lowercased()
+                let scope = week.collection.id.uuidString.lowercased() /* Owner or search scope */
 
                 guard let collection = context.collectionTargets[scope] else
                 {
                     throw MigrationContentValues.Failure.invalid("calendar_collection_mapping")
                 }
 
-                let start = try date(week.startKey)
+                let start = try date(week.startKey) /* Range start */
 
                 guard calendar.component(.weekday, from: start) == source.firstWeekday,
                       Set(week.dayListIDs.values).count == week.dayListIDs.count else
@@ -127,13 +132,14 @@ enum MigrationCalendarTemplates
                     throw MigrationContentValues.Failure.invalid("calendar_week_mapping")
                 }
 
-                var days: [[String: Any]] = []
+                var days: [[String: Any]] = [] /* Dates in the selected range */
 
                 for key in week.dayListIDs.keys.sorted()
                 {
 
-                    let day      = try date(key)
-                    let distance = calendar.dateComponents([.day], from: start, to: day).day ?? -1
+                    let day      = try date(key) /* Day under consideration           */
+                    let distance =               /* Distance between layout positions */
+                        calendar.dateComponents([.day], from: start, to: day).day ?? -1
 
                     guard (0..<7).contains(distance), let sourceList = week.dayListIDs[key] else
                     {
@@ -143,7 +149,8 @@ enum MigrationCalendarTemplates
                         scope: scope, context: context, active: true)])
                 }
 
-                let id = try context.id("calendar_week", owner: "calendar_weeks", legacy: scope)
+                let id = /* Portable record identity */
+                    try context.id("calendar_week", owner: "calendar_weeks", legacy: scope)
 
                 weekTargets[week.id] = id
 
@@ -153,8 +160,8 @@ enum MigrationCalendarTemplates
                     "day_lists": days, "explicitly_saved": week.explicitlySaved]))
             }
 
-            var links: [[String: Any]] = []
-            let liveCards              = Set(context.cardTargets.filter { key, _ in
+            var links: [[String: Any]] = [] /* Resolved content references */
+            let liveCards              = Set(context.cardTargets.filter { key, _ in /* Live cards */
                 context.calendarOwnerScopes.contains(key.components(separatedBy: ":").first ?? "")
             }.values)
 
@@ -165,7 +172,7 @@ enum MigrationCalendarTemplates
                     throw MigrationContentValues.Failure.invalid("calendar_checklist_week_target")
                 }
 
-                let matches = context.journal.entries.filter {
+                let matches = context.journal.entries.filter { /* Matching source entries */
                     $0.source.recordType == "nested_checklist_item" && liveCards.contains($0.source.owner) &&
                         $0.source.legacyID == item.uuidString.lowercased() &&
                         context.usedNested.contains($0.source.owner + ":checklist_item:" + $0.source.legacyID)
@@ -178,7 +185,8 @@ enum MigrationCalendarTemplates
                 links.append(["checklist_item_id": target.uuidString.lowercased(), "week_id": week])
             }
 
-            let index = try context.id("calendar_index", owner: "workspace_metadata", legacy: "Plenact.CalendarWeeks.v1")
+            let index = /* Element position */
+                try context.id("calendar_index", owner: "workspace_metadata", legacy: "Plenact.CalendarWeeks.v1")
 
             records.append(context.document("calendar_index", id: index, payload: [
                 "source_store_version": source.version, "first_weekday": source.firstWeekday,
@@ -188,7 +196,8 @@ enum MigrationCalendarTemplates
         if let data = values["Plenact.PlanningTemplates.v1"] as? Data
         {
 
-            let library = try JSONDecoder().decode(PlanningRoutineLibrary.self, from: data)
+            let library = /* Retained library contents */
+                try JSONDecoder().decode(PlanningRoutineLibrary.self, from: data)
 
             guard Set(library.templates.map(\.id)).count == library.templates.count,
                   library.bundledRoutineRevision.map({ (0...Int(Int32.max)).contains($0) }) ?? true else
@@ -196,7 +205,7 @@ enum MigrationCalendarTemplates
                 throw MigrationContentValues.Failure.invalid("template_library_identity_or_revision")
             }
 
-            var ids: [UUID: String] = [:]
+            var ids: [UUID: String] = [:] /* Record identifiers */
 
             for template in library.templates
             {
@@ -211,7 +220,8 @@ enum MigrationCalendarTemplates
                     throw MigrationContentValues.Failure.invalid("template_weekday_mapping")
                 }
 
-                let scope = "template:" + template.id.uuidString.lowercased() + ":" + template.collection.id.uuidString.lowercased()
+                let scope = /* Owner or search scope */
+                    "template:" + template.id.uuidString.lowercased() + ":" + template.collection.id.uuidString.lowercased()
 
                 guard let collection = context.collectionTargets[scope] else
                 {
@@ -219,15 +229,17 @@ enum MigrationCalendarTemplates
                 }
 
                 // Validate the stored zone even for a routine containing no timed Cards
-                let zoneContext = MigrationContentValues(journal: context.journal, timeZoneID: template.timeZoneID, mediaDigests: [:])
+                let zoneContext = /* Zone context */
+                    MigrationContentValues(journal: context.journal, timeZoneID: template.timeZoneID, mediaDigests: [:])
 
                 _ = try MigrationContentDates.convert(1_600_000_000, kind: "date", context: zoneContext, path: "template-zone")
 
-                let id = try context.id("planning_template", owner: "planning_templates", legacy: template.id.uuidString.lowercased())
+                let id = /* Portable record identity */
+                    try context.id("planning_template", owner: "planning_templates", legacy: template.id.uuidString.lowercased())
 
                 ids[template.id] = id
 
-                var weekdays: [[String: Any]] = []
+                var weekdays: [[String: Any]] = [] /* Ordered weekday values */
 
                 for weekday in template.weekdays.keys.sorted()
                 {
@@ -235,17 +247,17 @@ enum MigrationCalendarTemplates
                         collection: template.collection, scope: scope, context: context, active: false)])
                 }
 
-                var focus: Any = NSNull()
+                var focus: Any = NSNull() /* Today Focus selection */
 
                 if let source = template.exampleFocus
                 {
 
-                    var mapped: [String: Any] = [:]
+                    var mapped: [String: Any] = [:] /* Value after identity translation */
 
                     for (key, originals) in [("important", source.important), ("bookmarked", source.bookmarked), ("all_day", source.allDay)]
                     {
 
-                        var targets: [String] = []
+                        var targets: [String] = [] /* Resolved operation targets */
 
                         for original in originals.sorted()
                         {
@@ -270,7 +282,7 @@ enum MigrationCalendarTemplates
                     "weekdays": weekdays, "example_focus": focus]))
             }
 
-            var selected: Any = NSNull()
+            var selected: Any = NSNull() /* Current selection */
 
             if let source = library.defaultWeekID
             {
@@ -283,7 +295,8 @@ enum MigrationCalendarTemplates
 
             }
 
-            let id = try context.id("template_library", owner: "workspace_metadata", legacy: "Plenact.PlanningTemplates.v1")
+            let id = /* Portable record identity */
+                try context.id("template_library", owner: "workspace_metadata", legacy: "Plenact.PlanningTemplates.v1")
 
             records.append(context.document("template_library", id: id, payload: [
                 "source_store_version": library.version, "template_ids": library.templates.map { ids[$0.id]! },

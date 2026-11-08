@@ -15,7 +15,7 @@ enum StudioUnsplash
 {
 
 
-    private static let service = "com.plenact.studio.unsplash"
+    private static let service = "com.plenact.studio.unsplash" /* Injected operation service */
 
 
     /// @fcn StudioUnsplash.key()
@@ -26,8 +26,9 @@ enum StudioUnsplash
     {
 
 
-        var value: CFTypeRef?
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+        var value: CFTypeRef?      /* Keychain result reference  */
+        let query: [String: Any] = /* Keychain lookup attributes */
+            [kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service, kSecReturnData as String: true]
 
         guard SecItemCopyMatching(query as CFDictionary, &value) == errSecSuccess,
@@ -51,8 +52,10 @@ enum StudioUnsplash
     {
 
 
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
-        let cleaned              = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query: [String: Any] = /* Keychain lookup attributes */
+            [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
+        let cleaned              = /* Normalized input value */
+            key.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if cleaned.isEmpty
         {
@@ -60,9 +63,11 @@ enum StudioUnsplash
             return
         }
 
-        let values: [String: Any] = [kSecValueData as String: Data(cleaned.utf8),
+        let values: [String: Any] = /* Values being processed */
+            [kSecValueData as String: Data(cleaned.utf8),
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly]
-        let updated = SecItemUpdate(query as CFDictionary, values as CFDictionary)
+        let updated = /* Edited value to publish */
+            SecItemUpdate(query as CFDictionary, values as CFDictionary)
 
         if updated == errSecItemNotFound
         {
@@ -104,12 +109,12 @@ enum StudioUnsplash
             throw URLError(.userAuthenticationRequired)
         }
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url) /* Pending lookup request */
 
         request.setValue("Client-ID " + key(), forHTTPHeaderField: "Authorization")
         request.setValue("v1", forHTTPHeaderField: "Accept-Version")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request) /* Data response */
 
         guard let http = response as? HTTPURLResponse, (200 ... 299).contains(http.statusCode) else
         {
@@ -131,12 +136,14 @@ enum StudioUnsplash
     {
 
 
-        var url = URLComponents(string: "https://api.unsplash.com/search/photos")!
+        var url = /* Resource location */
+            URLComponents(string: "https://api.unsplash.com/search/photos")!
 
         url.queryItems = [URLQueryItem(name: "query", value: query), URLQueryItem(name: "per_page", value: "20")]
 
-        let data   = try await request(url.url!)
-        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let data   = try await request(url.url!) /* Encoded or loaded bytes */
+        let object =                             /* Decoded JSON object     */
+            try JSONSerialization.jsonObject(with: data) as? [String: Any]
 
         return (object? ["results"] as? [[String: Any]] ?? []).compactMap
         {
@@ -180,14 +187,15 @@ struct StudioUnsplashPicker: View
 {
 
 
-    let onSelect: (StudioRemotePhoto) -> Void
-    @State private var query                       = ""
-    @State private var key                         = StudioUnsplash.key()
-    @State private var photos: [StudioRemotePhoto] = []
-    @State private var isBusy                      = false
-    @State private var error:       String?
-    @State private var requestTask: Task<Void, Never>?
-    @Environment(\.dismiss) private var dismiss
+    let onSelect: (StudioRemotePhoto) -> Void           /* Handle the selected value */
+    @State private var query                       = "" /* Search text               */
+    @State private var key                         =    /* Lookup or persistence key */
+        StudioUnsplash.key()
+    @State private var photos: [StudioRemotePhoto] = []    /* Photo selections or gallery entries */
+    @State private var isBusy                      = false /* Operation in progress               */
+    @State private var error:       String?                /* Reported operation failure          */
+    @State private var requestTask: Task<Void, Never>?     /* Request task                        */
+    @Environment(\.dismiss) private var dismiss            /* Close the current presentation      */
 
     ///
     /// @fcn        StudioUnsplashPicker.body
@@ -197,7 +205,7 @@ struct StudioUnsplashPicker: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View
+    var body: some View /* Studio Unsplash Picker layout */
     {
 
 

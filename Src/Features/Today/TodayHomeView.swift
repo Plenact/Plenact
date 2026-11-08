@@ -24,12 +24,15 @@ struct TodayHomeView: View
 {
 
 
-    @ScaledMetric(relativeTo: .subheadline) private var browseIconSize: CGFloat = 30
-    @ScaledMetric(relativeTo: .subheadline) private var browseTextSize: CGFloat = 18.75
-    @AppStorage(PlanPreferencesStore.key) private var planPreferencesData       = Data()
-    @EnvironmentObject private var welcomeCue: TodayWelcomeCue
-    @Environment(\.accessibilityReduceMotion) private var reduceWelcomeMotion
-    @Environment(\.planningCalendarAccess) private var planningCalendarAccess
+    @ScaledMetric(relativeTo: .subheadline) private var browseIconSize: CGFloat = /* Browse icon size */
+        30
+    @ScaledMetric(relativeTo: .subheadline) private var browseTextSize: CGFloat = /* Browse text size */
+        18.75
+    @AppStorage(PlanPreferencesStore.key) private var planPreferencesData       = /* Plan preferences data */
+        Data()
+    @EnvironmentObject private var welcomeCue: TodayWelcomeCue /* Welcome cue */
+    @Environment(\.accessibilityReduceMotion) private var reduceWelcomeMotion /* Reduce welcome motion */
+    @Environment(\.planningCalendarAccess) private var planningCalendarAccess /* Planning calendar access */
 
 
     ///
@@ -46,7 +49,7 @@ struct TodayHomeView: View
     private func calendarDayList(_ date: Date, in snapshot: [KanbanList]? = nil) -> KanbanList?
     {
 
-        let lists = snapshot ?? self.lists
+        let lists = snapshot ?? self.lists /* Ordered List records */
 
         if let id = planningCalendarAccess?.document.week(for: date)?.dayListIDs[PlanningDate.key(date)],
         let list = lists.first(where:
@@ -68,10 +71,10 @@ struct TodayHomeView: View
     let profile:                LocalProfile?           /* Current local profile and preferences              */
     let onSaveProfile:          (LocalProfile) -> Void  /* Save local identity and personalization            */
     let onRemoveProfile:        () -> Void              /* Remove only local profile information              */
-    let onAddCard:
+    let onAddCard: /* Add card callback */
     (Int, String, String, String, ItemPresentation?, [String]?) ->
     Void /* Create canonical Week records                      */
-    let onAddCapture:           (QuickCaptureSubmission) -> Bool
+    let onAddCapture:           (QuickCaptureSubmission) -> Bool /* Add capture callback */
     let onToggleCardCompletion: (Int, Int) -> Void  /* Toggle local card completion                  */
     let onOpenBoardList:        (Int) -> Void       /* Route to Board at the selected list ID        */
     let onOpenBoardCard:        (Int, Int) -> Void  /* Route to a Week card by list/card IDs         */
@@ -84,37 +87,40 @@ struct TodayHomeView: View
     @State private var selectedTodayListID: Int?                  /* Board list selected for today's plan  */
     @State private var listPickerMode:      TodayListPickerMode?  /* Active list picker presentation mode  */
     @State private var showsAccountSettings                                   = false /* Account & Settings sheet presentation */
-    @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = Data()
-    @Environment(\.workspaceBottomBarHeight) private var focusToolbarHeight
-    @State private var removedFocusBookmark: Int?
-    @State private var bookmarkNoticeRevision = UUID()
-    @State private var focusDate              = Date.now
-    @State private var focusFiltersChangedAt:  Date?
-    @State private var perspectiveSectionTop:  CGFloat = 0
-    @State private var shortcutsSectionBottom: CGFloat = 0
-    @State private var openedFocusCard:        KanbanCard?
+    @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData = /* Focus important data */
+        Data()
+    @Environment(\.workspaceBottomBarHeight) private var focusToolbarHeight /* Focus toolbar height */
+    @State private var removedFocusBookmark: Int? /* Removed focus bookmark */
+    @State private var bookmarkNoticeRevision = UUID() /* Bookmark notice revision */
+    @State private var focusDate              = Date.now /* Focus date */
+    @State private var focusFiltersChangedAt:  Date? /* Focus filters changed at */
+    @State private var perspectiveSectionTop:  CGFloat = 0 /* Perspective section top */
+    @State private var shortcutsSectionBottom: CGFloat = 0 /* Shortcuts section bottom */
+    @State private var openedFocusCard:        KanbanCard? /* Opened focus card */
     @State private var showsTodayList               = false /* Focused single-list presentation         */
-    @State private var showsTodayPlan               = false
-    @State private var perspectivePlanDate: Date    = .now
-    @State private var showsPerspectivePlan         = false
-    @ObservedObject private var reviewNotifications = ReviewRhythmNotifications.shared
-    @State private var reviewRoute: ReviewRhythmRoute?
-    @State private var showsReviewRhythmSettings           = false
-    @AppStorage(TodayListPins.key) private var listPinData = Data()
-    @State private var openedShortcut: WorkspaceListReference?
+    @State private var showsTodayPlan               = false /* Today Plan visibility */
+    @State private var perspectivePlanDate: Date    = .now /* Perspective plan date */
+    @State private var showsPerspectivePlan         = false /* Perspective Plan visibility */
+    @ObservedObject private var reviewNotifications = /* Review notifications */
+        ReviewRhythmNotifications.shared
+    @State private var reviewRoute: ReviewRhythmRoute?       /* Review route                      */
+    @State private var showsReviewRhythmSettings           = /* Reminder editor visibility        */
+        false
+    @AppStorage(TodayListPins.key) private var listPinData = Data() /* List pin data   */
+    @State private var openedShortcut: WorkspaceListReference?      /* Opened shortcut */
 
     @State private var focusedListID: Int?             /* Current-day list selected when opening Focus */
     @State private var quickCaptureTitle         = ""    /* Draft title for inline card capture          */
     @State private var quickComposerInitialTitle = ""    /* Quick-capture title handed to full editor    */
     @State private var showsQuickNoteEditor      = false /* Full-size quick card editor presentation     */
-    @State private var showsTemplates            = false
-    @State private var pendingTemplate:             QuickCaptureTemplate?
-    @State private var composerInitialPresentation: ItemPresentation?
-    @State private var composerTemplate:            QuickCaptureTemplate?
-    @State private var captureAction:               TodayCaptureAction?
-    @State private var showsPlanSettings                 = false
-    @State private var opensTemplateLibraryAfterSettings = false
-    @Environment(\.openTemplateLibrary) private var openTemplateLibrary
+    @State private var showsTemplates            = false /* Templates visibility */
+    @State private var pendingTemplate:             QuickCaptureTemplate? /* Pending template */
+    @State private var composerInitialPresentation: ItemPresentation? /* Composer initial presentation */
+    @State private var composerTemplate:            QuickCaptureTemplate? /* Composer template */
+    @State private var captureAction:               TodayCaptureAction? /* Capture action */
+    @State private var showsPlanSettings                 = false /* Plan Settings visibility */
+    @State private var opensTemplateLibraryAfterSettings = false /* Opens template library after */
+    @Environment(\.openTemplateLibrary) private var openTemplateLibrary /* Open template library */
     @State private var showsSearch                    = false                    /* Local Board search presentation          */
     @State private var presentComposerAfterListChoice = false                    /* Deferred center-plus request             */
     @State private var labelLibrary                   = LabelLibraryStore.load() /* Local categorized label definitions      */
@@ -130,7 +136,7 @@ struct TodayHomeView: View
     /// @return     (KanbanList?) selected list from the supplied active snapshot
     /// @post       No preference is read or changed during resolution
     ///
-    private var selectedTodayList: KanbanList?
+    private var selectedTodayList: KanbanList? /* Selected today list */
     {  /* Board list selected for the current date */
 
 
@@ -161,7 +167,7 @@ struct TodayHomeView: View
     /// @return     (some View) Today header content
     /// @post       Tapping controls updates sheet-presentation state without modifying Board data
     ///
-    private var todayHeader: some View
+    private var todayHeader: some View /* Today header */
     {  /* Today's heading and account controls */
 
 
@@ -261,7 +267,7 @@ struct TodayHomeView: View
     /// @return     (some View) padded header with noninteractive background and fade
     /// @post       Rendering does not change scroll or navigation state
     ///
-    private var todayHeaderPanel: some View
+    private var todayHeaderPanel: some View /* Today header panel */
     {  /* Styled container for Today's heading */
 
 
@@ -337,7 +343,7 @@ struct TodayHomeView: View
     /// @return     (some View) accessible bottom notice while a removal is pending
     ///
     @ViewBuilder
-    private var focusBookmarkUndoNotice: some View
+    private var focusBookmarkUndoNotice: some View /* Focus bookmark undo notice */
     {
         if let cardID = removedFocusBookmark
         {
@@ -477,13 +483,14 @@ struct TodayHomeView: View
 
 
     /// Pinned, owner-qualified list shortcuts chosen by the user and persisted across launches
-    private var yourShortcutsSection: some View
+    private var yourShortcutsSection: some View /* Your shortcuts section */
     {
 
-        let owners = WorkspaceBrowseIndex.owners(
+        let owners = WorkspaceBrowseIndex.owners( /* Qualified record owners */
             document: planningCalendarAccess?.document, library: planningCalendarAccess?.library ?? [])
-        let available = WorkspaceBrowseIndex.lists(in: owners)
-        let pinned    = TodayListPins.decode(listPinData).compactMap
+        let available = WorkspaceBrowseIndex.lists(in: owners) /* Available operation inputs */
+        let pinned    =                                        /* Ordered shortcut selection */
+            TodayListPins.decode(listPinData).compactMap
         {
             reference in
             available.first
@@ -510,7 +517,7 @@ struct TodayHomeView: View
     /// @return     (some View) accessible list-browsing button
     /// @post       Tapping sets listPickerMode to browseAll
     ///
-    private var browseListsAction: some View
+    private var browseListsAction: some View /* Browse lists action */
     {  /* Library navigation action */
 
 
@@ -731,8 +738,9 @@ struct TodayHomeView: View
             return
         }
 
-        let result      = TodayListSelection.ensureCurrentDayList(lists: lists + archivedLists)
-        let activeLists = result.lists.filter
+        let result      = /* Result being assembled */
+            TodayListSelection.ensureCurrentDayList(lists: lists + archivedLists)
+        let activeLists = result.lists.filter /* Active lists */
         {
             !$0.isArchived
         }  /* Updated active Week lists     */
@@ -774,7 +782,7 @@ struct TodayHomeView: View
     /// @post       Callbacks route Board edits/navigation; label changes persist locally,
     ///             and example-load/undo callbacks replace both active and archived Week partitions
     ///
-    var body: some View
+    var body: some View /* Today planning workspace */
     {  /* Today screen and list-selection sheets */
 
 
@@ -833,9 +841,9 @@ struct TodayHomeView: View
 
 
                     // Read live workspace inputs directly; the clock only advances time-based selection
-                    let focusLists        = lists
-                    let focusBookmarks    = savedCardIDs
-                    let importantFocusIDs =
+                    let focusLists        = lists        /* Focus lists          */
+                    let focusBookmarks    = savedCardIDs /* Focus bookmarks      */
+                    let importantFocusIDs =              /* Important focus i ds */
                     planningCalendarAccess?.document.weeks.first(where:
                         {
 
@@ -847,16 +855,16 @@ struct TodayHomeView: View
 
                     ?? []
                     // Keep the Focus identity stable while its contents and preferences change
-                    let focusPreferences =
+                    let focusPreferences = /* Focus preferences */
                     (try? JSONDecoder().decode(LocalProfilePreferences.self, from: planPreferencesData))
                     ?? PlanPreferencesStore.load()
 
                     Group
                     {
 
-                        let focus = calendarDayList(
+                        let focus = calendarDayList( /* Today Focus selection */
                             focusDate, in: focusLists) /* Active list matching the current weekday */
-                        let cards =
+                        let cards = /* Card records under consideration */
                         focus?.cards.filter
                         {
                             !$0.isSectionDivider
@@ -885,7 +893,8 @@ struct TodayHomeView: View
                             {
                                 important, bookmarked, upNext in
 
-                                var updated = PlanPreferencesStore.load()
+                                var updated = /* Edited value to publish */
+                                    PlanPreferencesStore.load()
 
                                 updated.todayFocusIncludesImportant = important
                                 updated.todayFocusIncludesBookmarked = bookmarked
@@ -973,9 +982,12 @@ struct TodayHomeView: View
                     {
                         context in
 
-                        let calendar     = planningCalendarAccess?.document.calendar ?? .current
-                        let tomorrow     = calendar.date(byAdding: .day, value: 1, to: context.date) ?? context.date
-                        let tomorrowList = planningCalendarAccess?.document.weeks.compactMap
+                        let calendar     = /* Date calculation calendar */
+                            planningCalendarAccess?.document.calendar ?? .current
+                        let tomorrow     = /* Following local day */
+                            calendar.date(byAdding: .day, value: 1, to: context.date) ?? context.date
+                        let tomorrowList = /* Tomorrow list */
+                            planningCalendarAccess?.document.weeks.compactMap
                         {
                             $0.list(on: tomorrow)
                         }
@@ -1187,7 +1199,8 @@ struct TodayHomeView: View
                 while let pending = reviewNotifications.pending, !Task.isCancelled
                 {
 
-                    let root = UIApplication.shared.connectedScenes.compactMap
+                    let root = /* Workspace or view root */
+                        UIApplication.shared.connectedScenes.compactMap
                     {
                         $0 as? UIWindowScene
                     }
@@ -1319,7 +1332,7 @@ struct TodayHomeView: View
                         {
                             capture in
 
-                            let saved = onAddCapture(capture)
+                            let saved = onAddCapture(capture) /* Saved state under review */
 
                             if saved
                             {
@@ -1602,7 +1615,7 @@ struct TodayHomeView: View
     /// @return     (some View) title field, composer button, and quick-add controls
     /// @post       Submission and selection actions delegate to the Today capture helpers
     ///
-    private var quickCaptureSection: some View
+    private var quickCaptureSection: some View /* Quick capture section */
     {  /* Inline capture controls for the selected list */
 
 

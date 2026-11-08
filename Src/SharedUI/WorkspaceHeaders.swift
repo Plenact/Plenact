@@ -21,9 +21,9 @@ struct WorkspaceHeaderIcon: View
 {
 
 
-    let systemName: String
+    let systemName: String /* System name */
 
-    var body:       some View
+    var body:       some View /* Workspace Header Icon layout */
     {
 
         Image(systemName: systemName)
@@ -45,8 +45,8 @@ struct DayHeaderAccessibility: ViewModifier
 {
 
 
-    let label:  String
-    let action: (() -> Void)?
+    let label:  String        /* Resolved display label   */
+    let action: (() -> Void)? /* Requested user operation */
 
 
     ///
@@ -93,36 +93,37 @@ struct SlideableHeaderText: View
 {
 
 
-    let text:             String
-    var onTap:            (() -> Void)?  = nil
-    var onOverflowChange: (Bool) -> Void =
+    let text:             String               /* Text being processed     */
+    var onTap:            (() -> Void)?  = nil /* Tap callback             */
+    var onOverflowChange: (Bool) -> Void =     /* Overflow change callback */
     {
         _ in
     }
 
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData = /* Preferences data */
+        Data()
 
-    private var allowsScrolling: Bool
+    private var allowsScrolling: Bool /* Allows scrolling */
     {
 
         (try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData))?.scrollsOverflowingTitles
         ?? true
     }
 
-    @Environment(\.layoutDirection) private var readingDirection
-    @Namespace private var readingSpace
-    @State private var textFrame:     CGRect  = .zero
-    @State private var ellipsisWidth: CGFloat = 18
-    @State private var textWidth:     CGFloat = 0
-    @State private var viewportWidth: CGFloat = 0
+    @Environment(\.layoutDirection) private var readingDirection /* Reading direction */
+    @Namespace private var readingSpace                          /* Reading space     */
+    @State private var textFrame:     CGRect  = .zero            /* Text frame        */
+    @State private var ellipsisWidth: CGFloat = 18               /* Ellipsis width    */
+    @State private var textWidth:     CGFloat = 0                /* Text width        */
+    @State private var viewportWidth: CGFloat = 0                /* Viewport width    */
 
-    private var overflows:            Bool
+    private var overflows:            Bool /* Overflows state flag */
     {
         textWidth > viewportWidth + 1
     }
 
 
-    private var showsLeadingCue: Bool
+    private var showsLeadingCue: Bool /* Leading Cue visibility */
     {
 
         guard overflows else
@@ -134,7 +135,7 @@ struct SlideableHeaderText: View
     }
 
 
-    private var showsTrailingCue: Bool
+    private var showsTrailingCue: Bool /* Trailing Cue visibility */
     {
 
         guard overflows else
@@ -146,7 +147,7 @@ struct SlideableHeaderText: View
     }
 
 
-    private var scrollingSurface: some View
+    private var scrollingSurface: some View /* Scrolling surface */
     {
 
         Text(text.isEmpty ? " " : text)
@@ -274,7 +275,7 @@ struct SlideableHeaderText: View
     }
 
 
-    @ViewBuilder private var readingSurface: some View
+    @ViewBuilder private var readingSurface: some View /* Reading surface */
     {
 
         if allowsScrolling
@@ -296,7 +297,7 @@ struct SlideableHeaderText: View
     }
 
 
-    var body: some View
+    var body: some View /* Slideable Header Text layout */
     {
 
         Group
@@ -348,7 +349,7 @@ struct WorkspaceHeaderTitleKey: LayoutValueKey
 {
 
 
-    static let defaultValue = false
+    static let defaultValue = false /* Fallback environment value */
 
 }
 
@@ -384,7 +385,8 @@ enum WorkspaceHeaderSpacing
     ) -> CGFloat
     {
 
-        let titleSpace = max(0, availableWidth - controlsWidth - CGFloat(max(0, gapCount)) * regularSpacing)
+        let titleSpace = /* Title space */
+            max(0, availableWidth - controlsWidth - CGFloat(max(0, gapCount)) * regularSpacing)
 
         return titleIdealWidth > titleSpace + 1 ? 0 : regularSpacing
     }
@@ -403,8 +405,8 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
 {
 
 
-    var regularSpacing:  CGFloat
-    var layoutDirection: LayoutDirection = .leftToRight
+    var regularSpacing:  CGFloat                        /* Regular spacing  */
+    var layoutDirection: LayoutDirection = .leftToRight /* Layout direction */
 
 
     ///
@@ -422,7 +424,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     private func arrangement(width: CGFloat?, subviews: Subviews) -> (sizes: [CGSize], gap: CGFloat, width: CGFloat)
     {
 
-        let ideal = subviews.map
+        let ideal = subviews.map /* Preferred layout size */
         {
             $0.sizeThatFits(.unspecified)
         }
@@ -433,7 +435,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
             }) else
         {
 
-            let total = ideal.reduce(0)
+            let total = ideal.reduce(0) /* Total matching entries */
             {
                 $0 + $1.width
             }
@@ -442,7 +444,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
             return (ideal, regularSpacing, width ?? total)
         }
 
-        let controlsWidth = ideal.enumerated().filter
+        let controlsWidth = ideal.enumerated().filter /* Controls width */
         {
             $0.offset != title
         } .reduce(0)
@@ -450,14 +452,17 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
             $0 + $1.element.width
         }
 
-        let gapCount  = max(0, subviews.count - 1)
-        let available = width ?? (controlsWidth + ideal[title].width + CGFloat(gapCount) * regularSpacing)
-        let gap       = WorkspaceHeaderSpacing.gap(
+        let gapCount  = max(0, subviews.count - 1) /* Gap count                  */
+        let available =                            /* Available operation inputs */
+            width ?? (controlsWidth + ideal[title].width + CGFloat(gapCount) * regularSpacing)
+        let gap       = WorkspaceHeaderSpacing.gap( /* Spacing between visible items */
             availableWidth: available, titleIdealWidth: ideal[title].width,
             controlsWidth: controlsWidth, gapCount: gapCount, regularSpacing: regularSpacing)
-        let titleWidth = max(0, available - controlsWidth - CGFloat(gapCount) * gap)
-        var sizes      = ideal
-        let titleSize  = subviews[title].sizeThatFits(ProposedViewSize(width: titleWidth, height: nil))
+        let titleWidth = /* Title width */
+            max(0, available - controlsWidth - CGFloat(gapCount) * gap)
+        var sizes      = ideal /* Measured layout dimensions */
+        let titleSize  =       /* Title size                 */
+            subviews[title].sizeThatFits(ProposedViewSize(width: titleWidth, height: nil))
 
         sizes[title] = CGSize(width: titleWidth, height: titleSize.height)
 
@@ -479,7 +484,8 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
     {
 
-        let layout = arrangement(width: proposal.width, subviews: subviews)
+        let layout = /* Resolved layout configuration */
+            arrangement(width: proposal.width, subviews: subviews)
 
         return CGSize(width: layout.width, height: layout.sizes.map(\.height).max() ?? 0)
     }
@@ -501,14 +507,15 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
     {
 
-        let layout          = arrangement(width: bounds.width, subviews: subviews)
-        var offset: CGFloat = 0
+        let layout          = /* Resolved layout configuration */
+            arrangement(width: bounds.width, subviews: subviews)
+        var offset: CGFloat = 0 /* Current position offset */
 
         for index in subviews.indices
         {
 
-            let size = layout.sizes[index]
-            let x    =
+            let size = layout.sizes[index] /* Content or layout size       */
+            let x    =                     /* Horizontal layout coordinate */
             layoutDirection == .rightToLeft
             ? bounds.maxX - offset - size.width / 2
             : bounds.minX + offset + size.width / 2

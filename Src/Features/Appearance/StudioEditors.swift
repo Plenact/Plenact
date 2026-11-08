@@ -16,12 +16,12 @@ struct StudioSurfaceSettings: View
 {
 
 
-    @Binding var surface: StudioSurface?
-    var title                                       = "Background artwork"
-    var header:     Binding<ItemAccent?>?           = nil
-    var italic:     Binding<Bool?>?                 = nil
-    var titleColor: Binding<ListPreviewTextColor?>? = nil
-    var textColor:  Binding<ListPreviewTextColor?>? = nil
+    @Binding var surface: StudioSurface? /* Artwork surface definition */
+    var title                                       = "Background artwork" /* User-facing title */
+    var header:     Binding<ItemAccent?>?           = nil /* Resolved header appearance */
+    var italic:     Binding<Bool?>?                 = nil /* Inherited subtitle emphasis */
+    var titleColor: Binding<ListPreviewTextColor?>? = nil /* Title color */
+    var textColor:  Binding<ListPreviewTextColor?>? = nil /* Text color */
 
     ///
     /// @fcn        StudioSurfaceSettings.body
@@ -31,7 +31,7 @@ struct StudioSurfaceSettings: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View
+    var body: some View /* Studio Surface Settings layout */
     {
 
 
@@ -77,27 +77,27 @@ struct StudioSurfaceEditor: View
 {
 
 
-    @Binding private var surface:       StudioSurface?
-    let header:                         Binding<ItemAccent?>?
-    let italic:                         Binding<Bool?>?
-    let titleColor:                     Binding<ListPreviewTextColor?>?
-    let textColor:                      Binding<ListPreviewTextColor?>?
-    @State private var draftHeader:     ItemAccent?
-    @State private var draftItalic:     Bool?
-    @State private var draftTitleColor: ListPreviewTextColor?
-    @State private var draftTextColor:  ListPreviewTextColor?
-    @State private var draft:           StudioSurface
-    @State private var photo:           PhotosPickerItem?
-    @State private var importsFile = false
-    @State private var error: String?
-    @State private var artworkName   = "My look"
-    @State private var showsLibrary  = false
-    @State private var showsUnsplash = false
-    @State private var applyTask: Task<Void, Never>?
-    @State private var isApplying     = false
-    @State private var savedToLibrary = false
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage(StudioSettings.libraryKey) private var libraryData = Data()
+    @Binding private var surface:       StudioSurface? /* Artwork surface definition */
+    let header:                         Binding<ItemAccent?>? /* Resolved header appearance */
+    let italic:                         Binding<Bool?>? /* Inherited subtitle emphasis */
+    let titleColor:                     Binding<ListPreviewTextColor?>? /* Title color */
+    let textColor:                      Binding<ListPreviewTextColor?>? /* Text color */
+    @State private var draftHeader:     ItemAccent? /* Draft header */
+    @State private var draftItalic:     Bool? /* Draft italic */
+    @State private var draftTitleColor: ListPreviewTextColor? /* Draft title color */
+    @State private var draftTextColor:  ListPreviewTextColor? /* Draft text color */
+    @State private var draft:           StudioSurface /* Local editing draft */
+    @State private var photo:           PhotosPickerItem? /* Photo selection or source */
+    @State private var importsFile = false /* Imports file */
+    @State private var error: String? /* Reported operation failure */
+    @State private var artworkName   = "My look" /* Artwork name */
+    @State private var showsLibrary  = false /* Library visibility */
+    @State private var showsUnsplash = false /* Unsplash visibility */
+    @State private var applyTask: Task<Void, Never>? /* Apply task */
+    @State private var isApplying     = false /* Apply operation in progress */
+    @State private var savedToLibrary = false /* Saved to library */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @AppStorage(StudioSettings.libraryKey) private var libraryData = Data() /* Library data */
 
 
     /// @fcn StudioSurfaceEditor.init(surface:header:italic:titleColor:textColor:)
@@ -146,7 +146,8 @@ struct StudioSurfaceEditor: View
 
             color in
 
-                var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+                var r: CGFloat = /* Resolved RGBA channels */
+                    0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
 
                 guard UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a) else
                 {
@@ -177,7 +178,7 @@ struct StudioSurfaceEditor: View
                 throw CocoaError(.fileReadTooLarge)
             }
 
-            let name = try StudioArtworkStore.importImage(data)
+            let name = try StudioArtworkStore.importImage(data) /* Display or lookup name */
 
             draft.material = .photo
             draft.photoFileName = name
@@ -208,7 +209,8 @@ struct StudioSurfaceEditor: View
     {
 
 
-        var saved = libraryData.isEmpty ? [] : try JSONDecoder().decode([StudioArtwork].self, from: libraryData)
+        var saved = /* Saved state under review */
+            libraryData.isEmpty ? [] : try JSONDecoder().decode([StudioArtwork].self, from: libraryData)
 
         saved.append(StudioArtwork(name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "My look" : name,
                 surface: surface, header: draftHeader, italicSubtitle: draftItalic,
@@ -228,11 +230,11 @@ struct StudioSurfaceEditor: View
     {
 
 
-        let chosen           = draft
-        let chosenHeader     = draftHeader
-        let chosenItalic     = draftItalic
-        let chosenTitleColor = draftTitleColor
-        let chosenTextColor  = draftTextColor
+        let chosen           = draft           /* Explicit user selection */
+        let chosenHeader     = draftHeader     /* Chosen header           */
+        let chosenItalic     = draftItalic     /* Chosen italic           */
+        let chosenTitleColor = draftTitleColor /* Chosen title color      */
+        let chosenTextColor  = draftTextColor  /* Chosen text color       */
 
         applyTask?.cancel()
 
@@ -295,7 +297,7 @@ struct StudioSurfaceEditor: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View
+    var body: some View /* Studio Surface Editor layout */
     {
 
 
@@ -577,8 +579,9 @@ struct StudioSurfaceEditor: View
             do
             {
 
-                let url    = try result.get()
-                let access = url.startAccessingSecurityScopedResource()
+                let url    = try result.get() /* Resource location             */
+                let access =                  /* Security-scoped access result */
+                    url.startAccessingSecurityScopedResource()
 
                 defer
                 {
@@ -642,14 +645,14 @@ struct StudioLibraryView: View
 {
 
 
-    var onSelect: ((StudioArtwork) -> Void)?                = nil
-    @AppStorage(StudioSettings.libraryKey) private var data = Data()
-    @Environment(\.dismiss) private var dismiss
-    @State private var error:    String?
-    @State private var renaming: StudioArtwork?
-    @State private var renamed = ""
+    var onSelect: ((StudioArtwork) -> Void)?                = nil /* Handle the selected value */
+    @AppStorage(StudioSettings.libraryKey) private var data = Data() /* Persisted settings bytes */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var error:    String? /* Reported operation failure */
+    @State private var renaming: StudioArtwork? /* Item with an edited name */
+    @State private var renamed = "" /* Item after renaming */
 
-    private var artworks: [StudioArtwork]
+    private var artworks: [StudioArtwork] /* Reusable saved artwork */
     {
         (try? JSONDecoder().decode([StudioArtwork].self, from: data)) ?? []
     }
@@ -668,7 +671,8 @@ struct StudioLibraryView: View
             return
         }
 
-        let name = renamed.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = /* Display or lookup name */
+            renamed.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !name.isEmpty else
         {
@@ -678,7 +682,7 @@ struct StudioLibraryView: View
         do
         {
 
-            var saved = artworks
+            var saved = artworks /* Saved state under review */
 
             guard let index = saved.firstIndex(where:
                 {
@@ -713,7 +717,7 @@ struct StudioLibraryView: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View
+    var body: some View /* Studio Library layout */
     {
 
 
@@ -780,7 +784,7 @@ struct StudioLibraryView: View
                     do
                     {
 
-                        var retained = artworks
+                        var retained = artworks /* State retained for recovery */
 
                         retained.remove(atOffsets: indices)
 

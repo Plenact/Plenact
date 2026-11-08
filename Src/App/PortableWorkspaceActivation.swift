@@ -13,8 +13,8 @@ import SwiftUI
 struct PortableWorkspaceImportAccess
 {
 
-    let install: (ReviewedPortablePackage) -> Void
-    let undo:    () -> Void
+    let install: (ReviewedPortablePackage) -> Void /* Install callback       */
+    let undo:    () -> Void                        /* Restore the prior edit */
 
 }
 
@@ -25,7 +25,7 @@ struct PortableWorkspaceImportAccess
 private struct PortableWorkspaceImportKey: EnvironmentKey
 {
 
-    static let defaultValue: PortableWorkspaceImportAccess? = nil
+    static let defaultValue: PortableWorkspaceImportAccess? = nil /* Fallback environment value */
 
 }
 
@@ -36,7 +36,7 @@ extension EnvironmentValues
     /// @fcn EnvironmentValues.portableWorkspaceImport
     /// @brief Access the root's explicit Simulator import boundary
     /// @return Optional import and undo actions
-    var portableWorkspaceImport: PortableWorkspaceImportAccess?
+    var portableWorkspaceImport: PortableWorkspaceImportAccess? /* Portable workspace import */
     {
 
         get
@@ -76,7 +76,7 @@ extension AppRootView
             #if targetEnvironment(simulator)
             KanbanBoardPersistence.waitForPendingSaves()
 
-            let store = try FullMonthExampleStore.live()
+            let store = try FullMonthExampleStore.live() /* Persistence boundary */
 
             if undoingPortableImport
             {
@@ -89,17 +89,22 @@ extension AppRootView
             else if let package = pendingPortableImport, let domain = Bundle.main.bundleIdentifier
             {
 
-                let candidate    = try PortableWorkspaceCandidate.prepare(package)
-                let aliases      = ["GMT": "Etc/UTC", "UTC": "Etc/UTC", "Etc/GMT": "Etc/UTC"]
-                let deviceZone   = aliases[TimeZone.current.identifier] ?? TimeZone.current.identifier
-                let originalZone = aliases[candidate.timeZoneID] ?? candidate.timeZoneID
+                let candidate    = /* Candidate under validation */
+                    try PortableWorkspaceCandidate.prepare(package)
+                let aliases      = /* Local-to-portable identities */
+                    ["GMT": "Etc/UTC", "UTC": "Etc/UTC", "Etc/GMT": "Etc/UTC"]
+                let deviceZone   = /* Device zone */
+                    aliases[TimeZone.current.identifier] ?? TimeZone.current.identifier
+                let originalZone = /* Original zone */
+                    aliases[candidate.timeZoneID] ?? candidate.timeZoneID
 
                 guard originalZone == deviceZone else
                 {
                     throw PortableEditableContent.Failure.dateContextRequired
                 }
 
-                let staging = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+                let staging = /* Isolated staging workspace */
+                    FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 
                 defer
                 {

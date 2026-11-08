@@ -54,20 +54,21 @@ extension PlenactBoardDocumentTests
             KanbanCard(id: id, word: title, listTitle: "Day", checklists: [])
         }
 
-        var heading = card(1, "--- Morning")
+        var heading = card(1, "--- Morning") /* Section heading text */
 
         heading.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
 
-        let cards = [
+        let cards = [ /* Card records under consideration */
             card(0, "Before"), heading, card(2, "Hidden"), card(3, "--- Evening"), card(4, "Visible"), card(5, "Last")
         ]
-        let move = try XCTUnwrap(
+        let move = try XCTUnwrap( /* Move comparison fixture */
             DaySections.visibleMove(cards, sourceOffsets: IndexSet(integer: 4), destinationOffset: 2))
 
         XCTAssertEqual(move.id, 5)
         XCTAssertEqual(move.index, 3)
 
-        var result = DaySections.reordered(cards, itemID: move.id, to: move.index)
+        var result = /* Accumulated output value */
+            DaySections.reordered(cards, itemID: move.id, to: move.index)
 
         DaySections.reveal(move.id, in: &result)
         XCTAssertEqual(result.map(\.id), [0, 1, 2, 5, 3, 4])
@@ -78,7 +79,7 @@ extension PlenactBoardDocumentTests
                 $0.id == 2
             }, cards[2], "Hidden content remains intact")
 
-        var lists = [KanbanList(id: 1, title: "Day", cards: cards)]
+        var lists = [KanbanList(id: 1, title: "Day", cards: cards)] /* Ordered List records */
 
         XCTAssertTrue(try BoardCardMovement.move(5, to: 1, before: 3, in: &lists))
         XCTAssertEqual(lists[0].cards.map(\.id), [0, 1, 2, 5, 3, 4])
@@ -102,7 +103,7 @@ extension PlenactBoardDocumentTests
     func testSingleListViewModePersistsWithoutConvertingOrReorderingContent() throws
     {
 
-        var list = KanbanList(
+        var list = KanbanList( /* Synthetic list fixture */
             id: 4, title: "Wednesday",
             cards: [
                 KanbanCard(
@@ -117,12 +118,13 @@ extension PlenactBoardDocumentTests
 
         list.appearance = ItemAppearance(icon: .tasks)
 
-        let original = list
+        let original = list /* Baseline before changes */
 
         XCTAssertEqual(list.singleListViewMode, .cards)
         list.setSingleListViewMode(.noteList)
 
-        let restored = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        let restored = /* Recovered state under review */
+            try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
 
         XCTAssertEqual(restored.singleListViewMode, .noteList)
         XCTAssertEqual(restored.cards, original.cards)
@@ -134,7 +136,7 @@ extension PlenactBoardDocumentTests
         XCTAssertFalse(ItemAppearance(listViewMode: .noteList).isEmpty)
         XCTAssertNil(try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8)).listViewMode)
 
-        var anotherDay = KanbanList(id: 5, title: "Thursday", cards: [])
+        var anotherDay = KanbanList(id: 5, title: "Thursday", cards: []) /* Another day */
 
         XCTAssertEqual(anotherDay.singleListViewMode, .cards)
         anotherDay.setSingleListViewMode(.noteList)
@@ -156,23 +158,25 @@ extension PlenactBoardDocumentTests
     func testKeepTomorrowDecisionPersistsWithoutCopyingOrRetimingTheTableItem() throws
     {
 
-        let suite    = "ReviewCarryTests." + UUID().uuidString
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let suite    = "ReviewCarryTests." + UUID().uuidString /* Isolated preference domain  */
+        let defaults =                                         /* Preference store under test */
+            try XCTUnwrap(UserDefaults(suiteName: suite))
 
         defer
         {
             defaults.removePersistentDomain(forName: suite)
         }
 
-        let week  = DatedPlanningWeek.make(for: .now)
-        var table = PersonalCollection(title: "On the Table", kind: .list)
-        var card  = KanbanCard(
+        let week  = DatedPlanningWeek.make(for: .now) /* Synthetic week fixture     */
+        var table =                                   /* Table content under review */
+            PersonalCollection(title: "On the Table", kind: .list)
+        var card  = KanbanCard( /* Synthetic card fixture */
             id: 0, word: "Go to the grocery store", listTitle: table.title, checklists: [], createdAt: .now)
 
         card.dueDate = .now.addingTimeInterval(-3600)
         table.lists[0].cards = [card]
 
-        let access = PlanningCalendarAccess(
+        let access = PlanningCalendarAccess( /* Scoped workspace operations */
             document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [table],
             saveWeek:
             {
@@ -195,11 +199,12 @@ extension PlenactBoardDocumentTests
                 XCTFail("Keep must not save/move the source");
                 return false
             })
-        var plan  = DailyPlan(date: .now)
-        let items = TodayReviewSelection.items(
+        var plan  = DailyPlan(date: .now)       /* Daily planning record */
+        let items = TodayReviewSelection.items( /* Items being processed */
             plan: plan, date: .now, access: access, referenceLabelIDs: [], calendar: .current)
-        let source = DailyPlanPriority(try XCTUnwrap(items.first))
-        var review = DailyEveningReview()
+        let source = /* Source value for this operation */
+            DailyPlanPriority(try XCTUnwrap(items.first))
+        var review = DailyEveningReview() /* Review record being inspected */
 
         review.decisions = [DailyReviewDecision(source: source, result: source, action: .keepTomorrow)]
         plan.eveningReview = review
@@ -211,7 +216,8 @@ extension PlenactBoardDocumentTests
 
         }
 
-        let restored = try XCTUnwrap(DailyPlanStore.load(from: defaults).plans[plan.id])
+        let restored = /* Recovered state under review */
+            try XCTUnwrap(DailyPlanStore.load(from: defaults).plans[plan.id])
 
         XCTAssertEqual(restored.eveningReview?.decisions.first?.action, .keepTomorrow)
         XCTAssertTrue(TodayReviewSelection.pending(items, review: restored.eveningReview).isEmpty)
@@ -237,16 +243,18 @@ extension PlenactBoardDocumentTests
     func testWholeListMoveRejectsUnavailableOrSameBoardWithoutMutation() throws
     {
 
-        var source = PersonalCollection(title: "Source", kind: .board)
+        var source = /* Source value for this operation */
+            PersonalCollection(title: "Source", kind: .board)
 
         source.lists = [KanbanList(id: 4, title: "List", cards: [])]
 
-        var archived = PersonalCollection(title: "Archived", kind: .board)
+        var archived = /* Archived records or state */
+            PersonalCollection(title: "Archived", kind: .board)
 
         archived.isArchived = true
 
-        var boards   = [source, archived]
-        let original = boards
+        var boards   = [source, archived] /* Boards lookup entries   */
+        let original = boards             /* Baseline before changes */
 
         for destination in [source.id, archived.id, UUID()]
         {
@@ -297,28 +305,29 @@ extension PlenactBoardDocumentTests
     func testCrossBoardMoveReservesArchivedIdentitiesAndPreservesFormat() throws
     {
 
-        var original = SampleData.lists[0].cards[0]
+        var original = SampleData.lists[0].cards[0] /* Baseline before changes */
 
         original.displayFormat = .picture
 
-        var week = [KanbanList(id: 10, title: "Monday", cards: [])]
+        var week = [KanbanList(id: 10, title: "Monday", cards: [])] /* Synthetic week fixture */
 
         week[0].archivedCards = [original]
 
-        var library = PersonalCollection(title: "Ideas", kind: .list)
+        var library = /* Retained library contents */
+            PersonalCollection(title: "Ideas", kind: .list)
 
         library.lists = [KanbanList(id: 20, title: "Ideas", cards: [original])]
         library.savedCardIDs = [original.id]
 
-        var collections = [library]
-        var saved       = Set<Int>()
+        var collections = [library]  /* Retained personal collections */
+        var saved       = Set<Int>() /* Saved state under review      */
 
         try CrossBoardCardMovement.move(
             original, from: library.id,
             to: CardMoveDestination(collectionID: nil, listID: 10, title: "Monday", group: "Week"),
             week: &week, collections: &collections, saved: &saved)
 
-        let moved = try XCTUnwrap(week[0].cards.first)
+        let moved = try XCTUnwrap(week[0].cards.first) /* Item after transfer */
 
         XCTAssertNotEqual(moved.id, original.id)
         XCTAssertEqual(moved, original.replacingLocation(id: moved.id, listTitle: "Monday"))
@@ -339,11 +348,12 @@ extension PlenactBoardDocumentTests
     func testCrossBoardMoveRejectsUnavailableDestinationWithoutMutation() throws
     {
 
-        let card            = SampleData.lists[0].cards[0]
-        var week            = [KanbanList(id: 10, title: "Monday", cards: [card])]
-        let before          = week
-        var collections     = [PersonalCollection]()
-        var saved: Set<Int> = [card.id]
+        let card            = SampleData.lists[0].cards[0] /* Synthetic card fixture */
+        var week            =                              /* Synthetic week fixture */
+            [KanbanList(id: 10, title: "Monday", cards: [card])]
+        let before          = week                   /* State before the operation    */
+        var collections     = [PersonalCollection]() /* Retained personal collections */
+        var saved: Set<Int> = [card.id]              /* Saved state under review      */
 
         XCTAssertThrowsError(
             try CrossBoardCardMovement.move(
@@ -370,20 +380,24 @@ extension PlenactBoardDocumentTests
     func testMixedDisplayFormatsPersistMoveRenameAndArchiveWithIndependentDefaults() async throws
     {
 
-        let suite    = "PlenactTests.DisplayFormats.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let suite    = /* Isolated preference domain */
+            "PlenactTests.DisplayFormats.\(UUID().uuidString)"
+        let defaults = /* Preference store under test */
+            try XCTUnwrap(UserDefaults(suiteName: suite))
 
         defer
         {
             defaults.removePersistentDomain(forName: suite)
         }
 
-        let photo = KanbanAttachment(fileName: "mixed-display-example.jpg")
-        let cards = ItemDisplayFormat.allCases.enumerated().map
+        let photo = /* Photo selection or source */
+            KanbanAttachment(fileName: "mixed-display-example.jpg")
+        let cards = /* Card records under consideration */
+            ItemDisplayFormat.allCases.enumerated().map
         {
             index, format in
 
-            var card = KanbanCard(
+            var card = KanbanCard( /* Synthetic card fixture */
                 id: index + 1, word: "Example \(format.title)", listTitle: "Ideas",
                 attachments: [photo], coverAttachmentID: photo.id, descriptionOverride: "Retained body")
 
@@ -392,13 +406,14 @@ extension PlenactBoardDocumentTests
             return card
         }
 
-        var lists = [KanbanList(id: 1, title: "Ideas", cards: cards), KanbanList(id: 2, title: "Next", cards: [])]
+        var lists = /* Ordered List records */
+            [KanbanList(id: 1, title: "Ideas", cards: cards), KanbanList(id: 2, title: "Next", cards: [])]
 
         XCTAssertTrue(editBoardList(1, title: "Ideas", subtitle: "", newItemPresentation: .note, in: &lists))
         XCTAssertEqual(lists[0].cards, cards)
         XCTAssertEqual(lists[0].makeItem(id: 10, title: "New writing").displayFormat, .note)
 
-        let picture = try XCTUnwrap(cards.first
+        let picture = try XCTUnwrap(cards.first /* Picture comparison fixture */
             {
                 $0.displayFormat == .picture
             })
@@ -407,7 +422,8 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(lists[1].cards.first?.displayFormat, .picture)
         lists[1].archiveCard(id: picture.id)
 
-        var collection = PersonalCollection(title: "Ideas", kind: .list)
+        var collection = /* Synthetic collection fixture */
+            PersonalCollection(title: "Ideas", kind: .list)
 
         collection.lists = lists
 
@@ -420,11 +436,12 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(PersonalCollectionStore.load(from: defaults) [0].lists[0].newItemPresentation, .card)
         try KanbanBoardPersistence.saveListsChecked(collection.lists, suiteName: suite)
 
-        let restored = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+        let restored = /* Recovered state under review */
+            await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
 
         XCTAssertEqual(restored, collection.lists)
 
-        var archivedList = try XCTUnwrap(restored.last)
+        var archivedList = try XCTUnwrap(restored.last) /* Archived list */
 
         archivedList.restoreArchivedCard(id: picture.id)
         XCTAssertEqual(archivedList.cards.first?.displayFormat, .picture)
@@ -445,7 +462,7 @@ extension PlenactBoardDocumentTests
     func testListCopyAllocatesIDsAndPreservesContentAndInternalLinks() throws
     {
 
-        var first = KanbanCard(
+        var first = KanbanCard( /* First comparison value */
             id: 1, word: "First", listTitle: "Source", descriptionOverride: "Keep",
             sectionLayout: CardSectionLayout(hidden: [.details]))
 
@@ -458,16 +475,18 @@ extension PlenactBoardDocumentTests
                 ])
         ]
 
-        let archived = KanbanCard(id: 2, word: "Archived", listTitle: "Source")
-        var source   = KanbanList(
+        let archived = /* Archived records or state */
+            KanbanCard(id: 2, word: "Archived", listTitle: "Source")
+        var source   = KanbanList( /* Source value for this operation */
             id: 1, title: "Source", cards: [first], archivedCards: [archived], newItemPresentation: .note)
 
         source.subtitleOverride = "Subtitle"
 
-        let destination = [
+        let destination = [ /* Destination for the operation */
             KanbanList(id: 8, title: "Other", cards: [KanbanCard(id: 20, word: "Existing", listTitle: "Other")])
         ]
-        let copy = ListCopying.copy(source, into: destination, crossBoard: true)
+        let copy = /* Independent working copy */
+            ListCopying.copy(source, into: destination, crossBoard: true)
 
         XCTAssertEqual(copy.id, 9)
         XCTAssertEqual(copy.allCards.map(\.id), [21, 22])
@@ -495,7 +514,7 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let first = KanbanList(
+        let first = KanbanList( /* First comparison value */
             id: 1, title: "First",
             cards: [ /* First value in the comparison */
                 KanbanCard(id: 10, word: "Active", listTitle: "First", checklists: [])
@@ -503,7 +522,7 @@ extension PlenactBoardDocumentTests
             archivedCards: [
                 KanbanCard(id: 11, word: "Archived", listTitle: "First", checklists: [])
             ])
-        let second = KanbanList(
+        let second = KanbanList( /* Second comparison value */
             id: 2, title: "Keep",
             cards: [ /* Second value in the comparison */
                 KanbanCard(id: 12, word: "Keep", listTitle: "Keep", checklists: [])
@@ -537,8 +556,8 @@ extension PlenactBoardDocumentTests
     {
 
 
-        var lists  = SampleData.lists     /* Board lists under verification        */
-        let monday = lists.removeFirst()  /* Restored Monday List after reordering */
+        var lists  = SampleData.lists    /* Board lists under verification        */
+        let monday = lists.removeFirst() /* Restored Monday List after reordering */
 
         lists.append(monday)
 
@@ -547,7 +566,7 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(BoardListReordering.move(monday.id, to: lists.count - 1, in: &lists))
         XCTAssertEqual(lists.last, monday)
 
-        let restored = try JSONDecoder().decode(
+        let restored = try JSONDecoder().decode( /* Recovered state under review */
             [KanbanList].self, from: JSONEncoder().encode(lists)) /* Restored value under verification */
 
         XCTAssertEqual(restored, lists)
@@ -588,8 +607,8 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let cardsBeforeMove = SampleData.lists[0].cards  /* Original complete card sequence */
-        var cards           = cardsBeforeMove            /* Mutable card-order copy         */
+        let cardsBeforeMove = SampleData.lists[0].cards /* Original complete card sequence */
+        var cards           = cardsBeforeMove           /* Mutable card-order copy         */
 
         guard let lastCardID = cards.last?.id else
         {  /* Stable identity moved to the first position */
@@ -625,7 +644,7 @@ extension PlenactBoardDocumentTests
     {
 
 
-        var card = try XCTUnwrap(
+        var card = try XCTUnwrap( /* Synthetic card fixture */
             SampleData.lists[0].cards.first
             {
                 !$0.isSectionDivider
@@ -642,7 +661,7 @@ extension PlenactBoardDocumentTests
         card.dueDate = Date(timeIntervalSince1970: 5678)
         card.descriptionOverride = "Retain every field"
 
-        let retained = KanbanCard(
+        let retained = KanbanCard( /* State retained for recovery */
             id: 901, word: "Archived", listTitle: "Source")  /* Archived Card retained by its source List */
         var lists = [                                        /* Board lists under verification            */
             KanbanList(id: 1, title: "Source", cards: [card], archivedCards: [retained]),
@@ -687,13 +706,13 @@ extension PlenactBoardDocumentTests
     {
 
 
-        let cards = (1 ... 4).map
+        let cards = (1 ... 4).map /* Card records under consideration */
         {
 
             KanbanCard(id: $0, word: "Card \($0)", listTitle: "A")
         }  /* Card records under inspection  */
 
-        var lists = [
+        var lists = [ /* Ordered List records */
             KanbanList(id: 10, title: "A", cards: cards), /* Board lists under verification */
             KanbanList(id: 20, title: "Empty", cards: [])
         ]
@@ -731,7 +750,7 @@ extension PlenactBoardDocumentTests
         let card    = KanbanCard(id: 1, word: "Card", listTitle: "A")               /* Card value under verification */
         let divider = KanbanCard(id: 2, word: "", listTitle: "A", isDivider: true)  /* Section-divider fixture       */
         let archive = KanbanCard(id: 3, word: "Retained", listTitle: "A")           /* Archived-card snapshot        */
-        var lists   = [
+        var lists   = [ /* Ordered List records */
             KanbanList(
                 id: 10, title: "A", cards: [card, divider], archivedCards: [archive]), /* Board lists under verification */
             KanbanList(id: 20, title: "B", cards: [])
@@ -808,8 +827,8 @@ extension PlenactBoardDocumentTests
         }
 
 
-        var lists = SampleData.lists /* Board lists under verification */
-        let card  = try XCTUnwrap(lists[0].cards.first
+        var lists = SampleData.lists                   /* Board lists under verification */
+        let card  = try XCTUnwrap(lists[0].cards.first /* Synthetic card fixture         */
             {
                 !$0.isSectionDivider
             })                         /* Card value under verification */
@@ -818,18 +837,19 @@ extension PlenactBoardDocumentTests
         try BoardCardMovement.move(card.id, to: destination, in: &lists)
         KanbanBoardPersistence.enqueueSave(lists, suiteName: suite)
 
-        let reloaded = await KanbanBoardPersistence.loadListsInBackground(
+        let reloaded = /* Stored reloaded snapshot */
+            await KanbanBoardPersistence.loadListsInBackground(
             suiteName: suite) /* Document loaded after reopening storage */
 
         XCTAssertEqual(reloaded, lists)
 
-        var personal = PersonalCollection(
+        var personal = PersonalCollection( /* Personal collection fixture */
             title: "Synthetic Board", kind: .board) /* Personal List fixture filtered from demo Boards */
 
         personal.lists = SampleData.lists
         personal.savedCardIDs = [card.id]
 
-        var independent = PersonalCollection(
+        var independent = PersonalCollection( /* Independent comparison fixture */
             title: "Separate Board", kind: .board) /* Separate personal Board retained by movement */
 
         independent.lists = personal.lists
@@ -838,7 +858,7 @@ extension PlenactBoardDocumentTests
 
         XCTAssertEqual(independent.lists, SampleData.lists)
 
-        let decoded = try JSONDecoder().decode(
+        let decoded = try JSONDecoder().decode( /* Decoded input value */
             PersonalCollection.self, from: JSONEncoder().encode(personal)) /* Decoded personal collection after persistence */
 
         XCTAssertEqual(decoded.lists, lists)
@@ -883,7 +903,8 @@ extension PlenactBoardDocumentTests
 
         defaults.set(invalidData, forKey: "Plenact.Board.v1")
 
-        let restored = await KanbanBoardPersistence.loadListsInBackground(
+        let restored = /* Recovered state under review */
+            await KanbanBoardPersistence.loadListsInBackground(
             suiteName: suite) /* Restored value under verification */
 
         XCTAssertEqual(restored, SampleData.lists)

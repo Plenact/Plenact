@@ -21,15 +21,15 @@ import UniformTypeIdentifiers
 struct ReadOnlyCardContent: View
 {
 
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
-    let card:             KanbanCard
-    let labels:           LabelLibrary
-    let onOpenAttachment: (KanbanAttachment) -> Void
-    var showsUnlockHint = true
+    let card:             KanbanCard                 /* Card under consideration    */
+    let labels:           LabelLibrary               /* Available label definitions */
+    let onOpenAttachment: (KanbanAttachment) -> Void /* Open attachment callback    */
+    var showsUnlockHint = true                       /* Unlock Hint visibility      */
 
-    var body: some View
+    var body: some View /* Read Only Card Content layout */
     {
 
         ScrollView
@@ -77,7 +77,8 @@ struct ReadOnlyCardContent: View
                     .buttonStyle(.plain).accessibilityLabel("View cover")
                 }
 
-                let body = card.presentation == .note ? card.descriptionOverride ?? "" : card.funParagraph
+                let body = /* Note or description text */
+                    card.presentation == .note ? card.descriptionOverride ?? "" : card.funParagraph
 
                 if !PlanRichText.plain(body).isEmpty
                 {
@@ -217,9 +218,9 @@ struct ReadOnlyChecklistContent: View
 {
 
 
-    let checklists: [KanbanChecklist]
+    let checklists: [KanbanChecklist] /* Owned checklist groups */
 
-    var body: some View
+    var body: some View /* Read Only Checklist Content layout */
     {
 
         ForEach(checklists)

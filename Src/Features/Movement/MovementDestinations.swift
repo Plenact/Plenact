@@ -21,11 +21,16 @@ struct CardMovementAccess
 {
 
 
-    var destinations:      [CardMoveDestination]                                     = []
-    var move:              ((KanbanCard, UUID?, CardMoveDestination) -> Bool)?       = nil
-    var moveToDate:        ((KanbanCard, UUID?, Date) -> Bool)?                      = nil
-    var moveSection:       ((KanbanCard, UUID?, CardMoveDestination, Bool) -> Bool)? = nil
-    var moveSectionToDate: ((KanbanCard, UUID?, Date, Bool) -> Bool)?                = nil
+    var destinations:      [CardMoveDestination]                                     = /* Available operation destinations */
+        []
+    var move:              ((KanbanCard, UUID?, CardMoveDestination) -> Bool)?       = /* Move callback */
+        nil
+    var moveToDate:        ((KanbanCard, UUID?, Date) -> Bool)?                      = /* Move to date callback */
+        nil
+    var moveSection:       ((KanbanCard, UUID?, CardMoveDestination, Bool) -> Bool)? = /* Move section callback */
+        nil
+    var moveSectionToDate: ((KanbanCard, UUID?, Date, Bool) -> Bool)?                = /* Move section to date callback */
+        nil
 
 }
 
@@ -41,7 +46,7 @@ struct CardMovementAccessKey: EnvironmentKey
 {
 
 
-    static let defaultValue = CardMovementAccess()
+    static let defaultValue = CardMovementAccess() /* Fallback environment value */
 
 }
 
@@ -57,7 +62,7 @@ struct CardMovementSourceKey: EnvironmentKey
 {
 
 
-    static let defaultValue: UUID? = nil
+    static let defaultValue: UUID? = nil /* Fallback environment value */
 
 }
 
@@ -73,7 +78,7 @@ extension EnvironmentValues
 {
 
 
-    var cardMovementAccess: CardMovementAccess
+    var cardMovementAccess: CardMovementAccess /* Card movement access */
     {
 
         get
@@ -90,7 +95,7 @@ extension EnvironmentValues
 
     }
 
-    var cardMovementSource: UUID?
+    var cardMovementSource: UUID? /* Card movement source */
     {
 
         get
@@ -121,42 +126,42 @@ struct SectionMoveSheet: View
 {
 
 
-    let heading: KanbanCard
-    var onMoved: () -> Void =
+    let heading: KanbanCard   /* Section heading text */
+    var onMoved: () -> Void = /* Moved callback       */
     {
 
     }
 
-    @Environment(\.cardMovementAccess) private var movement
-    @Environment(\.cardMovementSource) private var source
-    @Environment(\.planningCalendarAccess) private var planning
-    @Environment(\.dismiss) private var dismiss
-    @State private var chooseDate = false
-    @State private var date       = Date()
-    @State private var destination: CardMoveDestination?
-    @State private var shiftDates = false
-    @State private var failed     = false
+    @Environment(\.cardMovementAccess) private var movement /* Owner-qualified transfer context */
+    @Environment(\.cardMovementSource) private var source /* Source value for this operation */
+    @Environment(\.planningCalendarAccess) private var planning /* Planning store projection */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var chooseDate = false /* Choose date */
+    @State private var date       = Date() /* Date used by this operation */
+    @State private var destination: CardMoveDestination? /* Destination for the operation */
+    @State private var shiftDates = false /* Shift dates */
+    @State private var failed     = false /* Rejected operation result */
 
-    private var destinations: [CardMoveDestination]
+    private var destinations: [CardMoveDestination] /* Available operation destinations */
     {
 
         movement.destinations.filter
         {
             item in
 
-            let current = planning?.document.weeks.first
+            let current = planning?.document.weeks.first /* Current operation snapshot */
             {
                 $0.startKey == planning?.document.currentWeekKey
             }?.id
-            let ownerID  = item.collectionID ?? current
-            let sourceID = source ?? current
+            let ownerID  = item.collectionID ?? current /* Record owner identifier */
+            let sourceID = source ?? current            /* Source ID               */
 
             guard ownerID == sourceID else
             {
                 return true
             }
 
-            let owner =
+            let owner = /* Owning collection or Week */
             planning?.document.weeks.first
             {
                 $0.id == sourceID
@@ -178,7 +183,7 @@ struct SectionMoveSheet: View
 
     }
 
-    private var destinationDay: Date?
+    private var destinationDay: Date? /* Destination day */
     {
 
         guard let destination, let document = planning?.document else
@@ -186,7 +191,7 @@ struct SectionMoveSheet: View
             return nil
         }
 
-        let owner = destination.collectionID ?? document.weeks.first
+        let owner = destination.collectionID ?? document.weeks.first /* Owning collection or Week */
         {
             $0.startKey == document.currentWeekKey
         }?.id
@@ -205,7 +210,7 @@ struct SectionMoveSheet: View
 
     }
 
-    var body: some View
+    var body: some View /* Section Move layout */
     {
 
         NavigationStack
@@ -308,7 +313,7 @@ struct SectionMoveSheet: View
                     Button("Move")
                     {
 
-                        let succeeded: Bool
+                        let succeeded: Bool /* Successful operation result */
 
                         if chooseDate
                         {
@@ -379,27 +384,27 @@ struct CardDestinationMenu: View
 {
 
 
-    let card:    KanbanCard
-    var onMoved: () -> Void =
+    let card:    KanbanCard   /* Card under consideration */
+    var onMoved: () -> Void = /* Moved callback           */
     {
 
     }
 
-    var locationTitle: String?          = nil
-    @State private var showsSectionMove = false
-    @State private var showsDatePicker  = false
-    @State private var selectedMoveDate = Date()
+    var locationTitle: String?          = nil    /* Location title          */
+    @State private var showsSectionMove = false  /* Section Move visibility */
+    @State private var showsDatePicker  = false  /* Date Picker visibility  */
+    @State private var selectedMoveDate = Date() /* Selected move date      */
 
-    @Environment(\.cardMovementAccess) private var access
-    @Environment(\.cardMovementSource) private var source
+    @Environment(\.cardMovementAccess) private var access /* Scoped workspace operations     */
+    @Environment(\.cardMovementSource) private var source /* Source value for this operation */
 
-    private var destinations: [CardMoveDestination]
+    private var destinations: [CardMoveDestination] /* Available operation destinations */
     {
 
         access.destinations
     }
 
-    var body: some View
+    var body: some View /* Card Destination Menu layout */
     {
 
         if card.sectionHeading != nil, access.moveSection != nil

@@ -12,8 +12,8 @@ import SwiftSyntax
 final class Inventory: SyntaxVisitor
 {
 
-    var models: [[String: Any]] = []
-    var keys: Set<String>       = []
+    var models: [[String: Any]] = [] /* Models lookup entries       */
+    var keys: Set<String>       = [] /* Keys used by this operation */
 
     /// @fcn Inventory.owner
     /// @brief Qualify nested source types independently of similarly named store documents
@@ -22,8 +22,8 @@ final class Inventory: SyntaxVisitor
     func owner(_ node: some SyntaxProtocol) -> String
     {
 
-        var names: [String] = []
-        var parent          = node.parent
+        var names: [String] = []          /* Names used by this operation */
+        var parent          = node.parent /* Owning view or model         */
 
         while let current = parent
         {
@@ -52,15 +52,16 @@ final class Inventory: SyntaxVisitor
     func collect(name: String, parent: String, inheritance: InheritanceClauseSyntax?, members: MemberBlockItemListSyntax)
     {
 
-        let protocols = inheritance?.inheritedTypes.map { $0.type.trimmedDescription } ?? []
+        let protocols = /* Mapped protocols values */
+            inheritance?.inheritedTypes.map { $0.type.trimmedDescription } ?? []
 
         guard protocols.contains(where: { ["Codable", "Encodable", "Decodable"].contains($0) }) else
         {
             return
         }
 
-        var fields: [[String: String]] = []
-        var cases: [String]            = []
+        var fields: [[String: String]] = [] /* Record fields under review */
+        var cases: [String]            = [] /* Supported enum cases       */
 
         for member in members
         {
@@ -125,7 +126,7 @@ final class Inventory: SyntaxVisitor
     override func visit(_ node: StringSegmentSyntax) -> SyntaxVisitorContinueKind
     {
 
-        let value = node.content.text
+        let value = node.content.text /* Value being processed */
 
         if value.hasPrefix("Plenact.") || value.hasPrefix("plenact.creationDraft.")
         {
@@ -135,21 +136,24 @@ final class Inventory: SyntaxVisitor
     }
 }
 
-let root                       = URL(fileURLWithPath: CommandLine.arguments[1])
-let paths                      = FileManager.default.enumerator(at: root.appendingPathComponent("Src"), includingPropertiesForKeys: nil)!
-var inventory: [[String: Any]] = []
+let root                       = /* Workspace or view root */
+    URL(fileURLWithPath: CommandLine.arguments[1])
+let paths                      = /* Source filesystem paths */
+    FileManager.default.enumerator(at: root.appendingPathComponent("Src"), includingPropertiesForKeys: nil)!
+var inventory: [[String: Any]] = [] /* Verified source inventory */
 
 for case let file as URL in paths where file.pathExtension == "swift"
 {
 
-    let text    = try String(contentsOf: file, encoding: .utf8)
-    let visitor = Inventory(viewMode: .sourceAccurate)
+    let text    = try String(contentsOf: file, encoding: .utf8) /* Text being processed   */
+    let visitor = Inventory(viewMode: .sourceAccurate)          /* Swift syntax traversal */
 
     visitor.walk(Parser.parse(source: text))
     inventory.append(["file": String(file.path.dropFirst(root.path.count + 1)),
                       "models": visitor.models, "key_segments": visitor.keys.sorted()])
 }
 
-let output = try JSONSerialization.data(withJSONObject: inventory.sorted { ($0["file"] as! String) < ($1["file"] as! String) }, options: [.sortedKeys])
+let output = /* Operation output */
+    try JSONSerialization.data(withJSONObject: inventory.sorted { ($0["file"] as! String) < ($1["file"] as! String) }, options: [.sortedKeys])
 
 FileHandle.standardOutput.write(output)

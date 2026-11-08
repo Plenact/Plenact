@@ -23,13 +23,13 @@ struct ArchivedCollectionContentsView: View
 {
 
 
-    @Binding var collection: PersonalCollection     /* Canonical retained collection           */
-    let onDeleteBoard:       () -> Bool             /* Parent reports saved collection removal */
-    let onRestoreBoard:      () -> Void             /* Parent saves restoration                */
-    @Environment(\.dismiss) private var dismiss     /* Return to Saved                         */
-    @State private var deletingList: KanbanList?    /* Nested list awaiting removal            */
-    @State private var deletingCard: KanbanCard?    /* Retained card awaiting removal          */
-    @State private var confirmsDeleteBoard = false  /* Entire collection removal confirmation  */
+    @Binding var collection: PersonalCollection    /* Canonical retained collection           */
+    let onDeleteBoard:       () -> Bool            /* Parent reports saved collection removal */
+    let onRestoreBoard:      () -> Void            /* Parent saves restoration                */
+    @Environment(\.dismiss) private var dismiss    /* Return to Saved                         */
+    @State private var deletingList: KanbanList?   /* Nested list awaiting removal            */
+    @State private var deletingCard: KanbanCard?   /* Retained card awaiting removal          */
+    @State private var confirmsDeleteBoard = false /* Entire collection removal confirmation  */
 
 
     ///
@@ -70,7 +70,7 @@ struct ArchivedCollectionContentsView: View
     /// @details    Deletion updates the owning collection's complete snapshot and local bookmarks
     /// @return     (some View) retained-content browser with restore and deletion controls
     ///
-    var body: some View
+    var body: some View /* Archived Collection Contents layout */
     {  /* Archived Board lists and retained card management */
 
         NavigationStack
@@ -341,7 +341,7 @@ struct ArchivedListsView: View
     /// @return     (some View) archived-list navigation sheet with Close action
     /// @post       Restore delegates the list identity to onRestore; Close dismisses without changes
     ///
-    var body: some View
+    var body: some View /* Archived Lists layout */
     {  /* Archived-list browser with restore and deletion actions */
 
         NavigationStack
@@ -505,13 +505,13 @@ struct ArchivedListContentsView: View
 {
 
 
-    @Binding var lists:              [KanbanList]   /* Canonical retained lists         */
-    let listID:                      Int            /* Archived list identity           */
-    let onDeleteCard:                (Int) -> Void  /* Owner removes confirmed cards    */
-    let onDeleteList:                () -> Void     /* Owner removes the confirmed list */
-    @State private var deletingCard: KanbanCard?    /* Card awaiting permanent removal  */
-    @State private var confirmsDeleteList = false   /* Complete retained list deletion  */
-    @Environment(\.dismiss) private var dismiss     /* Close a deleted list             */
+    @Binding var lists:              [KanbanList]  /* Canonical retained lists         */
+    let listID:                      Int           /* Archived list identity           */
+    let onDeleteCard:                (Int) -> Void /* Owner removes confirmed cards    */
+    let onDeleteList:                () -> Void    /* Owner removes the confirmed list */
+    @State private var deletingCard: KanbanCard?   /* Card awaiting permanent removal  */
+    @State private var confirmsDeleteList = false  /* Complete retained list deletion  */
+    @Environment(\.dismiss) private var dismiss    /* Close a deleted list             */
 
     ///
     /// @fcn        ArchivedListContentsView.list
@@ -519,7 +519,7 @@ struct ArchivedListContentsView: View
     /// @details    Failed saves keep the original rows visible rather than hiding snapshot records
     /// @return     (KanbanList?) current retained list
     ///
-    private var list: KanbanList?
+    private var list: KanbanList? /* List under consideration */
     {
 
         lists.first
@@ -536,7 +536,7 @@ struct ArchivedListContentsView: View
     /// @details    Leaves the list archived and does not create editable copies of its cards
     /// @return     (some View) retained-content list with confirmation
     ///
-    var body: some View
+    var body: some View /* Archived List Contents layout */
     {  /* Retained cards within the selected archived list */
 
         List(list?.allCards ?? [])
@@ -688,10 +688,10 @@ struct ArchivedCardInspectionView: View
 {
 
 
-    let card:     KanbanCard                     /* Retained card snapshot                      */
-    let onDelete: () -> Bool                     /* Owner reports successful save-first removal */
-    @State private var confirmsDelete = false    /* Permanent deletion confirmation             */
-    @Environment(\.dismiss) private var dismiss  /* Return after deletion                       */
+    let card:     KanbanCard                    /* Retained card snapshot                      */
+    let onDelete: () -> Bool                    /* Owner reports successful save-first removal */
+    @State private var confirmsDelete = false   /* Permanent deletion confirmation             */
+    @Environment(\.dismiss) private var dismiss /* Return after deletion                       */
 
     ///
     /// @fcn        ArchivedCardInspectionView.body
@@ -699,7 +699,7 @@ struct ArchivedCardInspectionView: View
     /// @details    This read-only view never writes stale card state on disappearance
     /// @return     (some View) archived card detail with a confirmed Delete Card action
     ///
-    var body: some View
+    var body: some View /* Archived Card Inspection layout */
     {  /* Archived card preview with optional featured media */
 
         List
@@ -842,9 +842,9 @@ struct ArchivedCardsView: View
     /// Archived card snapshot supplied by the owning list
     @Binding var cards: [KanbanCard] /* Shared archived-card collection displayed by the browser */
     /// Requests restoration of an archived card by identity
-    let onRestore:                   (Int) -> Void  /* Returns an archived card to its active list */
-    let onDelete:                    (Int) -> Void  /* Owner removes confirmed archived cards      */
-    @State private var deletingCard: KanbanCard?    /* Archived card awaiting deletion             */
+    let onRestore:                   (Int) -> Void /* Returns an archived card to its active list */
+    let onDelete:                    (Int) -> Void /* Owner removes confirmed archived cards      */
+    @State private var deletingCard: KanbanCard?   /* Archived card awaiting deletion             */
 
 
     ///
@@ -856,7 +856,7 @@ struct ArchivedCardsView: View
     /// @return     (some View) archived-card navigation list
     /// @post       Restore invokes onRestore with the card identity; record movement belongs to the parent
     ///
-    var body: some View
+    var body: some View /* Archived Cards layout */
     {  /* Archived-card browser with restore and deletion controls */
 
         List

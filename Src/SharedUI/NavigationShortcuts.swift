@@ -72,13 +72,14 @@ struct LowerCornerBackShortcut: ViewModifier
 {
 
 
-    let action: (() -> Void)?
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
-    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()
-    @Environment(\.workspaceBottomBarHeight) private var toolbarHeight
-    @State private var keyboardVisible = false
+    let action: (() -> Void)? /* Requested user operation */
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData = /* Preferences data */
+        Data()
+    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data() /* Profile data */
+    @Environment(\.workspaceBottomBarHeight) private var toolbarHeight /* Toolbar height */
+    @State private var keyboardVisible = false /* Keyboard visible */
 
-    private var enabled: Bool
+    private var enabled: Bool /* Feature availability flag */
     {
 
         PlanPreferencesStore.resolved(preferencesData: preferencesData, profileData: profileData).enablesLowerCornerBack
@@ -111,7 +112,8 @@ struct LowerCornerBackShortcut: ViewModifier
 
                     // Full-screen destinations have no toolbar below the target:
                     // include their home-indicator safe area in the touch region
-                    let bottomExtension = toolbarHeight > 0 ? 0 : geometry.safeAreaInsets.bottom
+                    let bottomExtension = /* Bottom extension */
+                        toolbarHeight > 0 ? 0 : geometry.safeAreaInsets.bottom
 
                     HStack(spacing: 0)
                     {

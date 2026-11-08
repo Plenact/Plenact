@@ -26,15 +26,15 @@ struct ImportanceStarCluster: View
 {
 
 
-    let level:         Int
-    var style:         ImportanceStarStyle = .tucked
+    let level:         Int                           /* Saved importance level */
+    var style:         ImportanceStarStyle = .tucked /* Selected display style */
 
-    private var count: Int
+    private var count: Int /* Number of entries */
     {
         min(5, max(0, level))
     }
 
-    var body: some View
+    var body: some View /* Importance Star Cluster layout */
     {
 
         ZStack(alignment: .topLeading)
@@ -83,7 +83,7 @@ struct ImportanceStarCluster: View
             return CGSize(width: 3 + Double(depth) * 3.1, height: 7 - Double(depth) * 1.5)
         }
 
-        let positions: [CGSize] = [
+        let positions: [CGSize] = [ /* Visible item positions */
             CGSize(width: 6, height: 8), CGSize(width: 0, height: 3),
             CGSize(width: 11, height: 2), CGSize(width: 3, height: 0), CGSize(width: 8, height: 0)
         ]
@@ -105,16 +105,19 @@ struct ImportantItemIndicator: View
 {
 
 
-    let cardID:  Int
-    var ownerID: UUID?                                                   = nil
-    @AppStorage("Plenact.LibraryImportant.v1") private var importantData = Data()
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData    = Data()
-    @AppStorage(LocalProfileStore.storageKey) private var profileData    = Data()
-    @Environment(\.cardMovementSource) private var source
-    @Environment(\.libraryImportance) private var importance
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let cardID:  Int /* Owner-local Card identifier */
+    var ownerID: UUID?                                                   = /* Record owner identifier */
+        nil
+    @AppStorage("Plenact.LibraryImportant.v1") private var importantData = /* Important data */
+        Data()
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData    = /* Preferences data */
+        Data()
+    @AppStorage(LocalProfileStore.storageKey) private var profileData    = Data() /* Profile data */
+    @Environment(\.cardMovementSource) private var source /* Source value for this operation */
+    @Environment(\.libraryImportance) private var importance /* Owner-qualified importance state */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
-    private var level: Int
+    private var level: Int /* Saved importance level */
     {
 
         if let owner = ownerID ?? source
@@ -126,7 +129,7 @@ struct ImportantItemIndicator: View
         return importance?.level(cardID) ?? 0
     }
 
-    var body: some View
+    var body: some View /* Important Item Indicator layout */
     {
 
         if level > 0
@@ -199,7 +202,7 @@ struct ImportantItemIndicator: View
     private func adjustImportance(by direction: Int)
     {
 
-        let previous = level
+        let previous = level /* Previous value for comparison */
 
         guard direction > 0 ? previous < 5 : previous > 0 else
         {
@@ -266,7 +269,7 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     func makeUIView(context: Context) -> Marker
     {
 
-        let marker = Marker()
+        let marker = Marker() /* Marker operation value */
 
         marker.isUserInteractionEnabled = false
 
@@ -336,9 +339,9 @@ struct ImportanceStarStylePicker: View
 {
 
 
-    @Binding var selection: ImportanceStarStyle
+    @Binding var selection: ImportanceStarStyle /* Current selection state */
 
-    var body:               some View
+    var body:               some View /* Importance Star Style Picker layout */
     {
 
         Picker("Importance stars", selection: $selection)

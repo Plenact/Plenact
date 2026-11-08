@@ -22,7 +22,7 @@ enum ObjectiveStatus: String, Codable, CaseIterable, Identifiable
 
 
     case active = "Active", achieved = "Achieved", paused = "Paused", released = "Let go"
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }
@@ -41,11 +41,11 @@ struct ReviewObjective: Codable, Equatable, Identifiable
 {
 
 
-    var id                      = UUID()
-    var title                   = ""
-    var status: ObjectiveStatus = .active
-    var progress                = ""
-    var nextStep                = ""
+    var id                      = UUID()  /* Record UUID              */
+    var title                   = ""      /* User-facing title        */
+    var status: ObjectiveStatus = .active /* Current operation status */
+    var progress                = ""      /* Operation progress state */
+    var nextStep                = ""      /* Next step                */
 
 }
 
@@ -61,21 +61,21 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
 {
 
 
-    var id = UUID()
-    var title:      String
-    let startKey:   String
-    let endKey:     String
-    let timeZoneID: String
-    var step                                    = 0
-    var highlights                              = ""
-    var learned                                 = ""
-    var direction                               = ""
-    var risks                                   = ""
-    var startingObjectives: [ReviewObjective]   = []
-    var objectives:         [ReviewObjective]   = []
-    var priorities:         [DailyPlanPriority] = []
-    var updatedAt:          Date?
-    var completedAt:        Date?
+    var id = UUID()                                  /* Record UUID                 */
+    var title:      String                           /* User-facing title           */
+    let startKey:   String                           /* Dated Week boundary key     */
+    let endKey:     String                           /* End key                     */
+    let timeZoneID: String                           /* Time zone ID                */
+    var step                                    = 0  /* Current review step         */
+    var highlights                              = "" /* Saved weekly highlights     */
+    var learned                                 = "" /* Saved review lessons        */
+    var direction                               = "" /* Requested move direction    */
+    var risks                                   = "" /* Saved planning concerns     */
+    var startingObjectives: [ReviewObjective]   = [] /* Starting objectives         */
+    var objectives:         [ReviewObjective]   = [] /* Period review objectives    */
+    var priorities:         [DailyPlanPriority] = [] /* Ordered planning priorities */
+    var updatedAt:          Date?                    /* Updated at                  */
+    var completedAt:        Date?                    /* Completed at                */
 
 
     ///
@@ -104,7 +104,7 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
         {
             prior in
 
-            var current = prior;
+            var current = prior; /* Current operation snapshot */
 
             current.progress = "";
 
@@ -130,7 +130,7 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
         {
             record in
 
-            let keys = record.dayKeys
+            let keys = record.dayKeys /* Keys used by this operation */
 
             return keys.contains
             {
@@ -159,7 +159,7 @@ enum PeriodicReviewStore
 {
 
 
-    static let key = "Plenact.PeriodicReviews.v1"
+    static let key = "Plenact.PeriodicReviews.v1" /* Persistence lookup key */
 
 
     ///
@@ -171,8 +171,8 @@ enum PeriodicReviewStore
     struct Document: Codable, Equatable
     {
 
-        var version                                 = 1;
-        var records: [String: PeriodicReviewRecord] = [:]
+        var version                                 = 1;  /* Serialized format version */
+        var records: [String: PeriodicReviewRecord] = [:] /* Records being processed   */
 
     }
 
@@ -191,7 +191,7 @@ enum PeriodicReviewStore
     static func validate(_ record: PeriodicReviewRecord) throws
     {
 
-        var calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         guard let zone = TimeZone(identifier: record.timeZoneID) else
         {
@@ -321,20 +321,20 @@ enum PeriodicReviewStore
 
         try validate(draft)
 
-        var document = try load(from: defaults)
+        var document = try load(from: defaults) /* Source document snapshot */
 
         guard document.records[draft.id.uuidString] == baseline else
         {
             throw DailyPlanStore.Failure.conflict
         }
 
-        var saved = draft;
+        var saved = draft; /* Saved state under review */
 
         saved.updatedAt = .now
         document.records[saved.id.uuidString] = saved
 
-        let data     = try JSONEncoder().encode(document)
-        let previous = defaults.object(forKey: key)
+        let data     = try JSONEncoder().encode(document) /* Encoded record bytes          */
+        let previous = defaults.object(forKey: key)       /* Previous value for comparison */
 
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
@@ -369,24 +369,24 @@ struct PeriodicReviewView: View
 {
 
 
-    let calendar:                Calendar
-    private let defaults:        UserDefaults
-    private let initialReviewID: UUID?
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var document = PeriodicReviewStore.Document()
-    @State private var weekly   = WeeklyReviewStore.Document()
-    @State private var draft:    PeriodicReviewRecord?
-    @State private var baseline: PeriodicReviewRecord?
-    @State private var title = ""
-    @State private var start: Date
-    @State private var end:   Date
-    @State private var objectiveTitle = ""
-    @State private var error: String?
-    @State private var loaded          = false
-    @State private var loadFailed      = false
-    @State private var confirmsDiscard = false
-    @State private var showsPicker     = false
+    let calendar:                Calendar /* Date calculation calendar */
+    private let defaults:        UserDefaults /* Preference storage domain */
+    private let initialReviewID: UUID? /* Initial review ID */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var document = PeriodicReviewStore.Document() /* Source document snapshot */
+    @State private var weekly   = WeeklyReviewStore.Document() /* Weekly review state */
+    @State private var draft:    PeriodicReviewRecord? /* Local editing draft */
+    @State private var baseline: PeriodicReviewRecord? /* Original state for comparison */
+    @State private var title = "" /* User-facing title */
+    @State private var start: Date /* Range start */
+    @State private var end:   Date /* Range end */
+    @State private var objectiveTitle = "" /* Objective title */
+    @State private var error: String? /* Reported operation failure */
+    @State private var loaded          = false /* Initial load completed      */
+    @State private var loadFailed      = false /* Load failed */
+    @State private var confirmsDiscard = false /* Confirms discard */
+    @State private var showsPicker     = false /* Picker visibility */
 
 
     ///
@@ -413,12 +413,12 @@ struct PeriodicReviewView: View
 
     }
 
-    private var dirty: Bool
+    private var dirty: Bool /* Unsaved-change flag */
     {
         draft != baseline || !objectiveTitle.isEmpty || (draft == nil && !title.isEmpty)
     }
 
-    private var sources: [PlanningSearchResult]
+    private var sources: [PlanningSearchResult] /* Source records or files */
     {
         access?.searchableItems ?? []
     }
@@ -474,7 +474,7 @@ struct PeriodicReviewView: View
     private func begin()
     {
 
-        let key = PlanningDate.key(start, calendar: calendar)
+        let key = PlanningDate.key(start, calendar: calendar) /* Local calendar-day key */
 
         draft = PeriodicReviewRecord(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines), start: start, end: end, calendar: calendar,
@@ -518,7 +518,8 @@ struct PeriodicReviewView: View
     private func addObjective()
     {
 
-        let value = objectiveTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = /* Value being processed */
+            objectiveTitle.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !value.isEmpty else
         {
@@ -571,7 +572,8 @@ struct PeriodicReviewView: View
         do
         {
 
-            let saved = try PeriodicReviewStore.save(value, replacing: baseline, to: defaults)
+            let saved = /* Saved state under review */
+                try PeriodicReviewStore.save(value, replacing: baseline, to: defaults)
 
             document.records[saved.id.uuidString] = saved;
             draft = saved;
@@ -626,7 +628,7 @@ struct PeriodicReviewView: View
             })
     }
 
-    @ViewBuilder private var savedCheckpoints: some View
+    @ViewBuilder private var savedCheckpoints: some View /* Saved checkpoints */
     {
 
         if !document.records.isEmpty
@@ -656,7 +658,7 @@ struct PeriodicReviewView: View
 
     }
 
-    var body: some View
+    var body: some View /* Periodic Review layout */
     {
 
         NavigationStack
@@ -719,7 +721,7 @@ struct PeriodicReviewView: View
                             Section
                             {
 
-                                let weeks = review.weeks(in: weekly)
+                                let weeks = review.weeks(in: weekly) /* Retained dated Weeks */
 
                                 if weeks.isEmpty
                                 {
@@ -804,7 +806,7 @@ struct PeriodicReviewView: View
                                 Section
                                 {
 
-                                    let value = objective(item.id)
+                                    let value = objective(item.id) /* Value being processed */
 
                                     TextField("Objective", text: value.title, axis: .vertical)
                                     .textInputAutocapitalization(.sentences)

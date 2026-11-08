@@ -106,14 +106,14 @@ enum SampleData
     {
 
 
-        let nestedItems = steps.map
+        let nestedItems = steps.map /* Nested items */
         {
             KanbanChecklistItem(title: $0)
         }  /* Standard nested actions */
 
         let checklist  = KanbanChecklist(title: title, items: nestedItems) /* Nested checklist   */
         let sampleDate = Date(timeIntervalSince1970: 1_790_467_200)        /* Stable sample date */
-        let comments   = [
+        let comments   = [ /* Stored item discussion */
             KanbanComment(author: "Plenact Demo", body: comment, createdAt: sampleDate)
         ] /* Sample discussion       */
 
@@ -185,17 +185,17 @@ enum SampleData
 
 
     /// Complete starter Board generated from weekday lists and planning cards
-    static let lists: [KanbanList] =
+    static let lists: [KanbanList] = /* Ordered List records */
     {  /* Deterministic seven-day starter Board */
 
 
         var globalIndex = 0 /* Board-wide list/card seed identity counter */
 
-        var initializedLists = listTitles.enumerated().map
+        var initializedLists = listTitles.enumerated().map /* Initialized lists */
         {
         listIndex, title in /* Seed one list per weekday */
 
-            let cards = cardTitlesByDay[listIndex].map
+            let cards = cardTitlesByDay[listIndex].map /* Card records under consideration */
             {
             cardTitle -> KanbanCard in /* Seed the day's activities */
 
@@ -212,9 +212,10 @@ enum SampleData
                 {
 
 
-                    let illustration = ExampleCoverImage.allCases[
+                    let illustration = /* Illustration operation value */
+                        ExampleCoverImage.allCases[
                     listIndex] /* Bundled cover selected for this example list */
-                    let attachment = KanbanAttachment(
+                    let attachment = KanbanAttachment( /* Owned attachment content */
                         mediaKind: .photo, exampleImage: illustration) /* Photo record referencing the bundled cover   */
 
                     card.attachments = [attachment]
@@ -223,7 +224,7 @@ enum SampleData
                 }
 
 
-                let gallery: [(ExampleCoverImage, String?)]
+                let gallery: [(ExampleCoverImage, String?)] /* Gallery presentation state */
 
                 switch cardTitle
                 {
@@ -273,7 +274,7 @@ enum SampleData
 
 
                 // A few local Picture rows demonstrate mixed Lists without replacing activity content
-                let picture: ExampleCoverImage?
+                let picture: ExampleCoverImage? /* Picture operation value */
 
                 switch (listIndex, cardTitle)
                 {
@@ -299,7 +300,8 @@ enum SampleData
                 if let picture
                 {
 
-                    let photo = KanbanAttachment(mediaKind: .photo, exampleImage: picture)
+                    let photo = /* Photo selection or source */
+                        KanbanAttachment(mediaKind: .photo, exampleImage: picture)
 
                     card.attachments = (card.attachments ?? []) + [photo]
                     card.coverAttachmentID = photo.id
@@ -356,7 +358,7 @@ enum SampleData
 
 
             let targetListIndex = (listIndex + 1) % initializedLists.count /* Next Board list */
-            let targetCards     = baseLists[targetListIndex].cards.filter
+            let targetCards     = baseLists[targetListIndex].cards.filter  /* Target cards    */
             {
                 !$0.isSectionDivider
             }  /* Link targets    */
@@ -453,12 +455,12 @@ enum DefaultListTutorial
             return collection
         }
 
-        var result = collection
+        var result = collection /* Accumulated output value */
 
         for index in result.lists.indices
         {
 
-            let list = result.lists[index]
+            let list = result.lists[index] /* List under consideration */
 
             guard !list.isArchived,
             let template = makeStarter(title: list.title, includesWelcomeCard: true).lists.first?.cards.first
@@ -485,7 +487,7 @@ enum DefaultListTutorial
                     return false
                 }
 
-                var comparable = template
+                var comparable = template /* Comparable operation value */
 
                 comparable.checklists = card.checklists
 
@@ -540,8 +542,8 @@ enum DefaultListTutorial
     static func makeStarter(title: String, includesWelcomeCard: Bool = false) -> PersonalCollection
     {
 
-        let icon: PersonalCollectionIcon
-        let color: ProfileColor
+        let icon: PersonalCollectionIcon /* Selected display icon */
+        let color: ProfileColor          /* Resolved color value  */
 
         switch title
         {
@@ -578,7 +580,8 @@ enum DefaultListTutorial
 
         }
 
-        var collection = PersonalCollection(title: title, kind: .list, icon: icon, color: color)
+        var collection = /* Personal collection record */
+            PersonalCollection(title: title, kind: .list, icon: icon, color: color)
 
         if KanbanList.defaultHeaderIcon(for: title) != nil
         {
@@ -606,9 +609,9 @@ enum DefaultListTutorial
             break
         }
 
-        let heading: String
-        let body: String
-        let steps: [String]
+        let heading: String /* Section heading text     */
+        let body: String    /* Note or description text */
+        let steps: [String] /* Ordered review steps     */
 
         switch title
         {
@@ -647,8 +650,8 @@ enum DefaultListTutorial
             return collection
         }
 
-        let list = collection.lists[0]
-        let card = KanbanCard(
+        let list = collection.lists[0] /* List under consideration */
+        let card = KanbanCard(         /* Card under consideration */
             id: 0, word: heading, listTitle: list.title,
             checklists: [KanbanChecklist(title: "Try it", items: steps.map
                     {

@@ -39,10 +39,12 @@ enum PortableTemplateApplication
             throw PortableEditedExport.Failure.structureChanged
         }
 
-        let originalLists = Set(original.collection.lists.map(\.id))
-        let originalCards = Set(original.collection.lists.flatMap(\.allCards).map(\.id))
-        let lists         = preview.collection.lists.map(\.id)
-        let cards         = preview.collection.lists.flatMap(\.allCards).map(\.id)
+        let originalLists = Set(original.collection.lists.map(\.id)) /* Original lists */
+        let originalCards =                                          /* Original cards */
+            Set(original.collection.lists.flatMap(\.allCards).map(\.id))
+        let lists         = preview.collection.lists.map(\.id) /* Ordered List records */
+        let cards         = /* Card records under consideration */
+            preview.collection.lists.flatMap(\.allCards).map(\.id)
 
         guard Set(lists).count == lists.count, Set(cards).count == cards.count,
               importantIDs.isSubset(of: Set(cards)) else
@@ -51,9 +53,9 @@ enum PortableTemplateApplication
             throw PortableEditedExport.Failure.inconsistent
         }
 
-        let newLists = lists.filter { !originalLists.contains($0) }
-        let newCards = cards.filter { !originalCards.contains($0) }
-        let count    = newLists.count + newCards.count
+        let newLists = lists.filter { !originalLists.contains($0) } /* New lists         */
+        let newCards = cards.filter { !originalCards.contains($0) } /* New cards         */
+        let count    = newLists.count + newCards.count              /* Number of entries */
 
         guard count > 0 else
         {
@@ -61,7 +63,8 @@ enum PortableTemplateApplication
             return (preview, importantIDs)
         }
 
-        let maximum = (lists + cards + Array(originalLists) + Array(originalCards)).max() ?? -1
+        let maximum = /* Upper supported bound */
+            (lists + cards + Array(originalLists) + Array(originalCards)).max() ?? -1
 
         guard maximum < Int.max else
         {
@@ -69,9 +72,12 @@ enum PortableTemplateApplication
             throw PortableEditedExport.Failure.unsupported
         }
 
-        let start   = try PortableCreationIdentity.reserve(proposed: maximum + 1, count: count, root: root)
-        let listMap = Dictionary(uniqueKeysWithValues: newLists.enumerated().map { ($0.element, start + $0.offset) })
-        let cardMap = Dictionary(uniqueKeysWithValues: newCards.enumerated().map { ($0.element, start + newLists.count + $0.offset) })
+        let start   = /* Range start */
+            try PortableCreationIdentity.reserve(proposed: maximum + 1, count: count, root: root)
+        let listMap = /* List map */
+            Dictionary(uniqueKeysWithValues: newLists.enumerated().map { ($0.element, start + $0.offset) })
+        let cardMap = /* Card map */
+            Dictionary(uniqueKeysWithValues: newCards.enumerated().map { ($0.element, start + newLists.count + $0.offset) })
 
         /// @fcn PortableTemplateApplication.reserve.references
         /// @brief Translate explicit copied Card links without interpreting opaque edit-history bytes
@@ -109,14 +115,15 @@ enum PortableTemplateApplication
             return value
         }
 
-        var raw        = try JSONSerialization.jsonObject(with: JSONEncoder().encode(preview)) as! [String: Any]
-        var collection = raw["collection"] as! [String: Any]
-        var rawLists   = collection["lists"] as! [[String: Any]]
+        var raw        = /* Unprocessed source value */
+            try JSONSerialization.jsonObject(with: JSONEncoder().encode(preview)) as! [String: Any]
+        var collection = raw["collection"] as! [String: Any]     /* Personal collection record */
+        var rawLists   = collection["lists"] as! [[String: Any]] /* Raw lists                  */
 
         for index in rawLists.indices
         {
 
-            let number = rawLists[index]["id"] as! Int
+            let number = rawLists[index]["id"] as! Int /* Local numeric value */
 
             rawLists[index]["id"] = listMap[number] ?? number
 
@@ -131,7 +138,7 @@ enum PortableTemplateApplication
                 for item in items.indices
                 {
 
-                    let number = items[item]["id"] as! Int
+                    let number = items[item]["id"] as! Int /* Local numeric value */
 
                     if let target = cardMap[number]
                     {
@@ -165,7 +172,8 @@ enum PortableTemplateApplication
 
         }
 
-        let week = try JSONDecoder().decode(DatedPlanningWeek.self, from: JSONSerialization.data(withJSONObject: raw))
+        let week = /* Dated Week under consideration */
+            try JSONDecoder().decode(DatedPlanningWeek.self, from: JSONSerialization.data(withJSONObject: raw))
 
         return (week, Set(importantIDs.map { cardMap[$0] ?? $0 }))
     }
@@ -189,7 +197,8 @@ enum PortableTemplateApplication
             return data
         }
 
-        let items = try JSONDecoder().decode([LibraryImportanceItem].self, from: data)
+        let items = /* Items being processed */
+            try JSONDecoder().decode([LibraryImportanceItem].self, from: data)
 
         guard let raw = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], raw.count == items.count else
         {
@@ -197,7 +206,7 @@ enum PortableTemplateApplication
             throw PortableEditedExport.Failure.inconsistent
         }
 
-        var seen = Set<String>()
+        var seen = Set<String>() /* Identities already encountered */
 
         for (item, object) in zip(items, raw)
         {
@@ -211,7 +220,8 @@ enum PortableTemplateApplication
             }
         }
 
-        let actual = Set(week.collection.lists.flatMap(\.allCards).map(\.id))
+        let actual = /* Observed operation result */
+            Set(week.collection.lists.flatMap(\.allCards).map(\.id))
 
         guard items.contains(where: { $0.collectionID == week.id && !actual.contains($0.cardID) }) else
         {
@@ -219,7 +229,7 @@ enum PortableTemplateApplication
             return data
         }
 
-        let runtime = try PortableRuntimeEvidence.capture(root: root)
+        let runtime = try PortableRuntimeEvidence.capture(root: root) /* Retained import evidence */
 
         guard let baseline = runtime["NativeStores.plist"] else
         {
@@ -232,13 +242,15 @@ enum PortableTemplateApplication
             throw PortableEditedExport.Failure.inconsistent
         }
 
-        let retained = try (stores[LibraryImportanceSelection.key] as? Data).map
+        let retained = /* State retained for recovery */
+            try (stores[LibraryImportanceSelection.key] as? Data).map
         {
 
             try JSONDecoder().decode([LibraryImportanceItem].self, from: $0)
         } ?? []
-        let retainedIDs = Set(retained.filter { $0.collectionID == week.id }.map(\.cardID))
-        let kept        = zip(items, raw).filter
+        let retainedIDs = /* Retained i ds */
+            Set(retained.filter { $0.collectionID == week.id }.map(\.cardID))
+        let kept        = zip(items, raw).filter /* Entries retained after filtering */
         {
 
             $0.0.collectionID != week.id || actual.contains($0.0.cardID) || retainedIDs.contains($0.0.cardID)

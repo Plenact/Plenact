@@ -14,10 +14,10 @@ import Foundation
 struct PortableEditableContent
 {
 
-    let records:       [[String: Any]]
-    let numericIDs:    [String: Int]
-    let assetFiles:    [String: String]
-    let deletedCardIDs: Set<String>
+    let records:       [[String: Any]]  /* Records being processed */
+    let numericIDs:    [String: Int]    /* Numeric i ds            */
+    let assetFiles:    [String: String] /* Asset files             */
+    let deletedCardIDs: Set<String>     /* Deleted card i ds       */
 
 
     /// Adapter failures reject unsupported or ambiguous values rather than defaulting authored content
@@ -31,7 +31,7 @@ struct PortableEditableContent
         /// @fcn Failure.errorDescription
         /// @brief Explain a blocked editable reconstruction without exposing private values
         /// @return Actionable local import guidance
-        var errorDescription: String?
+        var errorDescription: String? /* Readable failure explanation */
         {
 
             switch self
@@ -58,7 +58,7 @@ struct PortableEditableContent
     init(records: [[String: Any]], assetFiles: [String: String], retainedAliases: [String: Int] = [:], deletedCardIDs: Set<String> = []) throws
     {
 
-        let ids = records.compactMap { $0["id"] as? String }
+        let ids = records.compactMap { $0["id"] as? String } /* Record identifiers */
 
         guard ids.count == records.count, Set(ids).count == ids.count,
               ids.allSatisfy({ UUID(uuidString: $0) != nil }),
@@ -69,7 +69,8 @@ struct PortableEditableContent
             throw Failure.invalid
         }
 
-        var targets = Set(records.filter { ["card", "list"].contains($0["record_type"] as? String ?? "") }.compactMap { $0["id"] as? String })
+        var targets = /* Resolved operation targets */
+            Set(records.filter { ["card", "list"].contains($0["record_type"] as? String ?? "") }.compactMap { $0["id"] as? String })
 
         for record in records where record["record_type"] as? String == "unavailable_reference"
         {
@@ -91,8 +92,8 @@ struct PortableEditableContent
             throw Failure.invalid
         }
 
-        var aliases = retainedAliases
-        var next    = (aliases.values.max() ?? 0) + 1
+        var aliases = retainedAliases                 /* Local-to-portable identities */
+        var next    = (aliases.values.max() ?? 0) + 1 /* Candidate next state         */
 
         for id in targets.sorted() where aliases[id] == nil
         {
@@ -141,7 +142,7 @@ struct PortableEditableContent
             return NSNull()
         }
 
-        let formatter = ISO8601DateFormatter()
+        let formatter = ISO8601DateFormatter() /* Date or value formatter */
 
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
@@ -185,14 +186,14 @@ struct PortableEditableContent
             throw Failure.dateContextRequired
         }
 
-        let formatter = DateFormatter()
+        let formatter = DateFormatter() /* Date or value formatter */
 
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.timeZone = zone
         formatter.isLenient = false
 
-        let text: String
+        let text: String /* Text being processed */
 
         if kind == "date", Set(object.keys) == ["kind", "date"], let day = object["date"] as? String
         {
@@ -289,7 +290,8 @@ struct PortableEditableContent
             }
         }
 
-        var output = try mapped(source, fields: Dictionary(uniqueKeysWithValues: fields.map { ($0.value, $0.key) }))
+        var output = /* Operation output */
+            try mapped(source, fields: Dictionary(uniqueKeysWithValues: fields.map { ($0.value, $0.key) }))
 
         for (key, nestedKind) in ["collectionBackground": "collection_background", "studioSurface": "surface",
             "studioCardSurface": "surface", "addItemTextColor": "color", "iconColor": "color", "remotePhoto": "remote_photo"]
@@ -357,7 +359,8 @@ struct PortableEditableContent
             throw Failure.invalid
         }
 
-        let fields = ["list_id": "_list", "archived": "_archived", "title": "word", "is_divider": "isDivider",
+        let fields = /* Record fields under review */
+            ["list_id": "_list", "archived": "_archived", "title": "word", "is_divider": "isDivider",
             "completed": "isTitleChecked", "editing_locked": "editingLocked", "presentation": "itemPresentation",
             "display_format": "listDisplayFormat", "description_override": "descriptionOverride", "subtitle_override": "subtitleOverride",
             "location": "location", "start_kind": "startDateKind", "due_kind": "dueDateKind", "start": "startDate", "due": "dueDate",
@@ -371,7 +374,7 @@ struct PortableEditableContent
             throw Failure.unsupported
         }
 
-        var raw = try mapped(payload, fields: fields)
+        var raw = try mapped(payload, fields: fields) /* Unprocessed source value */
 
         raw.removeValue(forKey: "_list")
         raw.removeValue(forKey: "_archived")
@@ -437,7 +440,8 @@ struct PortableEditableContent
             throw Failure.invalid
         }
 
-        var raw = try mapped(value, fields: ["collection_id": "_collection", "title": "title", "subtitle_override": "subtitleOverride",
+        var raw = /* Unprocessed source value */
+            try mapped(value, fields: ["collection_id": "_collection", "title": "title", "subtitle_override": "subtitleOverride",
             "archived": "isArchived", "default_item_presentation": "defaultItemPresentation", "appearance": "appearance",
             "card_ids": "cards", "archived_card_ids": "archivedCards"])
 
@@ -446,7 +450,7 @@ struct PortableEditableContent
         raw["id"] = try alias(record["id"])
         raw["appearance"] = try appearance(raw["appearance"], kind: "item_appearance")
 
-        var used = Set<String>()
+        var used = Set<String>() /* Identifiers already reserved */
 
         for (field, archived) in [("cards", false), ("archivedCards", true)]
         {
@@ -463,7 +467,8 @@ struct PortableEditableContent
                     throw Failure.invalid
                 }
 
-                let native = try card(target, listTitle: title, timeZoneID: timeZoneID, civilDate: civilDate)
+                let native = /* Native workspace representation */
+                    try card(target, listTitle: title, timeZoneID: timeZoneID, civilDate: civilDate)
 
                 if deletedCardIDs.contains(id)
                 {
@@ -496,7 +501,8 @@ struct PortableEditableContent
             throw Failure.invalid
         }
 
-        var raw = try mapped(payload, fields: ["title": "title", "kind": "kind", "icon": "icon", "color": "color",
+        var raw = /* Unprocessed source value */
+            try mapped(payload, fields: ["title": "title", "kind": "kind", "icon": "icon", "color": "color",
             "description": "collectionDescription", "archived": "isArchived", "board_appearance": "boardAppearance",
             "preferred_focused_list_id": "preferredFocusedListID", "list_ids": "lists"])
 
@@ -518,7 +524,7 @@ struct PortableEditableContent
         // The current model derives focused List state; it cannot persist an authored override
         raw.removeValue(forKey: "preferredFocusedListID")
 
-        var ownedCards = Set<String>()
+        var ownedCards = Set<String>() /* Owned cards */
 
         raw["lists"] = try listIDs.map { target -> Any in
             guard let record = records.first(where: { $0["id"] as? String == target }),
@@ -535,13 +541,14 @@ struct PortableEditableContent
                 }
             }
 
-            let value = try list(record, timeZoneID: timeZoneID, civilDate: listDates[target])
+            let value = /* Value being processed */
+                try list(record, timeZoneID: timeZoneID, civilDate: listDates[target])
 
             return try JSONSerialization.jsonObject(with: JSONEncoder().encode(value))
         }
 
-        var bookmarks: [Int] = []
-        var seenSelections   = Set<String>()
+        var bookmarks: [Int] = []            /* Saved Card selections */
+        var seenSelections   = Set<String>() /* Seen selections       */
 
         for selection in selections
         {

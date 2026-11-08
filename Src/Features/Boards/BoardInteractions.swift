@@ -41,7 +41,7 @@ enum BoardListSwipePriority
             return 0
         }
 
-        var ancestor = list.superview
+        var ancestor = list.superview /* Current ancestor in traversal */
 
         while let view = ancestor
         {
@@ -52,7 +52,8 @@ enum BoardListSwipePriority
 
                 // Leave the vertical scrolling pan independent; prioritize the
                 // native row-action/editing pans before horizontal Board paging
-                let gestures = (list.gestureRecognizers ?? []).filter
+                let gestures = /* Installed gesture recognizers */
+                    (list.gestureRecognizers ?? []).filter
                 {
 
                     $0 is UIPanGestureRecognizer && $0 !== list.panGestureRecognizer && !($0 is BoardCardSwipeGate)
@@ -119,8 +120,9 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
 {
 
 
-    let markers = NSHashTable<BoardCardSwipeZone.Marker>.weakObjects()
-    weak var board: UIScrollView?
+    let markers = /* Native lifecycle probe views */
+        NSHashTable<BoardCardSwipeZone.Marker>.weakObjects()
+    weak var board: UIScrollView? /* Board state under review */
 
 
     ///
@@ -169,7 +171,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool
     {
 
-        let velocity = velocity(in: view)
+        let velocity = velocity(in: view) /* Current gesture velocity */
 
         return velocity.x < 0 && abs(velocity.x) > abs(velocity.y)
     }
@@ -213,8 +215,8 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
             return
         }
 
-        var ancestor = marker.superview
-        var list: UIScrollView?
+        var ancestor = marker.superview /* Current ancestor in traversal */
+        var list: UIScrollView?         /* List under consideration      */
 
         while let view = ancestor
         {
@@ -245,7 +247,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
             board.alwaysBounceHorizontal || board.contentSize.width > board.bounds.width + 1
             {
 
-                let gate: BoardCardSwipeGate
+                let gate: BoardCardSwipeGate /* Operation eligibility guard */
 
                 if let existing = list.gestureRecognizers?.compactMap(
                     {
@@ -304,7 +306,7 @@ struct BoardCardSwipeZone: UIViewRepresentable
 {
 
 
-    var enabled = true
+    var enabled = true /* Feature availability flag */
 
 
     ///
@@ -318,7 +320,7 @@ struct BoardCardSwipeZone: UIViewRepresentable
     {
 
 
-        var isEnabled = true
+        var isEnabled = true /* Enabled state */
 
 
         ///
@@ -359,7 +361,7 @@ struct BoardCardSwipeZone: UIViewRepresentable
     func makeUIView(context: Context) -> Marker
     {
 
-        let marker = Marker()
+        let marker = Marker() /* Marker operation value */
 
         marker.isUserInteractionEnabled = false
         marker.isEnabled = enabled
@@ -485,12 +487,12 @@ struct BoardCardDragSource: UIViewRepresentable
 {
 
 
-    static let contentType = UTType(
+    static let contentType = UTType( /* Content type */
         exportedAs: "com.plenact.local-board-card", conformingTo: .data)  /* Private transfer type for local Board card drags      */
-    let token:     String                                                 /* Board-session token carried by each drag item         */
-    let onBegan:   (CGPoint) -> Void                                      /* Reports the initial global card-drag position         */
-    let onChanged: (CGPoint) -> Void                                      /* Reports subsequent global card-drag positions         */
-    let onEnded:   () -> Void                                             /* Clears parent state when the native drag session ends */
+    let token:     String            /* Board-session token carried by each drag item         */
+    let onBegan:   (CGPoint) -> Void /* Reports the initial global card-drag position         */
+    let onChanged: (CGPoint) -> Void /* Reports subsequent global card-drag positions         */
+    let onEnded:   () -> Void        /* Clears parent state when the native drag session ends */
 
 
     ///
@@ -610,7 +612,7 @@ struct BoardCardDragSource: UIViewRepresentable
                     }
 
 
-                    let drag = UIDragInteraction(
+                    let drag = UIDragInteraction( /* Active drag translation */
                         delegate: self) /* Native drag interaction installed on the hosting cell */
 
                     drag.isEnabled = true
@@ -752,7 +754,7 @@ struct BoardCardDragSource: UIViewRepresentable
             }
 
 
-            let point = session.location(in: window)
+            let point = session.location(in: window) /* Converted input position */
 
             guard canBegin(at: point, in: window) else
             {
@@ -1048,7 +1050,7 @@ struct BoardCardDropSurface: UIViewRepresentable
         var surface:          BoardCardDropSurface  /* Current acceptance settings and parent drop callbacks */
         weak var container:   UICollectionView?     /* Collection view hosting drop handling                 */
         weak var interaction: UIDropInteraction?    /* Installed or reused native drop interaction           */
-        weak var originalDropDelegate:
+        weak var originalDropDelegate: /* Original drop delegate */
         (any UICollectionViewDropDelegate)? /* Prior collection delegate restored on detachment      */
 
 
@@ -1130,7 +1132,7 @@ struct BoardCardDropSurface: UIViewRepresentable
                     }
 
 
-                    let drop = RetainedInteraction(
+                    let drop = RetainedInteraction( /* Pending drop location */
                         receiver: self) /* New drop interaction retaining its delegate owner */
 
                     originalDropDelegate = collection.dropDelegate

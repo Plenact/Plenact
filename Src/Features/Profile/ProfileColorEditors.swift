@@ -31,7 +31,7 @@ extension ProfileColor
     ///
     /// @return     (Color) avatar presentation color
     ///
-    var color: Color
+    var color: Color /* Resolved color value */
     {  /* Avatar color */
 
         switch legacyToken
@@ -65,7 +65,7 @@ extension ProfileColor
     /// @pre        The color stores RGB component values
     /// @post       The stored color remains unchanged
     ///
-    var hexString: String
+    var hexString: String /* Hex string */
     {  /* Six-digit RGB hexadecimal value */
 
         String(
@@ -96,7 +96,7 @@ extension ProfileAvatarIcon
     ///
     /// @return     (String) display title for this icon
     ///
-    var title: String
+    var title: String /* User-facing title */
     {  /* User-facing avatar icon title */
 
         switch self
@@ -139,7 +139,7 @@ extension ProfileAvatarIcon
     ///
     /// @return     (String?) SF Symbol name, or nil for initials
     ///
-    var symbolName: String?
+    var symbolName: String? /* Symbol name */
     {  /* SF Symbol for this icon choice */
 
         switch self
@@ -250,7 +250,7 @@ struct ProfileAvatarIconPicker: View
     ///
     /// @return     (String) one or two uppercase initials, or the profile fallback
     ///
-    private var initials: String
+    private var initials: String /* Local profile initials */
     {  /* Preview initials for the current display name */
 
         LocalProfile(displayName: displayName).initials
@@ -287,7 +287,7 @@ struct ProfileAvatarIconPicker: View
     ///
     /// @return     (some View) avatar preview and profile name
     ///
-    private var previewHeader: some View
+    private var previewHeader: some View /* Preview header */
     {  /* Draft avatar preview and display name */
 
         HStack(spacing: 14)
@@ -329,7 +329,7 @@ struct ProfileAvatarIconPicker: View
     ///
     /// @return     (some View) navigation links for the two avatar colors
     ///
-    private var colorControls: some View
+    private var colorControls: some View /* Color controls */
     {  /* Profile avatar color controls */
 
         VStack(alignment: .leading, spacing: 10)
@@ -423,7 +423,7 @@ struct ProfileAvatarIconPicker: View
     ///
     /// @return     (some View) selectable grid of supported avatar icons
     ///
-    private var iconGrid: some View
+    private var iconGrid: some View /* Icon grid */
     {  /* Selectable avatar icon grid */
 
         VStack(alignment: .leading, spacing: 10)
@@ -504,7 +504,7 @@ struct ProfileAvatarIconPicker: View
     ///
     /// @return     (some View) avatar editor with photo selection and Save/Cancel actions
     ///
-    var body: some View
+    var body: some View /* Profile Avatar Icon Picker layout */
     {  /* Avatar icon and photo picker */
 
         VStack(spacing: 0)
@@ -824,8 +824,8 @@ struct AvatarCropImage: Identifiable
 {
 
 
-    let id = UUID()     /* Identity for the pending crop presentation */
-    let image: UIImage  /* Decoded source image                       */
+    let id = UUID()    /* Identity for the pending crop presentation */
+    let image: UIImage /* Decoded source image                       */
 
 }
 
@@ -929,10 +929,10 @@ enum AvatarPhotoCrop
         }
 
 
-        let scale =
+        let scale = /* Current layout scale */
         max(side / image.size.width, side / image.size.height)
         * zoom /* Aspect-fill crop scale                   */
-        let offset = constrainedOffset(
+        let offset = constrainedOffset( /* Current position offset */
             offset, imageSize: image.size, side: side, zoom: zoom)  /* Bounded crop translation                 */
         let outputScale = 512 / side                                /* Convert viewport points to output pixels */
         let format      = UIGraphicsImageRendererFormat()           /* Square JPEG renderer settings            */
@@ -940,7 +940,7 @@ enum AvatarPhotoCrop
         format.scale = 1
         format.opaque = true
 
-        let renderer = UIGraphicsImageRenderer(
+        let renderer = UIGraphicsImageRenderer( /* Image rendering context */
             size: CGSize(width: 512, height: 512), format: format) /* 512-pixel crop renderer */
 
         return renderer.image
@@ -1002,7 +1002,7 @@ struct AvatarPhotoCropView: View
             CGSize(width: offset.width + drag.width, height: offset.height + drag.height),
             imageSize: image.size, side: side, zoom: currentZoom
         )
-        let scale =
+        let scale = /* Current layout scale */
         max(side / image.size.width, side / image.size.height) * currentZoom /* Aspect-fill display scale */
 
         return ZStack
@@ -1103,7 +1103,7 @@ struct AvatarPhotoCropView: View
     /// @pre        image and crop callback are configured
     /// @post       Use Photo returns cropped data only when rendering succeeds
     ///
-    var body: some View
+    var body: some View /* Avatar Photo Crop layout */
     {  /* Interactive avatar crop screen */
 
         NavigationStack
@@ -1113,7 +1113,7 @@ struct AvatarPhotoCropView: View
             {
                 geometry in
 
-                let side = max(
+                let side = max( /* Current drawing side */
                     1, min(geometry.size.width - 32, geometry.size.height - 160, 360)) /* Available square crop viewport */
 
                 VStack(spacing: 16)
@@ -1271,8 +1271,8 @@ struct ProfileColorPreset: Identifiable
 {
 
 
-    let name:  String        /* Display name for the preset */
-    let color: ProfileColor  /* Preset color value          */
+    let name:  String       /* Display name for the preset */
+    let color: ProfileColor /* Preset color value          */
 
     ///
     /// @fcn        ProfileColorPreset.id
@@ -1281,7 +1281,7 @@ struct ProfileColorPreset: Identifiable
     ///
     /// @return     (String) preset name
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         name
     }  /* Stable preset identity */
@@ -1299,17 +1299,17 @@ struct ProfileColorMapPicker: View
 {
 
 
-    let title:                String                /* Color role shown in navigation and preview */
-    let defaultColor:         ProfileColor          /* Role-specific default choice               */
-    let presets:              [ProfileColorPreset]  /* Named colors available for quick selection */
-    @Binding var selection:   ProfileColor          /* Parent color value committed on save       */
-    private let initialColor: ProfileColor          /* Value used by Reset                        */
+    let title:                String               /* Color role shown in navigation and preview */
+    let defaultColor:         ProfileColor         /* Role-specific default choice               */
+    let presets:              [ProfileColorPreset] /* Named colors available for quick selection */
+    @Binding var selection:   ProfileColor         /* Parent color value committed on save       */
+    private let initialColor: ProfileColor         /* Value used by Reset                        */
 
-    @Environment(\.dismiss) private var dismiss  /* Picker dismissal action                 */
-    @State private var hue:        Double        /* Draft hue component                     */
-    @State private var saturation: Double        /* Draft saturation component              */
-    @State private var brightness: Double        /* Draft brightness component              */
-    @State private var isEditingRGB = false      /* Whether the nested RGB editor is active */
+    @Environment(\.dismiss) private var dismiss /* Picker dismissal action                 */
+    @State private var hue:        Double       /* Draft hue component                     */
+    @State private var saturation: Double       /* Draft saturation component              */
+    @State private var brightness: Double       /* Draft brightness component              */
+    @State private var isEditingRGB = false     /* Whether the nested RGB editor is active */
 
 
     ///
@@ -1355,7 +1355,7 @@ struct ProfileColorMapPicker: View
     ///
     /// @return     (ProfileColor) color represented by the current draft
     ///
-    private var selectedColor: ProfileColor
+    private var selectedColor: ProfileColor /* Selected color */
     {  /* Profile color represented by the HSB draft */
 
         ProfileColor(hue: hue, saturation: saturation, brightness: brightness)
@@ -1438,7 +1438,7 @@ struct ProfileColorMapPicker: View
     ///
     /// @return     (some View) navigation link for entering RGB values
     ///
-    private var hexEditorLink: some View
+    private var hexEditorLink: some View /* Hex editor link */
     {  /* Link to direct RGB editing */
 
         NavigationLink
@@ -1514,7 +1514,7 @@ struct ProfileColorMapPicker: View
     /// @pre        The parent selection and color presets are initialized
     /// @post       The parent value changes only when Save is selected
     ///
-    var body: some View
+    var body: some View /* Profile Color Map Picker layout */
     {  /* Interactive profile color picker */
 
         VStack(alignment: .leading, spacing: 20)
@@ -1653,11 +1653,11 @@ struct ProfileRGBColorEditor: View
 {
 
 
-    let onSave: (ProfileColor) -> Void           /* Callback receiving the edited profile color */
-    @Environment(\.dismiss) private var dismiss  /* Editor dismissal action                     */
-    @State private var red:   Double             /* Draft red channel in the 0...255 range      */
-    @State private var green: Double             /* Draft green channel in the 0...255 range    */
-    @State private var blue:  Double             /* Draft blue channel in the 0...255 range     */
+    let onSave: (ProfileColor) -> Void          /* Callback receiving the edited profile color */
+    @Environment(\.dismiss) private var dismiss /* Editor dismissal action                     */
+    @State private var red:   Double            /* Draft red channel in the 0...255 range      */
+    @State private var green: Double            /* Draft green channel in the 0...255 range    */
+    @State private var blue:  Double            /* Draft blue channel in the 0...255 range     */
 
 
     ///
@@ -1689,7 +1689,7 @@ struct ProfileRGBColorEditor: View
     ///
     /// @return     (ProfileColor) color represented by the current channel values
     ///
-    private var editedColor: ProfileColor
+    private var editedColor: ProfileColor /* Edited color */
     {  /* RGB draft converted to a profile color */
 
         ProfileColor(red: red / 255, green: green / 255, blue: blue / 255)
@@ -1722,7 +1722,7 @@ struct ProfileRGBColorEditor: View
     /// @pre        The editor has initial channel values and a save callback
     /// @post       The parent color is updated only when Save is selected
     ///
-    var body: some View
+    var body: some View /* Profile RGB Color Editor layout */
     {  /* Direct RGB channel editor */
 
         VStack(alignment: .leading, spacing: 20)
@@ -1796,11 +1796,11 @@ struct RGBChannelControl: View
 {
 
 
-    let title:          String  /* Channel label                        */
-    @Binding var value: Double  /* Channel intensity from 0 through 255 */
+    let title:          String /* Channel label                        */
+    @Binding var value: Double /* Channel intensity from 0 through 255 */
 
-    @State private var hexValue:          String  /* Editable two-character hexadecimal value */
-    @FocusState private var isEditingHex: Bool    /* Whether the text field owns focus        */
+    @State private var hexValue:          String /* Editable two-character hexadecimal value */
+    @FocusState private var isEditingHex: Bool   /* Whether the text field owns focus        */
 
 
     ///
@@ -1848,7 +1848,7 @@ struct RGBChannelControl: View
     ///
     /// @return     (some View) labeled RGB channel control
     ///
-    var body: some View
+    var body: some View /* RGB Channel Control layout */
     {  /* Slider and hexadecimal input for one RGB channel */
 
         HStack(spacing: 10)
@@ -1885,7 +1885,7 @@ struct RGBChannelControl: View
                 _, newValue in
 
                 let validCharacters = Set("0123456789ABCDEF") /* Accepted hexadecimal digits */
-                let normalized      = String(
+                let normalized      = String(                 /* Comparison-normalized value */
                     newValue.uppercased().filter
                     {
                         validCharacters.contains($0)
@@ -1935,9 +1935,9 @@ struct ProfileColorMapSurface: View
 {
 
 
-    @Binding var hue:        Double  /* Selected horizontal hue coordinate            */
-    @Binding var saturation: Double  /* Selected vertical saturation coordinate       */
-    let brightness:          Double  /* Fixed brightness used for the surface preview */
+    @Binding var hue:        Double /* Selected horizontal hue coordinate            */
+    @Binding var saturation: Double /* Selected vertical saturation coordinate       */
+    let brightness:          Double /* Fixed brightness used for the surface preview */
 
 
     ///
@@ -1947,7 +1947,7 @@ struct ProfileColorMapSurface: View
     ///
     /// @return     ([Color]) gradient stops spanning red through the hue spectrum
     ///
-    private var spectrum: [Color]
+    private var spectrum: [Color] /* Spectrum display color */
     {  /* Full-saturation hue-gradient stops */
 
         [
@@ -1973,15 +1973,15 @@ struct ProfileColorMapSurface: View
     /// @pre        Hue, saturation, and brightness describe the current draft color
     /// @post       User input updates only the bound hue and saturation values
     ///
-    var body: some View
+    var body: some View /* Profile Color Map Surface layout */
     {  /* Interactive hue and saturation surface */
 
         GeometryReader
         {
             geometry in
 
-            let width  = max(geometry.size.width, 1)   /* Safe color-map width  */
-            let height = max(geometry.size.height, 1)  /* Safe color-map height */
+            let width  = max(geometry.size.width, 1)  /* Safe color-map width  */
+            let height = max(geometry.size.height, 1) /* Safe color-map height */
 
             ZStack
             {

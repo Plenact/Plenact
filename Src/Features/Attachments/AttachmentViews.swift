@@ -43,7 +43,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
     ///
     /// @return     (String) attachment-source identifier
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         rawValue
     }  /* Stable picker identity */
@@ -56,7 +56,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
     ///
     /// @return     (String) display text defined for the source
     ///
-    var title: String
+    var title: String /* User-facing title */
     {  /* User-facing attachment-source label */
 
         switch self
@@ -97,7 +97,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
     ///
     /// @return     (String) SF Symbol identifier for the source
     ///
-    var symbolName: String
+    var symbolName: String /* Symbol name */
     {  /* SF Symbol for the picker row */
 
         switch self
@@ -208,7 +208,7 @@ struct CardAttachmentSourceSheet: View
     /// @pre        The selection binding and action callbacks are configured
     /// @post       Selecting a source dispatches its supported action
     ///
-    var body: some View
+    var body: some View /* Card Attachment Source layout */
     {  /* Attachment-source picker */
 
 
@@ -299,8 +299,8 @@ struct CardLinkAttachmentSheet: View
 
     let onSave: (URL) -> Void /* Callback receiving the validated URL */
 
-    @Environment(\.dismiss) private var dismiss  /* Sheet dismissal action */
-    @State private var urlDraft = ""             /* User-entered URL text  */
+    @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
+    @State private var urlDraft = ""            /* User-entered URL text  */
 
     ///
     /// @fcn        CardLinkAttachmentSheet.validatedURL
@@ -309,7 +309,7 @@ struct CardLinkAttachmentSheet: View
     ///
     /// @return     (URL?) valid HTTP or HTTPS URL, or nil for invalid draft text
     ///
-    private var validatedURL: URL?
+    private var validatedURL: URL? /* Validated URL */
     {  /* Parsed URL when the draft is valid */
 
         CardAttachmentStore.webURL(from: urlDraft)
@@ -326,7 +326,7 @@ struct CardLinkAttachmentSheet: View
     /// @pre        The save callback and dismissal environment are available
     /// @post       A valid submitted URL is passed to the save callback
     ///
-    var body: some View
+    var body: some View /* Card Link Attachment layout */
     {  /* Manual web-link form */
 
 
@@ -430,21 +430,21 @@ struct CardPhotoGallery: View
 {
 
 
-    let photos:                  [KanbanAttachment]
-    @Binding var photoSelection: [PhotosPickerItem]
-    let onOpen:                  (KanbanAttachment) -> Void
-    let onCaption:               (UUID, String) -> Bool
-    let onReorder:               ([UUID]) -> Bool
-    let onRemove:                (KanbanAttachment) -> Void
-    let onSetCover:              (UUID) -> Void
+    let photos:                  [KanbanAttachment] /* Photo selections or gallery entries */
+    @Binding var photoSelection: [PhotosPickerItem] /* Photo selection */
+    let onOpen:                  (KanbanAttachment) -> Void /* Open the selected destination */
+    let onCaption:               (UUID, String) -> Bool /* Caption callback */
+    let onReorder:               ([UUID]) -> Bool /* Reorder callback */
+    let onRemove:                (KanbanAttachment) -> Void /* Remove callback */
+    let onSetCover:              (UUID) -> Void /* Set cover callback */
 
-    @ScaledMetric(relativeTo: .body) private var photoWidth  = 220
-    @ScaledMetric(relativeTo: .body) private var photoHeight = 180
-    @State private var captionPhoto: KanbanAttachment?
-    @State private var removalPhoto: KanbanAttachment?
-    @State private var showsArrangement = false
+    @ScaledMetric(relativeTo: .body) private var photoWidth  = 220 /* Photo width            */
+    @ScaledMetric(relativeTo: .body) private var photoHeight = 180 /* Photo height           */
+    @State private var captionPhoto: KanbanAttachment?             /* Caption photo          */
+    @State private var removalPhoto: KanbanAttachment?             /* Removal photo          */
+    @State private var showsArrangement = false                    /* Arrangement visibility */
 
-    var body: some View
+    var body: some View /* Card Photo Gallery layout */
     {
 
         VStack(alignment: .leading, spacing: 12)
@@ -555,7 +555,7 @@ struct CardPhotoGallery: View
     }
 
 
-    private var galleryControls: some View
+    private var galleryControls: some View /* Gallery controls */
     {
 
         HStack(spacing: 12)
@@ -673,7 +673,7 @@ struct CardPhotoGallery: View
                     return false
                 }
 
-                var ids = photos.map(\.id)
+                var ids = photos.map(\.id) /* Record identifiers */
 
                 ids.remove(at: source)
                 ids.insert(id, at: index)
@@ -750,7 +750,7 @@ struct CardPhotoGallery: View
     private func movePhoto(_ index: Int, by offset: Int)
     {
 
-        var ids = photos.map(\.id)
+        var ids = photos.map(\.id) /* Record identifiers */
 
         ids.swapAt(index, index + offset)
 
@@ -772,10 +772,10 @@ struct CardPhotoCaptionSheet: View
 {
 
 
-    let photo:                  KanbanAttachment
-    let onSave:                 (String) -> Bool
-    @State private var caption: String
-    @Environment(\.dismiss) private var dismiss
+    let photo:                  KanbanAttachment /* Photo selection or source      */
+    let onSave:                 (String) -> Bool /* Persist the edited value       */
+    @State private var caption: String           /* Supporting media caption       */
+    @Environment(\.dismiss) private var dismiss  /* Close the current presentation */
 
 
     ///
@@ -799,7 +799,7 @@ struct CardPhotoCaptionSheet: View
     }
 
 
-    var body: some View
+    var body: some View /* Card Photo Caption layout */
     {
 
         NavigationStack
@@ -876,11 +876,11 @@ struct CardPhotoArrangementSheet: View
 {
 
 
-    let photos:    [KanbanAttachment]
-    let onReorder: ([UUID]) -> Bool
-    @Environment(\.dismiss) private var dismiss
+    let photos:    [KanbanAttachment]           /* Photo selections or gallery entries */
+    let onReorder: ([UUID]) -> Bool             /* Reorder callback                    */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation      */
 
-    var body: some View
+    var body: some View /* Card Photo Arrangement layout */
     {
 
         NavigationStack
@@ -908,7 +908,7 @@ struct CardPhotoArrangementSheet: View
                     {
                         source, destination in
 
-                        var ids = photos.map(\.id)
+                        var ids = photos.map(\.id) /* Record identifiers */
 
                         ids.move(fromOffsets: source, toOffset: destination)
 
@@ -974,7 +974,7 @@ struct CardAttachmentThumbnail: View
     /// @pre        attachment contains metadata for a local image file
     /// @post       Rendering does not modify the attachment or stored image data
     ///
-    var body: some View
+    var body: some View /* Card Attachment Thumbnail layout */
     {  /* Local image, remote link, or media fallback */
 
 
@@ -1070,8 +1070,8 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
 {
 
 
-    @Published private(set) var isPlaying = false
-    private var player: AVAudioPlayer?
+    @Published private(set) var isPlaying = false /* Playing state             */
+    private var player: AVAudioPlayer?            /* Audio playback controller */
 
 
     ///
@@ -1096,12 +1096,12 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
         do
         {
 
-            let session = AVAudioSession.sharedInstance()
+            let session = AVAudioSession.sharedInstance() /* Current operation session */
 
             try session.setCategory(.playback, mode: .spokenAudio)
             try session.setActive(true)
 
-            let player = try AVAudioPlayer(contentsOf: url)
+            let player = try AVAudioPlayer(contentsOf: url) /* Audio playback controller */
 
             player.delegate = self;
             self.player = player
@@ -1118,7 +1118,7 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
 
     }
 
-    @Published var errorMessage: String?
+    @Published var errorMessage: String? /* User-facing failure message */
 
 
     ///
@@ -1184,11 +1184,11 @@ struct AudioAttachmentPlayer: View
 {
 
 
-    let url: URL
-    @StateObject private var playback = CaptureAudioPlayback()
-    @Environment(\.scenePhase) private var scenePhase
+    let url: URL                                               /* Resource location            */
+    @StateObject private var playback = CaptureAudioPlayback() /* Current audio playback state */
+    @Environment(\.scenePhase) private var scenePhase          /* Scene phase                  */
 
-    var body: some View
+    var body: some View /* Audio Attachment Player layout */
     {
 
         VStack(spacing: 16)
@@ -1246,11 +1246,12 @@ struct CardAttachmentPreview: View
 
     let attachment: KanbanAttachment /* The media attachment to preview */
 
-    var onSaveDrawing:                   ((KanbanAttachment) -> Bool)? = nil
-    @State private var editedAttachment: KanbanAttachment?
-    @State private var showsDrawingEditor = false
+    var onSaveDrawing:                   ((KanbanAttachment) -> Bool)? = /* Save drawing callback */
+        nil
+    @State private var editedAttachment: KanbanAttachment? /* Edited attachment         */
+    @State private var showsDrawingEditor = false          /* Drawing Editor visibility */
 
-    private var currentAttachment: KanbanAttachment
+    private var currentAttachment: KanbanAttachment /* Current attachment */
     {
         editedAttachment ?? attachment
     }
@@ -1268,7 +1269,7 @@ struct CardAttachmentPreview: View
     /// @pre        attachment identifies a photo previously imported for a card
     /// @post       The preview is shown without modifying the image or its metadata
     ///
-    var body: some View
+    var body: some View /* Card Attachment Preview layout */
     {  /* Video or image preview with unavailable fallback */
 
 
@@ -1389,7 +1390,8 @@ struct CardAttachmentPreview: View
                     do
                     {
 
-                        let replacement = try DrawingAttachmentStore.save(drawing, replacing: currentAttachment)
+                        let replacement = /* Replacement content or state */
+                            try DrawingAttachmentStore.save(drawing, replacing: currentAttachment)
 
                         guard onSaveDrawing(replacement) else
                         {

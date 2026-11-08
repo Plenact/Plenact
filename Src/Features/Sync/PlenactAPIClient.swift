@@ -21,10 +21,10 @@ struct PlenactRemoteUser: Codable, Equatable, Identifiable
 {
 
 
-    let userID:      String   /* Stable user identifier     */
-    let username:    String   /* User's login name          */
-    let displayName: String   /* User's display name        */
-    var accountRole: String?  /* User's role in the account */
+    let userID:      String  /* Stable user identifier     */
+    let username:    String  /* User's login name          */
+    let displayName: String  /* User's display name        */
+    var accountRole: String? /* User's role in the account */
 
     ///
     /// @fcn        PlenactRemoteUser.id
@@ -33,7 +33,7 @@ struct PlenactRemoteUser: Codable, Equatable, Identifiable
     ///
     /// @return     (String) server-assigned user identifier
     ///
-    var id: String
+    var id: String /* Record or view identity */
     {
         userID
     }  /* Stable identity for SwiftUI lists */
@@ -68,9 +68,9 @@ struct PlenactRemoteSession: Codable, Equatable
 {
 
 
-    let accessToken:  String             /* Access token for the session */
-    let expiresAtUTC: String             /* Expiration timestamp in UTC  */
-    let user:         PlenactRemoteUser  /* Associated remote user       */
+    let accessToken:  String            /* Access token for the session */
+    let expiresAtUTC: String            /* Expiration timestamp in UTC  */
+    let user:         PlenactRemoteUser /* Associated remote user       */
 
 
     ///
@@ -131,9 +131,9 @@ struct PlenactLoginRequest: Encodable
 {
 
 
-    let action = "login"  /* Authentication operation           */
-    let username: String  /* Account handle submitted for login */
-    let password: String  /* Account secret sent over HTTPS     */
+    let action = "login" /* Authentication operation           */
+    let username: String /* Account handle submitted for login */
+    let password: String /* Account secret sent over HTTPS     */
 
 }
 
@@ -163,9 +163,9 @@ struct PlenactCreateMemberRequest: Encodable
 {
 
 
-    let username:    String  /* New member's login handle   */
-    let displayName: String  /* New member's directory name */
-    let password:    String  /* Temporary member password   */
+    let username:    String /* New member's login handle   */
+    let displayName: String /* New member's directory name */
+    let password:    String /* Temporary member password   */
 
 
     ///
@@ -196,9 +196,9 @@ struct PlenactBoardWriteRequest: Encodable
 {
 
 
-    let expectedRevision: Int64                 /* Revision read before editing */
-    let document:         PlenactBoardDocument  /* Complete snapshot payload    */
-    let seedKind:         String?               /* Explicit first-seed marker   */
+    let expectedRevision: Int64                /* Revision read before editing */
+    let document:         PlenactBoardDocument /* Complete snapshot payload    */
+    let seedKind:         String?              /* Explicit first-seed marker   */
 
 
     ///
@@ -229,10 +229,10 @@ struct PlenactAssignmentRequest: Encodable
 {
 
 
-    let expectedRevision: Int64    /* Revision read before mutation               */
-    let cardID:           Int      /* Stable target card identity                 */
-    let action:           String   /* Assign or unassign operation                */
-    let userID:           String?  /* Editor-selected target; omitted for members */
+    let expectedRevision: Int64   /* Revision read before mutation               */
+    let cardID:           Int     /* Stable target card identity                 */
+    let action:           String  /* Assign or unassign operation                */
+    let userID:           String? /* Editor-selected target; omitted for members */
 
 
     ///
@@ -264,8 +264,8 @@ struct PlenactAPIErrorResponse: Decodable
 {
 
 
-    let error:           String  /* Stable server error code                 */
-    let currentRevision: Int64?  /* Current revision included with conflicts */
+    let error:           String /* Stable server error code                 */
+    let currentRevision: Int64? /* Current revision included with conflicts */
 
 
     ///
@@ -311,7 +311,7 @@ enum PlenactAPIError: LocalizedError
     ///
     /// @return     (String?) user-facing description for the error
     ///
-    var errorDescription: String?
+    var errorDescription: String? /* Readable failure explanation */
     {  /* Safe user-facing error text */
 
 
@@ -361,8 +361,8 @@ enum PlenactSessionStore
 {
 
 
-    private static let account = "shared-demo-session" /* Keychain account key          */
-    private static let service =
+    private static let account = "shared-demo-session" /* Keychain account key       */
+    private static let service =                       /* Injected operation service */
     Bundle.main.bundleIdentifier.map
     {
             "\($0).remote-session"
@@ -442,7 +442,7 @@ enum PlenactSessionStore
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
-        let updateStatus = SecItemUpdate(
+        let updateStatus = SecItemUpdate( /* Update status */
             query as CFDictionary, attributes as CFDictionary) /* Existing item update result */
 
         if updateStatus == errSecItemNotFound
@@ -523,8 +523,8 @@ struct PlenactAPIClient
     }
 
 
-    private let baseURL: URL         /* Validated HTTPS API base URL    */
-    private let session: URLSession  /* Transport used for API requests */
+    private let baseURL: URL        /* Validated HTTPS API base URL    */
+    private let session: URLSession /* Transport used for API requests */
 
 
     ///
@@ -593,7 +593,7 @@ struct PlenactAPIClient
         }
 
 
-        var components = URLComponents(
+        var components = URLComponents( /* Parsed value components */
             url: configuredURL, resolvingAgainstBaseURL: false) /* Mutable URL normalization components */
 
         if components?.path.hasSuffix("/") == false
@@ -1095,7 +1095,7 @@ struct PlenactAPIClient
     {
 
 
-        let operation = await DatabaseActivity.shared.begin(
+        let operation = await DatabaseActivity.shared.begin( /* Pending requested operation */
                         "Synchronizing shared database...") /* Activity token for this request */
 
         do
@@ -1194,7 +1194,7 @@ struct PlenactAPIClient
         {
 
 
-            let serverError = try? JSONDecoder().decode(
+            let serverError = try? JSONDecoder().decode( /* Server error */
                 PlenactAPIErrorResponse.self, from: data) /* Optional API error payload */
 
             switch serverError?.error
@@ -1256,8 +1256,8 @@ struct PlenactBoardWriteResponse: Decodable
 {
 
 
-    let revision: Int64                 /* Newly accepted snapshot revision    */
-    let document: PlenactBoardDocument  /* Stored document returned by the API */
+    let revision: Int64                /* Newly accepted snapshot revision    */
+    let document: PlenactBoardDocument /* Stored document returned by the API */
 
 }
 
@@ -1272,7 +1272,7 @@ struct PlenactAssignmentResponse: Decodable
 {
 
 
-    let revision: Int64  /* Current Board revision           */
-    let changed:  Bool   /* Whether assignment state changed */
+    let revision: Int64 /* Current Board revision           */
+    let changed:  Bool  /* Whether assignment state changed */
 
 }

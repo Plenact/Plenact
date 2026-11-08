@@ -18,22 +18,24 @@ struct PlanSettingsView: View
 {
 
 
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.planningCalendarAccess) private var access
-    @State private var preferences                     = PlanPreferencesStore.load()
-    @State private var firstWeekday                    = 1
-    @State private var loaded                          = false
-    @State private var showsTemplates                  = false
-    @State private var opensLibraryAfterTemplates      = false
-    @State private var confirmsTemplateNavigation      = false
-    @State private var showsShortcuts                  = false
-    @State private var showsReviewRhythmSettings       = false
-    @State private var showsStudio                     = false
-    @State private var path: [PlanSettingsPage]        = []
-    @AppStorage(TodayListPins.key) private var pinData = Data()
-    let lists:         [KanbanList]
-    let onSaveProfile: (LocalProfile) -> Void
-    var onOpenTemplateLibrary: (() -> Void)? = nil
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @State private var preferences                     =      /* Planning and display choices   */
+        PlanPreferencesStore.load()
+    @State private var firstWeekday                    = 1 /* Calendar week boundary */
+    @State private var loaded                          = false /* Initial load completed      */
+    @State private var showsTemplates                  = false /* Templates visibility */
+    @State private var opensLibraryAfterTemplates      = false /* Deferred Template Library route */
+    @State private var confirmsTemplateNavigation      = false /* Unsaved-settings prompt flag */
+    @State private var showsShortcuts                  = false /* Shortcuts visibility */
+    @State private var showsReviewRhythmSettings       = /* Reminder editor visibility        */
+        false
+    @State private var showsStudio                     = false  /* Studio visibility              */
+    @State private var path: [PlanSettingsPage]        = []     /* Settings navigation stack      */
+    @AppStorage(TodayListPins.key) private var pinData = Data() /* Saved shortcut selections      */
+    let lists:         [KanbanList]                             /* Ordered List records           */
+    let onSaveProfile: (LocalProfile) -> Void                   /* Persist local profile edits    */
+    var onOpenTemplateLibrary: (() -> Void)? = nil              /* Open template library callback */
 
 
     /// @fcn PlanSettingsView.savePreferences
@@ -72,7 +74,7 @@ struct PlanSettingsView: View
     }
 
 
-    var body: some View
+    var body: some View /* Settings directory and sheets */
     {
 
         NavigationStack(path: $path)
@@ -209,7 +211,8 @@ struct PlanSettingsView: View
 
             opensLibraryAfterTemplates = false
 
-            let savedFirstWeekday = access?.document.firstWeekday ?? Calendar.current.firstWeekday
+            let savedFirstWeekday = /* Saved first weekday */
+                access?.document.firstWeekday ?? Calendar.current.firstWeekday
 
             if preferences != PlanPreferencesStore.load() || firstWeekday != savedFirstWeekday
             {

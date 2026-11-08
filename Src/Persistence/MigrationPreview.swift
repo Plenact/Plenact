@@ -14,33 +14,33 @@ import Foundation
 struct MigrationPreview
 {
 
-    let files:           FileWrapper /* Originals plus private mapping and converted records */
-    let recordCount:     Int         /* Canonical documents actually converted               */
-    let contentRecordCount: Int   /* Canonical content documents emitted by this slice */
-    let blockedContentReason: String? /* Explicit blocker, never silently omitted content */
-    let metadataRecordCount: Int
-    let selectionEntryCount: Int
-    let selectionIssueCount: Int
-    let verifiedAssetCount: Int
-    let missingAssetCount: Int
-    let assetIssueCount: Int
-    let settingsSourceLabel: String
-    let settingsPreparedCount: Int
-    let shortcutItemCount: Int
-    let settingsReviewCount: Int
-    let studioPreparedCount: Int
-    let artworkCount: Int
-    let appearanceReviewCount: Int
-    let planningRecordCount: Int
-    let planningReviewCount: Int
-    let appearanceModelRecordCount: Int
-    let remainingStores: [String]    /* Present source stores requiring later adapters        */
+    let files:           FileWrapper    /* Originals plus private mapping and converted records */
+    let recordCount:     Int            /* Canonical documents actually converted               */
+    let contentRecordCount: Int         /* Canonical content documents emitted by this slice    */
+    let blockedContentReason: String?   /* Explicit blocker, never silently omitted content     */
+    let metadataRecordCount: Int        /* Metadata record count                                */
+    let selectionEntryCount: Int        /* Selection entry count                                */
+    let selectionIssueCount: Int        /* Selection issue count                                */
+    let verifiedAssetCount: Int         /* Verified asset count                                 */
+    let missingAssetCount: Int          /* Missing asset count                                  */
+    let assetIssueCount: Int            /* Asset issue count                                    */
+    let settingsSourceLabel: String     /* Settings source label                                */
+    let settingsPreparedCount: Int      /* Settings prepared count                              */
+    let shortcutItemCount: Int          /* Shortcut item count                                  */
+    let settingsReviewCount: Int        /* Settings review count                                */
+    let studioPreparedCount: Int        /* Studio prepared count                                */
+    let artworkCount: Int               /* Artwork count                                        */
+    let appearanceReviewCount: Int      /* Appearance review count                              */
+    let planningRecordCount: Int        /* Planning record count                                */
+    let planningReviewCount: Int        /* Planning review count                                */
+    let appearanceModelRecordCount: Int /* Appearance model record count                        */
+    let remainingStores: [String]       /* Present source stores requiring later adapters       */
 
 
     /// @fcn MigrationPreview.contentReviewMessage
     /// @brief Explain a content blocker without exposing implementation codes in the interface
     /// @return Optional action-oriented review guidance; machine details remain in the exported report
-    var contentReviewMessage: String?
+    var contentReviewMessage: String? /* Content review message */
     {
 
         guard let code = blockedContentReason else
@@ -76,7 +76,7 @@ struct MigrationPreview
         case invalidLabels, unsupportedFields, invalidPreference, invalidSnapshot
     }
 
-    static let displayKeys: [String: String] = [
+    static let displayKeys: [String: String] = [ /* Display keys */
         "Plenact.BoardPresentation.v1": "board_presentation",
         "Plenact.CardCovers.enabled": "card_covers_enabled",
         "Plenact.ActivityShowsCovers": "activity_shows_covers",
@@ -98,7 +98,8 @@ struct MigrationPreview
         journal: inout MigrationIdentityJournal) throws -> [String: Any]
     {
 
-        let target = try journal.resolve(MigrationSourceIdentity(recordType: type,
+        let target = /* Target under consideration */
+            try journal.resolve(MigrationSourceIdentity(recordType: type,
             owner: "workspace_metadata", legacyID: source, discriminator: nil))
 
         return ["user_data_model_version": "1.0", "payload_schema_version": 1,
@@ -133,7 +134,8 @@ struct MigrationPreview
             throw Failure.unsupportedFields
         }
 
-        let library = try JSONDecoder().decode(LabelLibrary.self, from: data)
+        let library = /* Retained library contents */
+            try JSONDecoder().decode(LabelLibrary.self, from: data)
 
         guard Set(library.categories.map(\.id)).count == library.categories.count,
               Set(library.labels.map(\.id)).count == library.labels.count else
@@ -141,13 +143,14 @@ struct MigrationPreview
             throw Failure.invalidLabels
         }
 
-        var categoryIDs: [String: String] = [:]
-        var documents: [[String: Any]]    = []
+        var categoryIDs: [String: String] = [:] /* Category i ds            */
+        var documents: [[String: Any]]    = []  /* Store document snapshots */
 
         for category in library.categories
         {
 
-            let record = try document(type: "label_category", source: category.id,
+            let record = /* Record being processed */
+                try document(type: "label_category", source: category.id,
                 payload: ["name": category.name], journal: &journal)
 
             categoryIDs[category.id] = record["id"] as? String
@@ -181,7 +184,7 @@ struct MigrationPreview
             return []
         }
 
-        var payload: [String: Any] = [:]
+        var payload: [String: Any] = [:] /* Canonical record payload */
 
         for (key, wire) in displayKeys
         {
@@ -229,7 +232,7 @@ struct MigrationPreview
     static func prepare(backup: LegacyWorkspaceBackup, journalURL: URL, timeZoneID: String? = nil) throws -> MigrationPreview
     {
 
-        let values = try MigrationBackupReader.values(in: backup)
+        let values = try MigrationBackupReader.values(in: backup) /* Values being processed */
 
         guard backup.files.fileWrappers?["PortableRuntime"] == nil else
         {
@@ -237,15 +240,18 @@ struct MigrationPreview
             throw Failure.invalidSnapshot
         }
 
-        let baseline = try MigrationIdentityStore.read(at: journalURL)
-        var journal  = try baseline.map(MigrationIdentityJournal.decode) ?? MigrationIdentityJournal()
+        let baseline = /* Original state for comparison */
+            try MigrationIdentityStore.read(at: journalURL)
+        var journal  = /* Migration identity journal */
+            try baseline.map(MigrationIdentityJournal.decode) ?? MigrationIdentityJournal()
 
         if backup.files.fileWrappers?["Migration"] != nil
         {
 
-            let retained = try MigrationIdentityJournal.decode(
+            let retained = try MigrationIdentityJournal.decode( /* State retained for recovery */
                 MigrationBackupReader.file("Migration/IdentityJournal.json", in: backup.files))
-            let current = Dictionary(uniqueKeysWithValues: journal.entries.map { ($0.source, $0.target) })
+            let current = /* Current operation snapshot */
+                Dictionary(uniqueKeysWithValues: journal.entries.map { ($0.source, $0.target) })
 
             guard baseline != nil, retained.sourceInstallationID == journal.sourceInstallationID,
                   retained.previewWorkspaceID == journal.previewWorkspaceID,
@@ -256,16 +262,20 @@ struct MigrationPreview
         }
 
         // The unsaved catalog is the explicit application fallback, never a recovered user catalog
-        let usesDefaultLabels = values["Plenact.LabelLibrary.v1"] == nil &&
+        let usesDefaultLabels = /* Uses default labels */
+            values["Plenact.LabelLibrary.v1"] == nil &&
             ["Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1", "Plenact.PlanningTemplates.v1"].contains(where: { values[$0] != nil })
-        let defaultCatalog = usesDefaultLabels ? try JSONEncoder().encode(LabelLibrary.starter.includingDayAreas) : nil
-        var records        = try labels(values["Plenact.LabelLibrary.v1"] ?? defaultCatalog, journal: &journal)
+        let defaultCatalog = /* Default catalog */
+            usesDefaultLabels ? try JSONEncoder().encode(LabelLibrary.starter.includingDayAreas) : nil
+        var records        = /* Records being processed */
+            try labels(values["Plenact.LabelLibrary.v1"] ?? defaultCatalog, journal: &journal)
 
         records.append(contentsOf: try displays(values, journal: &journal))
 
-        var content: MigrationContentConverter.Result?
-        var blockedContentReason: String?
-        let contentKeys = ["Plenact.Board.v1", "Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1", "Plenact.PlanningTemplates.v1"]
+        var content: MigrationContentConverter.Result? /* Content being processed */
+        var blockedContentReason: String?              /* Blocked content reason  */
+        let contentKeys =                              /* Content keys            */
+            ["Plenact.Board.v1", "Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1", "Plenact.PlanningTemplates.v1"]
 
         if contentKeys.contains(where: { values[$0] != nil })
         {
@@ -274,8 +284,9 @@ struct MigrationPreview
                 do
                 {
 
-                    let sourceReport              = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
-                    var digests: [String: String] = [:]
+                    let sourceReport              = /* Source report */
+                        try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+                    var digests: [String: String] = [:] /* Expected content hashes */
 
                     for entry in sourceReport["media"] as! [[String: Any]]
                     {
@@ -333,15 +344,17 @@ struct MigrationPreview
             }
         }
 
-        var settings: MigrationSettingsPreview.Result?
-        var settingsBlocker: String?
-        var settingsJournal = journal
+        var settings: MigrationSettingsPreview.Result? /* Workspace settings snapshot */
+        var settingsBlocker: String?                   /* Settings blocker            */
+        var settingsJournal = journal                  /* Settings journal            */
 
         do
         {
 
-            let source  = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
-            let digests = Dictionary(uniqueKeysWithValues: (source["media"] as! [[String: Any]]).map {
+            let source  = /* Source value for this operation */
+                try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+            let digests = /* Expected content hashes */
+                Dictionary(uniqueKeysWithValues: (source["media"] as! [[String: Any]]).map {
                 ($0["path"] as! String, $0["sha256"] as! String)
             })
 
@@ -375,15 +388,17 @@ struct MigrationPreview
 
         }
 
-        var studio: MigrationStudioPreview.Result?
-        var studioBlocker: String?
-        var studioJournal = journal
+        var studio: MigrationStudioPreview.Result? /* Studio operation value */
+        var studioBlocker: String?                 /* Studio blocker         */
+        var studioJournal = journal                /* Studio journal         */
 
         do
         {
 
-            let source  = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
-            let digests = Dictionary(uniqueKeysWithValues: (source["media"] as! [[String: Any]]).map {
+            let source  = /* Source value for this operation */
+                try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
+            let digests = /* Expected content hashes */
+                Dictionary(uniqueKeysWithValues: (source["media"] as! [[String: Any]]).map {
                 ($0["path"] as! String, $0["sha256"] as! String)
             })
 
@@ -417,9 +432,9 @@ struct MigrationPreview
 
         }
 
-        var planning: MigrationPlanningPreview.Result?
-        var planningBlocker: String?
-        var planningJournal = journal
+        var planning: MigrationPlanningPreview.Result? /* Planning store projection */
+        var planningBlocker: String?                   /* Planning blocker          */
+        var planningJournal = journal                  /* Planning journal          */
 
         do
         {
@@ -453,11 +468,14 @@ struct MigrationPreview
 
         }
 
-        let assets = try MigrationAssetPreview.prepare(backup: backup,
+        let assets = try MigrationAssetPreview.prepare(backup: backup, /* Verified asset records */
             records: records + (settings?.assetRecords ?? []) + (studio?.assetRecords ?? []) + (studio?.appearanceRecords ?? []), journal: &journal)
-        let encoderOptions: JSONSerialization.WritingOptions = [.prettyPrinted, .sortedKeys]
-        let encodedRecords                                   = try records.map { try JSONSerialization.data(withJSONObject: $0, options: encoderOptions) }
-        var supported                                        = Set(displayKeys.keys).union(["Plenact.LabelLibrary.v1"])
+        let encoderOptions: JSONSerialization.WritingOptions = /* Encoder options */
+            [.prettyPrinted, .sortedKeys]
+        let encodedRecords                                   = /* Encoded records */
+            try records.map { try JSONSerialization.data(withJSONObject: $0, options: encoderOptions) }
+        var supported                                        = /* Supported fields or operations */
+            Set(displayKeys.keys).union(["Plenact.LabelLibrary.v1"])
 
         if content?.boardConverted == true
         {
@@ -469,17 +487,19 @@ struct MigrationPreview
         }
         supported.formUnion(planning?.convertedStores ?? [])
 
-        let deviceKeys: Set<String> = ["Plenact.LibraryRecents.v1", "Plenact.ActivityRecents.v1",
+        let deviceKeys: Set<String> = /* Device keys */
+            ["Plenact.LibraryRecents.v1", "Plenact.ActivityRecents.v1",
             "Plenact.RecentSearches.v1", "Plenact.LocalReactionAuthor.v1", "Plenact.LastViewedList.v1",
             "Plenact.Welcome.lastDeparture.v1", "Plenact.ReviewRhythmDismissals.v1"]
-        let local = values.keys.filter {
+        let local = values.keys.filter { /* Local workspace representation */
             deviceKeys.contains($0) || $0.hasPrefix("Plenact.BoardViewport.v1.") || $0.hasPrefix("plenact.creationDraft.")
         }.sorted()
-        let recovery  = values.keys.filter { LegacyStoreValidation.recoveryKeys.contains($0) }.sorted()
-        let remaining = values.keys.filter {
+        let recovery  = /* Retained recovery history */
+            values.keys.filter { LegacyStoreValidation.recoveryKeys.contains($0) }.sorted()
+        let remaining = values.keys.filter { /* Entries still to process */
             !supported.contains($0) && !local.contains($0) && !recovery.contains($0)
         }.sorted()
-        let report: [String: Any] = [
+        let report: [String: Any] = [ /* Validation findings */
             "format": "plenact.ios-migration-preview", "format_version": 1,
             "target_user_data_model_version": "1.0", "portable_conversion_complete": false,
             "cloud_account_linked": false, "workspace_identity_scope": "local_preview",
@@ -527,7 +547,8 @@ struct MigrationPreview
             "blocking_requirements": ["remaining_source_adapters", "verified_account_workspace_binding",
                 "full_workspace_validation", "recovery_acceptance"]
         ]
-        let reportData = try JSONSerialization.data(withJSONObject: report, options: encoderOptions)
+        let reportData = /* Report data */
+            try JSONSerialization.data(withJSONObject: report, options: encoderOptions)
 
         guard let serialized = backup.files.serializedRepresentation,
               let output = FileWrapper(serializedRepresentation: serialized), output.isDirectory,
@@ -536,24 +557,26 @@ struct MigrationPreview
             throw Failure.invalidSnapshot
         }
 
-        let recordDirectory = FileWrapper(directoryWithFileWrappers: [:])
+        let recordDirectory = FileWrapper(directoryWithFileWrappers: [:]) /* Record directory */
 
         for (index, record) in records.enumerated()
         {
 
-            let file = FileWrapper(regularFileWithContents: encodedRecords[index])
+            let file = /* File being processed */
+                FileWrapper(regularFileWithContents: encodedRecords[index])
 
             file.preferredFilename = String(format: "%04d", index) + "-" + (record["record_type"] as! String) + ".json"
 
             recordDirectory.addFileWrapper(file)
         }
 
-        let preview = FileWrapper(directoryWithFileWrappers: [
+        let preview = FileWrapper(directoryWithFileWrappers: [ /* Converted migration preview */
             "Records": recordDirectory,
             "Report.json": FileWrapper(regularFileWithContents: reportData),
             "IdentityJournal.json": FileWrapper(regularFileWithContents: try journal.encoded())
         ])
-        let assetFile = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: assets.document, options: encoderOptions))
+        let assetFile = /* Asset file */
+            FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: assets.document, options: encoderOptions))
 
         assetFile.preferredFilename = "AssetPreview.json"
 
@@ -561,7 +584,8 @@ struct MigrationPreview
         if let planning
         {
 
-            let file = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: planning.document, options: encoderOptions))
+            let file = /* File being processed */
+                FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: planning.document, options: encoderOptions))
 
             file.preferredFilename = "PlanningPreview.json"
 
@@ -570,13 +594,15 @@ struct MigrationPreview
         if let studio
         {
 
-            let appearanceFile = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: studio.appearanceDocument, options: encoderOptions))
+            let appearanceFile = /* Appearance file */
+                FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: studio.appearanceDocument, options: encoderOptions))
 
             appearanceFile.preferredFilename = "AppearancePreview.json"
 
             preview.addFileWrapper(appearanceFile)
 
-            let file = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: studio.document, options: encoderOptions))
+            let file = /* File being processed */
+                FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: studio.document, options: encoderOptions))
 
             file.preferredFilename = "StudioPreview.json"
 
@@ -585,7 +611,8 @@ struct MigrationPreview
         if let settings
         {
 
-            let file = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: settings.document, options: encoderOptions))
+            let file = /* File being processed */
+                FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: settings.document, options: encoderOptions))
 
             file.preferredFilename = "SettingsPreview.json"
 
@@ -594,7 +621,8 @@ struct MigrationPreview
         if let defaultCatalog
         {
 
-            let catalog = FileWrapper(regularFileWithContents: defaultCatalog)
+            let catalog = /* Available library entries */
+                FileWrapper(regularFileWithContents: defaultCatalog)
 
             catalog.preferredFilename = "ApplicationDefaultLabels.json"
 
@@ -603,7 +631,8 @@ struct MigrationPreview
         if let content
         {
 
-            let selections = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: [
+            let selections = /* Retained selection state */
+                FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: [
                 "format": "plenact.ios-selection-preview", "format_version": 1,
                 "target_user_data_model_version": "1.0", "account_binding_pending": true,
                 "entries": content.selections.entries, "issues": content.selections.issues
@@ -613,13 +642,15 @@ struct MigrationPreview
 
             preview.addFileWrapper(selections)
 
-            let graph = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: content.graph, options: encoderOptions))
+            let graph = /* Validated reference graph */
+                FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: content.graph, options: encoderOptions))
 
             graph.preferredFilename = "ContentGraph.json"
 
             preview.addFileWrapper(graph)
 
-            let evidence = FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: content.evidence, options: encoderOptions))
+            let evidence = /* Retained verification evidence */
+                FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: content.evidence, options: encoderOptions))
 
             evidence.preferredFilename = "SourcePrecision.json"
 
@@ -631,9 +662,11 @@ struct MigrationPreview
         output.addFileWrapper(preview)
         try MigrationIdentityStore.save(journal, at: journalURL, expected: baseline)
 
-        let settingsLabels = ["saved_planning_preferences": "Saved planning settings",
+        let settingsLabels = /* Settings labels */
+            ["saved_planning_preferences": "Saved planning settings",
             "saved_profile_preferences": "Saved profile settings", "application_defaults": "Application defaults"]
-        let settingsOrigin = settings?.document["preferences_origin"] as? String ?? ""
+        let settingsOrigin = /* Settings origin */
+            settings?.document["preferences_origin"] as? String ?? ""
 
         return MigrationPreview(files: output, recordCount: records.count,
             contentRecordCount: (content?.records.count ?? 0) - (content?.metadataRecordCount ?? 0), blockedContentReason: blockedContentReason, metadataRecordCount: content?.metadataRecordCount ?? 0, selectionEntryCount: content?.selections.entries.count ?? 0,

@@ -22,7 +22,7 @@ enum DailyReviewAction: Codable, Equatable
 
 
     case keep, keepTomorrow, table, complete, archive, queue, tomorrow, date(String)
-    var title: String
+    var title: String /* User-facing title */
     {
 
         switch self
@@ -62,11 +62,11 @@ struct DailyReviewDecision: Codable, Equatable, Identifiable
 {
 
 
-    var id = UUID()
-    let source: DailyPlanPriority
-    let result: DailyPlanPriority
-    let action: DailyReviewAction
-    var recordedAt = Date()
+    var id = UUID()               /* Record UUID                     */
+    let source: DailyPlanPriority /* Source value for this operation */
+    let result: DailyPlanPriority /* Result being assembled          */
+    let action: DailyReviewAction /* Requested user operation        */
+    var recordedAt = Date()       /* Recorded at                     */
 
 }
 
@@ -82,13 +82,13 @@ struct DailyEveningReview: Codable, Equatable
 {
 
 
-    var step = 0
-    var completedAt: Date?
-    var helped                              = ""
-    var difficult                           = ""
-    var tomorrow                            = ""
-    var decisions:    [DailyReviewDecision] = []
-    var achievements: [DailyPlanPriority]   = []
+    var step = 0                                 /* Current review step       */
+    var completedAt: Date?                       /* Completed at              */
+    var helped                              = "" /* Saved review successes    */
+    var difficult                           = "" /* Saved review difficulties */
+    var tomorrow                            = "" /* Following local day       */
+    var decisions:    [DailyReviewDecision] = [] /* Saved review decisions    */
+    var achievements: [DailyPlanPriority]   = [] /* Saved period highlights   */
 
 }
 
@@ -125,9 +125,11 @@ enum TodayReviewSelection
     ) -> [PlanningSearchResult]
     {
 
-        let day    = access.document.week(for: date, calendar: calendar)
-        let listID = day?.dayListIDs[PlanningDate.key(date, calendar: calendar)]
-        let tables = Set(
+        let day    = /* Day under consideration */
+            access.document.week(for: date, calendar: calendar)
+        let listID = /* Owner-local List identifier */
+            day?.dayListIDs[PlanningDate.key(date, calendar: calendar)]
+        let tables = Set( /* Filtered tables entries */
             access.library.filter
             {
                 $0.isActive && $0.kind == .list && $0.title == "On the Table"
@@ -141,12 +143,12 @@ enum TodayReviewSelection
                 return false
             }
 
-            let selected = plan.priorities.contains
+            let selected = plan.priorities.contains /* Current selection */
             {
                 $0.resolve(in: [item]) != nil
             }
 
-            let inWorkingList =
+            let inWorkingList = /* In working list */
             (item.collectionID == day?.id && item.listID == listID) || tables.contains(item.collectionID)
 
             return selected || (inWorkingList && item.card.presentation == .card)
@@ -201,37 +203,37 @@ struct TodayReviewView: View
 {
 
 
-    @Binding var plan: DailyPlan
-    let date:          Date
-    let baseline:      DailyPlan?
-    let onSave:        () -> Bool
-    let onCommitted:   (DailyPlan) -> Void
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var step = 0
-    @State private var pendingSource: PlanningSearchResult?
-    @State private var pendingAction: DailyReviewAction?
-    @State private var dateSource:    PlanningSearchResult?
-    @State private var selectedDate = Date()
-    @State private var chosenDateDecision: (PlanningSearchResult, String)?
-    @State private var operationError = false
+    @Binding var plan: DailyPlan /* Daily planning record */
+    let date:          Date /* Date used by this operation */
+    let baseline:      DailyPlan? /* Original state for comparison */
+    let onSave:        () -> Bool /* Persist the edited value */
+    let onCommitted:   (DailyPlan) -> Void /* Committed callback */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
+    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var step = 0 /* Current review step */
+    @State private var pendingSource: PlanningSearchResult? /* Pending source */
+    @State private var pendingAction: DailyReviewAction? /* Pending action */
+    @State private var dateSource:    PlanningSearchResult? /* Date source */
+    @State private var selectedDate = Date() /* Selected date */
+    @State private var chosenDateDecision: (PlanningSearchResult, String)? /* Chosen date decision */
+    @State private var operationError = false /* Operation error */
 
-    private var calendar: Calendar
+    private var calendar: Calendar /* Date calculation calendar */
     {
 
-        var value = access?.document.calendar ?? .current
+        var value = access?.document.calendar ?? .current /* Value being processed */
 
         value.timeZone = TimeZone(identifier: plan.timeZoneID) ?? .current
 
         return value
     }
 
-    private var review: DailyEveningReview
+    private var review: DailyEveningReview /* Review record being inspected */
     {
         plan.eveningReview ?? DailyEveningReview()
     }
 
-    private var items: [PlanningSearchResult]
+    private var items: [PlanningSearchResult] /* Items being processed */
     {
 
         guard let access else
@@ -239,7 +241,7 @@ struct TodayReviewView: View
             return []
         }
 
-        let labels = LabelLibraryStore.load().labels.filter
+        let labels = LabelLibraryStore.load().labels.filter /* Available label definitions */
         {
 
             $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id
@@ -249,7 +251,7 @@ struct TodayReviewView: View
             plan: plan, date: date, access: access, referenceLabelIDs: Set(labels.map(\.id)), calendar: calendar)
     }
 
-    private var achievements: [PlanningSearchResult]
+    private var achievements: [PlanningSearchResult] /* Saved period highlights */
     {
         items.filter
         {
@@ -258,7 +260,7 @@ struct TodayReviewView: View
 
     }
 
-    private var queueAvailable: Bool
+    private var queueAvailable: Bool /* Queue available */
     {
 
         access?.library.contains
@@ -290,7 +292,7 @@ struct TodayReviewView: View
             {
                 value in
 
-                var updated = review;
+                var updated = review; /* Edited value to publish */
 
                 updated[keyPath: key] = value;
                 plan.eveningReview = updated
@@ -328,8 +330,8 @@ struct TodayReviewView: View
     private func advance()
     {
 
-        let previous = plan.eveningReview
-        var updated  = review
+        let previous = plan.eveningReview /* Previous value for comparison */
+        var updated  = review             /* Edited value to publish       */
 
         updated.step = min(2, step + 1)
 
@@ -399,7 +401,7 @@ struct TodayReviewView: View
 
     }
 
-    var body: some View
+    var body: some View /* Today Review layout */
     {
 
         NavigationStack
@@ -458,7 +460,8 @@ struct TodayReviewView: View
                         {
                             priority in
 
-                            let source = priority.resolve(in: access?.searchableItems ?? [])
+                            let source = /* Source value for this operation */
+                                priority.resolve(in: access?.searchableItems ?? [])
 
                             VStack(alignment: .leading, spacing: 4)
                             {
@@ -489,7 +492,8 @@ struct TodayReviewView: View
                                                                         "Give each item a decision, or leave it for later. Keeping work is a valid outcome; no List has to be empty."
                         ).foregroundStyle(.secondary)
 
-                        let unfinished = TodayReviewSelection.pending(items, review: plan.eveningReview)
+                        let unfinished = /* Unfinished operation value */
+                            TodayReviewSelection.pending(items, review: plan.eveningReview)
 
                         if unfinished.isEmpty
                         {
@@ -815,20 +819,20 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
 {
 
 
-    let id:           String
-    let startKey:     String
-    let timeZoneID:   String
-    let firstWeekday: Int
-    var step                               = 0
-    var highlights                         = ""
-    var learned                            = ""
-    var direction                          = ""
-    var constraints                        = ""
-    var risks                              = ""
-    var priorities:  [DailyPlanPriority]   = []
-    var decisions:   [DailyReviewDecision] = []
-    var updatedAt:   Date?
-    var completedAt: Date?
+    let id:           String                    /* Record or view identity     */
+    let startKey:     String                    /* Dated Week boundary key     */
+    let timeZoneID:   String                    /* Time zone ID                */
+    let firstWeekday: Int                       /* Calendar week boundary      */
+    var step                               = 0  /* Current review step         */
+    var highlights                         = "" /* Saved weekly highlights     */
+    var learned                            = "" /* Saved review lessons        */
+    var direction                          = "" /* Requested move direction    */
+    var constraints                        = "" /* Available time or capacity  */
+    var risks                              = "" /* Saved planning concerns     */
+    var priorities:  [DailyPlanPriority]   = [] /* Ordered planning priorities */
+    var decisions:   [DailyReviewDecision] = [] /* Saved review decisions      */
+    var updatedAt:   Date?                      /* Updated at                  */
+    var completedAt: Date?                      /* Completed at                */
 
 
     ///
@@ -852,10 +856,10 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
 
     }
 
-    var calendar: Calendar
+    var calendar: Calendar /* Date calculation calendar */
     {
 
-        var value = Calendar(identifier: .gregorian)
+        var value = Calendar(identifier: .gregorian) /* Calendar for date calculations */
 
         value.timeZone = TimeZone(identifier: timeZoneID) ?? .current
         value.firstWeekday = firstWeekday
@@ -863,7 +867,7 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
         return value
     }
 
-    var dayKeys: Set<String>
+    var dayKeys: Set<String> /* Day keys */
     {
 
         Set(PlanningDate.days(in: startKey, calendar: calendar).map
@@ -910,7 +914,7 @@ enum WeeklyReviewStore
 {
 
 
-    static let key = "Plenact.WeeklyReviews.v1"
+    static let key = "Plenact.WeeklyReviews.v1" /* Persistence lookup key */
 
 
     ///
@@ -923,8 +927,8 @@ enum WeeklyReviewStore
     struct Document: Codable
     {
 
-        var version                               = 1;
-        var records: [String: WeeklyReviewRecord] = [:]
+        var version                               = 1;  /* Serialized format version */
+        var records: [String: WeeklyReviewRecord] = [:] /* Records being processed   */
 
     }
 
@@ -998,20 +1002,20 @@ enum WeeklyReviewStore
     ) throws -> WeeklyReviewRecord
     {
 
-        var document = try load(from: defaults)
+        var document = try load(from: defaults) /* Source document snapshot */
 
         guard document.records[draft.id] == baseline else
         {
             throw DailyPlanStore.Failure.conflict
         }
 
-        var saved = draft;
+        var saved = draft; /* Saved state under review */
 
         saved.updatedAt = .now
         document.records[saved.id] = saved
 
-        let data = try JSONEncoder().encode(document)
-        let old  = defaults.object(forKey: key)
+        let data = try JSONEncoder().encode(document) /* Encoded record bytes     */
+        let old  = defaults.object(forKey: key)       /* Previous operation state */
 
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
@@ -1046,25 +1050,26 @@ struct WeeklyReviewView: View
 {
 
 
-    let calendar:         Calendar
-    private let defaults: UserDefaults
-    @Environment(\.planningCalendarAccess) private var access
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedDate: Date
-    @State private var draft:        WeeklyReviewRecord
-    @State private var baseline:     WeeklyReviewRecord?
-    @State private var daily                         = DailyPlanStore.Document()
-    @State private var records: [WeeklyReviewRecord] = []
-    @State private var loaded                        = false
-    @State private var loadFailed                    = false
-    @State private var error: String?
-    @State private var showsPicker     = false
-    @State private var confirmsDiscard = false
-    @State private var pending:    PlanningSearchResult?
-    @State private var action:     DailyReviewAction?
-    @State private var dateSource: PlanningSearchResult?
-    @State private var targetDate = Date()
-    @State private var chosenDate: (PlanningSearchResult, String)?
+    let calendar:         Calendar                            /* Date calculation calendar      */
+    private let defaults: UserDefaults                        /* Preference storage domain      */
+    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @State private var selectedDate: Date                     /* Selected date                  */
+    @State private var draft:        WeeklyReviewRecord       /* Local editing draft            */
+    @State private var baseline:     WeeklyReviewRecord?      /* Original state for comparison  */
+    @State private var daily                         =        /* Daily planning state           */
+        DailyPlanStore.Document()
+    @State private var records: [WeeklyReviewRecord] = [] /* Records being processed */
+    @State private var loaded                        = false /* Initial load completed      */
+    @State private var loadFailed                    = false /* Load failed */
+    @State private var error: String? /* Reported operation failure */
+    @State private var showsPicker     = false /* Picker visibility */
+    @State private var confirmsDiscard = false /* Confirms discard */
+    @State private var pending:    PlanningSearchResult? /* Operation awaiting completion */
+    @State private var action:     DailyReviewAction? /* Requested user operation */
+    @State private var dateSource: PlanningSearchResult? /* Date source */
+    @State private var targetDate = Date() /* Target date */
+    @State private var chosenDate: (PlanningSearchResult, String)? /* Chosen date */
 
 
     ///
@@ -1089,26 +1094,26 @@ struct WeeklyReviewView: View
 
     }
 
-    private var dirty: Bool
+    private var dirty: Bool /* Unsaved-change flag */
     {
 
         loaded && !loadFailed && draft != (baseline ?? WeeklyReviewRecord(date: selectedDate, calendar: calendar))
     }
 
-    private var sources: [PlanningSearchResult]
+    private var sources: [PlanningSearchResult] /* Source records or files */
     {
         access?.searchableItems ?? []
     }
 
-    private var queue: [PlanningSearchResult]
+    private var queue: [PlanningSearchResult] /* Queue lookup entries */
     {
 
-        let owners = Set(
+        let owners = Set( /* Qualified record owners */
             access?.library.filter
             {
                 $0.isActive && $0.kind == .list && $0.title == "In the Queue"
             } .map(\.id) ?? [])
-        let reference = Set(
+        let reference = Set( /* Qualified record reference */
             LabelLibraryStore.load().labels.filter
             {
 
@@ -1145,7 +1150,7 @@ struct WeeklyReviewView: View
         do
         {
 
-            let document = try WeeklyReviewStore.load(from: defaults)
+            let document = try WeeklyReviewStore.load(from: defaults) /* Source document snapshot */
 
             daily = try DailyPlanStore.load(from: defaults)
             records = document.records.values.sorted
@@ -1209,7 +1214,7 @@ struct WeeklyReviewView: View
     private func save(advance: Bool)
     {
 
-        let before = draft
+        let before = draft /* State before the operation */
 
         if advance
         {
@@ -1231,7 +1236,8 @@ struct WeeklyReviewView: View
         do
         {
 
-            let saved = try WeeklyReviewStore.save(draft, replacing: baseline, to: defaults)
+            let saved = /* Saved state under review */
+                try WeeklyReviewStore.save(draft, replacing: baseline, to: defaults)
 
             baseline = saved;
             draft = saved
@@ -1296,7 +1302,7 @@ struct WeeklyReviewView: View
 
     }
 
-    var body: some View
+    var body: some View /* Weekly Review layout */
     {
 
         NavigationStack
@@ -1375,7 +1381,7 @@ struct WeeklyReviewView: View
                     Section("Look back")
                     {
 
-                        let days = draft.dailyPlans(in: daily)
+                        let days = draft.dailyPlans(in: daily) /* Dates in the selected range */
 
                         Text(
                                                                         "\(days.count) of 7 days have saved plans. Missing days are welcome; no catching up is required."

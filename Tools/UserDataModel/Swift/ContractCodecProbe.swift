@@ -26,7 +26,7 @@ indirect enum PortableJSONValue: Codable
     init(from decoder: Decoder) throws
     {
 
-        let value = try decoder.singleValueContainer()
+        let value = try decoder.singleValueContainer() /* Value being processed */
 
         if value.decodeNil()
         {
@@ -73,7 +73,7 @@ indirect enum PortableJSONValue: Codable
     func encode(to encoder: Encoder) throws
     {
 
-        var value = encoder.singleValueContainer()
+        var value = encoder.singleValueContainer() /* Value being processed */
 
         switch self
         {
@@ -99,12 +99,12 @@ indirect enum PortableJSONValue: Codable
 struct PortableContentDocument: Codable
 {
 
-    let modelVersion:   String
-    let schemaVersion:  Int
-    let recordType:     String
-    let id:             String
-    let workspaceID:    String
-    let payload:        [String: PortableJSONValue]
+    let modelVersion:   String                      /* Model version            */
+    let schemaVersion:  Int                         /* Schema version           */
+    let recordType:     String                      /* Record type              */
+    let id:             String                      /* Record or view identity  */
+    let workspaceID:    String                      /* Workspace ID             */
+    let payload:        [String: PortableJSONValue] /* Canonical record payload */
 
     enum CodingKeys: String, CodingKey
     {
@@ -121,9 +121,9 @@ struct PortableContentDocument: Codable
 struct FixtureCase: Decodable
 {
 
-    let file:   String
-    let schema: String
-    let valid:  Bool
+    let file:   String /* File being processed         */
+    let schema: String /* Contract schema under review */
+    let valid:  Bool   /* Accepted input value         */
 
 }
 
@@ -131,7 +131,7 @@ struct FixtureCase: Decodable
 struct FixtureManifest: Decodable
 {
 
-    let cases: [FixtureCase]
+    let cases: [FixtureCase] /* Supported enum cases */
 
 }
 
@@ -143,18 +143,18 @@ struct FixtureManifest: Decodable
 func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
 {
 
-    let decoder = JSONDecoder()
-    let encoder = JSONEncoder()
+    let decoder = JSONDecoder() /* JSON decoding configuration */
+    let encoder = JSONEncoder() /* JSON encoding configuration */
 
     encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
 
-    let manifest = try decoder.decode(
+    let manifest = try decoder.decode( /* Package inventory and hashes */
         FixtureManifest.self,
         from: Data(contentsOf: fixtures.appendingPathComponent("manifest.json")))
 
     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
 
-    let contentSchemas = Set([
+    let contentSchemas = Set([ /* Content schemas */
         "card.schema.json",
         "list.schema.json",
         "collection.schema.json",
@@ -180,7 +180,7 @@ func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
                 "content-selection.schema.json",
                 "unavailable-reference.schema.json"
     ])
-    var count = 0
+    var count = 0 /* Number of entries */
 
     for fixture in manifest.cases where fixture.valid
     {
@@ -189,8 +189,9 @@ func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
             throw CocoaError(.fileReadInvalidFileName)
         }
 
-        let input = try Data(contentsOf: fixtures.appendingPathComponent(fixture.file))
-        let result: Data
+        let input = /* Source operation input */
+            try Data(contentsOf: fixtures.appendingPathComponent(fixture.file))
+        let result: Data /* Result being assembled */
 
         if contentSchemas.contains(fixture.schema)
         {
@@ -220,7 +221,7 @@ do
         throw CocoaError(.fileReadInvalidFileName)
     }
 
-    let count = try roundTripFixtures(
+    let count = try roundTripFixtures( /* Number of entries */
         fixtures: URL(fileURLWithPath: CommandLine.arguments[1]),
         output: URL(fileURLWithPath: CommandLine.arguments[2]))
 

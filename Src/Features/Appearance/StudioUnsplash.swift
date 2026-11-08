@@ -29,6 +29,7 @@ enum StudioUnsplash
         var value: CFTypeRef?
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service, kSecReturnData as String: true]
+
         guard SecItemCopyMatching(query as CFDictionary, &value) == errSecSuccess,
         let data = value as? Data else
         {
@@ -52,6 +53,7 @@ enum StudioUnsplash
 
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
         let cleaned              = key.trimmingCharacters(in: .whitespacesAndNewlines)
+
         if cleaned.isEmpty
         {
             SecItemDelete(query as CFDictionary);
@@ -61,6 +63,7 @@ enum StudioUnsplash
         let values: [String: Any] = [kSecValueData as String: Data(cleaned.utf8),
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly]
         let updated = SecItemUpdate(query as CFDictionary, values as CFDictionary)
+
         if updated == errSecItemNotFound
         {
 
@@ -102,9 +105,12 @@ enum StudioUnsplash
         }
 
         var request = URLRequest(url: url)
+
         request.setValue("Client-ID " + key(), forHTTPHeaderField: "Authorization")
         request.setValue("v1", forHTTPHeaderField: "Accept-Version")
+
         let (data, response) = try await URLSession.shared.data(for: request)
+
         guard let http = response as? HTTPURLResponse, (200 ... 299).contains(http.statusCode) else
         {
             throw URLError(.badServerResponse)
@@ -126,9 +132,12 @@ enum StudioUnsplash
 
 
         var url = URLComponents(string: "https://api.unsplash.com/search/photos")!
+
         url.queryItems = [URLQueryItem(name: "query", value: query), URLQueryItem(name: "per_page", value: "20")]
+
         let data   = try await request(url.url!)
         let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+
         return (object? ["results"] as? [[String: Any]] ?? []).compactMap
         {
 
@@ -148,6 +157,7 @@ enum StudioUnsplash
 
             profile.queryItems = [URLQueryItem(name: "utm_source", value: "plenact"),
                 URLQueryItem(name: "utm_medium", value: "referral")]
+
             guard let profileURL = profile.url else
             {
                 return nil
@@ -211,7 +221,9 @@ struct StudioUnsplashPicker: View
 
                         catch
                         {
+
                             self.error = error.localizedDescription
+
                         }
 
                     }
@@ -229,18 +241,24 @@ struct StudioUnsplashPicker: View
                     {
 
                         requestTask?.cancel()
+
                         requestTask = Task
                         {
 
                             isBusy = true
+
                             defer
                             {
+
                                 isBusy = false
+
                             }
 
                             do
                             {
+
                                 photos = try await StudioUnsplash.search(query)
+
                             }
 
                             catch is CancellationError
@@ -250,7 +268,9 @@ struct StudioUnsplashPicker: View
 
                             catch
                             {
+
                                 self.error = "Search failed. Check the access key, connection, and API quota."
+
                             }
 
                         }

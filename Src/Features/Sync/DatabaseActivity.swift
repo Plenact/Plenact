@@ -113,6 +113,7 @@ final class DatabaseActivity: ObservableObject
 
 
         errorMessage = message
+
     }
 
 
@@ -128,6 +129,7 @@ final class DatabaseActivity: ObservableObject
 
 
         errorMessage = nil
+
     }
 
 }

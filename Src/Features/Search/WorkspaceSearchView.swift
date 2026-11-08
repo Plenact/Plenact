@@ -73,6 +73,7 @@ struct TodaySearchView: View
 
 
         recentSearches = RecentSearchStore.remember(query)
+
     }
 
 
@@ -101,8 +102,11 @@ struct TodaySearchView: View
                     {
 
                         query = search
+
                         rememberSearch()
+
                         searchFieldFocused = false
+
                     }
                     label:
                     {
@@ -129,7 +133,9 @@ struct TodaySearchView: View
                     {
 
                         RecentSearchStore.clear()
+
                         recentSearches = []
+
                     }
 
                     .accessibilityLabel("Clear recent searches")
@@ -181,7 +187,9 @@ struct TodaySearchView: View
                     {
 
                         rememberSearch()
+
                         searchFieldFocused = false
+
                     }
 
 
@@ -194,6 +202,7 @@ struct TodaySearchView: View
 
                             query = ""
                             searchFieldFocused = true
+
                         }
                         label:
                         {
@@ -559,7 +568,9 @@ struct PlanningSharedSearchPresentation: ViewModifier
                 }, onSelectResult:
                 {
                     result in
+
                     route = PlanningSearchRoute(result: result)
+
                 }
             )
             // Keep Search alive beneath its result, preserving query, scope, and scroll.
@@ -581,6 +592,7 @@ struct PlanningSharedSearchPresentation: ViewModifier
 
                             self.route = nil;
                             isPresented = false;
+
                             onLeaveForHome()
                         })
                 }
@@ -598,6 +610,7 @@ struct PlanningSharedSearchPresentation: ViewModifier
 
                             self.route = nil;
                             isPresented = false;
+
                             onLeaveForHome()
                         })
                 }

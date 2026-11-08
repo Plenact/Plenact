@@ -64,6 +64,7 @@ struct PersonalListExamplesView: View
         self.onSelectMixedTemplate = onSelectMixedTemplate
         self.onSelectBoardExample = onSelectBoardExample
         _hasUndoableWeek = State(initialValue: hasUndoableWeek)
+
     }
 
 
@@ -102,6 +103,7 @@ struct PersonalListExamplesView: View
                         {
 
                             confirmsLoadWeek = true
+
                         }
                         .accessibilityIdentifier("library.examples.loadWeek")
                         if hasUndoableWeek, onUndoExampleWeek != nil
@@ -111,6 +113,7 @@ struct PersonalListExamplesView: View
                             {
 
                                 confirmsUndoWeek = true
+
                             }
                             .accessibilityIdentifier("library.examples.undoWeek")
                         }
@@ -199,7 +202,9 @@ struct PersonalListExamplesView: View
                                 ForEach(template.items.indices, id: \.self)
                                 {
                                     index in
+
                                     let item = template.items[index]
+
                                     VStack(alignment: .leading, spacing: 6)
                                     {
 
@@ -317,6 +322,7 @@ struct PersonalListExamplesView: View
                 {
 
                     hasUndoableWeek = true
+
                     dismiss()
                 }
                 else
@@ -324,6 +330,7 @@ struct PersonalListExamplesView: View
 
                     operationError =
                                                             "The example Week Board could not be loaded. Your current Week Board was not changed."
+
                 }
 
             }
@@ -353,12 +360,14 @@ struct PersonalListExamplesView: View
                 {
 
                     hasUndoableWeek = false
+
                     dismiss()
                 }
                 else
                 {
 
                     operationError = "The saved Week Board snapshot could not be restored."
+
                 }
 
             }
@@ -387,7 +396,9 @@ struct PersonalListExamplesView: View
                             {
                                 if !$0
                                 {
+
                                     operationError = nil
+
                                 }
 
                             }
@@ -397,7 +408,9 @@ struct PersonalListExamplesView: View
 
             Button("OK", role: .cancel)
             {
+
                 operationError = nil
+
             }
 
         }
@@ -458,6 +471,7 @@ struct LibraryDaySectionExamples: View
     {
 
         let examples = Self.matches(query: query)
+
         if !examples.isEmpty
         {
 
@@ -547,6 +561,7 @@ struct LibraryExamplePreview: Identifiable
     let title:   String
     let summary: String
     let lists:   [KanbanList]
+
 }
 
 
@@ -563,6 +578,7 @@ struct LibraryExamplePreviewView: View
 
     let preview: LibraryExamplePreview
     @Environment(\.dismiss) private var dismiss
+
     var body: some View
     {
 

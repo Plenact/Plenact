@@ -44,6 +44,7 @@ enum WeekDayHighlight
     }
 
     static let gold = Color(red: 0.72, green: 0.49, blue: 0.12)
+
 }
 
 
@@ -65,6 +66,7 @@ struct DayScheduleOverview: View
     @State private var showsDetails                      = false
     @State private var showsPlan                         = false
     @AppStorage(DailyPlanStore.key) private var planData = Data()
+
     private var summary: DayTimeDistribution
     {
 
@@ -88,6 +90,7 @@ struct DayScheduleOverview: View
     {
 
         let data = summary
+
         VStack(alignment: .leading, spacing: 12)
         {
 
@@ -102,6 +105,7 @@ struct DayScheduleOverview: View
             {
 
                 showsDetails = true
+
             }
             label:
             {
@@ -141,7 +145,9 @@ struct DayScheduleOverview: View
             .font(.subheadline).foregroundStyle(.secondary)
             Button(planTitle, systemImage: "arrow.right", action:
                 {
+
                     showsPlan = true
+
                 })
             .font(.subheadline).frame(minHeight: 44)
         }
@@ -219,7 +225,9 @@ struct DayScheduleOverview: View
                     {
                         Button("Done")
                         {
+
                             showsDetails = false
+
                         }
 
                     }
@@ -256,6 +264,7 @@ struct DayScheduleOverview: View
                 ForEach(data.segments)
                 {
                     segment in
+
                     let start = data.segments.prefix
                     {
                         $0.id != segment.id
@@ -266,6 +275,7 @@ struct DayScheduleOverview: View
                     / data.total
                     let end = start + segment.planned / data.total
                     let gap = min(0.004, (end - start) / 4)
+
                     Circle().trim(from: start + gap, to: end - gap)
                     .stroke(segment.color.color, style: StrokeStyle(lineWidth: 20, lineCap: .butt))
                     Circle().trim(from: start + gap, to: end - gap)
@@ -370,6 +380,7 @@ struct DayTimeDistribution
         let color:     KanbanLabelColor
         var planned:   TimeInterval
         var completed: TimeInterval
+
     }
 
     let segments:       [Segment]
@@ -377,6 +388,7 @@ struct DayTimeDistribution
     let completedCount: Int
     let untimedCount:   Int
     let hasOverlaps:    Bool
+
     var total:          TimeInterval
     {
         segments.reduce(0)
@@ -411,6 +423,7 @@ struct DayTimeDistribution
 
         let minutes = Int((seconds / 60).rounded())
         let hours = minutes / 60, remainder = minutes % 60
+
         return hours == 0 ? "\(remainder)m" : (remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m")
     }
 
@@ -438,6 +451,7 @@ struct DayTimeDistribution
 
         taskCount = tasks.count
         completedCount = tasks.filter(\.isTitleChecked).count
+
         let dayStart                   = calendar.startOfDay(for: day)
         let dayEnd                     = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
         var buckets: [String: Segment] = [:]
@@ -468,6 +482,7 @@ struct DayTimeDistribution
             {
 
                 let parts = calendar.dateComponents([.hour, .minute, .second], from: date)
+
                 return calendar.date(
                     bySettingHour: parts.hour ?? 0, minute: parts.minute ?? 0,
                     second: parts.second ?? 0, of: dayStart)
@@ -484,7 +499,9 @@ struct DayTimeDistribution
             var end = resolve(rawEnd, kind: card.dueDateKind)
             else
             {
+
                 untimed += 1;
+
                 continue
             }
 
@@ -492,16 +509,21 @@ struct DayTimeDistribution
             {
 
                 end = calendar.date(byAdding: .day, value: 1, to: end) ?? end
+
             }
 
             let clippedStart = max(start, dayStart), clippedEnd = min(end, dayEnd)
+
             guard clippedEnd > clippedStart else
             {
+
                 untimed += 1;
+
                 continue
             }
 
             intervals.append((clippedStart, clippedEnd))
+
             let duration = clippedEnd.timeIntervalSince(clippedStart)
             let tags     = Set(card.labelIDs).sorted().compactMap
             {
@@ -525,13 +547,18 @@ struct DayTimeDistribution
             {
 
                 var segment = buckets[id] ?? Segment(id: id, title: title, color: color, planned: 0, completed: 0)
+
                 segment.planned += duration / Double(count)
+
                 if card.isTitleChecked
                 {
+
                     segment.completed += duration / Double(count)
+
                 }
 
                 buckets[id] = segment
+
             }
 
         }
@@ -544,6 +571,7 @@ struct DayTimeDistribution
 
         var latestEnd = Date.distantPast
         var overlap   = false
+
         for (start, end) in intervals.sorted(by:
             {
                 $0.0 < $1.0
@@ -552,13 +580,17 @@ struct DayTimeDistribution
 
             if start < latestEnd
             {
+
                 overlap = true
+
             }
 
             latestEnd = max(latestEnd, end)
+
         }
 
         hasOverlaps = overlap
+
     }
 
 }

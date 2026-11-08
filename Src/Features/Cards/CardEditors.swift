@@ -95,6 +95,7 @@ struct CardMembersSheet: View
         return membersToSave.compactMap
         {
             assignee in
+
             let trimmedName = assignee.displayName.trimmingCharacters(
                 in: .whitespacesAndNewlines) /* Normalized display name   */
             let identityKey =
@@ -139,6 +140,7 @@ struct CardMembersSheet: View
         self.onSave = onSave
         self.memberColors = memberColors
         _members = State(initialValue: members)
+
     }
 
 
@@ -167,7 +169,9 @@ struct CardMembersSheet: View
 
 
         members.append(.manual(trimmedMemberDraft))
+
         memberDraft = ""
+
     }
 
 
@@ -233,7 +237,9 @@ struct CardMembersSheet: View
                                                                                                     },
                                                                                                     set:
                                                                                                     {
+
                                                                                                         members[index].displayName = $0
+
                                                                                                     }
                                                                                                 )
                                 ).textInputAutocapitalization(.sentences)
@@ -349,6 +355,7 @@ struct CardLayoutEditor: View
     @State var layout: CardSectionLayout
     let onSave:        (CardSectionLayout) -> Bool
     @Environment(\.dismiss) private var dismiss
+
     var body: some View
     {
 
@@ -399,7 +406,9 @@ struct CardLayoutEditor: View
 
                 Button("Reset layout")
                 {
+
                     layout = CardSectionLayout()
+
                 }
 
             }
@@ -480,6 +489,7 @@ struct CardDateEditorSheet: View
         self.onSave = onSave
         _date = State(initialValue: date ?? .now)
         _kind = State(initialValue: kind)
+
     }
 
     var body: some View
@@ -620,12 +630,14 @@ struct ChecklistItemTypeEditor: View
         _type = State(initialValue: initialType)
         _cardID = State(initialValue: item.retainedCardID)
         _urlText = State(initialValue: item.retainedURL?.absoluteString ?? "")
+
     }
 
     private var url: URL?
     {
 
         let text = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard let url = URL(string: text), ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
         url.host?.isEmpty == false
         else
@@ -712,30 +724,40 @@ struct ChecklistItemTypeEditor: View
                     {
 
                         var updated = item
+
                         switch type
                         {
 
                         case .standard:
+
                             updated.content = .standard
+
                         case .linkedCard:
                             if let cardID
                             {
 
                                 if cardID != item.retainedCardID
                                 {
+
                                     updated.linkedCollectionID = nil
+
                                 }
                                 ;
 
                                 updated.content = .linkedCard(cardID: cardID)
+
                             }
 
                         case .actionDetail:
+
                             updated.content = .actionDetail(item.retainedDetail ?? KanbanChecklistActionDetail())
+
                         case .webLink:
                             if let url
                             {
+
                                 updated.content = .webLink(url)
+
                             }
 
                         }
@@ -824,6 +846,7 @@ struct CardInfoEditorSheet: View
         _subtitle = State(initialValue: card.subtitle)
         _description = State(
             initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
+
     }
 
 
@@ -939,7 +962,9 @@ struct CardPreviewDateEditor: ViewModifier
 
         Button
         {
+
             isPresented = true
+
         }
         label:
         {
@@ -970,15 +995,20 @@ struct CardPreviewDateEditor: ViewModifier
                 }
 
                 var updated = card
+
                 if isStart
                 {
+
                     updated.startDate = value
                     updated.startDateKind = value == nil ? .date : kind
+
                 }
                 else
                 {
+
                     updated.dueDate = value
                     updated.dueDateKind = value == nil ? .date : kind
+
                 }
 
                 onUpdate(updated)

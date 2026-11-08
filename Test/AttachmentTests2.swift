@@ -153,6 +153,7 @@ extension PlenactBoardDocumentTests
                     XCTFail("Layout must not toggle")
                 }
             ).defaultAppStorage(defaults)
+
             return UIHostingController(rootView: row).sizeThatFits(in: CGSize(width: 320, height: 10_000)).height
         }
 

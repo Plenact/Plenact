@@ -21,6 +21,7 @@ struct BoardCardDropTarget: Equatable
 
     let listID:       Int   /* Destination list identity for the drop             */
     let beforeCardID: Int?  /* Insertion anchor; nil appends after existing cards */
+
 }
 
 
@@ -134,12 +135,14 @@ enum BoardCardMovement
 
 
             insertion = position
+
         }
         else
         {
 
 
             insertion = updated[destination].cards.count
+
         }
 
 
@@ -152,8 +155,10 @@ enum BoardCardMovement
 
 
         card.listTitle = updated[destination].title
+
         updated[destination].cards.insert(card, at: insertion)
         DaySections.reveal(cardID, in: &updated[destination].cards)
+
         lists = updated
 
         return true
@@ -587,6 +592,7 @@ enum PersonalCollectionNoteMovement
 
             let (nextID, overflow) = (destinationIDs.max() ?? -1).addingReportingOverflow(
                 1) /* Next unused identity and its overflow status */
+
             guard !overflow else
             {
 
@@ -595,6 +601,7 @@ enum PersonalCollectionNoteMovement
             }
 
             destinationCardID = nextID
+
         }
 
 
@@ -611,6 +618,7 @@ enum PersonalCollectionNoteMovement
 
 
         destination.lists[destinationListIndex].cards.append(moved)
+
         collections[sourceIndex] = source
         collections[destinationIndex] = destination
 
@@ -715,6 +723,7 @@ struct CardMoveDestination: Identifiable, Hashable
     let title:        String
     let group:        String
     var columnTitle:  String? = nil
+
     var id:           String
     {
             "\(collectionID?.uuidString ?? "week"):\(listID)"
@@ -761,6 +770,7 @@ enum CrossBoardCardMovement
 
         var sourceLists: [KanbanList]
         var sourceSaved: Set<Int>
+
         if let sourceID
         {
 
@@ -775,12 +785,14 @@ enum CrossBoardCardMovement
 
             sourceLists = source.lists;
             sourceSaved = source.savedCardIDs
+
         }
         else
         {
 
             sourceLists = week;
             sourceSaved = saved
+
         }
 
         let matches = sourceLists.indices.filter
@@ -804,11 +816,13 @@ enum CrossBoardCardMovement
         var targetLists: [KanbanList]
         var targetSaved: Set<Int>
         let sameBoard = sourceID == destination.collectionID
+
         if sameBoard
         {
 
             targetLists = sourceLists;
             targetSaved = sourceSaved
+
         }
         else if let targetID = destination.collectionID
         {
@@ -824,12 +838,14 @@ enum CrossBoardCardMovement
 
             targetLists = target.lists;
             targetSaved = target.savedCardIDs
+
         }
         else
         {
 
             targetLists = week;
             targetSaved = saved
+
         }
 
         guard let targetIndex = targetLists.firstIndex(where:
@@ -843,16 +859,19 @@ enum CrossBoardCardMovement
 
         var newID    = card.id
         let reserved = Set(targetLists.flatMap(\.allCards).map(\.id))
+
         if !sameBoard && reserved.contains(newID)
         {
 
             let (next, overflow) = (reserved.max() ?? -1).addingReportingOverflow(1)
+
             guard !overflow else
             {
                 throw CocoaError(.validationNumberTooLarge)
             }
 
             newID = next
+
         }
 
         sourceLists[sourceIndex].cards.removeAll
@@ -862,7 +881,9 @@ enum CrossBoardCardMovement
 
         if sameBoard
         {
+
             targetLists = sourceLists
+
         }
 
         targetLists[targetIndex].cards.append(
@@ -874,8 +895,10 @@ enum CrossBoardCardMovement
 
         if sameBoard
         {
+
             sourceLists = targetLists;
             sourceSaved = targetSaved
+
         }
 
         if let sourceID, let index = collections.firstIndex(where:
@@ -886,12 +909,14 @@ enum CrossBoardCardMovement
 
             collections[index].lists = sourceLists;
             collections[index].savedCardIDs = sourceSaved
+
         }
         else
         {
 
             week = sourceLists;
             saved = sourceSaved
+
         }
 
         if !sameBoard
@@ -905,12 +930,14 @@ enum CrossBoardCardMovement
 
                 collections[index].lists = targetLists;
                 collections[index].savedCardIDs = targetSaved
+
             }
             else
             {
 
                 week = targetLists;
                 saved = targetSaved
+
             }
 
         }

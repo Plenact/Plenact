@@ -67,6 +67,7 @@ struct ProfileColor: Hashable, Codable
         self.green = green
         self.blue = blue
         legacyToken = nil
+
     }
 
 
@@ -99,17 +100,29 @@ struct ProfileColor: Hashable, Codable
 
 
         case 0:
+
             components = (chroma, intermediate, 0)
+
         case 1:
+
             components = (intermediate, chroma, 0)
+
         case 2:
+
             components = (0, chroma, intermediate)
+
         case 3:
+
             components = (0, intermediate, chroma)
+
         case 4:
+
             components = (intermediate, 0, chroma)
+
         default:
+
             components = (chroma, 0, intermediate)
+
         }
 
 
@@ -157,6 +170,7 @@ struct ProfileColor: Hashable, Codable
         self.green = green
         self.blue = blue
         self.legacyToken = legacyToken
+
     }
 
 
@@ -184,24 +198,28 @@ struct ProfileColor: Hashable, Codable
 
 
             hue = 0
+
         }
         else if maximum == red
         {
 
 
             hue = ((green - blue) / delta + (green < blue ? 6 : 0)) / 6
+
         }
         else if maximum == green
         {
 
 
             hue = ((blue - red) / delta + 2) / 6
+
         }
         else
         {
 
 
             hue = ((red - green) / delta + 4) / 6
+
         }
 
 
@@ -435,6 +453,7 @@ struct TodayFocusEntry: Identifiable
     let card:      KanbanCard
     let sectionID: Int?
     let heading:   String?
+
     var id:        Int
     {
         card.id
@@ -529,6 +548,7 @@ struct TodayFocusEntry: Identifiable
             {
 
                 let parts = calendar.dateComponents([.hour, .minute, .second], from: value)
+
                 return calendar.date(
                     bySettingHour: parts.hour ?? 0, minute: parts.minute ?? 0,
                     second: parts.second ?? 0, of: now)
@@ -538,6 +558,7 @@ struct TodayFocusEntry: Identifiable
             {
 
                 let start = calendar.startOfDay(for: value)
+
                 return end ? calendar.date(byAdding: .day, value: 1, to: start) : start
             }
 
@@ -547,6 +568,7 @@ struct TodayFocusEntry: Identifiable
         let start  = resolved(card.startDate, kind: card.startDateKind, end: false)
         let finish = resolved(card.dueDate, kind: card.dueDateKind, end: true)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+
         if let start, start >= dayEnd
         {
             return false
@@ -557,6 +579,7 @@ struct TodayFocusEntry: Identifiable
 
             // Date-only finish is an exclusive next-midnight boundary.
             let remains = card.dueDateKind == .date ? finish > now : finish >= now
+
             guard remains else
             {
                 return false
@@ -600,10 +623,12 @@ struct TodayFocusEntry: Identifiable
         }
 
         let kind = card.startDate == nil ? card.dueDateKind : card.startDateKind
+
         if kind == .time
         {
 
             let time = calendar.dateComponents([.hour, .minute, .second], from: value)
+
             return calendar.date(
                 bySettingHour: time.hour ?? 0, minute: time.minute ?? 0,
                 second: time.second ?? 0, of: day)
@@ -671,6 +696,7 @@ enum DayListTimeOrder
         }
 
         let components = calendar.dateComponents([.hour, .minute, .second], from: time)
+
         return calendar.date(bySettingHour: components.hour ?? 0, minute: components.minute ?? 0,
             second: components.second ?? 0, of: day)
     }
@@ -706,8 +732,10 @@ enum DayListTimeOrder
             {
 
             lhs, rhs in
+
                 let left  = time(for: lhs.element, on: day, calendar: calendar)
                 let right = time(for: rhs.element, on: day, calendar: calendar)
+
                 switch (left, right)
                 {
 
@@ -722,6 +750,7 @@ enum DayListTimeOrder
                 }
 
             } .map(\.element)
+
             section.removeAll(keepingCapacity: true)
         }
 
@@ -773,6 +802,7 @@ enum DayListTimeOrder
             }
 
             let ordered = cards(list.cards, calendar: calendar)
+
             guard ordered != list.cards else
             {
 
@@ -780,7 +810,9 @@ enum DayListTimeOrder
             }
 
             var updated = list
+
             updated.cards = ordered
+
             return updated
         }
 
@@ -930,6 +962,7 @@ struct LocalProfilePreferences: Hashable, Codable
         self.randomizesNewCardHeaders = randomizesNewCardHeaders
         self.randomizesNewCardBackgrounds = randomizesNewCardBackgrounds
         self.todayFocusItemCount = (0 ... 12).contains(todayFocusItemCount) ? todayFocusItemCount : 4
+
     }
 
 
@@ -959,6 +992,7 @@ struct LocalProfilePreferences: Hashable, Codable
         var sectionID: Int?
         var heading: String?
         var entries: [TodayFocusEntry] = []
+
         for card in cards
         {
 
@@ -970,6 +1004,7 @@ struct LocalProfilePreferences: Hashable, Codable
 
                     sectionID = card.id
                     heading = name
+
                 }
 
             }
@@ -1001,6 +1036,7 @@ struct LocalProfilePreferences: Hashable, Codable
 
                     ($0.element.id, $0.offset + 1)
                 })
+
             entries = entries.enumerated().sorted
             {
                 lhs, rhs in
@@ -1017,6 +1053,7 @@ struct LocalProfilePreferences: Hashable, Codable
                         sectionOrder[$0]
                     }
                     ?? 0
+
                     if l != r
                     {
                         return l < r
@@ -1030,6 +1067,7 @@ struct LocalProfilePreferences: Hashable, Codable
                 let r = keepsDayListsInTimeOrder
                     ? DayListTimeOrder.time(for: rhs.element.card, on: day, calendar: calendar)
                     : rhs.element.scheduleDate(on: day, calendar: calendar)
+
                 switch (l, r)
                 {
 
@@ -1044,6 +1082,7 @@ struct LocalProfilePreferences: Hashable, Codable
                 }
 
             } .map(\.element)
+
         }
 
         return entries
@@ -1274,6 +1313,7 @@ struct LocalProfile: Identifiable, Hashable, Codable
         self.avatarForegroundColor = avatarForegroundColor
         self.avatarPhotoFileName = avatarPhotoFileName
         self.preferences = preferences
+
     }
 
 }

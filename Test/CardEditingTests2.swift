@@ -47,12 +47,14 @@ extension PlenactBoardDocumentTests
             appearance: ItemAppearance(accent: .teal, icon: .notes, background: .green)
         )
         let cover = KanbanAttachment(exampleImage: .garden)
+
         note.attachments = [
             cover,
             KanbanAttachment(exampleImage: .camping, caption: "Our next adventure"),
             KanbanAttachment(exampleImage: .mountains, caption: "Room to explore")
         ]
         note.coverAttachmentID = cover.id
+
         let scene = try XCTUnwrap(
             UIApplication.shared.connectedScenes.compactMap
             {
@@ -67,6 +69,7 @@ extension PlenactBoardDocumentTests
 
             window.isHidden = true
             window.rootViewController = nil
+
             previous?.makeKey()
         }
 
@@ -92,13 +95,16 @@ extension PlenactBoardDocumentTests
                         })
                     .environment(\.dynamicTypeSize, textSize)
                 })
+
             window.frame = CGRect(origin: .zero, size: size)
             window.rootViewController = controller
+
             window.makeKeyAndVisible()
             controller.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(200))
 
             XCTAssertTrue(emitted.isEmpty, "Toolbar/gallery layout must not rewrite the Note")
+
             let image = UIGraphicsImageRenderer(size: size).image
             {
             _ in /* Synthetic two-color crop source */
@@ -106,8 +112,10 @@ extension PlenactBoardDocumentTests
             }
 
             let attachment = XCTAttachment(image: image) /* Attachment fixture under test */
+
             attachment.name = "Note-toolbar-\(name)"
             attachment.lifetime = .keepAlways
+
             add(attachment)
         }
 
@@ -129,16 +137,20 @@ extension PlenactBoardDocumentTests
 
 
         var note = SampleData.lists[0].cards[0] /* Note value under verification */
+
         note.word = "Synthetic shared note"
         note.presentation = .note
         note.descriptionOverride = "First line\n\nSecond line  "
+
         let link = try XCTUnwrap(URL(string: "https://example.com/synthetic-note")) /* Synthetic link target */
+
         note.attachments = [
             KanbanAttachment(fileName: "synthetic-private-photo.jpg", mediaKind: .photo),
             KanbanAttachment(fileName: "synthetic-private-video.mov", mediaKind: .video),
             KanbanAttachment(url: link),
             KanbanAttachment(exampleImage: .garden)
         ]
+
         let original = note /* Pre-operation value for preservation checks */
 
         XCTAssertEqual(
@@ -165,9 +177,11 @@ extension PlenactBoardDocumentTests
             id: 92, word: "Empty synthetic Note", listTitle: "Private list", presentation: .note) /* Note value under verification */
 
         XCTAssertEqual(NoteTextSharing.text(for: note), "Empty synthetic Note")
+
         note.descriptionOverride = ""
 
         XCTAssertEqual(NoteTextSharing.text(for: note), "Empty synthetic Note")
+
         note.descriptionOverride = " \n "
 
         XCTAssertEqual(NoteTextSharing.text(for: note), "Empty synthetic Note\n\n \n ")
@@ -204,17 +218,21 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(draft.destination(in: collections), selected)
 
         var saves = 0 /* Save-callback invocation count */
+
         try draft.save(in: collections)
         {
             destinationID, title, body, createdAt in
+
             saves += 1
 
             XCTAssertEqual(createdAt, originalCreationDate)
+
             let index = try XCTUnwrap(
                 collections.firstIndex
                 {
                     $0.id == destinationID
                 }) /* Selected collection index */
+
             try collections[index].addNote(title: title, body: body, createdAt: createdAt)
         }
 
@@ -222,6 +240,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(saves, 1)
         XCTAssertEqual(collections[0], initial)
         XCTAssertEqual(collections[1].lists[0].cards.count, 1)
+
         let note = try XCTUnwrap(collections[1].lists[0].cards.first) /* Note value under verification */
 
         XCTAssertEqual(note.word, "New idea")
@@ -250,9 +269,13 @@ extension PlenactBoardDocumentTests
             title: "Projects", kind: .board) /* Board state under verification                       */
         var archived = PersonalCollection(
             title: "Archived ideas", kind: .list) /* Archived value for restoration checks                */
+
         archived.isArchived = true
+
         var empty = PersonalCollection(title: "No active list", kind: .list) /* Empty collection fixture */
+
         empty.lists[0].isArchived = true
+
         let collections = [active, board, archived, empty] /* Saved personal-collection state */
 
         XCTAssertEqual(PersonalListNoteDraft.destinations(in: collections), [active])
@@ -308,6 +331,7 @@ extension PlenactBoardDocumentTests
         let collections          = [initial, selected]                              /* Saved personal-collection state              */
         var draft                = PersonalListNoteDraft(destinationID: initial.id) /* Uncommitted draft under test                 */
         let originalCreationDate = draft.createdAt                                  /* Timestamp retained by the operation          */
+
         draft.title = "  Retry idea  "
         draft.body = "Retained body\n  "
         draft.destinationID = selected.id
@@ -331,13 +355,16 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(draft.canSave(in: collections))
 
         var saves = 0 /* Save-callback invocation count */
+
         try draft.save(in: collections)
         {
             id, _, _, createdAt in
 
             XCTAssertEqual(id, selected.id)
             XCTAssertEqual(createdAt, originalCreationDate)
+
             saves += 1
+
         }
 
 
@@ -367,16 +394,19 @@ extension PlenactBoardDocumentTests
             presentation: .note,
             createdAt: Date(timeIntervalSince1970: 1_791_422_000)
         )
+
         note.attachments = [attachment]
         note.coverAttachmentID = attachment.id
         note.labelIDs = ["keep-this-label"]
         note.comments = [KanbanComment(author: "Synthetic", body: "Keep this comment")]
 
         var source = PersonalCollection(title: "Ideas", kind: .list) /* Source state before the operation */
+
         source.lists[0].cards = [note]
         source.savedCardIDs = [note.id]
 
         var destination = PersonalCollection(title: "Someday", kind: .list) /* Target location for the move */
+
         destination.lists[0].cards = [
             KanbanCard(id: 4, word: "ID collision", listTitle: "Someday", checklists: [])
         ]
@@ -442,6 +472,7 @@ extension PlenactBoardDocumentTests
         var source = PersonalCollection(title: "Ideas", kind: .list) /* Source state before the operation */
         var note   = KanbanCard(
             id: 14, word: "Read later", listTitle: "Ideas", checklists: [], presentation: .note) /* Note value under verification     */
+
         note.descriptionOverride = "Synthetic body"
         source.lists[0].cards = [note]
 
@@ -475,6 +506,7 @@ extension PlenactBoardDocumentTests
 
 
         var note = SampleData.lists[0].cards[0] /* Note value under verification */
+
         note.appearance = ItemAppearance(accent: .blue, icon: .heart, background: .rose)
         note.presentation = .note
         note.descriptionOverride = "Synthetic note body"
@@ -558,6 +590,7 @@ extension PlenactBoardDocumentTests
                 {
                     $0.text == fixture.word
                 }) /* Hosted title editor */
+
             titleEditor.text = "Updated synthetic title"
 
             titleEditor.delegate?.textViewDidChange?(titleEditor)
@@ -565,6 +598,7 @@ extension PlenactBoardDocumentTests
             try await Task.sleep(for: .milliseconds(150))
 
             var expected = fixture /* Expected result for comparison */
+
             expected.word = titleEditor.text
 
             XCTAssertEqual(
@@ -575,6 +609,7 @@ extension PlenactBoardDocumentTests
                 {
                     $0.text == (fixture.descriptionOverride ?? "")
                 }) /* Editor state under test */
+
             editor.text = "Edited synthetic body\nSecond paragraph"
 
             editor.delegate?.textViewDidChange?(editor)
@@ -635,21 +670,27 @@ extension PlenactBoardDocumentTests
                         lists
                     }, set:
                     {
+
                         lists = $0
+
                     }),
                 boardTargetListID: Binding(get:
                     {
                         targetList
                     }, set:
                     {
+
                         targetList = $0
+
                     }),
                 boardTargetCardID: Binding(get:
                     {
                         targetCard
                     }, set:
                     {
+
                         targetCard = $0
+
                     }),
                 boardRootRequest: request,
                 savedCardIDs: Binding(get:
@@ -657,7 +698,9 @@ extension PlenactBoardDocumentTests
                         saved
                     }, set:
                     {
+
                         saved = $0
+
                     }),
                 onListsChanged:
                 {
@@ -772,11 +815,13 @@ extension PlenactBoardDocumentTests
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
 
             window.isHidden = true
             window.rootViewController = nil
+
             previous?.makeKey()
         }
 
@@ -812,7 +857,9 @@ extension PlenactBoardDocumentTests
                         lists
                     }, set:
                     {
+
                         lists = $0
+
                     }), reservedLists: [],
                 labelLibrary: .constant(.starter), savedCardIDs: .constant([note.id]),
                 listID: 4, currentUserName: "Synthetic", onClose:
@@ -829,8 +876,10 @@ extension PlenactBoardDocumentTests
                     return false
                 }
             ))
+
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = controller
+
         window.makeKeyAndVisible()
         controller.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(250))
@@ -852,6 +901,7 @@ extension PlenactBoardDocumentTests
             {
                 !$0.isHidden && $0.windowLevel > .alert
             })
+
         let collection = try XCTUnwrap(collectionView(in: controller.view))
         let noteCell   = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 0, section: 0)))
         let source     = try XCTUnwrap(
@@ -860,10 +910,14 @@ extension PlenactBoardDocumentTests
 
                 ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator
             } .first)
+
         XCTAssertEqual(collection.numberOfItems(inSection: 0), 4)
+
         let receiver = try XCTUnwrap(collection.dropDelegate as? BoardCardDropSurface.Coordinator)
         let item     = UIDragItem(itemProvider: source.begin(at: noteCell.convert(CGPoint(x: 30, y: 30), to: window)))
+
         item.localObject = source
+
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertTrue(receiver.accepts([item]))
         XCTAssertFalse(receiver.perform([item], at: CGPoint(x: -100, y: -100)))
@@ -871,16 +925,21 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(lists, original, "An outside drop must not mutate canonical records")
 
         let secondItem = UIDragItem(itemProvider: source.begin(at: noteCell.convert(CGPoint(x: 30, y: 30), to: window)))
+
         secondItem.localObject = source
+
         try await Task.sleep(for: .milliseconds(100))
+
         let addCell  = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 3, section: 0)))
         let endPoint = addCell.convert(CGPoint(x: 30, y: addCell.bounds.midY), to: window)
+
         XCTAssertTrue(receiver.perform([secondItem], at: endPoint))
         source.finish()
         XCTAssertEqual(lists[0].cards, [divider, card, note])
         XCTAssertEqual(Set(lists[0].cards.map(\.id)), Set(original[0].cards.map(\.id)))
 
         try await Task.sleep(for: .milliseconds(150))
+
         let currentCell   = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 2, section: 0)))
         let currentSource = try XCTUnwrap(
             currentCell.contentView.interactions.compactMap
@@ -888,7 +947,9 @@ extension PlenactBoardDocumentTests
 
                 ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator
             } .first)
+
         _ = currentSource.begin(at: currentCell.convert(CGPoint(x: 30, y: 30), to: window))
+
         currentSource.finish()
         XCTAssertEqual(lists[0].cards, [divider, card, note], "Cancelled drags retain order and content")
 
@@ -896,16 +957,21 @@ extension PlenactBoardDocumentTests
             itemProvider: currentSource.begin(
                 at: currentCell.convert(CGPoint(x: 30, y: 30), to: window)
             ))
+
         returnItem.localObject = currentSource
+
         try await Task.sleep(for: .milliseconds(100))
+
         let dividerCell     = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 0, section: 0)))
         let firstPoint      = dividerCell.convert(CGPoint(x: 30, y: 1), to: window)
         let currentReceiver = try XCTUnwrap(collection.dropDelegate as? BoardCardDropSurface.Coordinator)
+
         XCTAssertTrue(currentReceiver.perform([returnItem], at: firstPoint))
         currentSource.finish()
         XCTAssertEqual(lists, original, "Dragging before a divider must restore the original complete records")
 
         try await Task.sleep(for: .milliseconds(150))
+
         let movableDividerCell = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 1, section: 0)))
         let dividerSource      = try XCTUnwrap(
             movableDividerCell.contentView.interactions.compactMap
@@ -917,10 +983,14 @@ extension PlenactBoardDocumentTests
             itemProvider: dividerSource.begin(
                 at: movableDividerCell.convert(CGPoint(x: 30, y: 10), to: window)
             ))
+
         dividerItem.localObject = dividerSource
+
         try await Task.sleep(for: .milliseconds(100))
+
         let dividerReceiver = try XCTUnwrap(collection.dropDelegate as? BoardCardDropSurface.Coordinator)
         let tailCell        = try XCTUnwrap(collection.cellForItem(at: IndexPath(item: 3, section: 0)))
+
         XCTAssertTrue(
             dividerReceiver.perform(
                 [dividerItem],

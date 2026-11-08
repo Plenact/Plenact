@@ -44,6 +44,7 @@ enum PlanningCalendarStore
         }
 
         let result = try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
+
         guard result.version == 1, (1 ... 7).contains(result.firstWeekday),
         Set(result.weeks.map(\.startKey)).count == result.weeks.count,
         Set(result.weeks.map(\.id)).count == result.weeks.count,
@@ -78,6 +79,7 @@ enum PlanningCalendarStore
 
         // Retained corrupt or unsupported data must not be silently overwritten.
         _ = try load(from: defaults)
+
         defaults.set(try JSONEncoder().encode(document), forKey: key)
     }
 

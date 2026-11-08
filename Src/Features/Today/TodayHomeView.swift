@@ -47,6 +47,7 @@ struct TodayHomeView: View
     {
 
         let lists = snapshot ?? self.lists
+
         if let id = planningCalendarAccess?.document.week(for: date)?.dayListIDs[PlanningDate.key(date)],
         let list = lists.first(where:
             {
@@ -176,6 +177,7 @@ struct TodayHomeView: View
                 {
 
                     showsTodayPlan = true
+
                 }
                 label:
                 {
@@ -203,6 +205,7 @@ struct TodayHomeView: View
             {
 
                 showsSearch = true
+
             }
             label:
             {
@@ -217,6 +220,7 @@ struct TodayHomeView: View
             {
 
                 showsPlanSettings = true
+
             }
             label:
             {
@@ -231,6 +235,7 @@ struct TodayHomeView: View
             {
 
                 showsAccountSettings = true
+
             }
             label:
             {
@@ -343,8 +348,10 @@ struct TodayHomeView: View
                 Button("Undo")
                 {
                     savedCardIDs.insert(cardID)
+
                     removedFocusBookmark = nil
                     bookmarkNoticeRevision = UUID()
+
                 }
                 .fontWeight(.semibold)
                 .accessibilityIdentifier("today.focus.bookmark.undo")
@@ -442,6 +449,7 @@ struct TodayHomeView: View
 
         _selectedTodayListID = State(
             initialValue: TodayListSelection.currentDayList(in: lists.wrappedValue, date: .now)?.id)
+
     }
 
 
@@ -487,7 +495,9 @@ struct TodayHomeView: View
 
         return TodayShortcutGrid(pinned: pinned, onOpen:
             {
+
                 openedShortcut = $0
+
             })
     }
 
@@ -508,6 +518,7 @@ struct TodayHomeView: View
         {
 
             listPickerMode = .browseAll
+
         }
         label:
         {
@@ -571,7 +582,9 @@ struct TodayHomeView: View
 
 
         onAddCard(selectedTodayList.id, title, "", "", nil, nil)
+
         quickCaptureTitle = ""
+
     }
 
 
@@ -591,6 +604,7 @@ struct TodayHomeView: View
 
         composerTemplate = nil
         captureAction = nil
+
         guard selectedTodayList != nil else
         {
 
@@ -621,13 +635,16 @@ struct TodayHomeView: View
     {
 
         welcomeCue.cancel()
+
         composerTemplate = nil
         captureAction = action
+
         guard selectedTodayList != nil else
         {
 
             presentComposerAfterListChoice = true
             listPickerMode = .chooseToday
+
             return
         }
 
@@ -649,6 +666,7 @@ struct TodayHomeView: View
         quickComposerInitialTitle = quickCaptureTitle
         quickCaptureTitle = ""
         showsQuickNoteEditor = true
+
     }
 
 
@@ -707,7 +725,9 @@ struct TodayHomeView: View
 
         if let current = calendarDayList(.now)
         {
+
             selectedTodayListID = current.id;
+
             return
         }
 
@@ -724,6 +744,7 @@ struct TodayHomeView: View
 
 
             lists = activeLists
+
         }
 
 
@@ -732,10 +753,12 @@ struct TodayHomeView: View
 
 
             archivedLists = retainedLists
+
         }
 
 
         selectedTodayListID = result.dayList.id
+
     }
 
 
@@ -788,7 +811,9 @@ struct TodayHomeView: View
                                 sources: planningCalendarAccess?.searchableItems ?? [],
                                 welcomesPlan: welcomeCue.highlights(.plan), onOpen:
                                 {
+
                                     showsTodayPlan = true
+
                                 }
                             )
                             .padding(16)
@@ -825,8 +850,10 @@ struct TodayHomeView: View
                     let focusPreferences =
                     (try? JSONDecoder().decode(LocalProfilePreferences.self, from: planPreferencesData))
                     ?? PlanPreferencesStore.load()
+
                     Group
                     {
+
                         let focus = calendarDayList(
                             focusDate, in: focusLists) /* Active list matching the current weekday */
                         let cards =
@@ -857,18 +884,24 @@ struct TodayHomeView: View
                             onChangeFilters:
                             {
                                 important, bookmarked, upNext in
+
                                 var updated = PlanPreferencesStore.load()
+
                                 updated.todayFocusIncludesImportant = important
                                 updated.todayFocusIncludesBookmarked = bookmarked
                                 updated.todayFocusIncludesUpNext = upNext
+
                                 PlanPreferencesStore.save(updated)
                                 if var profile
                                 {
+
                                     profile.preferences = updated;
+
                                     onSaveProfile(profile)
                                 }
 
                                 focusFiltersChangedAt = .now
+
                             },
                             onRemoveBookmark:
                             {
@@ -877,8 +910,10 @@ struct TodayHomeView: View
                                 {
                                     return
                                 }
+
                                 removedFocusBookmark = cardID
                                 bookmarkNoticeRevision = UUID()
+
                             },
                             onUpdateDate:
                             {
@@ -899,7 +934,9 @@ struct TodayHomeView: View
                             onOpenCard:
                             {
                                 card in
+
                                 openedFocusCard = card
+
                             },
                             onDeleteCard: onDeleteCard,
                             onOpenTodayList:
@@ -907,6 +944,7 @@ struct TodayHomeView: View
 
                                 focusedListID = focus?.id
                                 showsTodayList = focus != nil
+
                             }
                         )
                         .onChange(of: Calendar.current.startOfDay(for: focusDate))
@@ -927,12 +965,14 @@ struct TodayHomeView: View
                     {
 
                         shortcutsSectionBottom = $0
+
                     }
 
                     browseListsAction
                     TimelineView(.everyMinute)
                     {
                         context in
+
                         let calendar     = planningCalendarAccess?.document.calendar ?? .current
                         let tomorrow     = calendar.date(byAdding: .day, value: 1, to: context.date) ?? context.date
                         let tomorrowList = planningCalendarAccess?.document.weeks.compactMap
@@ -940,6 +980,7 @@ struct TodayHomeView: View
                             $0.list(on: tomorrow)
                         }
                         .first
+
                         TodayPerspectiveSection(
                             completed: calendarDayList(context.date)?.cards.filter
                             {
@@ -950,21 +991,28 @@ struct TodayHomeView: View
                             tomorrowList: tomorrowList,
                             onReview:
                             {
+
                                 reviewRoute = $0
+
                             },
                             onSettings:
                             {
+
                                 showsReviewRhythmSettings = true
+
                             },
                             onReflect:
                             {
+
                                 showsTodayPlan = true
+
                             },
                             onPrepare:
                             {
 
                                 perspectivePlanDate = tomorrow
                                 showsPerspectivePlan = true
+
                             })
                     }
                     .padding(.top, 16)
@@ -977,6 +1025,7 @@ struct TodayHomeView: View
                     {
 
                         perspectiveSectionTop = $0
+
                     }
 
                 }
@@ -1012,7 +1061,9 @@ struct TodayHomeView: View
                 // Advance Up Next and the weekday at least once a minute without caching Card data.
                 while !Task.isCancelled
                 {
+
                     focusDate = .now
+
                     do
                     {
                         try await Task.sleep(for: .seconds(60))
@@ -1026,7 +1077,9 @@ struct TodayHomeView: View
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification))
             {
                 _ in
+
                 focusDate = .now
+
             }
             .task(id: welcomeCue.requestID)
             {
@@ -1063,8 +1116,10 @@ struct TodayHomeView: View
             .onChange(of: planningCalendarAccess?.document.currentWeekKey)
             {
                 _, _ in
+
                 removedFocusBookmark = nil
                 bookmarkNoticeRevision = UUID()
+
             }
             .task(id: bookmarkNoticeRevision)
             {
@@ -1080,12 +1135,16 @@ struct TodayHomeView: View
                 {
                     return
                 }
+
                 removedFocusBookmark = nil
+
             }
             .onDisappear
             {
+
                 removedFocusBookmark = nil
                 bookmarkNoticeRevision = UUID()
+
             }
             .background
             {
@@ -1133,6 +1192,7 @@ struct TodayHomeView: View
                         $0 as? UIWindowScene
                     }
                     .flatMap(\.windows).first(where: \.isKeyWindow)?.rootViewController
+
                     if UIApplication.shared.applicationState == .active, root != nil,
                     root?.presentedViewController == nil,
                     reviewRoute == nil
@@ -1140,6 +1200,7 @@ struct TodayHomeView: View
 
                         reviewRoute = pending
                         reviewNotifications.pending = nil
+
                         break
                     }
 
@@ -1201,11 +1262,13 @@ struct TodayHomeView: View
                         {
 
                             showsTodayList = false
+
                         },
                         onOpenWeek:
                         {
 
                             showsTodayList = false
+
                             onOpenBoardList(focusedList.id)
                         },
                         onPermanentDelete: onDeleteCard,
@@ -1227,6 +1290,7 @@ struct TodayHomeView: View
 
 
                         quickCaptureTitle = quickComposerInitialTitle
+
                     }
 
 
@@ -1234,6 +1298,7 @@ struct TodayHomeView: View
                     composerTemplate = nil
                     composerInitialPresentation = nil
                     captureAction = nil
+
                 }
             )
             {
@@ -1253,10 +1318,14 @@ struct TodayHomeView: View
                         onSaveCapture:
                         {
                             capture in
+
                             let saved = onAddCapture(capture)
+
                             if saved
                             {
+
                                 quickComposerInitialTitle = ""
+
                             }
 
                             return saved
@@ -1265,7 +1334,9 @@ struct TodayHomeView: View
                     {
                         listID, title, description, subtitle, presentation, actions in
                         onAddCard(listID, title, description, subtitle, presentation, actions)
+
                         quickComposerInitialTitle = ""
+
                     }
 
                     .databaseActivityOverlay()
@@ -1284,9 +1355,12 @@ struct TodayHomeView: View
                     }
 
                     pendingTemplate = nil
+
                     ensureCurrentWeekdayList()
+
                     composerTemplate = template
                     captureAction = nil
+
                     presentQuickNoteEditor()
                 }
             )
@@ -1295,8 +1369,10 @@ struct TodayHomeView: View
                 QuickCaptureTemplatesView
                 {
                     template in
+
                     pendingTemplate = template
                     showsTemplates = false
+
                 }
 
             }
@@ -1310,7 +1386,9 @@ struct TodayHomeView: View
 
                     return
                 }
+
                 opensTemplateLibraryAfterSettings = false
+
                 openTemplateLibrary?()
             })
             {
@@ -1321,6 +1399,7 @@ struct TodayHomeView: View
 
                         opensTemplateLibraryAfterSettings = true
                         showsPlanSettings = false
+
                     })
             }
 
@@ -1329,13 +1408,16 @@ struct TodayHomeView: View
             {
 
                 labelLibrary = LabelLibraryStore.load()
+
                 ensureCurrentWeekdayList()
             }
 
             .onChange(of: quickCreateRequest)
             {
                 _, _ in
+
                 composerInitialPresentation = .card
+
                 openQuickNoteEditor()
             }
 
@@ -1345,7 +1427,9 @@ struct TodayHomeView: View
                 ensureCurrentWeekdayList()
                 if showsTodayList
                 {
+
                     focusedListID = calendarDayList(.now)?.id
+
                 }
 
             }
@@ -1353,11 +1437,15 @@ struct TodayHomeView: View
             {
 
             _ in
+
                 focusDate = .now
+
                 ensureCurrentWeekdayList()
                 if showsTodayList
                 {
+
                     focusedListID = calendarDayList(.now)?.id
+
                 }
 
             }
@@ -1394,7 +1482,9 @@ struct TodayHomeView: View
                                 case .chooseToday:
                                     selectTodayList(list)
                                 case .browseAll:
+
                                     listPickerMode = nil
+
                                     onOpenBoardList(list.id)
                                 }
 
@@ -1466,6 +1556,7 @@ struct TodayHomeView: View
                             {
 
                                 listPickerMode = nil
+
                             }
 
                         }
@@ -1527,6 +1618,7 @@ struct TodayHomeView: View
                 {
 
                     showsTemplates = true
+
                 }
                 label:
                 {
@@ -1608,6 +1700,7 @@ struct TodayHomeView: View
                 {
 
                     listPickerMode = .chooseToday
+
                 }
 
                 .font(.caption)

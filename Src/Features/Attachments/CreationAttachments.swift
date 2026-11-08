@@ -55,6 +55,7 @@ final class CreationAttachmentDraft: ObservableObject
 
         let id = UUID()
         let content: Content
+
         var title:   String
         {
 
@@ -138,7 +139,9 @@ final class CreationAttachmentDraft: ObservableObject
     {
 
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+
         sheet = .sources
+
     }
 
 
@@ -154,6 +157,7 @@ final class CreationAttachmentDraft: ObservableObject
     {
 
         sheet = nil
+
         if let images = UIPasteboard.general.images, !images.isEmpty
         {
 
@@ -169,6 +173,7 @@ final class CreationAttachmentDraft: ObservableObject
                 {
 
                     notice = "A clipboard image couldn't be prepared. Please try again."
+
                 }
 
             }
@@ -184,6 +189,7 @@ final class CreationAttachmentDraft: ObservableObject
         {
 
             notice = "The clipboard does not contain an image or a valid web link."
+
         }
 
     }
@@ -206,12 +212,16 @@ final class CreationAttachmentDraft: ObservableObject
         }
 
         let selected = selection
+
         isImporting = true
         sheet = nil
+
         defer
         {
+
             isImporting = false;
             selection = []
+
         }
 
         for item in selected
@@ -227,6 +237,7 @@ final class CreationAttachmentDraft: ObservableObject
                 }
 
                 try Task.checkCancellation()
+
                 let video = item.supportedContentTypes.contains
                 {
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
@@ -252,6 +263,7 @@ final class CreationAttachmentDraft: ObservableObject
 
                 notice =
                                                 "Some attachments couldn't be prepared. Your draft and attachments already added are still here."
+
             }
 
         }
@@ -282,6 +294,7 @@ final class CreationAttachmentDraft: ObservableObject
         }
 
         var stored: [KanbanAttachment] = []
+
         do
         {
 
@@ -338,6 +351,7 @@ struct CreationAttachmentList: View
 
 
     @ObservedObject var draft: CreationAttachmentDraft
+
     var body:                  some View
     {
 
@@ -436,17 +450,23 @@ struct CreationAttachmentPresentation: ViewModifier
                     photoSelection: $draft.selection,
                     onAddLink:
                     {
+
                         draft.sheet = .link
+
                     }, onPasteClipboard: draft.paste,
                     onComingSoon:
                     {
                         source in
+
                         draft.sheet = nil;
                         draft.notice = source + " isn't available yet."
+
                     },
                     onAddDrawing:
                     {
+
                         draft.sheet = .drawing(DrawingCaptureDraft())
+
                     })
             case .link:
                 CardLinkAttachmentSheet
@@ -479,7 +499,9 @@ struct CreationAttachmentPresentation: ViewModifier
                                 {
                                     if !$0
                                     {
+
                                         draft.notice = nil
+
                                     }
 
                                 })
@@ -488,7 +510,9 @@ struct CreationAttachmentPresentation: ViewModifier
 
             Button("OK", role: .cancel)
             {
+
                 draft.notice = nil
+
             }
 
         }

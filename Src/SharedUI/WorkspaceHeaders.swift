@@ -22,6 +22,7 @@ struct WorkspaceHeaderIcon: View
 
 
     let systemName: String
+
     var body:       some View
     {
 
@@ -100,6 +101,7 @@ struct SlideableHeaderText: View
     }
 
     @AppStorage(PlanPreferencesStore.key) private var preferencesData = Data()
+
     private var allowsScrolling: Bool
     {
 
@@ -113,6 +115,7 @@ struct SlideableHeaderText: View
     @State private var ellipsisWidth: CGFloat = 18
     @State private var textWidth:     CGFloat = 0
     @State private var viewportWidth: CGFloat = 0
+
     private var overflows:            Bool
     {
         textWidth > viewportWidth + 1
@@ -171,6 +174,7 @@ struct SlideableHeaderText: View
 
                         textFrame = $0
                         textWidth = $0.width
+
                     }
 
                 }
@@ -188,6 +192,7 @@ struct SlideableHeaderText: View
                 {
 
                     viewportWidth = $0
+
                 }
                 .mask
                 {
@@ -246,6 +251,7 @@ struct SlideableHeaderText: View
                     {
 
                         ellipsisWidth = $0
+
                     }
                     .opacity(showsTrailingCue ? 1 : 0)
                     .allowsHitTesting(false)
@@ -343,6 +349,7 @@ struct WorkspaceHeaderTitleKey: LayoutValueKey
 
 
     static let defaultValue = false
+
 }
 
 
@@ -378,6 +385,7 @@ enum WorkspaceHeaderSpacing
     {
 
         let titleSpace = max(0, availableWidth - controlsWidth - CGFloat(max(0, gapCount)) * regularSpacing)
+
         return titleIdealWidth > titleSpace + 1 ? 0 : regularSpacing
     }
 
@@ -430,6 +438,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
                 $0 + $1.width
             }
             + CGFloat(max(0, subviews.count - 1)) * regularSpacing
+
             return (ideal, regularSpacing, width ?? total)
         }
 
@@ -449,7 +458,9 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
         let titleWidth = max(0, available - controlsWidth - CGFloat(gapCount) * gap)
         var sizes      = ideal
         let titleSize  = subviews[title].sizeThatFits(ProposedViewSize(width: titleWidth, height: nil))
+
         sizes[title] = CGSize(width: titleWidth, height: titleSize.height)
+
         return (sizes, gap, available)
     }
 
@@ -469,6 +480,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     {
 
         let layout = arrangement(width: proposal.width, subviews: subviews)
+
         return CGSize(width: layout.width, height: layout.sizes.map(\.height).max() ?? 0)
     }
 
@@ -491,6 +503,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
 
         let layout          = arrangement(width: bounds.width, subviews: subviews)
         var offset: CGFloat = 0
+
         for index in subviews.indices
         {
 
@@ -499,10 +512,13 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
             layoutDirection == .rightToLeft
             ? bounds.maxX - offset - size.width / 2
             : bounds.minX + offset + size.width / 2
+
             subviews[index].place(
                 at: CGPoint(x: x, y: bounds.midY), anchor: .center,
                 proposal: ProposedViewSize(width: size.width, height: size.height))
+
             offset += size.width + layout.gap
+
         }
 
     }

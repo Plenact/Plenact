@@ -28,19 +28,24 @@ enum PortableRuntimeEvidence
 
         let directory = root.appendingPathComponent(area)
         let manager   = FileManager.default
+
         if !manager.fileExists(atPath: directory.path)
         {
             return [:]
         }
+
         var remaining = LegacyWorkspaceExport.maximumBytes
         let files     = try LocalBackupRestore.readTree(directory, remaining: &remaining)
+
         guard files.isDirectory, Set(files.fileWrappers?.keys.map { $0 } ?? []) == names else
         {
             throw PortablePackageReview.Failure.invalid
         }
+
         let bytes = try Dictionary(uniqueKeysWithValues: names.map { name in
             (name, try MigrationBackupReader.file(name, in: files))
         })
+
         try validate(bytes)
         return bytes
     }
@@ -64,7 +69,9 @@ enum PortableRuntimeEvidence
         {
             throw PortablePackageReview.Failure.invalid
         }
+
         _ = try PortablePackageReview.review(files: snapshot)
+
     }
 
 
@@ -91,7 +98,9 @@ enum PortableRuntimeEvidence
         {
             throw PortablePackageReview.Failure.invalid
         }
+
         var output: [String: Data] = [:]
+
         for entry in entries
         {
             guard Set(entry.keys) == ["name", "sha256", "byte_length"], let name = entry["name"] as? String,
@@ -99,12 +108,16 @@ enum PortableRuntimeEvidence
             {
                 throw PortablePackageReview.Failure.invalid
             }
+
             let bytes = try MigrationBackupReader.file(name, in: directory)
+
             guard entry["sha256"] as? String == MigrationBackupReader.digest(bytes), entry["byte_length"] as? Int == bytes.count else
             {
                 throw PortablePackageReview.Failure.integrity
             }
+
             output[name] = bytes
+
         }
         try validate(output)
         return output

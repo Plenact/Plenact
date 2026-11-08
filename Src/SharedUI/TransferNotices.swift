@@ -35,6 +35,7 @@ struct TransferConfirmation: Equatable
     let title:       String
     let destination: String
     var action:      Action = .moved
+
     var message:     String
     {
 
@@ -75,11 +76,15 @@ final class TransferConfirmationPresenter
     {
 
         dismissTask?.cancel()
+
         window?.isHidden = true
         window = nil
+
         undoOverlay?.removeFromSuperview()
+
         undoOverlay = nil
         undoHost = nil
+
     }
 
 
@@ -116,19 +121,24 @@ final class TransferConfirmationPresenter
         }
 
         dismiss()
+
         // Keep native drag sessions in their original window. A second, persistent
         // UIWindow can intercept the system's drag routing even when taps pass through.
         let overlay = TransferUndoOverlay(frame: mainWindow.bounds)
+
         overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         overlay.backgroundColor = .clear
         overlay.accessibilityIdentifier = "section.move.undo.overlay"
+
         let host = UIHostingController(
             rootView: SectionUndoToast(
                 message: confirmation.message,
                 undo:
                 {
                     [weak self] in
+
                     let succeeded = undo()
+
                     if succeeded
                     {
                         self?.dismiss()
@@ -143,16 +153,23 @@ final class TransferConfirmationPresenter
                 onFrame:
                 {
                     [weak overlay] in
+
                     overlay?.touchRegion = $0
+
                 }))
+
         host.view.backgroundColor = .clear
         host.view.frame = overlay.bounds
         host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
         overlay.addSubview(host.view)
         mainWindow.addSubview(overlay)
+
         undoOverlay = overlay
         undoHost = host
+
         UIAccessibility.post(notification: .announcement, argument: confirmation.message + " Undo available.")
+
         // UIKit may add a presentation above the root view during navigation.
         // Retain the same panel and bring it above that presentation, without another window.
         dismissTask = Task
@@ -215,7 +232,9 @@ final class TransferConfirmationPresenter
         }
 
         dismiss()
+
         let window = TransferConfirmationWindow(windowScene: scene)
+
         window.frame = scene.coordinateSpace.bounds
         window.windowLevel = .alert + 1
         window.backgroundColor = .clear
@@ -224,7 +243,9 @@ final class TransferConfirmationPresenter
         window.rootViewController?.view.backgroundColor = .clear
         self.window = window
         window.isHidden = false
+
         UIAccessibility.post(notification: .announcement, argument: confirmation.message)
+
         dismissTask = Task
         {
             [weak self, weak window] in
@@ -244,6 +265,7 @@ final class TransferConfirmationPresenter
 
             window.isHidden = true
             self.window = nil
+
         }
 
     }
@@ -302,6 +324,7 @@ final class TransferConfirmationWindow: UIWindow
 
 
     var touchRegion:           CGRect = .zero
+
     override var canBecomeKey: Bool
     {
         false
@@ -346,6 +369,7 @@ struct TransferConfirmationToast: View
     let message: String
     @State private var visible = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View
     {
 
@@ -375,7 +399,9 @@ struct TransferConfirmationToast: View
 
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2))
             {
+
                 visible = true
+
             }
 
             do
@@ -389,7 +415,9 @@ struct TransferConfirmationToast: View
 
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3))
             {
+
                 visible = false
+
             }
 
         }
@@ -415,6 +443,7 @@ struct SectionUndoToast: View
     let close:   () -> Void
     let onFrame: (CGRect) -> Void
     @State private var failed = false
+
     var body: some View
     {
 
@@ -433,7 +462,9 @@ struct SectionUndoToast: View
 
                     Button("Undo", systemImage: "arrow.uturn.backward")
                     {
+
                         failed = !undo()
+
                     }
                     .font(.headline).frame(minHeight: 44)
                     .accessibilityIdentifier("section.move.undo")

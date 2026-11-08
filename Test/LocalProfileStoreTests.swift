@@ -40,6 +40,7 @@ final class LocalProfileStoreTests: XCTestCase
         super.setUp()
 
         defaults = UserDefaults(suiteName: suiteName)
+
         defaults.removePersistentDomain(forName: suiteName)
     }
 
@@ -56,6 +57,7 @@ final class LocalProfileStoreTests: XCTestCase
 
 
         defaults.removePersistentDomain(forName: suiteName)
+
         defaults = nil
 
         super.tearDown()
@@ -319,6 +321,7 @@ final class LocalProfileStoreTests: XCTestCase
                                 ]
             ).cropped(to: CGRect(x: 0, y: 0, width: 1, height: 1)) as CIImage?)
         var pixel = [UInt8](repeating: 0, count: 4) /* RGBA buffer for the average crop color */
+
         pixel.withUnsafeMutableBytes
         {
             buffer in

@@ -37,13 +37,17 @@ extension PlenactBoardDocumentTests
     {
 
         let legacy = try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
+
         XCTAssertEqual(legacy.resolvedListBackgroundOpacity, 1)
         for value in [0.0, 0.5, 1.0]
         {
 
             let appearance = ItemAppearance(listBackgroundOpacity: value)
+
             XCTAssertFalse(appearance.isEmpty)
+
             let restored = try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(appearance))
+
             XCTAssertEqual(restored.resolvedListBackgroundOpacity, value)
             XCTAssertEqual(BoardAppearance().resolved(restored).resolvedListBackgroundOpacity, value)
             XCTAssertNil(restored.background)
@@ -70,13 +74,18 @@ extension PlenactBoardDocumentTests
     {
 
         var list = KanbanList(id: 1, title: "Custom", cards: [])
+
         list.appearance = ItemAppearance(iconColor: .blue, showsIconInHeader: true)
+
         let restored = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+
         XCTAssertEqual(restored.resolvedIconColor(collectionColor: .orange), .blue)
         XCTAssertEqual(restored.headerAppearance()?.iconColor, .blue)
         XCTAssertNil(restored.appearance?.background)
         XCTAssertFalse(ItemAppearance(iconColor: .blue).isEmpty)
+
         list.appearance?.iconColor = nil
+
         XCTAssertEqual(list.resolvedIconColor(collectionColor: .orange), .orange)
         XCTAssertNotEqual(
             KanbanList.fixedHeaderIconColor(for: "On the Table"), KanbanList.fixedIconColor(for: "On the Table"))
@@ -84,7 +93,9 @@ extension PlenactBoardDocumentTests
         {
 
             var main = DefaultListTutorial.makeStarter(title: title).lists[0]
+
             main.appearance?.iconColor = .blue
+
             XCTAssertEqual(main.resolvedIconColor(collectionColor: .green), KanbanList.fixedIconColor(for: title))
             XCTAssertEqual(main.headerAppearance()?.iconColor, KanbanList.fixedHeaderIconColor(for: title))
         }
@@ -121,28 +132,41 @@ extension PlenactBoardDocumentTests
                     id: 1, word: "Done card", listTitle: "Sunday", isTitleChecked: true, checklists: [checklist]),
                 KanbanCard(id: 2, word: "Open card", listTitle: "Sunday", checklists: [])
             ])
+
         list.archivedCards = [
             KanbanCard(id: 99, word: "Archived", listTitle: "Sunday", isTitleChecked: true, checklists: [])
         ]
+
         let original          = list
         let (snapshot, cards) = ListCheckmarkReset.reset(list)
+
         list.cards = cards
+
         XCTAssertFalse(ListCheckmarkReset.values(in: list).values.contains(true))
         XCTAssertEqual(list.archivedCards, original.archivedCards)
         XCTAssertTrue(snapshot.canRestore(list))
+
         var expectedRestored = original.cards
+
         for index in expectedRestored.indices
         {
+
             expectedRestored[index].editHistory = list.cards[index].editHistory
+
         }
         XCTAssertEqual(snapshot.restoring(list), expectedRestored)
         XCTAssertEqual(list.cards[0].editHistory?.count, 1)
         XCTAssertNil(list.cards[1].editHistory)
+
         list.cards[0].word = "Edited title survives restore"
+
         let restored = try XCTUnwrap(snapshot.restoring(list))
+
         XCTAssertEqual(restored[0].word, "Edited title survives restore")
         XCTAssertTrue(restored[0].isTitleChecked)
+
         list.cards[1].isTitleChecked = true
+
         XCTAssertFalse(snapshot.canRestore(list))
         XCTAssertNil(snapshot.restoring(list))
     }
@@ -161,10 +185,13 @@ extension PlenactBoardDocumentTests
     {
 
         let legacy = try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
+
         XCTAssertTrue(legacy.enablesLowerCornerBack)
         XCTAssertTrue(LocalProfilePreferences().enablesLowerCornerBack)
+
         let suite    = "CornerBack." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+
         defer
         {
             defaults.removePersistentDomain(forName: suite)
@@ -172,11 +199,16 @@ extension PlenactBoardDocumentTests
 
         XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
         XCTAssertNil(defaults.object(forKey: PlanPreferencesStore.key))
+
         var preferences = legacy
+
         preferences.enablesLowerCornerBack = true
+
         PlanPreferencesStore.save(preferences, to: defaults)
         XCTAssertTrue(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
+
         preferences.enablesLowerCornerBack = false
+
         PlanPreferencesStore.save(preferences, to: defaults)
         XCTAssertFalse(PlanPreferencesStore.load(from: defaults).enablesLowerCornerBack)
         XCTAssertNil(LocalProfileStore.load(from: defaults))
@@ -199,6 +231,7 @@ extension PlenactBoardDocumentTests
     {
 
         let legacy = try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
+
         XCTAssertNil(legacy.addItemTextColor)
         XCTAssertNil(legacy.resolvedAddItemTextColor(list: nil, title: "Thursday"))
         for title in ["On the Table", "In the Queue", "Scheduled"]
@@ -209,10 +242,14 @@ extension PlenactBoardDocumentTests
         }
 
         var board = BoardAppearance()
+
         board.addItemTextColor = .white
         board.cardTextColor = .blue
+
         var list = ItemAppearance()
+
         list.addItemTextColor = .charcoal
+
         XCTAssertFalse(list.isEmpty)
         XCTAssertEqual(board.resolvedAddItemTextColor(list: list, title: "Projects"), .charcoal)
         XCTAssertEqual(board.resolvedAddItemTextColor(list: nil, title: "Projects"), .white)
@@ -220,10 +257,14 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(list.cardTextColor)
         XCTAssertEqual(try JSONDecoder().decode(BoardAppearance.self, from: JSONEncoder().encode(board)), board)
         XCTAssertEqual(try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(list)), list)
+
         let original = KanbanList(id: 8, title: "Ideas", cards: [])
         var styled   = original
+
         styled.appearance = list
+
         let inherited = BoardAppearance.inheritingLists([styled]) [0]
+
         XCTAssertNil(inherited.appearance?.addItemTextColor)
         XCTAssertEqual(inherited.cards, original.cards)
         XCTAssertEqual(styled.appearance?.addItemTextColor, .charcoal)
@@ -244,7 +285,9 @@ extension PlenactBoardDocumentTests
     {
 
         var calendar = Calendar(identifier: .gregorian)
+
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
+
         let start = try XCTUnwrap(
             calendar.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 23, minute: 24)))
         let finish = try XCTUnwrap(calendar.date(byAdding: .minute, value: 21, to: start))
@@ -253,23 +296,34 @@ extension PlenactBoardDocumentTests
             showsDueDateInList: true, startDateKind: .dateAndTime, dueDateKind: .dateAndTime)
         let original = card
         let badges   = card.scheduleBadges(on: start, calendar: calendar)
+
         XCTAssertEqual(badges.map(\.title), ["Start", "Finish"])
         XCTAssertEqual(badges.map(\.systemImage), ["clock", "checkmark.circle"])
         XCTAssertEqual(badges.map(\.value), [CardDateKind.time.label(for: start), CardDateKind.time.label(for: finish)])
         XCTAssertEqual(card, original)
+
         let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: start))
+
         XCTAssertEqual(card.scheduleBadges(on: tomorrow, calendar: calendar).map(\.title), ["Start date", "Due date"])
         XCTAssertEqual(
             card.scheduleBadges(on: nil, calendar: calendar).map(\.value), [card.dueDateLabel],
                             "Undated Library previews retain their existing date display")
+
         card.dueDate = tomorrow
+
         XCTAssertEqual(card.scheduleBadges(on: start, calendar: calendar).map(\.title), ["Start date", "Due date"])
+
         card.dueDate = finish
         card.startDateKind = .date
+
         XCTAssertEqual(card.scheduleBadges(on: start, calendar: calendar).map(\.title), ["Start date", "Due date"])
+
         card.startDate = nil
+
         XCTAssertEqual(card.scheduleBadges(on: start, calendar: calendar).map(\.title), ["Finish"])
+
         card.showsDueDateInList = false
+
         XCTAssertTrue(card.scheduleBadges(on: start, calendar: calendar).isEmpty)
         XCTAssertTrue(
             card.usesTimeOnlySchedule(on: start, calendar: calendar),
@@ -296,16 +350,21 @@ extension PlenactBoardDocumentTests
         {
 
             var calendar = Calendar(identifier: .gregorian)
+
             calendar.firstWeekday = firstWeekday
+
             let date    = try XCTUnwrap(PlanningDate.date("2026-10-13"))
             var current = DatedPlanningWeek.make(for: date, calendar: calendar)
+
             current.collection.lists[0].cards = [
                 KanbanCard(id: 987, word: "Keep this writing", listTitle: current.collection.lists[0].title)
             ]
+
             let document = PlanningCalendarDocument(
                 currentWeekKey: current.startKey, firstWeekday: firstWeekday, weeks: [current])
             let original = document
             let choices  = PlanningWeekSelector.choices(document: document, referenceDate: date)
+
             XCTAssertEqual(choices.count, 17)
             XCTAssertEqual(Set(choices.map(\.startKey)).count, choices.count)
             XCTAssertEqual(choices.first
@@ -318,8 +377,10 @@ extension PlenactBoardDocumentTests
 
                     PlanningDate.weekKey(PlanningDate.date($0.startKey)!, calendar: calendar) == $0.startKey
                 })
+
             let future        = try XCTUnwrap(calendar.date(byAdding: .month, value: 6, to: date))
             let futureChoices = PlanningWeekSelector.choices(document: document, referenceDate: future)
+
             XCTAssertTrue(futureChoices.contains
                 {
                     $0.startKey == PlanningDate.weekKey(future, calendar: calendar)
@@ -345,27 +406,40 @@ extension PlenactBoardDocumentTests
 
         let date = Date(timeIntervalSince1970: 1_800_000_000)
         var card = KanbanCard(id: 1, word: "Due date", listTitle: "Monday", dueDate: date, showsDueDateInList: true)
+
         XCTAssertTrue(card.hasDueDate, "Date presence must not depend on the sample card ID")
         XCTAssertEqual(card.listDueDateLabel, card.dueDateLabel)
         XCTAssertNotEqual(card.listDueDateLabel, "Today")
+
         card.showsDueDateInList = false
+
         XCTAssertNil(card.listDueDateLabel)
         XCTAssertEqual(card.dueDate, date, "Hiding the badge must retain the due date")
+
         let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+
         XCTAssertFalse(restored.showsDueDateInList)
         XCTAssertEqual(restored.dueDate, date)
         XCTAssertFalse(restored.replacingLocation(id: 50, listTitle: "Friday").showsDueDateInList)
+
         let source = KanbanList(id: 0, title: "Monday", cards: [restored])
+
         XCTAssertFalse(ListCopying.copy(source, into: [source], crossBoard: true).cards[0].showsDueDateInList)
+
         card.dueDate = nil
         card.showsDueDateInList = true
+
         XCTAssertFalse(card.hasDueDate)
         XCTAssertNil(card.listDueDateLabel)
         XCTAssertEqual(card.dueDateLabel, "")
+
         var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(restored)) as? [String: Any])
+
         legacy.removeValue(forKey: "showsDueDateInList")
+
         let decodedLegacy = try JSONDecoder().decode(
             KanbanCard.self, from: JSONSerialization.data(withJSONObject: legacy))
+
         XCTAssertTrue(decodedLegacy.showsDueDateInList)
         XCTAssertEqual(decodedLegacy.listDueDateLabel, restored.dueDateLabel)
     }
@@ -388,10 +462,13 @@ extension PlenactBoardDocumentTests
         var list     = PersonalCollection(title: "Reading", kind: .list)
         var board    = PersonalCollection(title: "Projects", kind: .board)
         var archived = PersonalCollection(title: "Old", kind: .list)
+
         archived.isArchived = true
         list.lists[0].cards = [KanbanCard(id: 1, word: "Garden reference", listTitle: "Reading")]
         board.lists[0].cards = [KanbanCard(id: 1, word: "Garden project", listTitle: "Ideas")]
+
         let collections = [list, board, archived]
+
         XCTAssertEqual(collections.filter
             {
                 LibraryBrowseFilter.all.includes($0)
@@ -413,6 +490,7 @@ extension PlenactBoardDocumentTests
                     filter.includes($0)
                 },
                 labels: LabelLibraryStore.load())
+
             XCTAssertEqual(results.count, 1)
             XCTAssertEqual(results.first?.ownerID, expected)
         }
@@ -436,6 +514,7 @@ extension PlenactBoardDocumentTests
 
         let suite    = "OverflowPreferenceTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+
         defer
         {
             defaults.removePersistentDomain(forName: suite)
@@ -444,9 +523,12 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(
             try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8)).scrollsOverflowingTitles)
         XCTAssertTrue(PlanPreferencesStore.load(from: defaults).scrollsOverflowingTitles)
+
         var preferences = LocalProfilePreferences()
+
         preferences.scrollsOverflowingTitles = false
         preferences.todayFocusIncludesImportant = true
+
         PlanPreferencesStore.save(preferences, to: defaults)
         XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
         XCTAssertNil(LocalProfileStore.load(from: defaults))
@@ -469,32 +551,43 @@ extension PlenactBoardDocumentTests
 
         let suite    = "PlenactTests.BoardAppearance.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+
         defer
         {
             defaults.removePersistentDomain(forName: suite)
         }
 
         let week = BoardAppearance(bannerBackground: .blue, listBackground: .orange, cardBackground: .green)
+
         defaults.set(try JSONEncoder().encode(week), forKey: BoardAppearance.weekStorageKey)
         XCTAssertEqual(
             try BoardAppearance.decodeWeek(XCTUnwrap(defaults.data(forKey: BoardAppearance.weekStorageKey))), week)
         XCTAssertEqual(try BoardAppearance.decodeWeek(Data()), BoardAppearance())
         XCTAssertThrowsError(try BoardAppearance.decodeWeek(Data("invalid".utf8)))
         XCTAssertThrowsError(try BoardAppearance.decodeWeek(Data(#"{"bannerBackground":"invalid"}"#.utf8)))
+
         var first = PersonalCollection(title: "First", kind: .board)
+
         first.boardAppearance = BoardAppearance(
             bannerBackground: .purple, listBackground: .red, cardBackground: .orange)
+
         var second = PersonalCollection(title: "Second", kind: .board)
+
         second.boardAppearance = BoardAppearance(bannerBackground: .green, listBackground: .blue, cardBackground: .red)
         second.isArchived = true
+
         try PersonalCollectionStore.saveChecked([first, second], to: defaults)
         XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [first, second])
         XCTAssertEqual(
             try BoardAppearance.decodeWeek(XCTUnwrap(defaults.data(forKey: BoardAppearance.weekStorageKey))), week)
+
         var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(first)) as? [String: Any])
+
         legacy.removeValue(forKey: "boardAppearance")
+
         let reopened = try JSONDecoder().decode(
             PersonalCollection.self, from: JSONSerialization.data(withJSONObject: legacy))
+
         XCTAssertNil(reopened.boardAppearance)
         XCTAssertEqual(reopened.lists, first.lists)
     }
@@ -517,27 +610,38 @@ extension PlenactBoardDocumentTests
 
         let suite    = "PlenactTests.ListMetadata.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+
         defer
         {
             defaults.removePersistentDomain(forName: suite)
         }
 
         var week = KanbanList(id: 4, title: "Thursday", cards: [])
+
         try week.edit(title: "My Week plans", subtitle: "One step at a time")
         try KanbanBoardPersistence.saveListsChecked([week], suiteName: suite)
+
         let restoredWeek = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+
         XCTAssertEqual(restoredWeek, [week])
 
         var collection = PersonalCollection(title: "Synthetic collection", kind: .board)
         let originalID = collection.lists[0].id
+
         try collection.lists[0].edit(title: "Library ideas", subtitle: "Room to explore")
+
         collection.savedCardIDs = []
+
         try PersonalCollectionStore.saveChecked([collection], to: defaults)
+
         let restoredCollection = try XCTUnwrap(PersonalCollectionStore.load(from: defaults).first)
+
         XCTAssertEqual(restoredCollection, collection)
         XCTAssertEqual(restoredCollection.lists[0].id, originalID)
         XCTAssertEqual(restoredCollection.lists[0].subtitle, "Room to explore")
+
         let unchangedWeek = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+
         XCTAssertEqual(unchangedWeek, [week], "Editing Library metadata must not alter the Week store")
     }
 
@@ -564,11 +668,15 @@ extension PlenactBoardDocumentTests
         let previous   = scene.windows.first(where: \.isKeyWindow)
         let window     = UIWindow(windowScene: scene)
         let controller = UIViewController();
+
         window.rootViewController = controller
+
         window.makeKeyAndVisible()
         defer
         {
+
             window.isHidden = true;
+
             previous?.makeKeyAndVisible()
         }
 
@@ -578,25 +686,36 @@ extension PlenactBoardDocumentTests
                     stored
                 }, set:
                 {
+
                     stored = $0
+
                 }))
         let coordinator = editor.makeCoordinator()
         let text        = UITextView(frame: CGRect(x: 0, y: 0, width: 300, height: 200))
+
         controller.view.addSubview(text)
+
         text.attributedText = PlanRichText.attributed(stored)
         coordinator.view = text
+
         text.becomeFirstResponder()
+
         let undo = try XCTUnwrap(text.undoManager)
+
         undo.removeAllActions();
+
         undo.groupsByEvent = false
         text.selectedRange = NSRange(location: 0, length: text.textStorage.length)
+
         undo.beginUndoGrouping()
         coordinator.font(name: "Georgia", size: 24)
         coordinator.toggle(.traitBold)
         coordinator.color("Blue")
         undo.endUndoGrouping()
+
         let formatted  = stored
         let attributes = PlanRichText.attributed(stored).attributes(at: 0, effectiveRange: nil)
+
         XCTAssertEqual((attributes[.font] as? UIFont)?.pointSize, 24)
         XCTAssertEqual(attributes[NSAttributedString.Key("PlenactFontName")] as? String, "Georgia")
         XCTAssertEqual(PlanRichText.plain(stored), "Keep all these words")
@@ -606,7 +725,9 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(undo.canRedo)
         undo.redo()
         XCTAssertEqual(PlanRichText.runs(stored), PlanRichText.runs(formatted))
+
         let legacy = Data(#"[{"text":"Old writing","bold":true,"italic":false}]"#.utf8)
+
         XCTAssertEqual(PlanRichText.plain(PlanRichText.prefix + legacy.base64EncodedString()), "Old writing")
     }
 
@@ -625,15 +746,19 @@ extension PlenactBoardDocumentTests
 
         let list  = KanbanList(id: 1, title: "Saturday", cards: [])
         let blank = list.makeItem(id: 1, title: "New task")
+
         XCTAssertEqual(blank.subtitleOverride, "")
         XCTAssertEqual(blank.subtitle, "")
+
         let entered = list.makeItem(id: 2, title: "New task", description: "Details", subtitle: "  A useful subtitle  ")
+
         XCTAssertEqual(entered.subtitle, "A useful subtitle")
         XCTAssertEqual(entered.descriptionOverride, "Details")
         for card in [blank, entered]
         {
 
             let decoded = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+
             XCTAssertEqual(decoded.subtitle, card.subtitle)
             XCTAssertEqual(decoded.subtitleOverride, card.subtitleOverride)
         }
@@ -678,6 +803,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(archived[0].lists, original.lists)
 
         var invalid = original /* Malformed fixture input */
+
         invalid.lists[0].cards[0].dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
 
         XCTAssertThrowsError(try PersonalCollectionStore.archiveCollection(id: invalid.id, in: [invalid], to: defaults))
@@ -718,6 +844,7 @@ extension PlenactBoardDocumentTests
                     KanbanCard(id: 1, word: "Synthetic", listTitle: "Earlier edit", checklists: [])
                 ])
         ]
+
         KanbanBoardPersistence.enqueueSave(prior, suiteName: suite)
         try KanbanBoardPersistence.saveListsChecked([], suiteName: suite)
 
@@ -726,6 +853,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(try JSONDecoder().decode([KanbanList].self, from: saved), [])
 
         var invalid = prior /* Malformed fixture input */
+
         invalid[0].cards[0].dueDate = Date(timeIntervalSinceReferenceDate: .infinity)
 
         XCTAssertThrowsError(try KanbanBoardPersistence.saveListsChecked(invalid, suiteName: suite))
@@ -802,11 +930,14 @@ extension PlenactBoardDocumentTests
                 snapshot
             }, set:
             {
+
                 snapshot = $0
+
             })                   /* Board state under verification        */
         var archived = original  /* Archived value for restoration checks */
 
         archived.isArchived = true
+
         board.archivedLists.wrappedValue.append(archived)
         board.activeLists.wrappedValue.removeAll
         {
@@ -824,6 +955,7 @@ extension PlenactBoardDocumentTests
         var restored = try XCTUnwrap(board.archivedLists.wrappedValue.first) /* Restored value under verification */
 
         restored.isArchived = false
+
         board.activeLists.wrappedValue.append(restored)
         board.archivedLists.wrappedValue.removeAll
         {
@@ -866,6 +998,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(board.isArchived, true)
 
         board = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(board))
+
         board.restore(existingTitles: ["Week Board", "Week Board (Restored)", "week board (restored) (2)"])
 
         XCTAssertEqual(board.title, "Week Board (Restored) (3)")
@@ -910,6 +1043,7 @@ extension PlenactBoardDocumentTests
         board.lists[0].cards = [KanbanCard(id: 77, word: "Task", listTitle: board.lists[0].title)]
         board.lists[1].isArchived = true
         board.savedCardIDs = [77]
+
         try PersonalCollectionStore.saveChecked([board], to: defaults)
 
         var restored = try XCTUnwrap(
@@ -956,8 +1090,10 @@ extension PlenactBoardDocumentTests
             PersonalCollection.self, from: JSONSerialization.data(withJSONObject: object)) /* Decoded legacy personal collection */
 
         XCTAssertTrue(decoded.isActive)
+
         decoded.lists[0].cards = [KanbanCard(id: 500, word: "Hidden activity", listTitle: decoded.lists[0].title)]
         decoded.lists[0].isArchived = true
+
         XCTAssertFalse(decoded.matches("Hidden activity"))
         XCTAssertEqual(decoded.cardCount, 0)
 
@@ -1071,6 +1207,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(list.archivedCards, [incomplete, complete])
 
         list = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+
         list.restoreArchivedCard(id: incomplete.id)
 
         XCTAssertEqual(list.cards, [divider, incomplete])
@@ -1095,7 +1232,9 @@ extension PlenactBoardDocumentTests
         var collection = PersonalCollection(title: "Original", kind: .list) /* Collection state under verification   */
         let archived   = KanbanCard(
             id: 42, word: "Archived", listTitle: "Original", isTitleChecked: true) /* Archived value for restoration checks */
+
         collection.lists[0].archivedCards = [archived]
+
         collection.rename(to: "Renamed")
 
         var expected = archived /* Expected result for comparison */
@@ -1141,6 +1280,7 @@ extension PlenactBoardDocumentTests
 
         var shopping = PersonalCollection(
             title: "Shopping", kind: .list, icon: .shopping, color: .coral) /* Shopping-list example */
+
         shopping.lists[0].cards = [KanbanCard(id: 0, word: "Eggs", listTitle: "Shopping", checklists: [])]
         shopping.savedCardIDs = [0]
 

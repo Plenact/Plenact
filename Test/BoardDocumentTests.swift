@@ -38,8 +38,10 @@ final class PlenactBoardDocumentTests: XCTestCase
     {
 
         var calendar = Calendar(identifier: .gregorian)
+
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = firstWeekday
+
         return calendar
     }
 
@@ -95,8 +97,10 @@ final class PlenactBoardDocumentTests: XCTestCase
     {
 
         var calendar = Calendar(identifier: .gregorian)
+
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 1
+
         return calendar
     }
 
@@ -219,6 +223,7 @@ final class PlenactBoardDocumentTests: XCTestCase
                         url: url, statusCode: 200, httpVersion: nil,
                         headerFields: ["Content-Type": "application/json"]
                     )!
+
                     client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
                     client?.urlProtocol(self, didLoad: Data("{\"users\":[]}".utf8))
                     client?.urlProtocolDidFinishLoading(self)

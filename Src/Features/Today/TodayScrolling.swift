@@ -44,6 +44,7 @@ struct TodayScrollOffsetPreferenceKey: PreferenceKey
 
 
         value = nextValue()
+
     }
 
 }
@@ -96,6 +97,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
         }
 
         let revealBoundary = max(24, perspectiveTop - viewport * 0.7)
+
         if proposed > start, start < perspectiveTop - 24,
         start <= revealBoundary, proposed >= revealBoundary
         {
@@ -139,6 +141,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
         }
 
         target.rect.origin.y = y
+
     }
 
 }
@@ -186,7 +189,9 @@ struct TodayScrollFadeTracking: ViewModifier
             action:
             {
                 _, contentIsScrolled in
+
                 isScrolled = contentIsScrolled
+
             }
 
         }
@@ -198,7 +203,9 @@ struct TodayScrollFadeTracking: ViewModifier
             .onPreferenceChange(TodayScrollOffsetPreferenceKey.self)
             {
                 verticalOffset in
+
                 isScrolled = verticalOffset < -2
+
             }
 
         }

@@ -26,23 +26,33 @@ extension PortableEditableContent
         {
             return nil
         }
+
         let payload = try owned(document, kind: "user_preferences", accountID: accountID)
+
         guard Set(payload.keys) == ["account_id", "preferences"], let values = payload["preferences"] as? [String: Any] else
         {
             throw Failure.invalid
         }
+
         var raw = try mapped(values, fields: Dictionary(uniqueKeysWithValues: MigrationSettingsPreview.fields.map { ($0.value, $0.key) }))
+
         if let target = values["default_list_id"] as? String
         {
+
             _ = try record(target, kind: "list")
+
         }
+
         raw["defaultListID"] = try alias(values["default_list_id"])
+
         guard let count = values["today_focus_item_count"] as? Int, (0...12).contains(count),
               let order = values["today_focus_order"] as? String, ["day_list", "chronological"].contains(order) else
         {
             throw Failure.invalid
         }
+
         raw["todayFocusOrder"] = order == "day_list" ? "dayList" : "chronological"
+
         return try JSONDecoder().decode(LocalProfilePreferences.self, from: JSONSerialization.data(withJSONObject: raw))
     }
 
@@ -85,19 +95,23 @@ extension PortableEditableContent
         {
             throw Failure.unsupported
         }
+
         let payload = try owned(document, kind: "user_profile", accountID: accountID)
         var raw     = try mapped(payload, fields: ["account_id": "_account", "source_profile_id": "_source",
             "source_created_at_utc": "createdAt", "display_name": "displayName", "email": "email", "context": "context",
             "avatar_color": "avatarColor", "avatar_icon": "avatarIcon", "avatar_foreground_color": "avatarForegroundColor",
             "avatar_asset_id": "avatarPhotoFileName"])
+
         raw.removeValue(forKey: "_account")
         raw.removeValue(forKey: "_source")
+
         raw["id"] = id
         raw["createdAt"] = try timestamp(payload["source_created_at_utc"])
         raw["avatarColor"] = try appearance(payload["avatar_color"], kind: "color")
         raw["avatarForegroundColor"] = try appearance(payload["avatar_foreground_color"], kind: "color")
         raw["avatarPhotoFileName"] = try file(payload["avatar_asset_id"])
         raw["preferences"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(preferences))
+
         return try JSONDecoder().decode(LocalProfile.self, from: JSONSerialization.data(withJSONObject: raw))
     }
 
@@ -117,8 +131,11 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
             var raw = try mapped(body, fields: ["name": "name"])
+
             raw["id"] = record["id"]
+
             return raw
         }
         let nativeLabels = try labels.map { record -> [String: Any] in
@@ -127,10 +144,14 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
             var raw = try mapped(body, fields: ["name": "name", "category_id": "categoryID", "color": "color"])
+
             raw["id"] = record["id"]
+
             return raw
         }
+
         return try JSONDecoder().decode(LabelLibrary.self,
             from: JSONSerialization.data(withJSONObject: ["categories": nativeCategories, "labels": nativeLabels]))
     }
@@ -153,7 +174,9 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
         var seen = Set<String>()
+
         return try array(body["items"]).map { item in
             guard Set(item.keys) == ["collection_id", "list_id"], let owner = item["collection_id"] as? String,
                   let ownerID = UUID(uuidString: owner), let listID = item["list_id"] as? String,
@@ -161,8 +184,10 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
             let collection = try record(owner, kind: "collection")
             let list       = try record(listID, kind: "list")
+
             guard (list["payload"] as? [String: Any])?["collection_id"] as? String == owner,
                   ((collection["payload"] as? [String: Any])?["list_ids"] as? [String])?.contains(listID) == true else
             {
@@ -184,9 +209,12 @@ extension PortableEditableContent
 
         var seen                            = Set<String>()
         var output: [LibraryImportanceItem] = []
+
         for selection in selections
         {
+
             let value = try owned(selection, kind: "content_selection", accountID: accountID)
+
             guard Set(value.keys) == ["account_id", "card_id", "bookmarked", "importance"],
                   let cardID = value["card_id"] as? String, seen.insert(cardID).inserted,
                   let level = value["importance"] as? Int, (0...5).contains(level), value["bookmarked"] is Bool,
@@ -194,18 +222,24 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
             let card = try record(cardID, kind: "card")
+
             guard let listID = (card["payload"] as? [String: Any])?["list_id"] as? String else
             {
                 throw Failure.invalid
             }
+
             let list = try record(listID, kind: "list")
+
             guard let owner = (list["payload"] as? [String: Any])?["collection_id"] as? String,
                   let ownerID = UUID(uuidString: owner) else
             {
                 throw Failure.invalid
             }
+
             _ = try record(owner, kind: "collection")
+
             if level > 0
             {
                 output.append(LibraryImportanceItem(collectionID: ownerID, cardID: numericID, level: level))
@@ -235,13 +269,17 @@ extension PortableEditableContent
         {
             return nil
         }
+
         let payload = try owned(document, kind: "studio_settings", accountID: accountID)
         var raw     = try mapped(payload, fields: ["account_id": "_account", "views": "views", "default_card_surface": "defaultCardSurface",
             "default_note_surface": "defaultNoteSurface", "varies_new_surfaces": "variesNewSurfaces", "varies_new_headers": "variesNewHeaders", "palette": "palette"])
+
         raw.removeValue(forKey: "_account")
+
         var views: [String: Any] = [:]
         let destinations         = ["today": "Today", "week": "Week", "plans": "Plans", "activity": "Activity",
             "calendar": "Calendar", "search": "Search", "settings": "Settings"]
+
         for view in try array(payload["views"])
         {
             guard Set(view.keys) == ["destination", "surface"], let key = view["destination"] as? String,
@@ -249,11 +287,15 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
             views[name] = try appearance(view["surface"], kind: "surface")
+
         }
+
         raw["views"] = views
         raw["defaultCardSurface"] = try appearance(payload["default_card_surface"], kind: "surface")
         raw["defaultNoteSurface"] = try appearance(payload["default_note_surface"], kind: "surface")
+
         return try JSONDecoder().decode(StudioSettings.self, from: JSONSerialization.data(withJSONObject: raw))
     }
 
@@ -267,6 +309,7 @@ extension PortableEditableContent
     {
 
         let all = records.filter { $0["record_type"] as? String == "studio_artwork" }
+
         guard let library else
         {
             guard all.isEmpty else
@@ -284,15 +327,20 @@ extension PortableEditableContent
             throw Failure.invalid
         }
         return try ids.map { id in
+
             let document = try record(id, kind: "studio_artwork")
+
             guard let payload = document["payload"] as? [String: Any] else
             {
                 throw Failure.invalid
             }
+
             var raw = try mapped(payload, fields: ["name": "name", "surface": "surface", "header": "header",
                 "italic_subtitle": "italicSubtitle", "title_color": "titleColor", "text_color": "textColor"])
+
             raw["id"] = id
             raw["surface"] = try appearance(payload["surface"], kind: "surface")
+
             return try JSONDecoder().decode(StudioArtwork.self, from: JSONSerialization.data(withJSONObject: raw))
         }
     }
@@ -316,7 +364,9 @@ extension PortableEditableContent
         {
             throw Failure.invalid
         }
+
         let raw = try appearance(payload["week_board_defaults"], kind: "board_appearance")
+
         return try JSONDecoder().decode(BoardAppearance.self, from: JSONSerialization.data(withJSONObject: raw))
     }
 }

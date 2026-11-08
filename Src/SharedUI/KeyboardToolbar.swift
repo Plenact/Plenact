@@ -51,7 +51,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[WorkspaceNoteVisibilityKey.self] = newValue
+
         }
 
     }
@@ -70,6 +72,7 @@ struct WorkspaceBottomBarHeightKey: EnvironmentKey
 
 
     static let defaultValue: CGFloat = 0
+
 }
 
 
@@ -94,7 +97,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[WorkspaceBottomBarHeightKey.self] = newValue
+
         }
 
     }
@@ -118,6 +123,7 @@ struct CardKeyboardNavigation
 
     var previous: (() -> Void)? = nil
     var next:     (() -> Void)? = nil
+
 }
 
 
@@ -131,6 +137,7 @@ struct CardKeyboardNavigationKey: EnvironmentKey
 {
 
     static let defaultValue = CardKeyboardNavigation()
+
 }
 
 
@@ -155,7 +162,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[CardKeyboardNavigationKey.self] = newValue
+
         }
 
     }
@@ -239,6 +248,7 @@ struct KeyboardCardActions
     var attachment:       (() -> Void)? = nil
     var checklist:        (() -> Void)? = nil
     var showsUpperBorder: Bool?         = nil
+
 }
 
 
@@ -256,6 +266,7 @@ struct KeyboardFormatting
     let toggle: (UIFontDescriptor.SymbolicTraits) -> Void
     let color:  (String) -> Void
     let font:   (String?, Double?) -> Void
+
 }
 
 
@@ -275,6 +286,7 @@ final class PlenactKeyboard
     private var observers:        [NSObjectProtocol]            = []
     private var contexts:         [(UUID, KeyboardCardActions)] = []
     private weak var activeInput: UIView?
+
     var actions:                  KeyboardCardActions
     {
         contexts.last?.1 ?? KeyboardCardActions()
@@ -398,6 +410,7 @@ final class PlenactKeyboard
     {
 
         activeInput = view
+
         if let field = view as? UITextField
         {
 
@@ -405,6 +418,7 @@ final class PlenactKeyboard
             {
 
                 field.inputAccessoryView = PlenactKeyboardToolbar(input: field)
+
             }
             (field.inputAccessoryView as? PlenactKeyboardToolbar)?.rebuild()
             field.reloadInputViews()
@@ -416,6 +430,7 @@ final class PlenactKeyboard
             {
 
                 text.inputAccessoryView = PlenactKeyboardToolbar(input: text)
+
             }
             (text.inputAccessoryView as? PlenactKeyboardToolbar)?.rebuild()
             text.reloadInputViews()
@@ -436,6 +451,7 @@ final class PlenactKeyboard
 
         let toolbar =
         (activeInput as? UITextField)?.inputAccessoryView ?? (activeInput as? UITextView)?.inputAccessoryView
+
         (toolbar as? PlenactKeyboardToolbar)?.updateAvailability()
     }
 
@@ -480,16 +496,21 @@ final class PlenactKeyboardToolbar: UIView
 
         self.input = input;
         self.formatting = formatting
+
         super.init(frame: CGRect(x: 0, y: 0, width: 390, height: 44))
+
         autoresizingMask = [.flexibleWidth]
         backgroundColor = .clear
         // Extend only the background beneath the system keyboard; controls remain in 44pt.
         clipsToBounds = false
         keyboardBackdrop.isUserInteractionEnabled = false
         keyboardBackdrop.accessibilityElementsHidden = true
+
         addSubview(keyboardBackdrop)
+
         upperEdge.fillColor = UIColor.clear.cgColor
         upperEdge.lineWidth = 1
+
         layer.addSublayer(upperEdge)
         rebuild()
     }
@@ -522,9 +543,13 @@ final class PlenactKeyboardToolbar: UIView
     {
 
         super.layoutSubviews()
+
         let radius: CGFloat = 24
+
         keyboardBackdrop.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height + radius)
+
         let shape = CAShapeLayer()
+
         shape.path =
         UIBezierPath(
             roundedRect: keyboardBackdrop.bounds,
@@ -532,7 +557,9 @@ final class PlenactKeyboardToolbar: UIView
             cornerRadii: CGSize(width: radius, height: radius)
         ).cgPath
         keyboardBackdrop.layer.mask = shape
+
         let edge = UIBezierPath()
+
         edge.move(to: CGPoint(x: 0.25, y: radius))
         edge.addArc(
             withCenter: CGPoint(x: radius, y: radius), radius: radius - 0.25,
@@ -541,9 +568,11 @@ final class PlenactKeyboardToolbar: UIView
         edge.addArc(
             withCenter: CGPoint(x: bounds.width - radius, y: radius), radius: radius - 0.25,
             startAngle: .pi * 1.5, endAngle: .pi * 2, clockwise: true)
+
         upperEdge.path = edge.cgPath
         upperEdge.strokeColor = UIColor.label.resolvedColor(with: traitCollection).withAlphaComponent(0.22).cgColor
         upperEdge.isHidden = !overlaysLightNeutralSurface()
+
     }
 
 
@@ -594,8 +623,10 @@ final class PlenactKeyboardToolbar: UIView
                 _ in
                 run()
             })
+
         item.accessibilityLabel = title
         item.width = 30
+
         return item
     }
 
@@ -637,6 +668,7 @@ final class PlenactKeyboardToolbar: UIView
     {
 
         contextualButtons = []
+
         let exit     = contextual("Return from Card or Note", symbol: "chevron.left", key: \.exit)
         let previous = contextual("Previous item in this list", symbol: "arrow.left", key: \.previous)
         let next     = contextual("Next item in this list", symbol: "arrow.right", key: \.next)
@@ -654,12 +686,15 @@ final class PlenactKeyboardToolbar: UIView
 
         undoButton = undo;
         redoButton = redo
+
         let attachment = contextual("Add attachment", symbol: "paperclip", key: \.attachment)
         let checklist  = contextual("Add checklist", symbol: "checklist", key: \.checklist)
         let format     = UIBarButtonItem(image: UIImage(systemName: "textformat"), menu: formattingMenu())
+
         format.accessibilityLabel = "Font and formatting";
         format.width = 30;
         format.isEnabled = formatting != nil
+
         let done = action("Hide keyboard", symbol: "chevron.down")
         {
             [weak input] in
@@ -667,17 +702,22 @@ final class PlenactKeyboardToolbar: UIView
         }
 
         let models = [exit, previous, next, undo, redo, attachment, checklist, format, done]
+
         buttonViews = models.map
         {
             item in
+
             let button = UIButton(type: .system, primaryAction: item.primaryAction)
+
             button.setTitle(nil, for: .normal)
             button.setImage(item.image, for: .normal)
+
             button.menu = item.menu;
             button.showsMenuAsPrimaryAction = item.menu != nil
             button.accessibilityLabel = item.accessibilityLabel
             button.widthAnchor.constraint(equalToConstant: 44).isActive = true
             button.heightAnchor.constraint(equalToConstant: 44).isActive = true
+
             return (item, button)
         }
 
@@ -686,9 +726,11 @@ final class PlenactKeyboardToolbar: UIView
                 $0.1
             })
         let scroll = UIScrollView();
+
         scroll.showsHorizontalScrollIndicator = false
         scroll.accessibilityLabel = "Editor actions"
         scroll.accessibilityHint = "Scroll horizontally for additional keyboard actions"
+
         if #available(iOS 26.0, *)
         {
 
@@ -697,10 +739,13 @@ final class PlenactKeyboardToolbar: UIView
             scroll.bottomEdgeEffect.isHidden = true
             scroll.leftEdgeEffect.isHidden = true;
             scroll.rightEdgeEffect.isHidden = true
+
         }
 
         scroll.addSubview(middle);
+
         middle.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
                 middle.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
                 middle.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
@@ -708,7 +753,9 @@ final class PlenactKeyboardToolbar: UIView
                 middle.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
                 middle.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor)
             ])
+
         let strip = UIStackView(arrangedSubviews: [buttonViews[0].1, scroll, buttonViews[8].1])
+
         subviews.filter
         {
             $0 !== keyboardBackdrop
@@ -718,7 +765,9 @@ final class PlenactKeyboardToolbar: UIView
         }
 
         addSubview(strip);
+
         strip.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
                 strip.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
                 strip.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
@@ -745,17 +794,22 @@ final class PlenactKeyboardToolbar: UIView
     {
 
         setNeedsLayout()
+
         undoButton?.isEnabled = input?.undoManager?.canUndo == true
         redoButton?.isEnabled = input?.undoManager?.canRedo == true
+
         for (button, key) in contextualButtons
         {
 
             button.isEnabled = PlenactKeyboard.shared.actions[keyPath: key] != nil
+
         }
 
         for (item, button) in buttonViews
         {
+
             button.isEnabled = item.isEnabled
+
         }
 
     }
@@ -866,6 +920,7 @@ final class PlenactKeyboardToolbar: UIView
                 }
 
             })
+
         return UIMenu(title: "Text formatting", children: [style, fonts, sizes, colors])
     }
 

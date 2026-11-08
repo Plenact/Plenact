@@ -175,6 +175,7 @@ struct ContentCreationKindPicker: View
 
 
     @Binding var presentation: ItemPresentation
+
     var body:                  some View
     {
 
@@ -274,6 +275,7 @@ struct TodayCaptureActions: View
 
 
     let onSelect: (TodayCaptureAction) -> Void
+
     var body:     some View
     {
 
@@ -358,6 +360,7 @@ struct QuickCaptureSchedule: Equatable
     {
 
         let kind: CardDateKind = includesTime ? .dateAndTime : .date
+
         card.startDate = start.map
         {
             kind.normalized($0, calendar: calendar)
@@ -370,6 +373,7 @@ struct QuickCaptureSchedule: Equatable
 
         card.startDateKind = kind;
         card.dueDateKind = kind
+
     }
 
 }
@@ -394,6 +398,7 @@ struct QuickCaptureSubmission
     let actions:      [String]?
     let attachments:  [KanbanAttachment]
     let schedule:     QuickCaptureSchedule?
+
 }
 
 
@@ -439,12 +444,14 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
     {
 
         let text = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard savesText, !text.isEmpty else
         {
             return existing
         }
 
         let result = NSMutableAttributedString(attributedString: PlanRichText.attributed(existing))
+
         result.append(NSAttributedString(string: (result.length == 0 ? "" : "\n\n") + text))
         return PlanRichText.encode(result)
     }

@@ -67,6 +67,7 @@ struct DailyReviewDecision: Codable, Equatable, Identifiable
     let result: DailyPlanPriority
     let action: DailyReviewAction
     var recordedAt = Date()
+
 }
 
 
@@ -88,6 +89,7 @@ struct DailyEveningReview: Codable, Equatable
     var tomorrow                            = ""
     var decisions:    [DailyReviewDecision] = []
     var achievements: [DailyPlanPriority]   = []
+
 }
 
 
@@ -130,6 +132,7 @@ enum TodayReviewSelection
             {
                 $0.isActive && $0.kind == .list && $0.title == "On the Table"
             } .map(\.id))
+
         return access.searchableItems.filter
         {
             item in
@@ -145,6 +148,7 @@ enum TodayReviewSelection
 
             let inWorkingList =
             (item.collectionID == day?.id && item.listID == listID) || tables.contains(item.collectionID)
+
             return selected || (inWorkingList && item.card.presentation == .card)
         }
 
@@ -211,11 +215,14 @@ struct TodayReviewView: View
     @State private var selectedDate = Date()
     @State private var chosenDateDecision: (PlanningSearchResult, String)?
     @State private var operationError = false
+
     private var calendar: Calendar
     {
 
         var value = access?.document.calendar ?? .current
+
         value.timeZone = TimeZone(identifier: plan.timeZoneID) ?? .current
+
         return value
     }
 
@@ -282,9 +289,12 @@ struct TodayReviewView: View
             set:
             {
                 value in
+
                 var updated = review;
+
                 updated[keyPath: key] = value;
                 plan.eveningReview = updated
+
             })
     }
 
@@ -304,6 +314,7 @@ struct TodayReviewView: View
 
         pendingSource = source;
         pendingAction = action
+
     }
 
 
@@ -319,15 +330,19 @@ struct TodayReviewView: View
 
         let previous = plan.eveningReview
         var updated  = review
+
         updated.step = min(2, step + 1)
+
         if step == 2
         {
 
             updated.completedAt = .now
             updated.achievements = achievements.map(DailyPlanPriority.init)
+
         }
 
         plan.eveningReview = updated
+
         if onSave()
         {
 
@@ -337,7 +352,9 @@ struct TodayReviewView: View
             }
             else
             {
+
                 step += 1
+
             }
 
         }
@@ -346,6 +363,7 @@ struct TodayReviewView: View
 
             plan.eveningReview = previous;
             operationError = true
+
         }
 
     }
@@ -370,12 +388,15 @@ struct TodayReviewView: View
             operationError = true;
             pendingAction = nil;
             pendingSource = nil;
+
             return
         }
 
         onCommitted(saved)
+
         pendingAction = nil;
         pendingSource = nil
+
     }
 
     var body: some View
@@ -436,7 +457,9 @@ struct TodayReviewView: View
                         ForEach(plan.priorities)
                         {
                             priority in
+
                             let source = priority.resolve(in: access?.searchableItems ?? [])
+
                             VStack(alignment: .leading, spacing: 4)
                             {
 
@@ -465,7 +488,9 @@ struct TodayReviewView: View
                         Text(
                                                                         "Give each item a decision, or leave it for later. Keeping work is a valid outcome; no List has to be empty."
                         ).foregroundStyle(.secondary)
+
                         let unfinished = TodayReviewSelection.pending(items, review: plan.eveningReview)
+
                         if unfinished.isEmpty
                         {
                             Text("Nothing else needs a decision right now.")
@@ -522,7 +547,9 @@ struct TodayReviewView: View
                                         !queueAvailable)
                                     Button("Choose a day")
                                     {
+
                                         dateSource = source
+
                                     }
 
                                     if source.card.presentation == .card
@@ -619,7 +646,9 @@ struct TodayReviewView: View
                     {
                         Button("Previous step")
                         {
+
                             step -= 1
+
                         }
 
                     }
@@ -648,7 +677,9 @@ struct TodayReviewView: View
             }
             .onAppear
             {
+
                 step = min(2, max(0, review.completedAt == nil ? review.step : 0))
+
             }
             .confirmationDialog(
                 pendingAction?.title ?? "Apply decision?",
@@ -660,8 +691,10 @@ struct TodayReviewView: View
                     {
                         if !$0
                         {
+
                             pendingAction = nil;
                             pendingSource = nil
+
                         }
 
                     }),
@@ -675,6 +708,7 @@ struct TodayReviewView: View
 
                     pendingAction = nil;
                     pendingSource = nil
+
                 }
 
             }
@@ -696,6 +730,7 @@ struct TodayReviewView: View
                     {
 
                         chosenDateDecision = nil;
+
                         propose(.date(key), source: source)
                     }
 
@@ -720,7 +755,9 @@ struct TodayReviewView: View
                         {
                             Button("Cancel")
                             {
+
                                 dateSource = nil
+
                             }
 
                         }
@@ -733,6 +770,7 @@ struct TodayReviewView: View
 
                                 chosenDateDecision = (source, PlanningDate.key(selectedDate, calendar: calendar))
                                 dateSource = nil
+
                             }
 
                         }
@@ -811,14 +849,17 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
         timeZoneID = calendar.timeZone.identifier
         firstWeekday = calendar.firstWeekday
         id = startKey + "|" + timeZoneID + "|" + String(firstWeekday)
+
     }
 
     var calendar: Calendar
     {
 
         var value = Calendar(identifier: .gregorian)
+
         value.timeZone = TimeZone(identifier: timeZoneID) ?? .current
         value.firstWeekday = firstWeekday
+
         return value
     }
 
@@ -884,6 +925,7 @@ enum WeeklyReviewStore
 
         var version                               = 1;
         var records: [String: WeeklyReviewRecord] = [:]
+
     }
 
 
@@ -957,16 +999,20 @@ enum WeeklyReviewStore
     {
 
         var document = try load(from: defaults)
+
         guard document.records[draft.id] == baseline else
         {
             throw DailyPlanStore.Failure.conflict
         }
 
         var saved = draft;
+
         saved.updatedAt = .now
         document.records[saved.id] = saved
+
         let data = try JSONEncoder().encode(document)
         let old  = defaults.object(forKey: key)
+
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
         {
@@ -1040,6 +1086,7 @@ struct WeeklyReviewView: View
         self.defaults = defaults
         _selectedDate = State(initialValue: date)
         _draft = State(initialValue: WeeklyReviewRecord(date: date, calendar: calendar))
+
     }
 
     private var dirty: Bool
@@ -1067,6 +1114,7 @@ struct WeeklyReviewView: View
 
                 $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id
             } .map(\.id))
+
         return sources.filter
         {
             item in
@@ -1098,6 +1146,7 @@ struct WeeklyReviewView: View
         {
 
             let document = try WeeklyReviewStore.load(from: defaults)
+
             daily = try DailyPlanStore.load(from: defaults)
             records = document.records.values.sorted
             {
@@ -1109,12 +1158,15 @@ struct WeeklyReviewView: View
             selectedDate = PlanningDate.date(draft.startKey, calendar: draft.calendar) ?? selectedDate
             loaded = true;
             loadFailed = false
+
         }
         catch
         {
+
             loaded = true;
             loadFailed = true;
             self.error = error.localizedDescription
+
         }
 
     }
@@ -1137,7 +1189,9 @@ struct WeeklyReviewView: View
                 draft[keyPath: path]
             }, set:
             {
+
                 draft[keyPath: path] = $0
+
             })
     }
 
@@ -1156,15 +1210,20 @@ struct WeeklyReviewView: View
     {
 
         let before = draft
+
         if advance
         {
             if draft.step == 2
             {
+
                 draft.completedAt = .now
+
             }
             else
             {
+
                 draft.step += 1
+
             }
 
         }
@@ -1173,8 +1232,10 @@ struct WeeklyReviewView: View
         {
 
             let saved = try WeeklyReviewStore.save(draft, replacing: baseline, to: defaults)
+
             baseline = saved;
             draft = saved
+
             records.removeAll
             {
                 $0.id == saved.id
@@ -1184,8 +1245,10 @@ struct WeeklyReviewView: View
         }
         catch
         {
+
             draft = before;
             self.error = error.localizedDescription
+
         }
 
     }
@@ -1206,6 +1269,7 @@ struct WeeklyReviewView: View
 
         pending = source;
         self.action = action
+
     }
 
 
@@ -1223,11 +1287,13 @@ struct WeeklyReviewView: View
         {
 
             error = "The item or review changed, or saving failed. Your draft remains open.";
+
             return
         }
 
         baseline = saved;
         draft = saved
+
     }
 
     var body: some View
@@ -1252,7 +1318,9 @@ struct WeeklyReviewView: View
                                                                 set:
                                                                 {
                                                                     date in
+
                                                                     selectedDate = date;
+
                                                                     load(WeeklyReviewRecord(date: date, calendar: calendar))
                                                                 }), displayedComponents: .date
                     )
@@ -1308,6 +1376,7 @@ struct WeeklyReviewView: View
                     {
 
                         let days = draft.dailyPlans(in: daily)
+
                         Text(
                                                                         "\(days.count) of 7 days have saved plans. Missing days are welcome; no catching up is required."
                         ).foregroundStyle(.secondary)
@@ -1437,7 +1506,9 @@ struct WeeklyReviewView: View
 
                                     Button("Choose a calendar day")
                                     {
+
                                         dateSource = source
+
                                     }
 
                                     Button("Mark complete")
@@ -1506,7 +1577,9 @@ struct WeeklyReviewView: View
 
                         Button("Choose next week's priorities", systemImage: "plus.circle")
                         {
+
                             showsPicker = true
+
                         }
 
                     }
@@ -1550,7 +1623,9 @@ struct WeeklyReviewView: View
                         {
                             Button("Previous step")
                             {
+
                                 draft.step -= 1
+
                             }
 
                         }
@@ -1590,7 +1665,9 @@ struct WeeklyReviewView: View
                     {
                         if dirty
                         {
+
                             confirmsDiscard = true
+
                         }
                         else
                         {
@@ -1643,8 +1720,10 @@ struct WeeklyReviewView: View
                     {
                         if !$0
                         {
+
                             action = nil;
                             pending = nil
+
                         }
 
                     }),
@@ -1656,8 +1735,10 @@ struct WeeklyReviewView: View
                 {
 
                     apply();
+
                     action = nil;
                     pending = nil
+
                 }
 
                 Button("Cancel", role: .cancel)
@@ -1665,6 +1746,7 @@ struct WeeklyReviewView: View
 
                     action = nil;
                     pending = nil
+
                 }
 
             }
@@ -1681,7 +1763,9 @@ struct WeeklyReviewView: View
                 {
                     if let (source, key) = chosenDate
                     {
+
                         chosenDate = nil;
+
                         propose(.date(key), source)
                     }
 
@@ -1702,7 +1786,9 @@ struct WeeklyReviewView: View
                         {
                             Button("Cancel")
                             {
+
                                 dateSource = nil
+
                             }
 
                         }
@@ -1716,6 +1802,7 @@ struct WeeklyReviewView: View
                                 chosenDate = (source, PlanningDate.key(targetDate, calendar: calendar));
 
                                 dateSource = nil
+
                             }
 
                         }
@@ -1736,7 +1823,9 @@ struct WeeklyReviewView: View
                     {
                         if !$0
                         {
+
                             error = nil
+
                         }
 
                     }))

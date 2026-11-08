@@ -53,6 +53,7 @@ struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable
         self.description = description
         self.checklists = checklists
         self.comments = comments
+
     }
 
 }
@@ -135,13 +136,21 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
 
 
         case .webLink:
+
             self = .webLink(try container.decode(URL.self, forKey: .url))
+
         case .standard:
+
             self = .standard
+
         case .linkedCard:
+
             self = .linkedCard(cardID: try container.decode(Int.self, forKey: .cardID))
+
         case .actionDetail:
+
             self = .actionDetail(try container.decode(KanbanChecklistActionDetail.self, forKey: .detail))
+
         }
 
     }
@@ -244,6 +253,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     let id:          UUID    /* Stable checklist action ID */
     var title:       String  /* User-facing action text    */
     var isCompleted: Bool    /* Current completion state   */
+
     var content:     KanbanChecklistActionContent
     {
 
@@ -277,11 +287,17 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         case .standard:
             break
         case .linkedCard(let id):
+
             retainedCardID = id
+
         case .actionDetail(let detail):
+
             retainedDetail = detail
+
         case .webLink(let url):
+
             retainedURL = url
+
         }
 
     }
@@ -329,6 +345,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         self.title = title
         self.isCompleted = isCompleted
         self.content = content
+
         retainActiveContent()
     }
 
@@ -375,6 +392,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         retainedCardID = try container.decodeIfPresent(Int.self, forKey: .retainedCardID)
         retainedURL = try container.decodeIfPresent(URL.self, forKey: .retainedURL)
         linkedCollectionID = try container.decodeIfPresent(UUID.self, forKey: .linkedCollectionID)
+
         retainActiveContent()
     }
 
@@ -512,6 +530,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
 
 
                 normalizedItems[index].isCompleted = completedItemIndices.contains(index)
+
             }
 
         }
@@ -523,6 +542,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
 
 
                 normalizedItems[index].isCompleted = index < min(completed, normalizedItems.count)
+
             }
 
         }
@@ -531,6 +551,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
         self.id = id
         self.title = title
         self.items = normalizedItems
+
     }
 
 
@@ -567,6 +588,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
 
 
                     currentItems[index].isCompleted = legacyCompletedIndices.contains(index)
+
                 }
 
             }

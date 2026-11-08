@@ -52,6 +52,7 @@ enum MigrationContentGuard
     {
 
         let prefix = "plenact-rich-v1:"
+
         guard value.hasPrefix(prefix), let data = Data(base64Encoded: String(value.dropFirst(prefix.count))),
               let decoded = try? JSONSerialization.jsonObject(with: data) else
         {
@@ -109,7 +110,9 @@ enum MigrationContentGuard
         }
         if let array = value as? [Any]
         {
+
             let normalized = try array.map { try comparable($0) }
+
             if ["dismissedActivityIDs", "hidden", "savedCardIDs", "completedItemIndices", "important", "bookmarked", "allDay"].contains(key)
             {
                 return try normalized.map { try JSONSerialization.data(withJSONObject: $0, options: [.sortedKeys, .fragmentsAllowed]) }
@@ -153,8 +156,10 @@ enum MigrationContentGuard
             {
                 if let original = content[active], let mirror = object[retained], !(mirror is NSNull)
                 {
+
                     let left  = try JSONSerialization.data(withJSONObject: original, options: [.fragmentsAllowed, .sortedKeys])
                     let right = try JSONSerialization.data(withJSONObject: mirror, options: [.fragmentsAllowed, .sortedKeys])
+
                     guard left == right else
                     {
                         throw MigrationContentValues.Failure.invalid("divergent_retained_source")
@@ -185,19 +190,26 @@ enum MigrationContentGuard
                 try richText(text)
             }
         }
+
         let accepted: Set<String>
+
         if type == "action_content"
         {
+
             accepted = ["kind", "cardID", "detail", "url"]
+
         }
         else
         {
+
             accepted = fields[type] ?? []
+
         }
         guard Set(object.keys).isSubset(of: accepted) else
         {
             throw MigrationContentValues.Failure.unsupportedField(type)
         }
+
         let children: [String: String] = ["collections": "PersonalCollection", "collection": "PersonalCollection",
             "weeks": "DatedPlanningWeek", "templates": "PlanningRoutineTemplate", "exampleFocus": "PlanningExampleFocus",
             "lists": "KanbanList", "cards": "KanbanCard", "archivedCards": "KanbanCard", "checklists": "KanbanChecklist",
@@ -207,16 +219,23 @@ enum MigrationContentGuard
             "editHistory": "CardEditRecord", "changes": "CardEditChange", "boardAppearance": "BoardAppearance",
             "collectionBackground": "CollectionBackground", "studioSurface": "StudioSurface", "studioCardSurface": "StudioSurface",
             "remotePhoto": "StudioRemotePhoto", "iconColor": "ProfileColor", "addItemTextColor": "ProfileColor"]
+
         for (key, child) in object where !(child is NSNull)
         {
+
             var childType = children[key]
+
             if key == "appearance"
             {
+
                 childType = "ItemAppearance"
+
             }
             if key == "color", type == "PersonalCollection"
             {
+
                 childType = "ProfileColor"
+
             }
             if let childType
             {
@@ -234,7 +253,9 @@ enum MigrationContentGuard
             }
             if ["dismissedActivityIDs", "hidden", "order", "completedItemIndices", "savedCardIDs", "important", "bookmarked", "allDay"].contains(key), let array = child as? [Any]
             {
+
                 let encoded = try array.map { try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys]) }
+
                 guard Set(encoded).count == array.count else
                 {
                     throw MigrationContentValues.Failure.invalid("duplicate_source_set")

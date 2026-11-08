@@ -155,13 +155,17 @@ struct KanbanListView: View
     {
 
         var title = AttributedString(list.title)
+
         title.font = .title3.weight(.bold)
+
         if let datedTitle
         {
 
             var date = AttributedString(String(datedTitle.dropFirst(list.title.count)))
+
             date.font = .title3.weight(.regular).italic()
             date.foregroundColor = .secondary
+
             title.append(date)
         }
 
@@ -173,6 +177,7 @@ struct KanbanListView: View
     /// Opens card creation after the active list-actions sheet has dismissed.
     @State private var opensNewCardAfterDismissal = false  /* Deferred creation request after another sheet closes */
     @State private var isWatching                 = false  /* Indicates whether the user is watching the list      */
+
     private var effectiveAppearance: ItemAppearance
     {
         boardAppearance.resolved(list.appearance)
@@ -274,6 +279,7 @@ struct KanbanListView: View
 
 
                 state = true
+
             }
 
         }
@@ -580,6 +586,7 @@ struct KanbanListView: View
                     {
 
                         activeSheet = .listActions
+
                     }
                     label:
                     {
@@ -611,12 +618,16 @@ struct KanbanListView: View
                     Color.clear
                     .onAppear
                     {
+
                         headerHeight = header.size.height
+
                     }
                     .onChange(of: header.size.height)
                     {
                         _, height in
+
                         headerHeight = height
+
                     }
 
                 }
@@ -643,11 +654,15 @@ struct KanbanListView: View
                 list: list, labels: labelLibrary,
                 onReveal:
                 {
+
                     guidanceVisible = true
+
                 },
                 onPresentationChange:
                 {
+
                     guidanceFooterVisible = $0
+
                 }
             )
             .environment(\.defaultMinListRowHeight, 0)
@@ -732,14 +747,18 @@ struct KanbanListView: View
                         CardDestinationMenu(card: card)
                         Button("Delete Divider", systemImage: "trash", role: .destructive)
                         {
+
                             deletingCard = card
+
                         }
 
                     }
 
                     .accessibilityAction(named: "Delete Divider")
                     {
+
                         deletingCard = card
+
                     }
                     .listRowInsets(
                         usesNoteList
@@ -909,7 +928,9 @@ struct KanbanListView: View
                             enabled: editMode != .active,
                             onRequest:
                             {
+
                                 deletingCard = card
+
                             }))
                 }
 
@@ -939,7 +960,9 @@ struct KanbanListView: View
                 onCreate: onAddCard,
                 onOpenComposer:
                 {
+
                     activeSheet = .newCard
+
                 }
             )
             .background
@@ -967,7 +990,9 @@ struct KanbanListView: View
         .onPreferenceChange(BoardCardHeightPreferenceKey.self)
         {
             heights in
+
             var updated = measuredCardHeights
+
             updated.merge(heights, uniquingKeysWith:
                 {
                     _, latest in
@@ -975,7 +1000,9 @@ struct KanbanListView: View
                 })
             if updated != measuredCardHeights
             {
+
                 measuredCardHeights = updated
+
             }
 
         }
@@ -1052,7 +1079,9 @@ struct KanbanListView: View
                             {
                                 if !$0
                                 {
+
                                     deletingCard = nil
+
                                 }
 
                             }
@@ -1075,12 +1104,15 @@ struct KanbanListView: View
 
 
                 deletingCard = nil
+
             }
 
 
             Button("Cancel", role: .cancel)
             {
+
                 deletingCard = nil
+
             }
 
         }
@@ -1099,6 +1131,7 @@ struct KanbanListView: View
             }
 
             activeSheet = .listActions
+
             onConsumeListActions()
         }
         .onChange(of: ListCheckmarkReset.values(in: list))
@@ -1106,7 +1139,9 @@ struct KanbanListView: View
             _, _ in
             if checkmarkReset?.canRestore(list) == false
             {
+
                 checkmarkReset = nil
+
             }
 
         }
@@ -1114,7 +1149,9 @@ struct KanbanListView: View
         .environment(\.inheritedSubtitleItalic, boardAppearance.resolvedSubtitleItalic(list: list.appearance))
         .onDisappear
         {
+
             checkmarkReset = nil
+
         }
         .sheet(
             item: $activeSheet,
@@ -1125,6 +1162,7 @@ struct KanbanListView: View
                 {
 
                     opensDayAfterDismissal = false
+
                     onOpenDayView?()
                     return
                 }
@@ -1138,6 +1176,7 @@ struct KanbanListView: View
 
                 opensNewCardAfterDismissal = false
                 activeSheet = .newCard
+
             }
         )
         {
@@ -1158,6 +1197,7 @@ struct KanbanListView: View
 
                         opensNewCardAfterDismissal = true
                         activeSheet = nil
+
                     },
                     onCopyList: onCopyList,
                     onMoveToBoard: onMoveToBoard,
@@ -1181,6 +1221,7 @@ struct KanbanListView: View
 
                         opensDayAfterDismissal = true
                         activeSheet = nil
+
                     }
                 )
                 .databaseActivityOverlay()
@@ -1197,6 +1238,7 @@ struct KanbanListView: View
                         }
 
                         inlineCaptureDraft.title = ""
+
                         return true
                     }
                 )

@@ -102,6 +102,7 @@ struct PlenactUserDirectoryResponse: Decodable
 
 
     let users: [PlenactRemoteUser] /* Active users visible in the directory */
+
 }
 
 
@@ -116,6 +117,7 @@ struct PlenactCreatedUserResponse: Decodable
 
 
     let user: PlenactRemoteUser /* Newly provisioned account identity */
+
 }
 
 
@@ -132,6 +134,7 @@ struct PlenactLoginRequest: Encodable
     let action = "login"  /* Authentication operation           */
     let username: String  /* Account handle submitted for login */
     let password: String  /* Account secret sent over HTTPS     */
+
 }
 
 
@@ -146,6 +149,7 @@ struct PlenactLogoutRequest: Encodable
 
 
     let action = "logout" /* Session-revocation operation */
+
 }
 
 
@@ -449,7 +453,9 @@ enum PlenactSessionStore
 
             attributes.forEach
             {
+
                 insert[$0.key] = $0.value
+
             }
 
 
@@ -480,6 +486,7 @@ enum PlenactSessionStore
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
         ]
+
         SecItemDelete(query as CFDictionary)
     }
 
@@ -545,6 +552,7 @@ struct PlenactAPIClient
 
 
             configuredURL = baseURL /* Use the explicit endpoint */
+
         }
         else if let value = Bundle.main.object(forInfoDictionaryKey: "PLENACT_API_BASE_URL")
         as? String, /* Configured base URL text */
@@ -554,12 +562,14 @@ struct PlenactAPIClient
 
 
             configuredURL = URL(string: value) /* Parse the configured endpoint */
+
         }
         else
         {
 
 
             configuredURL = nil /* No endpoint configured for this build */
+
         }
 
 
@@ -604,6 +614,7 @@ struct PlenactAPIClient
 
         self.baseURL = normalizedURL  /* Store validated endpoint */
         self.session = session        /* Store request transport  */
+
     }
 
 
@@ -632,6 +643,7 @@ struct PlenactAPIClient
             method: "POST",
             body: PlenactLoginRequest(username: username, password: password)
         )
+
         guard PlenactSessionStore.save(response) else
         {
 
@@ -696,6 +708,7 @@ struct PlenactAPIClient
             method: "GET",
             token: token
         )
+
         return response.users
     }
 
@@ -1092,6 +1105,7 @@ struct PlenactAPIClient
             let response: Response = try await executeRequest( /* Decoded response from the API */
                 path: path, method: method, token: token, bodyData: bodyData
             )
+
             await DatabaseActivity.shared.end(operation)
 
             return response
@@ -1144,7 +1158,9 @@ struct PlenactAPIClient
 
 
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
             request.httpBody = bodyData
+
         }
 
 
@@ -1242,6 +1258,7 @@ struct PlenactBoardWriteResponse: Decodable
 
     let revision: Int64                 /* Newly accepted snapshot revision    */
     let document: PlenactBoardDocument  /* Stored document returned by the API */
+
 }
 
 
@@ -1257,4 +1274,5 @@ struct PlenactAssignmentResponse: Decodable
 
     let revision: Int64  /* Current Board revision           */
     let changed:  Bool   /* Whether assignment state changed */
+
 }

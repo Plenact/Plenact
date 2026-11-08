@@ -49,6 +49,7 @@ struct ArchivedCollectionContentsView: View
         var updated = collection /* Archived Board snapshot receiving the requested change */
 
         BoardContentDeletion.card(id, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
+
         collection = updated
 
         return !collection.lists.contains
@@ -102,14 +103,18 @@ struct ArchivedCollectionContentsView: View
 
                                 Button("Delete Card", systemImage: "trash", role: .destructive)
                                 {
+
                                     deletingCard = card
+
                                 }
 
                             }
 
                             .accessibilityAction(named: "Delete Card")
                             {
+
                                 deletingCard = card
+
                             }
 
                         }
@@ -117,7 +122,9 @@ struct ArchivedCollectionContentsView: View
 
                         Button("Delete List", systemImage: "trash", role: .destructive)
                         {
+
                             deletingList = list
+
                         }
 
                     }
@@ -156,6 +163,7 @@ struct ArchivedCollectionContentsView: View
                         {
 
                             confirmsDeleteBoard = true
+
                         }
 
                     }
@@ -174,7 +182,9 @@ struct ArchivedCollectionContentsView: View
                                         {
                                             if !$0
                                             {
+
                                                 deletingList = nil
+
                                             }
 
                                         }
@@ -193,17 +203,22 @@ struct ArchivedCollectionContentsView: View
 
                         BoardContentDeletion.list(
                             deletingList.id, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
+
                         collection = updated
+
                     }
 
 
                     deletingList = nil
+
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
+
                     deletingList = nil
+
                 }
 
             }
@@ -249,7 +264,9 @@ struct ArchivedCollectionContentsView: View
                                         {
                                             if !$0
                                             {
+
                                                 deletingCard = nil
+
                                             }
 
                                         }
@@ -269,12 +286,15 @@ struct ArchivedCollectionContentsView: View
 
 
                     deletingCard = nil
+
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
+
                     deletingCard = nil
+
                 }
 
             }
@@ -373,7 +393,9 @@ struct ArchivedListsView: View
                         .accessibilityLabel("Restore \(list.title)")
                         Button("Delete", systemImage: "trash", role: .destructive)
                         {
+
                             deletingList = list
+
                         }
                         .labelStyle(.iconOnly)
                         .accessibilityLabel("Delete \(list.title)")
@@ -410,7 +432,9 @@ struct ArchivedListsView: View
                                         {
                                             if !$0
                                             {
+
                                                 deletingList = nil
+
                                             }
 
                                         }
@@ -430,12 +454,15 @@ struct ArchivedListsView: View
 
 
                     deletingList = nil
+
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
+
                     deletingList = nil
+
                 }
 
             }
@@ -539,7 +566,9 @@ struct ArchivedListContentsView: View
                 Text(PlanRichText.display(card.funParagraph)).foregroundStyle(.secondary)
                 Button("Delete Card", systemImage: "trash", role: .destructive)
                 {
+
                     deletingCard = card
+
                 }
 
             }
@@ -555,7 +584,9 @@ struct ArchivedListContentsView: View
 
                 Button("Delete List", systemImage: "trash", role: .destructive)
                 {
+
                     confirmsDeleteList = true
+
                 }
 
             }
@@ -602,7 +633,9 @@ struct ArchivedListContentsView: View
                             {
                                 if !$0
                                 {
+
                                     deletingCard = nil
+
                                 }
 
                             }
@@ -622,12 +655,15 @@ struct ArchivedListContentsView: View
 
 
                 deletingCard = nil
+
             }
 
 
             Button("Cancel", role: .cancel)
             {
+
                 deletingCard = nil
+
             }
 
         }
@@ -751,7 +787,9 @@ struct ArchivedCardInspectionView: View
 
             Button("Delete Card", systemImage: "trash", role: .destructive)
             {
+
                 confirmsDelete = true
+
             }
 
         }
@@ -879,7 +917,9 @@ struct ArchivedCardsView: View
                         .accessibilityLabel("Restore \(card.word)")
                         Button("Delete", systemImage: "trash", role: .destructive)
                         {
+
                             deletingCard = card
+
                         }
                         .labelStyle(.iconOnly)
                         .accessibilityLabel("Delete \(card.word)")
@@ -935,7 +975,9 @@ struct ArchivedCardsView: View
                             {
                                 if !$0
                                 {
+
                                     deletingCard = nil
+
                                 }
 
                             }
@@ -955,12 +997,15 @@ struct ArchivedCardsView: View
 
 
                 deletingCard = nil
+
             }
 
 
             Button("Cancel", role: .cancel)
             {
+
                 deletingCard = nil
+
             }
 
         }

@@ -24,11 +24,13 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     let id:                 Int            /* Unique identifier for the kanban list               */
     private(set) var title: String         /* Title updated with retained card context            */
     var subtitleOverride:   String? = nil  /* nil preserves legacy generated copy; empty hides it */
+
     /// Records accepted content edits at the shared owner boundary, including nested value edits.
     var cards: [KanbanCard]
     {
         didSet
         {
+
             let previous = Dictionary(
                 oldValue.map
                 {
@@ -40,17 +42,22 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
                     first
                 }
             )
+
             for index in cards.indices
             {
                 if let old = previous[cards[index].id]
                 {
+
                     cards[index] = cards[index].recordingEdits(from: old)
+
                 }
             }
         }
     }
+
     var archivedCards:      [KanbanCard]   /* Cards retained in this list's archive               */
     var isArchived:         Bool = false   /* Whether this list is in the board archive           */
+
     var singleListViewMode: SingleListViewMode
     {
         appearance?.listViewMode ?? .cards
@@ -70,8 +77,10 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     {
 
         var value = appearance ?? ItemAppearance()
+
         value.listViewMode = mode
         appearance = value
+
     }
 
 
@@ -200,8 +209,10 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         }
 
         var value = appearance ?? ItemAppearance()
+
         value.icon = appearance?.icon ?? collectionIcon ?? Self.defaultHeaderIcon(for: title) ?? .notes
         value.iconColor = Self.fixedHeaderIconColor(for: title) ?? resolvedIconColor(collectionColor: collectionColor)
+
         return value
     }
 
@@ -237,7 +248,9 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
         set
         {
+
             defaultItemPresentation = newValue == .card ? nil : newValue
+
         }
 
     }
@@ -295,6 +308,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
             presentation: presentation,
             createdAt: createdAt
         )
+
         NewCardAppearanceDefaults.apply(to: &card, preferences: creationPreferences)
         return card
     }
@@ -340,6 +354,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         self.cards = cards
         self.archivedCards = archivedCards
         self.defaultItemPresentation = newItemPresentation == .card ? nil : newItemPresentation
+
     }
 
 
@@ -378,20 +393,25 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         title = try container.decode(String.self, forKey: .title)
         subtitleOverride = try container.decodeIfPresent(String.self, forKey: .subtitleOverride)
         appearance = try container.decodeIfPresent(ItemAppearance.self, forKey: .appearance)
+
         if appearance?.isEmpty == true
         {
+
             appearance = nil
+
         }
 
         cards = try container.decode([KanbanCard].self, forKey: .cards)
         archivedCards = try container.decodeIfPresent([KanbanCard].self, forKey: .archivedCards) ?? []
         isArchived = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
         defaultItemPresentation = try container.decodeIfPresent(ItemPresentation.self, forKey: .defaultItemPresentation)
+
         if defaultItemPresentation == .card
         {
 
 
             defaultItemPresentation = nil
+
         }
 
     }
@@ -577,6 +597,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
 
         let trimmedTitle = proposedTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard !trimmedTitle.isEmpty else
         {
 
@@ -586,16 +607,19 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
         title = trimmedTitle
         subtitleOverride = subtitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+
         for index in cards.indices
         {
 
             cards[index].listTitle = title
+
         }
 
         for index in archivedCards.indices
         {
 
             archivedCards[index].listTitle = title
+
         }
 
     }
@@ -662,6 +686,7 @@ struct CardEditChange: Codable, Hashable, Sendable
     let field:         String
     let previousValue: Data?
     let newValue:      Data?
+
 }
 
 
@@ -702,9 +727,12 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
             "dismissedActivityIDs": "Activity visibility"
         ]
         var labels: [String] = []
+
         for change in changes
         {
+
             let label = names[change.field] ?? "Card details"
+
             if !labels.contains(label)
             {
                 labels.append(label)
@@ -743,12 +771,16 @@ extension KanbanCard
     {
 
         var result = self
+
         result.editHistory = previous.editHistory
+
         var old = previous
         var new = self
+
         old.editHistory = nil
         new.editHistory = nil
         old.listTitle = new.listTitle
+
         if old == new
         {
             return result
@@ -765,14 +797,18 @@ extension KanbanCard
         let excluded: Set<String>     = ["id", "listTitle", "createdAt", "editHistory"]
         let keys                      = Set(before.keys).union(after.keys).subtracting(excluded).sorted()
         var changes: [CardEditChange] = []
+
         for key in keys
         {
+
             let left  = before[key] as? NSObject
             let right = after[key] as? NSObject
+
             if left == right
             {
                 continue
             }
+
             let previousValue = try? before[key].map
             {
                 try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys])
@@ -781,6 +817,7 @@ extension KanbanCard
             {
                 try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys])
             }
+
             changes.append(CardEditChange(field: key, previousValue: previousValue, newValue: newValue))
         }
         guard !changes.isEmpty else
@@ -789,12 +826,15 @@ extension KanbanCard
         }
 
         let retained = previous.editHistory ?? []
+
         if let prepared = editHistory,
            prepared.count == retained.count + 1,
            Array(prepared.dropLast()) == retained,
            prepared.last?.changes == changes
         {
+
             result.editHistory = prepared
+
         }
         else if let last = retained.last,
                 date.timeIntervalSince(last.timestamp) >= 0,
@@ -802,6 +842,7 @@ extension KanbanCard
                 Set(changes.map(\.field)) == Set(last.changes.map(\.field)),
                 Set(changes.map(\.field)).isSubset(of: ["word", "subtitleOverride", "descriptionOverride"])
         {
+
             // Autosaved typing is one readable update rather than an entry per keystroke.
             let merged = changes.map
             {
@@ -815,13 +856,17 @@ extension KanbanCard
                     newValue: change.newValue
                 )
             }
+
             result.editHistory = Array(retained.dropLast()) + [
                 CardEditRecord(id: last.id, timestamp: date, changes: merged)
             ]
+
         }
         else
         {
+
             result.editHistory = retained + [CardEditRecord(id: UUID(), timestamp: date, changes: changes)]
+
         }
         return result
     }

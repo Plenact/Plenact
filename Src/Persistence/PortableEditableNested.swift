@@ -42,10 +42,14 @@ extension PortableEditableContent
             {
                 throw Failure.unsupported
             }
+
             var raw = try mapped(value, fields: ["id": "id", "author": "author", "body": "body",
                 "source_created_at_utc": "createdAt", "author_account_id": "_author"])
+
             raw.removeValue(forKey: "_author")
+
             raw["createdAt"] = try timestamp(raw["createdAt"])
+
             return raw
         }
     }
@@ -60,8 +64,10 @@ extension PortableEditableContent
     {
 
         var raw = try mapped(value, fields: ["id": "id", "description": "description", "checklists": "checklists", "comments": "comments"])
+
         raw["checklists"] = try checklists(array(value["checklists"]))
         raw["comments"] = try comments(array(value["comments"]))
+
         return raw
     }
 
@@ -75,10 +81,14 @@ extension PortableEditableContent
     {
 
         try values.map { list in
+
             var raw = try mapped(list, fields: ["id": "id", "title": "title", "items": "items"])
+
             raw["items"] = try array(list["items"]).map { item -> [String: Any] in
+
                 var result = try mapped(item, fields: ["id": "id", "title": "title", "completed": "isCompleted", "content": "content",
                     "retained_detail": "retainedDetail", "retained_card_id": "retainedCardID", "retained_url": "retainedURL", "linked_collection_id": "linkedCollectionID"])
+
                 guard let content = item["content"] as? [String: Any], let kind = content["kind"] as? String else
                 {
                     throw Failure.invalid
@@ -90,35 +100,48 @@ extension PortableEditableContent
                     {
                         throw Failure.unsupported
                     }
+
                     result["content"] = ["kind": "standard"]
+
                 case "linked_card":
                     guard Set(content.keys) == ["kind", "card_id"] else
                     {
                         throw Failure.unsupported
                     }
+
                     result["content"] = ["kind": "linkedCard", "cardID": try alias(content["card_id"])]
+
                 case "web_link":
                     guard Set(content.keys) == ["kind", "url"] else
                     {
                         throw Failure.unsupported
                     }
+
                     result["content"] = ["kind": "webLink", "url": content["url"]!]
+
                 case "action_detail":
                     guard Set(content.keys) == ["kind", "detail"], let value = content["detail"] as? [String: Any] else
                     {
                         throw Failure.unsupported
                     }
+
                     result["content"] = ["kind": "actionDetail", "detail": try detail(value)]
+
                 default:
                     throw Failure.unsupported
                 }
                 if let retained = item["retained_detail"] as? [String: Any]
                 {
+
                     result["retainedDetail"] = try detail(retained)
+
                 }
+
                 result["retainedCardID"] = try alias(item["retained_card_id"])
+
                 return result
             }
+
             return raw
         }
     }
@@ -137,12 +160,15 @@ extension PortableEditableContent
             return NSNull()
         }
         return try array(value).map { entry -> [String: Any] in
+
             var raw = try mapped(entry, fields: ["id": "id", "kind": "mediaKind", "asset_id": "fileName",
                 "drawing_asset_id": "drawingFileName", "url": "url", "source_added_at_utc": "addedAt",
                 "example_image": "exampleImage", "caption": "caption"])
+
             raw["fileName"] = try file(entry["asset_id"])
             raw["drawingFileName"] = try file(entry["drawing_asset_id"])
             raw["addedAt"] = try timestamp(entry["source_added_at_utc"])
+
             return raw
         }
     }
@@ -161,10 +187,14 @@ extension PortableEditableContent
             return NSNull()
         }
         return try array(value).map { entry -> [String: Any] in
+
             var raw = try mapped(entry, fields: ["id": "id", "source_timestamp_utc": "timestamp", "changes": "changes"])
+
             raw["timestamp"] = try timestamp(entry["source_timestamp_utc"])
             raw["changes"] = try array(entry["changes"]).map { change -> [String: Any] in
+
                 var mappedChange = try mapped(change, fields: ["field": "field", "previous_value": "previousValue", "new_value": "newValue"])
+
                 for key in ["previousValue", "newValue"]
                 {
                     if mappedChange[key] is NSNull
@@ -179,10 +209,13 @@ extension PortableEditableContent
                     {
                         throw Failure.unsupported
                     }
+
                     mappedChange[key] = bytes
+
                 }
                 return mappedChange
             }
+
             return raw
         }
     }
@@ -197,16 +230,22 @@ extension PortableEditableContent
     {
 
         try values.map { value in
+
             let kind = value["kind"] as? String
+
             guard (kind == "manual" && value["identity_scope"] as? String == "manual") ||
                 (kind == "registered_user" && value["identity_scope"] as? String == "legacy_demo") else
             {
                 throw Failure.unsupported
             }
+
             var raw = try mapped(value, fields: ["id": "id", "kind": "kind", "display_name": "displayName",
                 "user_id": "userID", "identity_scope": "_scope"])
+
             raw.removeValue(forKey: "_scope")
+
             raw["kind"] = kind == "registered_user" ? "registeredUser" : "manual"
+
             return raw
         }
     }
@@ -229,10 +268,14 @@ extension PortableEditableContent
                     {
                         throw Failure.unsupported
                     }
+
             var raw = try mapped(entry, fields: ["id": "id", "emoji": "emoji", "source_author_id": "authorID",
                 "source_created_at_utc": "createdAt", "author_account_id": "_author"])
+
             raw.removeValue(forKey: "_author")
+
             raw["createdAt"] = try timestamp(entry["source_created_at_utc"])
+
             return raw
         }
     }

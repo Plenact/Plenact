@@ -189,6 +189,7 @@ enum TodayListSelection
         let weekdays = [
                         "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
         ] /* Calendar-indexed weekday names */
+
         return weekdays[calendar.component(.weekday, from: date) - 1]
     }
 
@@ -312,6 +313,7 @@ struct WorkspaceListReference: Hashable, Codable, Identifiable
 
     let ownerID: UUID
     let listID:  Int
+
     var id:      String
     {
             "\(ownerID):\(listID)"
@@ -332,6 +334,7 @@ struct WorkspaceListDestination: Identifiable
 
     let owner:     PersonalCollection
     let list:      KanbanList
+
     var reference: WorkspaceListReference
     {
         WorkspaceListReference(ownerID: owner.id, listID: list.id)
@@ -357,6 +360,7 @@ struct WorkspaceLabelUsage: Identifiable
 
     let label:   KanbanLabel
     let matches: [PlanningSearchResult]
+
     var id:      String
     {
         label.id
@@ -392,8 +396,11 @@ enum WorkspaceBrowseIndex
         (document?.weeks.map
             {
                 week in
+
                 var owner = week.collection
+
                 owner.title = (week.startKey == document?.currentWeekKey ? "This Week · " : "") + week.rangeTitle
+
                 return owner
             }
             ?? []) + library.filter(\.isActive)
@@ -443,6 +450,7 @@ enum WorkspaceBrowseIndex
     {
 
         var matches: [String: [PlanningSearchResult]] = [:]
+
         for destination in lists(in: owners)
         {
 
@@ -453,6 +461,7 @@ enum WorkspaceBrowseIndex
                     weekKey: nil, collectionID: destination.owner.id,
                     collectionTitle: destination.owner.title, listID: destination.list.id,
                     listTitle: destination.list.title, card: card)
+
                 for labelID in Set(card.labelIDs)
                 {
                     matches[labelID, default: []].append(result)
@@ -493,6 +502,7 @@ struct WorkspacePinnedListView: View
     var returnDestinationTitle = "Today"
     @Environment(\.planningCalendarAccess) private var access
     @Environment(\.dismiss) private var dismiss
+
     var body: some View
     {
 
@@ -606,6 +616,7 @@ struct PinnedListDayContent: View
         {
 
             week.collection = collection
+
             return access?.saveWeek(week) == true
         }
 
@@ -624,7 +635,9 @@ struct PinnedListDayContent: View
 
                 if var week
                 {
+
                     week.collection = collection;
+
                     access?.openWeek(week)
                 }
                 ;
@@ -633,7 +646,9 @@ struct PinnedListDayContent: View
             onPermanentDelete:
             {
                 cardID in
+
                 var updated = collection
+
                 BoardContentDeletion.card(cardID, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
                 guard save(updated) else
                 {
@@ -641,6 +656,7 @@ struct PinnedListDayContent: View
                 }
 
                 collection = updated;
+
                 return true
             }, boardAppearance: collection.boardAppearance, returnDestinationTitle: returnDestinationTitle,
             boardViewActionTitle: week == nil ? "Back to \(returnDestinationTitle)" : "Switch to Week View",
@@ -653,14 +669,18 @@ struct PinnedListDayContent: View
             old, updated in
             if reverting
             {
+
                 reverting = false;
+
                 return
             }
 
             if !save(updated)
             {
+
                 reverting = true;
                 collection = old
+
             }
 
         }
@@ -674,6 +694,7 @@ struct PinnedListDayContent: View
             {
 
                 collection = next
+
             }
 
         }
@@ -687,6 +708,7 @@ struct PinnedListDayContent: View
             {
 
                 collection = next
+
             }
 
         }
@@ -703,6 +725,7 @@ private struct OpenTemplateLibraryKey: EnvironmentKey
 {
 
     static let defaultValue: (() -> Void)? = nil
+
 }
 
 
@@ -722,6 +745,7 @@ extension EnvironmentValues
         {
 
             self[OpenTemplateLibraryKey.self] = newValue
+
         }
     }
 }

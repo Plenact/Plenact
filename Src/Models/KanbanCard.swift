@@ -38,7 +38,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
         set
         {
+
             editingLocked = newValue ? true : nil
+
         }
 
     }
@@ -59,6 +61,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
     var checklists:               [KanbanChecklist] /* List of checklists associated with the card        */
     var showsReactionsInPreviews: Bool? = nil
+
     var previewReactions:         [ItemEmojiReaction]
     {
 
@@ -96,9 +99,13 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         }
 
         var unlocked = self
+
         unlocked.isEditingLocked = false
+
         var candidate = updated
+
         candidate.editHistory = editHistory
+
         return candidate == self || candidate == unlocked
     }
 
@@ -116,10 +123,12 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         {
 
             itemPresentation = newValue == .card ? nil : newValue
+
             if listDisplayFormat == .card || listDisplayFormat == .note
             {
 
                 listDisplayFormat = newValue == .note ? .note : .card
+
             }
 
         }
@@ -145,9 +154,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             {
 
                 presentation = newValue == .card ? .card : .note
+
             }
 
             listDisplayFormat = newValue
+
         }
 
     }
@@ -229,6 +240,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     {  /* Gallery records without the valid featured cover */
 
         let displayedCoverID = coverAttachment?.id /* Featured attachment omitted from the gallery     */
+
         return (attachments ?? []).filter
         {
             $0.id != displayedCoverID
@@ -276,8 +288,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         }
 
         let text = caption.trimmingCharacters(in: .whitespacesAndNewlines)
+
         current[index].caption = text.isEmpty ? nil : text
         attachments = current
+
     }
 
 
@@ -296,6 +310,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     {
 
         let photos = galleryPhotos
+
         guard orderedIDs.count == photos.count,
         Set(orderedIDs).count == orderedIDs.count,
         Set(orderedIDs) == Set(photos.map(\.id)),
@@ -325,9 +340,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             }
 
             current[slot] = photo
+
         }
 
         attachments = current
+
     }
 
 
@@ -368,6 +385,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
 
         coverAttachmentID = id
+
     }
 
 
@@ -418,6 +436,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
 
                 attachments = []
+
             }
 
             attachments?.append(attachment)
@@ -451,6 +470,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
 
             coverAttachmentID = nil
+
         }
 
     }
@@ -487,6 +507,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     {
 
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard let space = trimmed.firstIndex(where:
             {
                 $0.isWhitespace
@@ -497,6 +518,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
         let marker = trimmed[..<space]
         let dashes = CharacterSet(charactersIn: "-‐‑‒–—―−")
+
         guard marker.count >= 3, marker.unicodeScalars.allSatisfy(
             {
                 dashes.contains($0)
@@ -506,6 +528,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         }
 
         let heading = trimmed[space...].trimmingCharacters(in: .whitespacesAndNewlines)
+
         return heading.isEmpty ? nil : heading
     }
 
@@ -524,6 +547,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         }
 
         let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
+
         return trimmed.isEmpty || Self.isDividerTitle(trimmed) ? nil : trimmed
     }
 
@@ -648,9 +672,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         self.dismissedActivityIDs = dismissedActivityIDs  /* Set of activity IDs that were dismissed by user */
         self.descriptionOverride = descriptionOverride    /* Optional user-edited description                */
         self.subtitleOverride = subtitleOverride          /* Optional user-edited subtitle                   */
+
         let retainedPresentation =
         [.note, .title, .text].contains(listDisplayFormat)
         ? ItemPresentation.note : (listDisplayFormat == .card ? .card : presentation)
+
         self.itemPresentation = retainedPresentation == .card ? nil : retainedPresentation
         self.appearance = appearance?.isEmpty == true ? nil : appearance
         self.sectionLayout = sectionLayout
@@ -668,6 +694,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
                 completed: 1),
             KanbanChecklist(title: "Routine", items: ["Home", "Gym", "Work"])
         ]
+
     }
 
 
@@ -695,6 +722,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
 
             decodedMembers = typedMembers /* Keep registered identity references */
+
         }
         else
         {
@@ -703,6 +731,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             let legacyMembers = try container.decodeIfPresent([String].self, forKey: .members) ?? [] /* Legacy names */
 
             decodedMembers = legacyMembers.map(CardAssignee.manual) /* Migrate old names as manual entries */
+
         }
 
 
@@ -736,7 +765,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             isEditingLocked: try container.decodeIfPresent(Bool.self, forKey: .editingLocked) ?? false,
             location: try container.decodeIfPresent(String.self, forKey: .location)
         )
+
         editHistory = try container.decodeIfPresent([CardEditRecord].self, forKey: .editHistory)
+
     }
 
 
@@ -972,6 +1003,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             calendar.isDate(dueDate, inSameDayAs: $0)
         }
         == true
+
         if matchesListDay || dueDateKind == .time
         {
 
@@ -1059,6 +1091,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         }
 
         var entries: [(title: String, date: Date, kind: CardDateKind)] = []
+
         if let startDate
         {
             entries.append(("Start", startDate, startDateKind))
@@ -1082,6 +1115,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         }
 
         let sameDayTimes = usesTimeOnlySchedule(on: listDate, calendar: calendar)
+
         if sameDayTimes
         {
 

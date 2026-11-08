@@ -78,7 +78,9 @@ enum RecentSearchStore
         }
 
         searches.insert(term, at: 0)
+
         searches = Array(searches.prefix(10))
+
         defaults.set(searches, forKey: key)
 
         return searches
@@ -119,6 +121,7 @@ struct LibraryRecentItem: Codable, Equatable, Identifiable
 
     let collectionID: UUID
     let cardID:       Int
+
     var id:           String
     {
             "\(collectionID.uuidString).\(cardID)"
@@ -178,10 +181,12 @@ enum LibraryRecentStore
     {
 
         ActivityRecentStore.remember(item, defaults: defaults)
+
         let items = Array(([item] + load(from: defaults).filter
                 {
                     $0 != item
                 }).prefix(8))
+
         if let data = try? JSONEncoder().encode(items)
         {
             defaults.set(data, forKey: key)
@@ -248,6 +253,7 @@ enum ActivityRecentStore
                 {
                     $0 != item
                 }).prefix(20))
+
         if let data = try? JSONEncoder().encode(items)
         {
             defaults.set(data, forKey: key)

@@ -42,6 +42,7 @@ enum TodayListPins
 
         let existing  = PersonalCollectionStore.load(from: defaults)
         let savedKeys = ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, key]
+
         guard savedKeys.allSatisfy(
             {
                 defaults.object(forKey: $0) == nil
@@ -61,6 +62,7 @@ enum TodayListPins
         {
 
             try PersonalCollectionStore.saveChecked(initial, to: defaults)
+
             let pins = initial.map
             {
                 WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id)
@@ -92,6 +94,7 @@ enum TodayListPins
     {
 
         var seen = Set<WorkspaceListReference>()
+
         return Array(pins.filter
             {
                 seen.insert($0).inserted
@@ -173,6 +176,7 @@ struct TodayShortcutEditor: View
         _pins = State(initialValue: TodayListPins.normalized(pins))
         self.owners = owners;
         self.onSave = onSave
+
     }
 
     private var available: [WorkspaceListDestination]
@@ -195,6 +199,7 @@ struct TodayShortcutEditor: View
                     ForEach(pins)
                     {
                         reference in
+
                         let destination = available.first
                         {
                             $0.reference == reference
@@ -244,7 +249,9 @@ struct TodayShortcutEditor: View
                             })
                         {
                             list in
+
                             let reference = WorkspaceListReference(ownerID: owner.id, listID: list.id)
+
                             Button
                             {
 
@@ -325,6 +332,7 @@ struct TodayShortcutGrid: View
 
     let pinned:                 [WorkspaceListDestination]
     let onOpen:                 (WorkspaceListReference) -> Void
+
     private var usesLargeIcons: Bool
     {
         pinned.count <= 3

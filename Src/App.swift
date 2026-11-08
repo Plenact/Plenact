@@ -49,12 +49,15 @@ struct Plenact: App
 
             try DailyReviewTransaction.recover()
             try FullMonthExampleStore.live().recoverInterruptedSwitch()
+
             _recoveryError = State(initialValue: nil)
+
         }
         catch
         {
 
             _recoveryError = State(initialValue: error.localizedDescription)
+
         }
 
     }
@@ -93,11 +96,15 @@ struct Plenact: App
                             try DailyReviewTransaction.recover();
 
                             try FullMonthExampleStore.live().recoverInterruptedSwitch();
+
                             self.recoveryError = nil
+
                         }
                         catch
                         {
+
                             self.recoveryError = error.localizedDescription
+
                         }
 
                     }

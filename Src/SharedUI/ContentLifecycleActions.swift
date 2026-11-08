@@ -112,7 +112,9 @@ struct ContentLifecycleActions: ViewModifier
 
             Button("Delete \(kind)", systemImage: "trash", role: .destructive)
             {
+
                 confirmsDelete = true
+
             }
 
         }
@@ -135,7 +137,9 @@ struct ContentLifecycleActions: ViewModifier
 
             Button("Delete \(kind)")
             {
+
                 confirmsDelete = true
+
             }
 
         }

@@ -25,6 +25,7 @@ struct LibraryImportanceItem: Codable
     let collectionID:  UUID
     let cardID:        Int
     var level:         Int? = nil
+
     var resolvedLevel: Int
     {
         min(5, max(0, level ?? 1))
@@ -61,6 +62,7 @@ enum LibraryImportanceSelection
     {
 
         let items = (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
+
         return Set(items.filter
             {
                 $0.collectionID == collectionID && $0.resolvedLevel > 0
@@ -85,6 +87,7 @@ enum LibraryImportanceSelection
     {
 
         let previous = level(cardID: cardID, collectionID: collectionID, data: data)
+
         return settingLevel(
             cardID: cardID, collectionID: collectionID,
             level: marked ? max(1, previous) : 0, data: data)
@@ -115,6 +118,7 @@ enum LibraryImportanceSelection
                         "call accountant", "call the accountant"
         ]
         var result = data
+
         for owner in owners
         {
 
@@ -128,7 +132,9 @@ enum LibraryImportanceSelection
 
                 let title              = card.word.lowercased()
                 let demonstrationLevel = demonstrationLevel(for: title)
+
                 result = settingLevel(cardID: card.id, collectionID: owner.id, level: demonstrationLevel, data: result)
+
             }
 
         }
@@ -151,6 +157,7 @@ enum LibraryImportanceSelection
     {
 
         let normalized = title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
         if normalized == "work"
         {
             return 4
@@ -207,6 +214,7 @@ enum LibraryImportanceSelection
     {
 
         let items = (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
+
         return items.last
         {
             $0.collectionID == collectionID && $0.cardID == cardID
@@ -230,12 +238,14 @@ enum LibraryImportanceSelection
     {
 
         var items = (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
+
         items.removeAll
         {
             $0.collectionID == collectionID && $0.cardID == cardID
         }
 
         let bounded = min(5, max(0, level))
+
         if bounded > 0
         {
 
@@ -345,8 +355,10 @@ struct OwnerImportanceControls: ViewModifier
                     set:
                     {
                         cardID, marked in
+
                         data = LibraryImportanceSelection.setting(
                             cardID: cardID, collectionID: owner, marked: marked, data: data)
+
                     }, level:
                     {
                         LibraryImportanceSelection.level(cardID: $0, collectionID: owner, data: data)
@@ -354,8 +366,10 @@ struct OwnerImportanceControls: ViewModifier
                     adjust:
                     {
                         cardID, direction in
+
                         data = LibraryImportanceSelection.adjusting(
                             cardID: cardID, collectionID: owner, direction: direction, data: data)
+
                     })
             })
     }
@@ -375,6 +389,7 @@ struct LibraryImportanceKey: EnvironmentKey
 
 
     static let defaultValue: LibraryImportanceAccess? = nil
+
 }
 
 
@@ -399,7 +414,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[LibraryImportanceKey.self] = newValue
+
         }
 
     }

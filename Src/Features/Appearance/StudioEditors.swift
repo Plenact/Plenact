@@ -55,7 +55,9 @@ struct StudioSurfaceSettings: View
 
                 Button("Use inherited appearance")
                 {
+
                     surface = nil
+
                 }
 
             }
@@ -122,6 +124,7 @@ struct StudioSurfaceEditor: View
         _draftTitleColor = State(initialValue: titleColor?.wrappedValue)
         _draftTextColor = State(initialValue: textColor?.wrappedValue)
         _draft = State(initialValue: surface.wrappedValue ?? StudioSurface())
+
     }
 
 
@@ -142,13 +145,16 @@ struct StudioSurfaceEditor: View
             {
 
             color in
+
                 var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+
                 guard UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a) else
                 {
                     return
                 }
 
                 draft[keyPath: path] = String(format: "%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
+
             })
     }
 
@@ -172,15 +178,19 @@ struct StudioSurfaceEditor: View
             }
 
             let name = try StudioArtworkStore.importImage(data)
+
             draft.material = .photo
             draft.photoFileName = name
             draft.remotePhoto = nil
+
             try saveArtwork(name: "My image", surface: draft)
         }
 
         catch
         {
+
             self.error = error.localizedDescription
+
         }
 
     }
@@ -199,11 +209,14 @@ struct StudioSurfaceEditor: View
 
 
         var saved = libraryData.isEmpty ? [] : try JSONDecoder().decode([StudioArtwork].self, from: libraryData)
+
         saved.append(StudioArtwork(name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "My look" : name,
                 surface: surface, header: draftHeader, italicSubtitle: draftItalic,
                 titleColor: draftTitleColor, textColor: draftTextColor))
+
         libraryData = try JSONEncoder().encode(saved)
         savedToLibrary = true
+
     }
 
 
@@ -220,14 +233,19 @@ struct StudioSurfaceEditor: View
         let chosenItalic     = draftItalic
         let chosenTitleColor = draftTitleColor
         let chosenTextColor  = draftTextColor
+
         applyTask?.cancel()
+
         applyTask = Task
         {
 
             isApplying = true
+
             defer
             {
+
                 isApplying = false
+
             }
 
             do
@@ -237,14 +255,17 @@ struct StudioSurfaceEditor: View
                 {
 
                     _ = try await StudioUnsplash.request(remote.downloadURL)
+
                 }
 
                 try Task.checkCancellation()
+
                 surface = chosen
                 header?.wrappedValue = chosenHeader
                 italic?.wrappedValue = chosenItalic
                 titleColor?.wrappedValue = chosenTitleColor
                 textColor?.wrappedValue = chosenTextColor
+
                 dismiss()
             }
 
@@ -255,7 +276,9 @@ struct StudioSurfaceEditor: View
 
             catch
             {
+
                 self.error = "Artwork could not be applied. Check the connection and Unsplash access key."
+
             }
 
         }
@@ -410,7 +433,9 @@ struct StudioSurfaceEditor: View
 
                 Button("Choose a saved look", systemImage: "square.grid.2x2")
                 {
+
                     showsLibrary = true
+
                 }
 
                 PhotosPicker(selection: $photo, matching: .images)
@@ -421,12 +446,16 @@ struct StudioSurfaceEditor: View
 
                 Button("Import from Files", systemImage: "folder")
                 {
+
                     importsFile = true
+
                 }
 
                 Button("Find a photo on Unsplash", systemImage: "magnifyingglass")
                 {
+
                     showsUnsplash = true
+
                 }
 
                 if savedToLibrary
@@ -446,7 +475,9 @@ struct StudioSurfaceEditor: View
 
                     catch
                     {
+
                         self.error = error.localizedDescription
+
                     }
 
                 }
@@ -487,11 +518,13 @@ struct StudioSurfaceEditor: View
             {
 
             look in
+
                 draft = look.surface
                 draftHeader = look.header
                 draftItalic = look.italicSubtitle
                 draftTitleColor = look.titleColor
                 draftTextColor = look.textColor
+
             }
 
         }
@@ -502,9 +535,11 @@ struct StudioSurfaceEditor: View
             {
 
             remote in
+
                 draft.material = .unsplash
                 draft.remotePhoto = remote
                 draft.photoFileName = nil
+
             }
 
         }
@@ -527,7 +562,9 @@ struct StudioSurfaceEditor: View
 
                 catch
                 {
+
                     self.error = error.localizedDescription
+
                 }
 
             }
@@ -542,6 +579,7 @@ struct StudioSurfaceEditor: View
 
                 let url    = try result.get()
                 let access = url.startAccessingSecurityScopedResource()
+
                 defer
                 {
                     if access
@@ -556,7 +594,9 @@ struct StudioSurfaceEditor: View
 
             catch
             {
+
                 self.error = error.localizedDescription
+
             }
 
         }
@@ -567,7 +607,9 @@ struct StudioSurfaceEditor: View
                 {
                     if !$0
                     {
+
                         error = nil
+
                     }
 
                 }))
@@ -575,7 +617,9 @@ struct StudioSurfaceEditor: View
 
             Button("OK")
             {
+
                 error = nil
+
             }
 
         }
@@ -604,6 +648,7 @@ struct StudioLibraryView: View
     @State private var error:    String?
     @State private var renaming: StudioArtwork?
     @State private var renamed = ""
+
     private var artworks: [StudioArtwork]
     {
         (try? JSONDecoder().decode([StudioArtwork].self, from: data)) ?? []
@@ -624,6 +669,7 @@ struct StudioLibraryView: View
         }
 
         let name = renamed.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard !name.isEmpty else
         {
             return
@@ -633,6 +679,7 @@ struct StudioLibraryView: View
         {
 
             var saved = artworks
+
             guard let index = saved.firstIndex(where:
                 {
                     $0.id == id
@@ -644,11 +691,14 @@ struct StudioLibraryView: View
             saved[index].name = name
             data = try JSONEncoder().encode(saved)
             renaming = nil
+
         }
 
         catch
         {
+
             self.error = error.localizedDescription
+
         }
 
     }
@@ -695,8 +745,10 @@ struct StudioLibraryView: View
 
                         else
                         {
+
                             renamed = look.name;
                             renaming = look
+
                         }
 
                     }
@@ -729,13 +781,18 @@ struct StudioLibraryView: View
                     {
 
                         var retained = artworks
+
                         retained.remove(atOffsets: indices)
+
                         data = try JSONEncoder().encode(retained)
+
                     }
 
                     catch
                     {
+
                         self.error = error.localizedDescription
+
                     }
 
                 }
@@ -767,7 +824,9 @@ struct StudioLibraryView: View
                     {
                         if !$0
                         {
+
                             renaming = nil
+
                         }
 
                     }))
@@ -777,7 +836,9 @@ struct StudioLibraryView: View
                 Button("Save", action: saveRename)
                 Button("Cancel", role: .cancel)
                 {
+
                     renaming = nil
+
                 }
 
             }
@@ -788,7 +849,9 @@ struct StudioLibraryView: View
                     {
                         if !$0
                         {
+
                             error = nil
+
                         }
 
                     }))
@@ -796,7 +859,9 @@ struct StudioLibraryView: View
 
                 Button("OK")
                 {
+
                     error = nil
+
                 }
 
             }

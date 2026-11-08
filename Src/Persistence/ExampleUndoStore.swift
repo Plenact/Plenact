@@ -24,6 +24,7 @@ struct ExampleLoadUndoSnapshot: Codable, Equatable
     var savedCardIDs:     Set<Int>?          = nil
     var importantCardIDs: Set<Int>?          = nil
     var importanceLevels: [Int: Int]?        = nil
+
 }
 
 

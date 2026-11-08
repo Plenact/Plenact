@@ -39,21 +39,28 @@ extension PlenactBoardDocumentTests
 
         let suite    = "PlanSettingsTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+
         defer
         {
             defaults.removePersistentDomain(forName: suite)
         }
 
         XCTAssertEqual(PlanPreferencesStore.load(from: defaults).todayFocusItemCount, 4)
+
         var preferences = LocalProfilePreferences()
+
         preferences.todayFocusItemCount = 8
         preferences.showsDueDatesOnNewCards = false
+
         PlanPreferencesStore.save(preferences, to: defaults)
         XCTAssertNil(LocalProfileStore.load(from: defaults))
         XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
         XCTAssertFalse(KanbanCard.defaultDueDateVisibility(from: defaults))
+
         preferences.todayFocusItemCount = 2
+
         let profile = LocalProfile(displayName: "Test", preferences: preferences)
+
         LocalProfileStore.save(profile, to: defaults)
         XCTAssertEqual(PlanPreferencesStore.load(from: defaults), preferences)
         LocalProfileStore.remove(from: defaults)
@@ -80,6 +87,7 @@ extension PlenactBoardDocumentTests
 
                 var list  = KanbanList(id: 7, title: title, cards: [], newItemPresentation: presentation)
                 var draft = InlineListCaptureDraft(title: "  First thought  ")
+
                 XCTAssertFalse(draft.submit(to: list)
                     {
                         _ in
@@ -90,7 +98,9 @@ extension PlenactBoardDocumentTests
                 {
 
                     draft.title = text
+
                     let destination = list
+
                     XCTAssertTrue(
                         draft.submit(to: destination)
                         {
@@ -116,7 +126,9 @@ extension PlenactBoardDocumentTests
                         $0.listTitle == title && $0.presentation == presentation
                     })
                 XCTAssertEqual(Set(list.cards.map(\.id)).count, 2)
+
                 draft.title = " \n "
+
                 XCTAssertFalse(
                     draft.submit(to: list)
                     {
@@ -124,8 +136,10 @@ extension PlenactBoardDocumentTests
                         XCTFail("Blank titles must not save");
                         return true
                     })
+
                 list.isArchived = true
                 draft.title = "Keep this draft"
+
                 XCTAssertFalse(
                     draft.submit(to: list)
                     {
@@ -155,15 +169,20 @@ extension PlenactBoardDocumentTests
 
         var collection = PersonalCollection(title: "Personal", kind: .list)
         let schedule   = QuickCaptureSchedule(start: .now, stop: .now.addingTimeInterval(3600), includesTime: true)
+
         try collection.addNote(
             title: "Card", body: "Details", presentation: .card,
             actions: ["First", "Second"], schedule: schedule)
+
         let card = try XCTUnwrap(collection.lists[0].cards.last)
+
         XCTAssertEqual(card.checklists.flatMap(\.items).map(\.title), ["First", "Second"])
         XCTAssertEqual(card.startDate, schedule.start)
         XCTAssertEqual(card.dueDate, schedule.stop)
+
         let before  = collection
         let invalid = QuickCaptureSchedule(start: .now, stop: .distantPast, includesTime: true)
+
         XCTAssertThrowsError(try collection.addNote(title: "Invalid", body: "", schedule: invalid))
         XCTAssertEqual(collection, before)
     }
@@ -190,7 +209,9 @@ extension PlenactBoardDocumentTests
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+
         let lists = [KanbanList(id: 0, title: "Monday", cards: [])]
         let host  = UIHostingController(
             rootView: QuickNoteComposer(lists: .constant(lists), initialListID: 0)
@@ -198,12 +219,16 @@ extension PlenactBoardDocumentTests
                 _, _, _, _, _, _ in
                 XCTFail("Switching formats must not create content")
             })
+
         window.rootViewController = host
+
         window.makeKeyAndVisible()
         defer
         {
+
             window.isHidden = true;
             window.rootViewController = nil;
+
             previous?.makeKey()
         }
 
@@ -233,8 +258,10 @@ extension PlenactBoardDocumentTests
 
                 String(describing: type(of: $0)).contains("VerticalTextView")
             })
+
         title.becomeFirstResponder()
         title.insertText("Shared draft title")
+
         let details = try XCTUnwrap(
             descendants(host.view).compactMap
             {
@@ -247,15 +274,21 @@ extension PlenactBoardDocumentTests
         let body =
         PlanRichText.prefix
         + Data("[{\"text\":\"Keep this writing\",\"bold\":true,\"italic\":false}]".utf8).base64EncodedString()
+
         details.attributedText = PlanRichText.attributed(body)
+
         details.delegate?.textViewDidChange?(details)
+
         let picker = try XCTUnwrap(descendants(host.view).compactMap
             {
                 $0 as? UISegmentedControl
             } .first)
+
         picker.selectedSegmentIndex = 1
+
         picker.sendActions(for: .valueChanged)
         try await Task.sleep(for: .milliseconds(350))
+
         let noteTitle = try XCTUnwrap(
             descendants(host.view).compactMap
             {
@@ -265,7 +298,9 @@ extension PlenactBoardDocumentTests
 
                 String(describing: type(of: $0)).contains("VerticalTextView")
             })
+
         XCTAssertEqual(noteTitle.text, "Shared draft title")
+
         let writing = try XCTUnwrap(
             descendants(host.view).compactMap
             {
@@ -275,14 +310,20 @@ extension PlenactBoardDocumentTests
 
                 $0.accessibilityLabel == "Start writing..."
             })
+
         XCTAssertEqual(PlanRichText.runs(PlanRichText.encode(writing.attributedText)), PlanRichText.runs(body))
         noteTitle.becomeFirstResponder()
         noteTitle.insertText(" edited")
+
         writing.attributedText = PlanRichText.attributed("Edited note body")
+
         writing.delegate?.textViewDidChange?(writing)
+
         picker.selectedSegmentIndex = 0
+
         picker.sendActions(for: .valueChanged)
         try await Task.sleep(for: .milliseconds(350))
+
         let returnedTitle = try XCTUnwrap(
             descendants(host.view).compactMap
             {
@@ -292,7 +333,9 @@ extension PlenactBoardDocumentTests
 
                 String(describing: type(of: $0)).contains("VerticalTextView")
             })
+
         XCTAssertEqual(returnedTitle.text, "Shared draft title edited")
+
         let returnedDetails = try XCTUnwrap(
             descendants(host.view).compactMap
             {
@@ -302,6 +345,7 @@ extension PlenactBoardDocumentTests
 
                 $0.accessibilityLabel == "Details (optional)"
             })
+
         XCTAssertEqual(PlanRichText.encode(returnedDetails.attributedText), "Edited note body")
     }
 
@@ -324,20 +368,25 @@ extension PlenactBoardDocumentTests
             var source = PersonalCollection(title: title, kind: .board, icon: .home, color: .green)
             var card   = KanbanCard(
                 id: 8, word: "Keep this note", listTitle: "Garden", descriptionOverride: "Original writing")
+
             card.displayFormat = .note
             card.checklists = [
                 KanbanChecklist(
                     title: "Link", items: [KanbanChecklistItem(title: "Archived", content: .linkedCard(cardID: 9))])
             ]
+
             let archive = KanbanCard(id: 9, word: "Archived", listTitle: "Garden")
             var list    = KanbanList(
                 id: 4, title: "Garden", cards: [card], archivedCards: [archive], newItemPresentation: .note)
+
             list.subtitleOverride = "Seasonal notes"
             list.appearance = ItemAppearance(accent: .green)
             source.lists = [list]
             source.savedCardIDs = [8, 9]
+
             var collections = [source]
             let result      = try CrossBoardListMovement.detach(listID: list.id, from: source.id, collections: &collections)
+
             XCTAssertEqual(collections.count, 2)
             XCTAssertTrue(collections[0].lists.isEmpty)
             XCTAssertTrue(collections[0].savedCardIDs.isEmpty)
@@ -359,6 +408,7 @@ extension PlenactBoardDocumentTests
         }
 
         var empty = [PersonalCollection]()
+
         XCTAssertThrowsError(try CrossBoardListMovement.detach(listID: 4, from: UUID(), collections: &empty))
         XCTAssertTrue(empty.isEmpty)
     }
@@ -378,22 +428,28 @@ extension PlenactBoardDocumentTests
     {
 
         let key = "test.creation.reset." + UUID().uuidString
+
         defer
         {
             ListCreationDraft.clear(key: key)
         }
 
         let draft = ListCreationDraftModel(key: key)
+
         for _ in 0 ..< 2
         {
 
             draft.beginSession()
+
             draft.binding(\.title).wrappedValue = "New card"
             draft.binding(\.subtitle).wrappedValue = "Subtitle"
             draft.binding(\.description).wrappedValue = "Body"
+
             XCTAssertEqual(ListCreationDraft.load(key: key).title, "New card")
             draft.finishSession()
+
             draft.binding(\.description).wrappedValue = "Late editor callback"
+
             XCTAssertEqual(draft.title, "")
             XCTAssertEqual(draft.subtitle, "")
             XCTAssertEqual(draft.description, "")
@@ -405,6 +461,7 @@ extension PlenactBoardDocumentTests
 
         draft.title = "Unsubmitted writing"
         draft.description = "Keep this draft"
+
         draft.beginSession()
         XCTAssertEqual(draft.title, "Unsubmitted writing")
         XCTAssertEqual(draft.description, "Keep this draft")
@@ -426,6 +483,7 @@ extension PlenactBoardDocumentTests
     {
 
         let key = "plenact.testDraft.\(UUID().uuidString)"
+
         defer
         {
             ListCreationDraft.clear(key: key)
@@ -443,12 +501,16 @@ extension PlenactBoardDocumentTests
                 _ in
                 true
             })
+
         window.rootViewController = host
+
         window.makeKeyAndVisible()
         defer
         {
+
             window.isHidden = true;
             window.rootViewController = nil;
+
             previous?.makeKey()
         }
 
@@ -508,17 +570,22 @@ extension PlenactBoardDocumentTests
                 {
                     $0.placeholder == "Subtitle (optional)"
                 }))
+
         XCTAssertTrue(subtitle.becomeFirstResponder())
+
         subtitle.text = "Subtitle"
+
         subtitle.sendActions(for: .editingChanged)
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertTrue(subtitle.isFirstResponder)
         XCTAssertEqual(ListCreationDraft.load(key: key).subtitle, "Subtitle")
+
         let description = try XCTUnwrap(
             editors(host.view).first(where:
                 {
                     $0.accessibilityLabel == "Details (optional)"
                 }))
+
         XCTAssertTrue(description.becomeFirstResponder())
         for character in ["A", "B", "C"]
         {
@@ -529,7 +596,9 @@ extension PlenactBoardDocumentTests
         }
 
         XCTAssertEqual(PlanRichText.plain(ListCreationDraft.load(key: key).description), "ABC")
+
         let restored = ListCreationDraftModel(key: key)
+
         XCTAssertEqual(restored.subtitle, "Subtitle")
         XCTAssertEqual(PlanRichText.plain(restored.description), "ABC")
     }
@@ -558,16 +627,22 @@ extension PlenactBoardDocumentTests
         var card     = KanbanCard(
             id: 42, word: "Comment focus", listTitle: "Monday", checklists: [], comments: [],
             descriptionOverride: "Description")
+
         card.sectionLayout = CardSectionLayout(
             order: [.description, .activity], hidden: [.quickActions, .media, .details, .checklists])
+
         let host = UIHostingController(rootView: CardDetailView(card: card))
+
         window.rootViewController = host
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+
         window.makeKeyAndVisible()
         defer
         {
+
             window.isHidden = true;
             window.rootViewController = nil;
+
             previous?.makeKey()
         }
 
@@ -600,6 +675,7 @@ extension PlenactBoardDocumentTests
         }
 
         let comment = try XCTUnwrap(findComment(host.view))
+
         XCTAssertTrue(comment.becomeFirstResponder())
         try await Task.sleep(for: .milliseconds(100))
         for character in ["H", "e", "l", "l", "o"]
@@ -638,10 +714,13 @@ extension PlenactBoardDocumentTests
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
+
             window.isHidden = true;
             window.rootViewController = nil;
+
             previous?.makeKeyAndVisible()
         }
 
@@ -650,6 +729,7 @@ extension PlenactBoardDocumentTests
             ItemEmojiReaction(emoji: "❤️", authorID: author), ItemEmojiReaction(emoji: "🎉", authorID: author)
         ]
         let identityBefore = UserDefaults.standard.object(forKey: LocalReactionIdentity.key) as? String
+
         for presentation in [ItemPresentation.card, .note]
         {
 
@@ -667,10 +747,13 @@ extension PlenactBoardDocumentTests
                             XCTFail("Rendering must not edit")
                         })
                 })
+
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             window.rootViewController = host;
+
             window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(250))
+
             let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
                 _ in
@@ -679,6 +762,7 @@ extension PlenactBoardDocumentTests
 
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "plenact-reactions-\(presentation).png")
+
             try XCTUnwrap(image.pngData()).write(to: url);
             print("REACTIONS_RENDER=" + url.path)
         }
@@ -693,8 +777,11 @@ extension PlenactBoardDocumentTests
                         XCTFail("Rendering must not choose")
                     })
                 .preferredColorScheme(scheme))
+
             window.rootViewController = host
+
             try await Task.sleep(for: .milliseconds(200))
+
             let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
                 _ in
@@ -703,6 +790,7 @@ extension PlenactBoardDocumentTests
 
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "plenact-reaction-picker-\(scheme).png")
+
             try XCTUnwrap(image.pngData()).write(to: url);
             print("REACTIONS_RENDER=" + url.path)
         }
@@ -725,17 +813,21 @@ extension PlenactBoardDocumentTests
     {
 
         var lists = [KanbanList(id: 7, title: "New List 2", cards: [])]
+
         lists[0].subtitleOverride = "Keep this context"
+
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
 
             window.endEditing(true);
+
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -773,15 +865,20 @@ extension PlenactBoardDocumentTests
                     return editBoardList(7, title: title, subtitle: lists[0].subtitle, in: &lists)
                 }, onFinish:
                 {
+
                     finishCalls += 1
+
                 }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading))
+
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
         window.rootViewController = host
+
         window.makeKeyAndVisible()
         host.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(350))
+
         let field = try XCTUnwrap(
             descendants(host.view).compactMap
             {
@@ -791,6 +888,7 @@ extension PlenactBoardDocumentTests
 
                 $0.accessibilityIdentifier == "board.newListTitle"
             })
+
         XCTAssertLessThanOrEqual(
             field.bounds.height, 37, "The title must stay one line instead of expanding the List header")
         XCTAssertLessThan(
@@ -801,15 +899,19 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(host.presentedViewController)
         field.insertText("  Roadmap  ")
         try await Task.sleep(for: .milliseconds(60))
+
         _ = field.delegate?.textFieldShouldReturn?(field)
+
         try await Task.sleep(for: .milliseconds(80))
         XCTAssertEqual(finishCalls, 0)
         XCTAssertEqual(field.text, "  Roadmap  ")
         XCTAssertTrue(field.isFirstResponder)
         XCTAssertEqual(lists[0].title, "New List 2")
         lists[0].cards.append(KanbanCard(id: 40, word: "Keep this task", listTitle: lists[0].title))
+
         allowsSave = true
         _ = field.delegate?.textFieldShouldReturn?(field)
+
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertEqual(lists[0].title, "Roadmap")
         XCTAssertEqual(lists[0].subtitle, "Keep this context")
@@ -840,10 +942,13 @@ extension PlenactBoardDocumentTests
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
+
             window.isHidden = true;
             window.rootViewController = nil;
+
             previous?.makeKeyAndVisible()
         }
 
@@ -862,6 +967,7 @@ extension PlenactBoardDocumentTests
         {
 
             let value = (view as? UITextField)?.text ?? (view as? UITextView)?.text
+
             return (value.map
                 {
                     [$0]
@@ -871,6 +977,7 @@ extension PlenactBoardDocumentTests
 
         let lists = [KanbanList(id: 4, title: "Today", cards: [])]
         var saves = 0
+
         for action in TodayCaptureAction.allCases
         {
 
@@ -881,16 +988,22 @@ extension PlenactBoardDocumentTests
                     onSaveCapture:
                     {
                         _ in
+
                         saves += 1;
+
                         return true
                     }
                 )
                 {
                     _, _, _, _, _, _ in
+
                     saves += 1
+
                 })
+
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             window.rootViewController = host;
+
             window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(200))
             host.view.layoutIfNeeded()
@@ -908,6 +1021,7 @@ extension PlenactBoardDocumentTests
 
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "plenact-capture-\(action.rawValue).png")
+
             try XCTUnwrap(image.pngData()).write(to: url)
             print("CAPTURE_RENDER=" + url.path)
             if action == .photo || action == .drawing
@@ -929,10 +1043,13 @@ extension PlenactBoardDocumentTests
                     XCTFail("Rendering must not activate a capture")
                 } .padding()
                 .background(Color(.secondarySystemGroupedBackground)))
+
             window.frame = CGRect(x: 0, y: 0, width: width, height: 180)
             window.rootViewController = host;
+
             window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(100))
+
             let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
                 _ in
@@ -941,6 +1058,7 @@ extension PlenactBoardDocumentTests
 
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "plenact-capture-row-\(Int(width)).png")
+
             try XCTUnwrap(image.pngData()).write(to: url)
             print("CAPTURE_RENDER=" + url.path)
         }
@@ -968,7 +1086,9 @@ extension PlenactBoardDocumentTests
 
         let timestamp = Date(timeIntervalSince1970: 1_791_422_000)       /* Fixed creation timestamp      */
         var list      = KanbanList(id: 1, title: "Synthetic", cards: []) /* List state under verification */
+
         list.newItemPresentation = .note
+
         let note = list.makeItem(id: 2, title: "Dated Note", createdAt: timestamp) /* Newly created Note value */
 
         XCTAssertEqual(note.createdAt, timestamp)
@@ -980,11 +1100,13 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(decoded.createdAt, timestamp)
 
         var card = decoded /* Card value under verification */
+
         card.presentation = .card
         card.word = "Edited title"
         card.descriptionOverride = "Edited body"
 
         XCTAssertEqual(card.createdAt, timestamp)
+
         card.presentation = .note
 
         XCTAssertEqual(card.replacingLocation(id: 8, listTitle: "Moved").createdAt, timestamp)
@@ -1020,11 +1142,14 @@ extension PlenactBoardDocumentTests
         var collection = PersonalCollection(title: "Ideas", kind: .list)
         let createdAt  = try XCTUnwrap(PlanningDate.date("2026-10-13"))
         let body       = "First paragraph\n\nSecond paragraph  "
+
         try collection.addNote(
             title: "A card", body: body, createdAt: createdAt, presentation: .card, subtitle: " Useful context ")
         try collection.addNote(title: "A note", body: body, createdAt: createdAt, presentation: .note)
         XCTAssertEqual(collection.lists[0].newItemPresentation, .note)
+
         let cards = collection.lists[0].cards
+
         XCTAssertEqual(cards.map(\.presentation), [.card, .note])
         XCTAssertEqual(cards[0].subtitleOverride, "Useful context")
         XCTAssertTrue(cards.allSatisfy
@@ -1060,6 +1185,7 @@ extension PlenactBoardDocumentTests
 
         collection.lists[0].cards = [existing]
         collection.lists[0].archivedCards = [archived]
+
         let original = collection /* Pre-operation value for preservation checks */
 
         XCTAssertThrowsError(try collection.addNote(title: " \n ", body: "Uncommitted"))
@@ -1071,6 +1197,7 @@ extension PlenactBoardDocumentTests
 
 
         let createdAt = Date(timeIntervalSince1970: 1_791_422_000) /* Creation timestamp under verification */
+
         try collection.addNote(title: "  Beach idea  ", body: "First line\n\nSecond line  ", createdAt: createdAt)
 
         XCTAssertEqual(
@@ -1096,6 +1223,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(board, boardBefore)
 
         collection.isArchived = true
+
         let archivedCollection = collection /* Collection state after archival */
 
         XCTAssertThrowsError(try collection.addNote(title: "No", body: ""))
@@ -1150,11 +1278,15 @@ extension PlenactBoardDocumentTests
                         current
                     }, set:
                     {
+
                         current = $0
+
                     }),
                 registerListNewNote:
                 {
+
                     newNoteAction = $0
+
                 },
                 onOpenSaved:
                 {

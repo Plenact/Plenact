@@ -42,6 +42,7 @@ extension PlenactBoardDocumentTests
         let name     = "Plenact.RoutineBackupTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
         let folder   = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+
         defer
         {
             defaults.removePersistentDomain(forName: name);
@@ -51,21 +52,29 @@ extension PlenactBoardDocumentTests
         let baseline   = try PlanningRoutineStore.load(from: defaults)
         var library    = baseline
         var attachment = KanbanAttachment(fileName: "routine-preview.png", mediaKind: .photo)
+
         attachment.drawingFileName = "routine-strokes.drawing"
         library.templates[1].collection.lists[0].cards[0].attachments = [attachment]
+
         try PlanningRoutineStore.save(library, baseline: baseline, to: defaults)
         XCTAssertEqual(
             try PlanningRoutineStore.retainedFiles(from: defaults), ["routine-preview.png", "routine-strokes.drawing"])
+
         let bytes     = try XCTUnwrap(defaults.data(forKey: PlanningRoutineStore.key))
         let documents = folder.appendingPathComponent("Documents")
         let media     = documents.appendingPathComponent("CardAttachments")
+
         try FileManager.default.createDirectory(at: media, withIntermediateDirectories: true)
+
         let preview = Data("saved PNG preview".utf8), strokes = Data("editable native strokes".utf8)
+
         try preview.write(to: media.appendingPathComponent("routine-preview.png"))
         try strokes.write(to: media.appendingPathComponent("routine-strokes.drawing"))
+
         let store = FullMonthExampleStore(
             root: folder.appendingPathComponent("Backup"), documents: documents,
             support: folder.appendingPathComponent("Support"), domainName: name)
+
         try store.loadExample(FullMonthExample.make())
         XCTAssertNil(defaults.object(forKey: PlanningRoutineStore.key))
         try store.restoreUserData()
@@ -88,13 +97,18 @@ extension PlenactBoardDocumentTests
     {
 
         var calendar = Calendar(identifier: .gregorian)
+
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 2
+
         let today   = calendar.date(from: DateComponents(year: 2026, month: 10, day: 15))!
         let example = FullMonthExample.make(now: today, calendar: calendar)
+
         XCTAssertEqual(example.document.firstWeekday, 2)
+
         var futureCount = 0
         var ids         = Set<Int>()
+
         for day in 1 ... 31
         {
 
@@ -105,6 +119,7 @@ extension PlenactBoardDocumentTests
                 {
                     $0.id == listID
                 }).cards
+
             if day < 15
             {
 
@@ -119,7 +134,9 @@ extension PlenactBoardDocumentTests
 
             if day > 15
             {
+
                 futureCount += cards.count;
+
                 XCTAssertLessThanOrEqual(cards.count, 1)
             }
 
@@ -144,6 +161,7 @@ extension PlenactBoardDocumentTests
 
             let date  = calendar.date(from: DateComponents(year: components.0, month: components.1, day: components.2))!
             let value = FullMonthExample.make(now: date, calendar: calendar)
+
             XCTAssertNotNil(value.document.week(for: date))
             XCTAssertEqual(
                 value.document.weeks.first
@@ -172,6 +190,7 @@ extension PlenactBoardDocumentTests
         let start      = Date(timeIntervalSince1970: 1800000000)
         let schedule   = QuickCaptureSchedule(start: start, stop: start.addingTimeInterval(3600), includesTime: true)
         let attachment = KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link)
+
         for presentation in [ItemPresentation.card, .note]
         {
 
@@ -179,6 +198,7 @@ extension PlenactBoardDocumentTests
                 listID: 7, title: "A new item", body: "Keep this writing", subtitle: "Context",
                 presentation: presentation, actions: ["First step"], attachments: [attachment], schedule: schedule)
             let card = try XCTUnwrap(ListItemCreation.items(capture, in: list, startingAt: 99)?.first)
+
             XCTAssertEqual(card.id, 99)
             XCTAssertEqual(card.presentation, presentation)
             XCTAssertEqual(card.descriptionOverride, "Keep this writing")
@@ -193,6 +213,7 @@ extension PlenactBoardDocumentTests
         let wrongOwner = QuickCaptureSubmission(
             listID: 8, title: "Wrong", body: "", subtitle: "", presentation: .card,
             actions: nil, attachments: [], schedule: nil)
+
         XCTAssertNil(ListItemCreation.items(wrongOwner, in: list, startingAt: 99))
         XCTAssertTrue(list.cards.isEmpty)
     }
@@ -216,18 +237,22 @@ extension PlenactBoardDocumentTests
             KanbanAttachment(fileName: "test-photo.png", mediaKind: .photo),
             KanbanAttachment(fileName: "test-video.mov", mediaKind: .video)
         ]
+
         for kind in [ItemPresentation.card, .note]
         {
 
             try collection.addNote(
                 title: "New item", body: "Keep this writing", presentation: kind, attachments: attachments)
+
             let item = try XCTUnwrap(collection.lists[0].cards.last)
+
             XCTAssertEqual(item.attachments, attachments)
             XCTAssertEqual(item.coverAttachmentID, attachments[1].id)
             XCTAssertEqual(item.presentation, kind)
         }
 
         let restored = try JSONDecoder().decode(PersonalCollection.self, from: JSONEncoder().encode(collection))
+
         XCTAssertEqual(restored.lists[0].cards, collection.lists[0].cards)
     }
 
@@ -252,10 +277,13 @@ extension PlenactBoardDocumentTests
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
+
             window.isHidden = true;
             window.rootViewController = nil;
+
             previous?.makeKeyAndVisible()
         }
 
@@ -263,10 +291,12 @@ extension PlenactBoardDocumentTests
         {
 
             let draft = CreationAttachmentDraft()
+
             draft.entries = [
                 .init(content: .link(try XCTUnwrap(URL(string: "https://example.com/plans")))),
                 .init(content: .drawing(DrawingCaptureDraft(drawing: drawingFixture())))
             ]
+
             let view = NavigationStack
             {
 
@@ -281,14 +311,17 @@ extension PlenactBoardDocumentTests
             } .modifier(CreationAttachmentPresentation(draft: draft))
             .preferredColorScheme(style == .dark ? .dark : .light)
             let host = UIHostingController(rootView: view)
+
             host.overrideUserInterfaceStyle = style
             window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
             window.rootViewController = host;
+
             window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(200))
             draft.openSources()
             try await Task.sleep(for: .milliseconds(400))
             XCTAssertNotNil(host.presentedViewController)
+
             let image = UIGraphicsImageRenderer(bounds: window.bounds).image
             {
                 _ in
@@ -297,12 +330,17 @@ extension PlenactBoardDocumentTests
 
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "plenact-creation-attachments-\(style.rawValue).png")
+
             try XCTUnwrap(image.pngData()).write(to: url)
             print("CREATION_ATTACHMENTS_RENDER=" + url.path)
+
             draft.sheet = nil
+
             try await Task.sleep(for: .milliseconds(300))
             XCTAssertEqual(draft.entries.count, 2, "Closing the menu must retain the draft attachments")
+
             window.rootViewController = nil
+
         }
 
     }
@@ -332,7 +370,9 @@ extension PlenactBoardDocumentTests
         }
 
         let data = try XCTUnwrap(image.pngData())
+
         draft.entries = [.init(content: .media(data, .photo, "png")), .init(content: .media(data, .photo, "png"))]
+
         for index in 0 ..< 20
         {
 
@@ -340,12 +380,15 @@ extension PlenactBoardDocumentTests
         }
 
         draft.entries.append(.init(content: .drawing(DrawingCaptureDraft(drawing: drawingFixture()))))
+
         var rejectedFiles: [URL] = []
+
         XCTAssertFalse(
             try draft.save
             {
                 attachments in
                 XCTAssertEqual(attachments.count, 23)
+
                 rejectedFiles = attachments.compactMap
                 {
                     CardAttachmentStore.fileURL(for: $0)
@@ -363,12 +406,15 @@ extension PlenactBoardDocumentTests
             {
                 !FileManager.default.fileExists(atPath: $0.path)
             })
+
         var saved: [KanbanAttachment] = []
+
         XCTAssertTrue(
             try draft.save
             {
 
                 saved = $0;
+
                 return true
             })
         defer
@@ -388,13 +434,18 @@ extension PlenactBoardDocumentTests
 
                 FileManager.default.fileExists(atPath: $0.path)
             })
+
         let drawing = try XCTUnwrap(saved.last)
+
         XCTAssertEqual(try DrawingAttachmentStore.load(drawing).drawing.strokes.count, drawingFixture().strokes.count)
+
         var thrownFiles: [URL] = []
+
         XCTAssertThrowsError(
             try draft.save
             {
                 attachments in
+
                 thrownFiles = attachments.compactMap
                 {
                     CardAttachmentStore.fileURL(for: $0)
@@ -426,7 +477,9 @@ extension PlenactBoardDocumentTests
     {
 
         let format = UIGraphicsImageRendererFormat();
+
         format.scale = 1
+
         let original = UIGraphicsImageRenderer(size: CGSize(width: 3000, height: 1800), format: format).image
         {
 
@@ -437,9 +490,12 @@ extension PlenactBoardDocumentTests
 
         let data  = try CollectionBackgroundPhotoStore.preparedPhoto(try XCTUnwrap(original.pngData()))
         let photo = try XCTUnwrap(UIImage(data: data))
+
         XCTAssertLessThanOrEqual(max(photo.size.width, photo.size.height), 2048)
         XCTAssertEqual(photo.size.width / photo.size.height, 3000.0 / 1800.0, accuracy: 0.01)
+
         let name = try CollectionBackgroundPhotoStore.save(data)
+
         defer
         {
             CollectionBackgroundPhotoStore.remove(name)
@@ -482,6 +538,7 @@ extension PlenactBoardDocumentTests
             }
 
             let saved = CollectionBackground(preset: preset)
+
             XCTAssertEqual(
                 try JSONDecoder().decode(CollectionBackground.self, from: JSONEncoder().encode(saved)), saved)
         }
@@ -518,7 +575,9 @@ extension PlenactBoardDocumentTests
             {
                 (10 ... 20).contains($0.tags.count)
             })
+
         let animals = ExampleCoverImage.search("animal")
+
         XCTAssertTrue(animals.contains(.petCare))
         XCTAssertTrue(animals.contains(.birdWatching))
         XCTAssertTrue(animals.contains(.butterfly))
@@ -576,8 +635,11 @@ extension PlenactBoardDocumentTests
             XCTAssertFalse(picture.checklists.isEmpty)
             XCTAssertFalse(picture.subtitle.isEmpty)
             XCTAssertNoThrow(try CardAttachmentStore.coverThumbnail(for: XCTUnwrap(picture.coverAttachment)))
+
             var card = picture
+
             card.displayFormat = .card
+
             XCTAssertEqual(card.attachments, picture.attachments)
             XCTAssertEqual(card.checklists, picture.checklists)
             XCTAssertEqual(card.word, picture.word)
@@ -632,6 +694,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(galleryCards.first?.coverAttachment?.exampleImage, .garden)
         XCTAssertEqual(cards.compactMap(\.coverAttachment).count, 6)
         XCTAssertTrue(CardAttachmentStore.fileNames(in: lists).isEmpty)
+
         let photos = cards.flatMap
         {
             $0.attachments ?? []
@@ -649,9 +712,12 @@ extension PlenactBoardDocumentTests
         }
 
         let restored = try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(lists))
+
         XCTAssertEqual(restored, lists)
+
         var edited   = try XCTUnwrap(galleryCards.first)
         let original = edited
+
         try edited.reorderGalleryPhotos(edited.galleryPhotos.reversed().map(\.id))
         try edited.setPhotoCaption("My own plans", for: edited.galleryPhotos[0].id)
         edited.removeAttachment(edited.galleryPhotos[1].id)
@@ -677,18 +743,27 @@ extension PlenactBoardDocumentTests
         let photo      = KanbanAttachment(fileName: "gallery-legacy.jpg", mediaKind: .photo)
         let legacyData = try JSONEncoder().encode(photo)
         let json       = try XCTUnwrap(JSONSerialization.jsonObject(with: legacyData) as? [String: Any])
+
         XCTAssertNil(json["caption"])
         XCTAssertEqual(try JSONDecoder().decode(KanbanAttachment.self, from: legacyData), photo)
 
         let link = KanbanAttachment(url: URL(string: "https://example.com"), mediaKind: .link)
         var card = KanbanCard(id: 31, word: "Gallery", listTitle: "Local", checklists: [], attachments: [photo, link])
+
         try card.setPhotoCaption("  A quiet afternoon\nby the lake  ", for: photo.id)
+
         var expected = photo
+
         expected.caption = "A quiet afternoon\nby the lake"
+
         XCTAssertEqual(card.attachments, [expected, link])
+
         let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+
         XCTAssertEqual(restored, card)
+
         let original = card
+
         for id in [link.id, UUID()]
         {
 
@@ -723,13 +798,16 @@ extension PlenactBoardDocumentTests
         var card   = KanbanCard(
             id: 32, word: "Gallery", listTitle: "Local", checklists: [],
             attachments: [first, video, cover, second, link, third], coverAttachmentID: cover.id)
+
         XCTAssertEqual(card.galleryPhotos, [first, second, third])
         try card.reorderGalleryPhotos([third.id, first.id, second.id])
         XCTAssertEqual(card.attachments, [third, video, cover, first, link, second])
         XCTAssertEqual(card.coverAttachmentID, cover.id)
         try card.reorderGalleryPhotos([first.id, second.id, third.id])
         XCTAssertEqual(card.attachments, [first, video, cover, second, link, third])
+
         let snapshot = card
+
         for ids in [
             [first.id], [first.id, first.id, third.id], [cover.id, second.id, third.id],
             [UUID(), second.id, third.id], [link.id, second.id, third.id]
@@ -763,6 +841,7 @@ extension PlenactBoardDocumentTests
 
         let suite    = "PlenactTests.Gallery.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+
         defer
         {
             defaults.removePersistentDomain(forName: suite)
@@ -773,19 +852,31 @@ extension PlenactBoardDocumentTests
         var original = KanbanCard(
             id: 33, word: "Trip", listTitle: "Local", checklists: [], attachments: [first, second])
         let archived = original
+
         try original.setPhotoCaption("Edited", for: first.id)
         try original.reorderGalleryPhotos([second.id, first.id])
+
         let lists = [KanbanList(id: 0, title: "Local", cards: [original], archivedCards: [archived])]
+
         try KanbanBoardPersistence.saveListsChecked(lists, suiteName: suite)
+
         let restoredWeek = await KanbanBoardPersistence.loadListsInBackground(suiteName: suite)
+
         XCTAssertEqual(restoredWeek, lists)
+
         var personal = PersonalCollection(title: "Gallery", kind: .board)
+
         personal.lists = lists
+
         try PersonalCollectionStore.saveChecked([personal], to: defaults)
         XCTAssertEqual(PersonalCollectionStore.load(from: defaults), [personal])
+
         var removed = original
+
         removed.removeAttachment(first.id)
+
         let retained = [KanbanList(id: 0, title: "Local", cards: [removed], archivedCards: [archived])]
+
         XCTAssertEqual(CardAttachmentStore.fileNames(in: retained), ["retained-gallery.jpg"])
         XCTAssertEqual(archived.attachments, [first, second])
         XCTAssertEqual(original.attachments?.first, second)
@@ -820,11 +911,13 @@ extension PlenactBoardDocumentTests
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
 
             window.isHidden = true
             window.rootViewController = nil
+
             previous?.makeKey()
         }
 
@@ -847,6 +940,7 @@ extension PlenactBoardDocumentTests
                 [$0]
             }
             ?? []
+
             return matches + view.subviews.flatMap
             {
                 scrollViews(in: $0)
@@ -888,8 +982,10 @@ extension PlenactBoardDocumentTests
                 }
             )
             let controller = UIHostingController(rootView: gallery.environment(\.dynamicTypeSize, textSize))
+
             window.frame = CGRect(x: 0, y: 0, width: width, height: 900)
             window.rootViewController = controller
+
             window.makeKeyAndVisible()
             controller.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(300))
@@ -897,6 +993,7 @@ extension PlenactBoardDocumentTests
                 {
                     $0.contentSize.width > $0.bounds.width
                 })
+
             let image = UIGraphicsImageRenderer(size: window.bounds.size).image
             {
                 _ in
@@ -904,8 +1001,10 @@ extension PlenactBoardDocumentTests
             }
 
             let snapshot = XCTAttachment(image: image)
+
             snapshot.name = "Photo-Gallery-\(Int(width))-\(textSize)"
             snapshot.lifetime = .keepAlways
+
             add(snapshot)
         }
 
@@ -927,6 +1026,7 @@ extension PlenactBoardDocumentTests
     {
 
         let source = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".m4a")
+
         defer
         {
             try? FileManager.default.removeItem(at: source)
@@ -934,7 +1034,9 @@ extension PlenactBoardDocumentTests
 
         let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1))
         let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 4_410))
+
         buffer.frameLength = 4_410
+
         if let data = buffer.floatChannelData
         {
             data[0].initialize(repeating: 0, count: 4_410)
@@ -946,11 +1048,13 @@ extension PlenactBoardDocumentTests
             let file = try AVAudioFile(
                 forWriting: source,
                 settings: [AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44_100, AVNumberOfChannelsKey: 1])
+
             try file.write(from: buffer)
         }
 
         let audio                        = try Data(contentsOf: source)
         var retained: [KanbanAttachment] = []
+
         defer
         {
             try? CardAttachmentStore.removeDeletedFiles(Set(retained.compactMap(\.fileName)), keeping: [])
@@ -960,27 +1064,41 @@ extension PlenactBoardDocumentTests
             try QuickCaptureMediaCommit.save([], audio: audio)
             {
                 attachments in
+
                 retained = attachments;
+
                 return true
             })
+
         let attachment = try XCTUnwrap(retained.first)
+
         XCTAssertEqual(attachment.kind, .audio)
         XCTAssertNil(CardAttachmentStore.imageURL(for: attachment))
+
         let savedURL = try XCTUnwrap(CardAttachmentStore.fileURL(for: attachment))
+
         XCTAssertEqual(try Data(contentsOf: savedURL), audio)
+
         let player = try AVAudioPlayer(contentsOf: savedURL)
+
         XCTAssertGreaterThan(player.duration, 0)
+
         let card = KanbanCard(
             id: 1, word: "Voice", listTitle: "Today", attachments: retained, descriptionOverride: "Reviewed transcript")
         let saved = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+
         XCTAssertEqual(saved.attachments?.first?.kind, .audio)
         XCTAssertEqual(saved.descriptionOverride, "Reviewed transcript")
+
         var rejected: [URL] = []
+
         XCTAssertFalse(
             try QuickCaptureMediaCommit.save([], audio: audio)
             {
                 attachments in
+
                 rejected = attachments.compactMap(CardAttachmentStore.fileURL);
+
                 return false
             })
         XCTAssertTrue(rejected.allSatisfy
@@ -1021,6 +1139,7 @@ extension PlenactBoardDocumentTests
 
         let photo                         = QuickCapturePhoto(data: try XCTUnwrap(image.pngData()), fileExtension: "png")
         var committed: [KanbanAttachment] = []
+
         defer
         {
             try? CardAttachmentStore.removeDeletedFiles(Set(committed.compactMap(\.fileName)), keeping: [])
@@ -1030,33 +1149,45 @@ extension PlenactBoardDocumentTests
             try QuickCaptureMediaCommit.save([photo])
             {
                 attachments in
+
                 committed = attachments
+
                 XCTAssertEqual(attachments.count, 1)
                 return true
             })
+
         let attachment = try XCTUnwrap(committed.first)
         let url        = try XCTUnwrap(CardAttachmentStore.fileURL(for: attachment))
+
         XCTAssertEqual(try Data(contentsOf: url), photo.data)
+
         let card = KanbanCard(
             id: 9, word: "Captured title", listTitle: "Today", attachments: committed, coverAttachmentID: attachment.id)
         let restored = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+
         XCTAssertEqual(restored.attachments, committed)
         XCTAssertEqual(restored.coverAttachmentID, attachment.id)
+
         var rejectedURLs: [URL] = []
+
         XCTAssertFalse(
             try QuickCaptureMediaCommit.save([photo])
             {
                 attachments in
+
                 rejectedURLs = attachments.compactMap(CardAttachmentStore.fileURL)
+
                 return false
             })
         XCTAssertTrue(rejectedURLs.allSatisfy
             {
                 !FileManager.default.fileExists(atPath: $0.path)
             })
+
         let directory = url.deletingLastPathComponent()
         let before    = Set(try FileManager.default.contentsOfDirectory(atPath: directory.path))
         let invalid   = QuickCapturePhoto(data: Data("not an image".utf8), fileExtension: "png")
+
         XCTAssertThrowsError(
             try QuickCaptureMediaCommit.save([photo, invalid])
             {
@@ -1084,6 +1215,7 @@ extension PlenactBoardDocumentTests
 
         let draft                     = DrawingCaptureDraft(drawing: drawingFixture())
         var saved: [KanbanAttachment] = []
+
         defer
         {
             try? CardAttachmentStore.removeDeletedFiles(Set(saved.flatMap(\.storedFileNames)), keeping: [])
@@ -1094,23 +1226,30 @@ extension PlenactBoardDocumentTests
             {
 
                 saved = $0;
+
                 return true
             })
+
         let attachment = try XCTUnwrap(saved.first)
+
         XCTAssertEqual(attachment.kind, .photo)
         XCTAssertEqual(attachment.storedFileNames.count, 2)
         XCTAssertNotNil(UIImage(contentsOfFile: try XCTUnwrap(CardAttachmentStore.imageURL(for: attachment)).path))
+
         let card = KanbanCard(
             id: 4, word: "Sketch", listTitle: "Today", attachments: saved, coverAttachmentID: attachment.id)
         let restored           = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
         let restoredAttachment = try XCTUnwrap(restored.attachments?.first)
         let editable           = try DrawingAttachmentStore.load(restoredAttachment)
+
         XCTAssertEqual(editable.drawing.strokes.count, draft.drawing.strokes.count)
         XCTAssertEqual(editable.drawing.bounds, draft.drawing.bounds)
         XCTAssertEqual(
             CardAttachmentStore.fileNames(in: [KanbanList(id: 4, title: "Today", cards: [restored])]),
             Set(attachment.storedFileNames))
+
         let replacement = try DrawingAttachmentStore.save(editable, replacing: attachment)
+
         saved.append(replacement)
         XCTAssertEqual(replacement.id, attachment.id)
         XCTAssertEqual(replacement.addedAt, attachment.addedAt)
@@ -1118,11 +1257,15 @@ extension PlenactBoardDocumentTests
         // Editing prepares new files and never overwrites strokes referenced by a saved snapshot.
         XCTAssertNoThrow(try DrawingAttachmentStore.load(attachment))
         XCTAssertNoThrow(try DrawingAttachmentStore.load(replacement))
+
         let legacy = KanbanAttachment(fileName: "old-photo.jpg", mediaKind: .photo)
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+
         object.removeValue(forKey: "drawingFileName")
+
         let legacyRestored = try JSONDecoder().decode(
             KanbanAttachment.self, from: JSONSerialization.data(withJSONObject: object))
+
         XCTAssertNil(legacyRestored.drawingFileName)
         XCTAssertEqual(legacyRestored.storedFileNames, ["old-photo.jpg"])
     }
@@ -1146,15 +1289,19 @@ extension PlenactBoardDocumentTests
 
         let draft                        = DrawingCaptureDraft(drawing: drawingFixture())
         var rejected: [KanbanAttachment] = []
+
         XCTAssertFalse(
             try QuickCaptureMediaCommit.save([], drawings: [draft])
             {
 
                 rejected = $0;
+
                 return false
             })
+
         let attachment = try XCTUnwrap(rejected.first)
         let directory  = try XCTUnwrap(CardAttachmentStore.fileURL(for: attachment)).deletingLastPathComponent()
+
         for name in attachment.storedFileNames
         {
 
@@ -1162,6 +1309,7 @@ extension PlenactBoardDocumentTests
         }
 
         let before = Set(try FileManager.default.contentsOfDirectory(atPath: directory.path))
+
         XCTAssertThrowsError(
             try QuickCaptureMediaCommit.save([], drawings: [draft, DrawingCaptureDraft()])
             {
@@ -1192,12 +1340,14 @@ extension PlenactBoardDocumentTests
         let transparent = try DrawingImageExport.data(drawing, format: .png, transparent: true)
         let opaque      = try DrawingImageExport.data(drawing, format: .png)
         let jpeg        = try DrawingImageExport.data(drawing, format: .jpeg)
+
         XCTAssertEqual(Array(transparent.prefix(8)), [137, 80, 78, 71, 13, 10, 26, 10])
         XCTAssertEqual(Array(jpeg.prefix(2)), [255, 216])
         for data in [transparent, opaque, jpeg]
         {
 
             let image = try XCTUnwrap(UIImage(data: data))
+
             XCTAssertLessThanOrEqual(max(image.size.width * image.scale, image.size.height * image.scale), 4096)
             XCTAssertGreaterThan(image.size.width, 0)
         }
@@ -1223,6 +1373,7 @@ extension PlenactBoardDocumentTests
                 CGContext(
                     data: &bytes, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
                     space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+
             context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
             return bytes[3]
         }
@@ -1256,14 +1407,18 @@ extension PlenactBoardDocumentTests
             } .first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
+
         defer
         {
+
             window.isHidden = true;
             window.rootViewController = nil;
+
             previous?.makeKeyAndVisible()
         }
 
         var saves = 0
+
         for size in [CGSize(width: 393, height: 852), CGSize(width: 744, height: 1133)]
         {
 
@@ -1271,11 +1426,15 @@ extension PlenactBoardDocumentTests
                 rootView: DrawingCaptureEditor(initial: DrawingCaptureDraft(drawing: drawingFixture()))
                 {
                     _ in
+
                     saves += 1;
+
                     return true
                 })
+
             window.frame = CGRect(origin: .zero, size: size)
             window.rootViewController = host;
+
             window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(800))
             host.view.layoutIfNeeded()
@@ -1302,8 +1461,10 @@ extension PlenactBoardDocumentTests
             }
 
             let canvas = try XCTUnwrap(canvases(host.view).first)
+
             XCTAssertEqual(canvas.drawing.strokes.count, 1)
             XCTAssertTrue(canvas.isFirstResponder)
+
             let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
                 _ in
@@ -1312,6 +1473,7 @@ extension PlenactBoardDocumentTests
 
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(
                                     "plenact-drawing-\(Int(size.width)).png")
+
             try XCTUnwrap(image.pngData()).write(to: url)
             print("DRAWING_RENDER=" + url.path)
         }
@@ -1342,12 +1504,14 @@ extension PlenactBoardDocumentTests
             KanbanAttachment(fileName: "synthetic-video.mov", mediaKind: .video),
             KanbanAttachment(fileName: "synthetic-missing-photo.jpg")
         ]
+
         for attachment in attachments
         {
 
 
             let controller = UIHostingController(
                 rootView: CardAttachmentThumbnail(attachment: attachment)) /* Hosted controller for layout assertions */
+
             for width: CGFloat in [92, 128, 260]
             {
 
@@ -1386,12 +1550,14 @@ extension PlenactBoardDocumentTests
             } .first)                                             /* Active scene for UI hosting     */
         let previous = scene.windows.first(where: \.isKeyWindow)  /* Previously focused window       */
         let window   = UIWindow(windowScene: scene)               /* Temporary window for UI hosting */
+
         defer
         {
 
 
             window.isHidden = true
             window.rootViewController = nil
+
             previous?.makeKey()
         }
 
@@ -1399,14 +1565,18 @@ extension PlenactBoardDocumentTests
         let photo = KanbanAttachment(exampleImage: .garden) /* Synthetic photo fixture       */
         var card  = KanbanCard(
             id: 94, word: "Synthetic cover layout", listTitle: "Synthetic", checklists: []) /* Card value under verification */
+
         card.appearance = ItemAppearance(icon: .project, background: .blue)
         card.attachments = [
             photo,
             KanbanAttachment(exampleImage: .camping, caption: "Our next adventure"),
             KanbanAttachment(exampleImage: .mountains)
         ]
+
         var covered = card /* Card with a selected cover */
+
         covered.coverAttachmentID = photo.id
+
         for fixture in [card, covered]
         {
 
@@ -1422,13 +1592,16 @@ extension PlenactBoardDocumentTests
                         })
                 })
             let size = CGSize(width: 393, height: 852) /* Proposed layout dimensions */
+
             window.frame = CGRect(origin: .zero, size: size)
             window.rootViewController = controller
+
             window.makeKeyAndVisible()
             controller.view.layoutIfNeeded()
             try await Task.sleep(for: .milliseconds(200))
 
             XCTAssertTrue(emitted.isEmpty, "Relocating cover setup must not modify cover or attachments")
+
             let image = UIGraphicsImageRenderer(size: size).image
             {
             _ in /* Synthetic two-color crop source */
@@ -1436,8 +1609,10 @@ extension PlenactBoardDocumentTests
             }
 
             let snapshot = XCTAttachment(image: image) /* Persisted snapshot under verification */
+
             snapshot.name = fixture.coverAttachmentID == nil ? "Card-without-cover-setup" : "Card-with-selected-cover"
             snapshot.lifetime = .keepAlways
+
             add(snapshot)
         }
 
@@ -1483,11 +1658,13 @@ extension PlenactBoardDocumentTests
         card.coverAttachmentID = link.id
 
         XCTAssertEqual(card.attachmentsExcludingCover, original.attachments)
+
         card.coverAttachmentID = UUID()
 
         XCTAssertEqual(card.attachmentsExcludingCover, original.attachments)
 
         card.attachments = [cover]
+
         try card.setCover(cover.id)
 
         XCTAssertTrue(card.attachmentsExcludingCover.isEmpty)
@@ -1600,7 +1777,9 @@ extension PlenactBoardDocumentTests
             let controller = UIHostingController(rootView: view) /* Hosted controller for layout assertions */
 
             controller.loadViewIfNeeded()
+
             controller.view.frame = CGRect(x: 0, y: 0, width: width, height: height)
+
             controller.view.layoutIfNeeded()
 
             let fitting = controller.sizeThatFits(

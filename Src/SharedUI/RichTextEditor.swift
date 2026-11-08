@@ -46,6 +46,7 @@ enum PlanRichText
         var color:    String? = nil
         var fontName: String? = nil
         var fontSize: Double? = nil
+
     }
 
     static let colors: [(String, UIColor)] = [
@@ -106,10 +107,12 @@ enum PlanRichText
     {
 
         let result = NSMutableAttributedString(string: "")
+
         for run in runs(value) ?? [Run(text: value)]
         {
 
             var traits: UIFontDescriptor.SymbolicTraits = []
+
             if run.bold
             {
                 traits.insert(.traitBold)
@@ -137,6 +140,7 @@ enum PlanRichText
             let styledFont = UIFont(
                 descriptor: font.fontDescriptor.withSymbolicTraits(traits) ?? font.fontDescriptor, size: font.pointSize)
             var attributes: [NSAttributedString.Key: Any] = [.font: styledFont, .foregroundColor: UIColor.label]
+
             if let name = run.color, let color = colors.first(where:
                 {
                     $0.0 == name
@@ -145,16 +149,21 @@ enum PlanRichText
 
                 attributes[.foregroundColor] = color
                 attributes[NSAttributedString.Key("PlenactColor")] = name
+
             }
 
             if let name = run.fontName
             {
+
                 attributes[NSAttributedString.Key("PlenactFontName")] = name
+
             }
 
             if let size = run.fontSize
             {
+
                 attributes[NSAttributedString.Key("PlenactFontSize")] = size
+
             }
 
             result.append(NSAttributedString(string: run.text, attributes: attributes))
@@ -178,10 +187,13 @@ enum PlanRichText
     {
 
         var runs: [Run] = []
+
         value.enumerateAttributes(in: NSRange(location: 0, length: value.length))
         {
             attributes, range, _ in
+
             let traits = (attributes[.font] as? UIFont)?.fontDescriptor.symbolicTraits ?? []
+
             runs.append(
                 Run(
                     text: (value.string as NSString).substring(with: range), bold: traits.contains(.traitBold),
@@ -203,7 +215,9 @@ enum PlanRichText
         }
 
         let encoder = JSONEncoder();
+
         encoder.outputFormatting = .sortedKeys
+
         guard let data = try? encoder.encode(runs) else
         {
             return value.string
@@ -227,10 +241,12 @@ enum PlanRichText
     {
 
         var result = AttributedString(plain(value))
+
         if let runs = runs(value)
         {
 
             result = AttributedString()
+
             for run in runs
             {
 
@@ -247,17 +263,23 @@ enum PlanRichText
                     .system(size: $0)
                 }
                 ?? .body
+
                 if run.bold
                 {
+
                     font = font.bold()
+
                 }
 
                 if run.italic
                 {
+
                     font = font.italic()
+
                 }
 
                 part.font = font
+
                 if let name = run.color, let color = colors.first(where:
                     {
                         $0.0 == name
@@ -265,6 +287,7 @@ enum PlanRichText
                 {
 
                     part.foregroundColor = Color(uiColor: color)
+
                 }
 
                 result.append(part)
@@ -325,6 +348,7 @@ struct RichTextEditor: UIViewRepresentable
     {
 
         let view = UITextView()
+
         view.autocapitalizationType = .sentences
         view.backgroundColor = .clear
         view.isScrollEnabled = false
@@ -336,19 +360,25 @@ struct RichTextEditor: UIViewRepresentable
         view.accessibilityLabel = placeholder
         view.delegate = context.coordinator
         context.coordinator.view = view
+
         let hint = UILabel()
+
         hint.text = placeholder
         hint.font = .preferredFont(forTextStyle: .body)
         hint.textColor = .placeholderText
         hint.translatesAutoresizingMaskIntoConstraints = false
+
         view.addSubview(hint)
         NSLayoutConstraint.activate([
                 hint.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 hint.topAnchor.constraint(equalTo: view.topAnchor, constant: verticalInset)
             ])
+
         context.coordinator.hint = hint
         hint.isHidden = !PlanRichText.plain(text).isEmpty
+
         let coordinator = context.coordinator
+
         view.inputAccessoryView = PlenactKeyboardToolbar(
             input: view,
             formatting: KeyboardFormatting(
@@ -368,6 +398,7 @@ struct RichTextEditor: UIViewRepresentable
                     coordinator?.font(name: name, size: size)
                 }
             ))
+
         return view
     }
 
@@ -387,15 +418,19 @@ struct RichTextEditor: UIViewRepresentable
     {
 
         context.coordinator.parent = self
+
         if PlanRichText.encode(view.attributedText) != text
         {
 
             let selection = view.selectedRange
+
             view.attributedText = PlanRichText.attributed(text)
             view.selectedRange = NSRange(location: min(selection.location, view.textStorage.length), length: 0)
+
         }
 
         context.coordinator.hint?.isHidden = !PlanRichText.plain(text).isEmpty
+
         // UIKit focus changes must happen after SwiftUI finishes its current view update.
         context.coordinator.scheduleFocusUpdate(view)
     }
@@ -458,7 +493,9 @@ struct RichTextEditor: UIViewRepresentable
         ///
         init(_ parent: RichTextEditor)
         {
+
             self.parent = parent
+
         }
 
 
@@ -483,6 +520,7 @@ struct RichTextEditor: UIViewRepresentable
             }
 
             focusUpdatePending = true
+
             DispatchQueue.main.async
             {
                 [weak self, weak view] in
@@ -492,6 +530,7 @@ struct RichTextEditor: UIViewRepresentable
                 }
 
                 self.focusUpdatePending = false
+
                 guard let view, view.window != nil, let focus = self.parent.focus,
                 focus.wrappedValue != view.isFirstResponder
                 else
@@ -501,9 +540,12 @@ struct RichTextEditor: UIViewRepresentable
 
                 // Read the latest request: a user may have tapped another field while this was queued.
                 self.applyingFocus = true
+
                 defer
                 {
+
                     self.applyingFocus = false
+
                 }
 
                 if focus.wrappedValue
@@ -535,6 +577,7 @@ struct RichTextEditor: UIViewRepresentable
 
             parent.text = PlanRichText.encode(textView.attributedText)
             hint?.isHidden = !textView.text.isEmpty
+
             PlenactKeyboard.shared.refreshActive()
         }
 
@@ -554,7 +597,9 @@ struct RichTextEditor: UIViewRepresentable
 
             if !applyingFocus, parent.focus?.wrappedValue == false
             {
+
                 parent.focus?.wrappedValue = true
+
             }
 
         }
@@ -575,7 +620,9 @@ struct RichTextEditor: UIViewRepresentable
 
             if !applyingFocus, parent.focus?.wrappedValue == true
             {
+
                 parent.focus?.wrappedValue = false
+
             }
 
         }
@@ -604,6 +651,7 @@ struct RichTextEditor: UIViewRepresentable
             let previous     = NSAttributedString(attributedString: view.attributedText)
             let oldSelection = view.selectedRange
             let oldTyping    = view.typingAttributes
+
             view.undoManager?.registerUndo(withTarget: self)
             {
 
@@ -615,6 +663,7 @@ struct RichTextEditor: UIViewRepresentable
                 location: min(selection.location, text.length),
                 length: min(selection.length, max(0, text.length - selection.location)))
             view.typingAttributes = typing
+
             textViewDidChange(view)
         }
 
@@ -640,6 +689,7 @@ struct RichTextEditor: UIViewRepresentable
             let previous  = NSAttributedString(attributedString: view.attributedText)
             let selection = view.selectedRange
             let typing    = view.typingAttributes
+
             view.undoManager?.registerUndo(withTarget: self)
             {
 
@@ -648,11 +698,14 @@ struct RichTextEditor: UIViewRepresentable
 
             if selection.length == 0
             {
+
                 view.typingAttributes = change(view.typingAttributes);
+
                 return
             }
 
             let copy = NSMutableAttributedString(attributedString: view.attributedText)
+
             copy.enumerateAttributes(in: selection)
             {
                 attributes, range, _ in
@@ -661,6 +714,7 @@ struct RichTextEditor: UIViewRepresentable
 
             view.attributedText = copy
             view.selectedRange = selection
+
             textViewDidChange(view)
         }
 
@@ -688,12 +742,15 @@ struct RichTextEditor: UIViewRepresentable
             ? view.typingAttributes
             : view.textStorage.attributes(at: view.selectedRange.location, effectiveRange: nil)
             let enabled = !((attributes[.font] as? UIFont)?.fontDescriptor.symbolicTraits.contains(trait) ?? false)
+
             apply
             {
                 attributes in
+
                 var attributes = attributes
                 let font       = (attributes[.font] as? UIFont) ?? .preferredFont(forTextStyle: .body)
                 var traits     = font.fontDescriptor.symbolicTraits
+
                 if enabled
                 {
                     traits.insert(trait)
@@ -706,6 +763,7 @@ struct RichTextEditor: UIViewRepresentable
                 attributes[.font] = UIFont(
                     descriptor: font.fontDescriptor.withSymbolicTraits(traits) ?? font.fontDescriptor,
                     size: font.pointSize)
+
                 return attributes
             }
 
@@ -729,6 +787,7 @@ struct RichTextEditor: UIViewRepresentable
             apply
             {
                 attributes in
+
                 var attributes = attributes
                 let old        = (attributes[.font] as? UIFont) ?? .preferredFont(forTextStyle: .body)
                 let pointSize  = size.map
@@ -744,17 +803,23 @@ struct RichTextEditor: UIViewRepresentable
                         UIFont(name: $0, size: pointSize)
                     }
                     ?? old.withSize(pointSize))
+
                 attributes[.font] = UIFont(
                     descriptor: base.fontDescriptor.withSymbolicTraits(old.fontDescriptor.symbolicTraits)
                     ?? base.fontDescriptor, size: pointSize)
+
                 if let name
                 {
+
                     attributes[NSAttributedString.Key("PlenactFontName")] = name
+
                 }
 
                 if let size
                 {
+
                     attributes[NSAttributedString.Key("PlenactFontSize")] = size
+
                 }
 
                 return attributes
@@ -779,12 +844,15 @@ struct RichTextEditor: UIViewRepresentable
             apply
             {
                 attributes in
+
                 var attributes = attributes
+
                 attributes[.foregroundColor] = PlanRichText.colors.first(where:
                     {
                         $0.0 == name
                     })?.1 ?? UIColor.label
                 attributes[NSAttributedString.Key("PlenactColor")] = name == "Default" ? nil : name
+
                 return attributes
             }
 

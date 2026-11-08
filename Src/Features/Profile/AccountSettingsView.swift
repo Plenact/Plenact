@@ -270,6 +270,7 @@ struct AccountSettingsView: View
         _todayFocusOrder = State(initialValue: preferences.todayFocusOrder)
         _todayFocusGroupsBySection = State(initialValue: preferences.todayFocusGroupsBySection)
         _todayFocusHidesCompleted = State(initialValue: preferences.todayFocusHidesCompleted)
+
     }
 
 
@@ -299,12 +300,14 @@ struct AccountSettingsView: View
 
 
                 photoFileName = try ProfileAvatarPhotoStore.save(avatarPhotoData)
+
             }
             else
             {
 
 
                 photoFileName = nil
+
             }
 
         }
@@ -429,12 +432,14 @@ struct AccountSettingsView: View
 
                                     isChoosingAvatarIcon = true
                                     profileSheetDetent = .height(620)
+
                                 }
                                 .onDisappear
                                 {
 
                                     isChoosingAvatarIcon = false
                                     profileSheetDetent = .large
+
                                 }
 
                             }
@@ -504,6 +509,7 @@ struct AccountSettingsView: View
                                 {
 
                                     confirmsRemoval = true
+
                                 }
 
                             }
@@ -536,6 +542,7 @@ struct AccountSettingsView: View
                             {
 
                                 showsShortcutEditor = true
+
                             }
                             label:
                             {
@@ -559,6 +566,7 @@ struct AccountSettingsView: View
 
                                 firstWeekday = planningAccess?.document.firstWeekday ?? Calendar.current.firstWeekday
                                 didLoadWeekStart = true
+
                             }
 
                             Toggle("Show due dates on new cards", isOn: $showsDueDatesOnNewCards)
@@ -595,7 +603,9 @@ struct AccountSettingsView: View
 
                             Button("Review invitations & reminders")
                             {
+
                                 showsReviewRhythmSettings = true
+
                             }
 
                         }
@@ -683,7 +693,9 @@ struct AccountSettingsView: View
                 )
                 {
                     pins in
+
                     listPinData = TodayListPins.encode(pins)
+
                 }
 
             }
@@ -762,7 +774,9 @@ struct AccountSettingsView: View
                             {
                                 if !$0
                                 {
+
                                     photoSaveError = nil
+
                                 }
 
                             }
@@ -772,7 +786,9 @@ struct AccountSettingsView: View
 
             Button("OK", role: .cancel)
             {
+
                 photoSaveError = nil
+
             }
 
         }
@@ -830,6 +846,7 @@ struct PlanSettingsView: View
         {
 
             profile.preferences = preferences
+
             onSaveProfile(profile)
         }
         return true
@@ -915,7 +932,9 @@ struct PlanSettingsView: View
 
                     Button("Review invitations & reminders")
                     {
+
                         showsReviewRhythmSettings = true
+
                     }
 
                 }
@@ -928,12 +947,16 @@ struct PlanSettingsView: View
 
                     Button("My shortcuts", systemImage: "square.grid.3x2")
                     {
+
                         showsShortcuts = true
+
                     }
 
                     Button("Planning Templates", systemImage: "doc.on.doc")
                     {
+
                         showsTemplates = true
+
                     }
 
                 }
@@ -1009,6 +1032,7 @@ struct PlanSettingsView: View
 
                 firstWeekday = access?.document.firstWeekday ?? Calendar.current.firstWeekday
                 loaded = true
+
             }
             .sheet(isPresented: $showsReviewRhythmSettings)
             {
@@ -1022,12 +1046,16 @@ struct PlanSettingsView: View
 
                     return
                 }
+
                 opensLibraryAfterTemplates = false
+
                 let savedFirstWeekday = access?.document.firstWeekday ?? Calendar.current.firstWeekday
+
                 if preferences != PlanPreferencesStore.load() || firstWeekday != savedFirstWeekday
                 {
 
                     confirmsTemplateNavigation = true
+
                 }
                 else
                 {
@@ -1042,6 +1070,7 @@ struct PlanSettingsView: View
 
                     opensLibraryAfterTemplates = true
                     showsTemplates = false
+
                 })
             }
             .confirmationDialog("Save settings before opening Templates?", isPresented: $confirmsTemplateNavigation,
@@ -1077,6 +1106,7 @@ struct PlanSettingsView: View
                 {
 
                     pinData = TodayListPins.encode($0)
+
                 }
 
             }
@@ -1101,6 +1131,7 @@ struct NewCardColorDefaultsSection: View
 
     @Binding var headers:     Bool
     @Binding var backgrounds: Bool
+
     var body:                 some View
     {
 
@@ -1176,7 +1207,9 @@ struct TodayFocusSettingsSection: View
                 },
                 set:
                 {
+
                     order = $0
+
                 }))
             {
 

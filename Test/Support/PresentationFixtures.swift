@@ -28,6 +28,7 @@ final class NoteNavigationProbe: ObservableObject
 
     @Published var path: [KanbanCard] = []
     var visibleNotes:    Set<UUID>    = []
+
     var noteIsVisible:   Bool
     {
         !visibleNotes.isEmpty
@@ -47,6 +48,7 @@ struct NoteNavigationTestView: View
 
 
     @ObservedObject var probe: NoteNavigationProbe
+
     var body:                  some View
     {
 
@@ -93,6 +95,7 @@ final class DirectReturnTestProbe: ObservableObject
 
 
     @Published var presented = false
+
 }
 
 
@@ -111,6 +114,7 @@ struct DirectReturnTestView: View
     let owner:                 PersonalCollection
     let week:                  DatedPlanningWeek?
     let listID:                Int
+
     var body:                  some View
     {
 

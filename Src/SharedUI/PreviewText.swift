@@ -37,7 +37,9 @@ struct PreviewTextWidthKey: PreferenceKey
     ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat)
     {
+
         value = nextValue()
+
     }
 
 }
@@ -68,7 +70,9 @@ struct PreviewViewportWidthKey: PreferenceKey
     ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat)
     {
+
         value = nextValue()
+
     }
 
 }
@@ -106,7 +110,9 @@ struct PreviewVisibility: ViewModifier
 
             content.onScrollVisibilityChange(threshold: 0.1)
             {
+
                 visible = $0
+
             }
 
         }
@@ -115,10 +121,14 @@ struct PreviewVisibility: ViewModifier
 
             content.onAppear
             {
+
                 visible = true
+
             } .onDisappear
             {
+
                 visible = false
+
             }
 
         }
@@ -163,6 +173,7 @@ struct GentleCollectionPreview: View
     @State private var offset:        CGFloat = 0
     @State private var opacity:       Double  = 1
     @State private var visible                = false
+
     private struct Loop: Hashable
     {
 
@@ -170,6 +181,7 @@ struct GentleCollectionPreview: View
         let text:     String
         let distance: CGFloat
         let active:   Bool
+
     }
 
     private var loop: Loop
@@ -231,23 +243,30 @@ struct GentleCollectionPreview: View
         .accessibilityElement(children: .ignore).accessibilityLabel(text)
         .onPreferenceChange(PreviewTextWidthKey.self)
         {
+
             textWidth = $0
+
         }
         .onPreferenceChange(PreviewViewportWidthKey.self)
         {
+
             viewportWidth = $0
+
         }
         .modifier(PreviewVisibility(visible: $visible))
         .task(id: loop)
         {
 
             var reset = Transaction();
+
             reset.disablesAnimations = true
+
             withTransaction(reset)
             {
 
                 offset = travelsAcross && loop.active ? viewportWidth : 0;
                 opacity = 1
+
             }
 
             guard loop.active, loop.distance > 1 else
@@ -257,6 +276,7 @@ struct GentleCollectionPreview: View
 
             let distance = loop.distance
             let seconds  = max(4, Double(distance) / max(1, pointsPerSecond))
+
             do
             {
 
@@ -266,24 +286,32 @@ struct GentleCollectionPreview: View
                     try await Task.sleep(for: .seconds(startPause))
                     withAnimation(.linear(duration: seconds))
                     {
+
                         offset = travelsAcross ? -textWidth : -distance
+
                     }
 
                     try await Task.sleep(for: .seconds(seconds + endPause))
                     withAnimation(.easeOut(duration: 0.4))
                     {
+
                         opacity = 0
+
                     }
 
                     try await Task.sleep(for: .seconds(0.4))
                     withTransaction(reset)
                     {
+
                         offset = travelsAcross ? viewportWidth : 0
+
                     }
 
                     withAnimation(.easeIn(duration: 0.6))
                     {
+
                         opacity = 1
+
                     }
 
                     try await Task.sleep(for: .seconds(0.6))

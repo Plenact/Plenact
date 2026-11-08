@@ -35,12 +35,15 @@ enum DaySections
     {
 
         var heading: KanbanCard?
+
         for card in cards
         {
 
             if card.sectionHeading != nil
             {
+
                 heading = card
+
             }
 
             if card.id == id
@@ -68,6 +71,7 @@ enum DaySections
     {
 
         var collapsed = false
+
         return cards.filter
         {
             card in
@@ -75,6 +79,7 @@ enum DaySections
             {
 
                 collapsed = card.appearance?.sectionCollapsed == true
+
                 return true
             }
 
@@ -109,6 +114,7 @@ enum DaySections
         }
 
         cards[index].appearance?.sectionCollapsed = false
+
     }
 
 
@@ -133,6 +139,7 @@ enum DaySections
     {
 
         let rows = visible(cards)
+
         guard let source = sourceOffsets.first, rows.indices.contains(source),
         (0 ... rows.count).contains(destinationOffset),
         let canonicalSource = cards.firstIndex(where:
@@ -145,10 +152,12 @@ enum DaySections
         }
 
         let boundary: Int
+
         if destinationOffset == rows.count
         {
 
             boundary = cards.count
+
         }
         else
         {
@@ -157,6 +166,7 @@ enum DaySections
                 {
                     $0.id == rows[destinationOffset].id
                 }) ?? cards.count
+
         }
 
         return (rows[source].id, canonicalSource < boundary ? boundary - 1 : boundary)
@@ -190,6 +200,7 @@ enum DaySections
         {
 
             var result = cards
+
             BoardCardReordering.move(itemID, to: destination, in: &result)
             return result
         }
@@ -209,10 +220,12 @@ enum DaySections
                 $0 <= min(max(0, destination), cards.count - 1)
             }) ?? 0
         var result = cards
+
         for _ in 0 ..< abs(target - position)
         {
 
             result = moved(result, sectionID: itemID, offset: target > position ? 1 : -1)
+
         }
 
         return result
@@ -256,6 +269,7 @@ enum DaySections
         offset < 0 ? starts[position - 1] : (position + 2 < starts.count ? starts[position + 2] : cards.count)
         var result = cards
         let block  = Array(cards[start ..< end])
+
         result.removeSubrange(start ..< end)
         result.insert(contentsOf: block, at: target > start ? target - block.count : target)
         return result

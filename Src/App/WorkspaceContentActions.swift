@@ -64,7 +64,9 @@ extension AppRootView
 
 
             try PersonalCollectionStore.saveChecked(updated)
+
             collections = updated
+
         }
         catch
         {
@@ -95,9 +97,11 @@ extension AppRootView
         displayedPlanningWeek = nil
 
         rememberLastViewedList(listID)
+
         boardTargetCardID = cardID
         boardTargetListID = listID
         selectedDestination = .board
+
     }
 
 
@@ -210,13 +214,16 @@ extension AppRootView
 
             title = "New List \(suffix)"
             suffix += 1
+
         }
 
 
         lists.append(KanbanList(id: nextListID, title: title, cards: []))
+
         displayedPlanningWeek = nil
         boardTargetListID = nextListID
         selectedDestination = .board
+
     }
 
 
@@ -278,6 +285,7 @@ extension AppRootView
             startingAt: nextCardID, titles: title, description: description.isEmpty ? nil : description,
             subtitle: subtitle, presentation: presentation, actions: actions
         )
+
         guard !created.isEmpty, schedule?.isValid() != false else
         {
             return false
@@ -297,6 +305,7 @@ extension AppRootView
                 {
                     $0.kind == .photo
                 })?.id
+
         }
 
         updatedList.cards.append(contentsOf: created)
@@ -306,7 +315,9 @@ extension AppRootView
         }
 
         var updatedLists = lists
+
         updatedLists[listIndex] = updatedList
+
         if checkedSave || !attachments.isEmpty || schedule != nil
         {
 
@@ -321,6 +332,7 @@ extension AppRootView
             }
 
             document.weeks[weekIndex].collection.lists = updatedLists
+
             do
             {
 
@@ -332,6 +344,7 @@ extension AppRootView
                 }
 
                 calendarDocument = document
+
             }
             catch
             {
@@ -340,6 +353,7 @@ extension AppRootView
                 {
 
                     workspaceRecoveryError = "The capture could not be saved. Retry recovery before continuing."
+
                 }
 
                 return false
@@ -348,6 +362,7 @@ extension AppRootView
         }
 
         lists = updatedLists
+
         if let card = created.first
         {
 

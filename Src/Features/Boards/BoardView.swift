@@ -72,6 +72,7 @@ struct ContentView: View
     /// Lets a single-list personal collection fill the Standard viewport without changing Overview.
     let fillsAvailableListWidth: Bool /* Whether a single personal List fills the Standard viewport */
     @State var standaloneListActionsRequest = 0
+
     var isStandaloneListView: Bool
     {
         fillsAvailableListWidth && lists.count == 1
@@ -99,7 +100,9 @@ struct ContentView: View
                 }
 
                 lists[0].setSingleListViewMode(mode)
+
                 isGallery = false
+
             })
     }
 
@@ -142,20 +145,24 @@ struct ContentView: View
     {
 
         var appearance: BoardAppearance
+
         if let appearanceBinding
         {
 
             appearance = appearanceBinding.wrappedValue ?? BoardAppearance()
+
         }
         else if personalCollectionID == nil
         {
 
             appearance = (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance()
+
         }
         else
         {
 
             appearance = BoardAppearance()
+
         }
 
         return appearance
@@ -172,15 +179,19 @@ struct ContentView: View
             {
                 $0.id == personalCollectionID
             }) == true
+
         if appearance.cardDetail == nil
         {
+
             appearance.cardDetail = isPlanningWeek ? .compact : .detailed
+
         }
 
         if isStandaloneListView, !isPlanningWeek, appearance.bannerBackground == nil
         {
 
             appearance.bannerBackground = DefaultListTutorial.defaultBanner(for: lists.first?.title ?? boardTitle)
+
         }
 
         return appearance
@@ -229,6 +240,7 @@ struct ContentView: View
     @Environment(\.planningCalendarAccess) var planningCalendarAccess
     @Environment(\.planningHomeExit) var planningHomeExit
     @Environment(\.planningDisplayedWeekKey) var displayedWeekKey
+
     var calendarOpeningDate: Date
     {
 
@@ -288,6 +300,7 @@ struct ContentView: View
     @State var todayHighlightDate  = Date.now
     @State var boardScale: CGFloat = 1
     @GestureState var boardPinch   = BoardPinchState()
+
     var boardZoomScale: CGFloat
     {
 
@@ -314,6 +327,7 @@ struct ContentView: View
             transaction.disablesAnimations = true
             state.active = true
             state.magnification = value.magnification
+
         }
         .onEnded
         {
@@ -324,6 +338,7 @@ struct ContentView: View
             }
 
             boardScale = BoardPanoramicZoom.scale(start: boardScale, magnification: value.magnification)
+
         }
 
     }
@@ -446,10 +461,12 @@ struct ContentView: View
 
 
         let memory = BoardViewportMemory(owner: (viewportOwnerID ?? personalCollectionID)?.uuidString ?? "week.current", defaults: viewportDefaults)
+
         _viewportMemory = State(initialValue: memory)
         _boardScale = State(initialValue: CGFloat(memory.state.scale))
         _isPanoramic = State(initialValue: memory.state.panoramic)
         _isGallery = State(initialValue: memory.state.gallery)
+
         let savedList = memory.state.visibleListID.flatMap
         {
             id in
@@ -490,6 +507,7 @@ struct ContentView: View
         self.onArchiveMovedNote = onArchiveMovedNote
         self.onDeleteMovedNote = onDeleteMovedNote
         self.onToggleMovedNoteBookmark = onToggleMovedNoteBookmark
+
     }
 
 
@@ -544,6 +562,7 @@ struct ContentView: View
     {
 
         _ = dragGeometryRevision /* Valid list and insertion anchor under the card-drag pointer */
+
         guard let location = cardDragLocation, let draggedCardID
         else
         {  /* Active pointer position and dragged record identity         */
@@ -609,7 +628,9 @@ struct ContentView: View
                             onSetMemberColor: setMemberColor,
                             onOpenCalendar:
                             {
+
                                 showsCalendar = true
+
                             },
                             title: boardTitle,
                             subtitle: standaloneSubtitle,
@@ -617,7 +638,9 @@ struct ContentView: View
                             onClose: onClose,
                             onViewArchivedLists:
                             {
+
                                 showsArchivedLists = true
+
                             },
                             onArchiveBoard: onArchiveBoard,
                             onDeleteBoard: onDeleteBoard,
@@ -645,7 +668,9 @@ struct ContentView: View
                                     })?.color) : nil,
                             onAppearance:
                             {
+
                                 showsBoardAppearance = true
+
                             },
                             onListActions: isStandaloneListView
                             ?
@@ -653,10 +678,13 @@ struct ContentView: View
 
                                 isGallery = false;
                                 standaloneListActionsRequest += 1
+
                             } : nil,
                             onSearch:
                             {
+
                                 showsSharedSearch = true
+
                             },
                             onToggleZoom: isGallery ? nil : toggleBoardZoom,
                             onToggleGallery:
@@ -677,7 +705,9 @@ struct ContentView: View
                                         $0.id == personalCollectionID
                                     }) == true) ?
                             {
+
                                 showsWeekSelector = true
+
                             } : nil,
                             onAddList: addList
                         )
@@ -705,7 +735,9 @@ struct ContentView: View
                                 onOpen:
                                 {
                                     card, listID in
+
                                     visibleListID = listID
+
                                     onListViewed(listID)
                                     navigationPath.append(card)
                                 }, onUpdate: updateCard, onMoveSection: moveSection,
@@ -720,6 +752,7 @@ struct ContentView: View
                             GeometryReader
                             {
                                 listArea in
+
                                 let columnWidth = presentation.columnWidth(
                                     viewportWidth: listArea.size.width,
                                     accessibilitySize: dynamicTypeSize.isAccessibilitySize,
@@ -736,6 +769,7 @@ struct ContentView: View
                                 presentation == .standard && !isPanoramic
                                 ? max(14, (listArea.size.width - columnWidth * layoutListScale) / 2)
                                 : 14
+
                                 ScrollViewReader
                                 {
                                     listProxy in
@@ -784,6 +818,7 @@ struct ContentView: View
                                                             {
 
                                                                 listToCopy = list
+
                                                             }
 
                                                         },
@@ -800,6 +835,7 @@ struct ContentView: View
                                                             {
 
                                                                 listToMove = list
+
                                                             }
 
                                                         } : nil,
@@ -845,6 +881,7 @@ struct ContentView: View
                                                                 }
 
                                                                 lists[index].archivedCards = archivedCards
+
                                                             }
                                                         ),
                                                         onRestoreArchivedCard:
@@ -940,13 +977,17 @@ struct ContentView: View
 
                                                             if namingNewListID == list.id
                                                             {
+
                                                                 namingNewListID = nil
+
                                                             }
 
                                                         },
                                                         onOpenDayView:
                                                         {
+
                                                             focusedDayListID = list.id
+
                                                         },
                                                         boardAppearance: currentBoardAppearance,
                                                         onAppearance:
@@ -969,7 +1010,9 @@ struct ContentView: View
                                                         listActionsRequest: standaloneListActionsRequest,
                                                         onConsumeListActions:
                                                         {
+
                                                             standaloneListActionsRequest = 0
+
                                                         }
                                                     )
                                                     .frame(
@@ -1074,7 +1117,9 @@ struct ContentView: View
                                     .onPreferenceChange(BoardListCenterPreferenceKey.self)
                                     {
                                         centers in
+
                                         dragGeometry.centers = centers
+
                                         refreshActiveDragGeometry()
                                     }
 
@@ -1082,12 +1127,14 @@ struct ContentView: View
                                     {
 
                                         dragGeometry.lists = $0;
+
                                         refreshActiveDragGeometry()
                                     }
                                     .onPreferenceChange(BoardCardFramePreferenceKey.self)
                                     {
 
                                         dragGeometry.cards = $0;
+
                                         refreshActiveDragGeometry()
                                     }
                                     .background
@@ -1100,12 +1147,15 @@ struct ContentView: View
                                             {
 
                                                 dragGeometry.viewport = geometry.frame(in: .global)
+
                                             }
 
                                             .onChange(of: geometry.frame(in: .global))
                                             {
                                                 _, frame in
+
                                                 dragGeometry.viewport = frame
+
                                             }
 
                                         }
@@ -1128,6 +1178,7 @@ struct ContentView: View
                                         }
 
                                         lastReportedVisibleListID = listID
+
                                         onListViewed(listID)
                                     }
 
@@ -1194,6 +1245,7 @@ struct ContentView: View
                                         }
 
                                         viewportMemory.horizontalRestoreAllowed = false
+
                                         do
                                         {
                                             try await Task.sleep(for: .milliseconds(100))
@@ -1209,6 +1261,7 @@ struct ContentView: View
                                         }
 
                                         visibleListID = target.listID
+
                                         listProxy.scrollTo(
                                             target.listID, anchor: presentation == .standard ? .center : .leading)
                                     }
@@ -1272,7 +1325,9 @@ struct ContentView: View
 
                                             listProxy.scrollTo(
                                                 listID, anchor: presentation == .standard ? .center : .leading)
+
                                             visibleListID = listID
+
                                         }
 
                                     }
@@ -1285,6 +1340,7 @@ struct ContentView: View
 
 
                                             visibleListID = lists.first?.id
+
                                         }
 
 
@@ -1344,6 +1400,7 @@ struct ContentView: View
                                                 {
 
                                                     _ = BoardListReordering.move(listID, to: destination, in: &lists)
+
                                                 }
 
 
@@ -1418,6 +1475,7 @@ struct ContentView: View
                                                     at: location.x - dragGeometry.viewport.minX,
                                                     viewportWidth: dragGeometry.viewport.width
                                                 )
+
                                                 guard direction != 0,
                                                 let current = lists.firstIndex(where:
                                                     {
@@ -1439,7 +1497,9 @@ struct ContentView: View
 
                                                     listProxy.scrollTo(
                                                         nextID, anchor: presentation == .standard ? .center : .leading)
+
                                                     visibleListID = nextID
+
                                                 }
 
                                             }
@@ -1507,42 +1567,56 @@ struct ContentView: View
             .toolbar(.hidden, for: .navigationBar)
             .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect())
             {
+
                 todayHighlightDate = $0
+
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification))
             {
 
             _ in
+
                 todayHighlightDate = .now
+
             }
             .onChange(of: boardScale)
             {
                 _, value in
+
                 viewportMemory.state.scale = Double(value);
+
                 viewportMemory.scheduleSave()
             }
             .onChange(of: isPanoramic)
             {
                 _, value in
+
                 viewportMemory.state.panoramic = value;
+
                 viewportMemory.scheduleSave()
             }
             .onChange(of: isGallery)
             {
                 _, value in
+
                 viewportMemory.state.gallery = value;
+
                 viewportMemory.scheduleSave()
             }
             .onChange(of: presentation)
             {
                 _, value in
+
                 viewportMemory.state.presentation = value.rawValue;
+
                 viewportMemory.scheduleSave()
             }
             .onChange(of: visibleListID)
             {
                 _, value in
+
                 viewportMemory.state.visibleListID = value;
+
                 viewportMemory.scheduleSave()
             }
             .onChange(of: scenePhase)
@@ -1554,7 +1628,9 @@ struct ContentView: View
                 }
                 else
                 {
+
                     todayHighlightDate = .now
+
                 }
 
             }
@@ -1572,6 +1648,7 @@ struct ContentView: View
                 {
 
                     openedDirectItem = false
+
                     directItemReturn?()
                 }
 
@@ -1581,9 +1658,12 @@ struct ContentView: View
                 _, _ in
 
                 navigationPath = NavigationPath()
+
                 viewportMemory.resetScrollOffsets()
+
                 viewportMemory.horizontalRestoreAllowed = false
                 isGallery = false
+
                 let week = planningCalendarAccess?.document.weeks.first
                 {
 
@@ -1596,21 +1676,27 @@ struct ContentView: View
                     lists.contains(where: { $0.id == target }) ? target : nil
                 }
                 let firstID = explicit ?? AppReturnSession.firstListID(in: week, lists: lists)
+
                 visibleListID = firstID
                 boardTargetCardID = nil
                 boardTargetListID = firstID
+
             }
             .onChange(of: boardRootRequest)
             {
                 _, _ in
+
                 navigationPath = NavigationPath()
+
             }
             .onChange(of: boardTargetListID)
             {
                 _, target in
                 if target != nil
                 {
+
                     isGallery = false
+
                 }
 
             }
@@ -1696,7 +1782,9 @@ struct ContentView: View
                     {
                         if !$0
                         {
+
                             focusedDayListID = nil
+
                         }
 
                     }
@@ -1716,13 +1804,16 @@ struct ContentView: View
                         currentUserName: currentUserName,
                         onClose:
                         {
+
                             focusedDayListID = nil
+
                         },
                         onOpenWeek:
                         {
 
                             boardTargetListID = listID
                             focusedDayListID = nil
+
                         },
                         onPermanentDelete: deleteCard,
                         boardAppearance: storedBoardAppearance,
@@ -1764,7 +1855,9 @@ struct ContentView: View
                     appearance: storedBoardAppearance, presentation: presentation,
                     onSavePresentation:
                     {
+
                         presentation = $0
+
                     },
                     allowsCollectionBackground: allowsCollectionBackground,
                     defaultCollectionBackground: isStandaloneListView
@@ -1784,11 +1877,13 @@ struct ContentView: View
                         }
 
                         var appearance = lists[0].appearance ?? ItemAppearance()
+
                         appearance.listBackgroundOpacity = value
                         appearance.showsIconInHeader = showsHeaderIcon
                         appearance.icon = icon
                         appearance.iconColor = iconColor
                         lists[0].appearance = appearance
+
                     },
                     onSave: saveBoardAppearance)
             }
@@ -1826,7 +1921,9 @@ struct ContentView: View
                     )
                     {
                         week, date in
+
                         showsWeekSelector = false
+
                         if let open = access.openWeekOnDay
                         {
                             open(week, date)
@@ -1852,6 +1949,7 @@ struct ContentView: View
                     }
 
                     calendarCardTarget = nil
+
                     guard let list = lists.first(where:
                         {
                             $0.id == target.listID && !$0.isArchived
@@ -1871,6 +1969,7 @@ struct ContentView: View
 
                     visibleListID = list.id
                     navigationPath = NavigationPath()
+
                     navigationPath.append(card)
                 }
             )
@@ -1885,6 +1984,7 @@ struct ContentView: View
                         {
 
                             showsCalendar = false;
+
                             onClose?();
                             planningHomeExit?()
                         }
@@ -1904,8 +2004,10 @@ struct ContentView: View
                     )
                     {
                         listID, cardID in
+
                         calendarCardTarget = (listID: listID, cardID: cardID)
                         showsCalendar = false
+
                     }
 
                     .presentationDetents([.large])

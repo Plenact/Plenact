@@ -11,6 +11,7 @@ import SwiftSyntax
 /// Traverses source syntax without executing app code or reading user data.
 final class Inventory: SyntaxVisitor
 {
+
     var models: [[String: Any]] = []
     var keys: Set<String>       = []
 
@@ -20,8 +21,10 @@ final class Inventory: SyntaxVisitor
     /// @return Qualified enclosing type path
     func owner(_ node: some SyntaxProtocol) -> String
     {
+
         var names: [String] = []
         var parent          = node.parent
+
         while let current = parent
         {
             if let value = current.as(StructDeclSyntax.self)
@@ -32,7 +35,9 @@ final class Inventory: SyntaxVisitor
             {
                 names.insert(value.name.text, at: 0)
             }
+
             parent = current.parent
+
         }
         return names.joined(separator: ".")
     }
@@ -46,13 +51,17 @@ final class Inventory: SyntaxVisitor
     /// @return Void; appends a source-inventory entry when applicable
     func collect(name: String, parent: String, inheritance: InheritanceClauseSyntax?, members: MemberBlockItemListSyntax)
     {
+
         let protocols = inheritance?.inheritedTypes.map { $0.type.trimmedDescription } ?? []
+
         guard protocols.contains(where: { ["Codable", "Encodable", "Decodable"].contains($0) }) else
         {
             return
         }
+
         var fields: [[String: String]] = []
         var cases: [String]            = []
+
         for member in members
         {
             if let declaration = member.decl.as(EnumCaseDeclSyntax.self)
@@ -115,7 +124,9 @@ final class Inventory: SyntaxVisitor
     /// @return Continue traversing children
     override func visit(_ node: StringSegmentSyntax) -> SyntaxVisitorContinueKind
     {
+
         let value = node.content.text
+
         if value.hasPrefix("Plenact.") || value.hasPrefix("plenact.creationDraft.")
         {
             keys.insert(value)
@@ -127,13 +138,18 @@ final class Inventory: SyntaxVisitor
 let root                       = URL(fileURLWithPath: CommandLine.arguments[1])
 let paths                      = FileManager.default.enumerator(at: root.appendingPathComponent("Src"), includingPropertiesForKeys: nil)!
 var inventory: [[String: Any]] = []
+
 for case let file as URL in paths where file.pathExtension == "swift"
 {
+
     let text    = try String(contentsOf: file, encoding: .utf8)
     let visitor = Inventory(viewMode: .sourceAccurate)
+
     visitor.walk(Parser.parse(source: text))
     inventory.append(["file": String(file.path.dropFirst(root.path.count + 1)),
                       "models": visitor.models, "key_segments": visitor.keys.sorted()])
 }
+
 let output = try JSONSerialization.data(withJSONObject: inventory.sorted { ($0["file"] as! String) < ($1["file"] as! String) }, options: [.sortedKeys])
+
 FileHandle.standardOutput.write(output)

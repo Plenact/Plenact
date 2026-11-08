@@ -36,7 +36,9 @@ struct StudioSettingsView: View
                 draft.views[destination.rawValue]
             }, set:
             {
+
                 draft.views[destination.rawValue] = $0
+
             })
     }
 
@@ -61,7 +63,9 @@ struct StudioSettingsView: View
 
                 Button("My art", systemImage: "paintpalette")
                 {
+
                     showsLibrary = true
+
                 }
 
                 Text("Reuse a favorite image or complete look across Cards, Notes, Lists, and Boards. Imported artwork stays on this device.")
@@ -118,20 +122,27 @@ struct StudioSettingsView: View
                             $0.count == 6 && UInt32($0, radix: 16) != nil
                         }) else
                     {
+
                         error = "Use comma-separated six-digit RGB colors, such as EDE3CA, DDE8D8.";
+
                         return
                     }
 
                     draft.palette = colors
+
                     do
                     {
+
                         data = try JSONEncoder().encode(draft);
+
                         dismiss()
                     }
 
                     catch
                     {
+
                         self.error = error.localizedDescription
+
                     }
 
                 }
@@ -150,14 +161,18 @@ struct StudioSettingsView: View
                 {
                     if !$0
                     {
+
                         error = nil
+
                     }
 
                 }))
         {
             Button("OK")
             {
+
                 error = nil
+
             }
 
         }

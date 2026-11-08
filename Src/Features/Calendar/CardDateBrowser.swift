@@ -377,6 +377,7 @@ struct TodayCalendarView: View
 
 
             selectedDate = calendar.startOfDay(for: date)
+
         }
         label:
         {
@@ -509,6 +510,7 @@ struct TodayCalendarView: View
 
         displayedMonth = nextMonth
         selectedDate = Calendar.current.startOfDay(for: nextMonth)
+
     }
 
 }

@@ -28,6 +28,7 @@ struct MigrationPlanningValues
 
         self.context = context
         self.priorityResolver = priorityResolver
+
     }
 
 
@@ -62,8 +63,11 @@ struct MigrationPlanningValues
     {
 
         _ = try MigrationCalendarTemplates.date(date)
+
         let zoneContext = MigrationContentValues(journal: context.journal, timeZoneID: zone, mediaDigests: [:])
+
         _ = try MigrationContentDates.convert(1_600_000_000, kind: "date", context: zoneContext, path: "planning-zone")
+
     }
 
 
@@ -101,10 +105,12 @@ struct MigrationPlanningValues
 
             return try priorityResolver(raw)
         }
+
         let owner         = try MigrationContentValues.lowerUUID(raw["ownerID"])
         let collection    = try context.id("collection", owner: "source_collections", legacy: owner)
         let discriminator = (raw["sourceCreatedAt"] as? NSNumber).map { String($0.doubleValue) }
         let card          = try context.id("card", owner: owner, legacy: String(raw["cardID"] as! Int), discriminator: discriminator)
+
         return ["source_collection_id": try context.reference("collection", collection),
             "card_id": try context.reference("card", card), "title": raw["title"]!, "source_location": raw["location"]!,
             "source_created_at_utc": try timestamp(raw["sourceCreatedAt"], path: card + "/historical-creation")]
@@ -121,8 +127,11 @@ struct MigrationPlanningValues
 
         let raw               = value as! [[String: Any]]
         var seen: Set<String> = []
+
         return try raw.map { item in
+
             let key = (try MigrationContentValues.lowerUUID(item["ownerID"])) + ":" + String(item["cardID"] as! Int)
+
             guard seen.insert(key).inserted else
             {
                 throw MigrationContentValues.Failure.invalid("planning_duplicate_priority")
@@ -156,16 +165,19 @@ struct MigrationPlanningValues
     {
 
         var seen: Set<String> = []
+
         return try raw.map { item in
             guard let id = item["id"] as? String, !id.isEmpty, seen.insert(id).inserted else
             {
                 throw MigrationContentValues.Failure.invalid("planning_checkin_identity")
             }
+
             var output: [String: Any] = ["id": id,
                 "saved_at_utc": try timestamp(item["savedAt"], path: path + "/check-in/" + id),
                 "changed": item["changed"]!, "focus": try (item["focus"] as? [String: Any]).map(priority) as Any? ?? NSNull(),
                 "intention": item["intention"]!, "constraints": item["constraints"]!, "concerns": item["concerns"]!,
                 "priorities": try priorities(item["priorities"]!), "legacy": item["legacy"]!, "mood": item["mood"] ?? NSNull()]
+
             for (source, target) in [("completedTasks", "completed_tasks"), ("totalTasks", "total_tasks"), ("notes", "notes"), ("unavailable", "unavailable")]
             {
                 if let number = item[source] as? Int
@@ -174,11 +186,15 @@ struct MigrationPlanningValues
                     {
                         throw MigrationContentValues.Failure.invalid("planning_checkin_counts")
                     }
+
                     output[target] = number
+
                 }
                 else
                 {
+
                     output[target] = NSNull()
+
                 }
             }
             if let complete = item["completedTasks"] as? Int, let total = item["totalTasks"] as? Int, complete > total
@@ -207,20 +223,28 @@ struct MigrationPlanningValues
     {
 
         var seen: Set<String> = []
+
         return try (value as! [[String: Any]]).map { raw in
+
             let id = try MigrationContentValues.lowerUUID(raw["id"])
+
             guard seen.insert(id).inserted else
             {
                 throw MigrationContentValues.Failure.invalid("planning_decision_identity")
             }
+
             let source                = raw["action"] as! [String: Any]
             let key                   = source.keys.first!
             var action: [String: Any] = ["kind": key == "keepTomorrow" ? "keep_tomorrow" : key]
+
             if key == "date"
             {
+
                 let date = (source[key] as! [String: Any])["_0"] as! String
+
                 _ = try MigrationCalendarTemplates.date(date)
                 action["date"] = date
+
             }
             return ["id": id, "source": try priority(raw["source"] as! [String: Any]),
                 "result": try priority(raw["result"] as! [String: Any]), "action": action,
@@ -269,8 +293,11 @@ struct MigrationPlanningValues
     {
 
         var seen: Set<String> = []
+
         return try (value as! [[String: Any]]).map { raw in
+
             let id = try MigrationContentValues.lowerUUID(raw["id"])
+
             guard seen.insert(id).inserted, let title = raw["title"] as? String,
                   !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   let status = ["Active": "active", "Achieved": "achieved", "Paused": "paused", "Let go": "released"][raw["status"] as? String ?? ""] else

@@ -38,6 +38,7 @@ enum ExampleCardLocations
         let lists:       [KanbanList]
         let calendar:    PlanningCalendarDocument
         let collections: [PersonalCollection]
+
     }
 
 
@@ -102,7 +103,9 @@ enum ExampleCardLocations
                 }
 
                 var updated = card
+
                 updated.location = location
+
                 return updated
             }
 
@@ -113,7 +116,9 @@ enum ExampleCardLocations
             }
 
             var updated = list
+
             updated.cards = cards
+
             return updated
         }
 
@@ -142,7 +147,9 @@ enum ExampleCardLocations
             }
 
             var updated = collection
+
             updated.lists = updating(collection.lists)
+
             return updated
         }
 
@@ -178,32 +185,39 @@ enum ExampleCardLocations
         let updatedLists       = updating(lists)
         let updatedCollections = updating(collections)
         var updatedCalendar    = calendar
+
         for index in updatedCalendar.weeks.indices
         {
 
             let week = updatedCalendar.weeks[index]
+
             if week.startKey == updatedCalendar.currentWeekKey
             {
 
                 updatedCalendar.weeks[index].collection.lists = updatedLists
+
             }
 
             else if week.collection.isActive
             {
 
                 updatedCalendar.weeks[index].collection.lists = updating(week.collection.lists)
+
             }
 
         }
 
         var library = try PlanningRoutineStore.load(from: defaults)
+
         for index in library.templates.indices where library.templates[index].collection.isActive
         {
 
             library.templates[index].collection.lists = updating(library.templates[index].collection.lists)
+
         }
 
         try PlanningRoutineStore.validate(library)
+
         let encoder      = JSONEncoder()
         let replacements = [
             boardKey: try encoder.encode(updatedLists),
@@ -212,13 +226,16 @@ enum ExampleCardLocations
             PlanningRoutineStore.key: try encoder.encode(library)
         ]
         var previous: [String: Data] = [:]
+
         for key in replacements.keys
         {
 
             previous[key] = defaults.data(forKey: key)
+
         }
 
         let backup = try encoder.encode(previous)
+
         defaults.set(backup, forKey: backupKey)
         guard defaults.synchronize(), defaults.data(forKey: backupKey) == backup else
         {

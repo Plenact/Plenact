@@ -42,6 +42,7 @@ enum BoardListSwipePriority
         }
 
         var ancestor = list.superview
+
         while let view = ancestor
         {
 
@@ -66,6 +67,7 @@ enum BoardListSwipePriority
             }
 
             ancestor = view.superview
+
         }
 
         return 0
@@ -146,7 +148,9 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
             })
         else
         {
+
             state = .failed;
+
             return
         }
 
@@ -166,6 +170,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     {
 
         let velocity = velocity(in: view)
+
         return velocity.x < 0 && abs(velocity.x) > abs(velocity.y)
     }
 
@@ -210,6 +215,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
 
         var ancestor = marker.superview
         var list: UIScrollView?
+
         while let view = ancestor
         {
 
@@ -217,10 +223,12 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
             {
 
                 list = scroll;
+
                 break
             }
 
             ancestor = view.superview
+
         }
 
         guard let list else
@@ -229,6 +237,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
         }
 
         ancestor = list.superview
+
         while let view = ancestor
         {
 
@@ -237,6 +246,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
             {
 
                 let gate: BoardCardSwipeGate
+
                 if let existing = list.gestureRecognizers?.compactMap(
                     {
                         $0 as? BoardCardSwipeGate
@@ -244,6 +254,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
                 {
 
                     gate = existing
+
                 }
                 else
                 {
@@ -254,10 +265,12 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
                     gate.delaysTouchesBegan = false
                     gate.maximumNumberOfTouches = 1
                     gate.board = board
+
                     list.addGestureRecognizer(gate)
                 }
 
                 gate.board = board
+
                 gate.markers.add(marker)
                 for gesture in list.gestureRecognizers ?? []
                 where gesture is UIPanGestureRecognizer
@@ -272,6 +285,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
             }
 
             ancestor = view.superview
+
         }
 
     }
@@ -346,8 +360,10 @@ struct BoardCardSwipeZone: UIViewRepresentable
     {
 
         let marker = Marker()
+
         marker.isUserInteractionEnabled = false
         marker.isEnabled = enabled
+
         return marker
     }
 
@@ -366,6 +382,7 @@ struct BoardCardSwipeZone: UIViewRepresentable
     {
 
         marker.isEnabled = enabled
+
         DispatchQueue.main.async
         {
             [weak marker] in
@@ -540,6 +557,7 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
             self.source = source
+
         }
 
 
@@ -596,7 +614,9 @@ struct BoardCardDragSource: UIViewRepresentable
                         delegate: self) /* Native drag interaction installed on the hosting cell */
 
                     drag.isEnabled = true
+
                     cell.contentView.addInteraction(drag)
+
                     container = cell.contentView
                     interaction = drag
 
@@ -605,6 +625,7 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
                 ancestor = view.superview
+
             }
 
         }
@@ -626,6 +647,7 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
             isDragging = true
+
             source.onBegan(point)
 
             let provider = NSItemProvider() /* Transfer provider advertising the local card token */
@@ -671,6 +693,7 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
             isDragging = false
+
             source.onEnded()
 
             if isDetached, let interaction
@@ -730,6 +753,7 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
             let point = session.location(in: window)
+
             guard canBegin(at: point, in: window) else
             {
                 return []
@@ -892,6 +916,7 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
         context.coordinator.source = self
+
         context.coordinator.install(from: probe)
     }
 
@@ -971,6 +996,7 @@ struct BoardCardDropSurface: UIViewRepresentable
 
 
             self.receiver = receiver
+
             super.init(delegate: receiver)
         }
 
@@ -1041,6 +1067,7 @@ struct BoardCardDropSurface: UIViewRepresentable
 
 
             self.surface = surface
+
         }
 
 
@@ -1107,7 +1134,9 @@ struct BoardCardDropSurface: UIViewRepresentable
                         receiver: self) /* New drop interaction retaining its delegate owner */
 
                     originalDropDelegate = collection.dropDelegate
+
                     collection.addInteraction(drop)
+
                     collection.dropDelegate = surface.isEnabled ? self : originalDropDelegate
                     container = collection
                     interaction = drop
@@ -1117,6 +1146,7 @@ struct BoardCardDropSurface: UIViewRepresentable
 
 
                 ancestor = view.superview
+
             }
 
         }
@@ -1407,6 +1437,7 @@ struct BoardCardDropSurface: UIViewRepresentable
 
 
         context.coordinator.surface = self
+
         context.coordinator.install(from: probe)
     }
 

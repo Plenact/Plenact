@@ -48,6 +48,7 @@ struct InlineBoardListTitle: View
         self.onSave = onSave
         self.onFinish = onFinish
         _title = State(initialValue: list.title)
+
     }
 
 
@@ -61,7 +62,9 @@ struct InlineBoardListTitle: View
         .frame(height: titleHeight)
         .task
         {
+
             focused = true
+
         }
         .onChange(of: focused)
         {
@@ -97,14 +100,18 @@ struct InlineBoardListTitle: View
         }
 
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard onSave(trimmed.isEmpty ? list.title : trimmed) else
         {
+
             focused = true;
+
             return
         }
 
         finished = true
         focused = false
+
         onFinish()
     }
 
@@ -158,6 +165,7 @@ struct ListTitleField: UIViewRepresentable
     {
 
         let field = UITextField()
+
         field.placeholder = "List title"
         field.font = .preferredFont(forTextStyle: textStyle)
         field.adjustsFontForContentSizeCategory = true
@@ -165,11 +173,14 @@ struct ListTitleField: UIViewRepresentable
         field.returnKeyType = returnKeyType
         field.accessibilityLabel = "List title"
         field.accessibilityIdentifier = identifier
+
         field.setContentHuggingPriority(.required, for: .vertical)
         field.setContentCompressionResistancePriority(.required, for: .vertical)
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         field.delegate = context.coordinator
+
         field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
         return field
     }
@@ -190,12 +201,16 @@ struct ListTitleField: UIViewRepresentable
     {
 
         context.coordinator.parent = self
+
         if field.text != text
         {
+
             field.text = text
+
         }
 
         let coordinator = context.coordinator
+
         DispatchQueue.main.async
         {
             [weak field, weak coordinator] in
@@ -246,7 +261,9 @@ struct ListTitleField: UIViewRepresentable
         ///
         init(_ parent: ListTitleField)
         {
+
             self.parent = parent
+
         }
 
 
@@ -261,7 +278,9 @@ struct ListTitleField: UIViewRepresentable
         ///
         @objc func changed(_ field: UITextField)
         {
+
             parent.text = field.text ?? ""
+
         }
 
 
@@ -280,7 +299,9 @@ struct ListTitleField: UIViewRepresentable
 
             if !parent.focused
             {
+
                 parent.focused = true
+
             }
 
             guard parent.selectsInitialTitle, !selectedInitialTitle else
@@ -289,6 +310,7 @@ struct ListTitleField: UIViewRepresentable
             }
 
             selectedInitialTitle = true
+
             DispatchQueue.main.async
             {
                 [weak field] in
@@ -298,6 +320,7 @@ struct ListTitleField: UIViewRepresentable
                 }
 
                 field.selectedTextRange = field.textRange(from: field.beginningOfDocument, to: field.endOfDocument)
+
             }
 
         }
@@ -317,7 +340,9 @@ struct ListTitleField: UIViewRepresentable
 
             if parent.focused
             {
+
                 parent.focused = false
+
             }
 
         }
@@ -413,6 +438,7 @@ struct ListInfoEditorSheet: View
         self.onSave = onSave
         _title = State(initialValue: list.title)
         _subtitle = State(initialValue: list.subtitle)
+
     }
 
 
@@ -437,6 +463,7 @@ struct ListInfoEditorSheet: View
 
                             titleFocused = false;
                             subtitleFocused = true
+
                         })
                 }
 
@@ -486,7 +513,9 @@ struct ListInfoEditorSheet: View
 
                 if focusesTitleOnAppear
                 {
+
                     titleFocused = true
+
                 }
 
             }
@@ -495,7 +524,9 @@ struct ListInfoEditorSheet: View
                 _, focused in
                 if focused
                 {
+
                     subtitleFocused = false
+
                 }
 
             }
@@ -504,7 +535,9 @@ struct ListInfoEditorSheet: View
                 _, focused in
                 if focused
                 {
+
                     titleFocused = false
+
                 }
 
             }

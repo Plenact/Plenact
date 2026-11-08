@@ -78,6 +78,7 @@ struct SessionListGuidance: View
         self.toggleRequest = toggleRequest
         self.onPresentationChange = onPresentationChange
         _entryWasEmpty = State(initialValue: list.cards.isEmpty && DefaultListTutorial.guidance(for: list.title) != nil)
+
     }
 
 
@@ -94,6 +95,7 @@ struct SessionListGuidance: View
                 {
 
                     showsReadingView = true
+
                 }
                 label:
                 {
@@ -125,7 +127,9 @@ struct SessionListGuidance: View
                     height in
                     if height > 0
                     {
+
                         guideHeight = height
+
                     }
 
                 }
@@ -148,6 +152,7 @@ struct SessionListGuidance: View
             }
 
             reportedInitialPresentation = true
+
             onPresentationChange(!entryWasEmpty)
         }
         .task(id: toggleRequest)
@@ -167,6 +172,7 @@ struct SessionListGuidance: View
                 }
 
                 handledToggleRequest = toggleRequest
+
             }
 
             if toggleRequest == 0
@@ -178,6 +184,7 @@ struct SessionListGuidance: View
                 }
 
                 automaticRevealAttempted = true
+
                 do
                 {
                     try await Task.sleep(for: .milliseconds(300))
@@ -195,8 +202,10 @@ struct SessionListGuidance: View
                 // Capture remains available and follows the shrinking row back toward the header.
                 withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
                 {
+
                     isVisible = false
                     hasPreparedLayout = false
+
                 }
 
                 return
@@ -213,8 +222,10 @@ struct SessionListGuidance: View
                 // Expand the reserved space with the card so capture follows the same curve.
                 withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
                 {
+
                     hasPreparedLayout = true
                     isVisible = true
+
                     onReveal()
                     onPresentationChange(true)
                 }
@@ -224,11 +235,14 @@ struct SessionListGuidance: View
 
             // Initial entry prepares the row while capture is hidden before revealing both.
             var layoutTransaction = Transaction(animation: nil)
+
             layoutTransaction.disablesAnimations = true
+
             withTransaction(layoutTransaction)
             {
 
                 hasPreparedLayout = true
+
                 onReveal()
             }
 
@@ -247,6 +261,7 @@ struct SessionListGuidance: View
             }
 
             isVisible = true
+
             onPresentationChange(true)
         }
         .sheet(isPresented: $showsReadingView)
@@ -271,7 +286,9 @@ struct SessionListGuidance: View
                         {
                             Button("Done")
                             {
+
                                 showsReadingView = false
+
                             }
 
                         }

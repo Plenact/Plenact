@@ -42,6 +42,7 @@ enum PlanningDate
         let suffix =
         year == calendar.component(.year, from: now)
         ? "\(month)/\(day)" : "\(month)/\(day)/\(String(format: "%02d", year % 100))"
+
         return "\(title) (\(suffix))"
     }
 
@@ -61,8 +62,11 @@ enum PlanningDate
     {
 
         var gregorian = Calendar(identifier: .gregorian)
+
         gregorian.timeZone = calendar.timeZone
+
         let parts = gregorian.dateComponents([.year, .month, .day], from: date)
+
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 
@@ -92,7 +96,9 @@ enum PlanningDate
         }
 
         var gregorian = Calendar(identifier: .gregorian)
+
         gregorian.timeZone = calendar.timeZone
+
         return gregorian.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2], hour: 12))
     }
 
@@ -177,6 +183,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     var collection:      PersonalCollection
     var dayListIDs:      [String: Int]
     var explicitlySaved: Bool = false
+
     var id:              UUID
     {
         collection.id
@@ -195,6 +202,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     {
 
         let days = PlanningDate.days(in: startKey)
+
         guard let first = days.first, let last = days.last else
         {
             return startKey
@@ -208,6 +216,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     {
 
         let days = PlanningDate.days(in: startKey)
+
         guard let first = days.first, let last = days.last else
         {
             return startKey
@@ -219,6 +228,7 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
         let firstLabel = first.formatted(.dateTime.month(.abbreviated).day())
         let lastLabel  = last.formatted(.dateTime.month(.abbreviated).day())
         let yearSuffix = String(format: "%02d", lastYear % 100)
+
         if firstYear != lastYear
         {
 
@@ -280,8 +290,11 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
         }
 
         let id = (collection.lists.map(\.id).max() ?? -1) + 1
+
         collection.lists.append(KanbanList(id: id, title: PlanningDate.weekdayTitle(date), cards: []))
+
         dayListIDs[PlanningDate.key(date)] = id
+
         return id
     }
 
@@ -307,13 +320,17 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 
         let start      = PlanningDate.weekKey(date, calendar: calendar)
         var collection = PersonalCollection(title: "Week of \(start)", kind: .board)
+
         collection.lists = lists ?? []
         collection.savedCardIDs = saved
+
         var dayIDs: [String: Int] = [:]
+
         for day in PlanningDate.days(in: start, calendar: calendar)
         {
 
             let title = PlanningDate.weekdayTitle(day, calendar: calendar)
+
             if let list = collection.lists.first(where:
                 {
 
@@ -322,13 +339,17 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
             {
 
                 dayIDs[PlanningDate.key(day, calendar: calendar)] = list.id
+
             }
             else
             {
 
                 let id = (collection.lists.map(\.id).max() ?? -1) + 1
+
                 collection.lists.append(KanbanList(id: id, title: title, cards: []))
+
                 dayIDs[PlanningDate.key(day, calendar: calendar)] = id
+
             }
 
         }
@@ -355,11 +376,14 @@ struct PlanningCalendarDocument: Hashable, Codable
     var firstWeekday:       Int = Calendar.current.firstWeekday
     var weeks:              [DatedPlanningWeek]
     var checklistLinkWeeks: [UUID: UUID]? = nil
+
     var calendar:           Calendar
     {
 
         var value = Calendar.current
+
         value.firstWeekday = firstWeekday
+
         return value
     }
 
@@ -405,6 +429,7 @@ struct PlanningCalendarDocument: Hashable, Codable
         {
 
             weeks[index] = week
+
         }
         else
         {
@@ -441,6 +466,7 @@ struct PlanningCalendarDocument: Hashable, Codable
     {
 
         let calendar = suppliedCalendar ?? self.calendar
+
         if var previous = weeks.first(where:
             {
                 $0.startKey == currentWeekKey
@@ -449,6 +475,7 @@ struct PlanningCalendarDocument: Hashable, Codable
 
             previous.collection.lists = currentLists
             previous.collection.savedCardIDs = saved
+
             upsert(previous)
         }
 
@@ -459,8 +486,11 @@ struct PlanningCalendarDocument: Hashable, Codable
             $0.startKey == key
         }
         ?? newWeek ?? DatedPlanningWeek.make(for: date, calendar: calendar)
+
         upsert(next)
+
         currentWeekKey = key
+
         return next
     }
 
@@ -513,6 +543,7 @@ extension PlanningCalendarDocument
         }
 
         let names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
         guard dated.map(\.title) == names,
         let monday = current.dayListIDs.first(where:
             {
@@ -565,7 +596,9 @@ extension PlanningCalendarDocument
 
         let oldCalendar = calendar
         var newCalendar = calendar
+
         newCalendar.firstWeekday = weekday
+
         let sources = weeks.sorted
         {
 
@@ -585,32 +618,39 @@ extension PlanningCalendarDocument
             {
                 $0.collection.lists.flatMap(\.allCards)
             } .map(\.id).max() ?? -1) + 1
+
         // Globally distinct IDs prevent a link from resolving to an unrelated card after a split.
         for source in sources
         {
 
             var mapping: [Int: Int] = [:]
+
             for card in source.collection.lists.flatMap(\.allCards)
             {
 
                 let id: Int
+
                 if usedCardIDs.insert(card.id).inserted
                 {
 
                     id = card.id
+
                 }
                 else
                 {
 
                     id = nextCardID;
                     nextCardID += 1;
+
                     usedCardIDs.insert(id)
                 }
 
                 mapping[card.id] = id
+
             }
 
             cardIDs[source.id] = mapping
+
             guard let middle = PlanningDate.days(in: source.startKey, calendar: oldCalendar).dropFirst(3).first else
             {
 
@@ -619,12 +659,14 @@ extension PlanningCalendarDocument
 
             let key      = PlanningDate.weekKey(middle, calendar: newCalendar)
             var retained = source
+
             retained.startKey = key
             retained.collection.title = "Week of \(key)"
             retained.collection.lists = []
             retained.collection.savedCardIDs = []
             retained.dayListIDs = [:]
             rebuilt[key] = retained
+
         }
 
         for source in sources
@@ -632,6 +674,7 @@ extension PlanningCalendarDocument
 
             let middle   = PlanningDate.days(in: source.startKey, calendar: oldCalendar) [3]
             let ownerKey = PlanningDate.weekKey(middle, calendar: newCalendar)
+
             for list in source.collection.lists
             {
 
@@ -650,11 +693,14 @@ extension PlanningCalendarDocument
                 }
                 ?? ownerKey
                 var target = rebuilt[key] ?? DatedPlanningWeek.make(for: date ?? middle, calendar: newCalendar)
+
                 // A new boundary week starts empty; weekday panels are filled after migration.
                 if rebuilt[key] == nil
                 {
+
                     target.collection.lists = [];
                     target.dayListIDs = [:]
+
                 }
 
                 let occupied = Set(target.collection.lists.map(\.id))
@@ -677,18 +723,23 @@ extension PlanningCalendarDocument
                 {
 
                     var result = card.replacingLocation(id: mapping[card.id]!, listTitle: list.title)
+
                     result.checklists = card.checklists.map
                     {
                         checklist in
+
                         let items = checklist.items.map
                         {
                             item in
+
                             var item  = item
                             let owner = checklistLinkWeeks? [item.id] ?? item.linkedCollectionID ?? source.id
+
                             if let retained = item.retainedCardID, let replacement = cardIDs[owner]? [retained]
                             {
 
                                 item.retainedCardID = replacement
+
                             }
 
                             if case .linkedCard(let id) = item.content
@@ -698,6 +749,7 @@ extension PlanningCalendarDocument
                                 {
 
                                     item.content = .linkedCard(cardID: replacement)
+
                                 }
 
                             }
@@ -716,9 +768,11 @@ extension PlanningCalendarDocument
                 var moved = KanbanList(
                     id: listID, title: list.title, cards: list.cards.map(relocated),
                     archivedCards: list.archivedCards.map(relocated), newItemPresentation: list.newItemPresentation)
+
                 moved.subtitleOverride = list.subtitleOverride
                 moved.appearance = list.appearance
                 moved.isArchived = list.isArchived
+
                 target.collection.lists.append(moved)
                 for card in list.allCards where source.collection.savedCardIDs.contains(card.id)
                 {
@@ -728,35 +782,44 @@ extension PlanningCalendarDocument
 
                 if let dateKey
                 {
+
                     target.dayListIDs[dateKey] = listID
+
                 }
 
                 rebuilt[key] = target
+
             }
 
         }
 
         let currentKey = PlanningDate.weekKey(now, calendar: newCalendar)
+
         if rebuilt[currentKey] == nil
         {
+
             rebuilt[currentKey] = DatedPlanningWeek.make(for: now, calendar: newCalendar)
+
         }
 
         for key in Array(rebuilt.keys)
         {
 
             var week = rebuilt[key]!
+
             for date in PlanningDate.days(in: key, calendar: newCalendar)
             where week.dayListIDs[PlanningDate.key(date)] == nil
             {
 
                 _ = week.prepareDay(date)
+
             }
 
             let datesByID = Dictionary(uniqueKeysWithValues: week.dayListIDs.map
                 {
                     ($0.value, $0.key)
                 })
+
             week.collection.lists = week.collection.lists.enumerated().sorted
             {
                 lhs, rhs in
@@ -775,6 +838,7 @@ extension PlanningCalendarDocument
 
             } .map(\.element)
             rebuilt[key] = week
+
         }
 
         // Keep checklist links navigable when their two dated lists now belong to different weeks.
@@ -789,6 +853,7 @@ extension PlanningCalendarDocument
 
             })
         var linkWeeks: [UUID: UUID] = [:]
+
         for week in rebuilt.values
         {
 
@@ -803,6 +868,7 @@ extension PlanningCalendarDocument
                     {
 
                         linkWeeks[item.id] = owner
+
                     }
 
                 }
@@ -812,6 +878,7 @@ extension PlanningCalendarDocument
         }
 
         let sourceWeekIDs = Set(sources.map(\.id))
+
         for key in Array(rebuilt.keys)
         {
 
@@ -832,19 +899,24 @@ extension PlanningCalendarDocument
             {
 
                 var card = card
+
                 card.checklists = card.checklists.map
                 {
                     checklist in
+
                     let items = checklist.items.map
                     {
                         original in
+
                         var item = original
+
                         if let id = item.retainedCardID,
                         item.linkedCollectionID == nil || sourceWeekIDs.contains(item.linkedCollectionID!),
                         let owner = cardOwners[id]
                         {
 
                             item.linkedCollectionID = owner
+
                         }
 
                         return item
@@ -864,9 +936,11 @@ extension PlanningCalendarDocument
                 week.collection.lists[index].cards = week.collection.lists[index].cards.map(preservingOwners)
                 week.collection.lists[index].archivedCards = week.collection.lists[index].archivedCards.map(
                     preservingOwners)
+
             }
 
             rebuilt[key] = week
+
         }
 
         checklistLinkWeeks = linkWeeks.isEmpty ? nil : linkWeeks
@@ -899,6 +973,7 @@ struct PlanningSearchResult: Identifiable, Hashable
     let listID:          Int
     let listTitle:       String
     let card:            KanbanCard
+
     var id:              String
     {
             "\(collectionID):\(card.id)"
@@ -938,9 +1013,11 @@ enum PlanningCalendarContent
         let calendar = document.calendar
         let week     = document.week(for: date)
         let listID   = week?.list(on: date)?.id
+
         return sources.filter
         {
             item in
+
             let planned =
             week.map
             {

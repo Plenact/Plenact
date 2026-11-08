@@ -18,6 +18,10 @@
 //             Add concise trailing /* ... */ descriptors to let/var declarations, including locals
 //             Vertically align = in consecutive let/var declarations at the same indentation
 //             Keep blank lines and intervening statements as alignment-group boundaries
+//             Leave at least one blank line above and below each stored/local declaration block
+//             Apply this spacing to single declarations and multiline initializers; keep docs attached
+//             Leave at least one blank line above and below consecutive assignment statements too
+//             Keep adjacent writes together, including single writes and compound assignments such as +=
 //             Vertically align both /* and */ markers in consecutive trailing block-comment groups
 //             Use two empty physical lines before class/struct/enum/protocol and function/init definitions
 //             Place those blank lines before doc-comment blocks so comments remain attached
@@ -63,6 +67,7 @@ enum AppMetadata
     static let author       = "Justin Reina"  /* Example project author      */
     static let created      = "2026-09-24"    /* Example creation date       */
     static let lastRevision = "2026-09-24"    /* Example revision date       */
+
 }
 
 
@@ -165,6 +170,7 @@ struct Item: Identifiable, Codable, Sendable
         self.title     = title      /* Assign the display title                       */
         self.detail    = detail     /* Assign the optional secondary content          */
         self.createdAt = createdAt  /* Assign the timestamp for creation or retrieval */
+
     }
 
 }
@@ -269,6 +275,7 @@ final class ItemListViewModel: ObservableObject
 
 
         self.service = service      /* Assign the injected service to the local property */
+
     }
 
 
@@ -296,6 +303,7 @@ final class ItemListViewModel: ObservableObject
 
             //Fetch attempt
             items = try await service.fetchItems()
+
         }
         catch let error as AppError
         {  /* Example recognized application error */
@@ -303,6 +311,7 @@ final class ItemListViewModel: ObservableObject
 
             //Handle known application errors
             errorMessage = error.localizedDescription
+
         }
         catch
         {
@@ -310,11 +319,13 @@ final class ItemListViewModel: ObservableObject
 
             //Handle unexpected errors
             errorMessage = error.localizedDescription
+
         }
 
 
         //Update state
         isLoading = false
+
     }
 
 }

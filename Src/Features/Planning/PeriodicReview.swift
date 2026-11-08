@@ -46,6 +46,7 @@ struct ReviewObjective: Codable, Equatable, Identifiable
     var status: ObjectiveStatus = .active
     var progress                = ""
     var nextStep                = ""
+
 }
 
 
@@ -102,8 +103,11 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
         objectives = startingObjectives.map
         {
             prior in
+
             var current = prior;
+
             current.progress = "";
+
             return current
         }
 
@@ -125,7 +129,9 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
         document.records.values.filter
         {
             record in
+
             let keys = record.dayKeys
+
             return keys.contains
             {
                 $0 >= startKey && $0 <= endKey
@@ -167,6 +173,7 @@ enum PeriodicReviewStore
 
         var version                                 = 1;
         var records: [String: PeriodicReviewRecord] = [:]
+
     }
 
 
@@ -185,12 +192,14 @@ enum PeriodicReviewStore
     {
 
         var calendar = Calendar(identifier: .gregorian)
+
         guard let zone = TimeZone(identifier: record.timeZoneID) else
         {
             throw DailyPlanStore.Failure.corrupt
         }
 
         calendar.timeZone = zone
+
         guard !record.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
         record.startKey <= record.endKey, (0 ... 2).contains(record.step),
         [record.startKey, record.endKey].allSatisfy(
@@ -311,17 +320,22 @@ enum PeriodicReviewStore
     {
 
         try validate(draft)
+
         var document = try load(from: defaults)
+
         guard document.records[draft.id.uuidString] == baseline else
         {
             throw DailyPlanStore.Failure.conflict
         }
 
         var saved = draft;
+
         saved.updatedAt = .now
         document.records[saved.id.uuidString] = saved
+
         let data     = try JSONEncoder().encode(document)
         let previous = defaults.object(forKey: key)
+
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
         {
@@ -396,6 +410,7 @@ struct PeriodicReviewView: View
         self.initialReviewID = initialReviewID
         _start = State(initialValue: calendar.dateInterval(of: .month, for: date)?.start ?? date)
         _end = State(initialValue: date)
+
     }
 
     private var dirty: Bool
@@ -424,21 +439,26 @@ struct PeriodicReviewView: View
 
             document = try PeriodicReviewStore.load(from: defaults)
             weekly = try WeeklyReviewStore.load(from: defaults)
+
             if !loaded, let initialReviewID, let record = document.records[initialReviewID.uuidString]
             {
 
                 draft = record;
                 baseline = record
+
             }
 
             loaded = true;
             loadFailed = false
+
         }
         catch
         {
+
             loaded = true;
             loadFailed = true;
             self.error = error.localizedDescription
+
         }
 
     }
@@ -455,10 +475,12 @@ struct PeriodicReviewView: View
     {
 
         let key = PlanningDate.key(start, calendar: calendar)
+
         draft = PeriodicReviewRecord(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines), start: start, end: end, calendar: calendar,
             previous: PeriodicReviewStore.previous(before: key, in: document))
         baseline = nil
+
     }
 
 
@@ -479,7 +501,9 @@ struct PeriodicReviewView: View
                 draft? [keyPath: path] ?? ""
             }, set:
             {
+
                 draft? [keyPath: path] = $0
+
             })
     }
 
@@ -495,13 +519,16 @@ struct PeriodicReviewView: View
     {
 
         let value = objectiveTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard !value.isEmpty else
         {
             return
         }
 
         draft?.objectives.append(ReviewObjective(title: value));
+
         objectiveTitle = ""
+
     }
 
 
@@ -528,11 +555,15 @@ struct PeriodicReviewView: View
         {
             if value.step == 2
             {
+
                 value.completedAt = .now
+
             }
             else
             {
+
                 value.step += 1
+
             }
 
         }
@@ -541,13 +572,17 @@ struct PeriodicReviewView: View
         {
 
             let saved = try PeriodicReviewStore.save(value, replacing: baseline, to: defaults)
+
             document.records[saved.id.uuidString] = saved;
             draft = saved;
             baseline = saved
+
         }
         catch
         {
+
             self.error = error.localizedDescription
+
         }
 
     }
@@ -583,7 +618,9 @@ struct PeriodicReviewView: View
                         $0.id == id
                     })
                 {
+
                     draft?.objectives[index] = value
+
                 }
 
             })
@@ -609,6 +646,7 @@ struct PeriodicReviewView: View
 
                         draft = record;
                         baseline = record
+
                     }
 
                 }
@@ -655,6 +693,7 @@ struct PeriodicReviewView: View
                                 draft = nil;
                                 baseline = nil;
                                 title = ""
+
                             } .disabled(dirty)
                         }
 
@@ -681,6 +720,7 @@ struct PeriodicReviewView: View
                             {
 
                                 let weeks = review.weeks(in: weekly)
+
                                 if weeks.isEmpty
                                 {
 
@@ -765,6 +805,7 @@ struct PeriodicReviewView: View
                                 {
 
                                     let value = objective(item.id)
+
                                     TextField("Objective", text: value.title, axis: .vertical)
                                     .textInputAutocapitalization(.sentences)
                                     if let previous = review.startingObjectives.first(where:
@@ -855,7 +896,9 @@ struct PeriodicReviewView: View
 
                                 Button("Choose priorities", systemImage: "plus.circle")
                                 {
+
                                     showsPicker = true
+
                                 } .disabled(
                                     access == nil)
                             }
@@ -889,7 +932,9 @@ struct PeriodicReviewView: View
                             {
                                 Button("Previous step")
                                 {
+
                                     draft?.step -= 1
+
                                 }
 
                             }
@@ -947,7 +992,9 @@ struct PeriodicReviewView: View
                     {
                         if dirty
                         {
+
                             confirmsDiscard = true
+
                         }
                         else
                         {
@@ -1001,7 +1048,9 @@ struct PeriodicReviewView: View
                             draft?.priorities ?? []
                         }, set:
                         {
+
                             draft?.priorities = $0
+
                         }))
             }
             .alert("Review not updated", isPresented: Binding(get:
@@ -1011,7 +1060,9 @@ struct PeriodicReviewView: View
                     {
                         if !$0
                         {
+
                             error = nil
+
                         }
 
                     }))

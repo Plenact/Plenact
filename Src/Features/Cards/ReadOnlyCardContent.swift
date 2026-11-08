@@ -78,6 +78,7 @@ struct ReadOnlyCardContent: View
                 }
 
                 let body = card.presentation == .note ? card.descriptionOverride ?? "" : card.funParagraph
+
                 if !PlanRichText.plain(body).isEmpty
                 {
 

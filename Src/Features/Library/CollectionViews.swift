@@ -163,8 +163,11 @@ struct CollectionFilterPopover: View
                 {
 
                     opacity = 1
+
                     onSelect(filter)
+
                     pendingSelection = filter
+
                 }
                 label:
                 {
@@ -208,7 +211,9 @@ struct CollectionFilterPopover: View
                 try await Task.sleep(for: .milliseconds(voiceOver ? 900 : 450))
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16))
                 {
+
                     opacity = 0
+
                 }
 
                 if !reduceMotion
@@ -331,9 +336,12 @@ struct PersonalCollectionBoardView: View
             onCommitDeletion:
             {
                 lists, bookmarks in
+
                 var updated = collection /* Collection snapshot receiving Board removals */
+
                 updated.lists = lists
                 updated.savedCardIDs = bookmarks
+
                 try onCommitDeletion(updated)
             },
             onListsChanged:
@@ -343,6 +351,7 @@ struct PersonalCollectionBoardView: View
                 {
 
                     collection.title = list.title
+
                 }
 
             },
@@ -386,7 +395,9 @@ struct PersonalCollectionBoardView: View
 
                 registerNewNote
                 {
+
                     showsNewNoteComposer = true
+
                 }
 
             }
@@ -447,6 +458,7 @@ struct PersonalCollectionSettingsView: View
         _draft = State(initialValue: collection)
         self.isNew = isNew
         self.onSave = onSave
+
     }
 
 
@@ -517,7 +529,9 @@ struct PersonalCollectionSettingsView: View
                                                                 },
                                                                 set:
                                                                 {
+
                                                                     draft.collectionDescription = $0
+
                                                                 }
                                                             ), axis: .vertical
                     ).textInputAutocapitalization(.sentences)
@@ -548,9 +562,12 @@ struct PersonalCollectionSettingsView: View
                                                                             set:
                                                                             {
                                                                                 value in
+
                                                                                 var appearance = draft.lists[0].appearance ?? ItemAppearance()
+
                                                                                 appearance.showsIconInHeader = value
                                                                                 draft.lists[0].appearance = appearance
+
                                                                             }
                                                                         ))
                     }
@@ -600,9 +617,12 @@ struct PersonalCollectionSettingsView: View
                                 set:
                                 {
                                     value in
+
                                     var appearance = draft.lists[0].appearance ?? ItemAppearance()
+
                                     appearance.listBackgroundOpacity = value
                                     draft.lists[0].appearance = appearance
+
                                 }
                             ))
                         Text(
@@ -629,9 +649,12 @@ struct PersonalCollectionSettingsView: View
                                 set:
                                 {
                                     value in
+
                                     var appearance = draft.lists[0].appearance ?? ItemAppearance()
+
                                     appearance.iconColor = value
                                     draft.lists[0].appearance = appearance
+
                                 }
                             ), fixedColor: KanbanList.fixedIconColor(for: draft.lists[0].title))
                     }

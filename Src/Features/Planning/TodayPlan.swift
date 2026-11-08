@@ -25,6 +25,7 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable
     let title:           String
     let location:        String
     let sourceCreatedAt: Date?
+
     var id:              String
     {
             "\(ownerID):\(cardID)"
@@ -50,6 +51,7 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable
         location =
         source.collectionTitle == source.listTitle
         ? source.listTitle : source.collectionTitle + " · " + source.listTitle
+
     }
 
 
@@ -118,6 +120,7 @@ struct DailyPlan: Codable, Equatable, Identifiable
 
         id = PlanningDate.key(date, calendar: calendar)
         timeZoneID = calendar.timeZone.identifier
+
     }
 
 }
@@ -151,6 +154,7 @@ enum DailyPlanStore
 
         var version                    = 1
         var plans: [String: DailyPlan] = [:]
+
     }
 
 
@@ -213,9 +217,12 @@ enum DailyPlanStore
         }
 
         let document: Document
+
         do
         {
+
             document = try JSONDecoder().decode(Document.self, from: data)
+
         }
         catch
         {
@@ -284,6 +291,7 @@ enum DailyPlanStore
         }
 
         var result = document
+
         for key in result.plans.keys
         {
 
@@ -334,6 +342,7 @@ enum DailyPlanStore
     {
 
         var document = try load(from: defaults)
+
         guard document.plans[plan.id] == expected else
         {
             throw Failure.conflict
@@ -347,10 +356,13 @@ enum DailyPlanStore
         }
 
         var saved = plan
+
         saved.updatedAt = .now
         document.plans[saved.id] = saved
+
         let data     = try JSONEncoder().encode(document)
         let previous = defaults.object(forKey: key)
+
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
         {
@@ -429,6 +441,7 @@ struct TodayPlanView: View
         _date = State(initialValue: date)
         self.defaults = defaults
         _draft = State(initialValue: DailyPlan(date: date, calendar: calendar))
+
     }
 
     private var sources: [PlanningSearchResult]
@@ -451,7 +464,9 @@ struct TodayPlanView: View
     {
 
         var value = Calendar.current
+
         value.timeZone = TimeZone(identifier: draft.timeZoneID) ?? .current
+
         return value
     }
 
@@ -471,15 +486,19 @@ struct TodayPlanView: View
         {
 
             let saved = try DailyPlanStore.load(from: defaults).plans[draft.id]
+
             baseline = saved
             draft = saved ?? draft
             loadError = nil
             loaded = true
+
         }
         catch
         {
+
             loadError = error.localizedDescription;
             loaded = true
+
         }
 
     }
@@ -501,11 +520,14 @@ struct TodayPlanView: View
 
             baseline = try DailyPlanStore.save(draft, replacing: baseline, to: defaults)
             draft = baseline!
+
             dismiss()
         }
         catch
         {
+
             saveError = error.localizedDescription
+
         }
 
     }
@@ -524,7 +546,9 @@ struct TodayPlanView: View
 
         if hasChanges
         {
+
             confirmsDiscard = true
+
         }
         else
         {
@@ -549,8 +573,10 @@ struct TodayPlanView: View
         {
 
             let saved = try DailyPlanStore.save(draft, replacing: baseline, to: defaults)
+
             baseline = saved
             draft = saved
+
             return true
         }
         catch
@@ -575,10 +601,12 @@ struct TodayPlanView: View
     {
 
         let source = priority.resolve(in: sources)
+
         return Button
         {
 
             openedItem = source
+
         }
         label:
         {
@@ -675,6 +703,7 @@ struct TodayPlanView: View
                 {
 
                     showsVision = true
+
                 }
                 label:
                 {
@@ -691,6 +720,7 @@ struct TodayPlanView: View
                 {
 
                     showsCheckIn = true
+
                 }
                 label:
                 {
@@ -702,6 +732,7 @@ struct TodayPlanView: View
                 {
 
                     showsReview = true
+
                 }
                 label:
                 {
@@ -730,6 +761,7 @@ struct TodayPlanView: View
                 {
 
                     showsDailyReview = true
+
                 }
                 label:
                 {
@@ -741,6 +773,7 @@ struct TodayPlanView: View
                 {
 
                     showsWeeklyReview = true
+
                 }
                 label:
                 {
@@ -751,6 +784,7 @@ struct TodayPlanView: View
                 {
 
                     showsPeriodicReview = true
+
                 }
                 label:
                 {
@@ -787,6 +821,7 @@ struct TodayPlanView: View
                 {
 
                     showsPicker = true
+
                 }
                 label:
                 {
@@ -797,6 +832,7 @@ struct TodayPlanView: View
                 {
 
                     showsNewPriority = true
+
                 }
                 label:
                 {
@@ -920,7 +956,9 @@ struct TodayPlanView: View
                     load()
                     if opensEveningReview && loadError == nil
                     {
+
                         showsReview = true
+
                     }
 
                 }
@@ -958,8 +996,10 @@ struct TodayPlanView: View
                     onCommitted:
                     {
                         saved in
+
                         baseline = saved;
                         draft = saved
+
                     })
             }
             .sheet(isPresented: $showsPicker)
@@ -972,7 +1012,9 @@ struct TodayPlanView: View
                 NewDailyPriorityView
                 {
                     source in
+
                     let priority = DailyPlanPriority(source)
+
                     if !draft.priorities.contains(where:
                         {
                             $0.id == priority.id
@@ -997,7 +1039,9 @@ struct TodayPlanView: View
                         week: week, initialDayID: result.listID, initialCardID: result.card.id,
                         onLeaveForHome:
                         {
+
                             openedItem = nil
+
                         })
                 }
                 else if let owner = access?.library.first(where:
@@ -1010,7 +1054,9 @@ struct TodayPlanView: View
                         collection: owner, initialListID: result.listID, initialCardID: result.card.id,
                         onLeaveForHome:
                         {
+
                             openedItem = nil
+
                         })
                 }
                 else
@@ -1022,7 +1068,9 @@ struct TodayPlanView: View
                         ContentUnavailableView("Item unavailable", systemImage: "link.badge.plus")
                         Button("Back to plan")
                         {
+
                             openedItem = nil
+
                         } .padding()
                     }
 
@@ -1053,7 +1101,9 @@ struct TodayPlanView: View
                 {
                     if !$0
                     {
+
                         saveError = nil
+
                     }
 
                 }))
@@ -1061,7 +1111,9 @@ struct TodayPlanView: View
 
             Button("OK")
             {
+
                 saveError = nil
+
             }
 
         }
@@ -1093,6 +1145,7 @@ struct DailyPriorityPicker: View
     @Binding var priorities: [DailyPlanPriority]
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
+
     private var matches: [PlanningSearchResult]
     {
 
@@ -1130,6 +1183,7 @@ struct DailyPriorityPicker: View
                 ForEach(matches)
                 {
                     source in
+
                     let priority = DailyPlanPriority(source)
                     let selected = priorities.contains
                     {
@@ -1235,6 +1289,7 @@ enum DailyPriorityCreation
     {
 
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard !title.isEmpty else
         {
             return nil
@@ -1269,19 +1324,24 @@ enum DailyPriorityCreation
                     $0.kind == .photo
                 })?.id,
             descriptionOverride: body, subtitleOverride: "", presentation: presentation, createdAt: .now)
+
         NewCardAppearanceDefaults.apply(to: &card)
         owner.lists[index].cards.append(card)
+
         let saved: Bool
+
         if var week
         {
 
             week.collection = owner;
             saved = access.saveWeek(week)
+
         }
         else
         {
 
             saved = access.saveLibrary(owner)
+
         }
 
         guard saved else
@@ -1321,6 +1381,7 @@ struct NewDailyPriorityView: View
     @State private var initialized = false
     @State private var error: String?
     @State private var confirmsDiscard = false
+
     private var destinations: [WorkspaceListDestination]
     {
 
@@ -1368,13 +1429,16 @@ struct NewDailyPriorityView: View
             {
 
                 error = "The item could not be saved. Your draft and attachments are still here."
+
                 return
             }
 
         }
         catch
         {
+
             self.error = "Attachments couldn't be saved. Your draft is still here; please try again.";
+
             return
         }
 
@@ -1399,10 +1463,12 @@ struct NewDailyPriorityView: View
         }
 
         initialized = true
+
         for target in destinations where target.owner.kind == .list && target.owner.title == "On the Table"
         {
 
             destination = target.reference
+
             break
         }
 
@@ -1494,6 +1560,7 @@ struct NewDailyPriorityView: View
                         {
 
                             confirmsDiscard = true
+
                         }
 
                     }
@@ -1524,7 +1591,9 @@ struct NewDailyPriorityView: View
                 actions: KeyboardCardActions(
                     exit:
                     {
+
                         confirmsDiscard = true
+
                     }, attachment: attachmentDraft.openSources, showsUpperBorder: true))
         }
         .onDisappear
@@ -1553,7 +1622,9 @@ struct NewDailyPriorityView: View
                 {
                     if !$0
                     {
+
                         error = nil
+
                     }
 
                 }))
@@ -1561,7 +1632,9 @@ struct NewDailyPriorityView: View
 
             Button("OK")
             {
+
                 error = nil
+
             }
 
         }

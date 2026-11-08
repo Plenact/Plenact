@@ -21,6 +21,7 @@ struct ReviewedLocalBackup
     let cardCount:  Int            /* Active Cards in the active Board                                */
     let mediaCount: Int            /* Verified original files                                         */
     let journal:    Data?          /* Verified retained migration identity evidence                    */
+
 }
 
 
@@ -71,15 +72,21 @@ enum LocalBackupRestore
         {
             throw Failure.unsafe
         }
+
         let manager    = FileManager.default
         let attributes = try manager.attributesOfItem(atPath: url.path)
         let kind       = attributes[.type] as? FileAttributeType
+
         if kind == .typeDirectory
         {
+
             var children: [String: FileWrapper] = [:]
+
             for child in try manager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
             {
+
                 children[child.lastPathComponent] = try readTree(child, remaining: &remaining, depth: depth + 1)
+
             }
             return FileWrapper(directoryWithFileWrappers: children)
         }
@@ -92,12 +99,16 @@ enum LocalBackupRestore
         {
             throw Failure.tooLarge
         }
+
         let data = try Data(contentsOf: url)
+
         guard data.count <= remaining else
         {
             throw Failure.tooLarge
         }
+
         remaining -= data.count
+
         return FileWrapper(regularFileWithContents: data)
     }
 
@@ -119,7 +130,9 @@ enum LocalBackupRestore
         {
             throw Failure.unsafe
         }
+
         var result: Set<String> = []
+
         for (name, child) in wrapper.fileWrappers ?? [:]
         {
             result.formUnion(try mediaPaths(child, prefix: prefix + "/" + name))
@@ -140,6 +153,7 @@ enum LocalBackupRestore
 
         var remaining = LegacyWorkspaceExport.maximumBytes
         let files     = try readTree(url, remaining: &remaining)
+
         guard files.isDirectory,
               let report = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: files)) as? [String: Any],
               let stores = report["store_count"] as? Int, let media = report["media_count"] as? Int,
@@ -147,15 +161,21 @@ enum LocalBackupRestore
         {
             throw Failure.reviewRequired
         }
+
         let backup                   = LegacyWorkspaceBackup(files: files, storeCount: stores, mediaCount: media, reviewCodes: issues)
         let values                   = try MigrationBackupReader.values(in: backup)
         var actualMedia: Set<String> = []
+
         for area in LegacyWorkspaceExport.mediaRoots
         {
+
             var entry: FileWrapper? = files
+
             for part in area.split(separator: "/")
             {
+
                 entry = entry?.fileWrappers?[String(part)]
+
             }
             if let entry
             {
@@ -182,9 +202,11 @@ enum LocalBackupRestore
         {
             throw Failure.invalid
         }
+
         let board    = try JSONDecoder().decode([KanbanList].self, from: boardData)
         let calendar = try JSONDecoder().decode(PlanningCalendarDocument.self, from: calendarData)
         let current  = calendar.weeks.filter { $0.startKey == calendar.currentWeekKey }
+
         guard calendar.version == 1, (1...7).contains(calendar.firstWeekday),
               Set(calendar.weeks.map(\.startKey)).count == calendar.weeks.count,
               Set(calendar.weeks.map(\.id)).count == calendar.weeks.count,
@@ -192,16 +214,22 @@ enum LocalBackupRestore
         {
             throw Failure.projectionMismatch
         }
+
         var journal: Data?
+
         if files.fileWrappers?["Migration"] != nil
         {
+
             journal = try MigrationBackupReader.file("Migration/IdentityJournal.json", in: files)
             _ = try MigrationIdentityJournal.decode(journal!)
+
         }
         if files.fileWrappers?["MigrationPreview"] != nil
         {
+
             let data      = try MigrationBackupReader.file("MigrationPreview/IdentityJournal.json", in: files)
             let candidate = try MigrationIdentityJournal.decode(data)
+
             guard let preview = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("MigrationPreview/Report.json", in: files)) as? [String: Any],
                   preview["source_preferences_sha256"] as? String == MigrationBackupReader.digest(try boardPreferences(files)),
                   preview["source_installation_id"] as? String == candidate.sourceInstallationID.uuidString.lowercased(),
@@ -212,8 +240,10 @@ enum LocalBackupRestore
             }
             if let journal
             {
+
                 let original = try MigrationIdentityJournal.decode(journal)
                 let mapped   = Dictionary(uniqueKeysWithValues: candidate.entries.map { ($0.source, $0.target) })
+
                 guard original.sourceInstallationID == candidate.sourceInstallationID,
                       original.previewWorkspaceID == candidate.previewWorkspaceID,
                       original.entries.allSatisfy({ mapped[$0.source] == $0.target }) else
@@ -221,7 +251,9 @@ enum LocalBackupRestore
                     throw Failure.invalid
                 }
             }
+
             journal = data
+
         }
         return ReviewedLocalBackup(files: files, values: values, storeCount: stores, listCount: board.count,
             cardCount: board.reduce(0) { $0 + $1.cards.count }, mediaCount: media, journal: journal)
@@ -254,18 +286,26 @@ enum LocalBackupRestore
     {
 
         #if targetEnvironment(simulator)
+
         let manager = FileManager.default
+
         for area in LegacyWorkspaceExport.mediaRoots
         {
+
             let target = root.appendingPathComponent(area)
+
             if manager.fileExists(atPath: target.path)
             {
                 try manager.removeItem(at: target)
             }
+
             var source: FileWrapper? = backup.files
+
             for part in area.split(separator: "/")
             {
+
                 source = source?.fileWrappers?[String(part)]
+
             }
             if let source
             {
@@ -277,7 +317,9 @@ enum LocalBackupRestore
                 try source.write(to: target, options: .atomic, originalContentsURL: nil)
             }
         }
+
         let migration = root.appendingPathComponent("Library/Application Support/PlenactMigration")
+
         if manager.fileExists(atPath: migration.path)
         {
             try manager.removeItem(at: migration)
@@ -299,7 +341,9 @@ enum LocalBackupRestore
             {
                 throw Failure.invalid
             }
+
             let installed = try Data(contentsOf: root.appendingPathComponent(path))
+
             guard MigrationBackupReader.digest(installed) == entry["sha256"] as? String else
             {
                 throw Failure.invalid
@@ -312,8 +356,10 @@ enum LocalBackupRestore
                 throw Failure.invalid
             }
         }
+
         let portable = try PortableRuntimeEvidence.backupFiles(report: sourceReport, files: backup.files)
         let runtime  = root.appendingPathComponent(PortableRuntimeEvidence.area)
+
         if manager.fileExists(atPath: runtime.path)
         {
             try manager.removeItem(at: runtime)
@@ -330,7 +376,9 @@ enum LocalBackupRestore
                 throw Failure.invalid
             }
         }
+
         var destination = (defaults.persistentDomain(forName: domain) ?? [:]).filter { !LegacyStoreValidation.includes($0.key) }
+
         destination.merge(backup.values) { _, imported in imported }
         defaults.setPersistentDomain(destination, forName: domain)
         guard defaults.synchronize(), NSDictionary(dictionary: destination).isEqual(to: defaults.persistentDomain(forName: domain) ?? [:]) else
@@ -352,6 +400,7 @@ struct LocalBackupRestoreAccess
 
     let restore: (ReviewedLocalBackup) -> Void /* Confirmed restore request */
     let undo:    () -> Void                   /* Explicit recovery of the pre-import workspace */
+
 }
 
 
@@ -362,6 +411,7 @@ private struct LocalBackupRestoreKey: EnvironmentKey
 {
 
     static let defaultValue: LocalBackupRestoreAccess? = nil
+
 }
 
 
@@ -375,6 +425,10 @@ extension EnvironmentValues
     {
 
         get { self[LocalBackupRestoreKey.self] }
-        set { self[LocalBackupRestoreKey.self] = newValue }
+        set {
+
+            self[LocalBackupRestoreKey.self] = newValue
+
+        }
     }
 }

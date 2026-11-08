@@ -17,6 +17,7 @@ struct PortablePlanningDocuments
     let weekly:   WeeklyReviewStore.Document
     let periodic: PeriodicReviewStore.Document
     let rhythm:   ReviewRhythmPreferences?
+
 }
 
 
@@ -36,13 +37,16 @@ extension PortableEditableContent
 
         var raw = try mapped(value, fields: ["source_collection_id": "ownerID", "card_id": "cardID",
             "title": "title", "source_location": "location", "source_created_at_utc": "sourceCreatedAt"])
+
         guard let owner = value["source_collection_id"] as? String, UUID(uuidString: owner) != nil,
               records.contains(where: { record in
                   if record["id"] as? String == owner && record["record_type"] as? String == "collection"
                   {
                       return true
                   }
+
                   let body = record["payload"] as? [String: Any]
+
                   return record["record_type"] as? String == "unavailable_reference" &&
                       body?["target_type"] as? String == "collection" && body?["target_id"] as? String == owner
               }) else
@@ -60,8 +64,10 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
         }
+
         raw["cardID"] = try alias(value["card_id"])
         raw["sourceCreatedAt"] = try timestamp(value["source_created_at_utc"])
+
         return raw
     }
 
@@ -75,6 +81,7 @@ extension PortableEditableContent
     {
 
         var seen = Set<String>()
+
         return try array(value).map { item in
             guard let owner = item["source_collection_id"] as? String, let card = item["card_id"] as? String,
                   seen.insert(owner + ":" + card).inserted else
@@ -95,26 +102,33 @@ extension PortableEditableContent
     {
 
         var seen = Set<String>()
+
         return try array(value).map { item in
+
             var raw = try mapped(item, fields: ["id": "id", "source": "source", "result": "result",
                 "action": "action", "recorded_at_utc": "recordedAt"])
+
             guard let id = item["id"] as? String, UUID(uuidString: id) != nil, seen.insert(id).inserted,
                   let source = item["source"] as? [String: Any], let result = item["result"] as? [String: Any],
                   let action = item["action"] as? [String: Any], let kind = action["kind"] as? String else
             {
                 throw Failure.invalid
             }
+
             raw["source"] = try priority(source)
             raw["result"] = try priority(result)
             raw["recordedAt"] = try timestamp(item["recorded_at_utc"])
+
             if kind == "date"
             {
                 guard Set(action.keys) == ["kind", "date"], let day = action["date"] as? String else
                 {
                     throw Failure.invalid
                 }
+
                 _ = try civil(day)
                 raw["action"] = ["date": ["_0": day]]
+
             }
             else
             {
@@ -122,7 +136,9 @@ extension PortableEditableContent
                 {
                     throw Failure.unsupported
                 }
+
                 raw["action"] = [kind == "keep_tomorrow" ? "keepTomorrow" : kind: [String: Any]()]
+
             }
             return raw
         }
@@ -165,9 +181,12 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
         var raw = try mapped(value, fields: ["focus": "focus", "changed": "changed", "saved_at_utc": "savedAt"])
+
         raw["focus"] = try optionalPriority(value["focus"])
         raw["savedAt"] = try timestamp(value["saved_at_utc"])
+
         return raw
     }
 
@@ -184,22 +203,30 @@ extension PortableEditableContent
         {
             return NSNull()
         }
+
         var seen = Set<String>()
+
         return try array(value).map { item -> [String: Any] in
+
             var raw = try mapped(item, fields: ["id": "id", "saved_at_utc": "savedAt", "changed": "changed", "focus": "focus",
                 "intention": "intention", "constraints": "constraints", "concerns": "concerns", "priorities": "priorities",
                 "legacy": "legacy", "mood": "mood", "completed_tasks": "completedTasks", "total_tasks": "totalTasks",
                 "notes": "notes", "unavailable": "unavailable"])
+
             guard let id = item["id"] as? String, !id.isEmpty, seen.insert(id).inserted else
             {
                 throw Failure.invalid
             }
+
             raw["focus"] = try optionalPriority(item["focus"])
             raw["priorities"] = try priorities(item["priorities"])
             raw["savedAt"] = try timestamp(item["saved_at_utc"])
+
             if let mood = item["mood"] as? [String: Any]
             {
+
                 _ = try mapped(mood, fields: ["emoji": "emoji", "label": "label"])
+
             }
             else if !(item["mood"] is NSNull)
             {
@@ -237,15 +264,19 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
         var raw = try mapped(value, fields: ["step": "step", "completed_at_utc": "completedAt", "helped": "helped",
             "difficult": "difficult", "tomorrow": "tomorrow", "decisions": "decisions", "achievements": "achievements"])
+
         guard let step = value["step"] as? Int, (0...2).contains(step) else
             {
                 throw Failure.invalid
             }
+
         raw["completedAt"] = try timestamp(value["completed_at_utc"])
         raw["decisions"] = try decisions(value["decisions"])
         raw["achievements"] = try priorities(value["achievements"])
+
         return raw
     }
 
@@ -259,15 +290,20 @@ extension PortableEditableContent
     {
 
         var seen = Set<String>()
+
         return try array(value).map { item in
+
             var raw = try mapped(item, fields: ["id": "id", "title": "title", "status": "status", "progress": "progress", "next_step": "nextStep"])
+
             guard let id = item["id"] as? String, UUID(uuidString: id) != nil, seen.insert(id).inserted,
                   let token = item["status"] as? String,
                   let status = ["active": "Active", "achieved": "Achieved", "paused": "Paused", "released": "Let go"][token] else
             {
                 throw Failure.invalid
             }
+
             raw["status"] = status
+
             return raw
         }
     }
@@ -285,6 +321,7 @@ extension PortableEditableContent
         var periodic: [String: Any] = [:]
         let reflections             = ["step": "step", "highlights": "highlights", "learned": "learned", "direction": "direction",
             "risks": "risks", "priorities": "priorities", "updated_at_utc": "updatedAt", "completed_at_utc": "completedAt"]
+
         for document in records
         {
             guard let kind = document["record_type"] as? String,
@@ -298,20 +335,25 @@ extension PortableEditableContent
             }
             if kind == "daily_plan"
             {
+
                 var raw = try mapped(payload, fields: ["date": "id", "time_zone": "timeZoneID", "intention": "intention",
                     "constraints": "constraints", "concerns": "concerns", "priorities": "priorities", "updated_at_utc": "updatedAt",
                     "vision_completed_at_utc": "visionCompletedAt", "vision_step": "visionStep", "check_in": "checkIn",
                     "check_ins": "checkIns", "evening_review": "eveningReview"])
+
                 guard let date = payload["date"] as? String, daily[date] == nil,
                       let zone = payload["time_zone"] as? String, TimeZone(identifier: zone) != nil else
             {
                 throw Failure.invalid
             }
+
                 _ = try civil(date)
+
                 guard payload["vision_step"] is NSNull || (payload["vision_step"] as? Int).map({ (0...2).contains($0) }) == true else
             {
                 throw Failure.invalid
             }
+
                 raw["priorities"] = try priorities(payload["priorities"])
                 raw["updatedAt"] = try timestamp(payload["updated_at_utc"])
                 raw["visionCompletedAt"] = try timestamp(payload["vision_completed_at_utc"])
@@ -319,24 +361,29 @@ extension PortableEditableContent
                 raw["checkIns"] = try checkIns(payload["check_ins"])
                 raw["eveningReview"] = try evening(payload["evening_review"])
                 daily[date] = raw
+
             }
             else
             {
+
                 let extra = kind == "weekly_review"
                     ? ["source_review_key": "id", "start_date": "startKey", "time_zone": "timeZoneID", "first_weekday": "firstWeekday",
                        "constraints": "constraints", "decisions": "decisions"]
                     : ["title": "title", "start_date": "startKey", "end_date": "endKey", "time_zone": "timeZoneID",
                        "starting_objectives": "startingObjectives", "objectives": "objectives"]
                 var raw = try mapped(payload, fields: reflections.merging(extra) { _, latest in latest })
+
                 guard let start = payload["start_date"] as? String, let zone = payload["time_zone"] as? String,
                       TimeZone(identifier: zone) != nil, let step = payload["step"] as? Int, (0...2).contains(step) else
             {
                 throw Failure.invalid
             }
+
                 _ = try civil(start)
                 raw["priorities"] = try priorities(payload["priorities"])
                 raw["updatedAt"] = try timestamp(payload["updated_at_utc"])
                 raw["completedAt"] = try timestamp(payload["completed_at_utc"])
+
                 if kind == "weekly_review"
                 {
                     guard let key = payload["source_review_key"] as? String, let weekday = payload["first_weekday"] as? Int,
@@ -344,8 +391,10 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
                     raw["decisions"] = try decisions(payload["decisions"])
                     weekly[key] = raw
+
                 }
                 else
                 {
@@ -354,20 +403,26 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
                     _ = try civil(end)
                     raw["id"] = id
                     raw["startingObjectives"] = try objectives(payload["starting_objectives"])
                     raw["objectives"] = try objectives(payload["objectives"])
                     periodic[uuid.uuidString] = raw
+
                 }
             }
         }
+
         let rhythms = records.filter { $0["record_type"] as? String == "review_rhythm" }
+
         guard rhythms.count <= 1 else
             {
                 throw Failure.invalid
             }
+
         var rhythm: ReviewRhythmPreferences?
+
         if let document = rhythms.first
         {
             guard let payload = document["payload"] as? [String: Any], let daily = payload["daily_minutes"] as? Int,
@@ -376,10 +431,13 @@ extension PortableEditableContent
             {
                 throw Failure.invalid
             }
+
             let raw = try mapped(payload, fields: ["daily_invitations": "dailyInvitations", "weekly_invitations": "weeklyInvitations",
                 "daily_minutes": "dailyMinutes", "weekly_minutes": "weeklyMinutes", "weekly_weekday": "weeklyWeekday",
                 "daily_notifications": "dailyNotifications", "weekly_notifications": "weeklyNotifications"])
+
             rhythm = try JSONDecoder().decode(ReviewRhythmPreferences.self, from: JSONSerialization.data(withJSONObject: raw))
+
         }
         return PortablePlanningDocuments(
             daily: try JSONDecoder().decode(DailyPlanStore.Document.self, from: JSONSerialization.data(withJSONObject: ["version": 1, "plans": daily])),

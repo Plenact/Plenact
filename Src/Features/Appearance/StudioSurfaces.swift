@@ -16,6 +16,7 @@ private struct StudioCardSurfaceKey: EnvironmentKey
 
 
     static let defaultValue: StudioSurface? = nil
+
 }
 
 
@@ -37,7 +38,9 @@ extension EnvironmentValues
 
         set
         {
+
             self[StudioCardSurfaceKey.self] = newValue
+
         }
 
     }
@@ -68,6 +71,7 @@ enum StudioArtworkStore
         let root = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
             appropriateFor: nil, create: true)
         let url = root.appendingPathComponent("PlenactStudioArtwork", isDirectory: true)
+
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
@@ -86,6 +90,7 @@ enum StudioArtworkStore
 
         let prepared = try CollectionBackgroundPhotoStore.preparedPhoto(data)
         let name     = UUID().uuidString + ".jpg"
+
         try prepared.write(to: directory().appendingPathComponent(name), options: .atomic)
         return name
     }
@@ -219,6 +224,7 @@ struct StudioSurfaceView: View
 
         let first  = Self.color(surface.color)
         let second = Self.color(surface.secondaryColor)
+
         switch surface.material
         {
 
@@ -265,11 +271,14 @@ struct StudioSurfaceView: View
             {
 
             context, bounds in
+
                 let ink = second
+
                 if surface.material == .canvas
                 {
 
                     var mountain = Path()
+
                     mountain.move(to: CGPoint(x: 0, y: bounds.height * 0.8))
                     mountain.addLine(to: CGPoint(x: bounds.width * 0.38, y: bounds.height * 0.28))
                     mountain.addLine(to: CGPoint(x: bounds.width, y: bounds.height * 0.7))
@@ -284,6 +293,7 @@ struct StudioSurfaceView: View
                 {
 
                     let step: CGFloat = surface.material == .linen ? 4 : 24
+
                     for x in stride(from: CGFloat(0), through: bounds.width, by: step)
                     {
 
@@ -302,6 +312,7 @@ struct StudioSurfaceView: View
                         {
 
                             var line = Path()
+
                             line.move(to: CGPoint(x: x, y: 0));
                             line.addLine(to: CGPoint(x: x, y: bounds.height))
                             context.stroke(line, with: .color(ink.opacity(0.35)), lineWidth: 0.5)
@@ -316,6 +327,7 @@ struct StudioSurfaceView: View
                         {
 
                             var line = Path()
+
                             line.move(to: CGPoint(x: 0, y: y));
                             line.addLine(to: CGPoint(x: bounds.width, y: y))
                             context.stroke(line, with: .color(ink.opacity(0.5)), lineWidth: 0.5)

@@ -333,8 +333,10 @@ struct BoardAppearance: Hashable, Codable, Sendable
     {
 
         var result = appearance ?? ItemAppearance()
+
         result.background = result.background ?? bannerBackground
         result.listBackground = result.listBackground ?? listBackground
+
         return result
     }
 
@@ -356,7 +358,9 @@ struct BoardAppearance: Hashable, Codable, Sendable
         lists.map
         {
             list in
+
             var updated = list
+
             if var appearance = updated.appearance
             {
 
@@ -369,6 +373,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
                 appearance.studioSurface = nil
                 appearance.studioCardSurface = nil
                 updated.appearance = appearance.isEmpty ? nil : appearance
+
             }
 
             return updated
@@ -476,6 +481,7 @@ struct ItemAppearance: Hashable, Codable, Sendable
     var iconColor:                     ProfileColor?         = nil
     var showsIconInHeader:             Bool?                 = nil
     var listBackgroundOpacity:         Double?               = nil
+
     var resolvedListBackgroundOpacity: Double
     {
 
@@ -556,19 +562,23 @@ enum NewCardAppearanceDefaults
         }
 
         var appearance = card.appearance ?? ItemAppearance()
+
         if preferences.randomizesNewCardHeaders && appearance.background == nil
         {
 
             appearance.background = headerPalette.randomElement()
+
         }
 
         if preferences.randomizesNewCardBackgrounds && appearance.cardBackground == nil
         {
 
             appearance.cardBackground = backgroundPalette.randomElement()
+
         }
 
         card.appearance = appearance.isEmpty ? nil : appearance
+
     }
 
 }

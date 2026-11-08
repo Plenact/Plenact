@@ -1372,3 +1372,75 @@ extension PlenactBoardDocumentTests
     }
 
 }
+
+
+extension PlenactBoardDocumentTests
+{
+
+    /// @fcn PlenactBoardDocumentTests.testLibraryDeletionUndoRestoresOwnersWithoutOverwritingEdits
+    /// @brief Restore complete List and Board owners while preserving intervening directory changes
+    /// @return Void; synthetic persistence uses isolated defaults
+    func testLibraryDeletionUndoRestoresOwnersWithoutOverwritingEdits() throws
+    {
+
+        let domain = "Plenact.CollectionUndoTests." + UUID().uuidString /* Isolated preference domain */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain)) /* Test-only persistence */
+        let start = ContinuousClock.now /* Synthetic monotonic anchor */
+
+        defer
+        {
+
+            defaults.removePersistentDomain(forName: domain)
+        }
+        for kind in [PersonalCollectionKind.list, .board]
+        {
+
+            var owner = PersonalCollection(title: "Synthetic owner", kind: kind) /* Deleted owner */
+            var other = PersonalCollection(title: "Other", kind: .list) /* Unrelated retained owner */
+            let added = PersonalCollection(title: "Added later", kind: .list) /* Intervening creation */
+
+            owner.lists[0].cards = [KanbanCard(id: 17, word: "Synthetic card", listTitle: "Synthetic")]
+            owner.lists[0].archivedCards = [KanbanCard(id: 18, word: "Archived", listTitle: "Synthetic")]
+            owner.savedCardIDs = [17, 18]
+            owner.collectionDescription = "Retained metadata"
+
+            let original = [other, owner] /* Original directory order */
+            let deletion = try LibraryCollectionDeletion(id: owner.id, in: original, at: start) /* Undo snapshot */
+
+            try PersonalCollectionStore.saveChecked([other], to: defaults)
+            other.title = "Edited while Undo is visible"
+
+            let restored = try deletion.restoring(in: [other, added],
+                at: start.advanced(by: .milliseconds(3999))) /* Merged Undo result */
+
+            try PersonalCollectionStore.saveChecked(restored, to: defaults)
+            XCTAssertEqual(restored, [other, owner, added])
+            XCTAssertEqual(PersonalCollectionStore.load(from: defaults), restored)
+            XCTAssertThrowsError(try deletion.restoring(in: restored, at: start))
+            XCTAssertThrowsError(try deletion.restoring(in: [other], at: start.advanced(by: .seconds(4))))
+            XCTAssertThrowsError(try deletion.restoring(in: [other], at: start.advanced(by: .seconds(5))))
+        }
+    }
+
+
+    /// @fcn PlenactBoardDocumentTests.testLibraryDeletionUndoKeepsIndependentDeadlines
+    /// @brief Verify rapid deletions, shortened directories and missing-owner rejection
+    /// @return Void; only synthetic collection values are used
+    func testLibraryDeletionUndoKeepsIndependentDeadlines() throws
+    {
+
+        let first = PersonalCollection(title: "First", kind: .list) /* First deleted owner */
+        let second = PersonalCollection(title: "Second", kind: .board) /* Second deleted owner */
+        let start = ContinuousClock.now /* Synthetic deletion time */
+        let one = try LibraryCollectionDeletion(id: first.id, in: [first, second], at: start) /* First snapshot */
+        let two = try LibraryCollectionDeletion(id: second.id, in: [second],
+            at: start.advanced(by: .seconds(1))) /* Later independent snapshot */
+        let restoredSecond = try two.restoring(in: [], at: start.advanced(by: .seconds(3))) /* Partial restoration */
+
+        XCTAssertEqual(try one.restoring(in: restoredSecond,
+            at: start.advanced(by: .seconds(3))), [first, second])
+        XCTAssertThrowsError(try one.restoring(in: [], at: start.advanced(by: .seconds(4))))
+        XCTAssertEqual(try two.restoring(in: [], at: start.advanced(by: .seconds(4))), [second])
+        XCTAssertThrowsError(try LibraryCollectionDeletion(id: UUID(), in: [], at: start))
+    }
+}

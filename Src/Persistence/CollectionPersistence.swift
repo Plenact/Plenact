@@ -195,3 +195,65 @@ enum PersonalCollectionStore
     }
 
 }
+
+
+/// Retains one deleted Library owner for a brief, in-process Undo window
+/// @section Purpose
+///     Restore only the deleted owner, preserving unrelated edits and refusing identity collisions
+struct LibraryCollectionDeletion: Identifiable
+{
+
+    let collection: PersonalCollection /* Complete deleted owner and its retained content */
+    let index: Int                     /* Original directory position */
+    let deadline: ContinuousClock.Instant /* Monotonic Undo expiry */
+
+    var id: UUID /* Stable identity for the transient notice */
+    {
+
+        collection.id
+    }
+
+
+    /// @fcn LibraryCollectionDeletion.init
+    /// @brief Capture an existing collection before checked deletion
+    /// @param[in] id Owner to remove
+    /// @param[in] collections Current directory
+    /// @param[in] instant Monotonic deletion time
+    /// @return Captured owner with a four-second deadline
+    /// @throws CocoaError when the owner no longer exists
+    init(id: UUID, in collections: [PersonalCollection], at instant: ContinuousClock.Instant = .now) throws
+    {
+
+        guard let index = collections.firstIndex(where: { $0.id == id }) else
+        {
+
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        self.collection = collections[index]
+        self.index = index
+        self.deadline = instant.advanced(by: .seconds(4))
+    }
+
+
+    /// @fcn LibraryCollectionDeletion.restoring
+    /// @brief Merge the retained owner into the latest directory during its Undo window
+    /// @param[in] collections Current directory, including edits since deletion
+    /// @param[in] instant Monotonic Undo time
+    /// @return Updated directory without overwriting an existing owner
+    /// @throws CocoaError for expired Undo or an identity collision
+    func restoring(in collections: [PersonalCollection], at instant: ContinuousClock.Instant = .now) throws
+        -> [PersonalCollection]
+    {
+
+        guard instant < deadline, !collections.contains(where: { $0.id == id }) else
+        {
+
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+
+        var restored = collections /* Current directory receiving only the deleted owner */
+
+        restored.insert(collection, at: min(index, restored.count))
+        return restored
+    }
+}

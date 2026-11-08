@@ -78,11 +78,7 @@ final class AppReturnTests: XCTestCase
         let other = /* Independent comparison value */
             BoardViewportMemory(owner: "other", defaults: defaults)
 
-        defer
-        {
-
-            defaults.removePersistentDomain(forName: domain)
-        }
+        defer { defaults.removePersistentDomain(forName: domain) }
 
         memory.record(450, for: "horizontal")
         memory.record(780, for: "list")
@@ -729,5 +725,73 @@ final class AppReturnTests: XCTestCase
             }
         }
         XCTAssertFalse(reference.hasPresentation)
+    }
+}
+
+
+extension AppReturnTests
+{
+
+    /// @fcn AppReturnTests.testLongAbsenceOverridesDailyWeekOnlyBeyondEightHours
+    /// @brief Verify the strict threshold, persisted departure, and once-only daily override
+    /// @return Void; isolated preferences are removed after the test
+    func testLongAbsenceOverridesDailyWeekOnlyBeyondEightHours() throws
+    {
+
+        let domain = "Plenact.LongAbsenceTests." + UUID().uuidString /* Isolated preference domain */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain)) /* Test-only preferences */
+        let start = Date(timeIntervalSince1970: 1_794_000_000) /* Synthetic departure */
+
+        defer
+        {
+
+            defaults.removePersistentDomain(forName: domain)
+        }
+        for elapsed in [28799.0, 28800.0, 28801.0, 43200.0]
+        {
+
+            AppDailyOpening.recordDeparture(at: start, defaults: defaults)
+            AppDailyOpening.recordDeparture(at: start.addingTimeInterval(100), defaults: defaults)
+
+            let reopened = try XCTUnwrap(UserDefaults(suiteName: domain)) /* Fresh store instance */
+            let arrival = start.addingTimeInterval(elapsed) /* Synthetic return */
+
+            XCTAssertEqual(AppDailyOpening.consumeLongAbsence(at: arrival,
+                protected: false, defaults: reopened), elapsed > 28800)
+            XCTAssertNil(reopened.object(forKey: AppDailyOpening.departureKey))
+            if elapsed > 28800
+            {
+
+                XCTAssertFalse(AppDailyOpening.claim(at: arrival, calendar: .current,
+                    protected: false, targetAvailable: true, defaults: reopened))
+            }
+            XCTAssertFalse(AppDailyOpening.consumeLongAbsence(at: arrival,
+                protected: false, defaults: reopened))
+        }
+    }
+
+
+    /// @fcn AppReturnTests.testLongAbsencePreservesOpenWorkAndHandlesMissingOrFutureDates
+    /// @brief Reject navigation for protected work and absent or future departure evidence
+    /// @return Void; no workspace preferences are used
+    func testLongAbsencePreservesOpenWorkAndHandlesMissingOrFutureDates() throws
+    {
+
+        let domain = "Plenact.LongAbsenceTests." + UUID().uuidString /* Isolated preference domain */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain)) /* Test-only preferences */
+        let now = Date() /* Synthetic arrival anchor */
+
+        defer
+        {
+
+            defaults.removePersistentDomain(forName: domain)
+        }
+        XCTAssertFalse(AppDailyOpening.consumeLongAbsence(at: now, protected: false, defaults: defaults))
+        AppDailyOpening.recordDeparture(at: now.addingTimeInterval(-43200), defaults: defaults)
+        XCTAssertFalse(AppDailyOpening.consumeLongAbsence(at: now, protected: true, defaults: defaults))
+        XCTAssertNil(defaults.object(forKey: AppDailyOpening.key))
+        XCTAssertNil(defaults.object(forKey: AppDailyOpening.departureKey))
+        AppDailyOpening.recordDeparture(at: now.addingTimeInterval(60), defaults: defaults)
+        XCTAssertFalse(AppDailyOpening.consumeLongAbsence(at: now, protected: false, defaults: defaults))
     }
 }

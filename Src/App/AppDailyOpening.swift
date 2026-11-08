@@ -2,14 +2,15 @@
 // @file       AppDailyOpening.swift
 // @brief      First daily opening to today's Week List, using a separate device-local preference domain
 // @details    Local calendar-day boundaries start at midnight. A daily opening takes priority over the
-//             five-minute browsing reset, but never over open work. No workspace/export keys are added
+//             five-minute browsing reset, but an eight-hour absence opens Today instead
+//             Open work stays protected; no workspace/export keys are added
 // --------------------------------------------------------------------------------------------------
 import SwiftUI
 import UIKit
 import UIKit.UIGestureRecognizerSubclass
 
 
-/// Records only which local calendar day already received its daily opening
+/// Records the handled local day and background departure in device-local preferences
 /// @section Purpose
 ///     Persist the once-per-day decision across launches without sharing navigation as user data
 enum AppDailyOpening
@@ -17,6 +18,49 @@ enum AppDailyOpening
 
     static let domain = "com.plenact.app.device-navigation" /* Lookup or storage namespace */
     static let key    = "lastDailyWeekOpening"              /* Lookup or persistence key   */
+
+
+    static let departureKey = "lastBackgroundDeparture" /* Device-local absence start */
+    static let longAbsence: TimeInterval = 8 * 60 * 60   /* Direct-to-Today threshold */
+
+
+    /// @fcn AppDailyOpening.recordDeparture
+    /// @brief Retain the first background timestamp across process termination
+    /// @param[in] date Background transition time
+    /// @param[in] defaults Device-local preference store
+    /// @return Void; repeated background notifications retain the original departure
+    static func recordDeparture(at date: Date, defaults: UserDefaults)
+    {
+
+        guard defaults.object(forKey: departureKey) == nil else
+        {
+
+            return
+        }
+        defaults.set(date, forKey: departureKey)
+    }
+
+
+    /// @fcn AppDailyOpening.consumeLongAbsence
+    /// @brief Open Today after more than eight hours away, unless open work is protected
+    /// @param[in] date Foreground arrival time
+    /// @param[in] protected Whether navigation must preserve open work
+    /// @param[in] defaults Device-local preference store
+    /// @return True once for an eligible long absence; consumes the daily Week opening too
+    static func consumeLongAbsence(at date: Date, protected: Bool, defaults: UserDefaults) -> Bool
+    {
+
+        let departure = defaults.object(forKey: departureKey) as? Date /* Prior background time */
+
+        defaults.removeObject(forKey: departureKey)
+        guard !protected, let departure, date.timeIntervalSince(departure) > longAbsence else
+        {
+
+            return false
+        }
+        defaults.set(PlanningDate.key(date, calendar: .current), forKey: key)
+        return true
+    }
 
 
     /// @fcn AppDailyOpening.claim
@@ -53,6 +97,29 @@ enum AppDailyOpening
 extension AppRootView
 {
 
+    /// @fcn AppRootView.openTodayAfterLongAbsence
+    /// @brief Give long absences priority over daily Week navigation while retaining open work
+    /// @param[in] date Foreground arrival time
+    /// @return True when Today was selected
+    @discardableResult
+    func openTodayAfterLongAbsence(at date: Date = .now) -> Bool
+    {
+
+        guard let defaults = UserDefaults(suiteName: AppDailyOpening.domain),
+              AppDailyOpening.consumeLongAbsence(at: date,
+                protected: hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture,
+                defaults: defaults) else
+        {
+
+            return false
+        }
+        dailyOverview.cancel()
+        dailyOverviewFade.cancel()
+        selectedDestination = .today
+        return true
+    }
+
+
     /// @fcn AppRootView.openFirstDailyWeek
     /// @brief Select the current Week and today's List at its top on the first eligible opening of the day
     /// @param[in] date Current local instant, injected when needed by callers
@@ -62,6 +129,11 @@ extension AppRootView
     func openFirstDailyWeek(at date: Date = .now) -> Bool
     {
 
+        if openTodayAfterLongAbsence(at: date)
+        {
+
+            return true
+        }
         guard !hasProtectedAppReturnContext, let document = calendarDocument,
               document.currentWeekKey == PlanningDate.weekKey(date, calendar: document.calendar),
               let week = document.week(for: date),

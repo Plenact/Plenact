@@ -331,6 +331,12 @@ extension AppRootView
         let fromBackground = appReturnSession.hasBackgroundDeparture /* From background */
         let protected      = /* Open-work navigation guard */
             hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture
+        if hasLoadedBoard, openTodayAfterLongAbsence()
+        {
+
+            _ = appReturnSession.becameActive(at: .now, protected: protected)
+            return
+        }
         let reset          = /* Requested state reset */
             appReturnSession.becameActive(at: .now, protected: protected)
 

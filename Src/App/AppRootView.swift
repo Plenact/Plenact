@@ -371,6 +371,11 @@ struct AppRootView: View
                 if phase == .background, hasLoadedBoard
                 {
 
+                    if let defaults = UserDefaults(suiteName: AppDailyOpening.domain) /* Local navigation store */
+                    {
+
+                        AppDailyOpening.recordDeparture(at: .now, defaults: defaults)
+                    }
                     appReturnSession.leftForBackground(at: .now, protected: hasProtectedAppReturnContext)
                 }
             }

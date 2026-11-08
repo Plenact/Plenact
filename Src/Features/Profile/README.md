@@ -6,7 +6,9 @@ This feature provides a local-only identity, Today avatar, Account & Settings sc
 
 - `ProfileModels.swift`: Codable local identity, avatar palette, and preferences.
 - `LocalProfileStore.swift`: versioned local persistence isolated from Board data.
-- `AccountSettingsView.swift`: profile creation/editing, planning preferences, accessibility controls, privacy details, and profile removal.
+- `AccountSettingsView.swift`: profile creation/editing, shared preference controls, privacy details, and profile removal.
+- `PlanSettingsView.swift`: compact settings directory and checked shared-draft save lifecycle.
+- `PlanSettingsPages.swift`: focused preference modules, navigation labels, and bindings.
 
 Week example loading is not a profile setting. Use **Library → + Examples → Load Example Week View**; **Undo Last Load** is in that same chooser. These confirmed Week-replacement actions retain their existing local undo format and do not change personal collections or profile data.
 
@@ -30,10 +32,12 @@ System Dynamic Type, VoiceOver, contrast, and Reduce Motion behavior remains aut
 The Settings tab includes **Visible rows in Today's Focus**: 1–12 or Expand all rows. The local profile stores `todayFocusItemCount` (0 expands all rows); older profiles default to 4. Save commits the draft; Cancel leaves the existing preference intact. This controls viewport capacity on both device layouts, never the number of matching items. All additional matches remain scrollable, preserving configured order and completion filters. The day's total progress remains unchanged.
 
 
-Plan Settings opens from the gear in Today’s header. It shares planning and display
-preferences with Account & Settings, including Today’s Focus count. Preferences also
-save without creating a profile and survive profile removal. Shortcuts and day/week
-templates open their existing editors with separate save controls.
+Plan Settings opens from the gear in Today’s header as a compact directory of focused pages.
+The pages share one preference draft: Back retains changes; Save from any preference page
+commits once and closes Settings; Cancel from the directory discards the draft. Studio,
+review reminders, shortcuts and templates retain independent save controls. Preferences still
+save without creating a profile and survive profile removal. See
+[Modular Plan Settings](../../../Doc/Design/Plan-Settings-Navigation.md) for the page map and validation.
 
 
 Ordinary writing fields explicitly request sentence capitalization, including titles,

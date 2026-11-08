@@ -204,6 +204,9 @@
 		7122434DA5DD4A91B2A58298 /* MigrationPlanningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D7A39C0E1D42658BCE971B /* MigrationPlanningTests.swift */; };
 		896DF9D2EFD24B8F835B0422 /* TemplateEditedExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AAA9951AB7A48EAA1F985CC /* TemplateEditedExportTests.swift */; };
 		26A4C386729B4858960FA040 /* PortableTemplateApplication.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BBF3D974C4B4969A07CDA82 /* PortableTemplateApplication.swift */; };
+		4FC2E6160D164866B9190DFE /* PlanSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9243DE1C2B47C1A75BD4EA /* PlanSettingsView.swift */; };
+		DB414BB27BA3443999B70F0D /* PlanSettingsPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84FEA315AD342558003AD4E /* PlanSettingsPages.swift */; };
+		444F2350F7764D41A77D29AD /* PlanSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9852D271ECD94BC48EF8A10A /* PlanSettingsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -418,6 +421,9 @@
 		16D7A39C0E1D42658BCE971B /* MigrationPlanningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationPlanningTests.swift; sourceTree = "<group>"; };
 		7AAA9951AB7A48EAA1F985CC /* TemplateEditedExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateEditedExportTests.swift; sourceTree = "<group>"; };
 		1BBF3D974C4B4969A07CDA82 /* PortableTemplateApplication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortableTemplateApplication.swift; sourceTree = "<group>"; };
+		5D9243DE1C2B47C1A75BD4EA /* PlanSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSettingsView.swift; sourceTree = "<group>"; };
+		D84FEA315AD342558003AD4E /* PlanSettingsPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSettingsPages.swift; sourceTree = "<group>"; };
+		9852D271ECD94BC48EF8A10A /* PlanSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanSettingsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -705,6 +711,8 @@
 			isa = PBXGroup;
 			children = (
 				F8D03891875A70B35F59D548 /* AccountSettingsView.swift */,
+				D84FEA315AD342558003AD4E /* PlanSettingsPages.swift */,
+				5D9243DE1C2B47C1A75BD4EA /* PlanSettingsView.swift */,
 				4DD79F089201D35CBCC9818E /* LocalProfileStore.swift */,
 				AA78AB090E1BC626D81A1C64 /* ProfileColorEditors.swift */,
 				FBE944E17F8305EB1263C5CC /* ProfileModels.swift */,
@@ -849,6 +857,7 @@
 				7AAA9951AB7A48EAA1F985CC /* TemplateEditedExportTests.swift */,
 				B59690BDB8FB4DAABE617E33 /* ShortcutEditedExportTests.swift */,
 				E1105978102A4291902C8D5E /* AppReturnTests.swift */,
+				9852D271ECD94BC48EF8A10A /* PlanSettingsTests.swift */,
 				E30F7ABF014C4F3A963290C5 /* MigrationAssetTests.swift */,
 				78767D1579344F79BBDF4EF9 /* MigrationSettingsTests.swift */,
 				E0DFC305FCA14D34B435FC19 /* MigrationStudioTests.swift */,
@@ -1125,6 +1134,8 @@
 				BBD5A5B6378080F8481AC133 /* TodayPlan.swift in Sources */,
 				1EA69F2D90001560088693A3 /* TodayReview.swift in Sources */,
 				CD18F3A4CF4D497D6122A8B1 /* AccountSettingsView.swift in Sources */,
+				DB414BB27BA3443999B70F0D /* PlanSettingsPages.swift in Sources */,
+				4FC2E6160D164866B9190DFE /* PlanSettingsView.swift in Sources */,
 				856DF0CE49CB06549CDF304D /* LocalProfileStore.swift in Sources */,
 				6E46B7E54020831A37839748 /* ProfileColorEditors.swift in Sources */,
 				27699FDB2028AC83FF5F6787 /* ProfileModels.swift in Sources */,
@@ -1174,6 +1185,7 @@
 				896DF9D2EFD24B8F835B0422 /* TemplateEditedExportTests.swift in Sources */,
 				82DAAEA37B46483584C3C652 /* ShortcutEditedExportTests.swift in Sources */,
 				95A409072B8D4246B7DC97D5 /* AppReturnTests.swift in Sources */,
+				444F2350F7764D41A77D29AD /* PlanSettingsTests.swift in Sources */,
 				351CC2BDBAA94F1BBD205056 /* MigrationAssetTests.swift in Sources */,
 				021C50262E9F4070A01F23B7 /* MigrationSettingsTests.swift in Sources */,
 				4FB34A0D4EE24E85A7617BFE /* MigrationStudioTests.swift in Sources */,

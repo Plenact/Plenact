@@ -43,6 +43,71 @@ struct StudioSettingsView: View
     }
 
 
+    /// @fcn StudioSettingsView.save
+    /// @brief Validate and commit the shared Studio draft once from any focused page
+    /// @return Void; invalid palette input keeps the draft open for correction
+    private func save()
+    {
+
+        let colors = palette.split(separator: ",").map
+        {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        guard !colors.isEmpty, colors.allSatisfy(
+            {
+                $0.count == 6 && UInt32($0, radix: 16) != nil
+            }) else
+        {
+
+            error = "Use comma-separated six-digit RGB colors, such as EDE3CA, DDE8D8.";
+
+            return
+        }
+
+        draft.palette = colors
+
+        do
+        {
+
+            data = try JSONEncoder().encode(draft);
+
+            dismiss()
+        }
+
+        catch
+        {
+
+            self.error = error.localizedDescription
+
+        }
+
+    }
+
+
+    /// @fcn StudioSettingsView.page
+    /// @brief Build a short Studio page over the same parent-owned draft
+    /// @param[in] title Focused navigation title
+    /// @param[in] content Controls bound to this Studio session
+    /// @return Scrollable native form; Back retains edits and Save commits the whole Studio draft
+    private func page<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View
+    {
+
+        Form(content: content)
+            .modifier(StudioFormWallpaper(destination: .settings))
+            .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+            .toolbar
+            {
+
+                ToolbarItem(placement: .confirmationAction)
+                {
+
+                    Button("Save", action: save)
+                }
+            }
+    }
+
+
     ///
     /// @fcn        StudioSettingsView.body
     /// @brief      Compose the native personalization interface for this destination
@@ -72,24 +137,69 @@ struct StudioSettingsView: View
                 .font(.caption)
             }
 
-            StudioSurfaceSettings(surface: $draft.defaultCardSurface, title: "New Card background")
-            StudioSurfaceSettings(surface: $draft.defaultNoteSurface, title: "New Note background")
-            Section("Coordinated variety")
+            Section("Creation defaults")
             {
 
-                Toggle("Vary new item colors", isOn: $draft.variesNewSurfaces)
-                Toggle("Vary new item header colors", isOn: $draft.variesNewHeaders)
-                TextField("Palette: comma-separated RGB hex colors", text: $palette)
-                .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                Text("Colors are chosen once when an item is created. Existing items keep their saved appearance.")
-                .font(.caption)
+                NavigationLink("New item backgrounds")
+                {
+
+                    page("New Item Backgrounds")
+                    {
+
+                        StudioSurfaceSettings(surface: $draft.defaultCardSurface, title: "New Card background")
+                        StudioSurfaceSettings(surface: $draft.defaultNoteSurface, title: "New Note background")
+                    }
+                }
+                NavigationLink("Coordinated variety")
+                {
+
+                    page("Coordinated Variety")
+                    {
+
+                        Section
+                        {
+
+                            Toggle("Vary new item colors", isOn: $draft.variesNewSurfaces)
+                            Toggle("Vary new item header colors", isOn: $draft.variesNewHeaders)
+                            TextField("Palette: comma-separated RGB hex colors", text: $palette)
+                                .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                        }
+                        footer:
+                        {
+
+                            Text("Colors are chosen once when an item is created. Existing items keep their saved appearance.")
+                        }
+                    }
+                }
             }
-
-            ForEach(StudioDestination.allCases)
+            Section("Wallpapers")
             {
 
-            destination in
-                StudioSurfaceSettings(surface: destinationBinding(destination), title: destination.rawValue + " wallpaper")
+                NavigationLink("View wallpapers")
+                {
+
+                    page("View Wallpapers")
+                    {
+
+                        Section
+                        {
+
+                            ForEach(StudioDestination.allCases)
+                            {
+                                destination in
+                                NavigationLink(destination.rawValue)
+                                {
+
+                                    page(destination.rawValue + " Wallpaper")
+                                    {
+
+                                        StudioSurfaceSettings(surface: destinationBinding(destination), title: "Wallpaper")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
         }
@@ -109,43 +219,7 @@ struct StudioSettingsView: View
             ToolbarItem(placement: .confirmationAction)
             {
 
-                Button("Save")
-                {
-
-                    let colors = palette.split(separator: ",").map
-                    {
-                        $0.trimmingCharacters(in: .whitespacesAndNewlines)
-                    }
-
-                    guard !colors.isEmpty, colors.allSatisfy(
-                        {
-                            $0.count == 6 && UInt32($0, radix: 16) != nil
-                        }) else
-                    {
-
-                        error = "Use comma-separated six-digit RGB colors, such as EDE3CA, DDE8D8.";
-
-                        return
-                    }
-
-                    draft.palette = colors
-
-                    do
-                    {
-
-                        data = try JSONEncoder().encode(draft);
-
-                        dismiss()
-                    }
-
-                    catch
-                    {
-
-                        self.error = error.localizedDescription
-
-                    }
-
-                }
+                Button("Save", action: save)
 
             }
 

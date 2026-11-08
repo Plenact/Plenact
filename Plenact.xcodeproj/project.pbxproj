@@ -1308,7 +1308,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 1.5;
 				PLENACT_API_BASE_URL = "https://plenact.com/api/";
 				PRODUCT_BUNDLE_IDENTIFIER = com.plenact.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1343,7 +1343,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 1.5;
 				PLENACT_API_BASE_URL = "https://plenact.com/api/";
 				PRODUCT_BUNDLE_IDENTIFIER = com.plenact.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";

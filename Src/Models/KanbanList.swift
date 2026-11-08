@@ -555,7 +555,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     /// @fcn        KanbanList.subtitle
     /// @brief      Provide supporting copy for the list header
-    /// @details    Uses saved supporting copy, falling back to the legacy identity-based subtitle
+    /// @details    Uses saved supporting copy, then built-in List descriptions, then the legacy identity-based subtitle
     ///
     /// @return     (String) supporting text shown beneath the list title
     /// @post       No list state is modified
@@ -567,6 +567,19 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         {
 
             return subtitleOverride
+        }
+
+        switch title
+        {
+
+        case "On the Table":
+            return "Idea taking shape"
+        case "In the Queue":
+            return "Things you got started"
+        case "Scheduled":
+            return "Upcoming activities"
+        default:
+            break
         }
 
         let subtitles = [ /* Supporting item text values */

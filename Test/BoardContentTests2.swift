@@ -1425,3 +1425,51 @@ extension PlenactBoardDocumentTests
     }
 
 }
+
+
+extension PlenactBoardDocumentTests
+{
+
+    /// @fcn PlenactBoardDocumentTests.testBuiltInListSubtitlesUseDistinctConciseDefaults
+    /// @brief Distinguish built-in Lists even when their owner-local numeric IDs are identical
+    /// @return Void; no source records or preferences are changed
+    func testBuiltInListSubtitlesUseDistinctConciseDefaults() throws
+    {
+
+        for (example, subtitle) in [
+            (PersonalListExample.onTheTable, "Idea taking shape"),
+            (.inTheQueue, "Things you got started"),
+            (.scheduled, "Upcoming activities")
+        ]
+        {
+
+            let collection = DefaultListTutorial.makeStarter(title: example.rawValue) /* Synthetic built-in List */
+            let list = try XCTUnwrap(collection.lists.first) /* Owner-local List with no saved subtitle */
+            let original = list /* Snapshot proving rendering does not rewrite the model */
+
+            XCTAssertEqual(list.id, 0)
+            XCTAssertNil(list.subtitleOverride)
+            XCTAssertEqual(list.subtitle, subtitle)
+            XCTAssertEqual(list, original)
+
+            var customized = list /* Explicit user subtitle takes precedence */
+
+            customized.subtitleOverride = "My own supporting text"
+            XCTAssertEqual(customized.subtitle, "My own supporting text")
+            customized.subtitleOverride = ""
+            XCTAssertEqual(customized.subtitle, "")
+            customized.subtitleOverride = nil
+            XCTAssertEqual(customized.subtitle, subtitle)
+
+            let decoded = try JSONDecoder().decode(KanbanList.self,
+                from: JSONEncoder().encode(list)) /* Legacy nil-override round trip */
+
+            XCTAssertNil(decoded.subtitleOverride)
+            XCTAssertEqual(decoded.subtitle, subtitle)
+        }
+
+        let ordinary = KanbanList(id: 0, title: "Personal custom List", cards: []) /* Unrelated List */
+
+        XCTAssertEqual(ordinary.subtitle, "Ideas taking shape")
+    }
+}

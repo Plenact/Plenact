@@ -758,29 +758,48 @@ struct SavedCardsView: View
         VStack(alignment: .leading, spacing: 10)
         {
 
-            if revisit == nil
+            HStack
             {
 
-                Button
+                if revisit == nil
                 {
 
-                    withAnimation(reduceRecentMotion ? nil : .easeInOut(duration: 0.2))
+                    Button
                     {
 
-                        usesSquareRecentCards.toggle()
+                        withAnimation(reduceRecentMotion ? nil : .easeInOut(duration: 0.2))
+                        {
+
+                            usesSquareRecentCards.toggle()
+                        }
                     }
+                    label:
+                    {
+
+                        Text("Recent").font(.headline)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityLabel("Recent card size")
+                    .accessibilityValue(usesSquareRecentCards ? "Square" : "Full size")
+                    .accessibilityHint(usesSquareRecentCards ? "Show full-size recent cards" : "Show square recent cards")
+                    .accessibilityIdentifier("activity.recent.toggleSize")
                 }
-                label:
+
+                Spacer()
+
+                if !recents.isEmpty
                 {
 
-                    Text("Recent").font(.headline)
+                    Button("Clear")
+                    {
+
+                        confirmsClear = true
+                    }
+                    .font(.subheadline)
+                    .accessibilityLabel("Clear recent history")
+                    .accessibilityIdentifier("activity.recent.clear")
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(.isHeader)
-                .accessibilityLabel("Recent card size")
-                .accessibilityValue(usesSquareRecentCards ? "Square" : "Full size")
-                .accessibilityHint(usesSquareRecentCards ? "Show full-size recent cards" : "Show square recent cards")
-                .accessibilityIdentifier("activity.recent.toggleSize")
             }
 
             if recents.isEmpty

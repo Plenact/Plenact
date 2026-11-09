@@ -1179,14 +1179,14 @@ struct AppRootView: View
             move:
             {
                 card, source, destination in
-                movePlanningCard(card, source: source, destination: destination)
+                movePlanningCardWithResult(card, source: source, destination: destination)
             },
             moveToDate:
             {
                 card, source, date in
                 guard var document = calendarDocument else
                 {
-                    return false
+                    return nil
                 }
 
                 var week   = /* Dated Week under consideration */
@@ -1198,11 +1198,11 @@ struct AppRootView: View
                         $0.id == listID
                     }) else
                 {
-                    return false
+                    return nil
                 }
 
                 document.upsert(week)
-                return movePlanningCard(
+                return movePlanningCardWithResult(
                     card, source: source,
                     destination: CardMoveDestination(
                         collectionID: week.id, listID: list.id, title: "\(week.rangeTitle) / \(list.title)",

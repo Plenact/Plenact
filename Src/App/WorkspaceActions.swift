@@ -1661,6 +1661,17 @@ extension AppRootView
     ) -> Bool
     {
 
+        movePlanningCardWithResult(card, source: source, destination: destination,
+            documentOverride: documentOverride) != nil
+    }
+
+
+    func movePlanningCardWithResult(
+        _ card: KanbanCard, source: UUID?, destination: CardMoveDestination,
+        documentOverride: PlanningCalendarDocument? = nil
+    ) -> CardMoveResult?
+    {
+
         do
         {
 
@@ -1669,6 +1680,11 @@ extension AppRootView
             {
                 $0.startKey == document?.currentWeekKey
             }?.id
+            guard let ownerID = destination.collectionID ?? currentID else
+            {
+                throw CocoaError(.validationMissingMandatoryProperty)
+            }
+
             let normalizedSource      = source == currentID ? nil : source /* Normalized source */
             let normalizedDestination = CardMoveDestination( /* Normalized destination */
                 collectionID: destination.collectionID == currentID ? nil : destination.collectionID,
@@ -1682,7 +1698,7 @@ extension AppRootView
 
             var combined = collections + dated.map(\.collection) /* Mapped combined values */
 
-            try CrossBoardCardMovement.move(
+            let moved = try CrossBoardCardMovement.move(
                 card, from: normalizedSource, to: normalizedDestination,
                 week: &updatedWeek, collections: &combined, saved: &updatedSaved)
 
@@ -1801,14 +1817,25 @@ extension AppRootView
                     TransferConfirmation(title: card.word, destination: destination.title))
             }
 
-            return true
+            let saved = normalizedDestination.collectionID == nil
+                ? updatedSaved.contains(moved.id)
+                : combined.first { $0.id == ownerID }?.savedCardIDs.contains(moved.id) == true
+            let day = document?.weeks.first { $0.id == ownerID }?.dayListIDs.first
+            {
+                $0.value == destination.listID
+            }.flatMap
+            {
+                PlanningDate.date($0.key, calendar: document?.calendar ?? .current)
+            }
+
+            return CardMoveResult(card: moved, ownerID: ownerID, listID: destination.listID, isSaved: saved, day: day)
         }
         catch
         {
 
             DatabaseActivity.shared.report(
                                     "Could not move this item: \(error.localizedDescription) Its content has been retained.")
-            return false
+            return nil
         }
 
     }

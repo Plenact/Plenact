@@ -10,6 +10,55 @@ import UIKit.UIGestureRecognizerSubclass
 import UniformTypeIdentifiers
 
 
+/// Carries the destination identity of a saved move back to the open editor
+struct CardMoveResult
+{
+
+    let card: KanbanCard /* Persisted destination record */
+    let ownerID: UUID   /* Destination collection or Week */
+    let listID: Int     /* Destination List identity */
+    let isSaved: Bool   /* Destination bookmark state */
+
+    let day: Date?     /* Represented date for a dated List */
+
+
+    /// Save a follow-up change against the destination's current snapshot
+    func saveChange(using access: PlanningCalendarAccess,
+        _ change: (inout PersonalCollection, Int, Int) -> Void) -> Bool
+    {
+
+        func apply(to collection: inout PersonalCollection) -> Bool
+        {
+
+            guard collection.isActive,
+                  let list = collection.lists.firstIndex(where: { $0.id == listID && !$0.isArchived }),
+                  let item = collection.lists[list].cards.firstIndex(where:
+                    { $0.id == card.id && $0.createdAt == card.createdAt }) else
+            {
+                return false
+            }
+
+            change(&collection, list, item)
+            return true
+        }
+
+        if var week = access.document.weeks.first(where: { $0.id == ownerID })
+        {
+            return apply(to: &week.collection) && access.saveWeek(week)
+        }
+
+        guard var collection = access.library.first(where: { $0.id == ownerID }),
+              apply(to: &collection) else
+        {
+            return false
+        }
+
+        return access.saveLibrary(collection)
+    }
+
+}
+
+
 ///
 /// Exposes cross-owner Card and section movement operations
 ///
@@ -23,9 +72,9 @@ struct CardMovementAccess
 
     var destinations:      [CardMoveDestination]                                     = /* Available operation destinations */
         []
-    var move:              ((KanbanCard, UUID?, CardMoveDestination) -> Bool)?       = /* Move callback */
+    var move:              ((KanbanCard, UUID?, CardMoveDestination) -> CardMoveResult?)?       = /* Move callback */
         nil
-    var moveToDate:        ((KanbanCard, UUID?, Date) -> Bool)?                      = /* Move to date callback */
+    var moveToDate:        ((KanbanCard, UUID?, Date) -> CardMoveResult?)?                      = /* Move to date callback */
         nil
     var moveSection:       ((KanbanCard, UUID?, CardMoveDestination, Bool) -> Bool)? = /* Move section callback */
         nil
@@ -391,11 +440,16 @@ struct CardDestinationMenu: View
 
     }
 
+    var onCardMoved: ((CardMoveResult) -> Void)? = nil /* Follow the saved move in an open editor */
+    var sourceOverride: UUID? = nil /* Owner after an earlier move in this editor */
+    var sourceListID: Int? = nil /* Exact current List after an earlier move */
+
     var locationTitle: String?          = nil    /* Location title          */
     @State private var showsSectionMove = false  /* Section Move visibility */
     @State private var showsDatePicker  = false  /* Date Picker visibility  */
     @State private var selectedMoveDate = Date() /* Selected move date      */
 
+    @Environment(\.planningCalendarAccess) private var calendarAccess /* Current Week owner */
     @Environment(\.cardMovementAccess) private var access /* Scoped workspace operations     */
     @Environment(\.cardMovementSource) private var source /* Source value for this operation */
 
@@ -403,6 +457,45 @@ struct CardDestinationMenu: View
     {
 
         access.destinations
+    }
+
+    private var currentSource: UUID?
+    {
+        sourceOverride ?? source
+    }
+
+    private func isCurrentDestination(_ destination: CardMoveDestination) -> Bool
+    {
+
+        let currentWeek = calendarAccess?.document.weeks.first
+        {
+            $0.startKey == calendarAccess?.document.currentWeekKey
+        }?.id
+
+        guard (destination.collectionID ?? currentWeek) == (currentSource ?? currentWeek) else
+        {
+            return false
+        }
+
+        if let sourceListID
+        {
+            return destination.listID == sourceListID
+        }
+
+        return (destination.columnTitle ?? destination.title) == card.listTitle
+    }
+
+    private func completeMove(_ result: CardMoveResult)
+    {
+
+        if let onCardMoved
+        {
+            onCardMoved(result)
+        }
+        else
+        {
+            onMoved()
+        }
     }
 
     var body: some View /* Card Destination Menu layout */
@@ -459,15 +552,13 @@ struct CardDestinationMenu: View
                             Button(destination.title)
                             {
 
-                                if access.move?(card, source, destination) == true
+                                if let result = access.move?(card, currentSource, destination)
                                 {
-                                    onMoved()
+                                    completeMove(result)
                                 }
 
                             }
-                            .disabled(
-                                destination.collectionID == source
-                                && (destination.columnTitle ?? destination.title) == card.listTitle)
+                            .disabled(isCurrentDestination(destination))
                         }
 
                     }
@@ -539,12 +630,12 @@ struct CardDestinationMenu: View
                             Button("Move")
                             {
 
-                                if access.moveToDate?(card, source, selectedMoveDate) == true
+                                if let result = access.moveToDate?(card, currentSource, selectedMoveDate)
                                 {
 
                                     showsDatePicker = false;
 
-                                    onMoved()
+                                    completeMove(result)
                                 }
 
                             }

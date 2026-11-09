@@ -757,16 +757,17 @@ enum CrossBoardCardMovement
     /// @param[in,out]  collections  Personal collection values available to the operation
     /// @param[in,out]  saved        Owner-local saved-card identities, updated when bookmarked content moves
     ///
-    /// @return     (Void) no return value
+    /// @return     (KanbanCard) record with its saved destination-local identity
     /// @throws     Explicit failures include `CocoaError(.validationMissingMandatoryProperty)`,
     ///             `CocoaError(.validationNumberTooLarge)`. Errors from throwing dependencies propagate unless
     ///             handled within this operation
     ///
+    @discardableResult
     static func move(
         _ card: KanbanCard, from sourceID: UUID?, to destination: CardMoveDestination,
         week: inout [KanbanList], collections: inout [PersonalCollection],
         saved: inout Set<Int>
-    ) throws
+    ) throws -> KanbanCard
     {
 
         var sourceLists: [KanbanList] /* Source lists */
@@ -889,8 +890,9 @@ enum CrossBoardCardMovement
 
         }
 
-        targetLists[targetIndex].cards.append(
-            card.replacingLocation(id: newID, listTitle: targetLists[targetIndex].title))
+        let moved = card.replacingLocation(id: newID, listTitle: targetLists[targetIndex].title)
+
+        targetLists[targetIndex].cards.append(moved)
         if !sameBoard, sourceSaved.remove(card.id) != nil
         {
             targetSaved.insert(newID)
@@ -944,6 +946,8 @@ enum CrossBoardCardMovement
             }
 
         }
+
+        return moved
 
     }
 

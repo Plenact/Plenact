@@ -446,6 +446,8 @@ struct CardDetailView: View
     @State var showingAttachmentNotice              = false /* Whether an attachment notice is presented                    */
     @State var attachmentNoticeMessage              = ""    /* Explanation shown for failed or unavailable sources          */
     @State var showingDeleteConfirmation            = false /* Whether permanent card deletion awaits confirmation          */
+    @AppStorage(LibraryImportanceSelection.key) var movedImportanceData = Data() /* Destination importance values */
+    @State var relocatedCard: CardMoveResult? /* Saved destination for this open editor */
     @State var hasMovedCard                         = false /* Stops editor callbacks from writing back to the old owner    */
     @State var hasDeletedCard                       = false /* Prevents stale snapshots after confirmed deletion            */
     @State var displayFormat: ItemDisplayFormat /* Display format */
@@ -775,7 +777,8 @@ struct CardDetailView: View
             return lockedSnapshot
         }
 
-        var updated = card /* Complete record assembled from working editor state */
+        var updated = (relocatedCard?.card ?? card).replacingLocation(id: recordID, listTitle: currentListTitle)
+            /* Complete record assembled from working editor state */
 
         updated.isEditingLocked = isEditingLocked
         updated.showsReactionsInPreviews = showsReactionsInPreviews
@@ -853,7 +856,8 @@ struct CardDetailView: View
                     hasMovedCard = true;
 
                     dismiss()
-                }, locationTitle: currentListTitle)
+                }, onCardMoved: followMovedCard, sourceOverride: relocatedCard?.ownerID,
+                sourceListID: relocatedCard?.listID, locationTitle: currentListTitle)
         }
         else if presentation == .note, onMoveNoteToPersonalList != nil
         {
@@ -1520,25 +1524,25 @@ struct CardDetailView: View
 
                                     }
 
-                                    if let libraryImportance
+                                    if relocatedCard != nil || libraryImportance != nil
                                     {
 
                                         Button(
-                                            libraryImportance.contains(card.id)
+                                            currentImportanceLevel > 0
                                             ? "Increase importance" : "Mark important", systemImage: "star.fill"
                                         )
                                         {
 
-                                            libraryImportance.adjust(card.id, 1)
+                                            adjustCurrentImportance(by: 1)
                                         }
-                                        .disabled(libraryImportance.level(card.id) >= 5)
-                                        if libraryImportance.contains(card.id)
+                                        .disabled(currentImportanceLevel >= 5)
+                                        if currentImportanceLevel > 0
                                         {
 
                                             Button("Decrease importance", systemImage: "star")
                                             {
 
-                                                libraryImportance.adjust(card.id, -1)
+                                                adjustCurrentImportance(by: -1)
                                             }
 
                                         }
@@ -1643,7 +1647,8 @@ struct CardDetailView: View
                                                 hasMovedCard = true;
 
                                                 dismiss()
-                                            })
+                                            }, onCardMoved: followMovedCard, sourceOverride: relocatedCard?.ownerID,
+                                            sourceListID: relocatedCard?.listID)
                                     }
                                     else
                                     {
@@ -1681,12 +1686,25 @@ struct CardDetailView: View
                                     Button
                                     {
 
-                                        syncCardState()
-                                        if let
+                                        if relocatedCard != nil
+                                        {
+                                            let snapshot = workingCardSnapshot.recordingEdits(from: lastSavedHistoryCard)
+
+                                            if saveRelocatedChange({ owner, list, item in
+                                                owner.lists[list].cards[item] = snapshot
+                                                owner.lists[list].archiveCard(id: recordID)
+                                            })
+                                            {
+                                                hasMovedCard = true
+                                                dismiss()
+                                            }
+                                        }
+                                        else if let
                                         currentPersonalCollectionID, /* Current owner used to route relocated Note archiving */
                                         currentPersonalCollectionID != personalCollectionID
                                         {
 
+                                            syncCardState()
                                             if onArchiveMovedNote?(currentPersonalCollectionID, workingCardSnapshot)
                                             == true
                                             {
@@ -1699,6 +1717,7 @@ struct CardDetailView: View
                                         else
                                         {
 
+                                            syncCardState()
                                             onArchive()
                                             dismiss()
                                         }

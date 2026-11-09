@@ -322,17 +322,58 @@ extension PlenactBoardDocumentTests
         var collections = [library]  /* Retained personal collections */
         var saved       = Set<Int>() /* Saved state under review      */
 
-        try CrossBoardCardMovement.move(
+        let result = try CrossBoardCardMovement.move(
             original, from: library.id,
             to: CardMoveDestination(collectionID: nil, listID: 10, title: "Monday", group: "Week"),
             week: &week, collections: &collections, saved: &saved)
 
         let moved = try XCTUnwrap(week[0].cards.first) /* Item after transfer */
 
+        XCTAssertEqual(result, moved)
         XCTAssertNotEqual(moved.id, original.id)
         XCTAssertEqual(moved, original.replacingLocation(id: moved.id, listTitle: "Monday"))
         XCTAssertEqual(week[0].archivedCards, [original])
         XCTAssertTrue(saved.contains(moved.id))
+    }
+
+
+    /// Follow-up edits use the moved Card's owner and identity even when another owner shares its ID
+    func testMovedCardSavesEditsAtDestinationAndRejectsReusedIdentity() throws
+    {
+
+        let date = Date(timeIntervalSince1970: 1_793_016_000)
+        var week = DatedPlanningWeek.make(for: date)
+        let list = week.collection.lists[0].id
+        let moved = KanbanCard(id: 14, word: "Moved", listTitle: week.collection.lists[0].title, createdAt: date)
+        var other = PersonalCollection(title: "Other", kind: .list)
+
+        week.collection.lists[0].cards = [moved]
+        other.lists[0].cards = [moved]
+
+        let result = CardMoveResult(card: moved, ownerID: week.id, listID: list, isSaved: false, day: date)
+        var savedWeek: DatedPlanningWeek?
+        let access = PlanningCalendarAccess(
+            document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [other],
+            saveWeek: { savedWeek = $0; return true }, openCurrentWeek: {}, openToday: {}, openLibraryCard: { _ in },
+            saveLibrary: { _ in XCTFail("The editor must save to the destination Week"); return false })
+
+        XCTAssertTrue(result.saveChange(using: access)
+        {
+            owner, list, item in
+            owner.lists[list].cards[item].word = "Edited after moving"
+        })
+        XCTAssertEqual(savedWeek?.collection.lists[0].cards.first?.word, "Edited after moving")
+        XCTAssertEqual(savedWeek?.collection.lists[0].cards.first?.id, moved.id)
+
+        var staleAccess = access
+        let replacement = KanbanCard(id: moved.id, word: "Replacement", listTitle: moved.listTitle,
+            createdAt: date.addingTimeInterval(60))
+        week.collection.lists[0].cards = [replacement]
+        staleAccess.document.weeks = [week]
+        savedWeek = nil
+
+        XCTAssertFalse(result.saveChange(using: staleAccess) { _, _, _ in XCTFail("A reused ID must not receive edits") })
+        XCTAssertNil(savedWeek)
     }
 
 

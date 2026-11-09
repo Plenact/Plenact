@@ -1000,7 +1000,16 @@ extension CardDetailView
 
         updatedCard = updatedCard.recordingEdits(from: lastSavedHistoryCard)
 
-        if let currentPersonalCollectionID, /* Current collection used to route relocated Note edits */
+        if relocatedCard != nil
+        {
+            guard saveRelocatedChange({ owner, list, item in
+                owner.lists[list].cards[item] = updatedCard
+            }) else
+            {
+                return false
+            }
+        }
+        else if let currentPersonalCollectionID, /* Current collection used to route relocated Note edits */
         currentPersonalCollectionID != personalCollectionID
         {
 
@@ -1146,7 +1155,15 @@ extension CardDetailView
 
         let deleted: Bool                    /* Whether the owning collection accepted permanent deletion */
 
-        if let currentPersonalCollectionID,  /* Current owner used to route relocated Note deletion       */
+        if relocatedCard != nil
+        {
+            deleted = saveRelocatedChange
+            {
+                owner, _, _ in
+                BoardContentDeletion.card(recordID, in: &owner.lists, savedCardIDs: &owner.savedCardIDs)
+            }
+        }
+        else if let currentPersonalCollectionID,  /* Current owner used to route relocated Note deletion       */
         currentPersonalCollectionID != personalCollectionID
         {
 
@@ -1214,7 +1231,24 @@ extension CardDetailView
 
         let isSaved = isCurrentRecordSaved /* Bookmark state before toggling */
 
-        if let currentPersonalCollectionID, /* Current owner used to route relocated Note bookmarking */
+        if relocatedCard != nil
+        {
+            guard saveRelocatedChange({ owner, _, _ in
+                if isSaved
+                {
+                    owner.savedCardIDs.remove(recordID)
+                }
+                else
+                {
+                    owner.savedCardIDs.insert(recordID)
+                }
+            }) else
+            {
+                return
+            }
+            movedNoteIsSaved = !isSaved
+        }
+        else if let currentPersonalCollectionID, /* Current owner used to route relocated Note bookmarking */
         currentPersonalCollectionID != personalCollectionID
         {
 
@@ -1496,6 +1530,68 @@ extension CardDetailView
     }
 
 
+    var currentImportanceLevel: Int
+    {
+
+        if let relocatedCard
+        {
+            return LibraryImportanceSelection.level(cardID: recordID, collectionID: relocatedCard.ownerID,
+                data: movedImportanceData)
+        }
+
+        return libraryImportance?.level(recordID) ?? 0
+    }
+
+
+    func adjustCurrentImportance(by direction: Int)
+    {
+
+        if let relocatedCard
+        {
+            movedImportanceData = LibraryImportanceSelection.adjusting(cardID: recordID,
+                collectionID: relocatedCard.ownerID, direction: direction, data: movedImportanceData)
+        }
+        else
+        {
+            libraryImportance?.adjust(recordID, direction)
+        }
+    }
+
+
+    /// Adopt the saved destination without closing the Card or Note editor
+    func followMovedCard(_ result: CardMoveResult)
+    {
+
+        relocatedCard = result
+        recordID = result.card.id
+        currentListTitle = result.card.listTitle
+        currentPersonalCollectionID = result.ownerID
+        movedNoteIsSaved = result.isSaved
+        lastSavedHistoryCard = result.card
+
+        if isEditingLocked
+        {
+            lockedSnapshot = result.card
+        }
+
+        ActivityRecentStore.remember(LibraryRecentItem(collectionID: result.ownerID, cardID: result.card.id))
+    }
+
+
+    @discardableResult
+    func saveRelocatedChange(_ change: (inout PersonalCollection, Int, Int) -> Void) -> Bool
+    {
+
+        guard let relocatedCard, let access = checklistTypePlanningAccess,
+              relocatedCard.saveChange(using: access, change) else
+        {
+            return false
+        }
+
+        return true
+    }
+
+
     ///
     /// @fcn        CardDetailView.personalListDestinationButton(_:)
     /// @brief      Build a menu action for moving a Note to one personal List
@@ -1578,7 +1674,7 @@ extension CardDetailView
 
 
         let currentDate = field == .start ? startDate : dueDate /* Date currently stored for the selected field */
-        let timeOnly    = workingCardSnapshot.usesTimeOnlySchedule(on: listedOnDate) /* Time only */
+        let timeOnly    = workingCardSnapshot.usesTimeOnlySchedule(on: relocatedCard.map(\.day) ?? listedOnDate) /* Time only */
         let iconName    = /* Icon name */
         timeOnly
         ? (field == .start ? "clock" : "checkmark.circle")
@@ -2335,7 +2431,7 @@ extension CardDetailView
                 {
 
                     updated.linkedCollectionID =
-                    checklistCollectionID
+                    currentPersonalCollectionID ?? checklistCollectionID
                     ?? checklistTypePlanningAccess?.document.weeks.first(where:
                         {
 

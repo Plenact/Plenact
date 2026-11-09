@@ -392,6 +392,7 @@ struct CardDetailView: View
     let onTitleToggle:         ((KanbanCard) -> Void)?  /* Callback invoked when the card title checkbox is toggled */
     let onMoveToList:          ((Int) -> Void)?         /* Callback invoked to move the card to a selected list     */
     let personalCollectionID:  UUID?                    /* Original personal collection owning this detail session  */
+    @Environment(\.studioCardSurface) private var inheritedStudioSurface /* List or Board artwork */
     @Environment(\.cardMovementAccess) var cardMovementAccess /* Card movement access */
     let availablePersonalLists: [PersonalCollection] /* Personal Lists offered as Note movement destinations     */
     let onMoveNoteToPersonalList: /* Move note to personal list callback */
@@ -1062,6 +1063,15 @@ struct CardDetailView: View
     }
 
 
+    private var showsPhotoThroughHeader: Bool
+    {
+
+        let material = (appearance?.studioSurface ?? inheritedStudioSurface)?.material /* Effective material */
+
+        return appearance?.background == nil && (material == .photo || material == .unsplash)
+    }
+
+
     var body: some View /* Card editing interface */
     {  /* Full card-detail presentation */
 
@@ -1071,10 +1081,6 @@ struct CardDetailView: View
             scrollProxy in
             ZStack
             {
-
-                Color(.systemGroupedBackground)
-                .ignoresSafeArea()
-                StudioItemBackground(appearance: appearance, isNote: presentation == .note).ignoresSafeArea()
 
                 if isEditingLocked
                 {
@@ -1404,6 +1410,8 @@ struct CardDetailView: View
 
             }
 
+            // Keep scrolling content below the header even when the artwork shows through
+            .clipped()
             .safeAreaInset(edge: .top, spacing: 0)
             {
 
@@ -1773,17 +1781,19 @@ struct CardDetailView: View
                 .background
                 {
 
-                    ZStack
+                    if !showsPhotoThroughHeader
                     {
+                        ZStack
+                        {
 
-                        Color(.systemGroupedBackground)
-                        StudioItemBackground(appearance: appearance, isNote: presentation == .note)
-                        Color.clear.itemBannerBackground(appearance)
+                            Color(.systemGroupedBackground)
+                            StudioItemBackground(appearance: appearance, isNote: presentation == .note)
+                            Color.clear.itemBannerBackground(appearance)
+                        }
+                        .ignoresSafeArea(.container, edges: .top)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                     }
-                    // Extend only the opaque backdrop; controls stay below the status area
-                    .ignoresSafeArea(.container, edges: .top)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
                 }
             }
 
@@ -1803,6 +1813,16 @@ struct CardDetailView: View
                     noteToolbar(using: scrollProxy)
                 }
 
+            }
+            .background
+            {
+                ZStack
+                {
+
+                    Color(.systemGroupedBackground)
+                    StudioItemBackground(appearance: appearance, isNote: presentation == .note)
+                }
+                .ignoresSafeArea()
             }
             .protectsAppReturn()
             // Keep the Note's navigation toolbar at the screen bottom, beneath the keyboard.

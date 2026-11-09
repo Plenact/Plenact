@@ -53,10 +53,37 @@ extension PlenactBoardDocumentTests
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrollers)
         }
 
+        let photo = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 400)).image
+        {
+            context in
+            for row in 0 ..< 400
+            {
+                UIColor(red: CGFloat(row) / 400, green: 0.3, blue: 0.6, alpha: 1).setFill()
+                context.fill(CGRect(x: 0, y: row, width: 200, height: 1))
+            }
+        }
+        let filename = try StudioArtworkStore.importImage(XCTUnwrap(photo.pngData()))
+        let photoURL = try StudioArtworkStore.directory().appendingPathComponent(filename)
+        let surface  = StudioSurface(material: .photo, strength: 1, readability: 0, photoFileName: filename)
+
+        defer { try? FileManager.default.removeItem(at: photoURL) }
+
+        func pixels(in view: UIView, rect: CGRect) throws -> Data
+        {
+
+            let image = UIGraphicsImageRenderer(bounds: view.bounds).image
+            { _ in view.drawHierarchy(in: view.bounds, afterScreenUpdates: true) }
+            let scaled = rect.applying(CGAffineTransform(scaleX: image.scale, y: image.scale))
+            let crop = try XCTUnwrap(image.cgImage?.cropping(to: scaled))
+
+            return try XCTUnwrap(UIImage(cgImage: crop).pngData())
+        }
+
         let fixtures: [(ItemPresentation, ItemAppearance?)] = /* Plain and banner-colored details */
         [
             (.card, nil), (.note, nil),
-            (.card, ItemAppearance(background: .rose)), (.note, ItemAppearance(background: .rose))
+            (.card, ItemAppearance(background: .rose)), (.note, ItemAppearance(background: .rose)),
+            (.note, ItemAppearance(studioSurface: surface))
         ]
 
         for (presentation, appearance) in fixtures
@@ -73,6 +100,21 @@ extension PlenactBoardDocumentTests
 
                     CardDetailView(card: card, onTitleToggle: { emissions.append($0) })
                 }) /* Rendered detail surface */
+
+            var canvasPixels: Data?
+
+            if appearance?.studioSurface != nil
+            {
+                let canvas = UIHostingController(rootView: StudioSurfaceView(surface: surface).ignoresSafeArea())
+
+                window.rootViewController = canvas
+                window.makeKeyAndVisible()
+                try await Task.sleep(for: .milliseconds(150))
+                canvas.view.layoutIfNeeded()
+
+                canvasPixels = try pixels(in: canvas.view, rect: CGRect(x: 140,
+                    y: canvas.view.safeAreaInsets.top + 16, width: 48, height: 16))
+            }
 
             window.rootViewController = host
 
@@ -104,6 +146,14 @@ extension PlenactBoardDocumentTests
                 return try XCTUnwrap(UIImage(cgImage: crop).pngData())
             }
 
+            let headerSample = CGRect(x: 140, y: safeTop + 16, width: 48, height: 16)
+
+            if let canvasPixels
+            {
+                XCTAssertEqual(try pixels(in: host.view, rect: headerSample), canvasPixels,
+                    "The toolbar must show the matching part of the full Note photo")
+            }
+
             let baseline = try topPixels() /* Header before scrolling */
 
             for offset in [CGFloat(130), 310, 570]
@@ -114,6 +164,11 @@ extension PlenactBoardDocumentTests
                 host.view.layoutIfNeeded()
                 XCTAssertEqual(try topPixels(), baseline,
                     "\(presentation): body content must not paint in the status area at offset \(offset)")
+                if let canvasPixels
+                {
+                    XCTAssertEqual(try pixels(in: host.view, rect: headerSample), canvasPixels,
+                        "Scrolling content must stay below the transparent photo header")
+                }
             }
 
             let attachment = XCTAttachment(image: UIGraphicsImageRenderer(bounds: host.view.bounds).image

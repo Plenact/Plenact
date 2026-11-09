@@ -133,11 +133,6 @@ extension CardDetailView
         .buttonStyle(NoteToolbarButtonStyle())
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(.bar)
-        .overlay(alignment: .top)
-        {
-            Divider()
-        }
         .accessibilityIdentifier("note.bottomToolbar")
     }
 

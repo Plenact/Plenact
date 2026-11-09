@@ -762,7 +762,9 @@ extension MigrationStudioTests
             let linkID   =                                          /* Link ID   */
                 (template.collection.lists.flatMap(\.allCards).map(\.id).max() ?? 0) + 1
 
-            template.collection.lists[0].cards.append(KanbanCard(id: linkID, word: "Applied link target", listTitle: "Monday", presentation: .note))
+            // Keep this isolated export fixture independent of device-local Note photo defaults
+            template.collection.lists[0].cards.append(KanbanCard(id: linkID, word: "Applied link target",
+                listTitle: "Monday", presentation: .note, appearance: ItemAppearance(studioSurface: StudioSurface(material: .plain))))
 
             var linkedItem = /* Linked item */
                 KanbanChecklistItem(title: "Local target", content: .linkedCard(cardID: linkID))
@@ -818,6 +820,7 @@ extension MigrationStudioTests
 
                 XCTAssertEqual(linked.checklists.first?.id, preparedCard.checklists.first?.id)
                 XCTAssertEqual(linked.createdAt, preparedCard.createdAt)
+                XCTAssertEqual(linked.creationHistory?.context?.origin, .template(template.name))
                 XCTAssertNotEqual(linked.checklists.first?.id, template.collection.lists[0].cards[0].checklists.first?.id)
                 XCTAssertEqual(committed.importantIDs, Set(newItems.map(\.id)))
                 XCTAssertTrue(committed.week.collection.savedCardIDs.contains(linked.id))
@@ -928,6 +931,10 @@ extension MigrationStudioTests
             let rebuiltWeek = try XCTUnwrap(rebuiltDocument.week(for: instant)) /* Rebuilt week */
 
             XCTAssertEqual(rebuiltWeek.collection.lists.flatMap(\.cards).map(\.word), current.collection.lists.flatMap(\.cards).map(\.word))
+            let restoredOrigin = rebuiltWeek.collection.lists.flatMap(\.cards)
+                .first { $0.word == "Applied link target" }?.creationHistory?.context?.origin
+
+            XCTAssertEqual(restoredOrigin, .template(template.name))
             XCTAssertEqual(rebuiltWeek.collection.savedCardIDs, current.collection.savedCardIDs)
             if mode == .replace
             {

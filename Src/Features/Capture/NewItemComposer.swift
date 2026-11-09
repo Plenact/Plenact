@@ -878,7 +878,8 @@ struct QuickNoteComposer: View
                                                         subtitle: subtitle.trimmingCharacters(
                                                             in: .whitespacesAndNewlines), presentation: presentation,
                                                         actions: actionTitles, attachments: attachments + additional,
-                                                        schedule: hasStartDate || hasStopDate ? schedule : nil))
+                                                        schedule: hasStartDate || hasStopDate ? schedule : nil,
+                                                        origin: template.map { .template($0.title) } ?? .createdHere))
                                             })
                                     })
                                 else

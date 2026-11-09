@@ -725,7 +725,7 @@ struct BoardListsView: View
             title: capture.title, body: capture.body, createdAt: createdAt,
             presentation: capture.presentation, subtitle: capture.subtitle, attachments: capture.attachments,
             actions: capture.actions, schedule: capture.schedule,
-            calendar: planningAccess?.document.calendar ?? .current)
+            calendar: planningAccess?.document.calendar ?? .current, origin: capture.origin)
 
         var snapshot = collections /* Collection snapshot saved before publishing the new Note */
 

@@ -255,7 +255,7 @@ extension AppRootView
     func addCard(
         to listID: Int, title: String, description: String, subtitle: String, presentation: ItemPresentation? = nil,
         actions: [String]? = nil, attachments: [KanbanAttachment] = [], schedule: QuickCaptureSchedule? = nil,
-        checkedSave: Bool = false
+        checkedSave: Bool = false, origin: CardHistoryOrigin = .createdHere
     ) -> Bool
     {
 
@@ -283,7 +283,7 @@ extension AppRootView
 
         var created = updatedList.makeItems( /* Newly created value */
             startingAt: nextCardID, titles: title, description: description.isEmpty ? nil : description,
-            subtitle: subtitle, presentation: presentation, actions: actions
+            subtitle: subtitle, presentation: presentation, actions: actions, origin: origin
         )
 
         guard !created.isEmpty, schedule?.isValid() != false else

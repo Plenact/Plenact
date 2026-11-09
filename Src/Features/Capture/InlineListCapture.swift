@@ -524,7 +524,7 @@ enum ListItemCreation
         var cards = list.makeItems( /* Card records under consideration */
             startingAt: id, titles: capture.title,
             description: capture.body, subtitle: capture.subtitle,
-            presentation: capture.presentation, actions: capture.actions)
+            presentation: capture.presentation, actions: capture.actions, origin: capture.origin)
 
         guard !cards.isEmpty else
         {

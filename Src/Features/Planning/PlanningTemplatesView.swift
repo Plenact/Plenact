@@ -1516,7 +1516,7 @@ enum LibraryTemplateCapture
         var created = source.collection.lists[index].makeItems( /* Newly created value */
             startingAt: nextID, titles: capture.title,
             description: capture.body, subtitle: capture.subtitle, presentation: capture.presentation,
-            actions: capture.actions)
+            actions: capture.actions, origin: capture.origin)
 
         guard !created.isEmpty else
         {

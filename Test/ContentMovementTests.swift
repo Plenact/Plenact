@@ -532,6 +532,8 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(copy.id, 9)
         XCTAssertEqual(copy.allCards.map(\.id), [21, 22])
         XCTAssertEqual(copy.cards.first?.descriptionOverride, "Keep")
+        XCTAssertEqual(copy.cards.first?.creationHistory?.context?.origin, .copy(first.word))
+        XCTAssertEqual(copy.cards.first?.creationHistory?.timestamp, copy.cards.first?.createdAt)
         XCTAssertEqual(copy.cards.first?.sectionLayout, first.sectionLayout)
         XCTAssertEqual(copy.newItemPresentation, .note)
         XCTAssertEqual(copy.subtitleOverride, "Subtitle")

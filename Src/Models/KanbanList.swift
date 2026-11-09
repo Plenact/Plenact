@@ -276,7 +276,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     func makeItem(
         id: Int, title: String, description: String? = nil, subtitle: String = "", createdAt: Date = .now,
         presentationOverride: ItemPresentation? = nil, actions: [String]? = nil,
-        creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()
+        creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load(),
+        origin: CardHistoryOrigin = .createdHere
     ) -> KanbanCard
     {
 
@@ -309,7 +310,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
             createdAt: createdAt
         )
 
-        NewCardAppearanceDefaults.apply(to: &card, preferences: creationPreferences)
+        NewCardAppearanceDefaults.apply(to: &card, preferences: creationPreferences, origin: origin)
         return card
     }
 
@@ -671,7 +672,8 @@ extension KanbanList
     func makeItems(
         startingAt id: Int, titles: String, description: String? = nil, subtitle: String = "",
         presentation: ItemPresentation? = nil, actions: [String]? = nil,
-        creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()
+        creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load(),
+        origin: CardHistoryOrigin = .createdHere
     ) -> [KanbanCard]
     {
 
@@ -680,7 +682,7 @@ extension KanbanList
             offset, title in
             makeItem(
                 id: id + offset, title: title, description: description, subtitle: subtitle,
-                presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences)
+                presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences, origin: origin)
         }
 
     }
@@ -704,12 +706,60 @@ struct CardEditChange: Codable, Hashable, Sendable
 }
 
 
+/// Stable attribution for a locally authored Card action
+struct CardHistoryAuthor: Codable, Hashable, Sendable
+{
+
+    let id: UUID        /* Stable local author identity */
+    let name: String?   /* Display name at the time of the action */
+
+    var label: String { name ?? "Local author" }
+
+    static func local(in defaults: UserDefaults = .standard) -> Self
+    {
+
+        let name = LocalProfileStore.load(from: defaults)?.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return Self(id: LocalReactionIdentity.forUserAction(in: defaults), name: name?.isEmpty == false ? name : nil)
+    }
+}
+
+
+enum CardHistoryOrigin: Codable, Hashable, Sendable
+{
+
+    case createdHere
+    case copy(String)
+    case template(String)
+
+    var label: String
+    {
+        switch self
+        {
+        case .createdHere: "Created here"
+        case .copy(let title): "Copied from “\(title)”"
+        case .template(let title): "Made from “\(title)”"
+        }
+    }
+}
+
+
+struct CardHistoryContext: Codable, Hashable, Sendable
+{
+
+    let author: CardHistoryAuthor? /* Author when known */
+    var origin: CardHistoryOrigin? /* Creation event when present */
+    var undid: String?             /* Summary of the revision undone */
+    var historyCleared: Bool?      /* Retains only last-edit attribution */
+}
+
+
 ///
 /// One saved Card update containing related field edits
 ///
 /// @section    Purpose
 ///     Groups a single accepted update under a stable identity and timestamp without recursively
-///     copying prior history. Values are retained for future reversal; no restore action is exposed
+///     copying prior history. The opaque history payload also carries author and origin metadata
 ///
 struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
 {
@@ -717,6 +767,68 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
     let id:        UUID             /* Record UUID             */
     let timestamp: Date             /* Stored event timestamp  */
     let changes:   [CardEditChange] /* Requested content edits */
+
+
+    let context: CardHistoryContext? /* Absent for historical records */
+
+    // Keep metadata in the existing opaque history payload used by native and portable stores
+    private static let contextField = "plenact.historyContext"
+    private enum CodingKeys: String, CodingKey
+    {
+        case id, timestamp, changes
+    }
+
+    init(id: UUID, timestamp: Date, changes: [CardEditChange], context: CardHistoryContext? = nil)
+    {
+        self.id = id
+        self.timestamp = timestamp
+        self.changes = changes
+        self.context = context
+    }
+
+    init(from decoder: Decoder) throws
+    {
+
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let stored = try container.decode([CardEditChange].self, forKey: .changes)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        timestamp = try container.decode(Date.self, forKey: .timestamp)
+        if let bytes = stored.last(where: { $0.field == Self.contextField })?.newValue,
+           let decoded = try? JSONDecoder().decode(CardHistoryContext.self, from: bytes)
+        {
+            context = decoded
+            changes = stored.filter { $0.field != Self.contextField }
+        }
+        else
+        {
+            context = nil
+            changes = stored
+        }
+    }
+
+    func storedChanges() throws -> [CardEditChange]
+    {
+        guard let context else
+        {
+            return changes
+        }
+
+        let encoder = JSONEncoder()
+
+        encoder.outputFormatting = [.sortedKeys]
+        return changes + [CardEditChange(field: Self.contextField, previousValue: nil,
+            newValue: try encoder.encode(context))]
+    }
+
+    func encode(to encoder: Encoder) throws
+    {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encode(storedChanges(), forKey: .changes)
+    }
 
 
     ///
@@ -752,6 +864,11 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
                 labels.append(label)
             }
         }
+        if context?.undid != nil
+        {
+            return "Undo · " + labels.joined(separator: ", ")
+        }
+
         return labels.joined(separator: ", ") + " updated"
     }
 }
@@ -781,7 +898,8 @@ extension KanbanCard
     /// @param[in]  date      Timestamp assigned to this update
     /// @return     (KanbanCard) proposed content carrying its accumulated edit history
     ///
-    func recordingEdits(from previous: KanbanCard, at date: Date = .now) -> KanbanCard
+    func recordingEdits(from previous: KanbanCard, at date: Date = .now,
+        author: CardHistoryAuthor? = nil, undoing revision: CardEditRecord? = nil) -> KanbanCard
     {
 
         var result = self /* Accumulated output value */
@@ -797,6 +915,11 @@ extension KanbanCard
 
         if old == new
         {
+            // Accept the exact clear-history snapshot while retaining history on ordinary saves
+            if !previous.revisions.isEmpty, editHistory == previous.clearingRevisionHistory().editHistory
+            {
+                result.editHistory = editHistory
+            }
             return result
         }
         guard let oldData = try? JSONEncoder().encode(old),
@@ -852,7 +975,8 @@ extension KanbanCard
             result.editHistory = prepared
 
         }
-        else if let last = retained.last,
+        else if revision == nil, let last = retained.last,
+                last.context?.undid == nil, last.context?.author == (author ?? .local()),
                 date.timeIntervalSince(last.timestamp) >= 0,
                 date.timeIntervalSince(last.timestamp) <= 2,
                 Set(changes.map(\.field)) == Set(last.changes.map(\.field)),
@@ -874,16 +998,170 @@ extension KanbanCard
             }
 
             result.editHistory = Array(retained.dropLast()) + [
-                CardEditRecord(id: last.id, timestamp: date, changes: merged)
+                CardEditRecord(id: last.id, timestamp: date, changes: merged, context: last.context)
             ]
 
         }
         else
         {
 
-            result.editHistory = retained + [CardEditRecord(id: UUID(), timestamp: date, changes: changes)]
+            let context = CardHistoryContext(author: author ?? .local(), undid: revision?.summary)
+
+            result.editHistory = retained + [CardEditRecord(id: UUID(), timestamp: date,
+                changes: changes, context: context)]
 
         }
         return result
+    }
+}
+
+
+extension KanbanCard
+{
+
+    var creationHistory: CardEditRecord?
+    {
+        editHistory?.first { $0.context?.origin != nil }
+    }
+
+    var revisions: [CardEditRecord]
+    {
+        (editHistory ?? []).filter { $0.context?.origin == nil && $0.context?.historyCleared != true }
+    }
+
+    var lastEditHistory: CardEditRecord?
+    {
+        editHistory?.last { $0.context?.origin == nil }
+    }
+
+    func clearingRevisionHistory() -> KanbanCard
+    {
+
+        guard let latest = revisions.last else
+        {
+            return self
+        }
+
+        var cleared = self
+        let summary = CardEditRecord(id: latest.id, timestamp: latest.timestamp, changes: [],
+            context: CardHistoryContext(author: latest.context?.author, historyCleared: true))
+
+        cleared.editHistory = [creationHistory, summary].compactMap { $0 }
+        return cleared
+    }
+
+    mutating func recordCreation(_ origin: CardHistoryOrigin, author: CardHistoryAuthor? = nil)
+    {
+
+        guard !isSectionDivider, creationHistory == nil, let createdAt else
+        {
+            return
+        }
+
+        let context = CardHistoryContext(author: author ?? .local(), origin: origin)
+        let event = CardEditRecord(id: UUID(), timestamp: createdAt, changes: [], context: context)
+
+        editHistory = [event] + (editHistory ?? [])
+    }
+}
+
+
+enum CardRevisionUndoError: Error
+{
+    case conflict
+    case unavailable
+}
+
+
+extension CardEditRecord
+{
+
+    var undoableChanges: [CardEditChange]
+    {
+        changes.filter
+        {
+            ["word", "subtitleOverride", "descriptionOverride", "startDate", "startDateKind",
+             "dueDate", "dueDateKind"].contains($0.field)
+        }
+    }
+
+    func undo(on card: KanbanCard, replacingConflicts: Bool = false,
+        author: CardHistoryAuthor? = nil, at date: Date = .now) throws -> KanbanCard
+    {
+
+        let changes = undoableChanges
+
+        let revisions = card.revisions
+
+        guard !card.isEditingLocked, let index = revisions.firstIndex(of: self), !changes.isEmpty else
+        {
+            throw CardRevisionUndoError.unavailable
+        }
+
+        if !replacingConflicts
+        {
+            var affected = Set(changes.map(\.field))
+            for pair: Set<String> in [["startDate", "startDateKind"], ["dueDate", "dueDateKind"]]
+            {
+                if !affected.isDisjoint(with: pair)
+                {
+                    affected.formUnion(pair)
+                }
+            }
+
+            if revisions.dropFirst(index + 1).contains(where: { entry in
+                entry.changes.contains { affected.contains($0.field) }
+            })
+            {
+                throw CardRevisionUndoError.conflict
+            }
+        }
+
+        var restored = card
+        let decoder = JSONDecoder()
+        let null = Data("null".utf8)
+
+        func restore<Value: Codable & Equatable>(_ change: CardEditChange, _ current: Value) throws -> Value
+        {
+
+            let expected = try decoder.decode(Value.self, from: change.newValue ?? null)
+
+            guard replacingConflicts || current == expected else
+            {
+                throw CardRevisionUndoError.conflict
+            }
+
+            return try decoder.decode(Value.self, from: change.previousValue ?? null)
+        }
+
+        for change in changes
+        {
+            switch change.field
+            {
+            case "word":
+                restored.word = try restore(change, card.word)
+            case "subtitleOverride":
+                restored.subtitleOverride = try restore(change, card.subtitleOverride)
+            case "descriptionOverride":
+                restored.descriptionOverride = try restore(change, card.descriptionOverride)
+            case "startDate":
+                restored.startDate = try restore(change, card.startDate)
+            case "startDateKind":
+                restored.startDateKind = try restore(change, card.startDateKind)
+            case "dueDate":
+                restored.dueDate = try restore(change, card.dueDate)
+            case "dueDateKind":
+                restored.dueDateKind = try restore(change, card.dueDateKind)
+            default:
+                break
+            }
+        }
+
+        guard restored != card else
+        {
+            throw CardRevisionUndoError.unavailable
+        }
+
+        return restored.recordingEdits(from: card, at: date, author: author, undoing: self)
     }
 }

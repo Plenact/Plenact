@@ -399,6 +399,7 @@ struct QuickCaptureSubmission
     let actions:      [String]?             /* Available item operations   */
     let attachments:  [KanbanAttachment]    /* Owned attachment records    */
     let schedule:     QuickCaptureSchedule? /* Item date and time settings */
+    var origin: CardHistoryOrigin = .createdHere /* Source of the captured item */
 
 }
 

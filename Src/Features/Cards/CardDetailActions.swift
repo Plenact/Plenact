@@ -1000,6 +1000,14 @@ extension CardDetailView
 
         updatedCard = updatedCard.recordingEdits(from: lastSavedHistoryCard)
 
+        return saveEditedSnapshot(updatedCard)
+    }
+
+
+    /// Route an already prepared edit through the active owner
+    private func saveEditedSnapshot(_ updatedCard: KanbanCard) -> Bool
+    {
+
         if relocatedCard != nil
         {
             guard saveRelocatedChange({ owner, list, item in
@@ -1035,6 +1043,44 @@ extension CardDetailView
         lastSavedHistoryCard = updatedCard
 
         return true
+    }
+
+
+    func clearRevisionHistory() -> Bool
+    {
+
+        guard !hasDeletedCard, !hasMovedCard, !isEditingLocked, !lastSavedHistoryCard.revisions.isEmpty else
+        {
+            return false
+        }
+
+        return saveEditedSnapshot(lastSavedHistoryCard.clearingRevisionHistory())
+    }
+
+
+    func undoRevision(_ revision: CardEditRecord, replacingConflicts: Bool) throws
+    {
+
+        guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else
+        {
+            throw CardRevisionUndoError.unavailable
+        }
+
+        let restored = try revision.undo(on: workingCardSnapshot, replacingConflicts: replacingConflicts)
+
+        guard saveEditedSnapshot(restored) else
+        {
+            throw CardRevisionUndoError.unavailable
+        }
+
+        titleText = restored.word
+        subtitleText = restored.subtitle
+        descriptionText = presentation == .note ? (restored.descriptionOverride ?? "") : restored.funParagraph
+        hasEditedDescription = false
+        startDate = restored.startDate
+        startDateKind = restored.startDateKind
+        dueDate = restored.dueDate
+        dueDateKind = restored.dueDateKind
     }
 
 
@@ -2489,7 +2535,8 @@ extension CardDetailView
         if !hasEditedDescription
         {
 
-            descriptionText = presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph
+            descriptionText = presentation == .note
+                ? (lastSavedHistoryCard.descriptionOverride ?? "") : lastSavedHistoryCard.funParagraph
 
         }
 

@@ -786,7 +786,8 @@ struct CardDetailView: View
         updated.reactions = reactions
         updated.word = titleText
         updated.appearance = appearance
-        updated.subtitleOverride = card.subtitleOverride == nil && subtitleText == card.subtitle ? nil : subtitleText
+        updated.subtitleOverride = lastSavedHistoryCard.subtitleOverride == nil
+            && subtitleText == lastSavedHistoryCard.subtitle ? nil : subtitleText
         updated.isTitleChecked = titleChecked
         updated.startDate = startDate
         updated.dueDate = dueDate
@@ -802,7 +803,8 @@ struct CardDetailView: View
         updated.checklists = checklists
         updated.comments = comments
         updated.dismissedActivityIDs = dismissedActivityIDs
-        updated.descriptionOverride = hasEditedDescription ? descriptionText : card.descriptionOverride
+        updated.descriptionOverride = hasEditedDescription ? descriptionText : lastSavedHistoryCard.descriptionOverride
+        updated.editHistory = lastSavedHistoryCard.editHistory
 
         if displayFormat == .card || displayFormat == .note
         {
@@ -1494,7 +1496,7 @@ struct CardDetailView: View
                         Menu
                         {
 
-                            Button("Edit history", systemImage: "clock.arrow.circlepath")
+                            Button("Info & History", systemImage: "clock.arrow.circlepath")
                             {
 
                                 activeSheet = .editHistory
@@ -2057,7 +2059,9 @@ struct CardDetailView: View
                     .databaseActivityOverlay()
 
                 case .editHistory:
-                    CardEditHistorySheet(records: lastSavedHistoryCard.editHistory ?? [])
+                    CardEditHistorySheet(card: $lastSavedHistoryCard,
+                        canUndo: !isEditingLocked && (onTitleToggle != nil || relocatedCard != nil),
+                        onUndo: undoRevision, onClear: clearRevisionHistory)
 
                 case .date(let field): /* Date field selected for editing */
                     CardDateEditorSheet(

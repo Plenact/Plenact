@@ -555,9 +555,14 @@ enum NewCardAppearanceDefaults
     ///
     static func apply(
         to card: inout KanbanCard, preferences: LocalProfilePreferences = PlanPreferencesStore.load(),
-        defaults: UserDefaults = .standard
+        defaults: UserDefaults = .standard, origin: CardHistoryOrigin = .createdHere
     )
     {
+
+        if !card.isSectionDivider, card.createdAt != nil, card.creationHistory == nil
+        {
+            card.recordCreation(origin, author: .local(in: defaults))
+        }
 
         StudioSettings.apply(to: &card)
 

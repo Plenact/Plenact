@@ -350,7 +350,7 @@ enum PortableEditedExport
             }
 
             let changes = /* Requested content edits */
-                entry.changes.map { change -> [String: Any] in
+                try entry.storedChanges().map { change -> [String: Any] in
 
                 var output: [String: Any] = ["field": change.field] /* Operation output */
 

@@ -45,6 +45,7 @@ enum ListCopying
                 ($0.element.id, firstCardID + $0.offset)
             })
         let title = source.title + " Copy" /* User-facing title */
+        let createdAt = Date.now /* Shared creation time for this copy */
 
 
         ///
@@ -61,8 +62,14 @@ enum ListCopying
         {
 
             var copy = /* Independent working copy */
-                card.replacingLocation(id: ids[card.id]!, listTitle: title)
+                card.replacingLocation(id: ids[card.id]!, listTitle: title,
+                    creationDate: card.isSectionDivider ? nil : createdAt)
 
+            if !copy.isSectionDivider
+            {
+                copy.editHistory = nil
+                copy.recordCreation(.copy(card.word))
+            }
             copy.checklists = card.checklists.map
             {
                 checklist in

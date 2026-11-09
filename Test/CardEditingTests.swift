@@ -23,6 +23,102 @@ import XCTest
 extension PlenactBoardDocumentTests
 {
 
+    /// Clearing removes reversible values through the List save boundary and retains attribution
+    func testClearRevisionHistoryPersistsWithoutErasingCreationOrLastEdit() throws
+    {
+
+        let date = Date(timeIntervalSince1970: 1_793_016_000)
+        let author = CardHistoryAuthor(id: UUID(), name: "Synthetic author")
+        var card = KanbanCard(id: 1, word: "Old title", listTitle: "Synthetic", createdAt: date)
+
+        card.recordCreation(.createdHere, author: author)
+        let creation = card.creationHistory
+        var list = KanbanList(id: 0, title: "Synthetic", cards: [card])
+        var edited = card
+
+        edited.word = "Current title"
+        list.cards[0] = edited.recordingEdits(from: card, at: date.addingTimeInterval(10), author: author)
+
+        let latest = try XCTUnwrap(list.cards[0].lastEditHistory)
+
+        list.cards[0] = list.cards[0].clearingRevisionHistory()
+        let reopened = try JSONDecoder().decode(KanbanList.self, from: JSONEncoder().encode(list))
+        let cleared = reopened.cards[0]
+
+        XCTAssertEqual(cleared.word, "Current title")
+        XCTAssertEqual(cleared.creationHistory, creation)
+        XCTAssertEqual(cleared.lastEditHistory?.timestamp, latest.timestamp)
+        XCTAssertEqual(cleared.lastEditHistory?.context?.author, author)
+        XCTAssertTrue(cleared.revisions.isEmpty)
+        XCTAssertTrue(cleared.lastEditHistory?.changes.isEmpty == true)
+        XCTAssertThrowsError(try latest.undo(on: cleared, author: author))
+
+        var next = cleared
+
+        next.word = "Next edit"
+        list.cards[0] = next.recordingEdits(from: cleared, at: date.addingTimeInterval(20), author: author)
+        XCTAssertEqual(list.cards[0].revisions.count, 1)
+        XCTAssertEqual(list.cards[0].lastEditHistory?.timestamp, date.addingTimeInterval(20))
+    }
+
+
+    /// Undo one supported revision without removing later unrelated changes or origin
+    func testCardRevisionUndoPreservesLaterChangesAndRequiresConflictConfirmation() throws
+    {
+
+        let date = Date(timeIntervalSince1970: 1_793_016_000)
+        let author = CardHistoryAuthor(id: UUID(), name: "Synthetic author")
+        var original = KanbanCard(id: 1, word: "Original", listTitle: "Synthetic", checklists: [],
+            presentation: .note, createdAt: date)
+
+        original.recordCreation(.template("Synthetic routine"), author: author)
+        var edited = original
+
+        edited.word = "Updated"
+        edited.descriptionOverride = "New Note body"
+        edited.dueDate = date
+        edited.dueDateKind = .dateAndTime
+        edited = edited.recordingEdits(from: original, at: date.addingTimeInterval(10), author: author)
+        let revision = try XCTUnwrap(edited.revisions.last)
+
+        var later = edited
+
+        later.checklists = [KanbanChecklist(title: "Later checklist", items: [])]
+        later = later.recordingEdits(from: edited, at: date.addingTimeInterval(20), author: author)
+
+        let reopened = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(later))
+        let restored = try revision.undo(on: reopened, author: author, at: date.addingTimeInterval(30))
+
+        XCTAssertEqual(restored.word, original.word)
+        XCTAssertNil(restored.descriptionOverride)
+        XCTAssertNil(restored.dueDate)
+        XCTAssertEqual(restored.dueDateKind, original.dueDateKind)
+        XCTAssertEqual(restored.checklists, later.checklists)
+        XCTAssertEqual(restored.creationHistory?.context?.origin, .template("Synthetic routine"))
+        XCTAssertEqual(restored.creationHistory?.context?.author, author)
+        XCTAssertEqual(Array(restored.revisions.dropLast()), later.revisions)
+        XCTAssertEqual(restored.revisions.last?.context?.undid, revision.summary)
+        XCTAssertEqual(restored.revisions.last?.context?.author, author)
+
+        var conflict = later
+
+        conflict.word = "Newer title"
+        conflict = conflict.recordingEdits(from: later, at: date.addingTimeInterval(40), author: author)
+        XCTAssertThrowsError(try revision.undo(on: conflict, author: author))
+        {
+            XCTAssertTrue($0 is CardRevisionUndoError)
+        }
+        XCTAssertEqual(conflict.word, "Newer title")
+        XCTAssertEqual(try revision.undo(on: conflict, replacingConflicts: true, author: author).word, original.word)
+
+        var locked = conflict
+
+        locked.isEditingLocked = true
+        XCTAssertThrowsError(try revision.undo(on: locked, replacingConflicts: true, author: author))
+    }
+
+
+
 
     /// @fcn PlenactBoardDocumentTests.testDetailHeaderCoversStatusAreaWhileScrolling
     /// @brief Keep Card and Note body text behind the header throughout the top safe area

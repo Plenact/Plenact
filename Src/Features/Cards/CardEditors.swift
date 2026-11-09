@@ -1028,65 +1028,217 @@ struct CardPreviewDateEditor: ViewModifier
 /// Displays a Card's saved updates without exposing reversal controls
 ///
 /// @section    Purpose
-///     Presents newest-first summaries and absolute timestamps, including an honest empty state
-///     for legacy Cards whose history begins with this feature
+///     Presents creation metadata and newest-first revisions with selective undo
 ///
 struct CardEditHistorySheet: View
 {
 
-    let records: [CardEditRecord]               /* Records being processed        */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @Binding var card: KanbanCard                         /* Latest accepted content */
+    let canUndo: Bool                                    /* Editor can save a reversal */
+    let onUndo: (CardEditRecord, Bool) throws -> Void      /* Confirmed undo callback */
+    let onClear: () -> Bool                               /* Save the cleared history */
+    @Environment(\.dismiss) private var dismiss          /* Close the presentation */
+    @State private var pendingConflict: CardEditRecord?  /* Older revision with newer edits */
+    @State private var confirmsClear = false             /* Confirm revision deletion */
+    @State private var showsClearFailure = false         /* Clear could not be saved */
+    @State private var showsUndoFailure = false           /* Undo could not be applied */
 
-
-    ///
-    /// @fcn        CardEditHistorySheet.body
-    /// @brief      Show retained saved updates and their dates
-    /// @details    Uses stable entry identities and reverses append order, retaining save order
-    ///             when multiple events have the same timestamp. Viewing history never edits it
-    /// @return     (some View) read-only history sheet with a Done action
-    ///
-    var body: some View /* Card Edit History layout */
+    var body: some View
     {
 
         NavigationStack
         {
             List
             {
-                if records.isEmpty
+                Section("Info")
                 {
-                    ContentUnavailableView(
-                        "No edits recorded yet", systemImage: "clock.arrow.circlepath",
-                        description: Text("Saved changes will appear here. Earlier edits are not available.")
-                    )
-                }
-                else
-                {
-                    ForEach(Array(records.reversed()))
+                    LabeledContent("Created by", value: card.creationHistory?.context?.author?.label ?? "Unknown")
+                    LabeledContent("Created on", value: timestamp(card.createdAt, fallback: "Unknown"))
+                    LabeledContent("Origin", value: card.creationHistory?.context?.origin?.label ?? "Unknown")
+
+                    if let latest = card.lastEditHistory
                     {
-                        record in
-                        VStack(alignment: .leading, spacing: 6)
+                        LabeledContent("Last edited by", value: latest.context?.author?.label ?? "Unknown")
+                        LabeledContent("Last edited on", value: timestamp(latest.timestamp, fallback: "Unknown"))
+                    }
+                    else
+                    {
+                        LabeledContent("Last edit", value: "No edits recorded")
+                    }
+                }
+
+                Section("Revision history")
+                {
+                    if card.revisions.isEmpty
+                    {
+                        Text("Saved changes will appear here.")
+                            .foregroundStyle(.secondary)
+                    }
+                    else
+                    {
+                        ForEach(Array(card.revisions.reversed()), content: revisionRow)
+                        if canUndo
                         {
-                            Text(record.summary)
-                            Text(record.timestamp, format: .dateTime.year().month(.abbreviated).day().hour().minute())
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            Button("Clear Revision History", role: .destructive)
+                            {
+                                confirmsClear = true
+                            }
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }
-            .navigationTitle("Edit history")
+            .navigationTitle("Info & History")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
                 ToolbarItem(placement: .confirmationAction)
                 {
-                    Button("Done")
-                    {
-                        dismiss()
-                    }
+                    Button("Done") { dismiss() }
                 }
             }
+            .confirmationDialog("Replace newer edits?", isPresented: Binding(
+                get: { pendingConflict != nil },
+                set: { if !$0 { pendingConflict = nil } }), titleVisibility: .visible, presenting: pendingConflict)
+            {
+                record in
+                Button("Replace newer values", role: .destructive)
+                {
+                    applyUndo(record, replacingConflicts: true)
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            message:
+            {
+                _ in
+                Text("This revision includes fields changed again later. Undo will restore their earlier values.")
+            }
+            .confirmationDialog("Clear revision history?", isPresented: $confirmsClear, titleVisibility: .visible)
+            {
+                Button("Clear Revision History", role: .destructive)
+                {
+                    showsClearFailure = !onClear()
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            message:
+            {
+                Text("This permanently removes saved revisions and their undo actions for this item.")
+            }
+            .alert("Couldn’t clear revision history", isPresented: $showsClearFailure)
+            {
+                Button("OK", role: .cancel) {}
+            }
+            .alert("Couldn’t undo this revision", isPresented: $showsUndoFailure)
+            {
+                Button("OK", role: .cancel) {}
+            }
+            message:
+            {
+                Text("The selected changes could not be restored to this item.")
+            }
+        }
+    }
+
+
+    private func revisionRow(_ record: CardEditRecord) -> some View
+    {
+
+        VStack(alignment: .leading, spacing: 8)
+        {
+            Text(record.summary)
+            Text(record.context?.author?.label ?? "Unknown author")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(timestamp(record.timestamp, fallback: "Unknown"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if !record.undoableChanges.isEmpty
+            {
+                DisclosureGroup("Before and after")
+                {
+                    ForEach(record.undoableChanges, id: \.field)
+                    {
+                        change in
+                        VStack(alignment: .leading, spacing: 4)
+                        {
+                            Text(fieldLabel(change.field)).font(.subheadline.weight(.semibold))
+                            LabeledContent("Before", value: valueLabel(change.previousValue, field: change.field))
+                            LabeledContent("After", value: valueLabel(change.newValue, field: change.field))
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                if canUndo
+                {
+                    Button(record.undoableChanges.count == record.changes.count
+                        ? "Undo this change" : "Undo text and date changes")
+                    {
+                        applyUndo(record)
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+
+    private func applyUndo(_ record: CardEditRecord, replacingConflicts: Bool = false)
+    {
+
+        do
+        {
+            try onUndo(record, replacingConflicts)
+        }
+        catch CardRevisionUndoError.conflict
+        {
+            pendingConflict = record
+        }
+        catch
+        {
+            showsUndoFailure = true
+        }
+    }
+
+
+    private func timestamp(_ date: Date?, fallback: String) -> String
+    {
+        date?.formatted(date: .abbreviated, time: .shortened) ?? fallback
+    }
+
+
+    private func fieldLabel(_ field: String) -> String
+    {
+        switch field
+        {
+        case "word": "Title"
+        case "subtitleOverride": "Subtitle"
+        case "descriptionOverride": "Body"
+        case "startDate": "Start date"
+        case "startDateKind": "Start date format"
+        case "dueDate": "Due date"
+        default: "Due date format"
+        }
+    }
+
+
+    private func valueLabel(_ value: Data?, field: String) -> String
+    {
+
+        guard let value else { return "None" }
+
+        let decoder = JSONDecoder()
+
+        switch field
+        {
+        case "startDate", "dueDate":
+            return timestamp(try? decoder.decode(Date.self, from: value), fallback: "None")
+        case "startDateKind", "dueDateKind":
+            return (try? decoder.decode(CardDateKind.self, from: value))?.title ?? "Unavailable"
+        default:
+            guard let text = try? decoder.decode(String.self, from: value) else { return "Unavailable" }
+            return text.isEmpty ? "Empty" : text
         }
     }
 }

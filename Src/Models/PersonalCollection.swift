@@ -498,7 +498,8 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note,
         subtitle: String = "", attachments: [KanbanAttachment] = [],
         creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load(),
-        actions: [String]? = nil, schedule: QuickCaptureSchedule? = nil, calendar: Calendar = .current
+        actions: [String]? = nil, schedule: QuickCaptureSchedule? = nil, calendar: Calendar = .current,
+        origin: CardHistoryOrigin = .createdHere
     ) throws
     {
 
@@ -528,7 +529,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         var destination = lists[listIndex]      /* Column snapshot receiving the new Note */
         var note        = destination.makeItem( /* Note content record                    */
             id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt,
-            presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences) /* New record carrying the draft's content and creation time */
+            presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences, origin: origin) /* New record carrying the draft's content and creation time */
 
         note.presentation = presentation
         note.subtitleOverride = subtitle.trimmingCharacters(in: .whitespacesAndNewlines)

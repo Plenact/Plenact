@@ -1176,7 +1176,7 @@ enum PlanningTemplateApplication
                 startDateKind: card.startDateKind, dueDateKind: card.dueDateKind,
                 showsReactionsInPreviews: card.showsReactionsInPreviews, location: card.location)
 
-            NewCardAppearanceDefaults.apply(to: &created)
+            NewCardAppearanceDefaults.apply(to: &created, origin: .template(template.name))
             return created
         }
 

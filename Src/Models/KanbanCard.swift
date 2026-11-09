@@ -172,7 +172,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @param[in]  listTitle  Name of the destination List
     /// @return     (KanbanCard) complete record with only its location identity changed
     ///
-    func replacingLocation(id: Int, listTitle: String) -> KanbanCard
+    func replacingLocation(id: Int, listTitle: String, creationDate: Date? = nil) -> KanbanCard
     {
 
 
@@ -194,7 +194,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             descriptionOverride: descriptionOverride,
             subtitleOverride: subtitleOverride,
             presentation: presentation,
-            createdAt: createdAt,
+            createdAt: creationDate ?? createdAt,
             appearance: appearance,
             listDisplayFormat: listDisplayFormat,
             sectionLayout: sectionLayout,

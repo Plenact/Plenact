@@ -663,7 +663,7 @@ struct AppRootView: View
                         addCard(
                             to: capture.listID, title: capture.title, description: capture.body, subtitle: capture.subtitle,
                             presentation: capture.presentation, actions: capture.actions, attachments: capture.attachments,
-                            schedule: capture.schedule, checkedSave: true)
+                            schedule: capture.schedule, checkedSave: true, origin: capture.origin)
                     },
                     onToggleCardCompletion: toggleCardCompletion,
                     onOpenBoardList: openBoardList,
@@ -994,7 +994,7 @@ struct AppRootView: View
                     addCard(
                         to: capture.listID, title: capture.title, description: capture.body,
                         subtitle: capture.subtitle, presentation: capture.presentation, actions: capture.actions,
-                        attachments: capture.attachments, schedule: capture.schedule, checkedSave: true)
+                        attachments: capture.attachments, schedule: capture.schedule, checkedSave: true, origin: capture.origin)
                 }
             )
             {

@@ -2409,6 +2409,80 @@ extension PlenactBoardDocumentTests
     }
 
 
+    /// Keep the open guide above the same native List when its first Card is added
+    @MainActor
+    func testFocusedListGuidanceStaysOpenWhenFirstCardAppears() async throws
+    {
+
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window   = UIWindow(windowScene: scene)
+        let owner    = UUID() /* Isolate viewport state */
+        var list     = KanbanList(id: 4, title: "In the Queue", cards: [])
+
+        func focusedView(_ list: KanbanList) -> some View
+        {
+
+            TodayListDetailView(lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
+                savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose: {},
+                onOpenWeek: {}, onPermanentDelete: { _ in false })
+                .environment(\.cardMovementSource, owner)
+        }
+
+        func collection(in view: UIView) -> UICollectionView?
+        {
+
+            if let collection = view as? UICollectionView
+            {
+                return collection
+            }
+
+            return view.subviews.lazy.compactMap { collection(in: $0) }.first
+        }
+
+        let host = UIHostingController(rootView: focusedView(list))
+
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+            UserDefaults.standard.removeObject(forKey: BoardViewportMemory.prefix + owner.uuidString + ".focused.4")
+        }
+
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+
+        let native = try XCTUnwrap(collection(in: host.view))
+        let closedTop = native.convert(native.bounds, to: window).minY
+
+        try await Task.sleep(for: .milliseconds(2400))
+        host.view.layoutIfNeeded()
+
+        let openTop = native.convert(native.bounds, to: window).minY
+
+        XCTAssertGreaterThan(openTop - closedTop, 50, "The guide must expand above the native List")
+
+        list.cards = [KanbanCard(id: 10, word: "First Card", listTitle: list.title)]
+        host.rootView = focusedView(list)
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+
+        let populated = try XCTUnwrap(collection(in: host.view))
+        let rowCount  = (0 ..< populated.numberOfSections).reduce(0)
+        {
+            $0 + populated.numberOfItems(inSection: $1)
+        }
+
+        XCTAssertTrue(populated === native)
+        XCTAssertEqual(populated.convert(populated.bounds, to: window).minY, openTop, accuracy: 2)
+        XCTAssertEqual(rowCount, 2, "Only the Card and capture belong to the native List")
+    }
+
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testHostedSessionGuidanceUsesEntrySnapshotAndSurvivesListEdits
     /// @brief      Verify delayed guidance is tied to the visit rather than live emptiness

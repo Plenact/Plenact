@@ -479,7 +479,7 @@ struct TodayListDetailView: View
     ///
     /// @fcn        TodayListDetailView.inlineCapture(for:)
     /// @brief      Build the list capture controls
-    /// @details    Keeps empty-list capture in the guide row so its position follows the same animated height
+    /// @details    Reveals capture with the guide on an empty List and keeps it available on retraction
     ///
     /// @param[in]  focusedList  Current list supplying content and appearance
     /// @return     (some View) session-scoped list content
@@ -704,7 +704,7 @@ struct TodayListDetailView: View
                     ScrollViewReader
                     {
                         scrollProxy in
-                        List
+                        let cards = List /* Scrollable rows beneath the guidance */
                         {
 
                             if let day = representedDate
@@ -720,14 +720,6 @@ struct TodayListDetailView: View
                                 .id("day.scheduleOverview")
                             }
 
-
-                            if !focusedList.cards.isEmpty
-                            {
-                                sessionGuidance(for: focusedList)
-                                .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
-                            }
 
                             ForEach(DaySections.visible(focusedList.cards))
                             {
@@ -893,22 +885,13 @@ struct TodayListDetailView: View
                             .moveDisabled(editMode != .active)
 
 
-                            VStack(spacing: 0)
-                            {
-                                if focusedList.cards.isEmpty
-                                {
-                                    sessionGuidance(for: focusedList)
-                                }
-
-                                inlineCapture(for: focusedList)
-                            }
+                            inlineCapture(for: focusedList)
                             .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 16, trailing: 8))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
                         }
 
                         .listStyle(.plain)
-                        // List reads this value when sizing rows; the hidden guide must occupy zero height
                         .environment(\.defaultMinListRowHeight, 0)
                         .environment(\.editMode, $editMode)
                         .scrollContentBackground(.hidden)
@@ -1050,6 +1033,15 @@ struct TodayListDetailView: View
 
                         }
 
+                        VStack(spacing: 0)
+                        {
+
+                            // Animate the guide above the List without resizing a native row
+                            sessionGuidance(for: focusedList)
+                                .padding(.horizontal, 8)
+
+                            cards
+                        }
                     }
 
                 }

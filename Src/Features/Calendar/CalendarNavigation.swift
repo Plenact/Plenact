@@ -237,6 +237,13 @@ struct PlanningCalendarWeekView: View
     var initialBoardListID: Int? = nil /* Initial board list ID */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    private enum DayExit
+    {
+        case calendar
+        case week(PlanningDaySelection)
+    }
+
+    @State private var dayExit: DayExit? /* Route applied after the Day cover closes */
     @State private var didOpenInitialTarget = false /* Open Initial Target completion flag */
     @State private var showsDay             = false /* Day visibility */
     @State private var isRevertingEdit      = false /* Guard against recursive saves */
@@ -301,6 +308,7 @@ struct PlanningCalendarWeekView: View
             personalCollectionID: week.id,
             boardAppearance: $week.collection.boardAppearance
         )
+        .id(week.id)
         .safeAreaInset(edge: .bottom)
         {
 
@@ -488,32 +496,39 @@ struct PlanningCalendarWeekView: View
             }
 
         }
-        .fullScreenCover(isPresented: $showsDay)
+        .fullScreenCover(isPresented: $showsDay, onDismiss: finishDayExit)
         {
 
             if let dayID
             {
 
                 TodayListDetailView(
+                    onOpenSelectedWeek:
+                    {
+                        selection in
+                        dayExit = .week(selection)
+                        showsDay = false
+                    },
                     lists: $week.collection.lists.activeLists,
                     reservedLists: week.collection.lists.filter(\.isArchived), labelLibrary: $labels,
                     savedCardIDs: $week.collection.savedCardIDs, listID: dayID, currentUserName: "You",
                     onClose:
                     {
 
-                        showsDay = false
-
                         if initialDayID != nil && initialCardID == nil
                         {
-                            dismiss()
+                            dayExit = .calendar
                         }
+
+                        showsDay = false
 
                     },
                     onOpenWeek:
                     {
 
-                        showsDay = false;
                         targetListID = dayID
+                        targetCardID = nil
+                        showsDay = false
 
                     },
                     onPermanentDelete:
@@ -549,6 +564,33 @@ struct PlanningCalendarWeekView: View
 
         }
 
+    }
+
+
+    /// Complete navigation only after the inner Day presentation finishes dismissing
+    private func finishDayExit()
+    {
+
+        let exit = dayExit /* Pending destination */
+
+        dayExit = nil
+
+        switch exit
+        {
+        case .calendar:
+            dismiss()
+        case let .week(selection):
+            if week != selection.week
+            {
+                isRevertingEdit = true
+                week = selection.week
+            }
+
+            targetListID = selection.listID
+            targetCardID = nil
+        case nil:
+            break
+        }
     }
 
 }
@@ -908,7 +950,14 @@ struct PlanningDaySelection
         let week =                                         /* Dated Week under consideration */
             document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
 
-        guard let id = week.dayListIDs[PlanningDate.key(date, calendar: document.calendar)],
+        return resolve(date, in: week, calendar: document.calendar)
+    }
+
+
+    static func resolve(_ date: Date, in week: DatedPlanningWeek, calendar: Calendar) -> Self?
+    {
+
+        guard let id = week.dayListIDs[PlanningDate.key(date, calendar: calendar)],
         week.collection.lists.contains(where:
             {
                 $0.id == id && !$0.isArchived
@@ -918,7 +967,7 @@ struct PlanningDaySelection
             return nil
         }
 
-        return Self(date: date, week: week, listID: id)
+        return Self(date: calendar.startOfDay(for: date), week: week, listID: id)
     }
 
 }
@@ -940,6 +989,7 @@ struct PlanningSelectedDayView: View
     let returnDestinationTitle: String /* Return destination title */
     let onClose:                () -> Void /* Close the current surface */
     let onSelectDay:            (Date) -> Void /* Select day callback */
+    let onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? /* Enclosing Calendar Week route */
     @State private var week:    DatedPlanningWeek /* Dated Week under consideration */
     @State private var labels          = LabelLibraryStore.load() /* Available label definitions */
     @State private var isRevertingEdit = false /* Guard against recursive saves */
@@ -962,7 +1012,8 @@ struct PlanningSelectedDayView: View
     ///
     init(
         selection: PlanningDaySelection, currentUserName: String, returnDestinationTitle: String,
-        onClose: @escaping () -> Void, onSelectDay: @escaping (Date) -> Void
+        onClose: @escaping () -> Void, onSelectDay: @escaping (Date) -> Void,
+        onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil
     )
     {
 
@@ -971,6 +1022,7 @@ struct PlanningSelectedDayView: View
         self.returnDestinationTitle = returnDestinationTitle
         self.onClose = onClose
         self.onSelectDay = onSelectDay
+        self.onOpenSelectedWeek = onOpenSelectedWeek
         _week = State(initialValue: selection.week)
 
     }
@@ -988,8 +1040,24 @@ struct PlanningSelectedDayView: View
             onOpenWeek:
             {
 
-                access?.openWeek(week);
-                onClose()
+                if let onOpenSelectedWeek
+                {
+                    if let target = PlanningDaySelection.resolve(selection.date, in: week,
+                        calendar: access?.document.calendar ?? .current)
+                    {
+                        onOpenSelectedWeek(target)
+                    }
+                }
+                else if let open = access?.openWeekOnDay
+                {
+                    open(week, selection.date)
+                    onClose()
+                }
+                else
+                {
+                    access?.openWeek(week)
+                    onClose()
+                }
             },
             onPermanentDelete:
             {

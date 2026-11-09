@@ -23,6 +23,38 @@ import XCTest
 extension PlenactBoardDocumentTests
 {
 
+    /// A date switched inside Day View targets the active List in that date's current Week snapshot
+    func testSwitchedCalendarDayTargetsItsOwnWeekAndCurrentListMapping() throws
+    {
+
+        var calendar = Calendar.current /* Same local date context used by the document */
+
+        calendar.firstWeekday = 2
+
+        let originalDate = try XCTUnwrap(PlanningDate.date("2026-10-29", calendar: calendar))
+        let switchedDate = try XCTUnwrap(PlanningDate.date("2026-11-05", calendar: calendar))
+        let original = DatedPlanningWeek.make(for: originalDate, calendar: calendar)
+        var switched = DatedPlanningWeek.make(for: switchedDate, calendar: calendar)
+        let document = PlanningCalendarDocument(currentWeekKey: original.startKey,
+            firstWeekday: calendar.firstWeekday, weeks: [original, switched])
+        let selected = try XCTUnwrap(PlanningDaySelection.resolve(switchedDate, document: document))
+        let index    = try XCTUnwrap(switched.collection.lists.firstIndex { $0.id == selected.listID })
+        let list     = switched.collection.lists[index] /* List from the switched date */
+
+        switched.collection.lists[index] = KanbanList(id: 90, title: list.title, cards: list.cards)
+        switched.dayListIDs[PlanningDate.key(switchedDate, calendar: calendar)] = 90
+
+        let target = try XCTUnwrap(PlanningDaySelection.resolve(selected.date, in: switched, calendar: calendar))
+
+        XCTAssertEqual(target.week.id, switched.id)
+        XCTAssertEqual(target.date, calendar.startOfDay(for: switchedDate))
+        XCTAssertEqual(target.listID, 90)
+        XCTAssertNil(PlanningDaySelection.resolve(selected.date, in: original, calendar: calendar))
+        switched.collection.lists[index].isArchived = true
+        XCTAssertNil(PlanningDaySelection.resolve(selected.date, in: switched, calendar: calendar))
+    }
+
+
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testFocusChronologyHonorsTimeOnlyDateOnlyAndDueFallback

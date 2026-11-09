@@ -32,6 +32,8 @@ struct TodayListDetailView: View
     @State private var showsDaySelector               = false /* Day Selector visibility */
     var onSelectDay:                ((Date) -> Void)? = nil /* Select day callback */
 
+    var onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil /* Switch to the selected date’s Week */
+
     @State private var focusedViewportMemory: BoardViewportMemory? /* Focused viewport memory */
     @State private var guidanceFooterVisible: Bool? /* Guidance footer visible */
     @State private var selectedDay: PlanningDaySelection? /* Selected day */
@@ -536,7 +538,7 @@ struct TodayListDetailView: View
                 PlanningSelectedDayView(
                     selection: selectedDay, currentUserName: currentUserName,
                     returnDestinationTitle: returnDestinationTitle, onClose: onClose,
-                    onSelectDay: selectDay
+                    onSelectDay: selectDay, onOpenSelectedWeek: onOpenSelectedWeek
                 )
                 .id(selectedDay.date)
             }
@@ -1281,7 +1283,7 @@ struct TodayListDetailView: View
                         Button
                         {
 
-                            if let planningCalendarAccess,
+                            if onOpenSelectedWeek == nil, onSelectDay == nil, let planningCalendarAccess,
                             (dayMovementSource != nil
                                 && dayMovementSource != planningCalendarAccess.document.week(for: .now)?.id)
                             || (representedDate.map

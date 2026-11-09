@@ -21,8 +21,6 @@ import SwiftUI
 ///
 struct BottomToolbarLayout
 {
-
-
     var height:             CGFloat        /* Measured layout height */
     var safeAreaAllowance:  CGFloat        /* Safe area allowance    */
     var rowSpacing:         CGFloat        /* Row spacing            */
@@ -74,7 +72,6 @@ struct BottomToolbarLayout
     ///
     static func configuration(isTablet: Bool, compact: Bool) -> Self
     {
-
         if isTablet
         {
             return compact ? padCompact : padRegular
@@ -95,7 +92,6 @@ struct BottomToolbarLayout
     ///
     func reservedHeight(bottomInset: CGFloat) -> CGFloat
     {
-
         height + max(0, safeAreaAllowance - bottomInset)
     }
 
@@ -110,7 +106,6 @@ struct BottomToolbarLayout
 ///
 struct BottomToolbarBackground: View
 {
-
     let topInset:    CGFloat /* Transparent overlap above the paper surface */
     let bottomInset: CGFloat /* Explicit coverage below the control frame   */
 
@@ -126,7 +121,6 @@ struct BottomToolbarBackground: View
     ///
     var body: some View /* Bottom Toolbar Background layout */
     {
-
         GeometryReader
         {
             geometry in
@@ -135,7 +129,6 @@ struct BottomToolbarBackground: View
 
             ZStack(alignment: .top)
             {
-
                 Color(red: 0.83, green: 0.77, blue: 0.66)
                 Image("TodayPaper")
                     .resizable()

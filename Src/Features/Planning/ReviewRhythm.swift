@@ -20,8 +20,6 @@ import UserNotifications
 ///
 enum ReviewRhythmKind: String, Codable, CaseIterable
 {
-
-
     case daily, weekly
     var title: String /* User-facing title */
     {
@@ -30,7 +28,6 @@ enum ReviewRhythmKind: String, Codable, CaseIterable
 
     var message: String /* User-facing status message */
     {
-
         self == .daily
         ? "Ready to decide what stays on the Table, goes into the Queue, or gets a day?"
         : "What in the Queue would you like to bring into the coming week?"
@@ -52,8 +49,6 @@ enum ReviewRhythmKind: String, Codable, CaseIterable
 ///
 struct ReviewRhythmRoute: Identifiable
 {
-
-
     let id = UUID()            /* Record UUID                 */
     let kind: ReviewRhythmKind /* Content kind discriminator  */
     let date: Date             /* Date used by this operation */
@@ -70,8 +65,6 @@ struct ReviewRhythmRoute: Identifiable
 ///
 struct ReviewRhythmPreferences: Codable, Equatable
 {
-
-
     var dailyInvitations    = true         /* Daily invitations  */
     var weeklyInvitations   = true         /* Weekly invitations */
     var dailyMinutes        = 20 * 60 + 30 /* Daily minutes      */
@@ -90,26 +83,22 @@ struct ReviewRhythmPreferences: Codable, Equatable
     ///
     func normalized() -> Self
     {
-
         var copy = self /* Independent working copy */
 
         if !(0 ..< 1440).contains(copy.dailyMinutes)
         {
-
             copy.dailyMinutes = 1230
 
         }
 
         if !(0 ..< 1440).contains(copy.weeklyMinutes)
         {
-
             copy.weeklyMinutes = 1080
 
         }
 
         if !(1 ... 7).contains(copy.weeklyWeekday)
         {
-
             copy.weeklyWeekday = 1
 
         }
@@ -129,8 +118,6 @@ struct ReviewRhythmPreferences: Codable, Equatable
 ///
 enum ReviewRhythmStore
 {
-
-
     static let key           = "Plenact.ReviewRhythm.v1"           /* Persistence lookup key */
     static let dismissalsKey = "Plenact.ReviewRhythmDismissals.v1" /* Dismissals key         */
 
@@ -147,7 +134,6 @@ enum ReviewRhythmStore
     ///
     static func load(from defaults: UserDefaults = .standard) -> ReviewRhythmPreferences
     {
-
         guard let data = defaults.data(forKey: key),
         let value = try? JSONDecoder().decode(ReviewRhythmPreferences.self, from: data)
         else
@@ -173,10 +159,8 @@ enum ReviewRhythmStore
     ///
     static func save(_ value: ReviewRhythmPreferences, to defaults: UserDefaults = .standard) throws
     {
-
         if defaults.object(forKey: key) != nil
         {
-
             guard let data = defaults.data(forKey: key) else
             {
                 throw CocoaError(.fileReadCorruptFile)
@@ -203,7 +187,6 @@ enum ReviewRhythmStore
     ///
     static func periodID(_ kind: ReviewRhythmKind, date: Date, calendar: Calendar) -> String
     {
-
         let key = /* Local Week boundary key */
         kind == .daily ? PlanningDate.key(date, calendar: calendar) : PlanningDate.weekKey(date, calendar: calendar)
 
@@ -232,7 +215,6 @@ enum ReviewRhythmStore
         calendar: Calendar, completed: Bool, deferredUntil: Date?
     ) -> Bool
     {
-
         guard !completed, deferredUntil.map(
             {
                 $0 <= now
@@ -247,7 +229,6 @@ enum ReviewRhythmStore
 
         switch kind
         {
-
         case .daily:
             return value.dailyInvitations && minutes >= value.dailyMinutes
         case .weekly:
@@ -277,7 +258,6 @@ enum ReviewRhythmStore
         until: Date, defaults: UserDefaults = .standard
     )
     {
-
         var values = /* Values being processed */
         (defaults.data(forKey: dismissalsKey).flatMap
             {
@@ -289,11 +269,9 @@ enum ReviewRhythmStore
 
         if values.count > 64
         {
-
             // The date component in each key retains recent periods, including permanent skips
             let keys = values.keys.sorted /* Keys used by this operation */
             {
-
                 ($0.split(separator: "|").dropFirst().first ?? "") > ($1.split(separator: "|").dropFirst().first ?? "")
             } .prefix(64)
 
@@ -324,7 +302,6 @@ enum ReviewRhythmStore
     ///
     static func notificationRequests(_ value: ReviewRhythmPreferences) -> [UNNotificationRequest]
     {
-
         let value = value.normalized() /* Value being processed */
 
         return ReviewRhythmKind.allCases.compactMap
@@ -344,7 +321,6 @@ enum ReviewRhythmStore
 
             if kind == .weekly
             {
-
                 components.weekday = value.weeklyWeekday
 
             }
@@ -377,8 +353,6 @@ enum ReviewRhythmStore
 @MainActor
 final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotificationCenterDelegate
 {
-
-
     static let shared = ReviewRhythmNotifications() /* Shared operation value        */
     @Published var pending: ReviewRhythmRoute?      /* Operation awaiting completion */
     private var isReconciling  = false              /* Reconciling state             */
@@ -394,7 +368,6 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     ///
     func install()
     {
-
         UNUserNotificationCenter.current().delegate = self
 
     }
@@ -416,7 +389,6 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     ///
     func synchronize(requestPermission: Bool = false) async throws -> Bool
     {
-
         let center             = UNUserNotificationCenter.current() /* Layout center point */
         let preferences        = ReviewRhythmStore.load() /* Planning and display choices */
         let wantsNotifications = /* Wants notifications */
@@ -426,7 +398,6 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 
         if wantsNotifications && requestPermission && status == .notDetermined
         {
-
             _ = try await center.requestAuthorization(options: [.alert, .sound])
             status = await center.notificationSettings().authorizationStatus
 
@@ -435,7 +406,6 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
         // Serialize reconciliation, then read the latest saved choices again on a queued pass
         if isReconciling
         {
-
             needsReconcile = true;
 
             return status == .authorized || status == .provisional
@@ -445,14 +415,12 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 
         defer
         {
-
             isReconciling = false
 
         }
 
         repeat
         {
-
             needsReconcile = false
 
             center.removePendingNotificationRequests(withIdentifiers: ReviewRhythmKind.allCases.map(\.notificationID))
@@ -461,7 +429,6 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 
             if status == .authorized || status == .provisional || status == .ephemeral
             {
-
                 for request in ReviewRhythmStore.notificationRequests(latest)
                 {
                     try await center.add(request)
@@ -492,11 +459,9 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
         withCompletionHandler completionHandler: @escaping () -> Void
     )
     {
-
         if let raw = response.notification.request.content.userInfo["plenactReview"] as? String,
         let kind = ReviewRhythmKind(rawValue: raw)
         {
-
             let date = response.notification.date /* Date used by this operation */
 
             Task
@@ -530,7 +495,6 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     )
     {
-
         completionHandler([.banner, .sound])
     }
 
@@ -546,8 +510,6 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 ///
 struct ReviewRhythmPanel: View
 {
-
-
     let onOpen:      (ReviewRhythmRoute) -> Void /* Open the selected destination */
     let onSettings:  () -> Void /* Settings callback */
     var defaults:    UserDefaults = .standard /* Preference storage domain */
@@ -581,12 +543,10 @@ struct ReviewRhythmPanel: View
     ///
     private func due(_ kind: ReviewRhythmKind, at now: Date) -> Bool
     {
-
         let completed: Bool /* Completion state */
 
         if kind == .daily
         {
-
             completed =
             (try? DailyPlanStore.load(from: defaults).plans[PlanningDate.key(now, calendar: calendar)]?
                 .eveningReview?.completedAt) != nil
@@ -594,7 +554,6 @@ struct ReviewRhythmPanel: View
         }
         else
         {
-
             let id = /* Record or view identity */
                 WeeklyReviewRecord(date: now, calendar: calendar).id
 
@@ -614,7 +573,6 @@ struct ReviewRhythmPanel: View
 
     var body: some View /* Review Rhythm Panel layout */
     {
-
         TimelineView(.everyMinute)
         {
             timeline in
@@ -623,7 +581,6 @@ struct ReviewRhythmPanel: View
 
             VStack(alignment: .leading, spacing: 12)
             {
-
                 ForEach(ReviewRhythmKind.allCases.filter
                     {
                         due($0, at: now)
@@ -632,12 +589,10 @@ struct ReviewRhythmPanel: View
                     kind in
                     VStack(alignment: .leading, spacing: 8)
                     {
-
                         Text(kind.title).font(.headline)
                         Text(kind.message).font(.subheadline).foregroundStyle(.secondary)
                         HStack
                         {
-
                             Button("Review now")
                             {
                                 onOpen(ReviewRhythmRoute(kind: kind, date: now))
@@ -646,10 +601,8 @@ struct ReviewRhythmPanel: View
                             Spacer()
                             Menu("Later", systemImage: "ellipsis")
                             {
-
                                 Button("Remind me here in one hour")
                                 {
-
                                     ReviewRhythmStore.deferInvitation(
                                         kind, date: now, calendar: calendar,
                                         until: now.addingTimeInterval(3600), defaults: defaults)
@@ -657,7 +610,6 @@ struct ReviewRhythmPanel: View
 
                                 Button(kind == .daily ? "Skip today" : "Skip this week")
                                 {
-
                                     ReviewRhythmStore.deferInvitation(
                                         kind, date: now, calendar: calendar, until: .distantFuture, defaults: defaults)
                                 }
@@ -671,10 +623,8 @@ struct ReviewRhythmPanel: View
 
                 HStack
                 {
-
                     Menu("Planning rhythm", systemImage: "arrow.triangle.2.circlepath")
                     {
-
                         Button("Review On the Table now")
                         {
                             onOpen(ReviewRhythmRoute(kind: .daily, date: now))
@@ -707,22 +657,17 @@ struct ReviewRhythmPanel: View
 ///
 struct ReviewRhythmDestination: View
 {
-
-
     let route: ReviewRhythmRoute                              /* Requested navigation destination */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations      */
 
     var body: some View /* Review Rhythm Destination layout */
     {
-
         if route.kind == .daily
         {
-
             TodayPlanView(date: route.date, calendar: access?.document.calendar ?? .current, opensEveningReview: true)
         }
         else
         {
-
             WeeklyReviewView(date: route.date, calendar: access?.document.calendar ?? .current)
         }
 
@@ -740,8 +685,6 @@ struct ReviewRhythmDestination: View
 ///
 struct ReviewRhythmSettingsView: View
 {
-
-
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
     @State private var preferences = ReviewRhythmStore.load() /* Planning and display choices   */
     @State private var saving      = false                    /* Save operation in progress     */
@@ -760,11 +703,9 @@ struct ReviewRhythmSettingsView: View
     ///
     private func time(_ key: WritableKeyPath<ReviewRhythmPreferences, Int>) -> Binding<Date>
     {
-
         Binding(
             get:
             {
-
                 Calendar.current.date(
                     bySettingHour: preferences[keyPath: key] / 60,
                     minute: preferences[keyPath: key] % 60, second: 0, of: .now) ?? .now
@@ -781,16 +722,12 @@ struct ReviewRhythmSettingsView: View
 
     var body: some View /* Review reminder controls */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Section("Daily · On the Table")
                 {
-
                     Toggle("Offer an evening review on Today", isOn: $preferences.dailyInvitations)
                     DatePicker("Evening time", selection: time(\.dailyMinutes), displayedComponents: .hourAndMinute)
                     Toggle("Send an evening notification", isOn: $preferences.dailyNotifications)
@@ -798,11 +735,9 @@ struct ReviewRhythmSettingsView: View
 
                 Section("Weekly · In the Queue")
                 {
-
                     Toggle("Offer a weekly review on Today", isOn: $preferences.weeklyInvitations)
                     Picker("Review day", selection: $preferences.weeklyWeekday)
                     {
-
                         ForEach(1 ... 7, id: \.self)
                         {
                             Text(Calendar.current.weekdaySymbols[$0 - 1]).tag($0)
@@ -816,7 +751,6 @@ struct ReviewRhythmSettingsView: View
 
                 Section
                 {
-
                     Text(
                                                             "Invitations help you decide; they never move or complete an item. Keep work, choose another day, return it to the Queue, or let it go. Neither list has to be empty."
                     )
@@ -828,17 +762,13 @@ struct ReviewRhythmSettingsView: View
 
                 if let error
                 {
-
                     Section
                     {
-
                         Text(error).foregroundStyle(.secondary)
                         Button("Open iOS notification settings")
                         {
-
                             if let url = URL(string: UIApplication.openSettingsURLString)
                             {
-
                                 UIApplication.shared.open(url)
                             }
 
@@ -853,7 +783,6 @@ struct ReviewRhythmSettingsView: View
             .disabled(saving)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -864,10 +793,8 @@ struct ReviewRhythmSettingsView: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         saving = true
 
                         Task
@@ -875,23 +802,19 @@ struct ReviewRhythmSettingsView: View
                             @MainActor in
                             defer
                             {
-
                                 saving = false
 
                             }
 
                             do
                             {
-
                                 try ReviewRhythmStore.save(preferences)
                                 if try await ReviewRhythmNotifications.shared.synchronize(requestPermission: true)
                                 {
-
                                     dismiss()
                                 }
                                 else
                                 {
-
                                     error =
                                                                                                             "Your choices are saved. iOS notifications are not allowed; invitations on Today still work. You can allow notifications in iOS Settings or turn the notification switches off."
 
@@ -900,7 +823,6 @@ struct ReviewRhythmSettingsView: View
                             }
                             catch
                             {
-
                                 self.error =
                                                                                                 "Could not finish saving reminders: \(error.localizedDescription). Your Cards and Notes are unchanged."
 

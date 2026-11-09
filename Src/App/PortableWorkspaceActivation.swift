@@ -12,7 +12,6 @@ import SwiftUI
 ///     Prevent old editors from saving into the reconstructed workspace during activation
 struct PortableWorkspaceImportAccess
 {
-
     let install: (ReviewedPortablePackage) -> Void /* Install callback       */
     let undo:    () -> Void                        /* Restore the prior edit */
 
@@ -24,7 +23,6 @@ struct PortableWorkspaceImportAccess
 ///     Keep views from installing native stores directly
 private struct PortableWorkspaceImportKey: EnvironmentKey
 {
-
     static let defaultValue: PortableWorkspaceImportAccess? = nil /* Fallback environment value */
 
 }
@@ -32,20 +30,17 @@ private struct PortableWorkspaceImportKey: EnvironmentKey
 
 extension EnvironmentValues
 {
-
     /// @fcn EnvironmentValues.portableWorkspaceImport
     /// @brief Access the root's explicit Simulator import boundary
     /// @return Optional import and undo actions
     var portableWorkspaceImport: PortableWorkspaceImportAccess? /* Portable workspace import */
     {
-
         get
         {
             self[PortableWorkspaceImportKey.self]
         }
         set
         {
-
             self[PortableWorkspaceImportKey.self] = newValue
 
         }
@@ -55,17 +50,14 @@ extension EnvironmentValues
 
 extension AppRootView
 {
-
     /// @fcn AppRootView.performPortableWorkspaceImport
     /// @brief Activate or undo portable data after old navigation/editor state has been removed
     /// @return Void after reload or protected recovery, without enabling synchronization
     @MainActor
     func performPortableWorkspaceImport()
     {
-
         defer
         {
-
             pendingPortableImport = nil
             undoingPortableImport = false
             isSwitchingWorkspace = false
@@ -88,7 +80,6 @@ extension AppRootView
             }
             else if let package = pendingPortableImport, let domain = Bundle.main.bundleIdentifier
             {
-
                 let candidate    = /* Candidate under validation */
                     try PortableWorkspaceCandidate.prepare(package)
                 let aliases      = /* Local-to-portable identities */
@@ -131,7 +122,6 @@ extension AppRootView
         {
             if (try? FullMonthExampleStore.live().needsRecovery) == true
             {
-
                 workspaceRecoveryError = error.localizedDescription
 
             }

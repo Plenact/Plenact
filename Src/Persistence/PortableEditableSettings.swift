@@ -12,7 +12,6 @@ import Foundation
 ///     Keep settings and personal selections attached to the same identities as imported content
 extension PortableEditableContent
 {
-
     /// @fcn PortableEditableContent.preferences
     /// @brief Restore effective settings using explicit field mappings and the retained List alias map
     /// @param[in] document Canonical user-preferences record, or nil for absent preferences
@@ -21,7 +20,6 @@ extension PortableEditableContent
     /// @throws Ownership, unknown field, range or unresolved List failures
     func preferences(_ document: [String: Any]?, accountID: String) throws -> LocalProfilePreferences?
     {
-
         guard let document else
         {
             return nil
@@ -40,7 +38,6 @@ extension PortableEditableContent
 
         if let target = values["default_list_id"] as? String
         {
-
             _ = try record(target, kind: "list")
 
         }
@@ -68,7 +65,6 @@ extension PortableEditableContent
     /// @throws Wrong ownership, workspace or record type
     func owned(_ document: [String: Any], kind: String, accountID: String) throws -> [String: Any]
     {
-
         guard document["record_type"] as? String == kind,
               document["workspace_id"] as? String == records.first?["workspace_id"] as? String,
               let payload = document["payload"] as? [String: Any], payload["account_id"] as? String == accountID else
@@ -88,7 +84,6 @@ extension PortableEditableContent
     /// @throws Missing preferences, timestamp, original avatar or unsupported fields
     func profile(_ document: [String: Any]?, preferences: LocalProfilePreferences?, accountID: String) throws -> LocalProfile?
     {
-
         guard let document else
         {
             return nil
@@ -126,7 +121,6 @@ extension PortableEditableContent
     /// @throws Invalid category membership or unsupported fields
     func labelLibrary() throws -> LabelLibrary
     {
-
         let categories       = /* Supported content categories */
             records.filter { $0["record_type"] as? String == "label_category" }
         let labels           = /* Available label definitions */
@@ -173,7 +167,6 @@ extension PortableEditableContent
     /// @throws Unresolved, duplicate or incorrectly owned List targets
     func shortcuts(_ document: [String: Any]?) throws -> [WorkspaceListReference]?
     {
-
         guard let document else
         {
             return nil
@@ -215,13 +208,11 @@ extension PortableEditableContent
     /// @throws Unknown ownership, duplicate targets or invalid levels
     func importance(_ selections: [[String: Any]], accountID: String) throws -> [LibraryImportanceItem]
     {
-
         var seen                            = Set<String>() /* Identities already encountered */
         var output: [LibraryImportanceItem] = []            /* Operation output               */
 
         for selection in selections
         {
-
             let value = /* Value being processed */
                 try owned(selection, kind: "content_selection", accountID: accountID)
 
@@ -265,7 +256,6 @@ extension PortableEditableContent
 ///     Preserve the additive appearance model while projecting supported values into current editor types
 extension PortableEditableContent
 {
-
     /// @fcn PortableEditableContent.studioSettings
     /// @brief Rebuild exact saved surfaces, palette order and variety flags
     /// @param[in] document Account-qualified Studio settings or nil
@@ -274,7 +264,6 @@ extension PortableEditableContent
     /// @throws Unsupported destinations, file mappings or ownership
     func studioSettings(_ document: [String: Any]?, accountID: String) throws -> StudioSettings?
     {
-
         guard let document else
         {
             return nil
@@ -320,7 +309,6 @@ extension PortableEditableContent
     /// @throws Missing library, incorrect membership or unsupported look values
     func artwork(_ library: [String: Any]?) throws -> [StudioArtwork]?
     {
-
         let all = /* Filtered all entries */
             records.filter { $0["record_type"] as? String == "studio_artwork" }
 
@@ -368,7 +356,6 @@ extension PortableEditableContent
     /// @throws Version, workspace, payload or appearance failures
     func weekAppearance(_ document: [String: Any]?) throws -> BoardAppearance?
     {
-
         guard let document else
         {
             return nil

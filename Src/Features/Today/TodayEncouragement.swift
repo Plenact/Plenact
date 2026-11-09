@@ -20,8 +20,6 @@ import SwiftUI
 ///
 enum TodaySloganCatalog
 {
-
-
     static let slogans: [String] = [ /* Available encouragement text */
             "small steps today, bringing your plans to life",
             "a fresh page today, with room for what matters",
@@ -99,7 +97,6 @@ enum TodaySloganCatalog
     ///
     static func slogan(on date: Date, calendar: Calendar = .current) -> String
     {
-
         // A fixed Gregorian anchor keeps rotation stable across relaunches, years, and DST
         var local = Calendar(identifier: .gregorian) /* Local workspace representation */
 
@@ -126,14 +123,11 @@ enum TodaySloganCatalog
 ///
 struct TodaySloganView: View
 {
-
-
     @State private var showsFullSlogan = false          /* Full Slogan visibility */
     @Environment(\.colorScheme) private var colorScheme /* Color scheme           */
 
     var body: some View /* Today Slogan layout */
     {
-
         TimelineView(.everyMinute)
         {
             context in
@@ -155,7 +149,6 @@ struct TodaySloganView: View
     ///
     private func sloganContent(_ slogan: String) -> some View
     {
-
         InteractiveSloganPreview(
             text: slogan,
             textColor: (colorScheme == .dark
@@ -163,7 +156,6 @@ struct TodaySloganView: View
                 : Color(red: 0.40, green: 0.31, blue: 0.23)).opacity(0.55),
             onTap:
             {
-
                 showsFullSlogan = true
 
             }
@@ -174,16 +166,13 @@ struct TodaySloganView: View
         .accessibilityHint("Swipe left or right to read. Tap to show the full message.")
         .alert("Today's slogan", isPresented: $showsFullSlogan)
         {
-
             Button("Done", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text(slogan)
         }
 
@@ -201,8 +190,6 @@ struct TodaySloganView: View
 ///
 enum TodaySloganMotion
 {
-
-
     ///
     /// @fcn        TodaySloganMotion.position
     /// @brief      Calculate the slogan's looping horizontal position
@@ -218,7 +205,6 @@ enum TodaySloganMotion
     ///
     static func position(elapsed: TimeInterval, start: CGFloat, viewport: CGFloat, textWidth: CGFloat) -> CGFloat
     {
-
         let distance = viewport + textWidth /* Distance between layout positions */
 
         guard distance > 0 else
@@ -261,7 +247,6 @@ enum TodaySloganMotion
     ///
     static func draggedPosition(start: CGFloat, translation: CGFloat, viewport: CGFloat, textWidth: CGFloat) -> CGFloat
     {
-
         start + translation
     }
 
@@ -277,8 +262,6 @@ enum TodaySloganMotion
 ///
 struct InteractiveSloganPreview: View
 {
-
-
     let text:      String /* Text being processed */
     let textColor: Color /* Text color */
     let onTap:     () -> Void /* Tap callback */
@@ -305,7 +288,6 @@ struct InteractiveSloganPreview: View
     ///
     private func position(at date: Date, width: CGFloat) -> CGFloat
     {
-
         if let draggedOffset
         {
             return draggedOffset
@@ -321,13 +303,10 @@ struct InteractiveSloganPreview: View
 
     var body: some View /* Interactive Slogan Preview layout */
     {
-
         Group
         {
-
             if reduceMotion || typeSize.isAccessibilitySize
             {
-
                 Button(action: onTap)
                 {
                     Text(text).frame(maxWidth: .infinity, alignment: .leading)
@@ -336,23 +315,19 @@ struct InteractiveSloganPreview: View
             }
             else
             {
-
                 Text(text).lineLimit(1).hidden()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay
                 {
-
                     GeometryReader
                     {
                         geometry in
                         TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !visible || dragStart != nil))
                         {
-
                         timeline in
                             Text(text).fixedSize(horizontal: true, vertical: false)
                             .background
                             {
-
                                 GeometryReader
                                 {
                                     measured in
@@ -372,13 +347,11 @@ struct InteractiveSloganPreview: View
                                 value in
                                 guard abs(value.translation.width) > abs(value.translation.height) else
                                 {
-
                                     return
                                 }
 
                                 if dragStart == nil
                                 {
-
                                     dragStart = position(at: Date(), width: geometry.size.width)
 
                                 }
@@ -409,7 +382,6 @@ struct InteractiveSloganPreview: View
                 .clipped()
                 .onPreferenceChange(PreviewTextWidthKey.self)
                 {
-
                     textWidth = $0
 
                 }
@@ -451,9 +423,6 @@ struct InteractiveSloganPreview: View
 ///
 enum TodayFocusPresentation
 {
-
-
-
     ///
     /// @fcn        TodayFocusPresentation.showsSchedule(important:bookmarked:upNext:)
     /// @brief      Show schedules for All items or a selection including Up Next
@@ -465,8 +434,6 @@ enum TodayFocusPresentation
     ///
     static func showsSchedule(important: Bool, bookmarked: Bool, upNext: Bool) -> Bool
     {
-
-
         upNext || (!important && !bookmarked)
     }
 
@@ -484,8 +451,6 @@ enum TodayFocusPresentation
     ///
     static func context(important: Bool, bookmarked: Bool, upNext: Bool, chronological: Bool) -> String
     {
-
-
         let selected = /* Current selection */
             [(upNext, "Up Next"), (important, "Important"), (bookmarked, "Bookmarked")]
         .filter
@@ -498,7 +463,6 @@ enum TodayFocusPresentation
 
         if selected.isEmpty
         {
-
             return chronological ? "From today’s list · in time order" : "From today’s list · in your list order"
         }
 

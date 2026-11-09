@@ -13,13 +13,11 @@ import Foundation
 @MainActor
 enum MigrationContentDates
 {
-
     /// Pinned transition data, not a claim about the device's installed timezone package
     /// @section Purpose
     ///     Bound current migration support explicitly to Chicago/UTC during 1900–2100
     private struct Rules: Decodable
     {
-
         let tzdb_version: String     /* Tzdb version                    */
         let start_epoch: Int         /* Start epoch                     */
         let end_epoch: Int           /* End epoch                       */
@@ -38,7 +36,6 @@ enum MigrationContentDates
     /// @throws Unsupported context/range or invalid time values
     static func convert(_ value: Any?, kind: String, context: MigrationContentValues, path: String) throws -> Any
     {
-
         guard let value, !(value is NSNull) else
         {
             return NSNull()
@@ -77,14 +74,12 @@ enum MigrationContentDates
 
         if kind == "date"
         {
-
             formatter.dateFormat = "yyyy-MM-dd"
 
             return ["kind": "date", "date": formatter.string(from: local)]
         }
         if kind == "time"
         {
-
             formatter.dateFormat = "HH:mm:ss.SSS"
 
             return ["kind": "time", "time": formatter.string(from: local)]
@@ -98,14 +93,12 @@ enum MigrationContentDates
 
         for i in 1..<transitions.count
         {
-
             let delta   = /* Difference from the baseline */
                 transitions[i - 1][1] - transitions[i][1]
             let instant = Double(transitions[i][0]) /* Transition timestamp */
 
             if delta > 0, wireEpoch >= instant - Double(delta), wireEpoch < instant + Double(delta)
             {
-
                 occurrence = wireEpoch < instant ? "first" : "second"
 
                 break

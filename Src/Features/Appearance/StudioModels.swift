@@ -12,8 +12,6 @@ import Foundation
 ///     Provides the same selection vocabulary for Cards, Notes, Lists, Boards, and workspace views
 enum StudioMaterial: String, Codable, CaseIterable, Identifiable, Sendable
 {
-
-
     case plain, color, gradient, paper, linen, dots, grid, canvas, photo, unsplash
     var id: String /* Record or view identity */
     {
@@ -34,8 +32,6 @@ enum StudioMaterial: String, Codable, CaseIterable, Identifiable, Sendable
 ///     Keeps external photographs separate from offline user imports and preserves required credits
 struct StudioRemotePhoto: Codable, Hashable, Sendable
 {
-
-
     let id:           String /* Record or view identity   */
     let imageURL:     URL    /* Image URL                 */
     let photographer: String /* Photographer display text */
@@ -51,8 +47,6 @@ struct StudioRemotePhoto: Codable, Hashable, Sendable
 ///     Allows each use of an artwork to retain independent strength, readability, and framing
 struct StudioSurface: Codable, Hashable, Sendable
 {
-
-
     var material:         StudioMaterial     = .paper   /* Selected surface material   */
     var color:            String             = "EDE3CA" /* Resolved color value        */
     var secondaryColor:   String             = "C4DADB" /* Secondary color             */
@@ -73,8 +67,6 @@ struct StudioSurface: Codable, Hashable, Sendable
 ///     Stores references rather than duplicated image bytes, so removing an individual use leaves art intact
 struct StudioArtwork: Codable, Identifiable, Hashable, Sendable
 {
-
-
     var id = UUID()                                 /* Record UUID                */
     var name:           String                      /* Display or lookup name     */
     var surface:        StudioSurface               /* Artwork surface definition */
@@ -92,8 +84,6 @@ struct StudioArtwork: Codable, Identifiable, Hashable, Sendable
 ///     Keeps per-view defaults distinct from Board and List overrides
 enum StudioDestination: String, Codable, CaseIterable, Identifiable
 {
-
-
     case today = "Today", week = "Week", plans = "Plans", activity = "Activity"
     case calendar = "Calendar", search = "Search", settings = "Settings"
     var id: String /* Record or view identity */
@@ -110,8 +100,6 @@ enum StudioDestination: String, Codable, CaseIterable, Identifiable
 ///     Provides new-item defaults and per-view wallpapers while leaving unset destinations unchanged
 struct StudioSettings: Codable, Equatable
 {
-
-
     static let key                                  = /* Persistence lookup key */
         "Plenact.Studio.Settings.v1"
     static let libraryKey                           = "Plenact.Studio.Artwork.v1" /* Library key */
@@ -131,11 +119,8 @@ struct StudioSettings: Codable, Equatable
     /// @return (StudioSettings) retained choices or an unchanged default configuration
     static func load(from defaults: UserDefaults = .standard) -> StudioSettings
     {
-
-
         guard let data = defaults.data(forKey: key), let value = try? JSONDecoder().decode(Self.self, from: data) else
         {
-
             return Self()
         }
 
@@ -153,8 +138,6 @@ struct StudioSettings: Codable, Equatable
     static func apply(to card: inout KanbanCard, settings: StudioSettings = .load(),
                       defaults: UserDefaults = .standard)
     {
-
-
         guard !card.isSectionDivider else
         {
             return
@@ -165,16 +148,13 @@ struct StudioSettings: Codable, Equatable
 
         if surface == nil, card.presentation == .note
         {
-
             surface = try? CardBackgroundPortfolio.nextSurface(defaults: defaults)
         }
 
         if settings.variesNewSurfaces, card.appearance?.studioSurface == nil, let color = settings.palette.randomElement()
         {
-
             if surface == nil
             {
-
                 surface = StudioSurface(material: .color)
 
             }
@@ -187,14 +167,12 @@ struct StudioSettings: Codable, Equatable
 
         if settings.variesNewHeaders, appearance.background == nil
         {
-
             appearance.background = ItemAccent.allCases.randomElement()
 
         }
 
         if let surface
         {
-
             appearance.studioSurface = surface
 
         }

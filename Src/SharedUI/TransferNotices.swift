@@ -17,8 +17,6 @@ import SwiftUI
 ///
 struct TransferConfirmation: Equatable
 {
-
-
     ///
     /// Distinguishes successful moves from copies
     ///
@@ -28,7 +26,6 @@ struct TransferConfirmation: Equatable
     ///
     enum Action
     {
-
         case moved, copied
     }
 
@@ -38,7 +35,6 @@ struct TransferConfirmation: Equatable
 
     var message:     String /* User-facing status message */
     {
-
                 "\(action == .moved ? "Moved" : "Copied") ‘\(title)’ to \(destination)."
     }
 
@@ -55,8 +51,6 @@ struct TransferConfirmation: Equatable
 @MainActor
 final class TransferConfirmationPresenter
 {
-
-
     static let shared = TransferConfirmationPresenter() /* Shared operation value     */
     private var window:      UIWindow?                  /* Scene window for rendering */
     private var dismissTask: Task<Void, Never>?         /* Dismiss task               */
@@ -74,7 +68,6 @@ final class TransferConfirmationPresenter
     ///
     func dismiss()
     {
-
         dismissTask?.cancel()
 
         window?.isHidden = true
@@ -104,7 +97,6 @@ final class TransferConfirmationPresenter
     ///
     func showUndo(_ confirmation: TransferConfirmation, undo: @escaping () -> Bool)
     {
-
         guard
         let scene = UIApplication.shared.connectedScenes.compactMap(
             {
@@ -177,7 +169,6 @@ final class TransferConfirmationPresenter
             [weak self, weak overlay, weak mainWindow] in
             while !Task.isCancelled
             {
-
                 guard let self, let overlay, let mainWindow, self.undoOverlay === overlay else
                 {
                     return
@@ -216,7 +207,6 @@ final class TransferConfirmationPresenter
     ///
     func show(_ confirmation: TransferConfirmation)
     {
-
         guard
         let scene = UIApplication.shared.connectedScenes.compactMap(
             {
@@ -282,8 +272,6 @@ final class TransferConfirmationPresenter
 ///
 final class TransferUndoOverlay: UIView
 {
-
-
     var touchRegion: CGRect = .zero /* Touch region */
 
 
@@ -300,7 +288,6 @@ final class TransferUndoOverlay: UIView
     ///
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView?
     {
-
         guard touchRegion.contains(point) else
         {
             return nil
@@ -321,8 +308,6 @@ final class TransferUndoOverlay: UIView
 ///
 final class TransferConfirmationWindow: UIWindow
 {
-
-
     var touchRegion:           CGRect = .zero /* Touch region */
 
     override var canBecomeKey: Bool /* Become Key availability */
@@ -343,7 +328,6 @@ final class TransferConfirmationWindow: UIWindow
     ///
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView?
     {
-
         guard touchRegion.contains(point) else
         {
             return nil
@@ -364,22 +348,17 @@ final class TransferConfirmationWindow: UIWindow
 ///
 struct TransferConfirmationToast: View
 {
-
-
     let message: String /* User-facing status message */
     @State private var visible = false /* Current visibility state */
     @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
     var body: some View /* Transfer Confirmation Toast layout */
     {
-
         VStack
         {
-
             Spacer()
             HStack(alignment: .top, spacing: 12)
             {
-
                 Image(systemName: "checkmark.circle.fill").font(.title3)
                 Text(message).font(.subheadline.weight(.medium)).fixedSize(horizontal: false, vertical: true)
             }
@@ -396,10 +375,8 @@ struct TransferConfirmationToast: View
         .allowsHitTesting(false)
         .task
         {
-
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2))
             {
-
                 visible = true
 
             }
@@ -415,7 +392,6 @@ struct TransferConfirmationToast: View
 
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3))
             {
-
                 visible = false
 
             }
@@ -436,8 +412,6 @@ struct TransferConfirmationToast: View
 ///
 struct SectionUndoToast: View
 {
-
-
     let message: String               /* User-facing status message */
     let undo:    () -> Bool           /* Restore the prior edit     */
     let close:   () -> Void           /* Close callback             */
@@ -446,23 +420,18 @@ struct SectionUndoToast: View
 
     var body: some View /* Section Undo Toast layout */
     {
-
         VStack
         {
-
             Spacer()
             VStack(alignment: .leading, spacing: 8)
             {
-
                 Text(failed ? "Couldn't undo this move. Your current content has been retained." : message).font(
                     .subheadline.weight(.medium)
                 ).fixedSize(horizontal: false, vertical: true)
                 HStack
                 {
-
                     Button("Undo", systemImage: "arrow.uturn.backward")
                     {
-
                         failed = !undo()
 
                     }
@@ -484,12 +453,10 @@ struct SectionUndoToast: View
             .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
             .onGeometryChange(for: CGRect.self)
             {
-
                 $0.frame(in: .global)
             }
             action:
             {
-
                 onFrame($0)
             }
             .padding(.horizontal, 20)

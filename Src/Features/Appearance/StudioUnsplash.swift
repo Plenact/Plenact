@@ -13,8 +13,6 @@ import SwiftUI
 ///     Restricts credential-bearing requests to the Unsplash API and preserves provider credits
 enum StudioUnsplash
 {
-
-
     private static let service = "com.plenact.studio.unsplash" /* Injected operation service */
 
 
@@ -24,8 +22,6 @@ enum StudioUnsplash
     /// @return (String) configured key or an empty string
     static func key() -> String
     {
-
-
         var value: CFTypeRef?      /* Keychain result reference  */
         let query: [String: Any] = /* Keychain lookup attributes */
             [kSecClass as String: kSecClassGenericPassword,
@@ -50,8 +46,6 @@ enum StudioUnsplash
     /// @throws Keychain write failures propagate to the configuration UI
     static func saveKey(_ key: String) throws
     {
-
-
         let query: [String: Any] = /* Keychain lookup attributes */
             [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
         let cleaned              = /* Normalized input value */
@@ -71,7 +65,6 @@ enum StudioUnsplash
 
         if updated == errSecItemNotFound
         {
-
             guard SecItemAdd(query.merging(values)
                 {
                 _, new in
@@ -102,8 +95,6 @@ enum StudioUnsplash
     /// @throws Invalid hosts, missing configuration, and HTTP/network errors propagate to the picker
     static func request(_ url: URL) async throws -> Data
     {
-
-
         guard url.scheme == "https", url.host == "api.unsplash.com", !key().isEmpty else
         {
             throw URLError(.userAuthenticationRequired)
@@ -134,8 +125,6 @@ enum StudioUnsplash
     /// @throws Request or response validation failures propagate without changing artwork
     static func search(_ query: String) async throws -> [StudioRemotePhoto]
     {
-
-
         var url = /* Resource location */
             URLComponents(string: "https://api.unsplash.com/search/photos")!
 
@@ -147,7 +136,6 @@ enum StudioUnsplash
 
         return (object? ["results"] as? [[String: Any]] ?? []).compactMap
         {
-
         photo in
             guard let id = photo["id"] as? String,
             let urls = photo["urls"] as? [String: String], let imageText = urls["regular"],
@@ -185,8 +173,6 @@ enum StudioUnsplash
 ///     Keeps failed or cancelled searches from applying an image; the final surface editor tracks each use
 struct StudioUnsplashPicker: View
 {
-
-
     let onSelect: (StudioRemotePhoto) -> Void           /* Handle the selected value */
     @State private var query                       = "" /* Search text               */
     @State private var key                         =    /* Lookup or persistence key */
@@ -207,21 +193,15 @@ struct StudioUnsplashPicker: View
     ///
     var body: some View /* Studio Unsplash Picker layout */
     {
-
-
         NavigationStack
         {
-
             List
             {
-
                 Section("Unsplash configuration")
                 {
-
                     SecureField("Developer access key", text: $key).textInputAutocapitalization(.never).autocorrectionDisabled()
                     Button("Save key")
                     {
-
                         do
                         {
                             try StudioUnsplash.saveKey(key)
@@ -229,7 +209,6 @@ struct StudioUnsplashPicker: View
 
                         catch
                         {
-
                             self.error = error.localizedDescription
 
                         }
@@ -243,40 +222,33 @@ struct StudioUnsplashPicker: View
 
                 Section("Find a photograph")
                 {
-
                     TextField("Forest, sea, quiet textures…", text: $query).submitLabel(.search)
                     Button("Search")
                     {
-
                         requestTask?.cancel()
 
                         requestTask = Task
                         {
-
                             isBusy = true
 
                             defer
                             {
-
                                 isBusy = false
 
                             }
 
                             do
                             {
-
                                 photos = try await StudioUnsplash.search(query)
 
                             }
 
                             catch is CancellationError
                             {
-
                             }
 
                             catch
                             {
-
                                 self.error = "Search failed. Check the access key, connection, and API quota."
 
                             }
@@ -299,11 +271,9 @@ struct StudioUnsplashPicker: View
 
                 ForEach(photos, id: \.id)
                 {
-
                 photo in
                     VStack(alignment: .leading)
                     {
-
                         AsyncImage(url: photo.imageURL)
                         {
                         image in
@@ -317,14 +287,12 @@ struct StudioUnsplashPicker: View
                         .frame(height: 140).clipped()
                         HStack
                         {
-
                             Link(photo.photographer, destination: photo.profileURL)
                             Link("on Unsplash", destination: URL(string: "https://unsplash.com/?utm_source=plenact&utm_medium=referral")!)
                         }
                         .font(.caption)
                         Button("Use this photo")
                         {
-
                             onSelect(photo)
                             dismiss()
                         }

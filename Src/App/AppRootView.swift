@@ -20,8 +20,6 @@ import SwiftUI
 ///
 struct AppRootView: View
 {
-
-
     @AppStorage(PlanPreferencesStore.key) var planPreferencesData = /* Plan preferences data */
         Data()
     @StateObject var welcomeCue                                   = /* Welcome cue */
@@ -61,13 +59,11 @@ struct AppRootView: View
 
     var bottomToolbarLayout:              BottomToolbarLayout /* Bottom toolbar layout */
     {
-
         .configuration(isTablet: UIDevice.current.userInterfaceIdiom == .pad, compact: verticalSizeClass == .compact)
     }
 
     var bottomNavigationHeight: CGFloat /* Bottom navigation height */
     {
-
         bottomToolbarLayout.reservedHeight(bottomInset: bottomNavigationSafeInset)
     }
 
@@ -124,17 +120,12 @@ struct AppRootView: View
     ///
     var body: some View /* Primary app navigation */
     {  /* Primary Today and Board navigation shell */
-
-
         Group
         {
-
             if let workspaceRecoveryError
             {
-
                 VStack(spacing: 20)
                 {
-
                     Text("Your saved data needs recovery").font(.headline)
                     Text(workspaceRecoveryError).foregroundStyle(.secondary)
                     Button("Retry recovery")
@@ -145,7 +136,6 @@ struct AppRootView: View
             }
             else if isSwitchingWorkspace
             {
-
                 ProgressView("Preparing your workspace…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .task
@@ -167,11 +157,8 @@ struct AppRootView: View
             }
             else if hasLoadedBoard
             {
-
-
                 AppNavigationSurface
                 {
-
                     navigationContent
                 }
                 .id(workspaceGeneration)
@@ -179,7 +166,6 @@ struct AppRootView: View
             }
             else
             {
-
                 PlenactLoadingView(fadesShadow: launchShadowFading, progress: launchProgress)
                 .transition(.opacity)
             }
@@ -192,13 +178,11 @@ struct AppRootView: View
             _, destination in
             if destination != .board
             {
-
                 dailyOverview.cancel()
             }
         }
         .onDisappear
         {
-
             dailyOverview.cancel()
             dailyOverviewFade.cancel()
         }
@@ -208,13 +192,11 @@ struct AppRootView: View
 
             if protected
             {
-
                 appReturnProtectionIDs.insert(id)
                 dailyOverview.cancel()
             }
             else
             {
-
                 appReturnProtectionIDs.remove(id)
             }
         })
@@ -227,7 +209,6 @@ struct AppRootView: View
             isSwitchingWorkspace = true
 
         }, undo: {
-
             pendingNativeRestore = nil
             undoingNativeRestore = true
             isSwitchingWorkspace = true
@@ -240,7 +221,6 @@ struct AppRootView: View
             isSwitchingWorkspace = true
 
         }, undo: {
-
             pendingPortableImport = nil
             undoingPortableImport = true
             isSwitchingWorkspace = true
@@ -249,7 +229,6 @@ struct AppRootView: View
         .databaseActivityOverlay()
         .confirmationDialog("Load an example month?", isPresented: $confirmsExampleMonth, titleVisibility: .visible)
         {
-
             Button("Back Up and Load Example Month")
             {
                 switchMonthExample(restoring: false)
@@ -257,13 +236,11 @@ struct AppRootView: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text(
                                     "Your current Plenact data and local files will first be copied to an offline backup. The example month will replace your active plans. To return, choose Library + → Examples → Restore User Data. An existing original backup will be kept."
             )
@@ -272,7 +249,6 @@ struct AppRootView: View
                         "Restore your saved data?", isPresented: $confirmsRestoreUserData, titleVisibility: .visible
         )
         {
-
             Button("Restore User Data")
             {
                 switchMonthExample(restoring: true)
@@ -280,13 +256,11 @@ struct AppRootView: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text(
                                     "Restores the complete offline copy saved before the example month. Changes made in the example workspace will be replaced."
             )
@@ -300,7 +274,6 @@ struct AppRootView: View
                             {
                                 if !$0
                                 {
-
                                     workspaceNotice = nil
 
                                 }
@@ -308,10 +281,8 @@ struct AppRootView: View
                             })
         )
         {
-
             Button("OK")
             {
-
                 workspaceNotice = nil
 
             }
@@ -319,7 +290,6 @@ struct AppRootView: View
         }
         message:
         {
-
             Text(workspaceNotice ?? "")
         }
         .alert(manualWeekNotice ?? "Week ready", isPresented: Binding(get:
@@ -329,23 +299,19 @@ struct AppRootView: View
             {
                 if !$0
                 {
-
                     manualWeekNotice = nil
 
                 }
             }))
         {
-
             Button("OK", role: .cancel)
             {
-
                 manualWeekNotice = nil
 
             }
         }
         message:
         {
-
             Text("Your Week is ready, opened at its first List.")
         }
         .onChange(of: scenePhase)
@@ -353,7 +319,6 @@ struct AppRootView: View
             _, phase in
             if phase == .active
             {
-
                 welcomeCue.becameActive();
                 handleAppReturn()
                 Task
@@ -364,16 +329,13 @@ struct AppRootView: View
             }
             else
             {
-
                 dailyOverview.cancel()
                 dailyOverviewFade.cancel()
                 welcomeCue.leftForeground()
                 if phase == .background, hasLoadedBoard
                 {
-
                     if let defaults = UserDefaults(suiteName: AppDailyOpening.domain) /* Local navigation store */
                     {
-
                         AppDailyOpening.recordDeparture(at: .now, defaults: defaults)
                     }
                     appReturnSession.leftForBackground(at: .now, protected: hasProtectedAppReturnContext)
@@ -400,7 +362,6 @@ struct AppRootView: View
             route in
             if route != nil
             {
-
                 selectedDestination = .today
 
             }
@@ -408,7 +369,6 @@ struct AppRootView: View
         }
         .task
         {
-
             PlenactKeyboard.shared.install()
             Task
             {
@@ -422,8 +382,6 @@ struct AppRootView: View
 
             guard !hasLoadedBoard else
             {
-
-
                 return
             }
 
@@ -447,10 +405,8 @@ struct AppRootView: View
 
             do
             {
-
                 if var document = try PlanningCalendarStore.load()
                 {
-
                     try document.repairLegacyMondayFirstLayout()
 
                     let previous = document.weeks.first /* Previous value for comparison */
@@ -469,10 +425,8 @@ struct AppRootView: View
                 }
                 else
                 {
-
                     if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1")
                     {
-
                         _ = try JSONDecoder().decode([KanbanList].self, from: data)
 
                     }
@@ -496,7 +450,6 @@ struct AppRootView: View
             }
             catch
             {
-
                 lists = legacy
 
                 DatabaseActivity.shared.report(
@@ -509,13 +462,10 @@ struct AppRootView: View
             await Task.yield()
             if let document = preparedDocument, let current = preparedWeek
             {
-
                 do
                 {
-
                     try DailyReviewTransaction.perform
                     {
-
                         try PlanningCalendarStore.save(document)
                         try KanbanBoardPersistence.saveListsChecked(current.collection.lists)
                     }
@@ -526,7 +476,6 @@ struct AppRootView: View
 
                     if seedsFreshDemoImportance
                     {
-
                         let defaults = UserDefaults.standard /* Preference storage domain */
 
                         defaults.set(
@@ -539,7 +488,6 @@ struct AppRootView: View
                 }
                 catch
                 {
-
                     lists = legacy
 
                     DatabaseActivity.shared.report(
@@ -612,15 +560,10 @@ struct AppRootView: View
     ///
     var navigationContent: some View /* Navigation content */
     {  /* Active tab with shared navigation chrome */
-
-
         TabView(selection: $selectedDestination)
         {
-
-
             AppNavigationSurface
             {
-
                 TodayHomeView(
                     lists: $lists.activeLists,
                     archivedLists: $lists.archivedLists,
@@ -636,7 +579,6 @@ struct AppRootView: View
                     },
                     onRemoveProfile:
                     {
-
                         profile = nil
 
                         LocalProfileStore.remove()
@@ -677,7 +619,6 @@ struct AppRootView: View
             }
             .tabItem
             {
-
                 Label("Today", systemImage: "sun.max")
             }
 
@@ -693,18 +634,14 @@ struct AppRootView: View
 
             AppNavigationSurface
             {
-
                 Group
                 {
-
                     if let displayedPlanningWeek
                     {
-
                         PlanningCalendarWeekView(
                             week: displayedPlanningWeek, initialDayID: nil, initialCardID: nil,
                             onLeaveForHome:
                             {
-
                                 self.displayedPlanningWeek = nil
 
                             }, isWeekTab: true,
@@ -714,7 +651,6 @@ struct AppRootView: View
                     }
                     else
                     {
-
                         ContentView(
                             lists: $lists.activeLists,
                             archivedLists: $lists.archivedLists,
@@ -739,7 +675,6 @@ struct AppRootView: View
                             },
                             viewportOwnerID: calendarDocument?.weeks.first
                             {
-
                                 $0.startKey == calendarDocument?.currentWeekKey
                             }?.id
                         )
@@ -759,7 +694,6 @@ struct AppRootView: View
 
                     if visible
                     {
-
                         beginDailyOverview()
                     }
                 }, onInteraction: { dailyOverview.cancel() }))
@@ -776,13 +710,11 @@ struct AppRootView: View
                 _, target in
                 if target == nil
                 {
-
                     beginDailyOverview()
                 }
             }
             .tabItem
             {
-
                 Label("Board", systemImage: "rectangle.3.group")
             }
 
@@ -793,7 +725,6 @@ struct AppRootView: View
 
             AppNavigationSurface
             {
-
                 SavedCardsView(
                     planningDocument: calendarDocument,
                     revisitDestination: $activityRevisitDestination,
@@ -821,7 +752,6 @@ struct AppRootView: View
             .environment(\.appReturnResetRequest, activityReturnResetRequest)
             .tabItem
             {
-
                 Label("Activity", systemImage: "clock.arrow.circlepath")
             }
 
@@ -831,7 +761,6 @@ struct AppRootView: View
 
         .safeAreaInset(edge: .bottom, spacing: 0)
         {
-
             Color.clear
             .frame(height: isNotePresented ? 0 : bottomNavigationHeight)
             .allowsHitTesting(false)
@@ -839,13 +768,11 @@ struct AppRootView: View
         }
         .overlay
         {
-
             GeometryReader
             {
                 geometry in
                 VStack(spacing: 0)
                 {
-
                     Spacer(minLength: 0)
                     if !isNotePresented
                     {
@@ -855,7 +782,6 @@ struct AppRootView: View
                 }
                 .onAppear
                 {
-
                     bottomNavigationSafeInset = geometry.safeAreaInsets.bottom
 
                 }
@@ -891,7 +817,6 @@ struct AppRootView: View
         .environment(\.planningCalendarAccess, planningCalendarAccess)
         .environment(\.openTemplateLibrary,
         {
-
             templateLibraryRequest += 1
             selectedDestination = .lists
 
@@ -901,7 +826,6 @@ struct AppRootView: View
             OwnerImportanceControls(
                 ownerID: calendarDocument?.weeks.first
                 {
-
                     $0.startKey == calendarDocument?.currentWeekKey
                 }?.id)
         )
@@ -923,8 +847,6 @@ struct AppRootView: View
             old, updated in
             guard hasLoadedBoard else
             {
-
-
                 return
             }
 
@@ -945,8 +867,6 @@ struct AppRootView: View
             old, updated in
             do
             {
-
-
                 try PersonalCollectionStore.saveChecked(updated)
                 cleanDeletedMedia(
                     CardAttachmentStore.fileNames(in: old.flatMap(\.lists))
@@ -954,7 +874,6 @@ struct AppRootView: View
             }
             catch
             {
-
                 DatabaseActivity.shared.report("Could not save your boards: \(error.localizedDescription)")
             }
 
@@ -963,22 +882,18 @@ struct AppRootView: View
         .modifier(PlanningSharedSearchPresentation(isPresented: $showsToolbarSearch))
         .sheet(isPresented: $showsToolbarTodayPlan)
         {
-
             TodayPlanView(calendar: calendarDocument?.calendar ?? .current)
         }
         .sheet(isPresented: $showsToolbarCalendar)
         {
-
             PlanningCalendarView(onLeaveForHome:
                 {
-
                     showsToolbarCalendar = false
 
                 })
         }
         .sheet(isPresented: $showsCenterNewCardSheet)
         {
-
             QuickNoteComposer(
                 lists: $lists.activeLists,
                 initialListID: centerNewListID
@@ -1012,7 +927,6 @@ struct AppRootView: View
 
     var planningCalendarAccess: PlanningCalendarAccess? /* Planning calendar access */
     {
-
         guard let document = calendarDocument else
         {
             return nil
@@ -1022,7 +936,6 @@ struct AppRootView: View
             document: document, library: collections, saveWeek: savePlanningWeek,
             openCurrentWeek:
             {
-
                 displayedPlanningListID = nil
                 displayedPlanningWeek = nil
                 selectedDestination = .board
@@ -1032,7 +945,6 @@ struct AppRootView: View
 
             }, openToday:
             {
-
                 selectedDestination = .today
 
             },
@@ -1069,7 +981,6 @@ struct AppRootView: View
                 }
                 catch
                 {
-
                     DatabaseActivity.shared.report(
                                                             "Could not save this Plans collection: \(error.localizedDescription)");
 
@@ -1123,7 +1034,6 @@ struct AppRootView: View
 
     var cardMovementAccess: CardMovementAccess /* Card movement access */
     {
-
         let currentID = calendarDocument?.weeks.first /* Current ID */
         {
             $0.startKey == calendarDocument?.currentWeekKey
@@ -1133,7 +1043,6 @@ struct AppRootView: View
             !$0.isArchived
         } .map
         {
-
             CardMoveDestination(collectionID: nil, listID: $0.id, title: $0.title, group: "Week")
         }
 
@@ -1149,7 +1058,6 @@ struct AppRootView: View
                 !$0.isArchived
             } .map
             {
-
                 CardMoveDestination(
                     collectionID: week.id, listID: $0.id, title: "\(week.rangeTitle) / \($0.title)", group: "Calendar",
                     columnTitle: $0.title)
@@ -1165,7 +1073,6 @@ struct AppRootView: View
                 !$0.isArchived
             } .map
             {
-
                 CardMoveDestination(
                     collectionID: collection.id, listID: $0.id,
                     title: collection.kind == .list ? collection.title : "\(collection.title) / \($0.title)",
@@ -1239,8 +1146,6 @@ struct AppRootView: View
 
     var libraryTab: some View /* Library tab */
     {  /* Personal collection directory and creation actions */
-
-
         BoardListsView(
             retainedWeekLists: lists + (calendarDocument?.weeks.flatMap
                 {
@@ -1257,13 +1162,11 @@ struct AppRootView: View
             onUndoExampleWeek: undoExampleWeek,
             onLoadExampleMonth:
             {
-
                 confirmsExampleMonth = true
 
             },
             onRestoreUserData:
             {
-
                 confirmsRestoreUserData = true
 
             },
@@ -1271,7 +1174,6 @@ struct AppRootView: View
             savedPersonalCardTarget: savedPersonalCardTarget,
             onClearSavedPersonalCardTarget:
             {
-
                 savedPersonalCardTarget = nil
 
             }
@@ -1279,7 +1181,6 @@ struct AppRootView: View
         .environment(\.appReturnResetRequest, libraryReturnResetRequest)
         .tabItem
         {
-
             Label("Plans", systemImage: "books.vertical")
         }
         .tag(AppDestination.lists)
@@ -1303,16 +1204,13 @@ struct AppRootView: View
     ///
     var bottomNavigationBar: some View /* Bottom navigation bar */
     {  /* Shared tab and quick-creation controls */
-
         let layout    = bottomToolbarLayout     /* Resolved layout configuration      */
         let isCompact = layout.horizontalLabels /* Landscape-height navigation layout */
 
         return ZStack(alignment: isCompact ? .center : .top)
         {
-
             HStack(spacing: layout.rowSpacing)
             {
-
                 tabButton(.today, title: "Today", systemImage: "sun.max.fill")
                 tabButton(.board, title: "Week", systemImage: "rectangle.3.group.fill")
 
@@ -1337,25 +1235,20 @@ struct AppRootView: View
 
             newLayout
             {
-
                 Button
                 {
-
                     if selectedDestination == .today
                     {
-
                         quickCreateRequest += 1
 
                     }
                     else if selectedDestination == .lists
                     {
-
                         newLibraryListRequest += 1
 
                     }
                     else
                     {
-
                         centerNewPresentation = .card
                         centerNewListID = nil
                         showsCenterNewCardSheet = true
@@ -1365,7 +1258,6 @@ struct AppRootView: View
                 }
                 label:
                 {
-
                     Image(systemName: "rectangle.stack.badge.plus")
                     .font(.system(size: layout.newIconSize, weight: .medium))
                     .foregroundStyle(.white)
@@ -1379,7 +1271,6 @@ struct AppRootView: View
                 .buttonStyle(.plain)
                 .contextMenu
                 {
-
                     Button("New Note", systemImage: "note.text")
                     {
                         openToolbarItem(.note)
@@ -1408,8 +1299,6 @@ struct AppRootView: View
 
                 if PlanPreferencesStore.load().showsNavigationLabels
                 {
-
-
                     Text("New")
                     .font(.system(layout.labelStyle))
                     .foregroundStyle(.white.opacity(0.92))
@@ -1425,7 +1314,6 @@ struct AppRootView: View
         .frame(height: bottomNavigationHeight, alignment: isCompact ? .center : .top)
         .background(alignment: .bottom)
         {
-
             BottomToolbarBackground(
                 topInset: layout.backgroundTopInset,
                 bottomInset: max(bottomNavigationSafeInset, layout.safeAreaAllowance)
@@ -1444,7 +1332,6 @@ struct AppRootView: View
 ///     the root builder. This limits simultaneous debug-build stack allocations on physical devices
 struct AppNavigationSurface<Content: View>: View
 {
-
     private let content: () -> Content /* Content being processed */
 
 
@@ -1454,7 +1341,6 @@ struct AppNavigationSurface<Content: View>: View
     /// @return Small, stable view boundary with no navigation or persistence state of its own
     init(@ViewBuilder content: @escaping () -> Content)
     {
-
         self.content = content
 
     }
@@ -1465,7 +1351,6 @@ struct AppNavigationSurface<Content: View>: View
     /// @return Original content, preserving its bindings, environment and view identity
     var body: some View /* App Navigation Surface layout */
     {
-
         content()
     }
 }

@@ -13,7 +13,6 @@ import Foundation
 ///     Keep the native migration adapter from silently flattening future source payloads
 enum MigrationContentGuard
 {
-
     static let fields: [String: Set<String>] = [ /* Record fields under review */
         "KanbanCard": ["id", "editHistory", "word", "listTitle", "isDivider", "isTitleChecked", "editingLocked", "members", "labelIDs", "startDate", "location", "dueDate", "createdAt", "descriptionOverride", "startDateKind", "dueDateKind", "showsDueDateInList", "sectionLayout", "subtitleOverride", "checklists", "showsReactionsInPreviews", "reactions", "comments", "attachments", "coverAttachmentID", "appearance", "dismissedActivityIDs", "listDisplayFormat", "itemPresentation"],
         "KanbanList": ["id", "title", "subtitleOverride", "cards", "archivedCards", "isArchived", "appearance", "defaultItemPresentation"],
@@ -50,7 +49,6 @@ enum MigrationContentGuard
     @MainActor
     static func richText(_ value: String) throws
     {
-
         let prefix = "plenact-rich-v1:" /* Leading lookup or display text */
 
         guard value.hasPrefix(prefix), let data = Data(base64Encoded: String(value.dropFirst(prefix.count))),
@@ -103,14 +101,12 @@ enum MigrationContentGuard
     /// @throws JSON serialization errors
     static func comparable(_ value: Any, key: String = "") throws -> Any
     {
-
         if let object = value as? [String: Any]
         {
             return Dictionary(uniqueKeysWithValues: try object.map { ($0.key, try comparable($0.value, key: $0.key)) })
         }
         if let array = value as? [Any]
         {
-
             let normalized = try array.map { try comparable($0) } /* Comparison-normalized value */
 
             if ["dismissedActivityIDs", "hidden", "savedCardIDs", "completedItemIndices", "important", "bookmarked", "allDay"].contains(key)
@@ -133,7 +129,6 @@ enum MigrationContentGuard
     @MainActor
     static func check(_ value: Any, type: String) throws
     {
-
         if type == "CardAssignee", value is String
         {
             throw MigrationContentValues.Failure.invalid("legacy_manual_assignee_identity_required")
@@ -156,7 +151,6 @@ enum MigrationContentGuard
             {
                 if let original = content[active], let mirror = object[retained], !(mirror is NSNull)
                 {
-
                     let left  = /* First comparison operand */
                         try JSONSerialization.data(withJSONObject: original, options: [.fragmentsAllowed, .sortedKeys])
                     let right = /* Second comparison operand */
@@ -197,13 +191,11 @@ enum MigrationContentGuard
 
         if type == "action_content"
         {
-
             accepted = ["kind", "cardID", "detail", "url"]
 
         }
         else
         {
-
             accepted = fields[type] ?? []
 
         }
@@ -225,18 +217,15 @@ enum MigrationContentGuard
 
         for (key, child) in object where !(child is NSNull)
         {
-
             var childType = children[key] /* Child type */
 
             if key == "appearance"
             {
-
                 childType = "ItemAppearance"
 
             }
             if key == "color", type == "PersonalCollection"
             {
-
                 childType = "ProfileColor"
 
             }
@@ -256,7 +245,6 @@ enum MigrationContentGuard
             }
             if ["dismissedActivityIDs", "hidden", "order", "completedItemIndices", "savedCardIDs", "important", "bookmarked", "allDay"].contains(key), let array = child as? [Any]
             {
-
                 let encoded = /* Serialized representation */
                     try array.map { try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys]) }
 

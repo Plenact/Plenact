@@ -18,8 +18,6 @@ import Foundation
 ///
 enum KanbanBoardPersistence
 {
-
-
     /// Versioned storage key for the serialized Board snapshot
     private static let storageKey = "Plenact.Board.v1" /* Versioned local Board snapshot key */
 
@@ -38,10 +36,8 @@ enum KanbanBoardPersistence
     @MainActor
     static func waitForPendingSaves()
     {
-
         queue.sync
         {
-
             // Waiting behind earlier saves does not enqueue a write
         }
     }
@@ -61,13 +57,10 @@ enum KanbanBoardPersistence
     ///
     static func saveListsChecked(_ lists: [KanbanList], suiteName: String? = nil) throws
     {
-
-
         let data = try JSONEncoder().encode(lists) /* Encoded Board snapshot for the checked save */
 
         try queue.sync
         {
-
             let defaults = try persistenceDefaults( /* Preference storage domain */
                 suiteName: suiteName) /* Validated preferences store receiving the Board document */
 
@@ -92,15 +85,11 @@ enum KanbanBoardPersistence
     @MainActor
     static func loadListsInBackground(suiteName: String? = nil) async -> [KanbanList]
     {
-
-
         let activity  = DatabaseActivity.shared             /* Shared persistence progress and failure reporter */
         let operation = activity.begin("Loading Board...")  /* Progress identity for the pending Board load     */
 
         defer
         {
-
-
             activity.end(operation)
         }
 
@@ -108,23 +97,18 @@ enum KanbanBoardPersistence
         let result: Result<[KanbanList], Error> = /* Decoded list records */
             await withCheckedContinuation
         {
-
         continuation in /* Background load outcome delivered to the caller */
             queue.async
             {
-
                 continuation.resume(
                     returning: Result
                     {
-
                         let defaults = try persistenceDefaults( /* Preference storage domain */
                             suiteName: suiteName) /* Validated preferences store supplying the Board document */
 
                         guard let data = defaults.data(forKey: storageKey)
                         else
                         {  /* Stored Board document awaiting decoding */
-
-
                             return SampleData.lists
                         }
 
@@ -137,8 +121,6 @@ enum KanbanBoardPersistence
 
         switch result
         {
-
-
         case .success(let lists): /* Decoded Board snapshot */
             return lists
         case .failure(let error): /* Persistence or decoding failure reported to the caller */
@@ -165,8 +147,6 @@ enum KanbanBoardPersistence
     @MainActor
     static func saveListsInBackground(_ lists: [KanbanList])
     {
-
-
         enqueueSave(lists)
     }
 
@@ -188,18 +168,14 @@ enum KanbanBoardPersistence
         onSuccess: (@MainActor () -> Void)? = nil
     )
     {
-
-
         let activity  = DatabaseActivity.shared            /* Shared persistence progress and failure reporter */
         let operation = activity.begin("Saving Board...")  /* Progress identity for the queued Board save      */
 
         // A serial queue preserves snapshot order even when edits arrive faster than encoding
         queue.async
         {
-
             let result = Result /* Result being assembled */
             {  /* Success or failure of the queued persistence operation   */
-
                 let defaults = try persistenceDefaults( /* Preference storage domain */
                     suiteName: suiteName) /* Validated preferences store receiving the Board document */
                 let data = try JSONEncoder().encode( /* Encoded record bytes */
@@ -213,16 +189,12 @@ enum KanbanBoardPersistence
                 @MainActor in
                 if case .failure(let error) = result
                 {  /* Save failure surfaced through the activity reporter */
-
-
                     activity.report(
                                                             "Could not save the Board: \(error.localizedDescription) Your latest changes are not saved. Please try editing again."
                     )
                 }
                 else
                 {
-
-
                     onSuccess?()
                 }
 
@@ -248,12 +220,8 @@ enum KanbanBoardPersistence
     ///
     private static func persistenceDefaults(suiteName: String?) throws -> UserDefaults
     {
-
-
         guard let suiteName else
         {  /* Named preferences domain requested by the caller */
-
-
             return .standard
         }
 
@@ -261,8 +229,6 @@ enum KanbanBoardPersistence
         guard let defaults = UserDefaults(suiteName: suiteName)
         else
         {  /* Preferences store opened for the requested domain */
-
-
             throw CocoaError(.fileReadUnknown)
         }
 
@@ -284,15 +250,11 @@ enum KanbanBoardPersistence
     ///
     static func loadLists() -> [KanbanList]
     {
-
-
         guard let data = UserDefaults.standard.data(forKey: storageKey), /* Encoded local Board data */
 
         let lists = try? JSONDecoder().decode([KanbanList].self, from: data)
         else
         {  /* Successfully decoded lists */
-
-
             return SampleData.lists
         }
 
@@ -317,13 +279,9 @@ enum KanbanBoardPersistence
     ///
     static func saveLists(_ lists: [KanbanList])
     {
-
-
         guard let data = try? JSONEncoder().encode(lists)
         else
         {  /* Encoded Board snapshot for legacy synchronous storage */
-
-
             return
         }
 

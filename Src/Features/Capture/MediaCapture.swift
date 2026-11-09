@@ -21,8 +21,6 @@ import SwiftUI
 @MainActor
 final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelegate
 {
-
-
     @Published private(set) var isRecording    = false    /* Recording state               */
     @Published private(set) var isStarting     = false    /* Starting state                */
     @Published private(set) var isTranscribing = false    /* Transcribing state            */
@@ -46,7 +44,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     func start() async
     {
-
         guard !isStarting, !isRecording else
         {
             return
@@ -59,7 +56,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
         NotificationCenter.default.post(name: Notification.Name("Plenact.StopAudioPreview"), object: nil)
         defer
         {
-
             isStarting = false
 
         }
@@ -69,7 +65,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
         guard granted else
         {
-
             errorMessage = "Microphone access is unavailable. You can allow it in Settings → Plenact.";
 
             return
@@ -88,7 +83,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
         do
         {
-
             let session = AVAudioSession.sharedInstance() /* Current operation session */
 
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
@@ -115,7 +109,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
         }
         catch
         {
-
             try? FileManager.default.removeItem(at: url)
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
 
@@ -136,7 +129,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     func stop()
     {
-
         guard isRecording else
         {
             return
@@ -163,7 +155,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool)
     {
-
         Task
         {
             @MainActor [weak self] in
@@ -175,7 +166,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             self.stop()
             if !flag
             {
-
                 self.errorMessage = "Recording was interrupted. Preview the recording before saving."
 
             }
@@ -195,7 +185,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     func transcribe() async
     {
-
         guard let url = recordingURL, !isRecording, !isTranscribing else
         {
             return
@@ -223,7 +212,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
         guard status == .authorized else
         {
-
             isTranscribing = false
             errorMessage =
                                     "Speech recognition is unavailable. You can enable it in Settings, keep the recording as Audio, or enter the transcript yourself."
@@ -233,7 +221,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
         guard let recognizer = SFSpeechRecognizer(locale: .current), recognizer.isAvailable else
         {
-
             isTranscribing = false;
 
             errorMessage = "Speech recognition isn't available right now. Retry later or save Audio instead.";
@@ -263,14 +250,12 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
                 if let text
                 {
-
                     self.transcript = text
 
                 }
 
                 if final || failed
                 {
-
                     self.generation += 1
                     self.isTranscribing = false;
                     self.speechTask = nil;
@@ -278,7 +263,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
                     self.timeout?.cancel()
                     if failed && !final
                     {
-
                         self.errorMessage =
                                                                         "Transcription couldn't finish. Review any text below, retry, or save Audio instead."
 
@@ -327,7 +311,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     func cancelTranscription()
     {
-
         generation += 1;
 
         speechTask?.cancel();
@@ -354,7 +337,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     func audioData() throws -> Data
     {
-
         guard let recordingURL, !isRecording else
         {
             throw CocoaError(.fileReadNoSuchFile)
@@ -373,7 +355,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
     ///
     func cleanup()
     {
-
         cancelTranscription();
         stop()
         if let recordingURL
@@ -398,8 +379,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 ///
 struct QuickCapturePhoto: Identifiable
 {
-
-
     let id = UUID()           /* Record UUID             */
     let data:          Data   /* Encoded or loaded bytes */
     let fileExtension: String /* File extension          */
@@ -422,8 +401,6 @@ struct QuickCapturePhoto: Identifiable
 @MainActor
 enum QuickCaptureMediaCommit
 {
-
-
     ///
     /// @fcn        QuickCaptureMediaCommit.save
     /// @brief      Import capture media and commit its attachment records
@@ -445,15 +422,12 @@ enum QuickCaptureMediaCommit
         commit: ([KanbanAttachment]) -> Bool
     ) throws -> Bool
     {
-
         var saved: [KanbanAttachment] = [] /* Saved state under review */
 
         do
         {
-
             for photo in photos
             {
-
                 guard photo.image != nil else
                 {
                     throw CocoaError(.fileReadCorruptFile)
@@ -470,7 +444,6 @@ enum QuickCaptureMediaCommit
 
             if let audio
             {
-
                 guard !audio.isEmpty else
                 {
                     throw CocoaError(.fileReadCorruptFile)
@@ -489,7 +462,6 @@ enum QuickCaptureMediaCommit
         }
         catch
         {
-
             try? CardAttachmentStore.removeDeletedFiles(Set(saved.flatMap(\.storedFileNames)), keeping: [])
             throw error
         }
@@ -508,8 +480,6 @@ enum QuickCaptureMediaCommit
 ///
 struct QuickCaptureCamera: UIViewControllerRepresentable
 {
-
-
     let onPhoto: (UIImage) -> Void              /* Photo callback                 */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
@@ -539,7 +509,6 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     ///
     func makeUIViewController(context: Context) -> UIImagePickerController
     {
-
         let picker = UIImagePickerController() /* Native selection control */
 
         picker.sourceType = .camera;
@@ -561,7 +530,6 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     ///
     func updateUIViewController(_ controller: UIImagePickerController, context: Context)
     {
-
     }
 
 
@@ -574,8 +542,6 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     ///
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate
     {
-
-
         let parent: QuickCaptureCamera /* Latest representable bindings */
 
 
@@ -591,7 +557,6 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
         ///
         init(parent: QuickCaptureCamera)
         {
-
             self.parent = parent
 
         }
@@ -628,7 +593,6 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         )
         {
-
             if let image = info[.originalImage] as? UIImage
             {
                 parent.onPhoto(image)

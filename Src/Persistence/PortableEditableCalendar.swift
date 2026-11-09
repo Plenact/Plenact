@@ -12,7 +12,6 @@ import Foundation
 ///     Rebuild day mappings without treating renamed Lists as a source of calendar identity
 extension PortableEditableContent
 {
-
     /// @fcn PortableEditableContent.record
     /// @brief Require an existing canonical record of the expected kind
     /// @param[in] id Canonical UUID
@@ -21,7 +20,6 @@ extension PortableEditableContent
     /// @throws Missing or mismatched target
     func record(_ id: String, kind: String) throws -> [String: Any]
     {
-
         guard let value = records.first(where: { $0["id"] as? String == id }), value["record_type"] as? String == kind else
         {
             throw Failure.invalid
@@ -37,7 +35,6 @@ extension PortableEditableContent
     /// @throws Invalid date
     func civil(_ text: String) throws -> Date
     {
-
         let formatter = DateFormatter() /* Date or value formatter */
 
         formatter.calendar = Calendar(identifier: .gregorian)
@@ -62,7 +59,6 @@ extension PortableEditableContent
     /// @throws Missing metadata, conflicting ownership or invalid date/reference values
     func calendarDocument(selections: [[String: Any]], accountID: String) throws -> PlanningCalendarDocument?
     {
-
         let indexes = /* Positions of matching entries */
             records.filter { $0["record_type"] as? String == "calendar_index" }
 
@@ -101,7 +97,6 @@ extension PortableEditableContent
 
         for id in weekIDs
         {
-
             let week = try record(id, kind: "calendar_week") /* Dated Week under consideration */
 
             guard let value = week["payload"] as? [String: Any] else
@@ -212,7 +207,6 @@ extension PortableEditableContent
     /// @return Number of distinct occurrences
     private func checklistOccurrences(_ id: UUID, in lists: [KanbanChecklist]) -> Int
     {
-
         var count = 0 /* Number of entries */
 
         for list in lists
@@ -221,19 +215,16 @@ extension PortableEditableContent
             {
                 if item.id == id
                 {
-
                     count += 1
 
                 }
                 if case .actionDetail(let detail) = item.content
                 {
-
                     count += checklistOccurrences(id, in: detail.checklists)
 
                 }
                 else if let detail = item.retainedDetail
                 {
-
                     count += checklistOccurrences(id, in: detail.checklists)
 
                 }
@@ -250,7 +241,6 @@ extension PortableEditableContent
     /// @throws Invalid order, ownership, default routine or focus references
     func templateLibrary(accountID: String) throws -> PlanningRoutineLibrary?
     {
-
         let libraries = /* Filtered libraries entries */
             records.filter { $0["record_type"] as? String == "template_library" }
 
@@ -281,7 +271,6 @@ extension PortableEditableContent
 
         for id in ids
         {
-
             let document = try record(id, kind: "planning_template") /* Source document snapshot */
 
             guard let payload = document["payload"] as? [String: Any] else
@@ -356,7 +345,6 @@ extension PortableEditableContent
 
             if let focus = payload["example_focus"] as? [String: Any]
             {
-
                 let owned       = /* Content belonging to this owner */
                     Set(nativeOwner.lists.flatMap { $0.cards + $0.archivedCards }.map(\.id))
                 var mappedFocus = /* Mapped focus */

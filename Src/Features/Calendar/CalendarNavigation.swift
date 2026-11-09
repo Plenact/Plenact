@@ -18,8 +18,6 @@ import SwiftUI
 ///
 struct PlanningCalendarAccess
 {
-
-
     var document:        PlanningCalendarDocument          /* Working calendar document    */
     var library:         [PersonalCollection]              /* Retained library contents    */
     var saveWeek:        (DatedPlanningWeek) -> Bool       /* Save week callback           */
@@ -64,7 +62,6 @@ struct PlanningCalendarAccess
 
     var searchableItems: [PlanningSearchResult] /* Searchable items */
     {
-
         document.weeks.flatMap
         {
             week in
@@ -79,7 +76,6 @@ struct PlanningCalendarAccess
                     !$0.isSectionDivider
                 } .map
                 {
-
                     PlanningSearchResult(
                         weekKey: week.startKey, collectionID: week.id, collectionTitle: week.rangeTitle,
                         listID: list.id, listTitle: list.title, card: $0)
@@ -103,7 +99,6 @@ struct PlanningCalendarAccess
                     !$0.isSectionDivider
                 } .map
                 {
-
                     PlanningSearchResult(
                         weekKey: nil, collectionID: collection.id, collectionTitle: collection.title,
                         listID: list.id, listTitle: list.title, card: $0)
@@ -126,8 +121,6 @@ struct PlanningCalendarAccess
 ///
 struct PlanningCalendarAccessKey: EnvironmentKey
 {
-
-
     static let defaultValue: PlanningCalendarAccess? = nil /* Fallback environment value */
 
 }
@@ -142,8 +135,6 @@ struct PlanningCalendarAccessKey: EnvironmentKey
 ///
 struct PlanningDisplayedWeekKey: EnvironmentKey
 {
-
-
     static let defaultValue: String? = nil /* Fallback environment value */
 
 }
@@ -157,11 +148,8 @@ struct PlanningDisplayedWeekKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var planningDisplayedWeekKey: String? /* Planning displayed week key */
     {
-
         get
         {
             self[PlanningDisplayedWeekKey.self]
@@ -169,7 +157,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[PlanningDisplayedWeekKey.self] = newValue
 
         }
@@ -178,7 +165,6 @@ extension EnvironmentValues
 
     var planningCalendarAccess: PlanningCalendarAccess? /* Planning calendar access */
     {
-
         get
         {
             self[PlanningCalendarAccessKey.self]
@@ -186,7 +172,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[PlanningCalendarAccessKey.self] = newValue
 
         }
@@ -204,8 +189,6 @@ extension EnvironmentValues
 ///
 struct PlanningWeekRoute: Identifiable
 {
-
-
     var week:   DatedPlanningWeek /* Dated Week under consideration */
     var dayID:  Int? = nil        /* Day ID                         */
     var cardID: Int? = nil        /* Owner-local Card identifier    */
@@ -227,8 +210,6 @@ struct PlanningWeekRoute: Identifiable
 ///
 struct PlanningCalendarWeekView: View
 {
-
-
     @State var week:    DatedPlanningWeek /* Dated Week under consideration */
     let initialDayID:   Int? /* Initial day ID */
     let initialCardID:  Int? /* Initial card ID */
@@ -269,7 +250,6 @@ struct PlanningCalendarWeekView: View
 
     var body: some View /* Dated Week workspace */
     {
-
         ContentView(
             lists: $week.collection.lists.activeLists, archivedLists: $week.collection.lists.archivedLists,
             boardTargetListID: $targetListID, boardTargetCardID: $targetCardID,
@@ -311,26 +291,20 @@ struct PlanningCalendarWeekView: View
         .id(week.id)
         .safeAreaInset(edge: .bottom)
         {
-
             if !isWeekTab
             {
-
                 HStack
                 {
-
                     if !isStored
                     {
-
                         Button("Save empty week", systemImage: "square.and.arrow.down")
                         {
-
                             var next = week; /* Candidate next state */
 
                             next.explicitlySaved = true
 
                             if access?.saveWeek(next) == true
                             {
-
                                 week = next
 
                             }
@@ -340,14 +314,12 @@ struct PlanningCalendarWeekView: View
                     }
                     else
                     {
-
                         Text(week.rangeTitle).font(.caption).foregroundStyle(.secondary)
                     }
 
                     Spacer()
                     Button("This week", systemImage: "arrow.uturn.backward")
                     {
-
                         access?.openCurrentWeek();
                         dismiss();
                         onLeaveForHome()
@@ -369,14 +341,12 @@ struct PlanningCalendarWeekView: View
         .environment(
             \.planningHomeExit,
             {
-
                 dismiss();
                 onLeaveForHome()
             }
         )
         .task
         {
-
             guard !didOpenInitialTarget else
             {
                 return
@@ -386,10 +356,8 @@ struct PlanningCalendarWeekView: View
 
             if !isStored, let access
             {
-
                 do
                 {
-
                     let date     = /* Date used by this operation */
                         PlanningDate.date(week.startKey, calendar: access.document.calendar)!
                     let prepared = /* Prepared operation input */
@@ -407,7 +375,6 @@ struct PlanningCalendarWeekView: View
                 }
                 catch
                 {
-
                     DatabaseActivity.shared.report(
                                                             "Could not create this week from its template. Your saved plans were retained.")
                     dismiss();
@@ -418,24 +385,20 @@ struct PlanningCalendarWeekView: View
 
             if let initialBoardListID
             {
-
                 targetListID = initialBoardListID
 
             }
 
             if let initialDayID
             {
-
                 if let initialCardID
                 {
-
                     targetListID = initialDayID;
                     targetCardID = initialCardID
 
                 }
                 else
                 {
-
                     dayID = initialDayID;
                     showsDay = true
 
@@ -449,7 +412,6 @@ struct PlanningCalendarWeekView: View
             _, id in
             if let id
             {
-
                 targetListID = id;
                 targetCardID = nil
 
@@ -467,7 +429,6 @@ struct PlanningCalendarWeekView: View
             // Merely opening a draft never writes; an actual edit saves the week
             if isRevertingEdit
             {
-
                 isRevertingEdit = false;
 
                 return
@@ -475,7 +436,6 @@ struct PlanningCalendarWeekView: View
 
             if access?.saveWeek(updated) != true
             {
-
                 isRevertingEdit = true;
                 week = old
 
@@ -490,7 +450,6 @@ struct PlanningCalendarWeekView: View
                     $0.startKey == week.startKey
                 }), updated != week
             {
-
                 week = updated
 
             }
@@ -498,10 +457,8 @@ struct PlanningCalendarWeekView: View
         }
         .fullScreenCover(isPresented: $showsDay, onDismiss: finishDayExit)
         {
-
             if let dayID
             {
-
                 TodayListDetailView(
                     onOpenSelectedWeek:
                     {
@@ -514,7 +471,6 @@ struct PlanningCalendarWeekView: View
                     savedCardIDs: $week.collection.savedCardIDs, listID: dayID, currentUserName: "You",
                     onClose:
                     {
-
                         if initialDayID != nil && initialCardID == nil
                         {
                             dayExit = .calendar
@@ -525,7 +481,6 @@ struct PlanningCalendarWeekView: View
                     },
                     onOpenWeek:
                     {
-
                         targetListID = dayID
                         targetCardID = nil
                         showsDay = false
@@ -554,7 +509,6 @@ struct PlanningCalendarWeekView: View
                             $0.value == dayID
                         }).flatMap
                     {
-
                         PlanningDate.date($0.key)
                     }
                 )
@@ -570,7 +524,6 @@ struct PlanningCalendarWeekView: View
     /// Complete navigation only after the inner Day presentation finishes dismissing
     private func finishDayExit()
     {
-
         let exit = dayExit /* Pending destination */
 
         dayExit = nil
@@ -605,8 +558,6 @@ struct PlanningCalendarWeekView: View
 ///
 struct PlanningDirectItemReturnKey: EnvironmentKey
 {
-
-
     static let defaultValue: (() -> Void)? = nil /* Fallback environment callback */
 
 }
@@ -621,11 +572,8 @@ struct PlanningDirectItemReturnKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var planningDirectItemReturn: (() -> Void)? /* Planning direct item return callback */
     {
-
         get
         {
             self[PlanningDirectItemReturnKey.self]
@@ -633,7 +581,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[PlanningDirectItemReturnKey.self] = newValue
 
         }
@@ -652,8 +599,6 @@ extension EnvironmentValues
 ///
 struct PlanningHomeExitKey: EnvironmentKey
 {
-
-
     static let defaultValue: (() -> Void)? = nil /* Fallback environment callback */
 
 }
@@ -668,11 +613,8 @@ struct PlanningHomeExitKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var planningHomeExit: (() -> Void)? /* Planning home exit callback */
     {
-
         get
         {
             self[PlanningHomeExitKey.self]
@@ -680,7 +622,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[PlanningHomeExitKey.self] = newValue
 
         }
@@ -698,8 +639,6 @@ extension EnvironmentValues
 ///
 struct PlanningSearchRoute: Identifiable
 {
-
-
     let result: TodaySearchResult /* Result being assembled */
 
     var id:     String /* Record or view identity */
@@ -719,8 +658,6 @@ struct PlanningSearchRoute: Identifiable
 ///
 struct PlanningSearchLibraryView: View
 {
-
-
     @State var collection: PersonalCollection /* Personal collection record */
     let initialListID:     Int /* Initial list ID */
     let initialCardID:     Int? /* Initial card ID */
@@ -735,7 +672,6 @@ struct PlanningSearchLibraryView: View
 
     var body: some View /* Planning Search Library layout */
     {
-
         ContentView(
             lists: $collection.lists.activeLists, archivedLists: $collection.lists.archivedLists,
             boardTargetListID: $targetListID, boardTargetCardID: $targetCardID, savedCardIDs: $collection.savedCardIDs,
@@ -777,14 +713,12 @@ struct PlanningSearchLibraryView: View
         .environment(
             \.planningHomeExit,
             {
-
                 dismiss();
                 onLeaveForHome()
             }
         )
         .task
         {
-
             guard !didOpenInitialTarget else
             {
                 return
@@ -800,7 +734,6 @@ struct PlanningSearchLibraryView: View
             old, next in
             if isRevertingEdit
             {
-
                 isRevertingEdit = false;
 
                 return
@@ -808,7 +741,6 @@ struct PlanningSearchLibraryView: View
 
             if old != next, access?.saveLibrary(next) != true
             {
-
                 isRevertingEdit = true;
                 collection = old
 
@@ -823,7 +755,6 @@ struct PlanningSearchLibraryView: View
                     $0.id == collection.id
                 }), next != collection
             {
-
                 collection = next
 
             }
@@ -844,8 +775,6 @@ struct PlanningSearchLibraryView: View
 ///
 struct PlanningChecklistLink: View
 {
-
-
     let itemID:  UUID                                         /* Item ID                     */
     let cardID:  Int                                          /* Owner-local Card identifier */
     let title:   String                                       /* User-facing title           */
@@ -855,7 +784,6 @@ struct PlanningChecklistLink: View
 
     private var destination: (DatedPlanningWeek, Int)? /* Destination for the operation */
     {
-
         guard let owner = access?.document.checklistLinkWeeks? [itemID] ?? ownerID,
         let week = access?.document.weeks.first(where:
             {
@@ -879,16 +807,13 @@ struct PlanningChecklistLink: View
 
     var body: some View /* Planning Checklist Link layout */
     {
-
         Button
         {
-
             showsCard = true
 
         }
         label:
         {
-
             Image(systemName: "link").frame(width: 28, height: 28).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -896,14 +821,11 @@ struct PlanningChecklistLink: View
         .accessibilityLabel("Open linked card: \(title)")
         .fullScreenCover(isPresented: $showsCard)
         {
-
             if let (week, listID) = destination
             {
-
                 PlanningCalendarWeekView(
                     week: week, initialDayID: listID, initialCardID: cardID, onLeaveForHome:
                     {
-
                         showsCard = false
 
                     })
@@ -925,8 +847,6 @@ struct PlanningChecklistLink: View
 ///
 struct PlanningDaySelection
 {
-
-
     let date:   Date              /* Date used by this operation    */
     let week:   DatedPlanningWeek /* Dated Week under consideration */
     let listID: Int               /* Owner-local List identifier    */
@@ -945,7 +865,6 @@ struct PlanningDaySelection
     ///
     static func resolve(_ date: Date, document: PlanningCalendarDocument) -> Self?
     {
-
         let date = document.calendar.startOfDay(for: date) /* Date used by this operation    */
         let week =                                         /* Dated Week under consideration */
             document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
@@ -956,7 +875,6 @@ struct PlanningDaySelection
 
     static func resolve(_ date: Date, in week: DatedPlanningWeek, calendar: Calendar) -> Self?
     {
-
         guard let id = week.dayListIDs[PlanningDate.key(date, calendar: calendar)],
         week.collection.lists.contains(where:
             {
@@ -982,8 +900,6 @@ struct PlanningDaySelection
 ///
 struct PlanningSelectedDayView: View
 {
-
-
     let selection:              PlanningDaySelection /* Current selection state */
     let currentUserName:        String /* Current user name */
     let returnDestinationTitle: String /* Return destination title */
@@ -1016,7 +932,6 @@ struct PlanningSelectedDayView: View
         onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil
     )
     {
-
         self.selection = selection
         self.currentUserName = currentUserName
         self.returnDestinationTitle = returnDestinationTitle
@@ -1030,7 +945,6 @@ struct PlanningSelectedDayView: View
 
     var body: some View /* Planning Selected Day layout */
     {
-
         TodayListDetailView(
             onSelectDay: onSelectDay,
             lists: $week.collection.lists.activeLists,
@@ -1039,7 +953,6 @@ struct PlanningSelectedDayView: View
             currentUserName: currentUserName, onClose: onClose,
             onOpenWeek:
             {
-
                 if let onOpenSelectedWeek
                 {
                     if let target = PlanningDaySelection.resolve(selection.date, in: week,
@@ -1084,7 +997,6 @@ struct PlanningSelectedDayView: View
         .environment(\.planningDisplayedWeekKey, week.startKey)
         .task
         {
-
             guard let access, access.document.week(for: selection.date) == nil else
             {
                 return
@@ -1092,7 +1004,6 @@ struct PlanningSelectedDayView: View
 
             do
             {
-
                 let prepared = /* Prepared operation input */
                     try PlanningRoutineStore.newWeek(for: selection.date, calendar: access.document.calendar)
 
@@ -1108,7 +1019,6 @@ struct PlanningSelectedDayView: View
             }
             catch
             {
-
                 DatabaseActivity.shared.report(
                                                 "Could not create this day from its week template. Your saved plans were retained.")
                 onClose()
@@ -1120,7 +1030,6 @@ struct PlanningSelectedDayView: View
             old, updated in
             if isRevertingEdit
             {
-
                 isRevertingEdit = false;
 
                 return
@@ -1128,7 +1037,6 @@ struct PlanningSelectedDayView: View
 
             if access?.saveWeek(updated) != true
             {
-
                 isRevertingEdit = true;
                 week = old
 
@@ -1143,7 +1051,6 @@ struct PlanningSelectedDayView: View
                     $0.startKey == week.startKey
                 }), updated != week
             {
-
                 week = updated
 
             }

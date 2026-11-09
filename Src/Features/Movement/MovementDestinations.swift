@@ -13,7 +13,6 @@ import UniformTypeIdentifiers
 /// Carries the destination identity of a saved move back to the open editor
 struct CardMoveResult
 {
-
     let card: KanbanCard /* Persisted destination record */
     let ownerID: UUID   /* Destination collection or Week */
     let listID: Int     /* Destination List identity */
@@ -26,10 +25,8 @@ struct CardMoveResult
     func saveChange(using access: PlanningCalendarAccess,
         _ change: (inout PersonalCollection, Int, Int) -> Void) -> Bool
     {
-
         func apply(to collection: inout PersonalCollection) -> Bool
         {
-
             guard collection.isActive,
                   let list = collection.lists.firstIndex(where: { $0.id == listID && !$0.isArchived }),
                   let item = collection.lists[list].cards.firstIndex(where:
@@ -68,8 +65,6 @@ struct CardMoveResult
 ///
 struct CardMovementAccess
 {
-
-
     var destinations:      [CardMoveDestination]                                     = /* Available operation destinations */
         []
     var move:              ((KanbanCard, UUID?, CardMoveDestination) -> CardMoveResult?)?       = /* Move callback */
@@ -93,8 +88,6 @@ struct CardMovementAccess
 ///
 struct CardMovementAccessKey: EnvironmentKey
 {
-
-
     static let defaultValue = CardMovementAccess() /* Fallback environment value */
 
 }
@@ -109,8 +102,6 @@ struct CardMovementAccessKey: EnvironmentKey
 ///
 struct CardMovementSourceKey: EnvironmentKey
 {
-
-
     static let defaultValue: UUID? = nil /* Fallback environment value */
 
 }
@@ -125,11 +116,8 @@ struct CardMovementSourceKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var cardMovementAccess: CardMovementAccess /* Card movement access */
     {
-
         get
         {
             self[CardMovementAccessKey.self]
@@ -137,7 +125,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[CardMovementAccessKey.self] = newValue
 
         }
@@ -146,7 +133,6 @@ extension EnvironmentValues
 
     var cardMovementSource: UUID? /* Card movement source */
     {
-
         get
         {
             self[CardMovementSourceKey.self]
@@ -154,7 +140,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[CardMovementSourceKey.self] = newValue
 
         }
@@ -173,12 +158,9 @@ extension EnvironmentValues
 ///
 struct SectionMoveSheet: View
 {
-
-
     let heading: KanbanCard   /* Section heading text */
     var onMoved: () -> Void = /* Moved callback       */
     {
-
     }
 
     @Environment(\.cardMovementAccess) private var movement /* Owner-qualified transfer context */
@@ -194,7 +176,6 @@ struct SectionMoveSheet: View
 
     private var destinations: [CardMoveDestination] /* Available operation destinations */
     {
-
         movement.destinations.filter
         {
             item in
@@ -226,7 +207,6 @@ struct SectionMoveSheet: View
                     $0.id == item.listID
                 })?.cards.contains(where:
                 {
-
                     $0.id == heading.id && $0.createdAt == heading.createdAt
                 }) != true
         }
@@ -235,7 +215,6 @@ struct SectionMoveSheet: View
 
     private var destinationDay: Date? /* Destination day */
     {
-
         guard let destination, let document = planning?.document else
         {
             return nil
@@ -262,16 +241,12 @@ struct SectionMoveSheet: View
 
     var body: some View /* Section Move layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Section
                 {
-
                     Text(
                                                             "Move “" + (heading.sectionHeading ?? "Section")
                                                             + "” and everything beneath it up to the next named section.")
@@ -279,26 +254,21 @@ struct SectionMoveSheet: View
 
                 Section("Destination")
                 {
-
                     Toggle("Choose another day", isOn: $chooseDate)
                     if chooseDate
                     {
-
                         DatePicker("Day", selection: $date, displayedComponents: .date).datePickerStyle(.graphical)
                     }
                     else
                     {
-
                         Picker("List", selection: $destination)
                         {
-
                             Text("Choose a list").tag(CardMoveDestination?.none)
                             ForEach(["Week", "Calendar", "Plans"], id: \.self)
                             {
                                 group in
                                 Section(group)
                                 {
-
                                     ForEach(destinations.filter
                                         {
                                             $0.group == group
@@ -320,10 +290,8 @@ struct SectionMoveSheet: View
 
                 if chooseDate || destinationDay != nil
                 {
-
                     Section("Dates")
                     {
-
                         Toggle("Shift dates to destination day", isOn: $shiftDates)
                         Text(
                             shiftDates
@@ -337,7 +305,6 @@ struct SectionMoveSheet: View
 
                 Section
                 {
-
                     Text("An Undo action remains available after moving, including when you navigate to another view.")
                     .font(.footnote).foregroundStyle(.secondary)
                 }
@@ -347,7 +314,6 @@ struct SectionMoveSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -359,21 +325,17 @@ struct SectionMoveSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Move")
                     {
-
                         let succeeded: Bool /* Successful operation result */
 
                         if chooseDate
                         {
-
                             succeeded = movement.moveSectionToDate?(heading, source, date, shiftDates) == true
 
                         }
                         else if let destination
                         {
-
                             succeeded =
                             movement.moveSection?(heading, source, destination, shiftDates && destinationDay != nil)
                             == true
@@ -381,7 +343,6 @@ struct SectionMoveSheet: View
                         }
                         else
                         {
-
                             return
                         }
 
@@ -392,7 +353,6 @@ struct SectionMoveSheet: View
                         }
                         else
                         {
-
                             failed = true
 
                         }
@@ -403,16 +363,13 @@ struct SectionMoveSheet: View
             }
             .alert("Section couldn't be moved", isPresented: $failed)
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text("Your content has been retained. Check the destination and try again.")
             }
 
@@ -432,12 +389,9 @@ struct SectionMoveSheet: View
 ///
 struct CardDestinationMenu: View
 {
-
-
     let card:    KanbanCard   /* Card under consideration */
     var onMoved: () -> Void = /* Moved callback           */
     {
-
     }
 
     var onCardMoved: ((CardMoveResult) -> Void)? = nil /* Follow the saved move in an open editor */
@@ -455,7 +409,6 @@ struct CardDestinationMenu: View
 
     private var destinations: [CardMoveDestination] /* Available operation destinations */
     {
-
         access.destinations
     }
 
@@ -466,7 +419,6 @@ struct CardDestinationMenu: View
 
     private func isCurrentDestination(_ destination: CardMoveDestination) -> Bool
     {
-
         let currentWeek = calendarAccess?.document.weeks.first
         {
             $0.startKey == calendarAccess?.document.currentWeekKey
@@ -487,7 +439,6 @@ struct CardDestinationMenu: View
 
     private func completeMove(_ result: CardMoveResult)
     {
-
         if let onCardMoved
         {
             onCardMoved(result)
@@ -500,27 +451,21 @@ struct CardDestinationMenu: View
 
     var body: some View /* Card Destination Menu layout */
     {
-
         if card.sectionHeading != nil, access.moveSection != nil
         {
-
             Button
             {
-
                 showsSectionMove = true
 
             }
             label:
             {
-
                 if let locationTitle
                 {
-
                     SlideableHeaderText(text: locationTitle).font(.caption).foregroundStyle(.secondary).italic()
                 }
                 else
                 {
-
                     Label("Move section to…", systemImage: "arrowshape.turn.up.right")
                 }
 
@@ -533,16 +478,13 @@ struct CardDestinationMenu: View
         }
         else if access.move != nil
         {
-
             Menu
             {
-
                 ForEach(["Week", "Calendar", "Plans"], id: \.self)
                 {
                     group in
                     Menu(group)
                     {
-
                         ForEach(destinations.filter
                             {
                                 $0.group == group
@@ -551,7 +493,6 @@ struct CardDestinationMenu: View
                             destination in
                             Button(destination.title)
                             {
-
                                 if let result = access.move?(card, currentSource, destination)
                                 {
                                     completeMove(result)
@@ -570,10 +511,8 @@ struct CardDestinationMenu: View
 
                 if access.moveToDate != nil
                 {
-
                     Button("Choose a date…", systemImage: "calendar")
                     {
-
                         showsDatePicker = true
 
                     }
@@ -583,28 +522,22 @@ struct CardDestinationMenu: View
             }
             label:
             {
-
                 if let locationTitle
                 {
-
                     SlideableHeaderText(text: locationTitle).font(.caption).foregroundStyle(.secondary).italic()
                 }
                 else
                 {
-
                     Label("Move \(card.displayFormat.title.lowercased())", systemImage: "arrowshape.turn.up.right")
                 }
 
             }
             .sheet(isPresented: $showsDatePicker)
             {
-
                 NavigationStack
                 {
-
                     Form
                     {
-
                         DatePicker("Move to", selection: $selectedMoveDate, displayedComponents: .date).datePickerStyle(
                             .graphical)
                     }
@@ -612,12 +545,10 @@ struct CardDestinationMenu: View
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar
                     {
-
                         ToolbarItem(placement: .cancellationAction)
                         {
                             Button("Cancel")
                             {
-
                                 showsDatePicker = false
 
                             }
@@ -626,13 +557,10 @@ struct CardDestinationMenu: View
 
                         ToolbarItem(placement: .confirmationAction)
                         {
-
                             Button("Move")
                             {
-
                                 if let result = access.moveToDate?(card, currentSource, selectedMoveDate)
                                 {
-
                                     showsDatePicker = false;
 
                                     completeMove(result)

@@ -20,8 +20,6 @@ import SwiftUI
 ///
 struct PersonalSavedCardTarget: Equatable
 {
-
-
     let collectionID: UUID /* Owning personal collection         */
     let listID:       Int  /* Containing collection-local list   */
     let cardID:       Int  /* Collection-local bookmarked record */
@@ -38,8 +36,6 @@ struct PersonalSavedCardTarget: Equatable
 ///
 struct SavedCardResult: Identifiable
 {
-
-
     let card:      KanbanCard /* Saved card data           */
     let listID:    Int        /* List opened when selected */
     let listTitle: String     /* Containing list title     */
@@ -70,8 +66,6 @@ struct SavedCardResult: Identifiable
 ///
 enum ActivityFocus: String, CaseIterable, Identifiable
 {
-
-
     case saved = "Saved", dueSoon = "Due soon", labels = "By label"
     var id: String /* Record or view identity */
     {
@@ -80,10 +74,8 @@ enum ActivityFocus: String, CaseIterable, Identifiable
 
     var symbol: String /* Selected symbol name */
     {
-
         switch self
         {
-
         case .saved:
                     "bookmark";
 
@@ -108,8 +100,6 @@ enum ActivityFocus: String, CaseIterable, Identifiable
 ///
 enum ActivityFocusSelection
 {
-
-
     ///
     /// @fcn        ActivityFocusSelection.isDueSoon
     /// @brief      Find unfinished date-bearing work due before the upcoming horizon
@@ -124,7 +114,6 @@ enum ActivityFocusSelection
     ///
     static func isDueSoon(_ card: KanbanCard, now: Date = .now, calendar: Calendar = .current) -> Bool
     {
-
         guard !card.isSectionDivider, !card.isTitleChecked, card.dueDateKind.includesDate, let due = card.dueDate,
         let horizon = calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: now))
         else
@@ -149,7 +138,6 @@ enum ActivityFocusSelection
     ///
     static func dueReason(_ card: KanbanCard, now: Date = .now, calendar: Calendar = .current) -> String
     {
-
         guard let due = card.dueDate else
         {
             return ""
@@ -157,7 +145,6 @@ enum ActivityFocusSelection
 
         if due < calendar.startOfDay(for: now) || (card.dueDateKind.includesTime && due < now)
         {
-
             return "Overdue · " + card.dueDateLabel
         }
 
@@ -180,8 +167,6 @@ enum ActivityFocusSelection
 ///
 enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 {
-
-
     case recent, bookmarked, archived
     var id: String /* Record or view identity */
     {
@@ -190,10 +175,8 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 
     var title: String /* User-facing title */
     {
-
         switch self
         {
-
         case .recent:
                     "Recently viewed";
 
@@ -208,10 +191,8 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 
     var symbol: String /* Selected symbol name */
     {
-
         switch self
         {
-
         case .recent:
                     "clock.arrow.circlepath";
 
@@ -226,10 +207,8 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 
     var detail: String /* Owned action detail */
     {
-
         switch self
         {
-
         case .recent:
                     "Pick up where you left off."
         case .bookmarked:
@@ -252,35 +231,27 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 ///
 struct ToolbarRevisitMenu: View
 {
-
-
     let onChoose: (ToolbarRevisitDestination) -> Void /* Choose callback */
 
     var body:     some View /* Toolbar Revisit Menu layout */
     {
-
         VStack(alignment: .leading, spacing: 4)
         {
-
             Text("Revisit").font(.headline).accessibilityAddTraits(.isHeader).padding(.bottom, 8)
             ForEach(ToolbarRevisitDestination.allCases)
             {
                 choice in
                 Button
                 {
-
                     onChoose(choice)
                 }
                 label:
                 {
-
                     HStack(spacing: 12)
                     {
-
                         Image(systemName: choice.symbol).frame(width: 24).foregroundStyle(.secondary)
                         VStack(alignment: .leading, spacing: 3)
                         {
-
                             Text(choice.title).font(.subheadline)
                             Text(choice.detail).font(.caption).foregroundStyle(.secondary)
                         }
@@ -310,8 +281,6 @@ struct ToolbarRevisitMenu: View
 ///
 struct SavedCardsView: View
 {
-
-
     let planningDocument:   PlanningCalendarDocument?             /* Planning document   */
     var revisitDestination: Binding<ToolbarRevisitDestination?> = /* Revisit destination */
         .constant(nil)
@@ -348,21 +317,17 @@ struct SavedCardsView: View
 
     private var availableFocusItems: [ActivityRecentResult] /* Available focus items */
     {
-
         var items: [ActivityRecentResult] = [] /* Items being processed */
 
         for week in planningDocument?.weeks ?? []
         {
-
             let current = /* Current operation snapshot */
                 week.startKey == planningDocument?.currentWeekKey
 
             for list in (current ? lists : week.collection.lists) where !list.isArchived
             {
-
                 for card in list.cards where !card.isSectionDivider
                 {
-
                     items.append(
                         ActivityRecentResult(
                             item: LibraryRecentItem(collectionID: week.id, cardID: card.id), card: card, list: list,
@@ -375,13 +340,10 @@ struct SavedCardsView: View
 
         for collection in collections where collection.isActive
         {
-
             for list in collection.lists where !list.isArchived
             {
-
                 for card in list.cards where !card.isSectionDivider
                 {
-
                     items.append(
                         ActivityRecentResult(
                             item: LibraryRecentItem(collectionID: collection.id, cardID: card.id), card: card,
@@ -400,7 +362,6 @@ struct SavedCardsView: View
 
     private var availableFocusLabels: [KanbanLabel] /* Available focus labels */
     {
-
         let assigned = Set(availableFocusItems.flatMap /* Mapped assigned values */
             {
                 $0.card.labelIDs
@@ -419,7 +380,6 @@ struct SavedCardsView: View
 
     private var selectedFocusLabel: KanbanLabel? /* Selected focus label */
     {
-
         availableFocusLabels.first
         {
             $0.id == selectedLabelID
@@ -429,7 +389,6 @@ struct SavedCardsView: View
 
     private var focusedItems: [ActivityRecentResult] /* Focused items */
     {
-
         let items = availableFocusItems.filter /* Items being processed */
         {
             matches($0.card.word, $0.location)
@@ -437,7 +396,6 @@ struct SavedCardsView: View
 
         switch focus
         {
-
         case .saved:
             return []
         case .dueSoon:
@@ -446,10 +404,8 @@ struct SavedCardsView: View
                 ActivityFocusSelection.isDueSoon($0.card, calendar: focusCalendar)
             } .sorted
             {
-
                 if $0.card.dueDate != $1.card.dueDate
                 {
-
                     return ($0.card.dueDate ?? .distantFuture) < ($1.card.dueDate ?? .distantFuture)
                 }
 
@@ -473,13 +429,10 @@ struct SavedCardsView: View
 
     private var focusHeading: some View /* Focus heading */
     {
-
         Menu
         {
-
             Picker("Show items", selection: $focus)
             {
-
                 ForEach(ActivityFocus.allCases)
                 {
                     option in
@@ -491,10 +444,8 @@ struct SavedCardsView: View
         }
         label:
         {
-
             HStack(spacing: 8)
             {
-
                 Label(focus.rawValue, systemImage: focus.symbol).font(.title2.weight(.semibold))
                 Image(systemName: "chevron.down").font(.caption.weight(.semibold))
             } .foregroundStyle(.primary).frame(minHeight: 44)
@@ -506,28 +457,22 @@ struct SavedCardsView: View
 
     private var focusContent: some View /* Focus content */
     {
-
         VStack(alignment: .leading, spacing: 12)
         {
-
             if focus == .labels
             {
-
                 Menu
                 {
-
                     ForEach(availableFocusLabels)
                     {
                         label in
                         Button
                         {
-
                             selectedLabelID = label.id
 
                         }
                         label:
                         {
-
                             Label(label.name, systemImage: selectedLabelID == label.id ? "checkmark" : "tag")
                         }
 
@@ -536,18 +481,14 @@ struct SavedCardsView: View
                 }
                 label:
                 {
-
                     HStack
                     {
-
                         if let label = selectedFocusLabel
                         {
-
                             KanbanLabelChip(label: label)
                         }
                         else
                         {
-
                             Text("Choose a label")
                         }
 
@@ -559,14 +500,12 @@ struct SavedCardsView: View
             }
             else
             {
-
                 Text("Unfinished items that are overdue or due within the next 7 days.")
                 .font(.caption).foregroundStyle(.secondary)
             }
 
             if focusedItems.isEmpty
             {
-
                 Text(
                     focus == .labels
                     ? (availableFocusLabels.isEmpty
@@ -582,20 +521,16 @@ struct SavedCardsView: View
                 result in
                 Button
                 {
-
                     openRecent(result)
                 }
                 label:
                 {
-
                     HStack(alignment: .top, spacing: 12)
                     {
-
                         Image(systemName: result.card.presentation == .note ? "note.text" : "rectangle")
                         .foregroundStyle(Color.accentColor)
                         VStack(alignment: .leading, spacing: 4)
                         {
-
                             Text(result.card.word).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
                             Text(result.location).font(.caption).foregroundStyle(.secondary)
                             Text(
@@ -626,8 +561,6 @@ struct SavedCardsView: View
     ///
     private struct ActivityRecentResult: Identifiable
     {
-
-
         let item:      LibraryRecentItem  /* Item under consideration       */
         let card:      KanbanCard         /* Card under consideration       */
         let list:      KanbanList         /* List under consideration       */
@@ -656,14 +589,12 @@ struct SavedCardsView: View
     ///
     private func matches(_ title: String, _ location: String) -> Bool
     {
-
         query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         || (title + " " + location).localizedStandardContains(query.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private var recents: [ActivityRecentResult] /* Recently accessed items */
     {
-
         let items = /* Items being processed */
         recentData.isEmpty
         ? ActivityRecentStore.load()
@@ -678,7 +609,6 @@ struct SavedCardsView: View
                 }),
             let list = collection.lists.first(where:
                 {
-
                     !$0.isArchived && $0.cards.contains(where:
                         {
                             $0.id == item.cardID && !$0.isSectionDivider
@@ -690,7 +620,6 @@ struct SavedCardsView: View
                 }),
             matches(card.word, collection.title + " " + list.title)
             {
-
                 return ActivityRecentResult(
                     item: item, card: card, list: list,
                     location: collection.title == list.title ? collection.title : collection.title + " · " + list.title,
@@ -713,7 +642,6 @@ struct SavedCardsView: View
             guard
             let list = source.first(where:
                 {
-
                     !$0.isArchived && $0.cards.contains(where:
                         {
                             $0.id == item.cardID && !$0.isSectionDivider
@@ -747,35 +675,27 @@ struct SavedCardsView: View
     ///
     private func openRecent(_ result: ActivityRecentResult)
     {
-
         historicalTarget = result
 
     }
 
     private var recentSection: some View /* Recent section */
     {
-
         VStack(alignment: .leading, spacing: 10)
         {
-
             HStack
             {
-
                 if revisit == nil
                 {
-
                     Button
                     {
-
                         withAnimation(reduceRecentMotion ? nil : .easeInOut(duration: 0.2))
                         {
-
                             usesSquareRecentCards.toggle()
                         }
                     }
                     label:
                     {
-
                         Text("Recent").font(.headline)
                     }
                     .buttonStyle(.plain)
@@ -790,10 +710,8 @@ struct SavedCardsView: View
 
                 if !recents.isEmpty
                 {
-
                     Button("Clear")
                     {
-
                         confirmsClear = true
                     }
                     .font(.subheadline)
@@ -804,7 +722,6 @@ struct SavedCardsView: View
 
             if recents.isEmpty
             {
-
                 Text(
                     query.isEmpty
                     ? "Recently opened Cards and Notes will appear here." : "No recent items match your search."
@@ -813,30 +730,23 @@ struct SavedCardsView: View
             }
             else
             {
-
                 ScrollView(.horizontal, showsIndicators: false)
                 {
-
                     HStack(spacing: 10)
                     {
-
                         ForEach(recents)
                         {
                             result in
                             Button
                             {
-
                                 openRecent(result)
                             }
                             label:
                             {
-
                                 VStack(alignment: .leading, spacing: usesSquareRecentCards ? 6 : 8)
                                 {
-
                                     if showsCovers, let cover = result.card.coverAttachment
                                     {
-
                                         CardCoverPreview(attachment: cover, height: usesSquareRecentCards ? 40 : 64)
                                             .frame(height: usesSquareRecentCards ? 40 : 64).clipShape(
                                             RoundedRectangle(cornerRadius: 8))
@@ -895,7 +805,6 @@ struct SavedCardsView: View
     ///
     private var savedCards: [SavedCardResult] /* Saved cards */
     {  /* Bookmarked cards paired with their containing lists */
-
         lists.flatMap
         {
             list in
@@ -904,8 +813,6 @@ struct SavedCardsView: View
                 card in
                 guard savedCardIDs.contains(card.id), !card.isSectionDivider, matches(card.word, list.title) else
                 {
-
-
                     return nil
                 }
 
@@ -928,7 +835,6 @@ struct SavedCardsView: View
     ///
     private var archivedCollections: [PersonalCollection] /* Archived collections */
     {
-
         collections.filter
         {
             $0.isArchived == true && matches($0.title, "")
@@ -938,10 +844,8 @@ struct SavedCardsView: View
 
     private var personalSavedCards: [PersonalCollectionBookmarkedCard] /* Personal saved cards */
     {  /* Active personal bookmarks for Saved */
-
         collections.filter(\.isActive).flatMap(\.bookmarkedCards).filter
         {
-
             matches($0.card.word, $0.collectionTitle + " " + $0.listTitle)
         }
 
@@ -960,25 +864,19 @@ struct SavedCardsView: View
     ///
     private var activityHeader: some View /* Activity header */
     {
-
         VStack(alignment: .leading, spacing: 16)
         {
-
             VStack(alignment: .leading, spacing: 4)
             {
-
                 HStack
                 {
-
                     Text("Activity").font(.largeTitle.weight(.bold))
                     Spacer()
                     Button
                     {
-
                         showsSearch.toggle();
                         if !showsSearch
                         {
-
                             query = ""
 
                         }
@@ -986,17 +884,14 @@ struct SavedCardsView: View
                     }
                     label:
                     {
-
                         Image(systemName: "magnifyingglass")
                     }
                     .accessibilityLabel("Search Activity")
                     Menu
                     {
-
                         Toggle("Show cover previews", isOn: $showsCovers)
                         Button("Clear recent history", systemImage: "trash", role: .destructive)
                         {
-
                             confirmsClear = true
 
                         }
@@ -1004,7 +899,6 @@ struct SavedCardsView: View
                     }
                     label:
                     {
-
                         Image(systemName: "ellipsis.circle")
                     }
                     .accessibilityLabel("Activity options")
@@ -1012,7 +906,6 @@ struct SavedCardsView: View
 
                 if let revisit
                 {
-
                     Text(revisit.detail)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -1024,7 +917,6 @@ struct SavedCardsView: View
 
             if showsSearch
             {
-
                 TextField("Find in Activity", text: $query)
                 .textFieldStyle(.roundedBorder)
                 .submitLabel(.search)
@@ -1032,15 +924,12 @@ struct SavedCardsView: View
 
             if revisit != nil
             {
-
                 HStack
                 {
-
                     Text(revisit?.title ?? "").font(.title2.weight(.semibold))
                     Spacer()
                     Button("All Activity")
                     {
-
                         revisitDestination.wrappedValue = nil
 
                     }
@@ -1068,25 +957,18 @@ struct SavedCardsView: View
     ///
     private var activityBrowserContents: some View /* Activity browser contents */
     {
-
         VStack(alignment: .leading, spacing: 16)
         {
-
             if revisit == nil && focus != .saved
             {
-
                 focusContent
             }
             else if revisit == nil || revisit == .bookmarked
             {
-
                 VStack(alignment: .leading, spacing: 10)
                 {
-
                     if savedCards.isEmpty && personalSavedCards.isEmpty
                     {
-
-
                         Label(
                             query.isEmpty ? "No saved items yet" : "No saved items match",
                             systemImage: "bookmark"
@@ -1098,10 +980,8 @@ struct SavedCardsView: View
                     }
                     else
                     {
-
                         if !savedCards.isEmpty
                         {
-
                             Text("Week")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.secondary)
@@ -1110,30 +990,24 @@ struct SavedCardsView: View
                                 result in
                                 Button
                                 {
-
                                     if let item = availableFocusItems.first(where:
                                         {
-
                                             $0.isCurrent && $0.list.id == result.listID
                                             && $0.card.id == result.card.id
                                         })
                                     {
-
                                         openRecent(item)
                                     }
 
                                 }
                                 label:
                                 {
-
                                     HStack(spacing: 12)
                                     {
-
                                         Image(systemName: "bookmark.fill")
                                         .foregroundStyle(.orange)
                                         VStack(alignment: .leading, spacing: 3)
                                         {
-
                                             Text(result.card.word)
                                             .foregroundStyle(.primary)
                                             Text(result.listTitle)
@@ -1158,7 +1032,6 @@ struct SavedCardsView: View
                                 .accessibilityHint("Opens this saved item.")
                                 .accessibilityActions
                                 {
-
                                     Button("Archive Card")
                                     {
                                         onArchiveCard(result.card.id)
@@ -1166,7 +1039,6 @@ struct SavedCardsView: View
 
                                     Button("Delete Card")
                                     {
-
                                         deletingCard = result.card
 
                                     }
@@ -1180,7 +1052,6 @@ struct SavedCardsView: View
 
                         if !personalSavedCards.isEmpty
                         {
-
                             Text("Plans")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.secondary)
@@ -1189,30 +1060,24 @@ struct SavedCardsView: View
                                 result in
                                 Button
                                 {
-
                                     if let item = availableFocusItems.first(where:
                                         {
-
                                             $0.item.collectionID == result.collectionID
                                             && $0.list.id == result.listID && $0.card.id == result.card.id
                                         })
                                     {
-
                                         openRecent(item)
                                     }
 
                                 }
                                 label:
                                 {
-
                                     HStack(spacing: 12)
                                     {
-
                                         Image(systemName: "bookmark.fill")
                                         .foregroundStyle(.orange)
                                         VStack(alignment: .leading, spacing: 3)
                                         {
-
                                             Text(result.card.word)
                                             .foregroundStyle(.primary)
                                             Text(
@@ -1259,29 +1124,22 @@ struct SavedCardsView: View
             if (revisit == .archived || (revisit == nil && focus == .saved))
             && collections.contains(where:
                 {
-
-
                     $0.isArchived == true
                 })
             {
-
                 VStack(alignment: .leading, spacing: 12)
                 {
-
                     Text("Archived Collections").font(.title2.weight(.semibold))
                     ForEach(archivedCollections)
                     {
                         board in
                         HStack
                         {
-
                             Image(systemName: "archivebox").foregroundStyle(.secondary)
                             VStack(alignment: .leading, spacing: 4)
                             {
-
                                 Button(board.title)
                                 {
-
                                     inspectingBoard = board
 
                                 }
@@ -1305,7 +1163,6 @@ struct SavedCardsView: View
                             {
                                 Button("Delete", systemImage: "trash", role: .destructive)
                                 {
-
                                     deletingBoard = board
 
                                 }
@@ -1330,7 +1187,6 @@ struct SavedCardsView: View
 
             if revisit == .archived && archivedCollections.isEmpty
             {
-
                 ContentUnavailableView(
                     "No archived collections", systemImage: "archivebox",
                     description: Text(
@@ -1356,11 +1212,8 @@ struct SavedCardsView: View
     ///
     var body: some View /* Activity and saved-item browser */
     {  /* Saved-card directory and navigation destinations */
-
-
         ZStack
         {
-
             TodayPaperBackground()
             StudioWorkspaceBackground(destination: .activity).ignoresSafeArea()
 
@@ -1378,10 +1231,8 @@ struct SavedCardsView: View
 
                 VStack(alignment: .leading, spacing: 16)
                 {
-
                     ScrollView(.vertical)
                     {
-
                         activityHeader
                             .fixedSize(horizontal: false, vertical: true)
                             .onGeometryChange(for: CGFloat.self)
@@ -1390,7 +1241,6 @@ struct SavedCardsView: View
                             }
                             action:
                             {
-
                                 activityHeaderHeight = $0
 
                             }
@@ -1401,16 +1251,13 @@ struct SavedCardsView: View
 
                     if revisit == nil
                     {
-
                         focusHeading
                     }
 
                     if hasBrowser
                     {
-
                         ScrollView(.vertical)
                         {
-
                             activityBrowserContents
                         }
                         .scrollBounceBehavior(.basedOnSize)
@@ -1422,7 +1269,6 @@ struct SavedCardsView: View
                     }
                     else
                     {
-
                         Spacer(minLength: 0)
                     }
                 }
@@ -1447,7 +1293,6 @@ struct SavedCardsView: View
         }
         .onAppear
         {
-
             focusLabelLibrary = LabelLibraryStore.load()
 
         }
@@ -1456,7 +1301,6 @@ struct SavedCardsView: View
             _, choice in
             if choice != nil
             {
-
                 query = "";
                 showsSearch = false;
                 focus = .saved
@@ -1469,7 +1313,6 @@ struct SavedCardsView: View
             _, value in
             if value == .labels && selectedFocusLabel == nil
             {
-
                 selectedLabelID = availableFocusLabels.first?.id
 
             }
@@ -1483,7 +1326,6 @@ struct SavedCardsView: View
                     $0.id == selectedLabelID
                 })
             {
-
                 selectedLabelID = labels.first?.id
 
             }
@@ -1491,7 +1333,6 @@ struct SavedCardsView: View
         }
         .confirmationDialog("Clear recent history?", isPresented: $confirmsClear, titleVisibility: .visible)
         {
-
             Button("Clear recent history", role: .destructive)
             {
                 ActivityRecentStore.clear()
@@ -1500,7 +1341,6 @@ struct SavedCardsView: View
         }
         message:
         {
-
             Text("Removes recent shortcuts from Activity and Plans. Your cards, notes, and Saved items stay intact.")
         }
         .fullScreenCover(item: $historicalTarget)
@@ -1508,12 +1348,10 @@ struct SavedCardsView: View
             result in
             if let week = result.week
             {
-
                 PlanningCalendarWeekView(
                     week: week, initialDayID: result.list.id, initialCardID: result.card.id,
                     onLeaveForHome:
                     {
-
                         historicalTarget = nil
 
                     })
@@ -1523,12 +1361,10 @@ struct SavedCardsView: View
                     $0.id == result.item.collectionID && $0.isActive
                 })
             {
-
                 PlanningSearchLibraryView(
                     collection: collection, initialListID: result.list.id, initialCardID: result.card.id,
                     onLeaveForHome:
                     {
-
                         historicalTarget = nil
 
                     })
@@ -1546,7 +1382,6 @@ struct SavedCardsView: View
                             {
                                 if !$0
                                 {
-
                                     deletingBoard = nil
 
                                 }
@@ -1555,14 +1390,10 @@ struct SavedCardsView: View
                         ), titleVisibility: .visible
         )
         {
-
             Button("Delete \(deletingBoard?.kind.rawValue ?? "item")", role: .destructive)
             {
-
                 if let deletingBoard, !deletingBoard.isPrimaryList
                 {  /* Archived collection awaiting permanent deletion */
-
-
                     _ = onDeleteBoard(deletingBoard.id)
 
                 }
@@ -1575,7 +1406,6 @@ struct SavedCardsView: View
 
             Button("Cancel", role: .cancel)
             {
-
                 deletingBoard = nil
 
             }
@@ -1583,7 +1413,6 @@ struct SavedCardsView: View
         }
         message:
         {
-
             Text(
                                     "Permanently deletes this retained collection, active and archived lists/cards, and bookmarks. This cannot be undone."
             )
@@ -1599,7 +1428,6 @@ struct SavedCardsView: View
                             {
                                 if !$0
                                 {
-
                                     deletingCard = nil
 
                                 }
@@ -1608,14 +1436,10 @@ struct SavedCardsView: View
                         ), titleVisibility: .visible
         )
         {
-
             Button("Delete Card", role: .destructive)
             {
-
                 if let deletingCard
                 {  /* Saved Week card awaiting permanent deletion */
-
-
                     _ = onDeleteCard(deletingCard.id)
 
                 }
@@ -1628,7 +1452,6 @@ struct SavedCardsView: View
 
             Button("Cancel", role: .cancel)
             {
-
                 deletingCard = nil
 
             }
@@ -1636,7 +1459,6 @@ struct SavedCardsView: View
         }
         message:
         {
-
             Text("Permanently deletes the card and its bookmark from Week. This cannot be undone.")
         }
 
@@ -1660,20 +1482,15 @@ struct SavedCardsView: View
                         let index = collections.firstIndex(
                             where:
                             {  /* Position of the archived collection to mutate */
-
-
                                 $0.id == updated.id
                             })
                         else
                         {
-
                             return
                         }
 
                         do
                         {
-
-
                             var snapshot = collections /* Directory snapshot saved before publishing archive changes */
 
                             snapshot[index] = updated
@@ -1685,7 +1502,6 @@ struct SavedCardsView: View
                         }
                         catch
                         {
-
                             DatabaseActivity.shared.report(
                                                                                     "Could not delete archived content: \(error.localizedDescription) It has been retained."
                             )

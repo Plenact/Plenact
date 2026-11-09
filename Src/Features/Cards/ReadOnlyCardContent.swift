@@ -20,7 +20,6 @@ import UniformTypeIdentifiers
 ///
 struct ReadOnlyCardContent: View
 {
-
     @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
@@ -31,19 +30,15 @@ struct ReadOnlyCardContent: View
 
     var body: some View /* Read Only Card Content layout */
     {
-
         ScrollView
         {
-
             VStack(alignment: .leading, spacing: 18)
             {
-
                 Label("Read-only", systemImage: "lock.fill")
                 .font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
                 .accessibilityIdentifier("card.editingLocked")
                 if showsUnlockHint
                 {
-
                     Text("Use Unlock editing in the actions menu to make changes.")
                     .font(.caption).foregroundStyle(.secondary)
                 }
@@ -63,15 +58,12 @@ struct ReadOnlyCardContent: View
 
                 if let cover = card.coverAttachment
                 {
-
                     Button
                     {
-
                         onOpenAttachment(cover)
                     }
                     label:
                     {
-
                         CardCoverPreview(attachment: cover)
                     }
                     .buttonStyle(.plain).accessibilityLabel("View cover")
@@ -82,7 +74,6 @@ struct ReadOnlyCardContent: View
 
                 if !PlanRichText.plain(body).isEmpty
                 {
-
                     Text(PlanRichText.display(body)).textSelection(.enabled)
                 }
 
@@ -90,26 +81,22 @@ struct ReadOnlyCardContent: View
 
                 if let start = card.startDate
                 {
-
                     Label("Start: " + card.startDateKind.label(for: start), systemImage: "calendar")
                 }
 
                 if let due = card.dueDate
                 {
-
                     Label("Due: " + card.dueDateKind.label(for: due), systemImage: "calendar.badge.clock")
                 }
 
                 if !card.checklists.isEmpty
                 {
-
                     Divider()
                     ReadOnlyChecklistContent(checklists: card.checklists)
                 }
 
                 if !card.labelIDs.isEmpty
                 {
-
                     Text("Labels").font(.headline)
                     ForEach(labels.labels.filter
                         {
@@ -123,7 +110,6 @@ struct ReadOnlyCardContent: View
 
                 if !card.members.isEmpty
                 {
-
                     Text("Members").font(.headline)
                     ForEach(card.members)
                     {
@@ -134,20 +120,16 @@ struct ReadOnlyCardContent: View
 
                 if !(card.attachmentsExcludingCover).isEmpty
                 {
-
                     Text("Attachments").font(.headline)
                     ScrollView(.horizontal)
                     {
-
                         HStack
                         {
-
                             ForEach(card.attachmentsExcludingCover)
                             {
                                 attachment in
                                 if let url = attachment.url
                                 {
-
                                     Link(destination: url)
                                     {
                                         CardAttachmentThumbnail(attachment: attachment)
@@ -156,15 +138,12 @@ struct ReadOnlyCardContent: View
                                 }
                                 else
                                 {
-
                                     Button
                                     {
-
                                         onOpenAttachment(attachment)
                                     }
                                     label:
                                     {
-
                                         CardAttachmentThumbnail(attachment: attachment)
                                     }
                                     .buttonStyle(.plain).accessibilityLabel("View attachment")
@@ -181,7 +160,6 @@ struct ReadOnlyCardContent: View
                 ItemReactionPreview(card: card)
                 if !card.comments.isEmpty
                 {
-
                     Divider()
                     Text("Comments").font(.headline)
                     ForEach(card.comments)
@@ -189,7 +167,6 @@ struct ReadOnlyCardContent: View
                         comment in
                         VStack(alignment: .leading, spacing: 4)
                         {
-
                             Text(comment.author).font(.subheadline.bold())
                             Text(PlanRichText.display(comment.body)).textSelection(.enabled)
                         }
@@ -216,29 +193,23 @@ struct ReadOnlyCardContent: View
 ///
 struct ReadOnlyChecklistContent: View
 {
-
-
     let checklists: [KanbanChecklist] /* Owned checklist groups */
 
     var body: some View /* Read Only Checklist Content layout */
     {
-
         ForEach(checklists)
         {
             checklist in
             VStack(alignment: .leading, spacing: 10)
             {
-
                 Text(checklist.title).font(.headline)
                 ForEach(Array(checklist.items.enumerated()), id: \.element.id)
                 {
                     index, item in
                     VStack(alignment: .leading, spacing: 6)
                     {
-
                         HStack(alignment: .top)
                         {
-
                             Image(
                                 systemName: checklist.completedItemIndices.contains(index)
                                 ? "checkmark.square.fill" : "square"
@@ -254,7 +225,6 @@ struct ReadOnlyChecklistContent: View
 
                         if case .actionDetail(let detail) = item.content
                         {
-
                             Text(PlanRichText.display(detail.description)).textSelection(.enabled)
                             AnyView(ReadOnlyChecklistContent(checklists: detail.checklists)).padding(.leading, 16)
                             ForEach(detail.comments)

@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 enum PortableEditedExport
 {
-
     static let fields = /* Record fields under review */
         ["word": "title", "descriptionOverride": "description_override",
         "subtitleOverride": "subtitle_override", "isTitleChecked": "completed", "editingLocked": "editing_locked",
@@ -27,7 +26,6 @@ enum PortableEditedExport
     ///     Share reference and preservation rules without accepting unrelated source stores
     private enum PlanningFamily: String
     {
-
         case daily = "daily_plan"
         case weekly = "weekly_review"
         case periodic = "periodic_review"
@@ -39,7 +37,6 @@ enum PortableEditedExport
     ///     Prevent an apparently successful package from omitting an unconverted edit
     enum Failure: LocalizedError
     {
-
         case unsupported, inconsistent, structureChanged
 
         /// @fcn Failure.errorDescription
@@ -47,7 +44,6 @@ enum PortableEditedExport
         /// @return Actionable guidance with no source values
         var errorDescription: String? /* Readable failure explanation */
         {
-
             switch self
             {
             case .unsupported:
@@ -69,19 +65,16 @@ enum PortableEditedExport
     /// @throws Malformed JSON
     static func nativeJSON(_ bytes: Data, store: String? = nil) throws -> Any
     {
-
         var value = try JSONSerialization.jsonObject(with: bytes) /* Decoded JSON object */
 
         if store == "Plenact.LibraryImportant.v1", let entries = value as? [[String: Any]]
         {
-
             value = entries.map { entry in
 
                 var entry = entry /* Entry being processed */
 
                 if entry["level"] == nil
                 {
-
                     entry["level"] = 1
 
                 }
@@ -95,7 +88,6 @@ enum PortableEditedExport
 
                 if leftOwner != rightOwner
                 {
-
                     return leftOwner < rightOwner
                 }
                 return (left["cardID"] as? Int ?? Int.min) < (right["cardID"] as? Int ?? Int.min)
@@ -108,7 +100,6 @@ enum PortableEditedExport
             {
                 if let raw = profile[key]
                 {
-
                     let bytes = /* Encoded record bytes */
                         try JSONSerialization.data(withJSONObject: raw, options: .fragmentsAllowed)
                     let color = /* Resolved color value */
@@ -124,7 +115,6 @@ enum PortableEditedExport
         }
         if ["Plenact.DailyPlans.v1", "Plenact.WeeklyReviews.v1", "Plenact.PeriodicReviews.v1"].contains(store ?? "")
         {
-
             value = planningTimestampComparison(value)
 
         }
@@ -140,10 +130,8 @@ enum PortableEditedExport
     /// @return Comparable subtree with integer epoch milliseconds for known timestamp fields
     private static func planningTimestampComparison(_ value: Any) -> Any
     {
-
         if let object = value as? [String: Any]
         {
-
             let fields: Set<String> = /* Record fields under review */
                 ["updatedAt", "savedAt", "visionCompletedAt", "completedAt",
                 "recordedAt", "sourceCreatedAt"]
@@ -152,13 +140,11 @@ enum PortableEditedExport
 
                 if fields.contains(entry.key), let number = entry.value as? NSNumber
                 {
-
                     result[entry.key] = floor((number.doubleValue + Date.timeIntervalBetween1970AndReferenceDate) * 1000)
 
                 }
                 else
                 {
-
                     result[entry.key] = entry.value
 
                 }
@@ -166,7 +152,6 @@ enum PortableEditedExport
         }
         if let array = value as? [Any]
         {
-
             return array.map(planningTimestampComparison)
         }
         return value
@@ -179,7 +164,6 @@ enum PortableEditedExport
     /// @return Normalized subtree; user-authored arrays remain ordered
     private static func normalized(_ value: Any) -> Any
     {
-
         if let object = value as? [String: Any]
         {
             return object.mapValues { normalized($0) }.reduce(into: [String: Any]()) { result, entry in
@@ -190,20 +174,17 @@ enum PortableEditedExport
                 if sets.contains(entry.key), let values = entry.value as? [Any],
                    values.allSatisfy({ $0 is String || $0 is NSNumber })
                 {
-
                     result[entry.key] = values.sorted { String(describing: $0) < String(describing: $1) }
 
                 }
                 else if ["createdAt", "addedAt"].contains(entry.key),
                         let number = entry.value as? NSNumber
                 {
-
                     result[entry.key] = floor((number.doubleValue + Date.timeIntervalBetween1970AndReferenceDate) * 1000)
 
                 }
                 else if entry.key == "checklistLinkWeeks", let pairs = entry.value as? [String], pairs.count % 2 == 0
                 {
-
                     let grouped = /* Values grouped by identity */
                         stride(from: 0, to: pairs.count, by: 2).map { [pairs[$0], pairs[$0 + 1]] }
 
@@ -212,7 +193,6 @@ enum PortableEditedExport
                 }
                 else
                 {
-
                     result[entry.key] = entry.value
 
                 }
@@ -233,7 +213,6 @@ enum PortableEditedExport
     /// @return Structural value equality
     private static func equal(_ left: Any, _ right: Any) -> Bool
     {
-
         NSDictionary(dictionary: ["value": left]).isEqual(to: ["value": right])
     }
 
@@ -247,7 +226,6 @@ enum PortableEditedExport
     /// @throws Structural edits, unsupported values or divergent duplicate Card copies
     private static func reconcile(_ old: Any, _ current: Any, edits: inout [Int: [String: Any]]) throws
     {
-
         if equal(old, current)
         {
             return
@@ -256,7 +234,6 @@ enum PortableEditedExport
         {
             if let id = before["id"] as? Int, before["word"] is String, after["id"] as? Int == id
             {
-
                 let allowed = /* Permitted input values */
                     Set(fields.keys).union(scheduleFields).union(["editHistory"])
                 let keys    = Set(before.keys).union(after.keys) /* Keys used by this operation */
@@ -324,7 +301,6 @@ enum PortableEditedExport
     /// @throws Invalid history, timestamp or encoded value
     private static func history(_ value: Any) throws -> Any
     {
-
         if value is NSNull
         {
             return NSNull()
@@ -358,14 +334,12 @@ enum PortableEditedExport
                 {
                     if let bytes
                     {
-
                         output[key] = ["encoding": "base64", "source_format": "swift_codable_json",
                             "source_model_version": "local_legacy", "data": bytes.base64EncodedString()]
 
                     }
                     else
                     {
-
                         output[key] = NSNull()
 
                     }
@@ -387,7 +361,6 @@ enum PortableEditedExport
     /// @throws Unsupported precision, date range or timezone
     static func schedule(_ value: Any, kind: String, zone: String) throws -> Any
     {
-
         let kinds = /* Supported record kinds */
             ["date": "date", "time": "time", "dateAndTime": "date_and_time"]
 
@@ -418,7 +391,6 @@ enum PortableEditedExport
     /// @return Canonical history or explicit null
     static func historyValue(_ entries: [CardEditRecord]?) throws -> Any
     {
-
         guard let entries else
         {
             return NSNull()
@@ -439,15 +411,12 @@ enum PortableEditedExport
     private static func reviewRhythm(assembly: [String: Any], current: [String: Any],
         baseline: PortableWorkspaceCandidate) throws -> [String: Any]
     {
-
         let key = "Plenact.ReviewRhythm.v1"  /* Explicitly supported planning preference store */
 
         guard let bytes = current[key] as? Data else
         {
-
             guard current[key] == nil, baseline.values[key] == nil else
             {
-
                 throw Failure.unsupported
             }
             return assembly
@@ -462,7 +431,6 @@ enum PortableEditedExport
 
         guard let raw, Set(raw.keys) == Set(fields.keys) else
         {
-
             throw Failure.unsupported
         }
 
@@ -472,13 +440,11 @@ enum PortableEditedExport
         guard (0..<1440).contains(rhythm.dailyMinutes), (0..<1440).contains(rhythm.weeklyMinutes),
               (1...7).contains(rhythm.weeklyWeekday) else
         {
-
             throw Failure.unsupported
         }
         if let old = baseline.values[key] as? Data,
            equal(try nativeJSON(old, store: key), try nativeJSON(bytes, store: key))
         {
-
             return assembly
         }
 
@@ -491,7 +457,6 @@ enum PortableEditedExport
 
         guard retained.count <= 1, (baseline.values[key] != nil) == !retained.isEmpty else
         {
-
             throw Failure.inconsistent
         }
 
@@ -506,7 +471,6 @@ enum PortableEditedExport
 
         for (source, target) in fields
         {
-
             payload[target] = raw[source]!
 
         }
@@ -535,7 +499,6 @@ enum PortableEditedExport
     private static func planningEdits(assembly: [String: Any], current: [String: Any],
         baseline: PortableWorkspaceCandidate, aliases: [String: Int], family: PlanningFamily = .daily) throws -> [String: Any]
     {
-
         let weekly        = family == .weekly   /* Weekly review state       */
         let periodic      = family == .periodic /* Periodic review state     */
         let key           =                     /* Lookup or persistence key */
@@ -548,10 +511,8 @@ enum PortableEditedExport
 
         guard let bytes = current[key] as? Data else
         {
-
             guard current[key] == nil, baseline.values[key] == nil else
             {
-
                 throw Failure.unsupported
             }
             return assembly
@@ -565,19 +526,16 @@ enum PortableEditedExport
 
         if periodic
         {
-
             _ = try JSONDecoder().decode(PeriodicReviewStore.Document.self, from: bytes)
 
         }
         else if weekly
         {
-
             _ = try JSONDecoder().decode(WeeklyReviewStore.Document.self, from: bytes)
 
         }
         else
         {
-
             _ = try JSONDecoder().decode(DailyPlanStore.Document.self, from: bytes)
 
         }
@@ -587,7 +545,6 @@ enum PortableEditedExport
 
         guard let sourceRecords = rawDocument[container] as? [String: [String: Any]] else
         {
-
             throw Failure.unsupported
         }
 
@@ -600,28 +557,23 @@ enum PortableEditedExport
 
         for (date, plan) in sourceRecords.sorted(by: { $0.key < $1.key })
         {
-
             let zone = plan["timeZoneID"] as! String /* Date conversion time zone */
             let old  = retained.first {              /* Previous operation state  */
-
                 periodic ? ($0["id"] as? String == date.lowercased()) :
                     (($0["payload"] as? [String: Any])?[identityField] as? String == date)
             }
 
             if let old, (old["payload"] as? [String: Any])?["time_zone"] as? String != zone
             {
-
                 throw Failure.unsupported
             }
             if periodic, let old
             {
-
                 let payload = old["payload"] as! [String: Any] /* Canonical record payload */
 
                 guard payload["start_date"] as? String == plan["startKey"] as? String,
                       payload["end_date"] as? String == plan["endKey"] as? String else
                 {
-
                     throw Failure.unsupported
                 }
             }
@@ -636,21 +588,18 @@ enum PortableEditedExport
 
             if family == .daily
             {
-
                 source["discriminator"] = zone
 
             }
             entries.append(["source": source, "target": id])
         }
         guard retained.allSatisfy({
-
             let token = /* Retained operation token */
                 periodic ? ($0["id"] as! String).uppercased() : ($0["payload"] as! [String: Any])[identityField] as! String
 
             return sourceRecords[token] != nil
         }) else
         {
-
             throw Failure.unsupported
         }
 
@@ -666,32 +615,25 @@ enum PortableEditedExport
         /// @return Void after collecting uniquely stored records
         func collect(_ value: Any)
         {
-
             if let object = value as? [String: Any]
             {
-
                 if object["record_type"] is String, object["payload"] != nil,
                    object["user_data_model_version"] as? String == "1.0"
                 {
-
                     records.append(object)
                 }
                 else
                 {
-
                     for child in object.values
                     {
-
                         collect(child)
                     }
                 }
             }
             else if let array = value as? [Any]
             {
-
                 for child in array
                 {
-
                     collect(child)
                 }
             }
@@ -709,28 +651,22 @@ enum PortableEditedExport
         /// @return Void after gathering authored reference snapshots
         func priorities(_ value: Any)
         {
-
             if let object = value as? [String: Any]
             {
-
                 if object["source_collection_id"] is String, object["card_id"] is String,
                    object["source_created_at_utc"] != nil
                 {
-
                     historical.append(object)
                 }
                 for child in object.values
                 {
-
                     priorities(child)
                 }
             }
             else if let array = value as? [Any]
             {
-
                 for child in array
                 {
-
                     priorities(child)
                 }
             }
@@ -742,7 +678,6 @@ enum PortableEditedExport
 
         for card in content["cards"] as! [[String: Any]]
         {
-
             let payload = card["payload"] as! [String: Any] /* Canonical record payload */
             let list    =                                   /* List under consideration */
                 lists.first { $0["id"] as? String == payload["list_id"] as? String }!
@@ -761,7 +696,6 @@ enum PortableEditedExport
 
                 for snapshot in historical
                 {
-
                     let native = /* Native workspace representation */
                         try adapter.priority(snapshot)
                     let fields = ["cardID"] /* Record fields under review */
@@ -771,14 +705,12 @@ enum PortableEditedExport
                        equal(planningTimestampComparison(["sourceCreatedAt": native["sourceCreatedAt"] ?? NSNull()]),
                            planningTimestampComparison(["sourceCreatedAt": raw["sourceCreatedAt"] ?? NSNull()]))
                     {
-
                         targets[snapshot["card_id"] as! String] = snapshot
 
                     }
                 }
                 guard targets.count == 1, var target = targets.values.first else
                 {
-
                     throw Failure.unsupported
                 }
 
@@ -790,7 +722,6 @@ enum PortableEditedExport
 
         guard converted.unresolvedCount == 0, seeded.entries.count == entries.count else
         {
-
             throw Failure.unsupported
         }
 
@@ -811,7 +742,6 @@ enum PortableEditedExport
 
         if weekly
         {
-
             sourceFields = ["source_review_key": "id", "start_date": "startKey", "time_zone": "timeZoneID",
                 "first_weekday": "firstWeekday", "step": "step", "highlights": "highlights", "learned": "learned",
                 "direction": "direction", "constraints": "constraints", "risks": "risks", "priorities": "priorities",
@@ -820,7 +750,6 @@ enum PortableEditedExport
         }
         if periodic
         {
-
             sourceFields = ["title": "title", "start_date": "startKey", "end_date": "endKey", "time_zone": "timeZoneID",
                 "step": "step", "highlights": "highlights", "learned": "learned", "direction": "direction", "risks": "risks",
                 "priorities": "priorities", "updated_at_utc": "updatedAt", "completed_at_utc": "completedAt",
@@ -832,10 +761,8 @@ enum PortableEditedExport
 
         for record in converted.records
         {
-
             if let index = updated.firstIndex(where: { $0["id"] as? String == record["id"] as? String })
             {
-
                 var old     = updated[index]                      /* Previous operation state    */
                 var payload = old["payload"] as! [String: Any]    /* Canonical record payload    */
                 let fresh   = record["payload"] as! [String: Any] /* New isolated instance       */
@@ -847,12 +774,10 @@ enum PortableEditedExport
 
                 for (field, value) in fresh
                 {
-
                     let source = sourceFields[field]! /* Source value for this operation */
 
                     if !equal(normalized(before[source] ?? NSNull()), normalized(after[source] ?? NSNull()))
                     {
-
                         payload[field] = value
 
                     }
@@ -864,7 +789,6 @@ enum PortableEditedExport
             }
             else
             {
-
                 updated.append(record)
             }
         }
@@ -890,15 +814,12 @@ enum PortableEditedExport
     private static func templateMetadata(assembly: [String: Any], current: [String: Any],
         baseline: PortableWorkspaceCandidate) throws -> [String: Any]
     {
-
         let key = "Plenact.PlanningTemplates.v1" /* Lookup or persistence key */
 
         guard let bytes = current[key] as? Data, let oldBytes = baseline.values[key] as? Data else
         {
-
             guard current[key] == nil, baseline.values[key] == nil else
             {
-
                 throw Failure.unsupported
             }
             return assembly
@@ -914,7 +835,6 @@ enum PortableEditedExport
               Set(library.templates.map(\.id)).count == library.templates.count,
               Set(library.templates.map(\.id)) == Set(previous.templates.map(\.id)) else
         {
-
             throw Failure.structureChanged
         }
 
@@ -929,12 +849,10 @@ enum PortableEditedExport
         guard libraries.count == 1,
               Set(templates.compactMap { $0["id"] as? String }) == Set(library.templates.map { $0.id.uuidString.lowercased() }) else
         {
-
             throw Failure.inconsistent
         }
         for template in library.templates
         {
-
             let old = /* Previous operation state */
                 previous.templates.first { $0.id == template.id }!
 
@@ -943,7 +861,6 @@ enum PortableEditedExport
                   old.firstWeekday == template.firstWeekday, old.weekdays == template.weekdays,
                   old.exampleFocus == template.exampleFocus else
             {
-
                 throw Failure.unsupported
             }
 
@@ -952,7 +869,6 @@ enum PortableEditedExport
 
             if template.name != old.name
             {
-
                 var payload = /* Canonical record payload */
                     templates[index]["payload"] as! [String: Any]
 
@@ -963,10 +879,8 @@ enum PortableEditedExport
         }
         if let selected = library.defaultWeekID
         {
-
             guard library.templates.first(where: { $0.id == selected })?.kind == .week else
             {
-
                 throw Failure.unsupported
             }
         }
@@ -999,15 +913,12 @@ enum PortableEditedExport
     private static func shortcuts(assembly: [String: Any], current: [String: Any],
         baseline: PortableWorkspaceCandidate, aliases: [String: Int]) throws -> [String: Any]
     {
-
         let key = TodayListPins.key /* Lookup or persistence key */
 
         guard let bytes = current[key] as? Data else
         {
-
             guard current[key] == nil, baseline.values[key] == nil else
             {
-
                 throw Failure.unsupported
             }
             return assembly
@@ -1015,7 +926,6 @@ enum PortableEditedExport
         guard let raw = try JSONSerialization.jsonObject(with: bytes) as? [[String: Any]], raw.count <= 6,
               raw.allSatisfy({ Set($0.keys) == ["ownerID", "listID"] }) else
         {
-
             throw Failure.unsupported
         }
 
@@ -1024,12 +934,10 @@ enum PortableEditedExport
 
         guard Set(pins).count == pins.count else
         {
-
             throw Failure.unsupported
         }
         if let old = baseline.values[key] as? Data, equal(try nativeJSON(old), try nativeJSON(bytes))
         {
-
             return assembly
         }
 
@@ -1048,7 +956,6 @@ enum PortableEditedExport
             let owner   = pin.ownerID.uuidString.lowercased() /* Normalized owner identifier */
             let targets = lists.filter                        /* Resolved operation targets  */
             {
-
                 aliases[$0["id"] as! String] == pin.listID &&
                     ($0["payload"] as! [String: Any])["collection_id"] as? String == owner
             }
@@ -1057,7 +964,6 @@ enum PortableEditedExport
                   let collection = collections.first(where: { $0["id"] as? String == owner }),
                   ((collection["payload"] as! [String: Any])["list_ids"] as? [String])?.contains(target) == true else
             {
-
                 throw Failure.unsupported
             }
             return ["collection_id": owner, "list_id": target]
@@ -1066,7 +972,6 @@ enum PortableEditedExport
 
         guard (baseline.values[key] != nil) == (retained != nil) else
         {
-
             throw Failure.inconsistent
         }
 
@@ -1095,7 +1000,6 @@ enum PortableEditedExport
     /// @throws Unsupported edits, inconsistent provenance, missing originals or failed native round trip
     static func prepare(_ backup: LegacyWorkspaceBackup) throws -> FileWrapper
     {
-
         var current = try MigrationBackupReader.values(in: backup) /* Current operation snapshot */
         let report  =                                              /* Validation findings        */
             try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
@@ -1112,7 +1016,6 @@ enum PortableEditedExport
         {
             if let bytes = value as? Data
             {
-
                 let object = try JSONSerialization.jsonObject(with: bytes) /* Decoded JSON object */
 
                 guard LegacyStoreValidation.mediaIssues(object, store: key, files: livePaths).isEmpty else
@@ -1245,7 +1148,6 @@ enum PortableEditedExport
 
         for (key, original) in baseline.values
         {
-
             let live = current[key]! /* Current workspace state */
 
             if let before = original as? Data, let after = live as? Data
@@ -1292,7 +1194,6 @@ enum PortableEditedExport
 
             for (native, canonical) in fields
             {
-
                 payload[canonical] = patch[native]!
 
             }
@@ -1360,7 +1261,6 @@ enum PortableEditedExport
         {
             if let bytes = value as? Data, let live = current[key] as? Data
             {
-
                 var unexpected: [Int: [String: Any]] = [:] /* Unrecognized input values */
 
                 try reconcile(nativeJSON(bytes, store: key), nativeJSON(live, store: key), edits: &unexpected)
@@ -1401,7 +1301,6 @@ enum PortableEditedExport
 @MainActor
 enum PortableLocalDeletions
 {
-
     /// @fcn PortableLocalDeletions.ids
     /// @brief Validate optional local deletion targets against retained canonical Cards
     /// @param[in] export Working Model 1.1 composite
@@ -1409,7 +1308,6 @@ enum PortableLocalDeletions
     /// @throws Invalid shape, duplicate identity or missing retained Card
     static func ids(in export: [String: Any]) throws -> Set<String>
     {
-
         guard let raw = export["local_card_deletions"] else
         {
             return []
@@ -1433,7 +1331,6 @@ enum PortableLocalDeletions
     /// @throws Serialization, checksum or reference failure
     static func package(snapshot: FileWrapper, assembly: [String: Any]) throws -> FileWrapper
     {
-
         let bytes    = /* Encoded record bytes */
             try JSONSerialization.data(withJSONObject: assembly, options: [.sortedKeys, .withoutEscapingSlashes])
         var manifest = /* Package inventory and hashes */
@@ -1465,7 +1362,6 @@ enum PortableLocalDeletions
     /// @return Retained Card numeric aliases
     static func nativeCards(_ value: Any) -> Set<Int>
     {
-
         if let object = value as? [String: Any]
         {
             if object["word"] is String, let id = object["id"] as? Int

@@ -18,17 +18,13 @@ import SwiftUI
 ///
 struct PlanningTemplatesView: View
 {
-
-
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
     var onOpenLibrary: (() -> Void)? = nil      /* Open library callback          */
 
     var body: some View /* Planning Templates layout */
     {
-
         NavigationStack
         {
-
             List
             {
                 PlanningTemplateLibraryRows(showsTemplateListings: false, onOpenLibrary: onOpenLibrary)
@@ -63,8 +59,6 @@ struct PlanningTemplatesView: View
 ///
 struct PlanningTemplateLibraryRows: View
 {
-
-
     var query                        = ""                     /* Search text                   */
     var showsTemplateListings        = true                   /* Template Listings visibility  */
     var onOpenLibrary: (() -> Void)? = nil                    /* Open library callback         */
@@ -90,16 +84,13 @@ struct PlanningTemplateLibraryRows: View
     ///
     private func reload()
     {
-
         do
         {
-
             library = try PlanningRoutineStore.load(from: defaults)
 
         }
         catch
         {
-
             library = nil;
             message = "Templates couldn't be read. Your saved data has been retained. Please retry."
 
@@ -120,7 +111,6 @@ struct PlanningTemplateLibraryRows: View
     ///
     @discardableResult private func update(_ change: (inout PlanningRoutineLibrary) -> Void) -> Bool
     {
-
         guard let baseline = library else
         {
             return false
@@ -139,7 +129,6 @@ struct PlanningTemplateLibraryRows: View
         }
         catch
         {
-
             message = "Templates couldn't be saved, or changed elsewhere. Close this draft and retry after reloading.";
 
             return false
@@ -160,10 +149,8 @@ struct PlanningTemplateLibraryRows: View
     ///
     private func capture(_ kind: PlanningRoutineTemplate.Kind)
     {
-
         guard let access, let week = access.document.week(for: sourceDate) else
         {
-
             message = "There is no saved plan for that date yet. Open and plan its week first.";
 
             return
@@ -171,7 +158,6 @@ struct PlanningTemplateLibraryRows: View
 
         do
         {
-
             editing = try PlanningRoutineTemplate.capture(
                 name: kind == .day ? "My Day" : "My Week", week: week,
                 day: kind == .day ? sourceDate : nil, calendar: access.document.calendar)
@@ -179,7 +165,6 @@ struct PlanningTemplateLibraryRows: View
         }
         catch
         {
-
             message = "That day has no active list to save as a template."
 
         }
@@ -188,19 +173,14 @@ struct PlanningTemplateLibraryRows: View
 
     var body: some View /* Template Library controls */
     {
-
         Group
         {
-
             if let library
             {
-
                 if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 {
-
                     Section
                     {
-
                         Picker(
                                                                         "New weeks use",
                                                                         selection: Binding(
@@ -214,7 +194,6 @@ struct PlanningTemplateLibraryRows: View
 
                                                                                 _ = update
                                                                                 {
-
                                                                                     $0.defaultWeekID = value
 
                                                                                 }
@@ -222,7 +201,6 @@ struct PlanningTemplateLibraryRows: View
                                                                             })
                         )
                         {
-
                             Text("Empty week").tag(nil as UUID?)
                             ForEach(library.templates.filter
                                 {
@@ -238,12 +216,10 @@ struct PlanningTemplateLibraryRows: View
                     }
                     header:
                     {
-
                         Text("Default Week")
                     }
                     footer:
                     {
-
                         Text(
                                                                         "Applied once when a new week is created. Existing weeks keep their plans. Editing a template affects future applications only."
                         )
@@ -253,13 +229,10 @@ struct PlanningTemplateLibraryRows: View
 
                 Section
                 {
-
                     if showsTemplateListings
                     {
-
                         let matches = library.templates.filter /* Matching source entries */
                         {
-
                             LibraryStarterSearch.matches(
                                 query,
                                 texts: [$0.name, $0.kind.rawValue]
@@ -279,32 +252,26 @@ struct PlanningTemplateLibraryRows: View
                             template in
                             VStack(alignment: .leading, spacing: 10)
                             {
-
                                 HStack
                                 {
-
                                     Label(template.name, systemImage: template.kind == .week ? "calendar" : "sun.max")
                                     .font(.headline)
                                     Spacer()
                                     if template.id == library.defaultWeekID
                                     {
-
                                         Text("Default").font(.caption).foregroundStyle(.secondary)
                                     }
 
                                     Menu
                                     {
-
                                         Button("Edit template", systemImage: "pencil")
                                         {
-
                                             editing = template
 
                                         }
 
                                         Button("Duplicate", systemImage: "plus.square.on.square")
                                         {
-
                                             var copy = template; /* Independent working copy */
 
                                             copy.id = UUID();
@@ -315,7 +282,6 @@ struct PlanningTemplateLibraryRows: View
 
                                         Button("Delete template", systemImage: "trash", role: .destructive)
                                         {
-
                                             deleting = template
 
                                         }
@@ -323,7 +289,6 @@ struct PlanningTemplateLibraryRows: View
                                     }
                                     label:
                                     {
-
                                         Image(systemName: "ellipsis").frame(width: 44, height: 44)
                                     }
                                     .accessibilityLabel(template.name + " actions")
@@ -333,7 +298,6 @@ struct PlanningTemplateLibraryRows: View
                                 .foregroundStyle(.secondary)
                                 Button("Preview & apply", systemImage: "calendar.badge.plus")
                                 {
-
                                     applying = template
 
                                 }
@@ -347,7 +311,6 @@ struct PlanningTemplateLibraryRows: View
                                                 {
                                                     if !$0
                                                     {
-
                                                         deleting = nil
 
                                                     }
@@ -356,13 +319,10 @@ struct PlanningTemplateLibraryRows: View
                                             titleVisibility: .visible
                             )
                             {
-
                                 if let deleting
                                 {
-
                                     Button("Delete " + deleting.name, role: .destructive)
                                     {
-
                                         _ = update
                                         {
                                             library in
@@ -373,7 +333,6 @@ struct PlanningTemplateLibraryRows: View
 
                                             if library.defaultWeekID == deleting.id
                                             {
-
                                                 library.defaultWeekID = nil
 
                                             }
@@ -388,7 +347,6 @@ struct PlanningTemplateLibraryRows: View
 
                                 Button("Cancel", role: .cancel)
                                 {
-
                                     deleting = nil
 
                                 }
@@ -396,17 +354,14 @@ struct PlanningTemplateLibraryRows: View
                             }
                             message:
                             {
-
                                 Text("Applied days and weeks remain. Deleting the default switches new weeks to Empty week.")
                             }
                         }
                     }
                     else
                     {
-
                         Button("Open Templates in Library", systemImage: "square.stack.3d.up")
                         {
-
                             onOpenLibrary?()
                         }
                         .disabled(onOpenLibrary == nil)
@@ -415,20 +370,16 @@ struct PlanningTemplateLibraryRows: View
                 }
                 header:
                 {
-
                     if showsTemplateListings
                     {
-
                         Text("Day & Week templates")
                     }
                 }
 
                 if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 {
-
                     Section
                     {
-
                         DatePicker("Source day / week", selection: $sourceDate, displayedComponents: .date)
                         Button("Save day as template", systemImage: "sun.max")
                         {
@@ -443,12 +394,10 @@ struct PlanningTemplateLibraryRows: View
                     }
                     header:
                     {
-
                         Text("Save your layout")
                     }
                     footer:
                     {
-
                         Text(
                                                                         "Includes active lists, Cards, Notes, checklists and media. New copies start unchecked, with dates shifted to their destination. Archives and activity history are excluded."
                         )
@@ -456,10 +405,8 @@ struct PlanningTemplateLibraryRows: View
 
                     if showsTemplateListings
                     {
-
                         Section
                         {
-
                             Button("Reload saved templates", systemImage: "arrow.clockwise", action: reload)
                         }
                     }
@@ -469,7 +416,6 @@ struct PlanningTemplateLibraryRows: View
             }
             else
             {
-
                 ContentUnavailableView("Templates unavailable", systemImage: "square.stack.3d.up")
                 Button("Retry", action: reload)
             }
@@ -487,7 +433,6 @@ struct PlanningTemplateLibraryRows: View
     /// @return Invisible presentation anchor without changing template content or persistence
     private var presentationAnchor: some View /* Presentation anchor */
     {
-
         Color.clear
         .frame(height: 0)
         .listRowInsets(EdgeInsets())
@@ -513,13 +458,11 @@ struct PlanningTemplateLibraryRows: View
                             $0.id == updated.id
                         })
                     {
-
                         library.templates[index] = updated
 
                     }
                     else
                     {
-
                         library.templates.append(updated)
                     }
 
@@ -532,7 +475,6 @@ struct PlanningTemplateLibraryRows: View
             {
                 guard let completion = completedWeek else
                 {
-
                     return
                 }
 
@@ -554,17 +496,14 @@ struct PlanningTemplateLibraryRows: View
                 {
                     if !$0
                     {
-
                         message = nil
 
                     }
 
                 }))
         {
-
             Button("OK", role: .cancel)
             {
-
                 message = nil
 
             }
@@ -572,7 +511,6 @@ struct PlanningTemplateLibraryRows: View
         }
         message:
         {
-
             Text(message ?? "")
         }
 
@@ -590,8 +528,6 @@ struct PlanningTemplateLibraryRows: View
 ///
 struct PlanningTemplateEditor: View
 {
-
-
     @State var template:  PlanningRoutineTemplate           /* Reusable planning template */
     let onSave:           (PlanningRoutineTemplate) -> Bool /* Persist the edited value   */
     private let original: PlanningRoutineTemplate           /* Baseline before changes    */
@@ -610,7 +546,6 @@ struct PlanningTemplateEditor: View
     ///
     init(template: PlanningRoutineTemplate, onSave: @escaping (PlanningRoutineTemplate) -> Bool)
     {
-
         _template = State(initialValue: template)
         self.original = template
         self.onSave = onSave
@@ -622,16 +557,12 @@ struct PlanningTemplateEditor: View
 
     var body: some View /* Planning Template Editor layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Section("Template")
                 {
-
                     TextField("Name", text: $template.name).textInputAutocapitalization(.sentences)
                     LabeledContent("Kind", value: template.kind.rawValue)
                     Text("These are reusable items. Completion and activity history reset when applied.")
@@ -651,7 +582,6 @@ struct PlanningTemplateEditor: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -668,10 +598,8 @@ struct PlanningTemplateEditor: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         template.name = template.name.trimmingCharacters(in: .whitespacesAndNewlines)
 
                         if onSave(template)
@@ -680,7 +608,6 @@ struct PlanningTemplateEditor: View
                         }
                         else
                         {
-
                             failed = true
 
                         }
@@ -691,16 +618,13 @@ struct PlanningTemplateEditor: View
             }
             .alert("Template not saved", isPresented: $failed)
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text(
                                                 "Your draft is still open. Check the template name and retry, or close it and reload Templates if another window made changes."
                 )
@@ -723,8 +647,6 @@ struct PlanningTemplateEditor: View
 ///
 struct PlanningTemplateListEditor: View
 {
-
-
     @Binding var list: KanbanList             /* List under consideration */
     let allLists:      [KanbanList]           /* All lists                */
     let anchor:        Date                   /* Layout anchor position   */
@@ -732,21 +654,17 @@ struct PlanningTemplateListEditor: View
 
     var body:          some View /* Planning Template List Editor layout */
     {
-
         Section(list.title)
         {
-
             ForEach($list.cards)
             {
                 $card in
                 NavigationLink
                 {
-
                     PlanningTemplateCardEditor(card: $card, anchor: anchor)
                 }
                 label:
                 {
-
                     Label(
                         card.word,
                         systemImage: card.isSectionDivider
@@ -765,7 +683,6 @@ struct PlanningTemplateListEditor: View
 
             Menu("Add item", systemImage: "plus")
             {
-
                 Button("Card")
                 {
                     add(.card)
@@ -779,15 +696,12 @@ struct PlanningTemplateListEditor: View
             }
             .alert("Item couldn't be added", isPresented: $creationFailed)
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
             }
             message:
             {
-
                 Text("The new item's identity could not be reserved. Your template draft is unchanged. Please retry.")
             }
 
@@ -808,15 +722,12 @@ struct PlanningTemplateListEditor: View
     ///
     private func add(_ presentation: ItemPresentation)
     {
-
         do
         {
-
             try PlanningTemplateItemCreation.append(presentation, to: &list, allLists: allLists)
         }
         catch
         {
-
             creationFailed = true
 
         }
@@ -831,7 +742,6 @@ struct PlanningTemplateListEditor: View
 @MainActor
 enum PlanningTemplateItemCreation
 {
-
     /// @fcn PlanningTemplateItemCreation.append
     /// @brief Reserve a new identity and append one authored Card or Note to the draft
     /// @details Unused reservations remain consumed when a draft is cancelled. Reservation failure
@@ -847,13 +757,11 @@ enum PlanningTemplateItemCreation
         allLists: [KanbanList], root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true),
         createdAt: Date = .now) throws
     {
-
         let maximum = /* Upper supported bound */
             ((allLists.flatMap(\.allCards) + list.allCards).map(\.id).max() ?? -1)
 
         guard maximum < Int.max, createdAt.timeIntervalSince1970.isFinite else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -878,20 +786,15 @@ enum PlanningTemplateItemCreation
 ///
 struct PlanningTemplateCardEditor: View
 {
-
-
     @Binding var card: KanbanCard /* Card under consideration */
     let anchor:        Date       /* Layout anchor position   */
 
     var body:          some View /* Planning Template Card Editor layout */
     {
-
         Form
         {
-
             Section("Item")
             {
-
                 TextField("Title", text: $card.word, axis: .vertical).textInputAutocapitalization(.sentences)
                 ContentCreationKindPicker(presentation: $card.presentation)
                 RichTextEditor(
@@ -901,7 +804,6 @@ struct PlanningTemplateCardEditor: View
                             card.descriptionOverride ?? ""
                         }, set:
                         {
-
                             card.descriptionOverride = $0
 
                         }))
@@ -909,23 +811,19 @@ struct PlanningTemplateCardEditor: View
 
             Section("Relative dates")
             {
-
                 Toggle(
                                                 "Start", isOn: Binding(get:
                                                     {
                                                         card.startDate != nil
                                                     }, set:
                                                     {
-
                                                         card.startDate = $0 ? anchor : nil
 
                                                     }))
                 if card.startDate != nil
                 {
-
                     Picker("Start format", selection: $card.startDateKind)
                     {
-
                         ForEach(CardDateKind.allCases)
                         {
                             Text($0.title).tag($0)
@@ -940,7 +838,6 @@ struct PlanningTemplateCardEditor: View
                                                                     card.startDate ?? anchor
                                                                 }, set:
                                                                 {
-
                                                                     card.startDate = $0
 
                                                                 }),
@@ -952,16 +849,13 @@ struct PlanningTemplateCardEditor: View
                             card.dueDate != nil
                         }, set:
                         {
-
                             card.dueDate = $0 ? anchor : nil
 
                         }))
                 if card.dueDate != nil
                 {
-
                     Picker("Due format", selection: $card.dueDateKind)
                     {
-
                         ForEach(CardDateKind.allCases)
                         {
                             Text($0.title).tag($0)
@@ -975,7 +869,6 @@ struct PlanningTemplateCardEditor: View
                                                                     card.dueDate ?? anchor
                                                                 }, set:
                                                                 {
-
                                                                     card.dueDate = $0
 
                                                                 }),
@@ -995,10 +888,8 @@ struct PlanningTemplateCardEditor: View
 
             Section
             {
-
                 Button("Add checklist", systemImage: "checklist")
                 {
-
                     card.checklists.append(KanbanChecklist(title: "Checklist", items: []))
                 }
 
@@ -1019,13 +910,10 @@ struct PlanningTemplateCardEditor: View
 ///
 struct PlanningTemplateChecklistEditor: View
 {
-
-
     @Binding var checklist: KanbanChecklist /* Checklist group and items */
 
     private var items:      Binding<[KanbanChecklistItem]> /* Items being processed */
     {
-
         Binding(
             get:
             {
@@ -1043,10 +931,8 @@ struct PlanningTemplateChecklistEditor: View
 
     var body: some View /* Planning Template Checklist Editor */
     {
-
         Section
         {
-
             TextField(
                                     "Checklist name",
                                     text: Binding(
@@ -1082,7 +968,6 @@ struct PlanningTemplateChecklistEditor: View
 
             Button("Add action", systemImage: "plus")
             {
-
                 items.wrappedValue = items.wrappedValue + [KanbanChecklistItem(title: "")]
 
             }
@@ -1103,8 +988,6 @@ struct PlanningTemplateChecklistEditor: View
 ///
 struct PlanningTemplateApplyView: View
 {
-
-
     let template: PlanningRoutineTemplate /* Reusable planning template */
     var onWeekCompleted: ((ManualWeekOpening) -> Void)? = nil /* Week completed callback */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
@@ -1131,10 +1014,8 @@ struct PlanningTemplateApplyView: View
     ///
     private func prepare()
     {
-
         guard let access else
         {
-
             preview = nil;
 
             return
@@ -1147,7 +1028,6 @@ struct PlanningTemplateApplyView: View
 
         do
         {
-
             preview = try PlanningTemplateApplication.apply(
                 template, to: target, date: date, calendar: access.document.calendar, mode: mode)
             exampleImportantIDs = PlanningTemplateApplication.exampleImportantIDs(template, in: target)
@@ -1155,7 +1035,6 @@ struct PlanningTemplateApplyView: View
         }
         catch
         {
-
             preview = nil;
             message = "This template couldn't be prepared. Your plans have not changed."
 
@@ -1174,7 +1053,6 @@ struct PlanningTemplateApplyView: View
     ///
     private func apply()
     {
-
         guard let access, let preview else
         {
             return
@@ -1184,13 +1062,11 @@ struct PlanningTemplateApplyView: View
 
         do
         {
-
             persisted = try PlanningCalendarStore.load()
 
         }
         catch
         {
-
             message = "Your saved calendar couldn't be read. Please retry after reopening the app.";
 
             return
@@ -1198,7 +1074,6 @@ struct PlanningTemplateApplyView: View
 
         guard access.document.week(for: date) == baseline, persisted?.week(for: date) == baseline else
         {
-
             message = "This week changed while you were previewing it. Refresh the preview before applying.";
 
             return
@@ -1208,14 +1083,12 @@ struct PlanningTemplateApplyView: View
 
         do
         {
-
             committed = try PortableTemplateApplication.reserve(preview, original: baseline,
                 importantIDs: exampleImportantIDs)
 
         }
         catch
         {
-
             message = "The applied items' identities could not be reserved. Your plans have not changed. Your preview is still open."
 
             return
@@ -1228,11 +1101,9 @@ struct PlanningTemplateApplyView: View
 
         if saved
         {
-
             if let completion = ManualWeekOpening.completion(week: committed.week,
                 kind: template.kind, mode: mode, hadBaseline: baseline != nil)
             {
-
                 onWeekCompleted?(completion)
             }
 
@@ -1240,7 +1111,6 @@ struct PlanningTemplateApplyView: View
         }
         else
         {
-
             message = "The template couldn't be applied. Your preview is still open; refresh and retry."
 
         }
@@ -1249,20 +1119,15 @@ struct PlanningTemplateApplyView: View
 
     var body: some View /* Template preview and actions */
     {
-
         NavigationStack
         {
-
             List
             {
-
                 Section
                 {
-
                     Text(template.name).font(.headline)
                     if template.exampleFocus != nil
                     {
-
                         Text(
                                                                         "Includes Important and Bookmarked examples for Today’s Focus. Untimed examples include an all-day item for Up Next. Only content applied to today appears in Today’s Focus."
                         )
@@ -1274,7 +1139,6 @@ struct PlanningTemplateApplyView: View
                         displayedComponents: .date)
                     Picker("Apply as", selection: $mode)
                     {
-
                         ForEach(PlanningTemplateApplication.Mode.allCases, id: \.self)
                         {
                             Text($0.rawValue).tag($0)
@@ -1286,7 +1150,6 @@ struct PlanningTemplateApplyView: View
                 }
                 footer:
                 {
-
                     Text(
                         mode == .add
                         ? "Adds independent, unchecked copies. Existing items are kept."
@@ -1296,7 +1159,6 @@ struct PlanningTemplateApplyView: View
 
                 if let preview, let access
                 {
-
                     ForEach(
                         preview.collection.lists.filter
                         {
@@ -1310,7 +1172,6 @@ struct PlanningTemplateApplyView: View
                         list in
                         Section(list.title)
                         {
-
                             if list.cards.isEmpty
                             {
                                 Text("No items").foregroundStyle(.secondary)
@@ -1336,7 +1197,6 @@ struct PlanningTemplateApplyView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -1348,13 +1208,10 @@ struct PlanningTemplateApplyView: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Apply")
                     {
-
                         if mode == .replace && baseline?.hasContent == true
                         {
-
                             confirmsReplace = true
 
                         }
@@ -1384,17 +1241,14 @@ struct PlanningTemplateApplyView: View
             }
             .confirmationDialog("Replace the selected plan?", isPresented: $confirmsReplace, titleVisibility: .visible)
             {
-
                 Button("Replace with " + template.name, role: .destructive, action: apply)
                 Button("Cancel", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text(
                         template.kind == .week
                         ? "Active items in this week's dated lists will be replaced by the preview. Archives and undated lists are kept."
@@ -1408,17 +1262,14 @@ struct PlanningTemplateApplyView: View
                     {
                         if !$0
                         {
-
                             message = nil
 
                         }
 
                     }))
             {
-
                 Button("OK", role: .cancel)
                 {
-
                     message = nil
 
                 }
@@ -1426,7 +1277,6 @@ struct PlanningTemplateApplyView: View
             }
             message:
             {
-
                 Text(message ?? "")
             }
 
@@ -1444,8 +1294,6 @@ struct PlanningTemplateApplyView: View
 ///
 enum LibraryStarterSearch
 {
-
-
     ///
     /// @fcn        LibraryStarterSearch.matches
     /// @brief      Match a starter against a normalized query
@@ -1458,12 +1306,10 @@ enum LibraryStarterSearch
     ///
     static func matches(_ query: String, texts: [String]) -> Bool
     {
-
         let content = texts.joined(separator: " ") /* Content being processed */
 
         return query.split(whereSeparator: \.isWhitespace).allSatisfy
         {
-
             content.localizedStandardContains(String($0))
         }
 
@@ -1481,8 +1327,6 @@ enum LibraryStarterSearch
 ///
 enum LibraryTemplateCapture
 {
-
-
     ///
     /// @fcn        LibraryTemplateCapture.adding
     /// @brief      Build a week containing a new reusable capture
@@ -1499,7 +1343,6 @@ enum LibraryTemplateCapture
     ///
     static func adding(_ capture: QuickCaptureSubmission, to source: DatedPlanningWeek) throws -> DatedPlanningWeek
     {
-
         guard let index = source.collection.lists.firstIndex(where:
             {
                 $0.id == capture.listID && !$0.isArchived
@@ -1530,7 +1373,6 @@ enum LibraryTemplateCapture
 
         if !capture.attachments.isEmpty
         {
-
             created[0].attachments = capture.attachments
             created[0].coverAttachmentID = capture.attachments.first
             {
@@ -1560,8 +1402,6 @@ enum LibraryTemplateCapture
 ///
 struct LibraryQuickTemplateComposer: View
 {
-
-
     let template: QuickCaptureTemplate                        /* Reusable planning template     */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
@@ -1580,7 +1420,6 @@ struct LibraryQuickTemplateComposer: View
     ///
     private func save(_ capture: QuickCaptureSubmission) -> Bool
     {
-
         guard let access, let originalWeek,
         let current = access.document.weeks.first(where:
             {
@@ -1593,7 +1432,6 @@ struct LibraryQuickTemplateComposer: View
 
         do
         {
-
             let updated = /* Edited value to publish */
                 try LibraryTemplateCapture.adding(capture, to: current)
 
@@ -1614,7 +1452,6 @@ struct LibraryQuickTemplateComposer: View
                     !previousIDs.contains($0.id)
                 })
             {
-
                 CreatedContentReveal.shared.request(listID: list.id, card: card)
                 access.openWeek(updated)
             }
@@ -1630,13 +1467,10 @@ struct LibraryQuickTemplateComposer: View
 
     var body: some View /* Library Quick Template Composer */
     {
-
         Group
         {
-
             if let originalWeek
             {
-
                 QuickNoteComposer(
                     lists: .constant(originalWeek.collection.lists.filter
                         {
@@ -1653,10 +1487,8 @@ struct LibraryQuickTemplateComposer: View
             }
             else
             {
-
                 NavigationStack
                 {
-
                     ContentUnavailableView(
                                                             "No Week destination", systemImage: "calendar",
                                                             description: Text("Open your current Week, then try this starting point again.")
@@ -1681,7 +1513,6 @@ struct LibraryQuickTemplateComposer: View
         }
         .task
         {
-
             guard originalWeek == nil, let access else
             {
                 return
@@ -1708,21 +1539,16 @@ struct LibraryQuickTemplateComposer: View
 ///
 struct LibraryExampleWeekTemplateButton: View
 {
-
-
     @State private var editing:  PlanningRoutineTemplate? /* Current editing destination   */
     @State private var baseline: PlanningRoutineLibrary?  /* Original state for comparison */
     @State private var message:  String?                  /* User-facing status message    */
 
     var body:                    some View /* Library Example Week Template Button */
     {
-
         Button("Save as a Week template", systemImage: "square.stack.3d.up")
         {
-
             do
             {
-
                 baseline = try PlanningRoutineStore.load()
 
                 var example = /* Seeded example content */
@@ -1735,7 +1561,6 @@ struct LibraryExampleWeekTemplateButton: View
             }
             catch
             {
-
                 message = "Saved templates couldn't be read. Your data has been retained; please retry."
 
             }
@@ -1775,17 +1600,14 @@ struct LibraryExampleWeekTemplateButton: View
                 {
                     if !$0
                     {
-
                         message = nil
 
                     }
 
                 }))
         {
-
             Button("OK", role: .cancel)
             {
-
                 message = nil
 
             }
@@ -1793,7 +1615,6 @@ struct LibraryExampleWeekTemplateButton: View
         }
         message:
         {
-
             Text(message ?? "")
         }
 

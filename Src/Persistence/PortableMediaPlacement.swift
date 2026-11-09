@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 struct PortableMediaPlacement
 {
-
     let filenames: [String: String] /* Original file basenames      */
     let files:     [String: Data]   /* Files used by this operation */
 
@@ -26,7 +25,6 @@ struct PortableMediaPlacement
     /// @throws Package integrity, missing original or unsupported path errors
     static func prepare(_ package: ReviewedPortablePackage, filenames overrides: [String: String] = [:]) throws -> PortableMediaPlacement
     {
-
         guard let snapshot = FileWrapper(serializedRepresentation: package.snapshot) else
         {
             throw PortablePackageReview.Failure.invalid
@@ -63,14 +61,12 @@ struct PortableMediaPlacement
         /// @return Void after collecting required native areas per Asset
         func usage(_ value: Any, path: String)
         {
-
             if let object = value as? [String: Any]
             {
                 for (key, child) in object
                 {
                     if let id = child as? String
                     {
-
                         let area: String? /* Native media storage area */
 
                         switch key
@@ -154,7 +150,6 @@ struct PortableMediaPlacement
 
             for area in destinations
             {
-
                 let path = area + "/" + name /* Filesystem or navigation path */
 
                 guard output[path] == nil, bytes.count <= LegacyWorkspaceExport.maximumBytes - total else
@@ -178,7 +173,6 @@ struct PortableMediaPlacement
     /// @throws Existing destination, unsafe plan, disk failure or corruption; partial candidate is removed
     func stage(at root: URL) throws
     {
-
         let manager = FileManager.default /* Filesystem or media manager */
 
         guard !manager.fileExists(atPath: root.path), files.keys.allSatisfy({ path in
@@ -224,7 +218,6 @@ struct PortableMediaPlacement
         }
         for (path, bytes) in files.sorted(by: { $0.key < $1.key })
         {
-
             let destination = root.appendingPathComponent(path) /* Destination for the operation */
 
             try manager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -244,13 +237,11 @@ struct PortableMediaPlacement
     /// @throws Missing, undeclared, nonregular or corrupted files
     func verify(at root: URL) throws
     {
-
         let manager = FileManager.default /* Filesystem or media manager */
         var actual  = Set<String>()       /* Observed operation result   */
 
         for area in LegacyWorkspaceExport.mediaRoots
         {
-
             let base = root.appendingPathComponent(area) /* Base value before overrides */
 
             if !manager.fileExists(atPath: base.path)
@@ -274,7 +265,6 @@ struct PortableMediaPlacement
             }
             for case let child as String in iterator
             {
-
                 let url  = base.appendingPathComponent(child) /* Resolved file location     */
                 let kind =                                    /* Content kind discriminator */
                     try manager.attributesOfItem(atPath: url.path)[.type] as? FileAttributeType

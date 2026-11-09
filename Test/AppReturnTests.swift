@@ -14,12 +14,9 @@ import XCTest
 @MainActor
 final class AppReturnTests: XCTestCase
 {
-
-
     /// Manual completion follows visual order, not weekday mappings or today's date
     func testManualWeekOpeningUsesLeftmostActiveList()
     {
-
         let date = Date(timeIntervalSince1970: 1_793_016_000) /* Date used by this operation */
         var week =                                            /* Synthetic week fixture      */
             DatedPlanningWeek.make(for: date, calendar: .current)
@@ -44,7 +41,6 @@ final class AppReturnTests: XCTestCase
     /// Ordinary additive edits and day templates must not trigger Week completion navigation
     func testManualWeekCompletionScope()
     {
-
         let week = /* Synthetic week fixture */
             DatedPlanningWeek.make(for: .now, calendar: .current)
 
@@ -64,7 +60,6 @@ final class AppReturnTests: XCTestCase
     /// A destination not yet mounted reads the new top position without resetting another owner
     func testManualWeekOpeningResetsOnlyItsViewport() throws
     {
-
         let domain = /* Lookup or storage namespace */
             "Plenact.Tests.ManualWeek." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -106,7 +101,6 @@ final class AppReturnTests: XCTestCase
     /// Measure root navigation value sizes without mounting or importing a workspace
     func testRootNavigationValueSize()
     {
-
         let bodyBytes       = MemoryLayout<AppRootView.Body>.size /* Root view value size       */
         let navigationBytes =                                     /* Navigation view value size */
             MemoryLayout.size(ofValue: AppRootView().navigationContent)
@@ -122,7 +116,6 @@ final class AppReturnTests: XCTestCase
     /// Start the quick-add preview after reveal, then return once at 1.5 seconds unless cancelled
     func testTodayQuickAddPreviewWaitsForRevealAndReturnsAfterIdle()
     {
-
         let now      = ContinuousClock.now /* Synthetic monotonic time */
         var overview = DailyWeekOverview() /* Shared transient preview policy */
 
@@ -153,7 +146,6 @@ final class AppReturnTests: XCTestCase
     /// Verify visible-time boundaries, permanent cancellation and stale timer rejection
     func testDailyOverviewDeadlineAndCancellation()
     {
-
         let now      = ContinuousClock.now /* Current reference instant   */
         var overview = DailyWeekOverview() /* Overview comparison fixture */
 
@@ -183,7 +175,6 @@ final class AppReturnTests: XCTestCase
     /// Observe typing only in the owning scene, then detach without affecting controls
     func testDailyOverviewObservesOnlyItsOwnWindow()
     {
-
         let window     = /* Synthetic scene window */
             UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
         let controller = DailyOverviewProbe.Controller() /* Native view controller */
@@ -193,7 +184,6 @@ final class AppReturnTests: XCTestCase
 
         defer
         {
-
             controller.disconnect()
 
             window.isHidden = true
@@ -210,7 +200,6 @@ final class AppReturnTests: XCTestCase
 
         controller.configure(armed: true)
         {
-
             interactions += 1
 
         }
@@ -231,13 +220,11 @@ final class AppReturnTests: XCTestCase
     /// Reduce Motion switches directly and cancellation removes transient visuals
     func testDailyOverviewFadeRespectsReduceMotion()
     {
-
         let fade     = DailyOverviewFade() /* Fade comparison fixture */
         var selected = false               /* Current selection       */
 
         fade.transition(in: nil, reduceMotion: true)
         {
-
             selected = true
 
         }
@@ -253,7 +240,6 @@ final class AppReturnTests: XCTestCase
     /// @throws None
     func testFreshActivationAndShortReturnPreserveContext()
     {
-
         let now     = ContinuousClock.now /* Current reference instant */
         var session = AppReturnSession()  /* Current operation session */
 
@@ -269,7 +255,6 @@ final class AppReturnTests: XCTestCase
     /// @throws None
     func testTimeoutIsConsumedOnceAndDuplicateDepartureDoesNotExtendIt()
     {
-
         let now     = ContinuousClock.now /* Current reference instant */
         var session = AppReturnSession()  /* Current operation session */
 
@@ -287,12 +272,10 @@ final class AppReturnTests: XCTestCase
     /// @throws None
     func testOpenWorkOverridesTimeoutAtEitherLifecycleBoundary()
     {
-
         let now = ContinuousClock.now /* Current reference instant */
 
         for (departure, arrival) in [(true, false), (false, true), (true, true)]
         {
-
             var session = AppReturnSession() /* Current operation session */
 
             session.leftForBackground(at: now, protected: departure)
@@ -308,12 +291,10 @@ final class AppReturnTests: XCTestCase
     /// @throws Missing fixture date or day mapping
     func testWeekResetUsesStoredFirstDayBeforeUndatedOrReorderedLists() throws
     {
-
         let date = Date(timeIntervalSince1970: 1793620800) /* Date used by this operation */
 
         for firstWeekday in [1, 2]
         {
-
             var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
             calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
@@ -343,7 +324,6 @@ final class AppReturnTests: XCTestCase
     /// @throws Isolated preference or date fixture failure
     func testDailyOpeningIsOncePerLocalDayAcrossNewStoreInstances() throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.DailyOpeningTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -378,7 +358,6 @@ final class AppReturnTests: XCTestCase
     /// @throws Isolated preference or date fixture failure
     func testDailyOpeningChangesAtLocalMidnightNotUTCMidnight() throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.DailyBoundaryTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -409,7 +388,6 @@ final class AppReturnTests: XCTestCase
     /// @throws Isolated preference failure
     func testProtectedOrUnavailableMorningIsDeferredWithoutClaimingTheDay() throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.DeferredDailyTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -421,7 +399,6 @@ final class AppReturnTests: XCTestCase
 
         for (protected, available) in [(true, true), (false, false), (true, false)]
         {
-
             XCTAssertFalse(AppDailyOpening.claim(at: date, calendar: .current,
                 protected: protected, targetAvailable: available, defaults: defaults))
             XCTAssertNil(defaults.object(forKey: AppDailyOpening.key))
@@ -436,7 +413,6 @@ final class AppReturnTests: XCTestCase
     /// @throws Isolated preference or date fixture failure
     func testRepeatedDSTHourDoesNotCreateAnotherDailyOpening() throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.DailyDSTTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -465,7 +441,6 @@ final class AppReturnTests: XCTestCase
     /// @throws Isolated preference setup failure
     func testViewportResetPreservesOtherOwnersAndPresentation() throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.ReturnViewportTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -516,7 +491,6 @@ final class AppReturnTests: XCTestCase
     /// @throws Scene, scroll-discovery or isolated-storage failure
     func testResetRepositionsMountedNativeScrollViews() async throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.ReturnScrollTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -527,13 +501,11 @@ final class AppReturnTests: XCTestCase
 
         defer
         {
-
             defaults.removePersistentDomain(forName: domain)
             previous?.makeKeyAndVisible()
         }
         for horizontal in [false, true]
         {
-
             let memory = /* Owner-scoped viewport state */
                 BoardViewportMemory(owner: horizontal ? "horizontal" : "vertical", defaults: defaults)
 
@@ -541,10 +513,8 @@ final class AppReturnTests: XCTestCase
             memory.flush()
             func screen(_ request: Int) -> some View
             {
-
                 ScrollView(horizontal ? .horizontal : .vertical)
                 {
-
                     Color.gray.frame(width: horizontal ? 2200 : 220, height: horizontal ? 120 : 3000)
                         .background(BoardViewportScrollProbe(memory: memory, key: "position", horizontal: horizontal))
                 }
@@ -561,7 +531,6 @@ final class AppReturnTests: XCTestCase
             window.makeKeyAndVisible()
             defer
             {
-
                 window.isHidden = true
                 window.rootViewController = nil
 
@@ -570,11 +539,9 @@ final class AppReturnTests: XCTestCase
             host.view.layoutIfNeeded()
             func find(_ view: UIView) -> UIScrollView?
             {
-
                 if let scroll = view as? UIScrollView,
                    horizontal ? scroll.contentSize.width > scroll.bounds.width + 1 : scroll.contentSize.height > scroll.bounds.height + 1
                 {
-
                     return scroll
                 }
                 return view.subviews.lazy.compactMap(find).first
@@ -584,7 +551,6 @@ final class AppReturnTests: XCTestCase
 
             func offset() -> CGFloat
             {
-
                 horizontal ? scroll.contentOffset.x + scroll.adjustedContentInset.left
                     : scroll.contentOffset.y + scroll.adjustedContentInset.top
             }
@@ -607,7 +573,6 @@ final class AppReturnTests: XCTestCase
     /// @throws Scene, native scroll discovery or fixture failure
     func testWeekReturnResetsTheActualBoardToFirstListTop() async throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.ReturnBoardTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -628,7 +593,6 @@ final class AppReturnTests: XCTestCase
 
             KanbanList(id: index, title: "Day " + String(index), cards: (0..<30).map
             {
-
                 KanbanCard(id: index * 100 + $0, word: "Synthetic Card " + String($0), listTitle: "Day " + String(index))
             })
         }
@@ -639,7 +603,6 @@ final class AppReturnTests: XCTestCase
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -648,7 +611,6 @@ final class AppReturnTests: XCTestCase
         }
         func screen(_ request: Int, target: Int? = nil) -> some View
         {
-
             ContentView(lists: .constant(lists), boardTitle: "Return test", onListsChanged: { _ in },
                 personalCollectionID: owner, viewportDefaults: defaults)
                 .environment(\.appReturnResetRequest, request)
@@ -656,7 +618,6 @@ final class AppReturnTests: XCTestCase
         }
         func scrolls(_ view: UIView) -> [UIScrollView]
         {
-
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)
         }
 
@@ -671,12 +632,10 @@ final class AppReturnTests: XCTestCase
 
         let horizontal = try XCTUnwrap(scrolls(host.view).first /* Horizontal scrolling axis */
         {
-
             !($0 is UICollectionView) && $0.contentSize.width > $0.bounds.width + 100
         })
         let vertical = try XCTUnwrap(scrolls(host.view).first /* Vertical comparison fixture */
         {
-
             $0 is UICollectionView && $0.contentSize.height > $0.bounds.height + 100
         })
 
@@ -699,7 +658,6 @@ final class AppReturnTests: XCTestCase
         XCTAssertEqual(BoardViewportMemory(owner: owner.uuidString, defaults: defaults).state.visibleListID, 2)
         for list in scrolls(host.view) where list is UICollectionView && list.contentSize.height > list.bounds.height + 100
         {
-
             XCTAssertEqual(list.contentOffset.y + list.adjustedContentInset.top, 0, accuracy: 4)
         }
         XCTAssertEqual(defaults.data(forKey: "Plenact.Board.v1"), nil)
@@ -711,7 +669,6 @@ final class AppReturnTests: XCTestCase
     /// @throws Scene or presentation failure
     func testSceneWindowProbeRecognizesPresentedEditors() async throws
     {
-
         let scene     = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous  = scene.windows.first(where: \.isKeyWindow) /* Prior key window           */
@@ -725,7 +682,6 @@ final class AppReturnTests: XCTestCase
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -740,7 +696,6 @@ final class AppReturnTests: XCTestCase
 
             host.present(UIViewController(), animated: false)
             {
-
                 continuation.resume()
             }
         }
@@ -751,7 +706,6 @@ final class AppReturnTests: XCTestCase
 
             host.dismiss(animated: false)
             {
-
                 continuation.resume()
             }
         }
@@ -762,25 +716,21 @@ final class AppReturnTests: XCTestCase
 
 extension AppReturnTests
 {
-
     /// @fcn AppReturnTests.testLongAbsenceOverridesDailyWeekOnlyBeyondEightHours
     /// @brief Verify the strict threshold, persisted departure, and once-only daily override
     /// @return Void; isolated preferences are removed after the test
     func testLongAbsenceOverridesDailyWeekOnlyBeyondEightHours() throws
     {
-
         let domain = "Plenact.LongAbsenceTests." + UUID().uuidString /* Isolated preference domain */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain)) /* Test-only preferences */
         let start = Date(timeIntervalSince1970: 1_794_000_000) /* Synthetic departure */
 
         defer
         {
-
             defaults.removePersistentDomain(forName: domain)
         }
         for elapsed in [28799.0, 28800.0, 28801.0, 43200.0]
         {
-
             AppDailyOpening.recordDeparture(at: start, defaults: defaults)
             AppDailyOpening.recordDeparture(at: start.addingTimeInterval(100), defaults: defaults)
 
@@ -792,7 +742,6 @@ extension AppReturnTests
             XCTAssertNil(reopened.object(forKey: AppDailyOpening.departureKey))
             if elapsed > 28800
             {
-
                 XCTAssertFalse(AppDailyOpening.claim(at: arrival, calendar: .current,
                     protected: false, targetAvailable: true, defaults: reopened))
             }
@@ -807,14 +756,12 @@ extension AppReturnTests
     /// @return Void; no workspace preferences are used
     func testLongAbsencePreservesOpenWorkAndHandlesMissingOrFutureDates() throws
     {
-
         let domain = "Plenact.LongAbsenceTests." + UUID().uuidString /* Isolated preference domain */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain)) /* Test-only preferences */
         let now = Date() /* Synthetic arrival anchor */
 
         defer
         {
-
             defaults.removePersistentDomain(forName: domain)
         }
         XCTAssertFalse(AppDailyOpening.consumeLongAbsence(at: now, protected: false, defaults: defaults))

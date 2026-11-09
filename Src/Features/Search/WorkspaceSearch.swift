@@ -21,8 +21,6 @@ import SwiftUI
 ///
 struct TodaySearchResult: Identifiable
 {
-
-
     let listID:     Int           /* Board list opened when this result is selected */
     let cardID:     Int?          /* Stable card identity, or nil for a list result */
     let cardTitle:  String        /* Matching card title                            */
@@ -43,7 +41,6 @@ struct TodaySearchResult: Identifiable
     ///
     var id: String /* Record or view identity */
     {
-
                 "\(ownerID?.uuidString ?? "week"):\(listID):\(cardID.map(String.init) ?? "list")"
     }  /* Composite search-result identity */
 
@@ -58,8 +55,6 @@ struct TodaySearchResult: Identifiable
 ///
 enum TodaySearchScope: String, CaseIterable, Identifiable
 {
-
-
     case all = "All"
     case boards = "Lists"
     case labels = "Labels"
@@ -89,8 +84,6 @@ enum TodaySearchScope: String, CaseIterable, Identifiable
 ///
 enum TodaySearchIndex
 {
-
-
     ///
     /// @fcn        TodaySearchIndex.results(query:scope:lists:library:)
     /// @brief      Search a supplied local Board snapshot without modifying it
@@ -111,30 +104,22 @@ enum TodaySearchIndex
     static func results(query: String, scope: TodaySearchScope, lists: [KanbanList], library: LabelLibrary)
     -> [TodaySearchResult]
     {
-
-
         let term = query.trimmingCharacters( /* Normalized search term */
             in: .whitespacesAndNewlines) /* Nonblank text matched against the chosen scope */
 
         guard !term.isEmpty else
         {
-
-
             return []
         }
 
 
         if scope == .boards
         {
-
-
             return lists.compactMap
             {
                 list in
                 guard list.title.localizedStandardContains(term) || list.subtitle.localizedStandardContains(term) else
                 {
-
-
                     return nil
                 }
 
@@ -156,28 +141,23 @@ enum TodaySearchIndex
                 card -> TodaySearchResult? in
                 guard !card.isSectionDivider else
                 {
-
-
                     return nil
                 }
 
 
                 let checklistText = card.checklists.flatMap /* Checklist text */
                 {
-
                     [$0.title] + $0.items.map(\.title)
                 }  /* Searchable checklist and action titles      */
 
                 let commentText = card.comments.flatMap /* Comment text */
                 {
-
                     [$0.author, PlanRichText.plain($0.body)]
                 }  /* Searchable discussion authors and content   */
 
                 let users  = card.members.map(\.displayName) /* Searchable assignee names   */
                 let labels = library.labels.filter           /* Available label definitions */
                 {
-
                     card.labelIDs.contains($0.id)
                 }  /* Definitions of labels assigned to this card */
 
@@ -195,8 +175,6 @@ enum TodaySearchIndex
 
                 switch scope
                 {
-
-
                 case .labels:
 
                     searchableText = labelText
@@ -224,14 +202,10 @@ enum TodaySearchIndex
                 guard
                 searchableText.contains(where:
                     {
-
-
                         $0.localizedStandardContains(term)
                     })
                 else
                 {
-
-
                     return nil
                 }
 
@@ -240,8 +214,6 @@ enum TodaySearchIndex
 
                 switch scope
                 {
-
-
                 case .labels:
 
                     detail = labels.map(\.name).joined(separator: ", ")
@@ -258,7 +230,6 @@ enum TodaySearchIndex
                             PlanRichText.plain($0)
                         }].compactMap
                     {
-
                         $0
                     }
                     .first(where:
@@ -291,8 +262,6 @@ enum TodaySearchIndex
 ///
 enum LibrarySearchIndex
 {
-
-
     ///
     /// @fcn        LibrarySearchIndex.results
     /// @brief      Search active lists across personal collections
@@ -307,7 +276,6 @@ enum LibrarySearchIndex
     ///
     static func results(query: String, collections: [PersonalCollection], labels: LabelLibrary) -> [TodaySearchResult]
     {
-
         collections.filter(\.isActive).flatMap
         {
             collection in
@@ -344,8 +312,6 @@ enum LibrarySearchIndex
 ///
 enum PlanningSharedSearchIndex
 {
-
-
     ///
     /// @fcn        PlanningSharedSearchIndex.results
     /// @brief      Search retained weeks and active personal collections
@@ -365,11 +331,9 @@ enum PlanningSharedSearchIndex
         labels: LabelLibrary
     ) -> [TodaySearchResult]
     {
-
         let sources: [(UUID, String?, String, [KanbanList])] = /* Source records or files */
         access.document.weeks.map
         {
-
             (
                 $0.id, $0.startKey,
                 $0.startKey == access.document.currentWeekKey ? "This week · \($0.rangeTitle)" : $0.rangeTitle,

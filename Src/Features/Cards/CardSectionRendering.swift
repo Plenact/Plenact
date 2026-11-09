@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 extension CardDetailView
 {
-
-
     ///
     /// @fcn        CardDetailView.noteToolbar(using:)
     /// @brief      Build the Note editor's persistent lower toolbar
@@ -33,19 +31,15 @@ extension CardDetailView
     ///
     func noteToolbar(using scrollProxy: ScrollViewProxy) -> some View
     {
-
         HStack(spacing: 0)
         {
-
             Button
             {
-
                 dismissEditing()
                 dismiss()
             }
             label:
             {
-
                 Image(systemName: "chevron.left")
             }
             .accessibilityLabel("Back to previous view")
@@ -55,10 +49,8 @@ extension CardDetailView
 
             if !isEditingLocked
             {
-
                 Button
                 {
-
                     dismissEditing()
                     showsNoteDetails.toggle()
 
@@ -69,10 +61,8 @@ extension CardDetailView
 
                     DispatchQueue.main.async
                     {
-
                         withAnimation(.easeInOut)
                         {
-
                             scrollProxy.scrollTo(target, anchor: .top)
                         }
 
@@ -81,7 +71,6 @@ extension CardDetailView
                 }
                 label:
                 {
-
                     Image(systemName: showsNoteDetails ? "info.circle.fill" : "info.circle")
                 }
                 .accessibilityLabel(showsNoteDetails ? "Hide Note details" : "Show Note details")
@@ -91,7 +80,6 @@ extension CardDetailView
 
                 Button
                 {
-
                     dismissEditing()
 
                     activeSheet = .noteAttachments
@@ -99,7 +87,6 @@ extension CardDetailView
                 }
                 label:
                 {
-
                     Image(systemName: "paperclip")
                 }
                 .accessibilityLabel("Note attachments")
@@ -112,7 +99,6 @@ extension CardDetailView
 
             ShareLink(item: NoteTextSharing.text(for: workingCardSnapshot), subject: Text(titleText))
             {
-
                 Image(systemName: "square.and.arrow.up")
             }
             .accessibilityLabel("Share Note text")
@@ -151,19 +137,13 @@ extension CardDetailView
     @ViewBuilder
     func cardSection(_ section: CardSection, using scrollProxy: ScrollViewProxy) -> some View
     {
-
         switch section
         {
-
         case .quickActions:
             DetailSection(title: "Quick Actions", collapsible: true)
             {
-
-
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8)
                 {
-
-
                     ActionTile(
                         title: "Add Checklist", icon: "checklist", color: .green,
                         action:
@@ -174,14 +154,12 @@ extension CardDetailView
                         title: "Add Attachment", icon: "paperclip", color: .cyan,
                         action:
                         {
-
                             activeSheet = .attachmentSources
 
                         }
                     )
                     ActionTile(title: "Members", icon: "person.2", color: .purple, action:
                         {
-
                             activeSheet = .members
 
                         })
@@ -193,7 +171,6 @@ extension CardDetailView
         case .media:
             if presentation == .card, displayFormat != .picture, let cover = workingCardSnapshot.coverAttachment
             {
-
                 selectedCoverPreview(cover)
                 .padding(16)
                 .accessibilityIdentifier("card.selectedCoverPreview")
@@ -202,14 +179,11 @@ extension CardDetailView
 
             if presentation == .card
             {
-
                 let visibleAttachments = workingCardSnapshot /* Visible attachments */
                 .attachmentsExcludingCover /* Gallery records excluding the featured cover */
 
                 if !visibleAttachments.isEmpty
                 {
-
-
                     attachmentGallery(visibleAttachments)
                 }
 
@@ -226,12 +200,8 @@ extension CardDetailView
         case .description:
             if presentation == .card
             {
-
-
                 DetailSection(title: "Description", collapsible: true)
                 {
-
-
                     RichTextEditor(
                         placeholder: "Description", text: descriptionEditingBinding,
                         focus: richTextFocusBinding(for: .description)
@@ -255,11 +225,8 @@ extension CardDetailView
         case .details:
             DetailSection(title: "Details", collapsible: true)
             {
-
-
                 CardLocationRow(location: location, canEdit: !isEditingLocked)
                 {
-
                     activeSheet = .location
 
                 }
@@ -270,8 +237,6 @@ extension CardDetailView
 
                 if startDate != nil
                 {
-
-
                     dateRow(for: .start)
                     Divider()
                 }
@@ -279,8 +244,6 @@ extension CardDetailView
 
                 if dueDate != nil
                 {
-
-
                     dateRow(for: .due)
                     Divider()
                 }
@@ -288,18 +251,13 @@ extension CardDetailView
 
                 Button
                 {
-
                     activeSheet = .labels
 
                 }
                 label:
                 {
-
-
                     HStack(spacing: 10)
                     {
-
-
                         Image(systemName: "tag")
                         .frame(width: 22)
                         .foregroundStyle(.secondary)
@@ -310,15 +268,11 @@ extension CardDetailView
 
                         if selectedLabels.isEmpty
                         {
-
-
                             Text("Add labels")
                             .foregroundStyle(.secondary)
                         }
                         else
                         {
-
-
                             ForEach(selectedLabels)
                             {
                                 label in
@@ -342,34 +296,23 @@ extension CardDetailView
 
                 Button
                 {
-
                     activeSheet = .members
 
                 }
                 label:
                 {
-
-
                     HStack(spacing: 12)
                     {
-
-
                         if members.isEmpty
                         {
-
-
                             Image(systemName: "person")
                             .frame(width: 22)
                             .foregroundStyle(.secondary)
                         }
                         else
                         {
-
-
                             HStack(spacing: -5)
                             {
-
-
                                 ForEach(Array(members.enumerated()), id: \.offset)
                                 {
                                     _, member in
@@ -420,8 +363,6 @@ extension CardDetailView
                 }
             )
             {
-
-
                 ForEach(checklists)
                 {
                     checklist in
@@ -440,12 +381,8 @@ extension CardDetailView
         case .activity:
             VStack(alignment: .leading, spacing: 10)
             {
-
-
                 HStack
                 {
-
-
                     Text("Activity")
                     .font(.headline)
 
@@ -453,10 +390,8 @@ extension CardDetailView
 
                     Menu
                     {
-
                         Picker("Show", selection: $activityFilter)
                         {
-
                             ForEach(ActivityFilter.allCases)
                             {
                                 filter in
@@ -468,7 +403,6 @@ extension CardDetailView
                     }
                     label:
                     {
-
                         Image(systemName: "gearshape")
                         .foregroundStyle(.secondary)
                     }
@@ -480,11 +414,8 @@ extension CardDetailView
 
                 if !isActivityCollapsed
                 {
-
                     if activityFilter != .cardActivity
                     {
-
-
                         ForEach(comments)
                         {
                             comment in
@@ -493,7 +424,6 @@ extension CardDetailView
                                 memberColor: memberIconColor(for: comment.author)
                             )
                             {
-
                                 deleteComment(with: comment.id)
                             }
 
@@ -504,21 +434,17 @@ extension CardDetailView
 
                     if activityFilter != .comments
                     {
-
-
                         ForEach(GeneratedActivity.allCases.filter
                             {
                                 !dismissedActivityIDs.contains($0.id)
                             })
                         {
-
                         activity in
                             ActivityRow(
                                 text: activity.text(for: card, actorName: currentUserName),
                                 actorColor: memberIconColor(for: currentUserName)
                             )
                             {
-
                                 dismissGeneratedActivity(activity)
                             }
 
@@ -539,8 +465,6 @@ extension CardDetailView
 
             HStack(alignment: .bottom, spacing: 10)
             {
-
-
                 Image(systemName: "person.crop.circle.fill")
                 .font(.title2)
                 .foregroundStyle(memberIconColor(for: currentUserName))
@@ -556,7 +480,6 @@ extension CardDetailView
 
                 Button(action: postComment)
                 {
-
                     Image(systemName: "paperplane.fill")
                     .font(.body.weight(.semibold))
                 }

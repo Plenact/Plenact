@@ -18,8 +18,6 @@ import SwiftUI
 ///
 enum PlanningCalendarStore
 {
-
-
     static let key = "Plenact.CalendarWeeks.v1" /* Persistence lookup key */
 
 
@@ -37,7 +35,6 @@ enum PlanningCalendarStore
     ///
     static func load(from defaults: UserDefaults = .standard) throws -> PlanningCalendarDocument?
     {
-
         guard let data = defaults.data(forKey: key) else
         {
             return nil
@@ -55,7 +52,6 @@ enum PlanningCalendarStore
             })
         else
         {
-
             throw CocoaError(.coderReadCorrupt)
         }
 
@@ -77,7 +73,6 @@ enum PlanningCalendarStore
     ///
     static func save(_ document: PlanningCalendarDocument, to defaults: UserDefaults = .standard) throws
     {
-
         // Retained corrupt or unsupported data must not be silently overwritten
         _ = try load(from: defaults)
 

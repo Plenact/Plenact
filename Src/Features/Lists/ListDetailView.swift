@@ -18,8 +18,6 @@ import UniformTypeIdentifiers
 ///
 struct TodayListDetailView: View
 {
-
-
     @State private var keyboardDetailPath: [KanbanCard] = [] /* Keyboard detail path */
     @State private var confirmsCheckmarkReset           = false /* Confirms checkmark reset */
 
@@ -70,7 +68,6 @@ struct TodayListDetailView: View
 
     private var effectiveBoardAppearance: BoardAppearance /* Resolved Board appearance */
     {
-
         if let boardAppearance
         {
             return boardAppearance
@@ -78,7 +75,6 @@ struct TodayListDetailView: View
 
         if let dayMovementSource
         {
-
             let owner = /* Owning collection or Week */
             planningCalendarAccess?.document.weeks.first
             {
@@ -111,7 +107,6 @@ struct TodayListDetailView: View
 
     private var cardDropTarget: BoardCardDropTarget? /* Card drop target */
     {
-
         guard let cardID = draggedCardID, let point = cardDragLocation, let focusedList else
         {
             return nil
@@ -126,12 +121,10 @@ struct TodayListDetailView: View
 
     private var cardDropSurface: some View /* Card drop surface */
     {
-
         BoardCardDropSurface(
             token: cardDragToken, isEnabled: editMode != .active,
             onChanged:
             {
-
                 cardDragLocation = $0
 
             },
@@ -156,13 +149,10 @@ struct TodayListDetailView: View
     ///
     private func insertionMarker(before cardID: Int?) -> some View
     {
-
         Group
         {
-
             if let target = cardDropTarget, target.beforeCardID == cardID
             {
-
                 RoundedRectangle(cornerRadius: 2)
                 .fill(Color.accentColor)
                 .frame(height: 4)
@@ -184,7 +174,6 @@ struct TodayListDetailView: View
     ///
     private func clearCardDrag()
     {
-
         draggedCardID = nil
         cardDragLocation = nil
 
@@ -203,13 +192,10 @@ struct TodayListDetailView: View
     ///
     private func cardDragSource(for cardID: Int) -> some View
     {
-
         Group
         {
-
             if editMode != .active
             {
-
                 BoardCardDragSource(
                     token: cardDragToken,
                     onBegan:
@@ -229,7 +215,6 @@ struct TodayListDetailView: View
                         point in
                         if draggedCardID == cardID
                         {
-
                             cardDragLocation = point
 
                         }
@@ -237,7 +222,6 @@ struct TodayListDetailView: View
                     },
                     onEnded:
                     {
-
                         if draggedCardID == cardID
                         {
                             clearCardDrag()
@@ -265,7 +249,6 @@ struct TodayListDetailView: View
     ///
     private func finishCardDrag(at point: CGPoint) -> Bool
     {
-
         defer
         {
             clearCardDrag()
@@ -288,12 +271,10 @@ struct TodayListDetailView: View
 
         do
         {
-
             return try BoardCardMovement.move(cardID, to: listID, before: target.beforeCardID, in: &lists)
         }
         catch
         {
-
             DatabaseActivity.shared.report(
                                     "Could not move this card: \(error.localizedDescription) Its content has been retained.")
             return false
@@ -312,7 +293,6 @@ struct TodayListDetailView: View
     ///
     private var focusedList: KanbanList? /* Focused list */
     {  /* Current list resolved for the focused Board surface */
-
         lists.first
         {
             $0.id == listID
@@ -332,7 +312,6 @@ struct TodayListDetailView: View
     ///
     private func usesCompactCards(_ card: KanbanCard) -> Bool
     {
-
         effectiveBoardAppearance.resolvedCardDetail(card: card.appearance, list: focusedList?.appearance) == .compact
     }
 
@@ -349,7 +328,6 @@ struct TodayListDetailView: View
     ///
     private func cardPreviewHeight(_ card: KanbanCard) -> CGFloat
     {
-
         usesCompactCards(card) ? 64 : BoardPresentation.standard.minimumCardHeight
     }
 
@@ -367,10 +345,8 @@ struct TodayListDetailView: View
     @ViewBuilder
     private func cardPreview(_ card: KanbanCard) -> some View
     {
-
         if focusedList?.singleListViewMode == .noteList
         {
-
             SingleListNoteRow(
                 card: card, onToggle:
                 {
@@ -381,14 +357,12 @@ struct TodayListDetailView: View
                     archiveCard(card.id)
                 }, onDelete:
                 {
-
                     _ = deleteCard(card.id)
 
                 }, onUpdateCard: updateCard)
         }
         else
         {
-
             KanbanCardView(
                 card: card,
                 height: cardPreviewHeight(card),
@@ -412,7 +386,6 @@ struct TodayListDetailView: View
                 }
             )
             {
-
                 toggleCard(card.id)
             }
 
@@ -423,7 +396,6 @@ struct TodayListDetailView: View
 
     private var personalListBackground: CollectionBackground? /* Personal list background */
     {
-
         guard representedDate == nil,
         CollectionBackground.isAllowed(
             collectionID: dayMovementSource,
@@ -440,7 +412,6 @@ struct TodayListDetailView: View
 
     private var headerColor: Color /* Header color */
     {
-
         let chosen   = /* Explicit user selection */
             effectiveBoardAppearance.resolved(focusedList?.appearance).background
         let fallback = /* Value used when no override exists */
@@ -463,12 +434,10 @@ struct TodayListDetailView: View
     ///
     private func sessionGuidance(for focusedList: KanbanList) -> some View
     {
-
         SessionListGuidance(
             list: focusedList, labels: labelLibrary, toggleRequest: guidanceToggleRequest,
             onPresentationChange:
             {
-
                 guidanceFooterVisible = $0
 
             }
@@ -486,7 +455,6 @@ struct TodayListDetailView: View
     ///
     private func inlineCapture(for focusedList: KanbanList) -> some View
     {
-
         InlineListCapture(
             list: focusedList, draft: $inlineCaptureDraft,
             textColor: effectiveBoardAppearance.resolvedAddItemTextColor(
@@ -497,7 +465,6 @@ struct TodayListDetailView: View
             onCreate: addCard,
             onOpenComposer:
             {
-
                 showsNewCard = true
 
             }
@@ -528,13 +495,10 @@ struct TodayListDetailView: View
     ///
     var body: some View /* Today List Detail layout */
     {
-
         Group
         {
-
             if let selectedDay
             {
-
                 PlanningSelectedDayView(
                     selection: selectedDay, currentUserName: currentUserName,
                     returnDestinationTitle: returnDestinationTitle, onClose: onClose,
@@ -544,14 +508,12 @@ struct TodayListDetailView: View
             }
             else
             {
-
                 dayContent
             }
 
         }
         .sheet(isPresented: $showsDaySelector)
         {
-
             PlanningDaySelector(initialDate: representedDate ?? .now)
             {
                 date in
@@ -578,7 +540,6 @@ struct TodayListDetailView: View
     ///
     private func selectDay(_ date: Date)
     {
-
         if let onSelectDay
         {
             onSelectDay(date);
@@ -610,7 +571,6 @@ struct TodayListDetailView: View
     ///
     private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation
     {
-
         let neighbors = CardKeyboardNeighbors.resolve(card, in: lists) /* Adjacent items or Lists */
 
         return CardKeyboardNavigation(
@@ -618,10 +578,8 @@ struct TodayListDetailView: View
             ? nil
             :
             {
-
                 if let target = CardKeyboardNeighbors.resolve(card, in: lists).previous
                 {
-
                     keyboardDetailPath = [target]
 
                 }
@@ -631,10 +589,8 @@ struct TodayListDetailView: View
             ? nil
             :
             {
-
                 if let target = CardKeyboardNeighbors.resolve(card, in: lists).next
                 {
-
                     keyboardDetailPath = [target]
 
                 }
@@ -645,22 +601,16 @@ struct TodayListDetailView: View
 
     private var dayContent: some View /* Day content */
     {  /* Focused-list Board surface and card-detail navigation */
-
-
         NavigationStack(path: $keyboardDetailPath)
         {
-
             ZStack
             {
-
                 if let personalListBackground
                 {
-
                     CollectionBackgroundSurface(background: personalListBackground).ignoresSafeArea()
                 }
                 else
                 {
-
                     Color(.systemGray6).ignoresSafeArea()
                 }
                 if let surface = focusedList?.appearance?.studioSurface ?? effectiveBoardAppearance.studioSurface
@@ -671,7 +621,6 @@ struct TodayListDetailView: View
 
                 VStack(spacing: 0)
                 {
-
                     Color.clear.frame(height: 129)
 
                     Spacer(minLength: 0)
@@ -680,13 +629,11 @@ struct TodayListDetailView: View
                 .ignoresSafeArea()
                 .overlay(alignment: .bottom)
                 {
-
                     Rectangle()
                     .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
                     .frame(height: 4)
                     .background
                     {
-
                         // Match the Day banner below the gold edge through the home-indicator area
                         headerColor
                         .ignoresSafeArea(edges: .bottom)
@@ -699,17 +646,13 @@ struct TodayListDetailView: View
 
                 if let focusedList
                 {  /* Selected list available for rendering */
-
-
                     ScrollViewReader
                     {
                         scrollProxy in
                         let cards = List /* Scrollable rows beneath the guidance */
                         {
-
                             if let day = representedDate
                             {
-
                                 DayScheduleOverview(
                                     cards: focusedList.cards, labels: labelLibrary, day: day,
                                     calendar: planningCalendarAccess?.document.calendar ?? .current
@@ -727,8 +670,6 @@ struct TodayListDetailView: View
 
                                 if card.isSectionDivider
                                 {
-
-
                                     DaySectionRow(
                                         card: card, cards: focusedList.cards, onUpdate: updateCard,
                                         onMove:
@@ -739,7 +680,6 @@ struct TodayListDetailView: View
                                                     $0.id == listID
                                                 }) else
                                             {
-
                                                 return
                                             }
 
@@ -790,7 +730,6 @@ struct TodayListDetailView: View
                                     .listRowBackground(Color.clear)
                                     .background
                                     {
-
                                         GeometryReader
                                         {
                                             geometry in
@@ -812,11 +751,8 @@ struct TodayListDetailView: View
                                 }
                                 else
                                 {
-
-
                                     NavigationLink(value: card)
                                     {
-
                                         cardPreview(card)
                                         .modifier(DaySectionRail(cardID: card.id, cards: focusedList.cards))
                                     }
@@ -831,7 +767,6 @@ struct TodayListDetailView: View
                                     .opacity(draggedCardID == card.id ? 0.45 : 1)
                                     .background
                                     {
-
                                         GeometryReader
                                         {
                                             geometry in
@@ -860,7 +795,6 @@ struct TodayListDetailView: View
                                             enabled: editMode != .active,
                                             onRequest:
                                             {
-
                                                 deletingCard = card
 
                                             }))
@@ -910,14 +844,11 @@ struct TodayListDetailView: View
                         .modifier(RevealCreatedContent(lists: [focusedList], existingProxy: scrollProxy))
                         .onAppear
                         {
-
                             if focusedViewportMemory == nil
                             {
-
                                 let currentWeekID = /* Current week ID */
                                     planningCalendarAccess?.document.weeks.first
                                 {
-
                                     $0.startKey == planningCalendarAccess?.document.currentWeekKey
                                 }?.id
                                 let owner    = /* Normalized owner identifier */
@@ -940,7 +871,6 @@ struct TodayListDetailView: View
 
                         .background
                         {
-
                             GeometryReader
                             {
                                 geometry in
@@ -984,13 +914,11 @@ struct TodayListDetailView: View
                         }
                         .overlay(alignment: .top)
                         {
-
                             Rectangle()
                             .fill(Color(.systemGray3).opacity(0.65))
                             .overlay(headerColor.opacity(0.20))
                             .mask
                             {
-
                                 LinearGradient(
                                     colors: [.black, .clear],
                                     startPoint: .top, endPoint: .bottom)
@@ -1003,7 +931,6 @@ struct TodayListDetailView: View
 
                         .task(id: cardViewport.size)
                         {
-
                             guard focusesFirstUncheckedTask, !didApplyInitialTaskFocus,
                             cardViewport.height > 0, cardViewport.width > 0,
                             let target = focusedList.firstUncheckedTaskID
@@ -1035,7 +962,6 @@ struct TodayListDetailView: View
 
                         VStack(spacing: 0)
                         {
-
                             // Animate the guide above the List without resizing a native row
                             sessionGuidance(for: focusedList)
                                 .padding(.horizontal, 8)
@@ -1047,7 +973,6 @@ struct TodayListDetailView: View
                 }
                 else
                 {
-
                     ContentUnavailableView("List unavailable", systemImage: "list.bullet")
                 }
 
@@ -1061,7 +986,6 @@ struct TodayListDetailView: View
                 _, _ in
                 if let focusedList, checkmarkReset?.canRestore(focusedList) == false
                 {
-
                     checkmarkReset = nil
 
                 }
@@ -1077,7 +1001,6 @@ struct TodayListDetailView: View
             }
             .onDisappear
             {
-
                 checkmarkReset = nil;
                 deletingCard = nil
 
@@ -1092,7 +1015,6 @@ struct TodayListDetailView: View
                                         {
                                             if !$0
                                             {
-
                                                 deletingCard = nil
 
                                             }
@@ -1101,10 +1023,8 @@ struct TodayListDetailView: View
                                     ), titleVisibility: .visible
             )
             {
-
                 Button("Delete \(deletingCard?.presentation.title ?? "item")", role: .destructive)
                 {
-
                     if let target = deletingCard,
                     focusedList?.cards.contains(where:
                         {
@@ -1112,7 +1032,6 @@ struct TodayListDetailView: View
                         })
                     == true
                     {
-
                         deleteCard(target.id)
                     }
 
@@ -1122,7 +1041,6 @@ struct TodayListDetailView: View
 
                 Button("Cancel", role: .cancel)
                 {
-
                     deletingCard = nil
 
                 }
@@ -1130,7 +1048,6 @@ struct TodayListDetailView: View
             }
             message:
             {
-
                 Text("Permanently deletes this item, its details, and its bookmark. This cannot be undone.")
             }
             .modifier(
@@ -1143,16 +1060,12 @@ struct TodayListDetailView: View
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0)
             {
-
                 VStack(spacing: 0)
                 {
-
                     AdaptiveWorkspaceHeaderLayout(regularSpacing: 12, layoutDirection: headerLayoutDirection)
                     {
-
                         Button(action: onClose)
                         {
-
                             Image(systemName: "chevron.left")
                             .font(.title2)
                             .foregroundStyle(.white)
@@ -1164,20 +1077,16 @@ struct TodayListDetailView: View
                         .accessibilityLabel("Back to \(returnDestinationTitle)")
                         VStack(alignment: .leading, spacing: 2)
                         {
-
                             HStack(spacing: 8)
                             {
-
                                 ItemAppearanceMark(
                                     appearance: focusedList?.headerAppearance(
                                         collectionIcon: planningCalendarAccess?.library.first(where:
                                             {
-
                                                 $0.id == dayMovementSource
                                             })?.icon,
                                         collectionColor: planningCalendarAccess?.library.first(where:
                                             {
-
                                                 $0.id == dayMovementSource
                                             })?.color))
                                 SlideableHeaderText(
@@ -1196,16 +1105,13 @@ struct TodayListDetailView: View
 
                             if let representedDate
                             {
-
                                 Button
                                 {
-
                                     showsDaySelector = true
 
                                 }
                                 label:
                                 {
-
                                     Text(representedDate.formatted(.dateTime.month(.abbreviated).day().year()))
                                     .font(effectiveBoardAppearance.resolvedSubtitleItalic(list: focusedList?.appearance)
                                           ? .subheadline.italic() : .subheadline)
@@ -1220,8 +1126,6 @@ struct TodayListDetailView: View
                             }
                             else if let subtitle = focusedList?.subtitle, !subtitle.isEmpty
                             {
-
-
                                 SlideableHeaderText(text: subtitle)
                                 .font(effectiveBoardAppearance.resolvedSubtitleItalic(list: focusedList?.appearance)
                                       ? .subheadline.italic() : .subheadline)
@@ -1235,7 +1139,6 @@ struct TodayListDetailView: View
                         .contentShape(Rectangle())
                         .onTapGesture
                         {
-
                             guard representedDate == nil,
                             DefaultListTutorial.guidance(for: focusedList?.title ?? "") != nil
                             else
@@ -1248,7 +1151,6 @@ struct TodayListDetailView: View
                         }
                         .accessibilityAction(named: "Show or hide List guide")
                         {
-
                             guard representedDate == nil,
                             DefaultListTutorial.guidance(for: focusedList?.title ?? "") != nil
                             else
@@ -1262,51 +1164,43 @@ struct TodayListDetailView: View
                         .layoutValue(key: WorkspaceHeaderTitleKey.self, value: true)
                         Button
                         {
-
                             showsDaySearch = true
 
                         }
                         label:
                         {
-
                             WorkspaceHeaderIcon(systemName: "magnifyingglass").foregroundStyle(.white)
                         }
                         .accessibilityLabel("Search Plenact")
                         Button
                         {
-
                             if onOpenSelectedWeek == nil, onSelectDay == nil, let planningCalendarAccess,
                             (dayMovementSource != nil
                                 && dayMovementSource != planningCalendarAccess.document.week(for: .now)?.id)
                             || (representedDate.map
                                 {
-
                                     PlanningDate.weekKey($0, calendar: planningCalendarAccess.document.calendar)
                                     != planningCalendarAccess.document.currentWeekKey
                                 }
                                 ?? false)
                             {
-
                                 planningCalendarAccess.openCurrentWeek();
                                 onClose();
                                 planningHomeExit?()
                             }
                             else
                             {
-
                                 onOpenWeek()
                             }
 
                         }
                         label:
                         {
-
                             WorkspaceHeaderIcon(systemName: "rectangle.split.3x1").foregroundStyle(.white)
                         }
                         .accessibilityLabel("Open this week")
                         Menu
                         {
-
                             Picker(
                                                                                     "View as",
                                                                                     selection: Binding(
@@ -1330,7 +1224,6 @@ struct TodayListDetailView: View
                                                                                     )
                             )
                             {
-
                                 ForEach(SingleListViewMode.allCases)
                                 {
                                     Text($0.title).tag($0)
@@ -1340,7 +1233,6 @@ struct TodayListDetailView: View
 
                             if let focusedList
                             {
-
                                 ListCheckmarkResetControl(
                                     list: focusedList, session: $checkmarkReset, confirmsClear: $confirmsCheckmarkReset,
                                     onUpdateCard: updateCard)
@@ -1348,14 +1240,12 @@ struct TodayListDetailView: View
 
                             Button("Appearance", systemImage: "paintpalette")
                             {
-
                                 isEditingAppearance = true
 
                             }
 
                             Button("Edit list", systemImage: "pencil")
                             {
-
                                 isEditingList = true
 
                             }
@@ -1366,10 +1256,8 @@ struct TodayListDetailView: View
                                 ? "checkmark.circle.fill" : "arrow.up.arrow.down.circle"
                             )
                             {
-
                                 withAnimation(.easeInOut(duration: 0.2))
                                 {
-
                                     editMode = editMode == .active ? .inactive : .active
 
                                 }
@@ -1381,7 +1269,6 @@ struct TodayListDetailView: View
                         }
                         label:
                         {
-
                             WorkspaceHeaderIcon(systemName: "ellipsis.circle.fill").foregroundStyle(.white)
                         }
 
@@ -1394,7 +1281,6 @@ struct TodayListDetailView: View
                 }
                 .background
                 {
-
                     Rectangle()
                     .fill(headerColor.opacity(0.85))
                     .background(.ultraThinMaterial)
@@ -1402,7 +1288,6 @@ struct TodayListDetailView: View
                 }
                 .overlay(alignment: .bottom)
                 {
-
                     Rectangle()
                     .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
                     .frame(height: 4)
@@ -1434,12 +1319,10 @@ struct TodayListDetailView: View
                     },
                     onArchive:
                     {
-
                         archiveCard(card.id)
                     },
                     onDelete:
                     {
-
                         deleteCard(card.id)
                     },
                     listedOnDate: representedDate
@@ -1466,7 +1349,6 @@ struct TodayListDetailView: View
                 isPresented: $showsDaySearch,
                 onLeaveForHome:
                 {
-
                     onClose();
                     planningHomeExit?()
                 })
@@ -1477,13 +1359,11 @@ struct TodayListDetailView: View
             } .flatMap(\.cards))
         .sheet(isPresented: $showsNewCard)
         {
-
             if let focusedList = lists.first(where:
                 {
                     $0.id == listID
                 })
             {
-
                 ListItemComposer(
                     list: focusedList, draftKey: ListCreationDraft.key(collectionID: dayMovementSource, listID: listID),
                     initialTitle: inlineCaptureDraft.title,
@@ -1506,10 +1386,8 @@ struct TodayListDetailView: View
         }
         .sheet(isPresented: $isEditingList)
         {
-
             if let focusedList
             {
-
                 ListInfoEditorSheet(list: focusedList)
                 {
                     title, subtitle, defaultPresentation in
@@ -1522,10 +1400,8 @@ struct TodayListDetailView: View
         }
         .sheet(isPresented: $isEditingAppearance)
         {
-
             if let focusedList
             {
-
                 ItemAppearanceSheet(
                     title: focusedList.title, appearance: focusedList.appearance, showsListBackground: true,
                     inheritedAddItemTextColor: effectiveBoardAppearance.resolvedAddItemTextColor(
@@ -1558,13 +1434,9 @@ struct TodayListDetailView: View
     ///
     private func toggleCard(_ cardID: Int)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the focused list containing the requested card */
-
-
                 $0.id == listID
             }),
         let cardIndex = lists[listIndex].cards.firstIndex(where:
@@ -1599,19 +1471,13 @@ struct TodayListDetailView: View
     ///
     private func moveCard(_ cardID: Int, toIndex destinationIndex: Int)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the focused list to reorder */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -1632,7 +1498,6 @@ struct TodayListDetailView: View
 
         withAnimation(.easeInOut(duration: 0.2))
         {
-
             lists[listIndex].cards = cards
 
         }
@@ -1654,13 +1519,9 @@ struct TodayListDetailView: View
     ///
     private func archiveCard(_ cardID: Int)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the focused list receiving the requested change */
-
-
                 $0.cards.contains(where:
                     {
                         $0.id == cardID
@@ -1668,8 +1529,6 @@ struct TodayListDetailView: View
             })
         else
         {
-
-
             return
         }
 
@@ -1691,13 +1550,9 @@ struct TodayListDetailView: View
     ///
     private func updateCard(_ updatedCard: KanbanCard)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the focused list owning the edited card */
-
-
                 $0.cards.contains(where:
                     {
                         $0.id == updatedCard.id
@@ -1736,8 +1591,6 @@ struct TodayListDetailView: View
     @discardableResult
     private func deleteCard(_ cardID: Int) -> Bool
     {
-
-
         onPermanentDelete(cardID)
     }
 
@@ -1757,13 +1610,9 @@ struct TodayListDetailView: View
     ///
     private func moveCard(_ cardID: Int, toListID destinationListID: Int)
     {
-
-
         guard
         let sourceListIndex = lists.firstIndex(where:
             {  /* Source list position for explicit card movement */
-
-
                 $0.id == listID
             }),
         let destinationListIndex = lists.firstIndex(where:
@@ -1807,7 +1656,6 @@ struct TodayListDetailView: View
     ///
     private func addCard(_ capture: QuickCaptureSubmission) -> Bool
     {
-
         guard capture.listID == listID, let listIndex = lists.firstIndex(where:
             {
                 $0.id == listID
@@ -1861,7 +1709,6 @@ struct TodayListDetailView: View
                 $0.id == listID
             })
         {
-
             week.collection.lists[index] = updated
 
             guard access.saveWeek(week) else
@@ -1879,7 +1726,6 @@ struct TodayListDetailView: View
                 $0.id == listID
             })
         {
-
             owner.lists[index] = updated
 
             guard access.saveLibrary(owner) else
@@ -1890,7 +1736,6 @@ struct TodayListDetailView: View
         }
         else
         {
-
             return false
         }
 

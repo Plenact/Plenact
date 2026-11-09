@@ -15,20 +15,17 @@ import UIKit
 ///     Keep first activation and transient inactivity separate from a genuine Home-screen absence
 struct AppReturnSession
 {
-
     static let timeout: Duration = .seconds(300)    /* Foreground return threshold */
     private var departure: ContinuousClock.Instant? /* Departure operation value   */
     private var protectedAtDeparture = false        /* Protected at departure      */
 
     var hasBackgroundDeparture: Bool /* Background Departure availability */
     {
-
         departure != nil
     }
 
     var hasProtectedDeparture: Bool /* Protected Departure availability */
     {
-
         protectedAtDeparture
     }
 
@@ -40,7 +37,6 @@ struct AppReturnSession
     /// @return First dated List, a visible fallback, or nil for an empty Board
     static func firstListID(in week: DatedPlanningWeek?, lists: [KanbanList]) -> Int?
     {
-
         let active = Set(lists.map(\.id)) /* Active operation state */
         let dated  =                      /* Calendar-backed owner  */
             week?.dayListIDs.sorted { $0.key < $1.key }.map(\.value) ?? []
@@ -56,7 +52,6 @@ struct AppReturnSession
     /// @return Void; no persisted or shared data changes
     mutating func leftForBackground(at instant: ContinuousClock.Instant, protected: Bool)
     {
-
         departure = departure ?? instant
         protectedAtDeparture = protectedAtDeparture || protected
 
@@ -70,10 +65,8 @@ struct AppReturnSession
     /// @return True only after five minutes with no protected editing context
     mutating func becameActive(at instant: ContinuousClock.Instant, protected: Bool) -> Bool
     {
-
         guard let departure else
         {
-
             return false
         }
 
@@ -93,7 +86,6 @@ struct AppReturnSession
 ///     Protect navigated Cards/Notes and inline writing without persisting user content or navigation
 private struct AppReturnProtectionKey: EnvironmentKey
 {
-
     static let defaultValue: (UUID, Bool) -> Void = /* Fallback environment callback */
     {
         _, _ in
@@ -108,7 +100,6 @@ private struct AppReturnProtectionKey: EnvironmentKey
 ///     Avoid reconstructing inactive tabs or adding navigation to the shared data model
 private struct AppReturnResetKey: EnvironmentKey
 {
-
     static let defaultValue = 0 /* Fallback environment value */
 
 }
@@ -119,7 +110,6 @@ private struct AppReturnResetKey: EnvironmentKey
 ///     Distinguish today's List from the Week's first dated List without changing content
 private struct AppReturnTargetKey: EnvironmentKey
 {
-
     static let defaultValue: Int? = nil /* Fallback environment value */
 
 }
@@ -127,18 +117,14 @@ private struct AppReturnTargetKey: EnvironmentKey
 
 extension EnvironmentValues
 {
-
     var appReturnTargetListID: Int? /* App return target list ID */
     {
-
         get
         {
-
             self[AppReturnTargetKey.self]
         }
         set
         {
-
             self[AppReturnTargetKey.self] = newValue
 
         }
@@ -146,15 +132,12 @@ extension EnvironmentValues
 
     var appReturnProtection: (UUID, Bool) -> Void /* App return protection callback */
     {
-
         get
         {
-
             self[AppReturnProtectionKey.self]
         }
         set
         {
-
             self[AppReturnProtectionKey.self] = newValue
 
         }
@@ -162,15 +145,12 @@ extension EnvironmentValues
 
     var appReturnResetRequest: Int /* App return reset request */
     {
-
         get
         {
-
             self[AppReturnResetKey.self]
         }
         set
         {
-
             self[AppReturnResetKey.self] = newValue
 
         }
@@ -183,7 +163,6 @@ extension EnvironmentValues
 ///     Uses a per-view token so closing one editor does not unprotect another visible editor
 private struct AppReturnProtection: ViewModifier
 {
-
     let active: Bool                                       /* Active operation state   */
     @State private var token = UUID()                      /* Retained operation token */
     @Environment(\.appReturnProtection) private var report /* Validation findings      */
@@ -194,11 +173,9 @@ private struct AppReturnProtection: ViewModifier
     /// @return Content with transient lifecycle reporting
     func body(content: Content) -> some View
     {
-
         content
             .onAppear
             {
-
                 report(token, active)
             }
             .onChange(of: active)
@@ -209,7 +186,6 @@ private struct AppReturnProtection: ViewModifier
             }
             .onDisappear
             {
-
                 report(token, false)
             }
     }
@@ -218,11 +194,9 @@ private struct AppReturnProtection: ViewModifier
 
 extension View
 {
-
     /// Mark an open item or unfinished editor as protected from automatic return resets
     func protectsAppReturn(_ active: Bool = true) -> some View
     {
-
         modifier(AppReturnProtection(active: active))
     }
 }
@@ -234,12 +208,10 @@ extension View
 @MainActor
 final class AppReturnWindow
 {
-
     weak var window: UIWindow? /* Scene window for rendering */
 
     var hasPresentation: Bool /* Presentation availability */
     {
-
         window?.rootViewController?.presentedViewController != nil
     }
 }
@@ -250,7 +222,6 @@ final class AppReturnWindow
 ///     Let the return policy preserve existing modal editors in the correct window
 struct AppReturnWindowProbe: UIViewRepresentable
 {
-
     let reference: AppReturnWindow /* Qualified record reference */
 
     /// Reports its actual window after UIKit attaches the probe
@@ -258,7 +229,6 @@ struct AppReturnWindowProbe: UIViewRepresentable
     ///     Keep window detection independent of global key-window selection
     final class Marker: UIView
     {
-
         var reference: AppReturnWindow? /* Qualified record reference */
 
         /// @fcn AppReturnWindowProbe.Marker.didMoveToWindow
@@ -266,11 +236,9 @@ struct AppReturnWindowProbe: UIViewRepresentable
         /// @return Void; does not change presentation or navigation
         override func didMoveToWindow()
         {
-
             super.didMoveToWindow()
             if let window
             {
-
                 reference?.window = window
 
             }
@@ -283,7 +251,6 @@ struct AppReturnWindowProbe: UIViewRepresentable
     /// @return Marker with a weak-window reference holder
     func makeUIView(context: Context) -> Marker
     {
-
         let view = Marker() /* View being rendered */
 
         view.isUserInteractionEnabled = false
@@ -299,12 +266,10 @@ struct AppReturnWindowProbe: UIViewRepresentable
     /// @return Void; no user-data or presentation changes
     func updateUIView(_ view: Marker, context: Context)
     {
-
         view.reference = reference
 
         if let window = view.window
         {
-
             reference.window = window
 
         }
@@ -314,10 +279,8 @@ struct AppReturnWindowProbe: UIViewRepresentable
 
 extension AppRootView
 {
-
     var hasProtectedAppReturnContext: Bool /* Protected App Return Context */
     {
-
         !appReturnProtectionIDs.isEmpty || appReturnWindow.hasPresentation
     }
 
@@ -327,13 +290,11 @@ extension AppRootView
     /// @return Void; requests affect view state and existing device-local viewport memory only
     func handleAppReturn()
     {
-
         let fromBackground = appReturnSession.hasBackgroundDeparture /* From background */
         let protected      = /* Open-work navigation guard */
             hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture
         if hasLoadedBoard, openTodayAfterLongAbsence()
         {
-
             _ = appReturnSession.becameActive(at: .now, protected: protected)
             return
         }
@@ -342,23 +303,19 @@ extension AppRootView
 
         guard hasLoadedBoard, !protected else
         {
-
             return
         }
         advancePlanningWeekIfNeeded()
         if fromBackground, openFirstDailyWeek()
         {
-
             return
         }
         guard reset else
         {
-
             return
         }
         switch selectedDestination
         {
-
         case .today:
             break
         case .board:
@@ -385,19 +342,16 @@ extension AppRootView
 ///     Keep explicit creation/replacement separate from ordinary edits, day templates and rollover
 struct ManualWeekOpening
 {
-
     let week: DatedPlanningWeek /* Dated Week under consideration */
     let replaced: Bool          /* State after replacement        */
 
     var title: String /* User-facing title */
     {
-
         replaced ? "Week replaced" : "Week created"
     }
 
     var firstListID: Int? /* Initial List navigation target */
     {
-
         week.collection.lists.first(where: { !$0.isArchived })?.id
     }
 
@@ -412,10 +366,8 @@ struct ManualWeekOpening
     static func completion(week: DatedPlanningWeek, kind: PlanningRoutineTemplate.Kind,
         mode: PlanningTemplateApplication.Mode, hadBaseline: Bool) -> Self?
     {
-
         guard kind == .week, !hadBaseline || mode == .replace else
         {
-
             return nil
         }
 
@@ -430,7 +382,6 @@ struct ManualWeekOpening
     @MainActor
     func resetViewport(in defaults: UserDefaults = .standard)
     {
-
         let memory = /* Owner-scoped viewport state */
             BoardViewportMemory(owner: week.id.uuidString, defaults: defaults)
 
@@ -446,17 +397,14 @@ struct ManualWeekOpening
 
 extension AppRootView
 {
-
     /// @fcn AppRootView.completeManualWeek
     /// @brief Open a saved manual Week at its leftmost List and confirm completion
     /// @param[in] completion Successful creation/replacement delivered after the preview dismisses
     /// @return Void; preserves the saved Week and bypasses the first-daily-opening timer
     func completeManualWeek(_ completion: ManualWeekOpening)
     {
-
         guard let week = calendarDocument?.weeks.first(where: { $0.id == completion.week.id }) else
         {
-
             return
         }
 

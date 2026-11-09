@@ -22,8 +22,6 @@ import UIKit
 ///
 enum CoverCategory: String, CaseIterable, Identifiable
 {
-
-
     case home = "Home & Everyday"
     case nature = "Nature & Garden"
     case work = "Work & Learning"
@@ -52,10 +50,8 @@ enum CoverCategory: String, CaseIterable, Identifiable
     ///
     var images: [ExampleCoverImage] /* Decoded image values */
     {
-
         switch self
         {
-
         case .home:
             [
                 .readingCorner, .tidyHome, .laundryDay, .homeRepairs, .cozySofa, .cleanKitchen, .petCare, .deskLamp,
@@ -160,8 +156,6 @@ enum CoverCategory: String, CaseIterable, Identifiable
 ///
 enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
 {
-
-
     case garden, mountains, workspace
     case readingCorner = "reading-corner", tidyHome = "tidy-home", laundryDay = "laundry-day", homeRepairs =
             "home-repairs"
@@ -543,7 +537,6 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
 
     private static let tagCatalog: [String: [String]] = /* Tag catalog */
     {
-
         guard
         let url = Bundle.main.url(
             forResource: "cover-tags", withExtension: "json", subdirectory: "CardCoverImages"),
@@ -576,7 +569,6 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     ///
     static func search(_ query: String, in album: CoverCategory? = nil) -> [Self]
     {
-
         (album?.images ?? CoverCategory.allCases.flatMap(\.images)).filter
         {
             $0.matches(query)
@@ -597,7 +589,6 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     ///
     func matches(_ query: String) -> Bool
     {
-
         let normalized = /* Comparison-normalized value */
             query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
         let terms      = /* Normalized search terms */
@@ -636,7 +627,6 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     ///
     var url: URL? /* Resource location */
     {  /* Bundled artwork resource URL */
-
         Bundle.main.url(forResource: rawValue, withExtension: "png", subdirectory: "CardCoverImages")
     }
 
@@ -651,8 +641,6 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
 ///
 struct CardCoverLibrary: View
 {
-
-
     let selectedImage: ExampleCoverImage?           /* Current library cover, if any                    */
     let onSelect:      (ExampleCoverImage) -> Bool  /* Owner validates and publishes an explicit choice */
     @State private var query = "" /* Search text */
@@ -668,10 +656,8 @@ struct CardCoverLibrary: View
     ///
     private var albumPicker: some View /* Album picker */
     {
-
         Picker("Cover album", selection: $category)
         {
-
             Text("All Covers").tag(Optional<CoverCategory>.none)
             ForEach(CoverCategory.allCases)
             {
@@ -689,26 +675,21 @@ struct CardCoverLibrary: View
 
     private var searchField: some View /* Search field */
     {
-
         HStack(spacing: 6)
         {
-
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
             TextField("Search covers", text: $query).textInputAutocapitalization(.never).autocorrectionDisabled()
             .accessibilityLabel("Search selected cover album")
             .accessibilityIdentifier("coverLibrary.search")
             if !query.isEmpty
             {
-
                 Button
                 {
-
                     query = ""
 
                 }
                 label:
                 {
-
                     Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                 }
                 .accessibilityLabel("Clear cover search")
@@ -723,36 +704,28 @@ struct CardCoverLibrary: View
 
     private var filteredImages: [ExampleCoverImage] /* Filtered images */
     {
-
         ExampleCoverImage.search(query, in: category)
     }
 
 
     var body: some View /* Card Cover Library layout */
     {  /* Offline cover library interface */
-
         NavigationStack
         {
-
             ScrollView
             {
-
                 VStack(alignment: .leading, spacing: 16)
                 {
-
                     ViewThatFits(in: .horizontal)
                     {
-
                         HStack(spacing: 12)
                         {
-
                             albumPicker;
                             searchField
                         }
 
                         VStack(alignment: .leading, spacing: 8)
                         {
-
                             albumPicker;
                             searchField
                         }
@@ -762,7 +735,6 @@ struct CardCoverLibrary: View
                     Text("\(filteredImages.count) covers").font(.caption).foregroundStyle(.secondary)
                     if filteredImages.isEmpty
                     {
-
                         ContentUnavailableView.search(text: query)
                     }
 
@@ -775,27 +747,21 @@ struct CardCoverLibrary: View
                         : [GridItem(.adaptive(minimum: 150))], spacing: 16
                     )
                     {
-
                         ForEach(filteredImages, id: \.self)
                         {
                             image in
                             Button
                             {
-
                                 if onSelect(image)
                                 {
-
-
                                     dismiss()
                                 }
 
                             }
                             label:
                             {
-
                                 VStack(alignment: .leading, spacing: 8)
                                 {
-
                                     CardCoverPreview(
                                         attachment: KanbanAttachment(
                                             mediaKind: .photo, exampleImage: image
@@ -829,7 +795,6 @@ struct CardCoverLibrary: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -856,8 +821,6 @@ struct CardCoverLibrary: View
 ///
 struct CardCoverPreview: View
 {
-
-
     let attachment: KanbanAttachment  /* Explicitly selected photo                                    */
     var height:     CGFloat = 128     /* Fixed preview height, independent of source image dimensions */
     var unavailableTitle    = "Cover unavailable" /* Unavailable title */
@@ -872,31 +835,23 @@ struct CardCoverPreview: View
     ///
     var body: some View /* Card Cover Preview layout */
     {  /* Loaded cover preview or fallback */
-
         GeometryReader
         {
             geometry in
             Group
             {
-
                 if let image
                 {  /* Successfully decoded cover thumbnail */
-
-
                     Image(uiImage: image).resizable().scaledToFill()
                 }
                 else if unavailable
                 {
-
-
                     Label(unavailableTitle, systemImage: "photo")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
                 else
                 {
-
-
                     Color.secondary.opacity(0.08)
                 }
 
@@ -911,13 +866,11 @@ struct CardCoverPreview: View
         .accessibilityHidden(!unavailable)
         .task(id: attachment)
         {
-
             image = nil
             unavailable = false
 
             let result = await Task.detached(priority: .utility) /* Result being assembled */
             {  /* Background thumbnail decode result */
-
                 Result
                 {
                     try CardAttachmentStore.coverThumbnail(for: attachment)
@@ -927,16 +880,12 @@ struct CardCoverPreview: View
 
             guard !Task.isCancelled else
             {
-
-
                 return
             }
 
 
             switch result
             {
-
-
             case .success(let thumbnail):
 
                 image = thumbnail /* Decoded cover thumbnail */
@@ -962,8 +911,6 @@ struct CardCoverPreview: View
 ///
 struct CardCoverPicker: View
 {
-
-
     let photos:     [KanbanAttachment]          /* Current attached photo choices       */
     let selectedID: UUID?                       /* Current cover, if explicitly enabled */
     let onSelect:   (UUID) -> Void              /* Owner validates and saves selection  */
@@ -977,28 +924,22 @@ struct CardCoverPicker: View
     ///
     var body: some View /* Card Cover Picker layout */
     {  /* Attached-photo cover choices */
-
         NavigationStack
         {
-
             List
             {
-
                 ForEach(Array(photos.enumerated()), id: \.element.id)
                 {
                     index, photo in
                     Button
                     {
-
                         onSelect(photo.id)
                         dismiss()
                     }
                     label:
                     {
-
                         VStack(alignment: .leading, spacing: 8)
                         {
-
                             CardCoverPreview(attachment: photo)
                             Label(
                                                                                     "Photo \(index + 1)",
@@ -1018,7 +959,6 @@ struct CardCoverPicker: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")

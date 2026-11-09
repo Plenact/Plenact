@@ -21,8 +21,6 @@ import SwiftUI
 ///
 struct TodayFocusFilterColor
 {
-
-
     ///
     /// @fcn        TodayFocusFilterColor.rgb
     /// @brief      Choose the distinct RGB color for a Focus-filter combination
@@ -40,7 +38,6 @@ struct TodayFocusFilterColor
         red: Double, green: Double, blue: Double
     )?
     {
-
         let selection = /* Current selection state */
             (upNext ? 1 : 0) | (important ? 2 : 0) | (bookmarked ? 4 : 0)
         // A blue, B red, C green; AB purple, AC teal, BC orange, ABC neutral
@@ -80,10 +77,8 @@ struct TodayFocusFilterColor
     ///
     static func color(upNext: Bool = false, important: Bool = false, bookmarked: Bool = false, dark: Bool) -> Color
     {
-
         guard let rgb = rgb(upNext: upNext, important: important, bookmarked: bookmarked, dark: dark) else
         {
-
             return dark ? .white : .black
         }
 
@@ -102,8 +97,6 @@ struct TodayFocusFilterColor
 ///
 struct TodayFocusSection: View
 {
-
-
     let list:              KanbanList?   /* Canonical Week list matching the current local weekday */
     let cards:             [KanbanCard]  /* Non-divider cards on that list                         */
     let entries:           [TodayFocusEntry] /* Entries being processed */
@@ -156,7 +149,6 @@ struct TodayFocusSection: View
     {
         Button
         {
-
             editsStartDate = isStart
             editingDateCard = card
 
@@ -210,7 +202,6 @@ struct TodayFocusSection: View
 
     private var filterColor: Color /* Filter color */
     {
-
         TodayFocusFilterColor.color(
             upNext: includesUpNext, important: includesImportant,
             bookmarked: includesBookmarked, dark: colorScheme == .dark)
@@ -237,7 +228,6 @@ struct TodayFocusSection: View
     ///
     private func beginsGroup(_ entry: TodayFocusEntry) -> Bool
     {
-
         guard groupsBySection, let index = entries.firstIndex(where:
             {
                 $0.id == entry.id
@@ -252,7 +242,6 @@ struct TodayFocusSection: View
 
     private var rowCapacity: Int /* Row capacity */
     {
-
         visibleItemCount == 0 ? max(entries.count, 1) : ((1 ... 12).contains(visibleItemCount) ? visibleItemCount : 4)
     }
 
@@ -266,26 +255,22 @@ struct TodayFocusSection: View
 
     private var rowsHeight: CGFloat /* Rows height */
     {
-
         rowHeight * CGFloat(min(entries.count, rowCapacity)) + headingHeight * CGFloat(visibleHeadingCount)
     }
 
     private var listingCapacity: CGFloat /* Listing capacity */
     {
-
         rowHeight * CGFloat(rowCapacity) + headingHeight * CGFloat(visibleHeadingCount) + 3 / displayScale
     }
 
     private var listingHeight: CGFloat /* Listing height */
     {
-
         measuredListingHeight ?? rowsHeight
     }
 
 
     private var filterLabel: String? /* Filter label */
     {
-
         let selected = [ /* Current selection */
             (includesUpNext, "Up Next"), (includesImportant, "Important"), (includesBookmarked, "Bookmarked")
         ]
@@ -303,19 +288,15 @@ struct TodayFocusSection: View
 
     private var focusTitle: some View /* Focus title */
     {
-
         Button
         {
-
             showsFilterChooser = true
 
         }
         label:
         {
-
             VStack(alignment: .leading, spacing: 2)
             {
-
                 Text("Today's Focus")
                 .font(isPad ? .title2.weight(.semibold) : .title3.weight(.semibold))
 
@@ -332,21 +313,16 @@ struct TodayFocusSection: View
         .accessibilityIdentifier("today.focus.filters")
         .popover(isPresented: $showsFilterChooser)
         {
-
             VStack(alignment: .leading, spacing: 4)
             {
-
                 HStack(spacing: 0)
                 {
-
                     Button
                     {
-
                         onChangeFilters(false, false, false)
                     }
                     label:
                     {
-
                         Text("All items")
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                         .contentShape(Rectangle())
@@ -354,16 +330,13 @@ struct TodayFocusSection: View
                     .accessibilityValue(filterLabel == nil ? "Selected" : "")
                     if filterLabel == nil
                     {
-
                         Button
                         {
-
                             showsFilterChooser = false
 
                         }
                         label:
                         {
-
                             Image(systemName: "checkmark")
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
@@ -387,7 +360,6 @@ struct TodayFocusSection: View
                         })
                 )
                 {
-
                     Text("Up Next").foregroundStyle(
                         TodayFocusFilterColor.color(upNext: true, dark: colorScheme == .dark))
                 }
@@ -403,7 +375,6 @@ struct TodayFocusSection: View
                         })
                 )
                 {
-
                     Text("Important").foregroundStyle(
                         TodayFocusFilterColor.color(important: true, dark: colorScheme == .dark))
                 }
@@ -419,7 +390,6 @@ struct TodayFocusSection: View
                         })
                 )
                 {
-
                     Text("Bookmarked").foregroundStyle(
                         TodayFocusFilterColor.color(bookmarked: true, dark: colorScheme == .dark))
                 }
@@ -445,7 +415,6 @@ struct TodayFocusSection: View
     ///
     private var showsSchedule: Bool /* Schedule visibility */
     {
-
         TodayFocusPresentation.showsSchedule(important: includesImportant, bookmarked: includesBookmarked,
                                             upNext: includesUpNext)
     }
@@ -453,12 +422,10 @@ struct TodayFocusSection: View
 
     private var completionButton: some View /* Completion button */
     {
-
         let completedCount = cards.filter(\.isTitleChecked).count /* Completed count */
 
         return Button(action: onOpenTodayList)
         {
-
             Text("\(completedCount) of \(cards.count) complete")
             .font(isPad ? .subheadline : .caption)
             .italic()
@@ -478,10 +445,8 @@ struct TodayFocusSection: View
 
     private var focusRows: some View /* Focus rows */
     {
-
         List
         {
-
             ForEach(entries)
             {
                 entry in
@@ -490,10 +455,8 @@ struct TodayFocusSection: View
 
                 VStack(alignment: .leading, spacing: 0)
                 {
-
                     if beginsGroup(entry)
                     {
-
                         Text(entry.heading ?? (entry.sectionID == nil ? "Before first section" : "Untitled section"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -504,15 +467,12 @@ struct TodayFocusSection: View
 
                     HStack(spacing: 8)
                     {
-
                         Button
                         {
-
                             onToggleCard(card.id)
                         }
                         label:
                         {
-
                             TodayFocusItemMark(card: card)
                             .frame(width: isPad ? 48 : 44, height: rowHeight)
                             .contentShape(Rectangle())
@@ -526,19 +486,15 @@ struct TodayFocusSection: View
 
                         Button
                         {
-
                             selectedFocusCard = card
 
                         }
                         label:
                         {
-
                             HStack
                             {
-
                                 VStack(alignment: .leading, spacing: 1)
                                 {
-
                                     Text(card.word)
                                     .font(.system(size: isPad ? padTaskSize : phoneTaskSize, weight: .medium))
                                     .foregroundStyle(card.isTitleChecked ? Color.secondary : Color.primary)
@@ -551,7 +507,6 @@ struct TodayFocusSection: View
                                 Spacer(minLength: 8)
                                 if showsSchedule, let time = entry.previewTimeLabel
                                 {
-
                                     focusDateControl(time, card: card, isStart: entry.previewTime?.isStart == true)
                                     .font(.caption)
                                     .foregroundStyle(.primary.opacity(0.72))
@@ -560,16 +515,13 @@ struct TodayFocusSection: View
                                 }
                                 else
                                 {
-
                                     let hasBookmark = /* Bookmark availability */
                                         bookmarkedCardIDs.contains(card.id)
 
                                     HStack(spacing: 3)
                                     {
-
                                         if hasBookmark
                                         {
-
                                             Button
                                             {
                                                 onRemoveBookmark(card.id)
@@ -611,7 +563,6 @@ struct TodayFocusSection: View
                             [
                                 (showsSchedule ? entry.previewTime : nil).map
                                 {
-
                                     ($0.isStart ? "Start time " : "Due time ")
                                     + $0.date.formatted(date: .omitted, time: .shortened)
                                 },
@@ -628,16 +579,13 @@ struct TodayFocusSection: View
                 .listRowBackground(Color.clear)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false)
                 {
-
                     Button
                     {
-
                         deletingCard = card
 
                     }
                     label:
                     {
-
                         Label("Delete", systemImage: "trash")
                     }
                     .tint(.red)
@@ -673,7 +621,6 @@ struct TodayFocusSection: View
                   let current = entries.first(where: { $0.card.id == selected.id })?.card
             else
             {
-
                 selectedFocusCard = nil
 
                 return
@@ -686,7 +633,6 @@ struct TodayFocusSection: View
         }
         .onDisappear
         {
-
             selectedFocusCard = nil
 
         }
@@ -705,16 +651,12 @@ struct TodayFocusSection: View
     ///
     var body: some View /* Today Focus layout */
     {  /* Weekday-list progress and unfinished-card shortcuts */
-
         VStack(alignment: .leading, spacing: 10)
         {
-
             ViewThatFits(in: .horizontal)
             {
-
                 HStack(alignment: .firstTextBaseline, spacing: 12)
                 {
-
                     focusTitle.fixedSize()
                     Spacer(minLength: 0)
                     if list != nil && showsSchedule
@@ -726,7 +668,6 @@ struct TodayFocusSection: View
 
                 VStack(alignment: .leading, spacing: 4)
                 {
-
                     focusTitle
                     if list != nil && showsSchedule
                     {
@@ -740,7 +681,6 @@ struct TodayFocusSection: View
 
             if list != nil
             {
-
                 if showsSelectionContext
                 {
                     Text(TodayFocusPresentation.context(important: includesImportant, bookmarked: includesBookmarked,
@@ -756,18 +696,14 @@ struct TodayFocusSection: View
 
                 Group
                 {
-
                     if cards.isEmpty
                     {
-
-
                         Text("This list is ready for its first card.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     }
                     else if openCards.isEmpty
                     {
-
                         Label(
                             cards.allSatisfy(\.isTitleChecked)
                             ? "Everything on this list is complete"
@@ -780,7 +716,6 @@ struct TodayFocusSection: View
                         .frame(minHeight: 40, alignment: .leading)
                         if !cards.allSatisfy(\.isTitleChecked)
                         {
-
                             Button("Show all items")
                             {
                                 onChangeFilters(false, false, false)
@@ -791,7 +726,6 @@ struct TodayFocusSection: View
                     }
                     else
                     {
-
                         focusRows
                         .accessibilityLabel("Today's Focus items")
                     }
@@ -813,7 +747,6 @@ struct TodayFocusSection: View
 
                 Button(action: onOpenTodayList)
                 {
-
                     Label("See today’s list", systemImage: "arrow.right")
                     .font(.system(.subheadline, design: .serif).italic().weight(.medium))
                     .frame(minHeight: 32)
@@ -824,7 +757,6 @@ struct TodayFocusSection: View
             }
             else
             {
-
                 Text("No list for today.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -848,14 +780,12 @@ struct TodayFocusSection: View
 
                 if editsStartDate
                 {
-
                     edited.startDate = value
                     edited.startDateKind = value == nil ? .date : kind
 
                 }
                 else
                 {
-
                     edited.dueDate = value
                     edited.dueDateKind = value == nil ? .date : kind
 
@@ -876,7 +806,6 @@ struct TodayFocusSection: View
                 {
                     if !$0
                     {
-
                         deletingCard = nil
 
                     }
@@ -889,11 +818,9 @@ struct TodayFocusSection: View
             card in
             Button("Delete", role: .destructive)
             {
-
                 guard
                 list?.cards.contains(where:
                     {
-
                         $0.id == card.id && $0.createdAt == card.createdAt
                     }) == true
                 else
@@ -908,7 +835,6 @@ struct TodayFocusSection: View
 
             Button("Cancel", role: .cancel)
             {
-
                 deletingCard = nil
 
             }
@@ -938,14 +864,12 @@ struct TodayFocusSection: View
             wasOpen, isOpen in
             if wasOpen && !isOpen
             {
-
                 contextRevision = UUID()
 
             }
         }
         .task(id: contextRevision)
         {
-
             showsSelectionContext = true
 
             do
@@ -962,7 +886,6 @@ struct TodayFocusSection: View
             }
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6))
             {
-
                 showsSelectionContext = false
 
             }
@@ -983,7 +906,6 @@ struct TodayFocusSection: View
 ///
 struct TodayFocusCardDetailView: View
 {
-
     @AppStorage(BoardAppearance.weekStorageKey) private var subtitleBoardAppearanceData = /* Subtitle board appearance data */
         Data()
 
@@ -1010,20 +932,17 @@ struct TodayFocusCardDetailView: View
     ///
     private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation
     {
-
         let neighbors = CardKeyboardNeighbors.resolve(card, in: lists) /* Adjacent items or Lists */
 
         return CardKeyboardNavigation(
             previous: neighbors.previous == nil
             ? nil :
             {
-
                 keyboardCard = CardKeyboardNeighbors.resolve(card, in: lists).previous
 
             },
             next: neighbors.next == nil ? nil :
             {
-
                 keyboardCard = CardKeyboardNeighbors.resolve(card, in: lists).next
 
             })
@@ -1031,12 +950,10 @@ struct TodayFocusCardDetailView: View
 
     var body: some View /* Today Focus Card Detail layout */
     {
-
         let card = keyboardCard ?? self.card /* Card under consideration */
 
         NavigationStack
         {
-
             CardDetailView(
                 card: card, labelLibrary: $labelLibrary,
                 currentUserName: currentUserName, savedCardIDs: $savedCardIDs,
@@ -1046,7 +963,6 @@ struct TodayFocusCardDetailView: View
                     guard
                     let owner = lists.firstIndex(where:
                         {
-
                             $0.cards.contains(where:
                                 {
                                     $0.id == card.id && $0.createdAt == card.createdAt
@@ -1071,11 +987,9 @@ struct TodayFocusCardDetailView: View
                 },
                 onArchive:
                 {
-
                     guard
                     let owner = lists.firstIndex(where:
                         {
-
                             $0.cards.contains(where:
                                 {
                                     $0.id == card.id && $0.createdAt == card.createdAt
@@ -1123,8 +1037,6 @@ struct TodayFocusCardDetailView: View
 ///
 enum TodayFocusDateUpdate
 {
-
-
     ///
     /// @fcn        TodayFocusDateUpdate.apply
     /// @brief      Merge a selected start or due value into the current Card
@@ -1137,13 +1049,10 @@ enum TodayFocusDateUpdate
     ///
     static func apply(_ edited: KanbanCard, isStart: Bool, to lists: inout [KanbanList]) -> Bool
     {
-
         guard let owner = lists.firstIndex(where:
             {
-
                 !$0.isArchived && $0.cards.contains
                 {
-
                     $0.id == edited.id && $0.createdAt == edited.createdAt
                 }
 
@@ -1153,7 +1062,6 @@ enum TodayFocusDateUpdate
             })
         else
         {
-
             return false
         }
 
@@ -1161,13 +1069,11 @@ enum TodayFocusDateUpdate
 
         guard !current.isEditingLocked else
         {
-
             return false
         }
 
         if isStart
         {
-
             current.startDate = edited.startDate
             current.startDateKind = edited.startDate == nil ? .date : edited.startDateKind
 
@@ -1175,7 +1081,6 @@ enum TodayFocusDateUpdate
 
         else
         {
-
             current.dueDate = edited.dueDate
             current.dueDateKind = edited.dueDate == nil ? .date : edited.dueDateKind
 
@@ -1199,7 +1104,6 @@ enum TodayFocusDateUpdate
 ///
 private struct TodayFocusItemMark: View
 {
-
     let card: KanbanCard /* Card under consideration */
     @ScaledMetric(relativeTo: .body) private var markSize: CGFloat = 18 /* Mark size */
 
@@ -1257,7 +1161,6 @@ private struct TodayFocusItemMark: View
 ///
 private struct TodayFocusSelectionStyle: ButtonStyle
 {
-
     let isSelected: Bool /* Selected state */
     @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
@@ -1274,7 +1177,6 @@ private struct TodayFocusSelectionStyle: ButtonStyle
     ///
     func makeBody(configuration: Configuration) -> some View
     {
-
         let highlighted = configuration.isPressed || isSelected /* Current-day highlight state */
         let gold        = Color(red: 0.90, green: 0.69, blue: 0.27) /* Gold operation value */
 

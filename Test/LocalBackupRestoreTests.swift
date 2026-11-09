@@ -15,7 +15,6 @@ import XCTest
 @MainActor
 final class LocalBackupRestoreTests: XCTestCase
 {
-
     /// @fcn LocalBackupRestoreTests.fixture
     /// @brief Provide a synthetic source backup, isolated destination and transactional store
     /// @param[in] body Assertions with source, destination root, suite/domain and recovery store
@@ -23,7 +22,6 @@ final class LocalBackupRestoreTests: XCTestCase
     /// @throws Setup or test-operation errors
     private func fixture(_ body: (URL, URL, UserDefaults, String, FullMonthExampleStore) throws -> Void) throws
     {
-
         let root     = /* Synthetic workspace root */
             FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
         let domain   = "Plenact.RestoreTests." + UUID().uuidString /* Lookup or storage namespace */
@@ -86,7 +84,6 @@ final class LocalBackupRestoreTests: XCTestCase
     /// @throws Fixture or review errors
     func testReviewDoesNotChangeDestination() throws
     {
-
         try fixture { source, _, defaults, domain, store in
 
             let before = /* State before the operation */
@@ -110,7 +107,6 @@ final class LocalBackupRestoreTests: XCTestCase
     /// @throws Fixture, filesystem or persistence errors
     func testRestoreAndUndoPreserveExactSavedBytesAndOriginalFiles() throws
     {
-
         try fixture { source, destination, defaults, domain, store in
 
             let review   = /* Review record being inspected */
@@ -149,7 +145,6 @@ final class LocalBackupRestoreTests: XCTestCase
     /// @throws Fixture errors
     func testInstallationFailureRestoresPreviousDestination() throws
     {
-
         try fixture { _, destination, defaults, domain, store in
 
             let original = defaults.persistentDomain(forName: domain)! /* Baseline before changes */
@@ -174,7 +169,6 @@ final class LocalBackupRestoreTests: XCTestCase
     /// @throws Fixture errors
     func testTamperedPreferencesAreRejectedBeforeRestore() throws
     {
-
         try fixture { source, _, _, _, store in
             try Data("changed".utf8).write(to: source.appendingPathComponent("Preferences.plist"))
             XCTAssertThrowsError(try LocalBackupRestore.review(at: source))
@@ -189,7 +183,6 @@ final class LocalBackupRestoreTests: XCTestCase
     /// @throws Fixture errors
     func testUndeclaredMediaAndSymlinksAreRejected() throws
     {
-
         try fixture { source, _, _, _, _ in
 
             let directory = /* Working directory location */
@@ -214,7 +207,6 @@ final class LocalBackupRestoreTests: XCTestCase
     /// @throws Fixture or persistence errors
     func testRepeatedImportCannotReplacePreviousUndoEvidence() throws
     {
-
         try fixture { source, destination, defaults, domain, store in
 
             let review = /* Review record being inspected */

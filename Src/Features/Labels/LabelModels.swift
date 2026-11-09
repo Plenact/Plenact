@@ -24,8 +24,6 @@ import SwiftUI
 ///
 enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable
 {
-
-
     case mint
     case yellow
     case orange
@@ -59,7 +57,6 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable
     ///
     var title: String /* User-facing title */
     {  /* Display name for the color picker */
-
         rawValue.capitalized
     }
 
@@ -73,11 +70,8 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable
     ///
     var color: Color /* Resolved color value */
     {  /* SwiftUI color resolved from the persisted token */
-
         switch self
         {
-
-
         case .mint:
             Color(red: 0.17, green: 0.72, blue: 0.55)
         case .yellow:
@@ -118,8 +112,6 @@ enum KanbanLabelColor: String, CaseIterable, Codable, Identifiable
 ///
 struct KanbanLabelCategory: Identifiable, Hashable, Codable
 {
-
-
     let id:   String /* Stable category identity  */
     var name: String /* User-facing category name */
 
@@ -139,8 +131,6 @@ struct KanbanLabelCategory: Identifiable, Hashable, Codable
 ///
 struct KanbanLabel: Identifiable, Hashable, Codable
 {
-
-
     let id:         String           /* Stable label identity           */
     var name:       String           /* User-facing label name          */
     var categoryID: String           /* Stable owning-category identity */
@@ -163,8 +153,6 @@ struct KanbanLabel: Identifiable, Hashable, Codable
 ///
 struct LabelLibrary: Hashable, Codable
 {
-
-
     static let dayAreaLabels: [KanbanLabel] = [ /* Day area labels */
         KanbanLabel(id: "day-work", name: "Work", categoryID: "work", color: .blue),
         KanbanLabel(id: "day-health", name: "Health", categoryID: "health", color: .green),
@@ -175,7 +163,6 @@ struct LabelLibrary: Hashable, Codable
 
     var includingDayAreas: LabelLibrary /* Including day areas */
     {
-
         var copy = self /* Independent working copy */
 
         for label in Self.dayAreaLabels where !copy.labels.contains(where:
@@ -183,7 +170,6 @@ struct LabelLibrary: Hashable, Codable
                 $0.id == label.id
             })
         {
-
             if !copy.categories.contains(where:
                 {
                     $0.id == label.categoryID
@@ -193,7 +179,6 @@ struct LabelLibrary: Hashable, Codable
                     $0.id == label.categoryID
                 })
             {
-
                 copy.categories.append(category)
             }
 
@@ -216,11 +201,9 @@ struct LabelLibrary: Hashable, Codable
     /// Keep the built-in tutorial label available without changing existing user labels
     var includingReference: LabelLibrary /* Including reference */
     {
-
         guard
         !labels.contains(where:
             {
-
                 $0.id == Self.referenceLabel.id || $0.name.caseInsensitiveCompare("Reference") == .orderedSame
             })
         else
@@ -235,7 +218,6 @@ struct LabelLibrary: Hashable, Codable
                 $0.id == Self.referenceCategory.id
             })
         {
-
             updated.categories.append(Self.referenceCategory)
         }
 
@@ -245,7 +227,6 @@ struct LabelLibrary: Hashable, Codable
 
     var referenceLabelID: String /* Reference label ID */
     {
-
         labels.first
         {
             $0.name.caseInsensitiveCompare("Reference") == .orderedSame
@@ -311,8 +292,6 @@ struct LabelLibrary: Hashable, Codable
 ///
 enum LabelLibraryStore
 {
-
-
     private static let storageKey = "Plenact.LabelLibrary.v1" /* Versioned local catalog key */
 
 
@@ -329,13 +308,10 @@ enum LabelLibraryStore
     ///
     static func load() -> LabelLibrary
     {
-
-
         guard let data = UserDefaults.standard.data(forKey: storageKey), /* Saved JSON catalog */
         let library = try? JSONDecoder().decode(LabelLibrary.self, from: data)
         else
         {  /* Decoded catalog    */
-
             return LabelLibrary.starter.includingDayAreas
         }
 
@@ -359,12 +335,8 @@ enum LabelLibraryStore
     ///
     static func save(_ library: LabelLibrary)
     {
-
-
         guard let data = try? JSONEncoder().encode(library) else
         {  /* Encoded label catalog snapshot */
-
-
             return
         }
 
@@ -386,8 +358,6 @@ enum LabelLibraryStore
 ///
 struct KanbanLabelChip: View
 {
-
-
     let label: KanbanLabel /* Label displayed by the chip */
 
     ///
@@ -399,7 +369,6 @@ struct KanbanLabelChip: View
     ///
     var body: some View /* Kanban Label Chip layout */
     {  /* Colored reusable-label chip */
-
         Text(label.name)
         .font(.caption2.weight(.semibold))
         .lineLimit(1)

@@ -18,8 +18,6 @@ import SwiftUI
 ///
 enum PlanningDate
 {
-
-
     ///
     /// @fcn        PlanningDate.listTitle
     /// @brief      Build a dated list title for nonheader contexts
@@ -35,7 +33,6 @@ enum PlanningDate
     ///
     static func listTitle(_ title: String, on date: Date, now: Date = .now, calendar: Calendar = .current) -> String
     {
-
         let month  = calendar.component(.month, from: date) /* Calendar month component           */
         let day    = calendar.component(.day, from: date)   /* Day under consideration            */
         let year   = calendar.component(.year, from: date)  /* Calendar year component            */
@@ -60,7 +57,6 @@ enum PlanningDate
     ///
     static func key(_ date: Date, calendar: Calendar = .current) -> String
     {
-
         var gregorian = Calendar(identifier: .gregorian) /* Gregorian date calculations */
 
         gregorian.timeZone = calendar.timeZone
@@ -85,7 +81,6 @@ enum PlanningDate
     ///
     static func date(_ key: String, calendar: Calendar = .current) -> Date?
     {
-
         let parts = key.split(separator: "-").compactMap /* Parsed value components */
         {
             Int($0)
@@ -117,7 +112,6 @@ enum PlanningDate
     ///
     static func weekKey(_ date: Date, calendar: Calendar = .current) -> String
     {
-
         key(calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date, calendar: calendar)
     }
 
@@ -135,7 +129,6 @@ enum PlanningDate
     ///
     static func days(in weekKey: String, calendar: Calendar = .current) -> [Date]
     {
-
         guard let start = date(weekKey, calendar: calendar) else
         {
             return []
@@ -161,7 +154,6 @@ enum PlanningDate
     ///
     static func weekdayTitle(_ date: Date, calendar: Calendar = .current) -> String
     {
-
         ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] [
         calendar.component(.weekday, from: date) - 1]
     }
@@ -178,8 +170,6 @@ enum PlanningDate
 ///
 struct DatedPlanningWeek: Identifiable, Hashable, Codable
 {
-
-
     var startKey:        String             /* Dated Week boundary key    */
     var collection:      PersonalCollection /* Personal collection record */
     var dayListIDs:      [String: Int]      /* Day list i ds              */
@@ -201,7 +191,6 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 
     var rangeTitle: String                  /* Full Week date range       */
     {
-
         let days = PlanningDate.days(in: startKey) /* Dates in the selected range */
 
         guard let first = days.first, let last = days.last else
@@ -215,7 +204,6 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 
     var compactRangeTitle: String /* Condensed Week date range */
     {
-
         let days = PlanningDate.days(in: startKey) /* Dates in the selected range */
 
         guard let first = days.first, let last = days.last else
@@ -234,13 +222,11 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 
         if firstYear != lastYear
         {
-
             return "\(firstLabel) '\(String(format: "%02d", firstYear % 100))-\(lastLabel) '\(yearSuffix)"
         }
 
         if calendar.component(.month, from: first) == calendar.component(.month, from: last)
         {
-
             return "\(firstLabel)-\(calendar.component(.day, from: last)) '\(yearSuffix)"
         }
 
@@ -260,7 +246,6 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     ///
     func list(on date: Date) -> KanbanList?
     {
-
         guard let id = dayListIDs[PlanningDate.key(date)] else
         {
             return nil
@@ -286,7 +271,6 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     ///
     mutating func prepareDay(_ date: Date) -> Int
     {
-
         if let existing = list(on: date)
         {
             return existing.id
@@ -320,7 +304,6 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
         calendar: Calendar = .current
     ) -> Self
     {
-
         let start      = PlanningDate.weekKey(date, calendar: calendar) /* Range start */
         var collection = /* Personal collection record */
             PersonalCollection(title: "Week of \(start)", kind: .board)
@@ -332,22 +315,18 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 
         for day in PlanningDate.days(in: start, calendar: calendar)
         {
-
             let title = PlanningDate.weekdayTitle(day, calendar: calendar) /* User-facing title */
 
             if let list = collection.lists.first(where:
                 {
-
                     !$0.isArchived && $0.title.caseInsensitiveCompare(title) == .orderedSame
                 })
             {
-
                 dayIDs[PlanningDate.key(day, calendar: calendar)] = list.id
 
             }
             else
             {
-
                 let id = (collection.lists.map(\.id).max() ?? -1) + 1 /* Record or view identity */
 
                 collection.lists.append(KanbanList(id: id, title: title, cards: []))
@@ -373,8 +352,6 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 ///
 struct PlanningCalendarDocument: Hashable, Codable
 {
-
-
     var version = 1                                             /* Serialized format version */
     var currentWeekKey:     String                              /* Current Week boundary key */
     var firstWeekday:       Int = Calendar.current.firstWeekday /* Calendar week boundary    */
@@ -383,7 +360,6 @@ struct PlanningCalendarDocument: Hashable, Codable
 
     var calendar:           Calendar /* Date calculation calendar */
     {
-
         var value = Calendar.current /* Calendar for date calculations */
 
         value.firstWeekday = firstWeekday
@@ -405,7 +381,6 @@ struct PlanningCalendarDocument: Hashable, Codable
     ///
     func week(for date: Date, calendar: Calendar? = nil) -> DatedPlanningWeek?
     {
-
         weeks.first
         {
             $0.startKey == PlanningDate.weekKey(date, calendar: calendar ?? self.calendar)
@@ -425,19 +400,16 @@ struct PlanningCalendarDocument: Hashable, Codable
     ///
     mutating func upsert(_ week: DatedPlanningWeek)
     {
-
         if let index = weeks.firstIndex(where:
             {
                 $0.startKey == week.startKey
             })
         {
-
             weeks[index] = week
 
         }
         else
         {
-
             weeks.append(week)
         }
 
@@ -468,7 +440,6 @@ struct PlanningCalendarDocument: Hashable, Codable
         calendar suppliedCalendar: Calendar? = nil, newWeek: DatedPlanningWeek? = nil
     ) -> DatedPlanningWeek
     {
-
         let calendar = suppliedCalendar ?? self.calendar /* Date calculation calendar */
 
         if var previous = weeks.first(where:
@@ -476,7 +447,6 @@ struct PlanningCalendarDocument: Hashable, Codable
                 $0.startKey == currentWeekKey
             })
         {
-
             previous.collection.lists = currentLists
             previous.collection.savedCardIDs = saved
 
@@ -510,8 +480,6 @@ struct PlanningCalendarDocument: Hashable, Codable
 ///
 extension PlanningCalendarDocument
 {
-
-
     ///
     /// @fcn        PlanningCalendarDocument.repairLegacyMondayFirstLayout
     /// @brief      Repair a recognized legacy weekday mapping
@@ -529,7 +497,6 @@ extension PlanningCalendarDocument
     @discardableResult
     mutating func repairLegacyMondayFirstLayout(now: Date = .now) throws -> Bool
     {
-
         guard firstWeekday == 1,
         let current = weeks.first(where:
             {
@@ -588,7 +555,6 @@ extension PlanningCalendarDocument
     ///
     mutating func changeFirstWeekday(to weekday: Int, now: Date = .now) throws
     {
-
         guard weekday == 1 || weekday == 2 else
         {
             throw CocoaError(.validationMissingMandatoryProperty)
@@ -606,10 +572,8 @@ extension PlanningCalendarDocument
 
         let sources = weeks.sorted /* Source records or files */
         {
-
             if ($0.startKey == currentWeekKey) != ($1.startKey == currentWeekKey)
             {
-
                 return $0.startKey == currentWeekKey
             }
 
@@ -627,23 +591,19 @@ extension PlanningCalendarDocument
         // Globally distinct IDs prevent a link from resolving to an unrelated card after a split
         for source in sources
         {
-
             var mapping: [Int: Int] = [:] /* Source-to-target identity map */
 
             for card in source.collection.lists.flatMap(\.allCards)
             {
-
                 let id: Int /* Owner-local numeric ID */
 
                 if usedCardIDs.insert(card.id).inserted
                 {
-
                     id = card.id
 
                 }
                 else
                 {
-
                     id = nextCardID;
                     nextCardID += 1;
 
@@ -658,7 +618,6 @@ extension PlanningCalendarDocument
 
             guard let middle = PlanningDate.days(in: source.startKey, calendar: oldCalendar).dropFirst(3).first else
             {
-
                 throw CocoaError(.coderReadCorrupt)
             }
 
@@ -677,14 +636,12 @@ extension PlanningCalendarDocument
 
         for source in sources
         {
-
             let middle   = /* Central layout position */
                 PlanningDate.days(in: source.startKey, calendar: oldCalendar) [3]
             let ownerKey = PlanningDate.weekKey(middle, calendar: newCalendar) /* Owner key */
 
             for list in source.collection.lists
             {
-
                 let dateKey = source.dayListIDs.first /* Date key */
                 {
                     $0.value == list.id
@@ -705,7 +662,6 @@ extension PlanningCalendarDocument
                 // A new boundary week starts empty; weekday panels are filled after migration
                 if rebuilt[key] == nil
                 {
-
                     target.collection.lists = [];
                     target.dayListIDs = [:]
 
@@ -731,7 +687,6 @@ extension PlanningCalendarDocument
                 ///
                 func relocated(_ card: KanbanCard) -> KanbanCard
                 {
-
                     var result = /* Accumulated output value */
                         card.replacingLocation(id: mapping[card.id]!, listTitle: list.title)
 
@@ -749,17 +704,14 @@ extension PlanningCalendarDocument
 
                             if let retained = item.retainedCardID, let replacement = cardIDs[owner]? [retained]
                             {
-
                                 item.retainedCardID = replacement
 
                             }
 
                             if case .linkedCard(let id) = item.content
                             {
-
                                 if let replacement = cardIDs[owner]? [id]
                                 {
-
                                     item.content = .linkedCard(cardID: replacement)
 
                                 }
@@ -788,13 +740,11 @@ extension PlanningCalendarDocument
                 target.collection.lists.append(moved)
                 for card in list.allCards where source.collection.savedCardIDs.contains(card.id)
                 {
-
                     target.collection.savedCardIDs.insert(mapping[card.id]!)
                 }
 
                 if let dateKey
                 {
-
                     target.dayListIDs[dateKey] = listID
 
                 }
@@ -809,20 +759,17 @@ extension PlanningCalendarDocument
 
         if rebuilt[currentKey] == nil
         {
-
             rebuilt[currentKey] = DatedPlanningWeek.make(for: now, calendar: newCalendar)
 
         }
 
         for key in Array(rebuilt.keys)
         {
-
             var week = rebuilt[key]! /* Dated Week under consideration */
 
             for date in PlanningDate.days(in: key, calendar: newCalendar)
             where week.dayListIDs[PlanningDate.key(date)] == nil
             {
-
                 _ = week.prepareDay(date)
 
             }
@@ -837,7 +784,6 @@ extension PlanningCalendarDocument
                 lhs, rhs in
                 switch (datesByID[lhs.element.id], datesByID[rhs.element.id])
                 {
-
                 case let (left?, right?):
                     return left < right
                 case (_?, nil):
@@ -868,17 +814,13 @@ extension PlanningCalendarDocument
 
         for week in rebuilt.values
         {
-
             for card in week.collection.lists.flatMap(\.allCards)
             {
-
                 for item in card.checklists.flatMap(\.items)
                 {
-
                     if case .linkedCard(let cardID) = item.content,
                     let owner = cardOwners[cardID], owner != week.id
                     {
-
                         linkWeeks[item.id] = owner
 
                     }
@@ -893,7 +835,6 @@ extension PlanningCalendarDocument
 
         for key in Array(rebuilt.keys)
         {
-
             var week = rebuilt[key]! /* Dated Week under consideration */
 
 
@@ -909,7 +850,6 @@ extension PlanningCalendarDocument
             ///
             func preservingOwners(_ card: KanbanCard) -> KanbanCard
             {
-
                 var card = card /* Card under consideration */
 
                 card.checklists = card.checklists.map
@@ -926,7 +866,6 @@ extension PlanningCalendarDocument
                         item.linkedCollectionID == nil || sourceWeekIDs.contains(item.linkedCollectionID!),
                         let owner = cardOwners[id]
                         {
-
                             item.linkedCollectionID = owner
 
                         }
@@ -944,7 +883,6 @@ extension PlanningCalendarDocument
 
             for index in week.collection.lists.indices
             {
-
                 week.collection.lists[index].cards = week.collection.lists[index].cards.map(preservingOwners)
                 week.collection.lists[index].archivedCards = week.collection.lists[index].archivedCards.map(
                     preservingOwners)
@@ -977,8 +915,6 @@ extension PlanningCalendarDocument
 ///
 struct PlanningSearchResult: Identifiable, Hashable
 {
-
-
     let weekKey:         String?    /* Week key                    */
     let collectionID:    UUID       /* Collection ID               */
     let collectionTitle: String     /* Collection title            */
@@ -1003,8 +939,6 @@ struct PlanningSearchResult: Identifiable, Hashable
 ///
 enum PlanningCalendarContent
 {
-
-
     ///
     /// @fcn        PlanningCalendarContent.items
     /// @brief      Select content represented on a calendar day
@@ -1021,7 +955,6 @@ enum PlanningCalendarContent
     static func items(on date: Date, document: PlanningCalendarDocument, sources: [PlanningSearchResult])
     -> [PlanningSearchResult]
     {
-
         let calendar = document.calendar        /* Date calculation calendar      */
         let week     = document.week(for: date) /* Dated Week under consideration */
         let listID   = week?.list(on: date)?.id /* Owner-local List identifier    */

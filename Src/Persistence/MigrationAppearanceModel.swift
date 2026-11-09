@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 enum MigrationAppearanceModel
 {
-
     /// @fcn MigrationAppearanceModel.prepare
     /// @brief Build separately versioned records only for actually present source stores
     /// @param[in] globalWeek Original mapped global Week appearance or nil when absent
@@ -25,7 +24,6 @@ enum MigrationAppearanceModel
     static func prepare(globalWeek: [String: Any]?, artworkIDs: [String], artworkPresent: Bool,
         context: MigrationContentValues) throws -> [String: Any]
     {
-
         let workspace       = /* Active workspace snapshot */
             context.journal.previewWorkspaceID.uuidString.lowercased()
         var appearance: Any = NSNull() /* Resolved appearance choices */
@@ -33,7 +31,6 @@ enum MigrationAppearanceModel
 
         if let globalWeek
         {
-
             let id = /* Portable record identity */
                 try context.id("workspace_appearance", owner: "workspace_metadata", legacy: "Plenact.WeekAppearance.v1")
 
@@ -44,7 +41,6 @@ enum MigrationAppearanceModel
         }
         if artworkPresent
         {
-
             let id = /* Portable record identity */
                 try context.id("artwork_library", owner: "workspace_metadata", legacy: "Plenact.Studio.Artwork.v1")
 

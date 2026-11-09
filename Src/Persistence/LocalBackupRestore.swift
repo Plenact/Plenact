@@ -13,7 +13,6 @@ import SwiftUI
 ///     Separate selecting/validating files from any destination mutation
 struct ReviewedLocalBackup
 {
-
     let files:      FileWrapper    /* Private immutable snapshot, independent of file-provider changes */
     let values:     [String: Any]  /* Exact source persistent-domain values                            */
     let storeCount: Int            /* Reviewed saved source stores                                    */
@@ -31,13 +30,11 @@ struct ReviewedLocalBackup
 @MainActor
 enum LocalBackupRestore
 {
-
     /// User-visible validation failures never authorize source repair or partial installation
     /// @section Purpose
     ///     Refuse incomplete, inconsistent or unsafe source evidence
     enum Failure: LocalizedError
     {
-
         case invalid, unsafe, tooLarge, projectionMismatch, reviewRequired
 
         /// @fcn Failure.errorDescription
@@ -45,7 +42,6 @@ enum LocalBackupRestore
         /// @return Actionable local-only feedback
         var errorDescription: String? /* Readable failure explanation */
         {
-
             switch self
             {
             case .invalid: return "This folder is not a supported, complete native source backup."
@@ -67,7 +63,6 @@ enum LocalBackupRestore
     /// @throws Unreadable, unsafe or oversized source entries
     static func readTree(_ url: URL, remaining: inout Int, depth: Int = 0) throws -> FileWrapper
     {
-
         guard depth <= 32 else
         {
             throw Failure.unsafe
@@ -80,12 +75,10 @@ enum LocalBackupRestore
 
         if kind == .typeDirectory
         {
-
             var children: [String: FileWrapper] = [:] /* Nested view or record values */
 
             for child in try manager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
             {
-
                 children[child.lastPathComponent] = try readTree(child, remaining: &remaining, depth: depth + 1)
 
             }
@@ -122,7 +115,6 @@ enum LocalBackupRestore
     /// @throws Unsafe wrapper kinds
     private static func mediaPaths(_ wrapper: FileWrapper, prefix: String) throws -> Set<String>
     {
-
         if wrapper.isRegularFile
         {
             return [prefix]
@@ -151,7 +143,6 @@ enum LocalBackupRestore
     /// @throws Integrity, native decoding or reconciliation errors
     static func review(at url: URL) throws -> ReviewedLocalBackup
     {
-
         var remaining = LegacyWorkspaceExport.maximumBytes       /* Entries still to process     */
         let files     = try readTree(url, remaining: &remaining) /* Files used by this operation */
 
@@ -171,12 +162,10 @@ enum LocalBackupRestore
 
         for area in LegacyWorkspaceExport.mediaRoots
         {
-
             var entry: FileWrapper? = files /* Entry being processed */
 
             for part in area.split(separator: "/")
             {
-
                 entry = entry?.fileWrappers?[String(part)]
 
             }
@@ -225,14 +214,12 @@ enum LocalBackupRestore
 
         if files.fileWrappers?["Migration"] != nil
         {
-
             journal = try MigrationBackupReader.file("Migration/IdentityJournal.json", in: files)
             _ = try MigrationIdentityJournal.decode(journal!)
 
         }
         if files.fileWrappers?["MigrationPreview"] != nil
         {
-
             let data      = /* Encoded or loaded bytes */
                 try MigrationBackupReader.file("MigrationPreview/IdentityJournal.json", in: files)
             let candidate = /* Candidate under validation */
@@ -248,7 +235,6 @@ enum LocalBackupRestore
             }
             if let journal
             {
-
                 let original = /* Baseline before changes */
                     try MigrationIdentityJournal.decode(journal)
                 let mapped   = /* Value after identity translation */
@@ -277,7 +263,6 @@ enum LocalBackupRestore
     /// @throws Missing source evidence
     private static func boardPreferences(_ files: FileWrapper) throws -> Data
     {
-
         try MigrationBackupReader.file("Preferences.plist", in: files)
     }
 
@@ -294,14 +279,12 @@ enum LocalBackupRestore
     /// @throws Unsupported environment, filesystem or persistence failure
     static func install(_ backup: ReviewedLocalBackup, root: URL, defaults: UserDefaults, domain: String) throws
     {
-
         #if targetEnvironment(simulator)
 
         let manager = FileManager.default /* Filesystem or media manager */
 
         for area in LegacyWorkspaceExport.mediaRoots
         {
-
             let target = root.appendingPathComponent(area) /* Target under consideration */
 
             if manager.fileExists(atPath: target.path)
@@ -313,7 +296,6 @@ enum LocalBackupRestore
 
             for part in area.split(separator: "/")
             {
-
                 source = source?.fileWrappers?[String(part)]
 
             }
@@ -412,7 +394,6 @@ enum LocalBackupRestore
 ///     Prevent a Settings sheet from installing data while old editors can still autosave
 struct LocalBackupRestoreAccess
 {
-
     let restore: (ReviewedLocalBackup) -> Void /* Confirmed restore request                     */
     let undo:    () -> Void                    /* Explicit recovery of the pre-import workspace */
 
@@ -424,7 +405,6 @@ struct LocalBackupRestoreAccess
 ///     Make standalone previews inert rather than mutating storage
 private struct LocalBackupRestoreKey: EnvironmentKey
 {
-
     static let defaultValue: LocalBackupRestoreAccess? = nil /* Fallback environment value */
 
 }
@@ -432,16 +412,13 @@ private struct LocalBackupRestoreKey: EnvironmentKey
 
 extension EnvironmentValues
 {
-
     /// @fcn EnvironmentValues.localBackupRestore
     /// @brief Expose the root-owned explicit restore boundary
     /// @return Optional installed restore callbacks
     var localBackupRestore: LocalBackupRestoreAccess? /* Local backup restore */
     {
-
         get { self[LocalBackupRestoreKey.self] }
         set {
-
             self[LocalBackupRestoreKey.self] = newValue
 
         }

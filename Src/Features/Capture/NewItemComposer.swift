@@ -20,8 +20,6 @@ import SwiftUI
 ///
 struct QuickNoteComposer: View
 {
-
-
     @State private var keyboardContextID     = UUID() /* Keyboard context ID */
     @StateObject private var attachmentDraft = CreationAttachmentDraft() /* Attachment draft */
     @Binding var lists: [KanbanList] /* Current destination lists */
@@ -57,14 +55,12 @@ struct QuickNoteComposer: View
 
     private var schedule: QuickCaptureSchedule /* Item date and time settings */
     {
-
         QuickCaptureSchedule(
             start: hasStartDate ? startDate : nil, stop: hasStopDate ? stopDate : nil, includesTime: includesDateTime)
     }
 
     private var voiceReady: Bool /* Voice ready */
     {
-
         guard captureAction == .voice else
         {
             return true
@@ -120,8 +116,6 @@ struct QuickNoteComposer: View
         onSave: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     )
     {
-
-
         _lists = lists
         self.draftKey = draftKey
 
@@ -171,7 +165,6 @@ struct QuickNoteComposer: View
     ///
     private var trimmedTitle: String /* Trimmed title */
     {  /* Card title without surrounding whitespace */
-
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -188,10 +181,8 @@ struct QuickNoteComposer: View
     ///
     private var destinationPicker: some View /* Destination picker */
     {
-
         Picker("List", selection: $selectedListID)
         {
-
             Text("Choose a list").tag(nil as Int?)
             ForEach(lists)
             {
@@ -205,30 +196,24 @@ struct QuickNoteComposer: View
 
     private var drawingControls: some View /* Drawing controls */
     {
-
         VStack(alignment: .leading, spacing: 12)
         {
-
             ForEach(drawings)
             {
                 drawing in
                 HStack
                 {
-
                     Button
                     {
-
                         drawingToEdit = drawing
 
                     }
                     label:
                     {
-
                         Image(uiImage: drawing.preview).resizable().scaledToFit().frame(maxHeight: 150)
                     } .buttonStyle(.plain).accessibilityLabel("Edit drawing")
                     Button("Remove drawing", systemImage: "trash", role: .destructive)
                     {
-
                         drawings.removeAll
                         {
                             $0.id == drawing.id
@@ -242,7 +227,6 @@ struct QuickNoteComposer: View
 
             Button("Add drawing", systemImage: "pencil.tip")
             {
-
                 drawingToEdit = DrawingCaptureDraft()
 
             }
@@ -255,14 +239,11 @@ struct QuickNoteComposer: View
 
     private var dateControls: some View /* Date controls */
     {
-
         VStack(alignment: .leading, spacing: 12)
         {
-
             Toggle("Start date", isOn: $hasStartDate)
             if hasStartDate
             {
-
                 DatePicker(
                                                 "Start", selection: $startDate,
                                                 displayedComponents: includesDateTime ? [.date, .hourAndMinute] : [.date])
@@ -271,7 +252,6 @@ struct QuickNoteComposer: View
             Toggle("Stop date", isOn: $hasStopDate)
             if hasStopDate
             {
-
                 DatePicker(
                                                 "Stop", selection: $stopDate,
                                                 displayedComponents: includesDateTime ? [.date, .hourAndMinute] : [.date])
@@ -291,13 +271,10 @@ struct QuickNoteComposer: View
 
     private var voiceControls: some View /* Voice controls */
     {
-
         VStack(alignment: .leading, spacing: 12)
         {
-
             Picker("Save as", selection: $voiceSaveOption)
             {
-
                 ForEach(VoiceCaptureSaveOption.allCases)
                 {
                     option in
@@ -307,7 +284,6 @@ struct QuickNoteComposer: View
             } .pickerStyle(.segmented)
             if voice.isRecording
             {
-
                 Label("Recording · up to 60 seconds", systemImage: "record.circle").foregroundStyle(.red)
                 Button("Stop recording", systemImage: "stop.circle")
                 {
@@ -316,13 +292,10 @@ struct QuickNoteComposer: View
             }
             else
             {
-
                 Button(voice.recordingURL == nil ? "Record a thought" : "Record again", systemImage: "mic")
                 {
-
                     if voice.recordingURL != nil
                     {
-
                         replaceRecording = true
 
                     }
@@ -350,10 +323,8 @@ struct QuickNoteComposer: View
 
             if voiceSaveOption.savesText
             {
-
                 if voice.isTranscribing
                 {
-
                     ProgressView("Transcribing…")
                     Button("Cancel transcription")
                     {
@@ -363,7 +334,6 @@ struct QuickNoteComposer: View
                 }
                 else if voice.recordingURL != nil
                 {
-
                     Button(
                         voice.transcript.isEmpty ? "Transcribe recording" : "Transcribe again",
                         systemImage: "text.bubble"
@@ -399,10 +369,8 @@ struct QuickNoteComposer: View
 
     private var photoControls: some View /* Photo controls */
     {
-
         VStack(alignment: .leading, spacing: 12)
         {
-
             if importingPhotos
             {
                 ProgressView("Preparing photos…")
@@ -413,17 +381,14 @@ struct QuickNoteComposer: View
                 photo in
                 HStack
                 {
-
                     if let image = photo.image
                     {
-
                         Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 140)
                         .accessibilityLabel("Photo to attach")
                     }
 
                     Button("Remove photo", systemImage: "trash", role: .destructive)
                     {
-
                         photos.removeAll
                         {
                             $0.id == photo.id
@@ -437,7 +402,6 @@ struct QuickNoteComposer: View
 
             Button("Add photo", systemImage: "camera")
             {
-
                 showsPhotoSources = true
 
             }
@@ -459,10 +423,8 @@ struct QuickNoteComposer: View
     ///
     @MainActor private func openCamera() async
     {
-
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else
         {
-
             mediaError = "A camera isn't available on this device. Choose Photo library instead."
 
             return
@@ -474,20 +436,17 @@ struct QuickNoteComposer: View
 
         if status == .notDetermined
         {
-
             allowed = await AVCaptureDevice.requestAccess(for: .video)
 
         }
 
         if allowed
         {
-
             showsCamera = true
 
         }
         else
         {
-
             mediaError =
                                     "Camera access is unavailable. You can allow it in Settings → Plenact, or choose Photo library."
 
@@ -506,7 +465,6 @@ struct QuickNoteComposer: View
     ///
     @MainActor private func importPhotos() async
     {
-
         guard !photoSelection.isEmpty else
         {
             return
@@ -516,7 +474,6 @@ struct QuickNoteComposer: View
 
         defer
         {
-
             importingPhotos = false;
             photoSelection = []
 
@@ -524,13 +481,10 @@ struct QuickNoteComposer: View
 
         do
         {
-
             for item in photoSelection
             {
-
                 guard let data = try await item.loadTransferable(type: Data.self), UIImage(data: data) != nil else
                 {
-
                     throw CocoaError(.fileReadCorruptFile)
                 }
 
@@ -548,7 +502,6 @@ struct QuickNoteComposer: View
         }
         catch
         {
-
             mediaError = "Some photos couldn't be prepared. Your draft and any photos already added are still here."
 
         }
@@ -566,7 +519,6 @@ struct QuickNoteComposer: View
     ///
     private func finishDraft()
     {
-
         acceptsDraftEdits = false
 
         if let draftKey
@@ -587,13 +539,11 @@ struct QuickNoteComposer: View
     ///
     private func registerKeyboardDraft()
     {
-
         PlenactKeyboard.shared.setContext(
             keyboardContextID,
             actions: KeyboardCardActions(
                 exit:
                 {
-
                     finishDraft();
                     dismiss()
                 },
@@ -601,7 +551,6 @@ struct QuickNoteComposer: View
                 checklist: presentation == .card
                 ?
                 {
-
                     UIApplication.shared.sendAction(
                         #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     actions.append(KanbanChecklistItem(title: ""))
@@ -613,24 +562,17 @@ struct QuickNoteComposer: View
 
     var body: some View /* Quick Note Composer layout */
     {  /* New-card form and destination controls */
-
-
         NavigationStack
         {
-
             VStack(spacing: 0)
             {
-
                 ContentCreationKindPicker(presentation: $presentation).padding(.horizontal, 20).padding(.vertical, 12)
                 if presentation == .note
                 {
-
                     ScrollView
                     {
-
                         VStack(alignment: .leading, spacing: 18)
                         {
-
                             destinationPicker
                             TextField("Note title", text: $title, axis: .vertical).textInputAutocapitalization(
                                 .sentences
@@ -655,7 +597,6 @@ struct QuickNoteComposer: View
 
                             if onSaveCapture != nil
                             {
-
                                 DisclosureGroup("Start and stop dates")
                                 {
                                     dateControls
@@ -669,13 +610,10 @@ struct QuickNoteComposer: View
                 }
                 else
                 {
-
                     Form
                     {
-
                         Section(presentation.title)
                         {
-
                             TextField("Title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
                             .lineLimit(1 ... 6)
                             TextField("Subtitle (optional)", text: $subtitle).textInputAutocapitalization(.sentences)
@@ -685,10 +623,8 @@ struct QuickNoteComposer: View
 
                         if (template != nil || captureAction == .checklist || !actions.isEmpty) && presentation == .card
                         {
-
                             Section("Actions")
                             {
-
                                 ForEach($actions)
                                 {
                                     $action in
@@ -701,7 +637,6 @@ struct QuickNoteComposer: View
 
                                 Button("Add action", systemImage: "plus")
                                 {
-
                                     actions.append(KanbanChecklistItem(title: ""))
                                 }
 
@@ -744,10 +679,8 @@ struct QuickNoteComposer: View
 
                         if onSaveCapture != nil
                         {
-
                             Section("Dates")
                             {
-
                                 DisclosureGroup("Start and stop dates")
                                 {
                                     dateControls
@@ -760,20 +693,15 @@ struct QuickNoteComposer: View
 
                         Section("Add to")
                         {
-
                             if lists.isEmpty
                             {
-
-
                                 Text("Create a list in Week before adding a card.")
                                 .foregroundStyle(.secondary)
                             }
                             else
                             {
-
                                 Picker("List", selection: $selectedListID)
                                 {
-
                                     Text("Choose a list").tag(nil as Int?)
                                     ForEach(lists)
                                     {
@@ -798,14 +726,10 @@ struct QuickNoteComposer: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
-
                         finishDraft()
                         dismiss()
                     }
@@ -815,11 +739,8 @@ struct QuickNoteComposer: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
-
                     Button("Add")
                     {
-
                         guard let selectedListID, /* Chosen Week destination identity */
                         lists.contains(where:
                             {
@@ -851,7 +772,6 @@ struct QuickNoteComposer: View
 
                         if let onSaveCapture
                         {
-
                             guard voiceReady, schedule.isValid() else
                             {
                                 return
@@ -859,7 +779,6 @@ struct QuickNoteComposer: View
 
                             do
                             {
-
                                 let audio = /* Audio attachment content */
                                 captureAction == .voice && voiceSaveOption.savesAudio ? try voice.audioData() : nil
 
@@ -884,7 +803,6 @@ struct QuickNoteComposer: View
                                     })
                                 else
                                 {
-
                                     mediaError =
                                                                                                             "This capture could not be saved. Your draft is still open; check its List and try again.";
 
@@ -894,7 +812,6 @@ struct QuickNoteComposer: View
                             }
                             catch
                             {
-
                                 mediaError =
                                                                                                 "Your capture couldn't be saved. Your draft is still open; please try again.";
 
@@ -904,10 +821,8 @@ struct QuickNoteComposer: View
                         }
                         else
                         {
-
                             guard attachmentDraft.entries.isEmpty else
                             {
-
                                 mediaError = "This destination couldn't save attachments. Your draft is still open.";
 
                                 return
@@ -961,10 +876,8 @@ struct QuickNoteComposer: View
         }
         .task
         {
-
             if captureAction == .drawing && !offeredDrawing
             {
-
                 offeredDrawing = true;
                 drawingToEdit = DrawingCaptureDraft()
 
@@ -972,7 +885,6 @@ struct QuickNoteComposer: View
 
             if captureAction == .photo && !offeredPhotoSources
             {
-
                 offeredPhotoSources = true;
                 showsPhotoSources = true
 
@@ -990,13 +902,11 @@ struct QuickNoteComposer: View
                         $0.id == updated.id
                     })
                 {
-
                     drawings[index] = updated
 
                 }
                 else
                 {
-
                     drawings.append(updated)
                 }
 
@@ -1006,7 +916,6 @@ struct QuickNoteComposer: View
         }
         .confirmationDialog("Add an attachment", isPresented: $showsPhotoSources, titleVisibility: .visible)
         {
-
             Button("Take photo")
             {
                 Task
@@ -1018,7 +927,6 @@ struct QuickNoteComposer: View
 
             Button("Photo library")
             {
-
                 showsPhotoLibrary = true
 
             }
@@ -1027,7 +935,6 @@ struct QuickNoteComposer: View
             {
                 Button("Drawing")
                 {
-
                     drawingToEdit = DrawingCaptureDraft()
 
                 }
@@ -1036,7 +943,6 @@ struct QuickNoteComposer: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
@@ -1049,18 +955,15 @@ struct QuickNoteComposer: View
         }
         .sheet(isPresented: $showsCamera)
         {
-
             QuickCaptureCamera
             {
                 image in
                 if let data = image.jpegData(compressionQuality: 0.9)
                 {
-
                     photos.append(QuickCapturePhoto(data: data, fileExtension: "jpg"))
                 }
                 else
                 {
-
                     mediaError = "This photo couldn't be prepared. Please try again."
 
                 }
@@ -1073,7 +976,6 @@ struct QuickNoteComposer: View
             if wasRecording && !recording && voice.recordingURL != nil && voiceSaveOption.savesText
             && scenePhase == .active
             {
-
                 Task
                 {
                     await voice.transcribe()
@@ -1109,7 +1011,6 @@ struct QuickNoteComposer: View
                         "Replace this recording and transcript?", isPresented: $replaceRecording, titleVisibility: .visible
         )
         {
-
             Button("Record again", role: .destructive)
             {
                 Task
@@ -1121,7 +1022,6 @@ struct QuickNoteComposer: View
 
             Button("Keep recording", role: .cancel)
             {
-
             }
 
         }
@@ -1133,7 +1033,6 @@ struct QuickNoteComposer: View
                             {
                                 if !$0
                                 {
-
                                     mediaError = nil
 
                                 }
@@ -1141,10 +1040,8 @@ struct QuickNoteComposer: View
                             })
         )
         {
-
             Button("OK", role: .cancel)
             {
-
                 mediaError = nil
 
             }
@@ -1152,7 +1049,6 @@ struct QuickNoteComposer: View
         }
         message:
         {
-
             Text(mediaError ?? "")
         }
         .presentationDetents([.large])
@@ -1169,8 +1065,6 @@ struct QuickNoteComposer: View
 ///
 struct NewPersonalNoteComposer: View
 {
-
-
     let availablePersonalLists:        [PersonalCollection] /* Available personal lists */
     let onSave:                        (UUID, QuickCaptureSubmission, Date) throws -> Void /* Persist the edited value */
     @State private var destinationIDs: [UUID] /* Destination i ds */
@@ -1195,7 +1089,6 @@ struct NewPersonalNoteComposer: View
         onSave: @escaping (UUID, QuickCaptureSubmission, Date) throws -> Void
     )
     {
-
         self.initialCollectionID = initialCollectionID
         self.availablePersonalLists = availablePersonalLists
         self.onSave = onSave
@@ -1205,7 +1098,6 @@ struct NewPersonalNoteComposer: View
 
     private var destinations: [KanbanList] /* Available operation destinations */
     {
-
         destinationIDs.enumerated().compactMap
         {
             index, id in
@@ -1236,7 +1128,6 @@ struct NewPersonalNoteComposer: View
     ///
     private func save(_ capture: QuickCaptureSubmission) -> Bool
     {
-
         guard destinationIDs.indices.contains(capture.listID) else
         {
             return false
@@ -1249,7 +1140,6 @@ struct NewPersonalNoteComposer: View
                 $0.id == ownerID && $0.kind == .list && $0.isActive
             }) else
         {
-
             return false
         }
 
@@ -1260,7 +1150,6 @@ struct NewPersonalNoteComposer: View
         }
         catch
         {
-
             DatabaseActivity.shared.report(
                                     "Could not save this item. Your draft remains open: \(error.localizedDescription)")
             return false
@@ -1270,7 +1159,6 @@ struct NewPersonalNoteComposer: View
 
     var body: some View /* New Personal Note Composer layout */
     {
-
         QuickNoteComposer(
             lists: .constant(destinations), initialListID: destinationIDs.firstIndex(of: initialCollectionID),
             initialPresentation: .note, onSaveCapture: save

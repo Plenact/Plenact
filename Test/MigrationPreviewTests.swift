@@ -15,7 +15,6 @@ import XCTest
 @MainActor
 final class MigrationPreviewTests: XCTestCase
 {
-
     /// @fcn MigrationPreviewTests.fixture
     /// @brief Capture synthetic source values inside a disposable test container
     /// @param[in] values Explicit saved preferences
@@ -25,7 +24,6 @@ final class MigrationPreviewTests: XCTestCase
     private func fixture(_ values: [String: Any] = [:],
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.MigrationTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -55,7 +53,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws JSON encoding errors
     private func library(category: String = "same") throws -> Data
     {
-
         try JSONSerialization.data(withJSONObject: [
             "categories": [["id": "same", "name": "  Personal 🪴  "]],
             "labels": [["id": "same", "name": "Quiet attention", "categoryID": category, "color": "green"]]
@@ -70,7 +67,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Missing output or invalid JSON
     private func records(_ preview: MigrationPreview) throws -> [[String: Any]]
     {
-
         let folder = /* Working folder location */
             try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"])
 
@@ -86,7 +82,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Journal resolution/encoding errors
     func testIdentitySurvivesRestartAndPreservesOwnerDiscriminators() throws
     {
-
         var journal  = MigrationIdentityJournal() /* Migration identity journal      */
         let source   =                            /* Source value for this operation */
             MigrationSourceIdentity(recordType: "card", owner: "collection-A", legacyID: "7", discriminator: nil)
@@ -113,7 +108,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture encoding errors
     func testCorruptFutureUnknownAndCollidingJournalsAreRejected() throws
     {
-
         XCTAssertThrowsError(try MigrationIdentityJournal.decode(Data("not-json".utf8)))
 
         var journal = MigrationIdentityJournal() /* Migration identity journal */
@@ -153,7 +147,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture or journal I/O errors
     func testStaleJournalWriterCannotOverwriteDurableMappings() throws
     {
-
         try fixture { _, url in
 
             let journal = MigrationIdentityJournal() /* Migration identity journal */
@@ -175,7 +168,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture, conversion or output-decoding errors
     func testConvertedRecordsAreStableAndRetainExactWriting() throws
     {
-
         let source = try library() /* Source value for this operation */
 
         try fixture(["Plenact.LabelLibrary.v1": source, "Plenact.ActivityShowsCovers": false,
@@ -229,7 +221,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture or conversion errors
     func testUnsetFalseAndTrueDisplayChoicesRemainDistinct() throws
     {
-
         try fixture(["Plenact.CardCovers.enabled": false, "Plenact.ActivityShowsCovers": true]) { backup, url in
 
             let payload = /* Canonical record payload */
@@ -249,7 +240,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture or conversion errors
     func testAbsentStoresNeverManufacturePortableExamples() throws
     {
-
         try fixture { backup, url in
 
             let result = /* Result being assembled */
@@ -273,7 +263,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture errors
     func testMissingLabelCategoryRejectsWithoutCreatingJournal() throws
     {
-
         try fixture(["Plenact.LabelLibrary.v1": library(category: "missing")]) { backup, url in
             XCTAssertThrowsError(try MigrationPreview.prepare(backup: backup, journalURL: url))
             XCTAssertNil(try MigrationIdentityStore.read(at: url))
@@ -287,7 +276,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture encoding errors
     func testDuplicateLabelsAndUnknownSourceFieldsAreRejected() throws
     {
-
         var object = /* Decoded JSON object */
             try XCTUnwrap(JSONSerialization.jsonObject(with: library()) as? [String: Any])
         let labels = /* Available label definitions */
@@ -315,7 +303,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture errors
     func testWrongNativePreferenceTypesAreNotCoerced() throws
     {
-
         for values: [String: Any] in [["Plenact.CardCovers.enabled": 1], ["Plenact.BoardPresentation.v1": "future"]]
         {
             try fixture(values) { backup, url in
@@ -332,7 +319,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture errors
     func testChangedSourceEvidenceBlocksBeforeJournalWrite() throws
     {
-
         try fixture { backup, url in
 
             let original = /* Baseline before changes */
@@ -358,7 +344,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture errors
     func testPendingReviewRecoveryBlocksConversion() throws
     {
-
         try fixture(["Plenact.DailyReviewTransaction.v1": Data("pending".utf8)]) { backup, url in
             XCTAssertThrowsError(try MigrationPreview.prepare(backup: backup, journalURL: url))
             XCTAssertNil(try MigrationIdentityStore.read(at: url))
@@ -372,7 +357,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture or report errors
     func testDeviceAndRecoveryStateAreNotListedAsSyncWork() throws
     {
-
         try fixture(["Plenact.ActivityRecents.v1": Data("[]".utf8), "Plenact.ExampleLoadUndo.v1": Data("old-source".utf8),
             "Plenact.SavedCardIDs.v1": [7]]) { backup, url in
 
@@ -396,7 +380,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture or filesystem errors
     func testCorruptExistingJournalIsNeverReset() throws
     {
-
         try fixture(["Plenact.LabelLibrary.v1": library()]) { backup, url in
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
 
@@ -414,7 +397,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture or journal errors
     func testExistingNamespaceCannotBeReplacedEvenWithCurrentBaseline() throws
     {
-
         try fixture { _, url in
 
             let original = MigrationIdentityJournal() /* Baseline before changes */
@@ -436,7 +418,6 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture, source-capture or conversion errors
     func testSubsequentBackupPreservesJournalAndPreviewResumesItsNamespace() throws
     {
-
         try fixture(["Plenact.LabelLibrary.v1": library()]) { backup, url in
 
             let first    = /* First comparison value */

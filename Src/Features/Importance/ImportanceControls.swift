@@ -24,8 +24,6 @@ import UniformTypeIdentifiers
 ///
 struct ImportanceStarCluster: View
 {
-
-
     let level:         Int                           /* Saved importance level */
     var style:         ImportanceStarStyle = .tucked /* Selected display style */
 
@@ -36,10 +34,8 @@ struct ImportanceStarCluster: View
 
     var body: some View /* Importance Star Cluster layout */
     {
-
         ZStack(alignment: .topLeading)
         {
-
             ForEach(Array((0 ..< count).reversed()), id: \.self)
             {
                 depth in
@@ -72,7 +68,6 @@ struct ImportanceStarCluster: View
     ///
     private func position(depth: Int) -> CGSize
     {
-
         if count == 1
         {
             return CGSize(width: 5, height: 4)
@@ -103,8 +98,6 @@ struct ImportanceStarCluster: View
 ///
 struct ImportantItemIndicator: View
 {
-
-
     let cardID:  Int /* Owner-local Card identifier */
     var ownerID: UUID?                                                   = /* Record owner identifier */
         nil
@@ -119,10 +112,8 @@ struct ImportantItemIndicator: View
 
     private var level: Int /* Saved importance level */
     {
-
         if let owner = ownerID ?? source
         {
-
             return LibraryImportanceSelection.level(cardID: cardID, collectionID: owner, data: importantData)
         }
 
@@ -131,18 +122,14 @@ struct ImportantItemIndicator: View
 
     var body: some View /* Important Item Indicator layout */
     {
-
         if level > 0
         {
-
             Button
             {
-
                 adjustImportance(by: 1)
             }
             label:
             {
-
                 ImportanceStarCluster(
                     level: level,
                     style: PlanPreferencesStore.resolved(
@@ -162,7 +149,6 @@ struct ImportantItemIndicator: View
                     result in
                     switch result
                     {
-
                     case .first(let completed):
                         if completed
                         {
@@ -201,7 +187,6 @@ struct ImportantItemIndicator: View
     ///
     private func adjustImportance(by direction: Int)
     {
-
         let previous = level /* Previous value for comparison */
 
         guard direction > 0 ? previous < 5 : previous > 0 else
@@ -211,7 +196,6 @@ struct ImportantItemIndicator: View
 
         if let owner = ownerID ?? source
         {
-
             importantData = LibraryImportanceSelection.adjusting(
                 cardID: cardID, collectionID: owner,
                 direction: direction, data: importantData)
@@ -219,7 +203,6 @@ struct ImportantItemIndicator: View
         }
         else
         {
-
             importance?.adjust(cardID, direction)
         }
 
@@ -242,8 +225,6 @@ struct ImportantItemIndicator: View
 ///
 struct ImportanceInteractionRegion: UIViewRepresentable
 {
-
-
     ///
     /// Marks the native bounds of an importance control
     ///
@@ -253,7 +234,6 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     ///
     final class Marker: UIView
     {
-
     }
 
 
@@ -268,7 +248,6 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> Marker
     {
-
         let marker = Marker() /* Marker operation value */
 
         marker.isUserInteractionEnabled = false
@@ -289,7 +268,6 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     ///
     func updateUIView(_ marker: Marker, context: Context)
     {
-
     }
 
 
@@ -307,7 +285,6 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     ///
     static func contains(_ point: CGPoint, from coordinateSpace: UIView, in root: UIView) -> Bool
     {
-
         guard !root.isHidden, root.alpha > 0.01 else
         {
             return false
@@ -337,22 +314,17 @@ struct ImportanceInteractionRegion: UIViewRepresentable
 ///
 struct ImportanceStarStylePicker: View
 {
-
-
     @Binding var selection: ImportanceStarStyle /* Current selection state */
 
     var body:               some View /* Importance Star Style Picker layout */
     {
-
         Picker("Importance stars", selection: $selection)
         {
-
             ForEach(ImportanceStarStyle.allCases)
             {
                 style in
                 HStack
                 {
-
                     Text(style.title)
                     ImportanceStarCluster(level: 4, style: style)
                 } .tag(style)

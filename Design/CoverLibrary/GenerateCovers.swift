@@ -25,7 +25,6 @@ import UniformTypeIdentifiers
 ///
 struct Cover: Decodable
 {
-
     let name:     String;   /* Display or lookup name  */
     let category: String;   /* Category display text   */
     let symbol:   String;   /* Selected symbol name    */
@@ -66,7 +65,6 @@ let contextSymbols = /* Context symbols */
 ///
 func color(_ hex: String, alpha: CGFloat = 1) -> NSColor
 {
-
     let value = UInt32(hex, radix: 16)! /* Value being processed */
 
     return NSColor(red: CGFloat((value >> 16) & 255) / 255, green: CGFloat((value >> 8) & 255) / 255, blue: CGFloat(value & 255) / 255, alpha: alpha)
@@ -88,14 +86,11 @@ func color(_ hex: String, alpha: CGFloat = 1) -> NSColor
 ///
 func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 {
-
     if name == "butterfly" || name == "dragonfly"
     {
-
         colors[0].setFill()
         for side: CGFloat in [-1, 1]
         {
-
             let wingX = rect.midX + (side < 0 ? -110 : 10) /* Wing x */
 
             NSBezierPath(ovalIn: CGRect(x: wingX, y: rect.midY, width: 100, height: 100)).fill()
@@ -109,7 +104,6 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 
     if name == "bowl"
     {
-
         colors[0].setFill()
 
         let bowl = NSBezierPath() /* Bowl drawing path */
@@ -125,7 +119,6 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 
     if name == "apple"
     {
-
         colors[0].setFill()
         NSBezierPath(ovalIn: CGRect(x: rect.midX - 100, y: rect.minY + 20, width: 130, height: 175)).fill()
         NSBezierPath(ovalIn: CGRect(x: rect.midX - 30, y: rect.minY + 20, width: 130, height: 175)).fill()
@@ -137,7 +130,6 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 
     if name == "cactus"
     {
-
         colors[0].setStroke()
 
         let plant = NSBezierPath() /* Plant drawing path */
@@ -163,7 +155,6 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 
     if name == "shovel"
     {
-
         colors[0].setFill()
         NSBezierPath(roundedRect: CGRect(x: rect.midX - 12, y: rect.minY + 90, width: 24, height: 125), xRadius: 8, yRadius: 8).fill()
 
@@ -190,7 +181,6 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 
     guard let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil) else
     {
-
         throw NSError(domain: "CoverGenerator", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unavailable symbol: \(name)"])
     }
 
@@ -203,7 +193,6 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 
 for (index, cover) in covers.enumerated()
 {
-
     let category   = categories.firstIndex(of: cover.category)! /* Matching category entry        */
     let palette    = palettes[category]                         /* Artwork color palette          */
     let background = color(palette[0]);                         /* Resolved background appearance */
@@ -229,7 +218,6 @@ for (index, cover) in covers.enumerated()
     context.setFillColor(primary.withAlphaComponent(0.16).cgColor)
     for n in 0 ..< 3
     {
-
         let x = CGFloat(105 + n * 64 + (index % 4) * 6) /* Horizontal layout coordinate */
 
         context.fillEllipse(in: CGRect(x: x, y: CGFloat(160 + n * 38), width: 22, height: 22))

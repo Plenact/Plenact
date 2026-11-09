@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 struct PortableEditableContent
 {
-
     let records:       [[String: Any]]  /* Records being processed */
     let numericIDs:    [String: Int]    /* Numeric i ds            */
     let assetFiles:    [String: String] /* Asset files             */
@@ -25,7 +24,6 @@ struct PortableEditableContent
     ///     Keep incomplete reconstruction from being installed as an editable workspace
     enum Failure: LocalizedError
     {
-
         case invalid, unsupported, dateContextRequired
 
         /// @fcn Failure.errorDescription
@@ -33,7 +31,6 @@ struct PortableEditableContent
         /// @return Actionable local import guidance
         var errorDescription: String? /* Readable failure explanation */
         {
-
             switch self
             {
             case .invalid:
@@ -57,7 +54,6 @@ struct PortableEditableContent
     /// @throws Duplicate identities or unsafe filenames
     init(records: [[String: Any]], assetFiles: [String: String], retainedAliases: [String: Int] = [:], deletedCardIDs: Set<String> = []) throws
     {
-
         let ids = records.compactMap { $0["id"] as? String } /* Record identifiers */
 
         guard ids.count == records.count, Set(ids).count == ids.count,
@@ -120,7 +116,6 @@ struct PortableEditableContent
     /// @throws Unknown canonical fields
     func mapped(_ value: [String: Any], fields: [String: String]) throws -> [String: Any]
     {
-
         guard Set(value.keys) == Set(fields.keys) else
         {
             throw Failure.unsupported
@@ -136,7 +131,6 @@ struct PortableEditableContent
     /// @throws Malformed timestamps
     func timestamp(_ value: Any?) throws -> Any
     {
-
         guard let value, !(value is NSNull) else
         {
             return NSNull()
@@ -163,7 +157,6 @@ struct PortableEditableContent
     /// @throws Missing context, invalid dates or ambiguous repeated wall-clock time
     func date(_ value: Any?, timeZoneID: String, civilDate: String?) throws -> Any
     {
-
         guard let value, !(value is NSNull) else
         {
             return NSNull()
@@ -197,14 +190,12 @@ struct PortableEditableContent
 
         if kind == "date", Set(object.keys) == ["kind", "date"], let day = object["date"] as? String
         {
-
             formatter.dateFormat = "yyyy-MM-dd"
             text = day
 
         }
         else if kind == "time", Set(object.keys) == ["kind", "time"], let day = civilDate, let time = object["time"] as? String
         {
-
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
             text = day + " " + time
 
@@ -232,7 +223,6 @@ struct PortableEditableContent
     /// @throws Missing Asset mapping
     func file(_ value: Any?) throws -> Any
     {
-
         guard let value, !(value is NSNull) else
         {
             return NSNull()
@@ -252,7 +242,6 @@ struct PortableEditableContent
     /// @throws Undeclared reference
     func alias(_ value: Any?) throws -> Any
     {
-
         guard let value, !(value is NSNull) else
         {
             return NSNull()
@@ -273,7 +262,6 @@ struct PortableEditableContent
     /// @throws Unsupported provider or missing Asset mapping
     func appearance(_ value: Any?, kind: String) throws -> Any
     {
-
         guard let value, !(value is NSNull) else
         {
             return NSNull()
@@ -298,32 +286,27 @@ struct PortableEditableContent
         {
             if let nested = output[key]
             {
-
                 output[key] = try appearance(nested, kind: nestedKind)
 
             }
         }
         if output["photoFileName"] != nil
         {
-
             output["photoFileName"] = try file(output["photoFileName"])
 
         }
         if output["preset"] as? String == "forest_path"
         {
-
             output["preset"] = "forestPath"
 
         }
         if output["preset"] as? String == "sunlit_wall"
         {
-
             output["preset"] = "sunlitWall"
 
         }
         if output["listViewMode"] as? String == "note_list"
         {
-
             output["listViewMode"] = "noteList"
 
         }
@@ -353,7 +336,6 @@ struct PortableEditableContent
     /// @throws Unsupported fields, unresolved references or native decoding failures
     func card(_ record: [String: Any], listTitle: String, timeZoneID: String, civilDate: String?) throws -> KanbanCard
     {
-
         guard record["record_type"] as? String == "card", let payload = record["payload"] as? [String: Any] else
         {
             throw Failure.invalid
@@ -384,13 +366,11 @@ struct PortableEditableContent
 
         for field in ["startDate", "dueDate"]
         {
-
             raw[field] = try date(raw[field], timeZoneID: timeZoneID, civilDate: civilDate)
 
         }
         for field in ["startDateKind", "dueDateKind"] where raw[field] as? String == "date_and_time"
         {
-
             raw[field] = "dateAndTime"
 
         }
@@ -433,7 +413,6 @@ struct PortableEditableContent
     /// @throws Membership, decoding or nested mapping failures
     func list(_ record: [String: Any], timeZoneID: String, civilDate: String?) throws -> KanbanList
     {
-
         guard record["record_type"] as? String == "list", let value = record["payload"] as? [String: Any],
               let title = value["title"] as? String else
         {
@@ -493,7 +472,6 @@ struct PortableEditableContent
     func collection(_ record: [String: Any], selections: [[String: Any]], accountID: String,
         timeZoneID: String, listDates: [String: String]) throws -> PersonalCollection
     {
-
         guard record["record_type"] as? String == "collection", let id = record["id"] as? String,
               let payload = record["payload"] as? [String: Any], let listIDs = payload["list_ids"] as? [String],
               Set(listIDs).count == listIDs.count, payload["preferred_focused_list_id"] is NSNull else

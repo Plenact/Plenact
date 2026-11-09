@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 struct ListCreationDraft: Codable, Equatable
 {
-
-
     var title       = "" /* User-facing title           */
     var subtitle    = "" /* Supporting item text        */
     var description = "" /* Supporting item description */
@@ -39,7 +37,6 @@ struct ListCreationDraft: Codable, Equatable
     ///
     static func key(collectionID: UUID?, listID: Int) -> String
     {
-
                 "plenact.creationDraft.\(collectionID?.uuidString ?? "currentWeek").\(listID)"
     }
 
@@ -56,10 +53,8 @@ struct ListCreationDraft: Codable, Equatable
     ///
     static func load(key: String, defaults: UserDefaults = .standard) -> Self
     {
-
         guard let data = defaults.data(forKey: key), let draft = try? JSONDecoder().decode(Self.self, from: data) else
         {
-
             return Self()
         }
 
@@ -79,7 +74,6 @@ struct ListCreationDraft: Codable, Equatable
     ///
     func save(key: String, defaults: UserDefaults = .standard)
     {
-
         if let data = try? JSONEncoder().encode(self)
         {
             defaults.set(data, forKey: key)
@@ -115,8 +109,6 @@ struct ListCreationDraft: Codable, Equatable
 ///
 final class ListCreationDraftModel: ObservableObject
 {
-
-
     private let key: String         /* Lookup or persistence key */
     private var acceptsEdits = true /* Accepts edits             */
 
@@ -159,7 +151,6 @@ final class ListCreationDraftModel: ObservableObject
     ///
     init(key: String)
     {
-
         self.key = key
 
         let saved = ListCreationDraft.load(key: key) /* Saved state under review */
@@ -181,7 +172,6 @@ final class ListCreationDraftModel: ObservableObject
     ///
     func beginSession()
     {
-
         acceptsEdits = false
 
         let saved = ListCreationDraft.load(key: key) /* Saved state under review */
@@ -204,7 +194,6 @@ final class ListCreationDraftModel: ObservableObject
     ///
     func finishSession()
     {
-
         // Dismissal can deliver a final text-editor callback after Add or Cancel
         acceptsEdits = false
         title = ""
@@ -226,7 +215,6 @@ final class ListCreationDraftModel: ObservableObject
     ///
     func binding(_ field: ReferenceWritableKeyPath<ListCreationDraftModel, String>) -> Binding<String>
     {
-
         Binding(
             get:
             {
@@ -255,7 +243,6 @@ final class ListCreationDraftModel: ObservableObject
     ///
     private func save()
     {
-
         guard acceptsEdits else
         {
             return
@@ -276,8 +263,6 @@ final class ListCreationDraftModel: ObservableObject
 ///
 struct InlineListCapture: View
 {
-
-
     let list:           KanbanList /* List under consideration */
     @Binding var draft: InlineListCaptureDraft /* Local editing draft */
     var textColor:      Color = .primary /* Text color */
@@ -289,10 +274,8 @@ struct InlineListCapture: View
 
     var body: some View /* Inline List Capture layout */
     {
-
         HStack(spacing: 8)
         {
-
             TextField(
                                     "Add a \(list.newItemPresentation.title.lowercased()) to \(list.title)…", text: $draft.title,
                                     prompt: Text("Add a \(list.newItemPresentation.title.lowercased()) to \(list.title)…").foregroundStyle(
@@ -309,14 +292,12 @@ struct InlineListCapture: View
             .accessibilityIdentifier("list.inlineCapture.title")
             Button
             {
-
                 isFocused = false
 
                 onOpenComposer()
             }
             label:
             {
-
                 Image(systemName: "plus.circle.fill")
                 .foregroundStyle(textColor)
                 .font(.title2)
@@ -340,7 +321,6 @@ struct InlineListCapture: View
             _, visible in
             if !visible
             {
-
                 isFocused = false
 
             }
@@ -367,7 +347,6 @@ struct InlineListCapture: View
     ///
     private func createInline()
     {
-
         let previousRevealID = CreatedContentReveal.shared.target?.id /* Previous reveal ID */
 
         guard draft.submit(to: list, onCreate: onCreate) else
@@ -379,7 +358,6 @@ struct InlineListCapture: View
         if let request = CreatedContentReveal.shared.target,
         request.id != previousRevealID, request.listID == list.id
         {
-
             CreatedContentReveal.shared.complete(request)
         }
 
@@ -399,8 +377,6 @@ struct InlineListCapture: View
 ///
 struct InlineListCaptureDraft
 {
-
-
     var title = "" /* User-facing title */
 
 
@@ -417,7 +393,6 @@ struct InlineListCaptureDraft
     ///
     mutating func submit(to list: KanbanList, onCreate: (QuickCaptureSubmission) -> Bool) -> Bool
     {
-
         let trimmed = /* Trimmed operation value */
             title.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -452,8 +427,6 @@ struct InlineListCaptureDraft
 ///
 struct ListItemComposer: View
 {
-
-
     let list:         KanbanList                       /* List under consideration */
     let draftKey:     String                           /* Draft key                */
     var initialTitle: String = ""                      /* Initial title            */
@@ -461,7 +434,6 @@ struct ListItemComposer: View
 
     var body:         some View /* List Item Composer layout */
     {
-
         QuickNoteComposer(
             lists: .constant([list]), initialListID: list.id, initialTitle: initialTitle,
             draftKey: draftKey, initialPresentation: list.newItemPresentation,
@@ -492,8 +464,6 @@ struct ListItemComposer: View
 ///
 enum ListItemCreation
 {
-
-
     ///
     /// @fcn        ListItemCreation.items
     /// @brief      Build full-featured cards or notes from a capture submission
@@ -512,7 +482,6 @@ enum ListItemCreation
         calendar: Calendar = .current
     ) -> [KanbanCard]?
     {
-
         guard capture.listID == list.id, !list.isArchived,
         !capture.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
         capture.schedule?.isValid(calendar: calendar) != false

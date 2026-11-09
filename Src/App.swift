@@ -27,8 +27,6 @@ import SwiftUI
 @main
 struct Plenact: App
 {
-
-
     @State private var recoveryError: String? /* Workspace recovery failure */
 
 
@@ -42,11 +40,9 @@ struct Plenact: App
     ///
     init()
     {
-
         ReviewRhythmNotifications.shared.install()
         do
         {
-
             try DailyReviewTransaction.recover()
             try FullMonthExampleStore.live().recoverInterruptedSwitch()
 
@@ -55,7 +51,6 @@ struct Plenact: App
         }
         catch
         {
-
             _recoveryError = State(initialValue: error.localizedDescription)
 
         }
@@ -74,25 +69,18 @@ struct Plenact: App
     ///
     var body: some Scene /* App scene hierarchy */
     {  /* Root window scene */
-
-
         WindowGroup
         {
-
             if let recoveryError
             {
-
                 VStack(spacing: 20)
                 {
-
                     Text("Your saved data needs recovery").font(.headline)
                     Text(recoveryError).foregroundStyle(.secondary)
                     Button("Retry recovery")
                     {
-
                         do
                         {
-
                             try DailyReviewTransaction.recover();
 
                             try FullMonthExampleStore.live().recoverInterruptedSwitch();
@@ -102,7 +90,6 @@ struct Plenact: App
                         }
                         catch
                         {
-
                             self.recoveryError = error.localizedDescription
 
                         }
@@ -113,7 +100,6 @@ struct Plenact: App
             }
             else
             {
-
                 AppRootView()
             }
 
@@ -132,8 +118,6 @@ struct Plenact: App
 ///
 extension PersonalCollectionIcon
 {
-
-
     ///
     /// @fcn        PersonalCollectionIcon.title
     /// @brief      Translate a collection icon into its display name
@@ -144,11 +128,8 @@ extension PersonalCollectionIcon
     ///
     var title: String /* User-facing title */
     {  /* User-facing name of the collection icon */
-
         switch self
         {
-
-
         case .notes:
                     "Notes"
         case .tasks:

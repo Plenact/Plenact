@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testRandomCardColorPreviewsRenderInLightAndDarkWithoutChangingRecords
     /// @brief      Verify that random Card Color Previews Render In Light And Dark Without Changing Records
@@ -36,7 +34,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testRandomCardColorPreviewsRenderInLightAndDarkWithoutChangingRecords() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -47,7 +44,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -72,10 +68,8 @@ extension PlenactBoardDocumentTests
 
         for scheme in [ColorScheme.light, .dark]
         {
-
             let view = VStack(spacing: 12) /* View being rendered */
             {
-
                 ForEach(cards)
                 {
                     card in
@@ -87,14 +81,11 @@ extension PlenactBoardDocumentTests
                             XCTFail("Rendering must not edit")
                         }, onDeleteCard:
                         {
-
                         }, onArchiveCard:
                         {
-
                         },
                         onToggle:
                         {
-
                         })
                 }
 
@@ -162,7 +153,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListHeaderIconDefaultsAndExplicitChoicesPersist() throws
     {
-
         var custom = /* User-defined configuration */
             KanbanList(id: 7, title: "Custom list", cards: [])
 
@@ -187,7 +177,6 @@ extension PlenactBoardDocumentTests
         XCTAssertFalse(explicitOff.isEmpty)
         for title in ["On the Table", "In the Queue", "Scheduled"]
         {
-
             var legacy = KanbanList(id: 1, title: title, cards: []) /* Earlier-format input */
 
             XCTAssertTrue(legacy.showsIconInHeader)
@@ -228,7 +217,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testToolbarRevisitMenuRendersWithoutChoosingOrChangingHistory() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -239,7 +227,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -251,7 +238,6 @@ extension PlenactBoardDocumentTests
 
         for scheme in [ColorScheme.light, .dark]
         {
-
             let host = UIHostingController( /* Synthetic SwiftUI host */
                 rootView: ToolbarRevisitMenu
                 {
@@ -297,7 +283,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testDayDistributionBannerRendersWithNoPlanWrites() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -308,7 +293,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -333,11 +317,9 @@ extension PlenactBoardDocumentTests
             ("populated", cards, ColorScheme.light), ("empty", [], .light), ("dark", cards, .dark)
         ]
         {
-
             let host = UIHostingController( /* Synthetic SwiftUI host */
                 rootView: ScrollView
                 {
-
                     DayScheduleOverview(cards: items, labels: LabelLibrary.starter.includingDayAreas, day: day).padding(
                         16)
                 } .preferredColorScheme(scheme))
@@ -381,7 +363,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testTodayPerspectiveRendersWithoutMutatingPlansOrLists() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -392,7 +373,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -418,10 +398,8 @@ extension PlenactBoardDocumentTests
             ("dark-tablet", completed, Optional(tomorrow), .dark, 820)
         ]
         {
-
             let view = ScrollView /* View being rendered */
             {
-
                 TodayPerspectiveSection(
                     completed: done, tomorrowList: next,
                     onReview:
@@ -486,7 +464,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testFocusOverflowRetainsNativeScrollingToLastMatchingItem() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -497,7 +474,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -518,7 +494,6 @@ extension PlenactBoardDocumentTests
         let host = UIHostingController( /* Synthetic SwiftUI host */
             rootView: ScrollView
             {
-
                 TodayFocusSection(
                     list: list, cards: cards, entries: entries, groupsBySection: false, chronological: false,
                     onToggleCard:
@@ -536,7 +511,6 @@ extension PlenactBoardDocumentTests
                         return false
                     }, onOpenTodayList:
                     {
-
                     }
                 )
                 .padding(20)
@@ -562,7 +536,6 @@ extension PlenactBoardDocumentTests
         ///
         func allScrollViews(_ view: UIView) -> [UIScrollView]
         {
-
             var result = (view as? UIScrollView).map /* Accumulated output value */
             {
                 [$0]
@@ -577,7 +550,6 @@ extension PlenactBoardDocumentTests
         let inner = try XCTUnwrap( /* Inner comparison fixture */
             allScrollViews(host.view).first
             {
-
                 $0.bounds.height > 0 && $0.bounds.height < 350 && $0.contentSize.height > $0.bounds.height + 100
             })
 
@@ -610,7 +582,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testFocusShapeRendersDefaultGroupedAndCompletedPreviewsWithoutMutations() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -621,7 +592,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -635,7 +605,6 @@ extension PlenactBoardDocumentTests
         ]
         list.cards += (1 ... 6).map
         {
-
             KanbanCard(
                 id: $0, word: "\($0 == 1 ? "Dinner with family" : "Make time for something meaningful")",
                 listTitle: "Monday", isTitleChecked: $0 == 2, checklists: [])
@@ -664,10 +633,8 @@ extension PlenactBoardDocumentTests
             ("filtered-empty", LocalProfilePreferences(todayFocusIncludesImportant: true), .light, 393)
         ]
         {
-
             let view = ScrollView /* View being rendered */
             {
-
                 TodayFocusSection(
                     list: list, cards: list.cards.filter
                     {
@@ -694,7 +661,6 @@ extension PlenactBoardDocumentTests
                         return false
                     }, onOpenTodayList:
                     {
-
                     }
                 )
                 .padding(20)
@@ -738,7 +704,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testLibraryHelpRendersGuidesWithoutChangingPlanningData() async throws
     {
-
         let keys = [ /* Keys used by this operation */
             DailyPlanStore.key, WeeklyReviewStore.key, PeriodicReviewStore.key, PlanningCalendarStore.key,
                             "Plenact.PersonalCollections.v1"
@@ -758,7 +723,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -783,7 +747,6 @@ extension PlenactBoardDocumentTests
 
         for (index, view) in views.enumerated()
         {
-
             let host = UIHostingController(rootView: view) /* Synthetic SwiftUI host */
 
             window.rootViewController = host;
@@ -827,7 +790,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testPeriodicReviewRendersSetupAndAllStepsWithoutWriting() async throws
     {
-
         let name     = /* Display or lookup name */
             "PlenactTests.PeriodicRender." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)! /* Preference store under test */
@@ -847,7 +809,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -857,10 +818,8 @@ extension PlenactBoardDocumentTests
 
         for step in -1 ... 2
         {
-
             if step >= 0
             {
-
                 var record = /* Record being processed */
                 baseline
                 ?? PeriodicReviewRecord(title: "A meaningful quarter", start: .now, end: .now, calendar: .current)
@@ -869,7 +828,6 @@ extension PlenactBoardDocumentTests
 
                 if record.objectives.isEmpty
                 {
-
                     record.objectives = [ReviewObjective(title: "Build a sustainable routine")]
 
                 }
@@ -921,7 +879,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testReviewRhythmInvitationsAndSettingsRenderWithoutWritingOrRequestingPermission() async throws
     {
-
         let suite    = "ReviewRhythmRender." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                           /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -950,7 +907,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -959,10 +915,8 @@ extension PlenactBoardDocumentTests
 
         for scheme in [ColorScheme.light, .dark]
         {
-
             let view = ScrollView /* View being rendered */
             {
-
                 ReviewRhythmPanel(
                     onOpen:
                     {
@@ -970,7 +924,6 @@ extension PlenactBoardDocumentTests
                         XCTFail("Rendering must not open")
                     }, onSettings:
                     {
-
                     }, defaults: defaults
                 )
                 .padding(20)
@@ -1019,7 +972,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testDailyHistoryRendersCurrentPastAndEmptyDaysWithoutWriting() async throws
     {
-
         let name     = /* Display or lookup name */
             "PlenactTests.DailyHistoryRender." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)! /* Preference store under test */
@@ -1038,7 +990,6 @@ extension PlenactBoardDocumentTests
 
         for date in [today, yesterday]
         {
-
             var plan = DailyPlan(date: date) /* Daily planning record */
 
             plan.intention = "Leave room for real life"
@@ -1063,7 +1014,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -1071,7 +1021,6 @@ extension PlenactBoardDocumentTests
 
         for (index, date) in [today, yesterday, missing].enumerated()
         {
-
             let host = UIHostingController( /* Synthetic SwiftUI host */
                 rootView: DailyHistoryReviewView(date: date, calendar: calendar, defaults: defaults))
 
@@ -1113,7 +1062,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCheckInRendersWithoutSavingOrChangingSources() async throws
     {
-
         let week   = DatedPlanningWeek.make(for: .now) /* Synthetic week fixture      */
         let access = PlanningCalendarAccess(           /* Scoped workspace operations */
             document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [],
@@ -1123,10 +1071,8 @@ extension PlenactBoardDocumentTests
                 false
             }, openCurrentWeek:
             {
-
             }, openToday:
             {
-
             }, openLibraryCard:
             {
                 _ in
@@ -1146,7 +1092,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -1158,7 +1103,6 @@ extension PlenactBoardDocumentTests
                 plan: .constant(DailyPlan(date: .now)), date: .now,
                 onSave:
                 {
-
                     saves += 1;
 
                     return true
@@ -1200,7 +1144,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testEveningReviewRendersAllStepsWithoutSaving() async throws
     {
-
         let week   = DatedPlanningWeek.make(for: .now) /* Synthetic week fixture      */
         let access = PlanningCalendarAccess(           /* Scoped workspace operations */
             document: PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week]), library: [],
@@ -1210,10 +1153,8 @@ extension PlenactBoardDocumentTests
                 false
             }, openCurrentWeek:
             {
-
             }, openToday:
             {
-
             }, openLibraryCard:
             {
                 _ in
@@ -1233,7 +1174,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -1243,7 +1183,6 @@ extension PlenactBoardDocumentTests
 
         for step in 0 ... 2
         {
-
             var plan = DailyPlan(date: .now) /* Daily planning record */
 
             plan.eveningReview = DailyEveningReview();
@@ -1254,7 +1193,6 @@ extension PlenactBoardDocumentTests
                     plan: .constant(plan), date: .now, baseline: nil,
                     onSave:
                     {
-
                         saves += 1;
 
                         return true
@@ -1304,7 +1242,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testTodayVisionRendersMorningAndRealityStepsWithoutSaving() async throws
     {
-
         let week     = DatedPlanningWeek.make(for: .now) /* Synthetic week fixture    */
         let document =                                   /* Working calendar document */
             PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
@@ -1315,10 +1252,8 @@ extension PlenactBoardDocumentTests
                 false
             }, openCurrentWeek:
             {
-
             }, openToday:
             {
-
             },
             openLibraryCard:
             {
@@ -1338,7 +1273,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -1348,7 +1282,6 @@ extension PlenactBoardDocumentTests
 
         for step in [0, 2]
         {
-
             var plan = DailyPlan(date: .now); /* Daily planning record */
 
             plan.visionStep = step
@@ -1359,7 +1292,6 @@ extension PlenactBoardDocumentTests
                     plan: .constant(plan), date: .now,
                     onSave:
                     {
-
                         saves += 1;
 
                         return true
@@ -1404,7 +1336,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCreatedContentRevealScrollsLongDayListsInBothLayouts() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -1415,7 +1346,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             if let target = CreatedContentReveal.shared.target
             {
                 CreatedContentReveal.shared.complete(target)
@@ -1440,7 +1370,6 @@ extension PlenactBoardDocumentTests
         ///
         func collection(in view: UIView) -> UICollectionView?
         {
-
             if let collection = view as? UICollectionView
             {
                 return collection
@@ -1454,15 +1383,12 @@ extension PlenactBoardDocumentTests
 
         for mode in SingleListViewMode.allCases
         {
-
             for width: CGFloat in [393, 820]
             {
-
                 let owner = UUID() /* Owning collection or Week */
 
                 defer
                 {
-
                     UserDefaults.standard.removeObject(
                         forKey: BoardViewportMemory.prefix + owner.uuidString + ".focused.8")
                 }
@@ -1472,7 +1398,6 @@ extension PlenactBoardDocumentTests
 
                 list.cards = (0 ..< 40).map
                 {
-
                     list.makeItem(id: $0, title: "Item \($0)", presentationOverride: mode == .noteList ? .note : .card)
                 }
 
@@ -1483,10 +1408,8 @@ extension PlenactBoardDocumentTests
                     lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
                     savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose:
                     {
-
                     }, onOpenWeek:
                     {
-
                     },
                     onPermanentDelete:
                     {
@@ -1548,16 +1471,13 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardCardSwipeRoutingUsesTheInitialPhysicalRightQuarter()
     {
-
         for width: CGFloat in [100, 240, 320, 480]
         {
-
             let bounds = /* Available layout bounds */
                 CGRect(x: 20, y: 10, width: width, height: 80)
 
             for fraction: CGFloat in [0, 0.25, 0.5, 0.749]
             {
-
                 XCTAssertFalse(
                     BoardCardSwipeRouting.routesToBoard(start: CGPoint(x: 20 + width * fraction, y: 30), bounds: bounds)
                 )
@@ -1565,7 +1485,6 @@ extension PlenactBoardDocumentTests
 
             for fraction: CGFloat in [0.75, 0.85, 0.99]
             {
-
                 XCTAssertTrue(
                     BoardCardSwipeRouting.routesToBoard(start: CGPoint(x: 20 + width * fraction, y: 30), bounds: bounds)
                 )
@@ -1593,7 +1512,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWeekAndLibraryBoardsPrioritizeInnerListSwipesWithoutDisablingScrolling() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -1604,7 +1522,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -1624,7 +1541,6 @@ extension PlenactBoardDocumentTests
         ///
         func collections(in view: UIView) -> [UICollectionView]
         {
-
             ((view as? UICollectionView).map
                 {
                     [$0]
@@ -1638,7 +1554,6 @@ extension PlenactBoardDocumentTests
 
         for personal in [false, true]
         {
-
             let owner = UUID() /* Owning collection or Week */
 
             defer
@@ -1691,10 +1606,8 @@ extension PlenactBoardDocumentTests
 
             while let view = ancestor
             {
-
                 if let candidate = view as? UIScrollView, candidate.contentSize.width > candidate.bounds.width + 1
                 {
-
                     board = candidate;
 
                     break
@@ -1712,7 +1625,6 @@ extension PlenactBoardDocumentTests
             XCTAssertFalse(gate.gestureRecognizer(gate, shouldRecognizeSimultaneouslyWith: list.panGestureRecognizer))
             if personal
             {
-
                 let standalone = UIHostingController( /* Standalone comparison fixture */
                     rootView: ContentView(
                         lists: .constant([lists[0]]), allowsAddingLists: false,
@@ -1764,7 +1676,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSloganManualReadingAllowsOverscrollAndResumesWithoutJumping()
     {
-
         XCTAssertEqual(
             TodaySloganMotion.draggedPosition(start: -100, translation: 500, viewport: 300, textWidth: 700), 400)
         XCTAssertEqual(
@@ -1803,7 +1714,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCollectionBackgroundPresetsRenderOffline() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -1814,7 +1724,6 @@ extension PlenactBoardDocumentTests
         let host     = UIHostingController(                      /* Synthetic SwiftUI host */
             rootView: LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12)
             {
-
                 ForEach(CollectionBackgroundPreset.allCases.filter
                     {
                         $0 != .photo
@@ -1825,7 +1734,6 @@ extension PlenactBoardDocumentTests
                     .frame(height: 160)
                     .overlay(alignment: .bottomLeading)
                     {
-
                         Text(preset.title).font(.headline).foregroundStyle(.white).padding(12)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -1840,7 +1748,6 @@ extension PlenactBoardDocumentTests
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -1889,7 +1796,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testPersonalBoardBackgroundAndWeekDefaultRenderSeparately() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -1904,14 +1810,12 @@ extension PlenactBoardDocumentTests
 
         for dated in [false, true]
         {
-
             let window = UIWindow(windowScene: scene) /* Synthetic scene window */
             let host   = UIHostingController(         /* Synthetic SwiftUI host */
                 rootView: ContentView(
                     lists: .constant(owner.lists), boardTitle: dated ? "Plenact" : "Garden plans",
                     boardSubtitle: dated ? "This Week" : "Board", onClose:
                     {
-
                     }, onListsChanged:
                     {
                         _ in
@@ -1924,7 +1828,6 @@ extension PlenactBoardDocumentTests
             window.makeKeyAndVisible()
             defer
             {
-
                 window.isHidden = true;
                 window.rootViewController = nil
 
@@ -1971,7 +1874,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBoardViewportMemoryRoundTripsAndKeepsOwnersSeparate() throws
     {
-
         let suite    = "Plenact.ViewportTests." + UUID().uuidString /* Isolated preference domain */
         let defaults = /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -2025,7 +1927,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testViewportProbeRestoresNativeOffsetsInBothDirections() async throws
     {
-
         let suite    = /* Isolated preference domain */
             "Plenact.ScrollRestoreTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -2062,13 +1963,11 @@ extension PlenactBoardDocumentTests
         ///
         func nativeScroll(_ view: UIView, horizontal: Bool) -> UIScrollView?
         {
-
             if let scroll = view as? UIScrollView,
             horizontal
             ? scroll.contentSize.width > scroll.bounds.width + 1
             : scroll.contentSize.height > scroll.bounds.height + 1
             {
-
                 return scroll
             }
 
@@ -2086,19 +1985,16 @@ extension PlenactBoardDocumentTests
 
         for horizontal in [true, false]
         {
-
             let owner = /* Owning collection or Week */
                 horizontal ? "horizontal-board" : "vertical-list"
 
             for reopening in [false, true]
             {
-
                 let memory = /* Owner-scoped viewport state */
                     BoardViewportMemory(owner: owner, defaults: defaults)
                 let host   = UIHostingController( /* Synthetic SwiftUI host */
                     rootView: ScrollView(horizontal ? .horizontal : .vertical)
                     {
-
                         Color.gray.frame(width: horizontal ? 2200 : 220, height: horizontal ? 120 : 3000)
                         .background(
                             BoardViewportScrollProbe(memory: memory, key: "position", horizontal: horizontal))
@@ -2111,7 +2007,6 @@ extension PlenactBoardDocumentTests
                 window.makeKeyAndVisible()
                 defer
                 {
-
                     window.isHidden = true;
                     window.rootViewController = nil
 
@@ -2125,7 +2020,6 @@ extension PlenactBoardDocumentTests
 
                 if reopening
                 {
-
                     let offset = /* Current position offset */
                     horizontal
                     ? scroll.contentOffset.x + scroll.adjustedContentInset.left
@@ -2135,7 +2029,6 @@ extension PlenactBoardDocumentTests
                 }
                 else
                 {
-
                     scroll.setContentOffset(horizontal ? CGPoint(x: 470, y: 0) : CGPoint(x: 0, y: 470), animated: false)
                     try await Task.sleep(for: .milliseconds(50))
                     memory.flush()
@@ -2162,7 +2055,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testZoomedBoardRestoresItsRealHorizontalViewport() async throws
     {
-
         let owner = UUID()                                        /* Owning collection or Week */
         let key   = BoardViewportMemory.prefix + owner.uuidString /* Lookup or persistence key */
 
@@ -2214,7 +2106,6 @@ extension PlenactBoardDocumentTests
         ///
         func scrolls(_ view: UIView) -> [UIScrollView]
         {
-
             ((view as? UIScrollView).map
                 {
                     [$0]
@@ -2224,7 +2115,6 @@ extension PlenactBoardDocumentTests
 
         for reopening in [false, true]
         {
-
             let window = UIWindow(windowScene: scene) /* Synthetic scene window */
             let host   = UIHostingController(         /* Synthetic SwiftUI host */
                 rootView: ContentView(
@@ -2249,7 +2139,6 @@ extension PlenactBoardDocumentTests
 
             if reopening
             {
-
                 XCTAssertEqual(scroll.contentOffset.x + scroll.adjustedContentInset.left, 420, accuracy: 3)
                 scroll.setContentOffset(
                     CGPoint(x: -scroll.adjustedContentInset.left, y: scroll.contentOffset.y), animated: false)
@@ -2260,7 +2149,6 @@ extension PlenactBoardDocumentTests
                     $0 as? UICollectionView
                 } .first
                 {
-
                     $0.contentSize.height > $0.bounds.height + 100
                 }
 
@@ -2270,13 +2158,11 @@ extension PlenactBoardDocumentTests
             }
             else
             {
-
                 let vertical = scrolls(host.view).compactMap /* Matching vertical entry */
                 {
                     $0 as? UICollectionView
                 } .first
                 {
-
                     $0.contentSize.height > $0.bounds.height + 100
                 }
 
@@ -2315,7 +2201,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCustomListPreviewColorsRenderWithoutEditingContent() async throws
     {
-
         var card = /* Synthetic card fixture */
             KanbanCard(id: 92, word: "Plan the garden", listTitle: "Garden")
 
@@ -2337,7 +2222,6 @@ extension PlenactBoardDocumentTests
         let host     = UIHostingController(                      /* Synthetic SwiftUI host */
             rootView: VStack(spacing: 16)
             {
-
                 ForEach(originals)
                 {
                     item in
@@ -2372,7 +2256,6 @@ extension PlenactBoardDocumentTests
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -2413,7 +2296,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testFocusedListGuidanceStaysOpenWhenFirstCardAppears() async throws
     {
-
         let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window   = UIWindow(windowScene: scene)
@@ -2422,7 +2304,6 @@ extension PlenactBoardDocumentTests
 
         func focusedView(_ list: KanbanList) -> some View
         {
-
             TodayListDetailView(lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
                 savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose: {},
                 onOpenWeek: {}, onPermanentDelete: { _ in false })
@@ -2431,7 +2312,6 @@ extension PlenactBoardDocumentTests
 
         func collection(in view: UIView) -> UICollectionView?
         {
-
             if let collection = view as? UICollectionView
             {
                 return collection
@@ -2495,7 +2375,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testHostedSessionGuidanceUsesEntrySnapshotAndSurvivesListEdits() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -2506,7 +2385,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -2522,7 +2400,6 @@ extension PlenactBoardDocumentTests
             rootView: SessionListGuidance(
                 list: list, labels: labels, onReveal:
                 {
-
                     reveals += 1
 
                 },
@@ -2544,7 +2421,6 @@ extension PlenactBoardDocumentTests
         host.rootView = SessionListGuidance(
             list: list, labels: labels, onReveal:
             {
-
                 reveals += 1
 
             }, onPresentationChange:
@@ -2559,7 +2435,6 @@ extension PlenactBoardDocumentTests
         host.rootView = SessionListGuidance(
             list: list, labels: labels, onReveal:
             {
-
                 reveals += 1
 
             }, onPresentationChange:
@@ -2577,7 +2452,6 @@ extension PlenactBoardDocumentTests
             rootView: SessionListGuidance(
                 list: list, labels: labels, onReveal:
                 {
-
                     reveals += 1
 
                 },
@@ -2595,7 +2469,6 @@ extension PlenactBoardDocumentTests
         nextVisit.rootView = SessionListGuidance(
             list: list, labels: labels, onReveal:
             {
-
                 reveals += 1
 
             }, onPresentationChange:
@@ -2610,7 +2483,6 @@ extension PlenactBoardDocumentTests
         nextVisit.rootView = SessionListGuidance(
             list: list, labels: labels, onReveal:
             {
-
                 reveals += 1
 
             }, toggleRequest: 1,
@@ -2626,7 +2498,6 @@ extension PlenactBoardDocumentTests
         nextVisit.rootView = SessionListGuidance(
             list: list, labels: labels, onReveal:
             {
-
                 reveals += 1
 
             }, toggleRequest: 2,
@@ -2643,7 +2514,6 @@ extension PlenactBoardDocumentTests
         nextVisit.rootView = SessionListGuidance(
             list: list, labels: labels, onReveal:
             {
-
                 reveals += 1
 
             }, toggleRequest: 3,

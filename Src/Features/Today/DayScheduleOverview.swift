@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 enum WeekDayHighlight
 {
-
-
     ///
     /// @fcn        WeekDayHighlight.isToday
     /// @brief      Determine whether an assigned list date is today
@@ -34,7 +32,6 @@ enum WeekDayHighlight
     ///
     static func isToday(_ assignedDate: Date?, now: Date, calendar: Calendar) -> Bool
     {
-
         guard let assignedDate else
         {
             return false
@@ -57,8 +54,6 @@ enum WeekDayHighlight
 ///
 struct DayScheduleOverview: View
 {
-
-
     let cards:    [KanbanCard] /* Card records under consideration */
     let labels:   LabelLibrary /* Available label definitions */
     let day:      Date /* Day under consideration */
@@ -69,31 +64,26 @@ struct DayScheduleOverview: View
 
     private var summary: DayTimeDistribution /* Aggregate operation results */
     {
-
         DayTimeDistribution(cards: cards, labels: labels, day: day, calendar: calendar)
     }
 
     private var intention: String /* Saved daily intention */
     {
-
         ((try? DailyPlanStore.load().plans[PlanningDate.key(day, calendar: calendar)]?.intention) ?? "")
         .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var planTitle: String /* Plan title */
     {
-
         calendar.isDateInToday(day) ? "Open today’s plan" : "Open day’s plan"
     }
 
     var body: some View /* Day Schedule Overview layout */
     {
-
         let data = summary /* Encoded or loaded bytes */
 
         VStack(alignment: .leading, spacing: 12)
         {
-
             Text(calendar.isDateInToday(day) ? "The day you’re shaping" : "Your day at a glance")
             .font(.headline).accessibilityAddTraits(.isHeader)
             if !intention.isEmpty
@@ -103,26 +93,21 @@ struct DayScheduleOverview: View
 
             Button
             {
-
                 showsDetails = true
 
             }
             label:
             {
-
                 ViewThatFits(in: .horizontal)
                 {
-
                     HStack(spacing: 16)
                     {
-
                         chart(data);
                         legend(data)
                     }
 
                     VStack(alignment: .leading, spacing: 12)
                     {
-
                         chart(data);
                         legend(data)
                     }
@@ -136,7 +121,6 @@ struct DayScheduleOverview: View
             .accessibilityHint("Opens time allocation and completion details")
             if data.total > 0
             {
-
                 Text("Outer ring · planned time completed")
                 .font(.caption).foregroundStyle(.secondary)
             }
@@ -145,7 +129,6 @@ struct DayScheduleOverview: View
             .font(.subheadline).foregroundStyle(.secondary)
             Button(planTitle, systemImage: "arrow.right", action:
                 {
-
                     showsPlan = true
 
                 })
@@ -159,22 +142,17 @@ struct DayScheduleOverview: View
         }
         .sheet(isPresented: $showsDetails)
         {
-
             NavigationStack
             {
-
                 List
                 {
-
                     Section("Planned task-hours by tag")
                     {
-
                         ForEach(data.segments)
                         {
                             segment in
                             VStack(alignment: .leading, spacing: 5)
                             {
-
                                 Label(segment.title, systemImage: "circle.fill").foregroundStyle(segment.color.color)
                                 Text(
                                                                                                 "\(DayTimeDistribution.durationLabel(segment.planned)) planned · \(DayTimeDistribution.durationLabel(segment.completed)) complete"
@@ -187,7 +165,6 @@ struct DayScheduleOverview: View
 
                         if data.segments.isEmpty
                         {
-
                             Text("Add start and end times to tasks to see their planned distribution.")
                         }
 
@@ -195,7 +172,6 @@ struct DayScheduleOverview: View
 
                     Section("What this means")
                     {
-
                         Text(
                                                                         "Completion is the planned duration of tasks you’ve checked off—not time tracked or elapsed."
                         )
@@ -210,7 +186,6 @@ struct DayScheduleOverview: View
                         )
                         if data.hasOverlaps
                         {
-
                             Text("Some tasks overlap. Totals are planned task-hours and may exceed the time available.")
                         }
 
@@ -225,7 +200,6 @@ struct DayScheduleOverview: View
                     {
                         Button("Done")
                         {
-
                             showsDetails = false
 
                         }
@@ -253,14 +227,11 @@ struct DayScheduleOverview: View
     ///
     private func chart(_ data: DayTimeDistribution) -> some View
     {
-
         ZStack
         {
-
             Circle().stroke(Color.secondary.opacity(0.12), lineWidth: 20)
             if data.total > 0
             {
-
                 ForEach(data.segments)
                 {
                     segment in
@@ -282,7 +253,6 @@ struct DayScheduleOverview: View
                     .stroke(segment.color.color.opacity(0.18), lineWidth: 4).padding(-16)
                     if segment.completed > 0
                     {
-
                         Circle().trim(from: start + gap, to: min(end - gap, start + segment.completed / data.total))
                         .stroke(segment.color.color, lineWidth: 4).padding(-16)
                     }
@@ -293,7 +263,6 @@ struct DayScheduleOverview: View
 
             VStack(spacing: 2)
             {
-
                 Text(DayTimeDistribution.durationLabel(data.total)).font(.headline)
                 Text("planned").font(.caption).foregroundStyle(.secondary)
             }
@@ -316,13 +285,10 @@ struct DayScheduleOverview: View
     ///
     private func legend(_ data: DayTimeDistribution) -> some View
     {
-
         VStack(alignment: .leading, spacing: 7)
         {
-
             if data.total == 0
             {
-
                 Text("Make room for your day").font(.subheadline)
                 Text("Add start and end times to see your planned balance.").font(.caption).foregroundStyle(.secondary)
             }
@@ -332,7 +298,6 @@ struct DayScheduleOverview: View
                 segment in
                 HStack(spacing: 5)
                 {
-
                     Circle().fill(segment.color.color).frame(width: 7, height: 7)
                     Text(segment.title).lineLimit(1)
                     Text(DayTimeDistribution.durationLabel(segment.planned)).foregroundStyle(.secondary)
@@ -341,7 +306,6 @@ struct DayScheduleOverview: View
 
             if data.segments.count > 3
             {
-
                 Text("+\(data.segments.count - 3) tags").font(.caption).foregroundStyle(.secondary)
             }
 
@@ -362,8 +326,6 @@ struct DayScheduleOverview: View
 ///
 struct DayTimeDistribution
 {
-
-
     ///
     /// Represents one category in the Day's planned-time distribution
     ///
@@ -373,8 +335,6 @@ struct DayTimeDistribution
     ///
     struct Segment: Identifiable
     {
-
-
         let id:        String           /* Record or view identity    */
         let title:     String           /* User-facing title          */
         let color:     KanbanLabelColor /* Resolved color value       */
@@ -420,7 +380,6 @@ struct DayTimeDistribution
     ///
     static func durationLabel(_ seconds: TimeInterval) -> String
     {
-
         let minutes = Int((seconds / 60).rounded())        /* Minute count or offset            */
         let hours = minutes / 60, remainder = minutes % 60 /* Whole hours and remaining minutes */
 
@@ -443,7 +402,6 @@ struct DayTimeDistribution
     ///
     init(cards: [KanbanCard], labels: LabelLibrary, day: Date, calendar: Calendar)
     {
-
         let tasks = cards.filter /* Linked priority tasks */
         {
             $0.displayFormat == .card
@@ -473,7 +431,6 @@ struct DayTimeDistribution
         ///
         func resolve(_ date: Date, kind: CardDateKind) -> Date?
         {
-
             guard kind.includesTime else
             {
                 return nil
@@ -481,7 +438,6 @@ struct DayTimeDistribution
 
             if kind == .time
             {
-
                 let parts = /* Parsed value components */
                     calendar.dateComponents([.hour, .minute, .second], from: date)
 
@@ -495,13 +451,11 @@ struct DayTimeDistribution
 
         for card in tasks
         {
-
             guard let rawStart = card.startDate, let rawEnd = card.dueDate,
             let start = resolve(rawStart, kind: card.startDateKind),
             var end = resolve(rawEnd, kind: card.dueDateKind)
             else
             {
-
                 untimed += 1;
 
                 continue
@@ -509,7 +463,6 @@ struct DayTimeDistribution
 
             if end < start, card.startDateKind == .time, card.dueDateKind == .time
             {
-
                 end = calendar.date(byAdding: .day, value: 1, to: end) ?? end
 
             }
@@ -519,7 +472,6 @@ struct DayTimeDistribution
 
             guard clippedEnd > clippedStart else
             {
-
                 untimed += 1;
 
                 continue
@@ -550,7 +502,6 @@ struct DayTimeDistribution
 
             for (id, title, color) in parts
             {
-
                 var segment = /* Current schedule interval */
                     buckets[id] ?? Segment(id: id, title: title, color: color, planned: 0, completed: 0)
 
@@ -558,7 +509,6 @@ struct DayTimeDistribution
 
                 if card.isTitleChecked
                 {
-
                     segment.completed += duration / Double(count)
 
                 }
@@ -583,10 +533,8 @@ struct DayTimeDistribution
                 $0.0 < $1.0
             })
         {
-
             if start < latestEnd
             {
-
                 overlap = true
 
             }

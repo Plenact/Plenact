@@ -22,12 +22,10 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
     /// Reject shared Board removal callbacks even when invoked without the visible menus
     @MainActor
     func testPrimaryListColumnsRejectRemoval()
     {
-
         let owner  = PersonalCollection(title: "On the Table", kind: .list) /* Protected owner */
         var lists  = owner.lists                                          /* Bound records */
         let view   = ContentView(
@@ -45,7 +43,6 @@ extension PlenactBoardDocumentTests
     /// Verify primary List containers reject removal while ordinary Lists and Boards retain it
     func testPrimaryListsRejectArchiveAndDeletion() throws
     {
-
         let suite    = "Plenact.PrimaryListTests." + UUID().uuidString /* Isolated preferences */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))    /* Test storage */
 
@@ -53,7 +50,6 @@ extension PlenactBoardDocumentTests
 
         for title in ["On the Table", "In the Queue", "Scheduled"]
         {
-
             var owner = PersonalCollection(title: title, kind: .list) /* Protected owner */
 
             owner.lists[0].cards = [KanbanCard(id: 7, word: "Synthetic", listTitle: title)]
@@ -97,14 +93,12 @@ extension PlenactBoardDocumentTests
     ///
     func testListBackgroundOpacityDefaultsClampsAndPersistsIndependently() throws
     {
-
         let legacy = /* Earlier-format input */
             try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
 
         XCTAssertEqual(legacy.resolvedListBackgroundOpacity, 1)
         for value in [0.0, 0.5, 1.0]
         {
-
             let appearance = /* Resolved appearance choices */
                 ItemAppearance(listBackgroundOpacity: value)
 
@@ -137,7 +131,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListIconColorsPersistAndMainListColorsRemainFixed() throws
     {
-
         var list = KanbanList(id: 1, title: "Custom", cards: []) /* Synthetic list fixture */
 
         list.appearance = ItemAppearance(iconColor: .blue, showsIconInHeader: true)
@@ -157,7 +150,6 @@ extension PlenactBoardDocumentTests
             KanbanList.fixedHeaderIconColor(for: "On the Table"), KanbanList.fixedIconColor(for: "On the Table"))
         for title in ["On the Table", "In the Queue", "Scheduled"]
         {
-
             var main = /* Main comparison fixture */
                 DefaultListTutorial.makeStarter(title: title).lists[0]
 
@@ -182,7 +174,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListCheckmarkResetRestoresExactNestedFlagsWithoutReplacingContent() throws
     {
-
         let nested = KanbanChecklist( /* Owned nested content */
             title: "Nested", items: [KanbanChecklistItem(title: "Nested done", isCompleted: true)])
         let detail    = /* Owned action detail */
@@ -218,7 +209,6 @@ extension PlenactBoardDocumentTests
 
         for index in expectedRestored.indices
         {
-
             expectedRestored[index].editHistory = list.cards[index].editHistory
 
         }
@@ -251,7 +241,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLowerCornerBackPreferenceDefaultsOnAndPersistsWithoutProfile() throws
     {
-
         let legacy = /* Earlier-format input */
             try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
 
@@ -299,7 +288,6 @@ extension PlenactBoardDocumentTests
     ///
     func testAddItemTextColorsPersistAndRemainScopedToTheirView() throws
     {
-
         let legacy = /* Earlier-format input */
             try JSONDecoder().decode(BoardAppearance.self, from: Data("{}".utf8))
 
@@ -307,7 +295,6 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(legacy.resolvedAddItemTextColor(list: nil, title: "Thursday"))
         for title in ["On the Table", "In the Queue", "Scheduled"]
         {
-
             XCTAssertEqual(legacy.resolvedAddItemTextColor(list: nil, title: title), .white)
             XCTAssertEqual(DefaultListTutorial.makeStarter(title: title).boardAppearance?.addItemTextColor, .white)
         }
@@ -355,7 +342,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSameDayScheduleUsesTimesOnlyWithoutChangingStoredDates() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
@@ -420,10 +406,8 @@ extension PlenactBoardDocumentTests
     ///
     func testWeekSelectorPreservesStoredContentAndActiveWeek() throws
     {
-
         for firstWeekday in [1, 2]
         {
-
             var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
             calendar.firstWeekday = firstWeekday
@@ -452,7 +436,6 @@ extension PlenactBoardDocumentTests
             XCTAssertTrue(
                 choices.allSatisfy
                 {
-
                     PlanningDate.weekKey(PlanningDate.date($0.startKey)!, calendar: calendar) == $0.startKey
                 })
 
@@ -483,7 +466,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDueDateVisibilityRequiresAStoredDateAndPreservesCardPreference() throws
     {
-
         let date = Date(timeIntervalSince1970: 1_800_000_000) /* Date used by this operation */
         var card =                                            /* Synthetic card fixture      */
             KanbanCard(id: 1, word: "Due date", listTitle: "Monday", dueDate: date, showsDueDateInList: true)
@@ -542,7 +524,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLibraryBrowseFiltersScopeSearchAndExcludeArchivedCollections()
     {
-
         var list     = /* Synthetic list fixture */
             PersonalCollection(title: "Reading", kind: .list)
         var board    = /* Board state under review */
@@ -569,7 +550,6 @@ extension PlenactBoardDocumentTests
             } .map(\.id), [board.id])
         for (filter, expected) in [(LibraryBrowseFilter.lists, list.id), (.boards, board.id)]
         {
-
             let results = LibrarySearchIndex.results( /* Collected operation results */
                 query: "garden", collections: collections.filter
                 {
@@ -597,7 +577,6 @@ extension PlenactBoardDocumentTests
     ///
     func testOverflowReadingPreferenceDefaultsOnAndPersistsWithoutProfile() throws
     {
-
         let suite    = /* Isolated preference domain */
             "OverflowPreferenceTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -636,7 +615,6 @@ extension PlenactBoardDocumentTests
     ///
     func testIndependentBoardAppearancePersistsAndAcceptsLegacyCollections() throws
     {
-
         let suite    = /* Isolated preference domain */
             "PlenactTests.BoardAppearance.\(UUID().uuidString)"
         let defaults = /* Preference store under test */
@@ -698,8 +676,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testEditedListMetadataPersistsInIndependentLocalStores() async throws
     {
-
-
         let suite    = /* Isolated preference domain */
             "PlenactTests.ListMetadata.\(UUID().uuidString)"
         let defaults = /* Preference store under test */
@@ -758,7 +734,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testKeyboardRichFontsPersistAndFormattingSupportsUndoRedo() throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -773,7 +748,6 @@ extension PlenactBoardDocumentTests
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -786,7 +760,6 @@ extension PlenactBoardDocumentTests
                     stored
                 }, set:
                 {
-
                     stored = $0
 
                 }))
@@ -846,7 +819,6 @@ extension PlenactBoardDocumentTests
     ///
     func testNewItemsUseBlankOrEnteredSubtitleAndPersistIt() throws
     {
-
         let list  = KanbanList(id: 1, title: "Saturday", cards: []) /* Synthetic list fixture */
         let blank = list.makeItem(id: 1, title: "New task")         /* Empty initial value    */
 
@@ -860,7 +832,6 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(entered.descriptionOverride, "Details")
         for card in [blank, entered]
         {
-
             let decoded = /* Decoded input value */
                 try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
 
@@ -883,15 +854,11 @@ extension PlenactBoardDocumentTests
     ///
     func testPersonalListArchiveSaveFailureLeavesPriorSnapshotUntouched() throws
     {
-
-
         let suite    = "Plenact.ListLifecycleTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -931,15 +898,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCheckedWeekDeletionWaitsForEarlierWritesAndPreservesDiskOnFailure() throws
     {
-
-
         let suite    = "Plenact.CheckedDeletionTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -980,15 +943,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBackgroundWeekPersistenceKeepsArchivedListsAndAllowsEmptyWorkspace() async throws
     {
-
-
         let suite    = "Plenact.WeekArchiveTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -1028,8 +987,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testListArchiveBindingsPreserveCardsAndRestoreAtEnd() throws
     {
-
-
         let original = SampleData.lists[0]              /* Pre-operation value for preservation checks */
         var snapshot = [original, SampleData.lists[1]]  /* Persisted snapshot under verification       */
         let board    = Binding( /* Board state under review */
@@ -1038,7 +995,6 @@ extension PlenactBoardDocumentTests
                 snapshot
             }, set:
             {
-
                 snapshot = $0
 
             })                   /* Board state under verification        */
@@ -1087,8 +1043,6 @@ extension PlenactBoardDocumentTests
     ///
     func testWholeWeekArchiveRestoresAsSeparateUniquelyNamedBoard() throws
     {
-
-
         var archivedList = SampleData.lists[1] /* List containing archived records */
 
         archivedList.isArchived = true
@@ -1132,15 +1086,11 @@ extension PlenactBoardDocumentTests
     ///
     func testArchivedPersonalBoardPersistsAndRestoresWithoutRenamingItsLists() throws
     {
-
-
         let suite    = "Plenact.BoardArchiveTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))    /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -1186,8 +1136,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLegacyPersonalBoardDefaultsToActiveAndArchivedListsStayOutOfSearch() throws
     {
-
-
         let original = PersonalCollection( /* Baseline before changes */
             title: "Project", kind: .board) /* Pre-operation value for preservation checks */
         var object = try XCTUnwrap( /* Decoded JSON object */
@@ -1226,8 +1174,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLegacyListsLoadWithEmptyArchiveAndKeepExistingJSONShape() throws
     {
-
-
         let data = Data( /* Encoded or loaded bytes */
                         "{\"id\":1,\"title\":\"Monday\",\"cards\":[]}".utf8) /* JSON fixture bytes for the compatibility check */
         let list = try JSONDecoder().decode( /* Synthetic list fixture */
@@ -1253,8 +1199,6 @@ extension PlenactBoardDocumentTests
     ///
     func testArchivedCardsStayOutOfSearchAndReserveTheirIDs()
     {
-
-
         let archived = KanbanCard( /* Archived records or state */
             id: 900, word: "Archived task", listTitle: "Monday", isTitleChecked: true)  /* Archived value for restoration checks */
         let list = KanbanList(                                                          /* List state under verification         */
@@ -1290,8 +1234,6 @@ extension PlenactBoardDocumentTests
     ///
     func testIndividualArchiveAcceptsIncompleteCardsAndPreservesContent() throws
     {
-
-
         var incomplete = SampleData.lists[0].cards[0] /* Incomplete checklist-item fixture */
 
         incomplete.isTitleChecked = false
@@ -1336,8 +1278,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPersonalListRenamePreservesArchivedCards() throws
     {
-
-
         var collection = PersonalCollection(title: "Original", kind: .list) /* Collection state under verification   */
         let archived   = KanbanCard( /* Archived records or state */
             id: 42, word: "Archived", listTitle: "Original", isTitleChecked: true) /* Archived value for restoration checks */
@@ -1370,15 +1310,11 @@ extension PlenactBoardDocumentTests
     ///
     func testPersonalCollectionPersistencePreservesOrderAndLeavesWeekUntouched() throws
     {
-
-
         let suite    = "Plenact.PersonalCollectionTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))          /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -1416,8 +1352,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDocumentRejectsEmptyCardTitle()
     {
-
-
         var card = SampleData.lists[0].cards[0] /* Starter card with an invalid title */
 
         card.word = "  "
@@ -1438,25 +1372,21 @@ extension PlenactBoardDocumentTests
 
 extension PlenactBoardDocumentTests
 {
-
     /// @fcn PlenactBoardDocumentTests.testLibraryDeletionUndoRestoresOwnersWithoutOverwritingEdits
     /// @brief Restore complete List and Board owners while preserving intervening directory changes
     /// @return Void; synthetic persistence uses isolated defaults
     func testLibraryDeletionUndoRestoresOwnersWithoutOverwritingEdits() throws
     {
-
         let domain = "Plenact.CollectionUndoTests." + UUID().uuidString /* Isolated preference domain */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain)) /* Test-only persistence */
         let start = ContinuousClock.now /* Synthetic monotonic anchor */
 
         defer
         {
-
             defaults.removePersistentDomain(forName: domain)
         }
         for kind in [PersonalCollectionKind.list, .board]
         {
-
             var owner = PersonalCollection(title: "Synthetic owner", kind: kind) /* Deleted owner */
             var other = PersonalCollection(title: "Other", kind: .list) /* Unrelated retained owner */
             let added = PersonalCollection(title: "Added later", kind: .list) /* Intervening creation */
@@ -1490,7 +1420,6 @@ extension PlenactBoardDocumentTests
     /// @return Void; only synthetic collection values are used
     func testLibraryDeletionUndoKeepsIndependentDeadlines() throws
     {
-
         let first = PersonalCollection(title: "First", kind: .list) /* First deleted owner */
         let second = PersonalCollection(title: "Second", kind: .board) /* Second deleted owner */
         let start = ContinuousClock.now /* Synthetic deletion time */

@@ -15,7 +15,6 @@ import XCTest
 @MainActor
 final class LegacyWorkspaceExportTests: XCTestCase
 {
-
     /// @fcn LegacyWorkspaceExportTests.fixture
     /// @brief Run an isolated capture scenario and remove only its owned temporary fixtures
     /// @param[in] body Assertions receiving a fresh preferences suite, domain and container
@@ -23,7 +22,6 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws Fixture setup or assertion-support errors
     private func fixture(_ body: (UserDefaults, String, URL) throws -> Void) throws
     {
-
         let domain   = "Plenact.ExportTests." + UUID().uuidString /* Lookup or storage namespace */
         let defaults =                                            /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: domain))
@@ -48,12 +46,10 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws An XCTest unwrap failure for a missing entry
     private func bytes(_ path: String, in wrapper: FileWrapper) throws -> Data
     {
-
         var entry = wrapper /* Entry being processed */
 
         for part in path.split(separator: "/")
         {
-
             entry = try XCTUnwrap(entry.fileWrappers?[String(part)])
 
         }
@@ -67,7 +63,6 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws Fixture or plist errors
     func testAbsentStoresDoNotBecomeExamples() throws
     {
-
         try fixture { defaults, domain, root in
             defaults.register(defaults: ["Plenact.Board.v1": Data("[]".utf8)])
             defaults.set("private", forKey: "unrelated-secret")
@@ -95,7 +90,6 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws Fixture or serialization errors
     func testCorruptBytesAndRecoveryArePreserved() throws
     {
-
         try fixture { defaults, domain, root in
 
             let corrupt = Data([0, 255, 3]) /* Malformed input fixture */
@@ -124,7 +118,6 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws Fixture or capture errors
     func testUnknownKeysAreNotSilentlyExported() throws
     {
-
         try fixture { defaults, domain, root in
             defaults.set("sensitive", forKey: "Plenact.Future.private")
 
@@ -144,11 +137,9 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws Fixture, media I/O or capture errors
     func testEveryMediaAreaPreservesOriginals() throws
     {
-
         try fixture { defaults, domain, root in
             for area in LegacyWorkspaceExport.mediaRoots
             {
-
                 let folder = root.appendingPathComponent(area) /* Working folder location */
 
                 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -173,7 +164,6 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws Fixture or filesystem errors
     func testSymlinkMediaRejectsWholeCapture() throws
     {
-
         try fixture { defaults, domain, root in
 
             let folder = /* Working folder location */
@@ -198,7 +188,6 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws Native fixture encoding errors
     func testNativeDecodersRejectFutureVersionAndWrongType() throws
     {
-
         XCTAssertNil(LegacyStoreValidation.check(key: "Plenact.Board.v1", value: Data("[]".utf8)))
         XCTAssertEqual(LegacyStoreValidation.check(key: "Plenact.DailyPlans.v1", value: Data("{\"version\":2,\"plans\":{}}".utf8)), "unsupported_store_version")
         XCTAssertEqual(LegacyStoreValidation.check(key: "Plenact.CardCovers.enabled", value: NSNumber(value: 1)), "wrong_storage_type")
@@ -211,7 +200,6 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @return Void after checking reference diagnostics
     func testMissingAndUnsafeMediaReferencesRequireReview()
     {
-
         XCTAssertEqual(LegacyStoreValidation.mediaIssues(["fileName": "missing.bin"], store: "test", files: []), ["missing_media: test"])
         XCTAssertEqual(LegacyStoreValidation.mediaIssues(["photoFileName": "../private"], store: "test", files: []), ["unsafe_media_reference: test"])
         XCTAssertTrue(LegacyStoreValidation.mediaIssues(["fileName": "ok.bin"], store: "test", files: ["Documents/CardAttachments/ok.bin"]).isEmpty)

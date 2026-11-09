@@ -13,8 +13,6 @@ import UIKit
 ///     Lets per-item surfaces override List and Board defaults without rewriting descendants
 private struct StudioCardSurfaceKey: EnvironmentKey
 {
-
-
     static let defaultValue: StudioSurface? = nil /* Fallback environment value */
 
 }
@@ -26,11 +24,8 @@ private struct StudioCardSurfaceKey: EnvironmentKey
 ///     Shares presentation metadata across navigation and sheet boundaries
 extension EnvironmentValues
 {
-
-
     var studioCardSurface: StudioSurface? /* Studio card surface */
     {
-
         get
         {
             self[StudioCardSurfaceKey.self]
@@ -38,7 +33,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[StudioCardSurfaceKey.self] = newValue
 
         }
@@ -54,8 +48,6 @@ extension EnvironmentValues
 ///     Reuses bounded image preparation and never deletes art because one item stops using it
 enum StudioArtworkStore
 {
-
-
     private static let cache = NSCache<NSString, UIImage>() /* Reusable lookup results */
 
 
@@ -66,8 +58,6 @@ enum StudioArtworkStore
     /// @throws Filesystem errors propagate to the importing editor
     static func directory() throws -> URL
     {
-
-
         let root = /* Workspace or view root */
             try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
             appropriateFor: nil, create: true)
@@ -88,8 +78,6 @@ enum StudioArtworkStore
     /// @throws Image preparation or filesystem errors propagate without updating appearance
     static func importImage(_ data: Data) throws -> String
     {
-
-
         let prepared = /* Prepared operation input */
             try CollectionBackgroundPhotoStore.preparedPhoto(data)
         let name     = UUID().uuidString + ".jpg" /* Display or lookup name */
@@ -107,8 +95,6 @@ enum StudioArtworkStore
     /// @return (UIImage?) image when available, otherwise nil for a readable fallback
     static func image(_ name: String?) -> UIImage?
     {
-
-
         guard let name, name == URL(fileURLWithPath: name).lastPathComponent,
         !name.contains(".."), let directory = try? directory() else
         {
@@ -139,7 +125,6 @@ enum StudioArtworkStore
 ///     Keeps the device-local Note rotation separate from saved appearance and shared content
 enum CardBackgroundPortfolio
 {
-
     static let rotationKey = "Plenact.NoteBackground.Next.v1" /* Next device-local selection */
     static let titles = /* Stable portfolio order; append new choices to preserve rotation */
         ["Mountain dawn", "Ocean morning", "Forest light", "Desert curves", "Alpine reflection",
@@ -154,7 +139,6 @@ enum CardBackgroundPortfolio
     /// Materialize an immutable local photo so backups and portable exports include its bytes
     static func surface(at index: Int, directory: URL? = nil) throws -> StudioSurface
     {
-
         guard titles.indices.contains(index) else
         {
             throw CocoaError(.fileReadInvalidFileName)
@@ -167,7 +151,6 @@ enum CardBackgroundPortfolio
 
         if !FileManager.default.fileExists(atPath: url.path)
         {
-
             guard let data = UIImage(named: asset)?.jpegData(compressionQuality: 0.86) else
             {
                 throw CocoaError(.fileReadCorruptFile)
@@ -182,7 +165,6 @@ enum CardBackgroundPortfolio
     /// Advance only after a usable photo has been prepared; a saved Note keeps its chosen photo
     static func nextSurface(defaults: UserDefaults = .standard, directory: URL? = nil) throws -> StudioSurface
     {
-
         let index   = max(0, defaults.integer(forKey: rotationKey)) % titles.count /* Next image */
         let surface = try surface(at: index, directory: directory)               /* Owned photo */
 
@@ -198,8 +180,6 @@ enum CardBackgroundPortfolio
 ///     Uses procedural textures instead of large repeated bitmaps and keeps content readable over artwork
 struct StudioSurfaceView: View
 {
-
-
     let surface: StudioSurface                     /* Artwork surface definition       */
     @Environment(\.colorScheme) private var scheme /* Current light or dark appearance */
 
@@ -211,8 +191,6 @@ struct StudioSurfaceView: View
     /// @return (Color) opaque display color
     static func color(_ hex: String) -> Color
     {
-
-
         guard hex.count == 6, let value = UInt32(hex, radix: 16) else
         {
             return Color(.secondarySystemBackground)
@@ -238,15 +216,11 @@ struct StudioSurfaceView: View
     ///
     var body: some View /* Studio Surface layout */
     {
-
-
         GeometryReader
         {
-
         geometry in
             ZStack(alignment: .bottomTrailing)
             {
-
                 Color(.systemBackground)
                 artwork(size: geometry.size)
                 .opacity(min(1, max(0, surface.strength)))
@@ -254,10 +228,8 @@ struct StudioSurfaceView: View
                 .opacity(min(1, max(0, surface.readability)))
                 if surface.material == .unsplash, let remote = surface.remotePhoto
                 {
-
                     HStack(spacing: 3)
                     {
-
                         Link(remote.photographer, destination: remote.profileURL)
                         Text("on")
                         Link("Unsplash", destination: URL(string: "https://unsplash.com/?utm_source=plenact&utm_medium=referral")!)
@@ -283,14 +255,11 @@ struct StudioSurfaceView: View
     @ViewBuilder
     private func artwork(size: CGSize) -> some View
     {
-
-
         let first  = Self.color(surface.color)          /* First comparison value  */
         let second = Self.color(surface.secondaryColor) /* Second comparison value */
 
         switch surface.material
         {
-
         case .plain:
             Color(.systemBackground)
         case .color:
@@ -300,7 +269,6 @@ struct StudioSurfaceView: View
         case .photo:
             if let image = StudioArtworkStore.image(surface.photoFileName)
             {
-
                 Image(uiImage: image).resizable().scaledToFill()
                 .frame(width: size.width, height: size.height)
                 .scaleEffect(min(2, max(1, surface.zoom)))
@@ -310,10 +278,8 @@ struct StudioSurfaceView: View
         case .unsplash:
             if let remote = surface.remotePhoto
             {
-
                 AsyncImage(url: remote.imageURL)
                 {
-
                 image in
                     image.resizable().scaledToFill()
                 }
@@ -332,14 +298,12 @@ struct StudioSurfaceView: View
             first
             Canvas
             {
-
             context, bounds in
 
                 let ink = second /* Drawing stroke content */
 
                 if surface.material == .canvas
                 {
-
                     var mountain = Path() /* Mountain operation value */
 
                     mountain.move(to: CGPoint(x: 0, y: bounds.height * 0.8))
@@ -354,19 +318,15 @@ struct StudioSurfaceView: View
 
                 else
                 {
-
                     let step: CGFloat = /* Current review step */
                         surface.material == .linen ? 4 : 24
 
                     for x in stride(from: CGFloat(0), through: bounds.width, by: step)
                     {
-
                         for y in stride(from: CGFloat(0), through: bounds.height, by: step)
                         {
-
                             if surface.material == .dots
                             {
-
                                 context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 2, height: 2)), with: .color(ink))
                             }
 
@@ -374,7 +334,6 @@ struct StudioSurfaceView: View
 
                         if [.grid, .linen].contains(surface.material)
                         {
-
                             var line = Path() /* Current text or drawing line */
 
                             line.move(to: CGPoint(x: x, y: 0));
@@ -386,10 +345,8 @@ struct StudioSurfaceView: View
 
                     if surface.material != .dots
                     {
-
                         for y in stride(from: CGFloat(0), through: bounds.height, by: step)
                         {
-
                             var line = Path() /* Current text or drawing line */
 
                             line.move(to: CGPoint(x: 0, y: y));
@@ -416,8 +373,6 @@ struct StudioSurfaceView: View
 ///     Keeps preview visibility independent of the full detail background
 struct StudioItemBackground: View
 {
-
-
     let appearance: ItemAppearance?                         /* Resolved appearance choices     */
     let isNote:     Bool                                    /* Note state                      */
     var preview = false                                     /* Prepared content preview        */
@@ -433,12 +388,9 @@ struct StudioItemBackground: View
     ///
     var body: some View /* Studio Item Background layout */
     {
-
-
         if let surface = appearance?.studioSurface ?? inherited,
         !preview || surface.showsInPreviews
         {
-
             StudioSurfaceView(surface: surface)
         }
 

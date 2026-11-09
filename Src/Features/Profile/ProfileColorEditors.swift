@@ -22,8 +22,6 @@ import UIKit
 ///
 extension ProfileColor
 {
-
-
     ///
     /// @fcn        ProfileColor.color
     /// @brief      Resolve the palette token to its SwiftUI color
@@ -33,11 +31,8 @@ extension ProfileColor
     ///
     var color: Color /* Resolved color value */
     {  /* Avatar color */
-
         switch legacyToken
         {
-
-
         case "teal":
             Color.teal
         case "blue":
@@ -67,7 +62,6 @@ extension ProfileColor
     ///
     var hexString: String /* Hex string */
     {  /* Six-digit RGB hexadecimal value */
-
         String(
             format: "#%02X%02X%02X",
             Int(min(max(red, 0), 1) * 255),
@@ -87,8 +81,6 @@ extension ProfileColor
 ///
 extension ProfileAvatarIcon
 {
-
-
     ///
     /// @fcn        ProfileAvatarIcon.title
     /// @brief      Return a display title for an avatar icon choice
@@ -98,11 +90,8 @@ extension ProfileAvatarIcon
     ///
     var title: String /* User-facing title */
     {  /* User-facing avatar icon title */
-
         switch self
         {
-
-
         case .initials:
                     "Initials"
         case .person:
@@ -141,11 +130,8 @@ extension ProfileAvatarIcon
     ///
     var symbolName: String? /* Symbol name */
     {  /* SF Symbol for this icon choice */
-
         switch self
         {
-
-
         case .initials:
             nil
         case .person:
@@ -185,8 +171,6 @@ extension ProfileAvatarIcon
 ///
 struct ProfileAvatarIconPicker: View
 {
-
-
     @Binding var selection:       ProfileAvatarIcon             /* Parent's saved icon choice             */
     @Binding var avatarColor:     ProfileAvatarColor            /* Parent's saved avatar background       */
     @Binding var foregroundColor: ProfileAvatarForegroundColor  /* Parent's saved icon and initials color */
@@ -229,8 +213,6 @@ struct ProfileAvatarIconPicker: View
         displayName: String
     )
     {
-
-
         _selection = selection
         _avatarColor = avatarColor
         _foregroundColor = foregroundColor
@@ -253,7 +235,6 @@ struct ProfileAvatarIconPicker: View
     ///
     private var initials: String /* Local profile initials */
     {  /* Preview initials for the current display name */
-
         LocalProfile(displayName: displayName).initials
     }
 
@@ -270,8 +251,6 @@ struct ProfileAvatarIconPicker: View
     ///
     private func saveSelection()
     {
-
-
         selection = draftIcon
         avatarColor = draftAvatarColor
         foregroundColor = draftForegroundColor
@@ -290,10 +269,8 @@ struct ProfileAvatarIconPicker: View
     ///
     private var previewHeader: some View /* Preview header */
     {  /* Draft avatar preview and display name */
-
         HStack(spacing: 14)
         {
-
             ProfileAvatarView(
                 profile: LocalProfile(
                     displayName: displayName, avatarColor: draftAvatarColor,
@@ -305,7 +282,6 @@ struct ProfileAvatarIconPicker: View
 
             VStack(alignment: .leading, spacing: 3)
             {
-
                 Text(displayName.isEmpty ? "Local profile" : displayName)
                 .font(.headline)
                 Text("Preview")
@@ -332,13 +308,10 @@ struct ProfileAvatarIconPicker: View
     ///
     private var colorControls: some View /* Color controls */
     {  /* Profile avatar color controls */
-
         VStack(alignment: .leading, spacing: 10)
         {
-
             NavigationLink
             {
-
                 ProfileColorMapPicker(
                     title: "Avatar color",
                     selection: $draftAvatarColor,
@@ -353,13 +326,11 @@ struct ProfileAvatarIconPicker: View
                 )
                 .onAppear
                 {
-
                     isEditingColorMap = true
 
                 }
                 .onDisappear
                 {
-
                     isEditingColorMap = false
 
                 }
@@ -367,8 +338,6 @@ struct ProfileAvatarIconPicker: View
             }
             label:
             {
-
-
                 colorSettingRow("Avatar color", color: draftAvatarColor)
             }
 
@@ -376,7 +345,6 @@ struct ProfileAvatarIconPicker: View
 
             NavigationLink
             {
-
                 ProfileColorMapPicker(
                     title: "Icon and initials",
                     selection: $draftForegroundColor,
@@ -391,13 +359,11 @@ struct ProfileAvatarIconPicker: View
                 )
                 .onAppear
                 {
-
                     isEditingColorMap = true
 
                 }
                 .onDisappear
                 {
-
                     isEditingColorMap = false
 
                 }
@@ -405,8 +371,6 @@ struct ProfileAvatarIconPicker: View
             }
             label:
             {
-
-
                 colorSettingRow("Icon and initials", color: draftForegroundColor)
             }
 
@@ -426,32 +390,26 @@ struct ProfileAvatarIconPicker: View
     ///
     private var iconGrid: some View /* Icon grid */
     {  /* Selectable avatar icon grid */
-
         VStack(alignment: .leading, spacing: 10)
         {
-
             Text("Choose an icon")
             .font(.headline)
 
             LazyVGrid(columns: columns, spacing: 8)
             {
-
                 ForEach(ProfileAvatarIcon.allCases)
                 {
                     icon in
                     Button
                     {
-
                         draftIcon = icon
                         draftPhotoData = nil
 
                     }
                     label:
                     {
-
                         VStack(spacing: 6)
                         {
-
                             avatarPreview(
                                 icon: icon, background: draftAvatarColor, foreground: draftForegroundColor, size: 42)
 
@@ -468,7 +426,6 @@ struct ProfileAvatarIconPicker: View
                         )
                         .overlay
                         {
-
                             RoundedRectangle(cornerRadius: 8)
                             .stroke(
                                 draftIcon == icon ? Color.accentColor : Color.secondary.opacity(0.22),
@@ -507,21 +464,16 @@ struct ProfileAvatarIconPicker: View
     ///
     var body: some View /* Profile Avatar Icon Picker layout */
     {  /* Avatar icon and photo picker */
-
         VStack(spacing: 0)
         {
-
             previewHeader
 
             ScrollView
             {
-
                 VStack(spacing: 10)
                 {
-
                     PhotosPicker(selection: $selectedPhoto, matching: .images)
                     {
-
                         Label(draftPhotoData == nil ? "Choose Photo" : "Replace Photo", systemImage: "photo")
                     }
 
@@ -529,19 +481,14 @@ struct ProfileAvatarIconPicker: View
 
                     if isLoadingPhoto
                     {
-
-
                         ProgressView()
                     }
 
 
                     if draftPhotoData != nil
                     {
-
-
                         Button("Remove Photo", role: .destructive)
                         {
-
                             draftPhotoData = nil
 
                         }
@@ -549,8 +496,6 @@ struct ProfileAvatarIconPicker: View
                     }
                     else
                     {
-
-
                         colorControls
                     }
 
@@ -573,11 +518,8 @@ struct ProfileAvatarIconPicker: View
         .navigationBarBackButtonHidden(true)
         .task(id: selectedPhoto)
         {
-
             guard let selectedPhoto else
             {  /* Chosen Photos picker item */
-
-
                 return
             }
 
@@ -586,8 +528,6 @@ struct ProfileAvatarIconPicker: View
 
             defer
             {
-
-
                 isLoadingPhoto = false
 
             }
@@ -595,23 +535,18 @@ struct ProfileAvatarIconPicker: View
 
             do
             {
-
-
                 guard
                 let data = try await selectedPhoto.loadTransferable(
                     type: Data.self), /* Transferred photo bytes    */
                 let image = AvatarPhotoCrop.image(from: data)
                 else
                 {  /* Decoded photo for cropping */
-
                     throw CocoaError(.fileReadCorruptFile)
                 }
 
 
                 guard !Task.isCancelled else
                 {
-
-
                     return
                 }
 
@@ -621,12 +556,8 @@ struct ProfileAvatarIconPicker: View
             }
             catch
             {
-
-
                 if !Task.isCancelled
                 {
-
-
                     photoError = error.localizedDescription
 
                 }
@@ -637,7 +568,6 @@ struct ProfileAvatarIconPicker: View
 
         .sheet(item: $cropImage, onDismiss:
             {
-
                 selectedPhoto = nil
 
             })
@@ -664,7 +594,6 @@ struct ProfileAvatarIconPicker: View
                             {
                                 if !$0
                                 {
-
                                     photoError = nil;
                                     selectedPhoto = nil
 
@@ -674,10 +603,8 @@ struct ProfileAvatarIconPicker: View
                         )
         )
         {
-
             Button("OK", role: .cancel)
             {
-
                 photoError = nil;
                 selectedPhoto = nil
 
@@ -686,19 +613,14 @@ struct ProfileAvatarIconPicker: View
         }
         message:
         {
-
             Text(photoError ?? "")
         }
         .toolbar
         {
-
             if !isEditingColorMap
             {
-
-
                 ToolbarItem(placement: .topBarLeading)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -709,7 +631,6 @@ struct ProfileAvatarIconPicker: View
 
                 ToolbarItem(placement: .topBarTrailing)
                 {
-
                     Button("Save", action: saveSelection)
                 }
 
@@ -732,11 +653,8 @@ struct ProfileAvatarIconPicker: View
     ///
     private func colorSettingRow(_ title: String, color: ProfileColor) -> some View
     {
-
-
         HStack(spacing: 10)
         {
-
             Text(title)
             Spacer()
             Circle()
@@ -744,7 +662,6 @@ struct ProfileAvatarIconPicker: View
             .frame(width: 20, height: 20)
             .overlay
             {
-
                 Circle()
                 .strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1)
             }
@@ -781,27 +698,20 @@ struct ProfileAvatarIconPicker: View
         size: CGFloat
     ) -> some View
     {
-
-
         ZStack
         {
-
             Circle()
             .fill(background.color)
             .frame(width: size, height: size)
 
             if let symbolName = icon.symbolName
             {  /* SF Symbol for the selected icon */
-
-
                 Image(systemName: symbolName)
                 .font(.system(size: size * 0.4, weight: .semibold))
                 .foregroundStyle(foreground.color)
             }
             else
             {
-
-
                 Text(initials)
                 .font(.system(size: size * 0.36, weight: .semibold))
                 .foregroundStyle(foreground.color)
@@ -823,8 +733,6 @@ struct ProfileAvatarIconPicker: View
 ///
 struct AvatarCropImage: Identifiable
 {
-
-
     let id = UUID()    /* Identity for the pending crop presentation */
     let image: UIImage /* Decoded source image                       */
 
@@ -839,8 +747,6 @@ struct AvatarCropImage: Identifiable
 ///
 enum AvatarPhotoCrop
 {
-
-
     ///
     /// @fcn        AvatarPhotoCrop.image(from:)
     /// @brief      Decode image data into a transformed thumbnail
@@ -855,8 +761,6 @@ enum AvatarPhotoCrop
     ///
     static func image(from data: Data) -> UIImage?
     {
-
-
         guard
         let source = CGImageSourceCreateWithData(data as CFData, nil), /* ImageIO source for the selected photo */
         let thumbnail = CGImageSourceCreateThumbnailAtIndex(
@@ -890,8 +794,6 @@ enum AvatarPhotoCrop
     ///
     static func constrainedOffset(_ offset: CGSize, imageSize: CGSize, side: CGFloat, zoom: CGFloat) -> CGSize
     {
-
-
         let scale           = max(side / imageSize.width, side / imageSize.height) * zoom /* Aspect-fill crop scale           */
         let horizontalLimit = max(0, (imageSize.width * scale - side) / 2)                /* Maximum horizontal crop movement */
         let verticalLimit   = max(0, (imageSize.height * scale - side) / 2)               /* Maximum vertical crop movement   */
@@ -920,12 +822,8 @@ enum AvatarPhotoCrop
     ///
     static func jpeg(image: UIImage, side: CGFloat, zoom: CGFloat, offset: CGSize) -> Data?
     {
-
-
         guard side > 0, image.size.width > 0, image.size.height > 0 else
         {
-
-
             return nil
         }
 
@@ -968,8 +866,6 @@ enum AvatarPhotoCrop
 ///
 struct AvatarPhotoCropView: View
 {
-
-
     let image:      UIImage                                  /* Decoded source photo                */
     let onUsePhoto: (Data) -> Void                           /* Callback receiving the cropped JPEG */
     @Environment(\.dismiss) private var dismiss              /* Crop-sheet dismissal action         */
@@ -996,8 +892,6 @@ struct AvatarPhotoCropView: View
     ///
     private func stage(side: CGFloat) -> some View
     {
-
-
         let currentZoom   = min(max(zoom * magnification, 1), 6) /* Zoom including the in-progress pinch */
         let currentOffset = AvatarPhotoCrop.constrainedOffset(   /* Drag-adjusted, bounded crop position */
             CGSize(width: offset.width + drag.width, height: offset.height + drag.height),
@@ -1008,7 +902,6 @@ struct AvatarPhotoCropView: View
 
         return ZStack
         {
-
             Image(uiImage: image)
             .resizable()
             .frame(width: image.size.width * scale, height: image.size.height * scale)
@@ -1078,7 +971,6 @@ struct AvatarPhotoCropView: View
         .accessibilityLabel("Avatar photo crop")
         .onAppear
         {
-
             cropSide = side
 
         }
@@ -1106,10 +998,8 @@ struct AvatarPhotoCropView: View
     ///
     var body: some View /* Avatar Photo Crop layout */
     {  /* Interactive avatar crop screen */
-
         NavigationStack
         {
-
             GeometryReader
             {
                 geometry in
@@ -1119,12 +1009,10 @@ struct AvatarPhotoCropView: View
 
                 VStack(spacing: 16)
                 {
-
                     stage(side: side)
 
                     HStack
                     {
-
                         Image(systemName: "minus.magnifyingglass")
                         Slider(value: $zoom, in: 1 ... 6)
                         .accessibilityLabel("Photo zoom")
@@ -1135,58 +1023,48 @@ struct AvatarPhotoCropView: View
 
                     HStack(spacing: 20)
                     {
-
                         Button
                         {
-
                             offset.width -= side / 10
 
                         }
                         label:
                         {
-
                             Image(systemName: "arrow.left")
                         }
                         .accessibilityLabel("Move photo left")
                         Button
                         {
-
                             offset.height -= side / 10
 
                         }
                         label:
                         {
-
                             Image(systemName: "arrow.up")
                         }
                         .accessibilityLabel("Move photo up")
                         Button
                         {
-
                             offset.height += side / 10
 
                         }
                         label:
                         {
-
                             Image(systemName: "arrow.down")
                         }
                         .accessibilityLabel("Move photo down")
                         Button
                         {
-
                             offset.width += side / 10
 
                         }
                         label:
                         {
-
                             Image(systemName: "arrow.right")
                         }
                         .accessibilityLabel("Move photo right")
                         Button("Reset")
                         {
-
                             zoom = 1;
                             offset = .zero
 
@@ -1205,10 +1083,8 @@ struct AvatarPhotoCropView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .topBarLeading)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -1219,21 +1095,15 @@ struct AvatarPhotoCropView: View
 
                 ToolbarItem(placement: .topBarTrailing)
                 {
-
                     Button("Use Photo")
                     {
-
                         if let data = AvatarPhotoCrop.jpeg(image: image, side: cropSide, zoom: zoom, offset: offset)
                         {  /* Successfully rendered crop JPEG */
-
-
                             onUsePhoto(data)
                             dismiss()
                         }
                         else
                         {
-
-
                             cropFailed = true
 
                         }
@@ -1246,10 +1116,8 @@ struct AvatarPhotoCropView: View
 
             .alert("Could not crop photo", isPresented: $cropFailed)
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
 
             }
@@ -1270,8 +1138,6 @@ struct AvatarPhotoCropView: View
 ///
 struct ProfileColorPreset: Identifiable
 {
-
-
     let name:  String       /* Display name for the preset */
     let color: ProfileColor /* Preset color value          */
 
@@ -1298,8 +1164,6 @@ struct ProfileColorPreset: Identifiable
 ///
 struct ProfileColorMapPicker: View
 {
-
-
     let title:                String               /* Color role shown in navigation and preview */
     let defaultColor:         ProfileColor         /* Role-specific default choice               */
     let presets:              [ProfileColorPreset] /* Named colors available for quick selection */
@@ -1332,8 +1196,6 @@ struct ProfileColorMapPicker: View
         presets: [ProfileColorPreset]
     )
     {
-
-
         self.title = title
         self.defaultColor = defaultColor
         self.presets = presets
@@ -1358,7 +1220,6 @@ struct ProfileColorMapPicker: View
     ///
     private var selectedColor: ProfileColor /* Selected color */
     {  /* Profile color represented by the HSB draft */
-
         ProfileColor(hue: hue, saturation: saturation, brightness: brightness)
     }
 
@@ -1372,8 +1233,6 @@ struct ProfileColorMapPicker: View
     ///
     private func saveSelection()
     {
-
-
         selection = selectedColor
 
         dismiss()
@@ -1389,8 +1248,6 @@ struct ProfileColorMapPicker: View
     ///
     private func resetColor()
     {
-
-
         setColor(initialColor)
     }
 
@@ -1404,8 +1261,6 @@ struct ProfileColorMapPicker: View
     ///
     private func useDefaultColor()
     {
-
-
         setColor(defaultColor)
     }
 
@@ -1421,8 +1276,6 @@ struct ProfileColorMapPicker: View
     ///
     private func setColor(_ color: ProfileColor)
     {
-
-
         let components = color.hueSaturationBrightness /* Converted HSB components */
 
         hue = components.hue
@@ -1441,10 +1294,8 @@ struct ProfileColorMapPicker: View
     ///
     private var hexEditorLink: some View /* Hex editor link */
     {  /* Link to direct RGB editing */
-
         NavigationLink
         {
-
             ProfileRGBColorEditor(color: selectedColor)
             {
                 updatedColor in
@@ -1452,13 +1303,11 @@ struct ProfileColorMapPicker: View
             }
             .onAppear
             {
-
                 isEditingRGB = true
 
             }
             .onDisappear
             {
-
                 isEditingRGB = false
 
             }
@@ -1466,16 +1315,13 @@ struct ProfileColorMapPicker: View
         }
         label:
         {
-
             HStack(spacing: 12)
             {
-
                 Circle()
                 .fill(selectedColor.color)
                 .frame(width: 48, height: 48)
                 .overlay
                 {
-
                     Circle()
                     .strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1)
                 }
@@ -1483,7 +1329,6 @@ struct ProfileColorMapPicker: View
 
                 VStack(alignment: .leading, spacing: 3)
                 {
-
                     Text(title)
                     .font(.headline)
                     Text(selectedColor.hexString)
@@ -1517,10 +1362,8 @@ struct ProfileColorMapPicker: View
     ///
     var body: some View /* Profile Color Map Picker layout */
     {  /* Interactive profile color picker */
-
         VStack(alignment: .leading, spacing: 20)
         {
-
             hexEditorLink
 
             ProfileColorMapSurface(hue: $hue, saturation: $saturation, brightness: brightness)
@@ -1528,30 +1371,24 @@ struct ProfileColorMapPicker: View
 
             ScrollView(.horizontal)
             {
-
                 HStack(spacing: 12)
                 {
-
                     ForEach(presets)
                     {
                         preset in
                         Button
                         {
-
                             setColor(preset.color)
                         }
                         label:
                         {
-
                             VStack(spacing: 5)
                             {
-
                                 Circle()
                                 .fill(preset.color.color)
                                 .frame(width: 26, height: 26)
                                 .overlay
                                 {
-
                                     Circle()
                                     .strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1)
                                 }
@@ -1578,10 +1415,8 @@ struct ProfileColorMapPicker: View
 
             VStack(alignment: .leading, spacing: 8)
             {
-
                 HStack
                 {
-
                     Text("Brightness")
                     Spacer()
                     Text("\(Int((brightness * 100).rounded()))%")
@@ -1597,7 +1432,6 @@ struct ProfileColorMapPicker: View
 
             HStack
             {
-
                 Button("Reset", action: resetColor)
                 Spacer()
                 Button("Default", action: useDefaultColor)
@@ -1613,14 +1447,10 @@ struct ProfileColorMapPicker: View
         .navigationBarBackButtonHidden(true)
         .toolbar
         {
-
             if !isEditingRGB
             {
-
-
                 ToolbarItem(placement: .topBarLeading)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -1631,7 +1461,6 @@ struct ProfileColorMapPicker: View
 
                 ToolbarItem(placement: .topBarTrailing)
                 {
-
                     Button("Save", action: saveSelection)
                 }
 
@@ -1652,8 +1481,6 @@ struct ProfileColorMapPicker: View
 ///
 struct ProfileRGBColorEditor: View
 {
-
-
     let onSave: (ProfileColor) -> Void          /* Callback receiving the edited profile color */
     @Environment(\.dismiss) private var dismiss /* Editor dismissal action                     */
     @State private var red:   Double            /* Draft red channel in the 0...255 range      */
@@ -1673,8 +1500,6 @@ struct ProfileRGBColorEditor: View
     ///
     init(color: ProfileColor, onSave: @escaping (ProfileColor) -> Void)
     {
-
-
         self.onSave = onSave
         _red = State(initialValue: color.red * 255)
         _green = State(initialValue: color.green * 255)
@@ -1692,7 +1517,6 @@ struct ProfileRGBColorEditor: View
     ///
     private var editedColor: ProfileColor /* Edited color */
     {  /* RGB draft converted to a profile color */
-
         ProfileColor(red: red / 255, green: green / 255, blue: blue / 255)
     }
 
@@ -1706,8 +1530,6 @@ struct ProfileRGBColorEditor: View
     ///
     private func saveColor()
     {
-
-
         onSave(editedColor)
         dismiss()
     }
@@ -1725,20 +1547,16 @@ struct ProfileRGBColorEditor: View
     ///
     var body: some View /* Profile RGB Color Editor layout */
     {  /* Direct RGB channel editor */
-
         VStack(alignment: .leading, spacing: 20)
         {
-
             HStack(spacing: 12)
             {
-
                 Circle()
                 .fill(editedColor.color)
                 .frame(width: 48, height: 48)
 
                 VStack(alignment: .leading, spacing: 3)
                 {
-
                     Text("RGB color")
                     .font(.headline)
                     Text(editedColor.hexString)
@@ -1762,10 +1580,8 @@ struct ProfileRGBColorEditor: View
         .navigationBarBackButtonHidden(false)
         .toolbar
         {
-
             ToolbarItem(placement: .cancellationAction)
             {
-
                 Button("Cancel")
                 {
                     dismiss()
@@ -1776,7 +1592,6 @@ struct ProfileRGBColorEditor: View
 
             ToolbarItem(placement: .confirmationAction)
             {
-
                 Button("Save", action: saveColor)
             }
 
@@ -1795,8 +1610,6 @@ struct ProfileRGBColorEditor: View
 ///
 struct RGBChannelControl: View
 {
-
-
     let title:          String /* Channel label                        */
     @Binding var value: Double /* Channel intensity from 0 through 255 */
 
@@ -1816,8 +1629,6 @@ struct RGBChannelControl: View
     ///
     init(title: String, value: Binding<Double>)
     {
-
-
         self.title = title
         _value = value
         _hexValue = State(initialValue: Self.hexString(value.wrappedValue))
@@ -1836,8 +1647,6 @@ struct RGBChannelControl: View
     ///
     private static func hexString(_ value: Double) -> String
     {
-
-
         String(format: "%02X", Int(value.rounded()))
     }
 
@@ -1851,10 +1660,8 @@ struct RGBChannelControl: View
     ///
     var body: some View /* RGB Channel Control layout */
     {  /* Slider and hexadecimal input for one RGB channel */
-
         HStack(spacing: 10)
         {
-
             Text(title)
             .frame(width: 48, alignment: .leading)
 
@@ -1873,8 +1680,6 @@ struct RGBChannelControl: View
                 _, newValue in
                 if !isEditingHex
                 {
-
-
                     hexValue = Self.hexString(newValue)
 
                 }
@@ -1894,8 +1699,6 @@ struct RGBChannelControl: View
 
                 if normalized != newValue
                 {
-
-
                     hexValue = normalized
 
                 }
@@ -1910,8 +1713,6 @@ struct RGBChannelControl: View
                 _, isEditing in
                 if !isEditing
                 {
-
-
                     hexValue = Self.hexString(value)
 
                 }
@@ -1934,8 +1735,6 @@ struct RGBChannelControl: View
 ///
 struct ProfileColorMapSurface: View
 {
-
-
     @Binding var hue:        Double /* Selected horizontal hue coordinate            */
     @Binding var saturation: Double /* Selected vertical saturation coordinate       */
     let brightness:          Double /* Fixed brightness used for the surface preview */
@@ -1950,7 +1749,6 @@ struct ProfileColorMapSurface: View
     ///
     private var spectrum: [Color] /* Spectrum display color */
     {  /* Full-saturation hue-gradient stops */
-
         [
             Color(hue: 0, saturation: 1, brightness: 1, opacity: 1),
             Color(hue: 1.0 / 6, saturation: 1, brightness: 1, opacity: 1),
@@ -1976,7 +1774,6 @@ struct ProfileColorMapSurface: View
     ///
     var body: some View /* Profile Color Map Surface layout */
     {  /* Interactive hue and saturation surface */
-
         GeometryReader
         {
             geometry in
@@ -1986,7 +1783,6 @@ struct ProfileColorMapSurface: View
 
             ZStack
             {
-
                 LinearGradient(colors: spectrum, startPoint: .leading, endPoint: .trailing)
                 LinearGradient(colors: [.clear, .white], startPoint: .top, endPoint: .bottom)
                 Color.black.opacity(1 - brightness)
@@ -1996,13 +1792,11 @@ struct ProfileColorMapSurface: View
                 .frame(width: 30, height: 30)
                 .overlay
                 {
-
                     Circle()
                     .strokeBorder(.white, lineWidth: 3)
                 }
                 .overlay
                 {
-
                     Circle()
                     .strokeBorder(.black.opacity(0.75), lineWidth: 1)
                 }
@@ -2035,8 +1829,6 @@ struct ProfileColorMapSurface: View
                 direction in
                 switch direction
                 {
-
-
                 case .increment:
 
                     hue = min(hue + 0.02, 1)

@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 enum MigrationPlanningPreview
 {
-
     static let stores                        = /* Native persistence stores */
         ["Plenact.DailyPlans.v1", "Plenact.WeeklyReviews.v1", "Plenact.PeriodicReviews.v1", "Plenact.ReviewRhythm.v1"]
     static let fields: [String: Set<String>] = [ /* Record fields under review */
@@ -35,7 +34,6 @@ enum MigrationPlanningPreview
     ///     Count converted source domains independently from complete workspace acceptance
     struct Result
     {
-
         let records:        [[String: Any]] /* Records being processed  */
         let document:       [String: Any]   /* Source document snapshot */
         let convertedStores: [String]       /* Converted stores         */
@@ -53,7 +51,6 @@ enum MigrationPlanningPreview
     /// @throws Malformed or unsupported field errors
     private static func check(_ value: Any, type: String) throws
     {
-
         if let array = value as? [Any]
         {
             for item in array
@@ -102,7 +99,6 @@ enum MigrationPlanningPreview
     /// @throws Invalid version, fields or native source decoding errors
     private static func load<T: Codable>(_ value: Any, as type: T.Type, family: String, container: String?) throws -> [String: Any]
     {
-
         guard let data = value as? Data, let raw = try JSONSerialization.jsonObject(with: data) as? [String: Any] else
         {
             throw MigrationContentValues.Failure.invalid("planning_source_storage")
@@ -141,7 +137,6 @@ enum MigrationPlanningPreview
     static func prepare(values: [String: Any], records: [[String: Any]], journal: inout MigrationIdentityJournal,
         priorityResolver: (([String: Any]) throws -> [String: Any])? = nil) throws -> Result
     {
-
         let context = /* Operation context */
             MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: [:])
 
@@ -162,14 +157,12 @@ enum MigrationPlanningPreview
 
         if let value = values[stores[0]]
         {
-
             let document = /* Daily-plan store snapshot */
                 try load(value, as: DailyPlanStore.Document.self, family: "daily", container: "plans")
             let plans    = document["plans"] as! [String: Any] /* Saved daily planning records */
 
             for key in plans.keys.sorted()
             {
-
                 let source = plans[key] as! [String: Any] /* Source value for this operation */
 
                 guard source["id"] as? String == key else
@@ -198,14 +191,12 @@ enum MigrationPlanningPreview
         }
         if let value = values[stores[1]]
         {
-
             let document = /* Source document snapshot */
                 try load(value, as: WeeklyReviewStore.Document.self, family: "weekly", container: "records")
             let entries  = document["records"] as! [String: Any] /* Entries being processed */
 
             for key in entries.keys.sorted()
             {
-
                 let source  = entries[key] as! [String: Any]  /* Source value for this operation */
                 let date    = source["startKey"] as! String   /* Date used by this operation     */
                 let zone    = source["timeZoneID"] as! String /* Date conversion time zone       */
@@ -240,14 +231,12 @@ enum MigrationPlanningPreview
         }
         if let value = values[stores[2]]
         {
-
             let document = /* Source document snapshot */
                 try load(value, as: PeriodicReviewStore.Document.self, family: "periodic", container: "records")
             let entries  = document["records"] as! [String: Any] /* Entries being processed */
 
             for key in entries.keys.sorted()
             {
-
                 let source   = entries[key] as! [String: Any] /* Source value for this operation */
                 let original =                                /* Baseline before changes         */
                     try MigrationContentValues.lowerUUID(source["id"])
@@ -279,7 +268,6 @@ enum MigrationPlanningPreview
         }
         if let value = values[stores[3]]
         {
-
             let source = /* Source value for this operation */
                 try load(value, as: ReviewRhythmPreferences.self, family: "rhythm", container: nil)
 

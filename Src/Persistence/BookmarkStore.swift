@@ -17,8 +17,6 @@ import SwiftUI
 ///
 enum SavedCardPersistence
 {
-
-
     private static let storageKey = "Plenact.SavedCardIDs.v1" /* Versioned local bookmark key */
 
 
@@ -35,8 +33,6 @@ enum SavedCardPersistence
     ///
     static func load() -> Set<Int>
     {
-
-
         Set(UserDefaults.standard.array(forKey: storageKey) as? [Int] ?? [])
     }
 
@@ -54,8 +50,6 @@ enum SavedCardPersistence
     ///
     static func save(_ cardIDs: Set<Int>)
     {
-
-
         UserDefaults.standard.set(cardIDs.sorted(), forKey: storageKey)
     }
 

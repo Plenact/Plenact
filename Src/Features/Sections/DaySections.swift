@@ -17,8 +17,6 @@ import Foundation
 ///
 enum DaySections
 {
-
-
     ///
     /// @fcn        DaySections.owner
     /// @brief      Find the named heading that owns a card
@@ -33,15 +31,12 @@ enum DaySections
     ///
     static func owner(of id: Int, in cards: [KanbanCard]) -> KanbanCard?
     {
-
         var heading: KanbanCard? /* Section heading text */
 
         for card in cards
         {
-
             if card.sectionHeading != nil
             {
-
                 heading = card
 
             }
@@ -69,7 +64,6 @@ enum DaySections
     ///
     static func visible(_ cards: [KanbanCard]) -> [KanbanCard]
     {
-
         var collapsed = false /* Collapsed-section state */
 
         return cards.filter
@@ -77,7 +71,6 @@ enum DaySections
             card in
             if card.sectionHeading != nil
             {
-
                 collapsed = card.appearance?.sectionCollapsed == true
 
                 return true
@@ -101,7 +94,6 @@ enum DaySections
     ///
     static func reveal(_ id: Int, in cards: inout [KanbanCard])
     {
-
         guard let heading = owner(of: id, in: cards),
         let index = cards.firstIndex(where:
             {
@@ -137,7 +129,6 @@ enum DaySections
         id: Int, index: Int
     )?
     {
-
         let rows = visible(cards) /* Rows used by this layout */
 
         guard let source = sourceOffsets.first, rows.indices.contains(source),
@@ -155,13 +146,11 @@ enum DaySections
 
         if destinationOffset == rows.count
         {
-
             boundary = cards.count
 
         }
         else
         {
-
             boundary = cards.firstIndex(where:
                 {
                     $0.id == rows[destinationOffset].id
@@ -187,7 +176,6 @@ enum DaySections
     ///
     static func reordered(_ cards: [KanbanCard], itemID: Int, to destination: Int) -> [KanbanCard]
     {
-
         guard let source = cards.firstIndex(where:
             {
                 $0.id == itemID
@@ -198,7 +186,6 @@ enum DaySections
 
         guard cards[source].sectionHeading != nil else
         {
-
             var result = cards /* Accumulated output value */
 
             BoardCardReordering.move(itemID, to: destination, in: &result)
@@ -223,7 +210,6 @@ enum DaySections
 
         for _ in 0 ..< abs(target - position)
         {
-
             result = moved(result, sectionID: itemID, offset: target > position ? 1 : -1)
 
         }
@@ -246,7 +232,6 @@ enum DaySections
     ///
     static func moved(_ cards: [KanbanCard], sectionID: Int, offset: Int) -> [KanbanCard]
     {
-
         let starts = cards.indices.filter /* Section boundary indices */
         {
             cards[$0].sectionHeading != nil

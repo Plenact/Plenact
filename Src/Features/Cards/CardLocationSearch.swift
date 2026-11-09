@@ -18,8 +18,6 @@ import SwiftUI
 ///
 struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 {
-
-
     let id:        UUID   /* Record UUID            */
     let name:      String /* Display or lookup name */
     let address:   String /* Resolved place address */
@@ -28,26 +26,22 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 
     var coordinate: CLLocationCoordinate2D /* Resolved map coordinate */
     {
-
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
 
     var savedLocation: String /* Saved location */
     {
-
         let title   = CardLocation.normalized(name)    /* User-facing title      */
         let address = CardLocation.normalized(address) /* Resolved place address */
 
         if let title, let address, title.caseInsensitiveCompare(address) != .orderedSame
         {
-
             return "\(title), \(address)"
         }
 
         if let value = title ?? address
         {
-
             return value
         }
 
@@ -69,7 +63,6 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
     ///
     init(id: UUID = UUID(), name: String, address: String, latitude: Double, longitude: Double)
     {
-
         self.id = id
         self.name = name
         self.address = address
@@ -90,13 +83,11 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
     ///
     init?(item: MKMapItem)
     {
-
         let coordinate: CLLocationCoordinate2D /* Resolved map coordinate */
         let address: String                    /* Resolved place address  */
 
         if #available(iOS 26.0, *)
         {
-
             coordinate = item.location.coordinate
             address = item.addressRepresentations?.fullAddress(includingRegion: true, singleLine: true)
             ?? item.address?.fullAddress ?? ""
@@ -105,7 +96,6 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 
         else
         {
-
             coordinate = item.placemark.coordinate
             address = item.placemark.title ?? ""
 
@@ -113,7 +103,6 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 
         guard CLLocationCoordinate2DIsValid(coordinate) else
         {
-
             return nil
         }
 
@@ -135,8 +124,6 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 @MainActor
 final class CardLocationSearchModel: ObservableObject
 {
-
-
     typealias Searcher = @MainActor (String, MKCoordinateRegion?) async throws -> [CardLocationSearchResult]
 
     ///
@@ -147,20 +134,16 @@ final class CardLocationSearchModel: ObservableObject
     ///
     enum Phase
     {
-
         case idle, searching, results, empty, failed
     }
 
 
     @Published var query: String /* Search text */
     {
-
         didSet
         {
-
             if query != oldValue
             {
-
                 cancel()
             }
 
@@ -178,10 +161,8 @@ final class CardLocationSearchModel: ObservableObject
 
     var selectedResult: CardLocationSearchResult? /* Selected result */
     {
-
         results.first
         {
-
             $0.id == selectedID
         }
 
@@ -199,7 +180,6 @@ final class CardLocationSearchModel: ObservableObject
     ///
     init(query: String = "", searcher: Searcher? = nil)
     {
-
         self.query = query
         self.searcher = searcher ?? Self.findPlaces
 
@@ -216,7 +196,6 @@ final class CardLocationSearchModel: ObservableObject
     ///
     func cancel()
     {
-
         revision = UUID()
         results = []
         selectedID = nil
@@ -236,11 +215,9 @@ final class CardLocationSearchModel: ObservableObject
     ///
     func search(in region: MKCoordinateRegion? = nil) async
     {
-
         cancel()
         guard let query = CardLocation.normalized(query) else
         {
-
             return
         }
 
@@ -250,18 +227,15 @@ final class CardLocationSearchModel: ObservableObject
 
         do
         {
-
             let matches = try await searcher(query, region) /* Matching source entries */
 
             guard revision == requestRevision else
             {
-
                 return
             }
 
             guard !Task.isCancelled else
             {
-
                 cancel()
                 return
             }
@@ -273,16 +247,13 @@ final class CardLocationSearchModel: ObservableObject
 
         catch
         {
-
             guard revision == requestRevision else
             {
-
                 return
             }
 
             guard !Task.isCancelled else
             {
-
                 cancel()
                 return
             }
@@ -307,7 +278,6 @@ final class CardLocationSearchModel: ObservableObject
     ///
     private static func findPlaces(_ query: String, region: MKCoordinateRegion?) async throws -> [CardLocationSearchResult]
     {
-
         let request = MKLocalSearch.Request() /* Pending lookup request */
 
         request.naturalLanguageQuery = query
@@ -315,7 +285,6 @@ final class CardLocationSearchModel: ObservableObject
 
         if let region, region.span.latitudeDelta < 120, region.span.longitudeDelta < 180
         {
-
             request.region = region
 
         }
@@ -323,16 +292,13 @@ final class CardLocationSearchModel: ObservableObject
         let search   = MKLocalSearch(request: request)       /* Active content search  */
         let response = try await withTaskCancellationHandler /* Received lookup result */
         {
-
             try await search.start()
         }
 
         onCancel:
         {
-
             Task
             {
-
             @MainActor in
                 search.cancel()
             }
@@ -355,8 +321,6 @@ final class CardLocationSearchModel: ObservableObject
 ///
 struct CardLocationSearchView: View
 {
-
-
     let onSelect: (String) -> Void                          /* Handle the selected value       */
     @StateObject private var model: CardLocationSearchModel /* Current data model              */
     @State private var position: MapCameraPosition =        /* Current layout or item position */
@@ -380,7 +344,6 @@ struct CardLocationSearchView: View
     @MainActor
     init(query: String, model: CardLocationSearchModel? = nil, onSelect: @escaping (String) -> Void)
     {
-
         self.onSelect = onSelect
         self._model = StateObject(wrappedValue: model ?? CardLocationSearchModel(query: query))
 
@@ -398,31 +361,24 @@ struct CardLocationSearchView: View
     @ViewBuilder
     private var searchFeedback: some View /* Search feedback */
     {
-
         switch model.phase
         {
-
         case .results:
             List(model.results)
             {
-
             place in
                 Button
                 {
-
                     model.selectedID = place.id
 
                 }
 
                 label:
                 {
-
                     HStack
                     {
-
                         VStack(alignment: .leading, spacing: 3)
                         {
-
                             Text(place.name)
                             .font(.body.weight(.medium))
                             Text(place.address)
@@ -434,7 +390,6 @@ struct CardLocationSearchView: View
                         Spacer(minLength: 8)
                         if model.selectedID == place.id
                         {
-
                             Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(Color.accentColor)
                         }
@@ -459,13 +414,11 @@ struct CardLocationSearchView: View
         case .failed:
             VStack(spacing: 8)
             {
-
                 Text("Search is unavailable. Try again or enter the address manually.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 Button("Try again")
                 {
-
                     retryRevision += 1
 
                 }
@@ -492,20 +445,15 @@ struct CardLocationSearchView: View
     ///
     var body: some View /* Card Location Search layout */
     {
-
         GeometryReader
         {
-
         geometry in
             VStack(spacing: 0)
             {
-
                 Map(position: $position, selection: $model.selectedID)
                 {
-
                     ForEach(model.results)
                     {
-
                     place in
                         Marker(place.name, coordinate: place.coordinate)
                         .tag(place.id)
@@ -514,13 +462,11 @@ struct CardLocationSearchView: View
                 }
                 .mapControls
                 {
-
                     MapCompass()
                     MapScaleView()
                 }
                 .onMapCameraChange(frequency: .onEnd)
                 {
-
                     visibleRegion = $0.region
 
                 }
@@ -536,19 +482,15 @@ struct CardLocationSearchView: View
         .searchable(text: $model.query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Place or address")
         .onSubmit(of: .search)
         {
-
             retryRevision += 1
 
         }
         .toolbar
         {
-
             ToolbarItem(placement: .cancellationAction)
             {
-
                 Button("Cancel")
                 {
-
                     dismiss()
                 }
 
@@ -557,13 +499,10 @@ struct CardLocationSearchView: View
         }
         .safeAreaInset(edge: .bottom)
         {
-
             VStack(alignment: .leading, spacing: 8)
             {
-
                 if let selected = model.selectedResult
                 {
-
                     Text(selected.savedLocation)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -572,10 +511,8 @@ struct CardLocationSearchView: View
 
                 Button
                 {
-
                     guard let selected = model.selectedResult else
                     {
-
                         return
                     }
 
@@ -585,7 +522,6 @@ struct CardLocationSearchView: View
 
                 label:
                 {
-
                     Text("Use this location")
                     .frame(maxWidth: .infinity, minHeight: 32)
                 }
@@ -598,16 +534,13 @@ struct CardLocationSearchView: View
         }
         .task(id: [model.query, String(retryRevision)])
         {
-
             do
             {
-
                 try await Task.sleep(for: .milliseconds(350))
             }
 
             catch
             {
-
                 return
             }
 
@@ -615,7 +548,6 @@ struct CardLocationSearchView: View
         }
         .onChange(of: model.results)
         {
-
         _, _ in
 
             position = .automatic
@@ -623,17 +555,14 @@ struct CardLocationSearchView: View
         }
         .onChange(of: model.selectedID)
         {
-
         _, _ in
             guard let selected = model.selectedResult else
             {
-
                 return
             }
 
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25))
             {
-
                 position = .region(MKCoordinateRegion(center: selected.coordinate,
                         span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)))
 
@@ -642,7 +571,6 @@ struct CardLocationSearchView: View
         }
         .onDisappear
         {
-
             model.cancel()
         }
 

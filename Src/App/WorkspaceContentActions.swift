@@ -19,8 +19,6 @@ import SwiftUI
 ///
 extension AppRootView
 {
-
-
     ///
     /// @fcn        AppRootView.restoreBoard(_:)
     /// @brief      Reactivate an archived board under a unique title
@@ -36,19 +34,13 @@ extension AppRootView
     ///
     func restoreBoard(_ id: UUID)
     {
-
-
         guard
         let index = collections.firstIndex(where:
             {  /* Position of the archived Board to restore */
-
-
                 $0.id == id && $0.isArchived == true
             })
         else
         {
-
-
             return
         }
 
@@ -61,8 +53,6 @@ extension AppRootView
             } .map(\.title))
         do
         {
-
-
             try PersonalCollectionStore.saveChecked(updated)
 
             collections = updated
@@ -70,8 +60,6 @@ extension AppRootView
         }
         catch
         {
-
-
             DatabaseActivity.shared.report("Could not restore the board: \(error.localizedDescription)")
         }
 
@@ -93,7 +81,6 @@ extension AppRootView
     ///
     func openBoardCard(listID: Int, cardID: Int)
     {
-
         displayedPlanningWeek = nil
 
         rememberLastViewedList(listID)
@@ -119,19 +106,13 @@ extension AppRootView
     ///
     func rememberLastViewedList(_ listID: Int)
     {
-
-
         guard
         lists.contains(where:
             {
-
-
                 $0.id == listID
             }), LastViewedListStore.load() != listID
         else
         {
-
-
             return
         }
 
@@ -155,13 +136,9 @@ extension AppRootView
     ///
     func toggleCardCompletion(in listID: Int, cardID: Int)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the card's containing Week list */
-
-
                 $0.id == listID
             }),
         let cardIndex = lists[listIndex].cards.firstIndex(where:
@@ -170,8 +147,6 @@ extension AppRootView
             })
         else
         {  /* Position of the requested Week card */
-
-
             return
         }
 
@@ -198,8 +173,6 @@ extension AppRootView
     ///
     func addWeekList()
     {
-
-
         let nextListID     = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
         let existingTitles = Set(lists.map                     /* Existing titles         */
             {
@@ -210,8 +183,6 @@ extension AppRootView
 
         while existingTitles.contains(title.lowercased())
         {
-
-
             title = "New List \(suffix)"
             suffix += 1
 
@@ -258,19 +229,13 @@ extension AppRootView
         checkedSave: Bool = false, origin: CardHistoryOrigin = .createdHere
     ) -> Bool
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Destination list index */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return false
         }
 
@@ -298,7 +263,6 @@ extension AppRootView
 
         if !attachments.isEmpty
         {
-
             created[0].attachments = attachments;
 
             created[0].coverAttachmentID = attachments.first(where:
@@ -320,7 +284,6 @@ extension AppRootView
 
         if checkedSave || !attachments.isEmpty || schedule != nil
         {
-
             guard var document = calendarDocument,
             let weekIndex = document.weeks.firstIndex(where:
                 {
@@ -335,10 +298,8 @@ extension AppRootView
 
             do
             {
-
                 try DailyReviewTransaction.perform
                 {
-
                     try PlanningCalendarStore.save(document)
                     try KanbanBoardPersistence.saveListsChecked(updatedLists)
                 }
@@ -348,10 +309,8 @@ extension AppRootView
             }
             catch
             {
-
                 if UserDefaults.standard.object(forKey: DailyReviewTransaction.key) != nil
                 {
-
                     workspaceRecoveryError = "The capture could not be saved. Retry recovery before continuing."
 
                 }
@@ -365,7 +324,6 @@ extension AppRootView
 
         if let card = created.first
         {
-
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             CreatedContentReveal.shared.request(listID: listID, card: card)
             openBoardList(listID)

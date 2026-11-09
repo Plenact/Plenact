@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 enum PortableRuntimeEvidence
 {
-
     static let area               = /* Native media storage area */
         "Library/Application Support/PlenactPortableRuntime"
     static let names: Set<String> = /* Names used by this operation */
@@ -27,7 +26,6 @@ enum PortableRuntimeEvidence
     /// @throws Unsafe, incomplete, oversized or invalid evidence
     static func capture(root: URL) throws -> [String: Data]
     {
-
         let directory = root.appendingPathComponent(area) /* Working directory location  */
         let manager   = FileManager.default               /* Filesystem or media manager */
 
@@ -62,7 +60,6 @@ enum PortableRuntimeEvidence
     /// @throws Inconsistent or unsupported evidence
     private static func validate(_ bytes: [String: Data]) throws
     {
-
         guard let snapshot = bytes["CanonicalPackage.bin"].flatMap(FileWrapper.init(serializedRepresentation:)),
               let aliases = try JSONSerialization.jsonObject(with: bytes["IdentityAliases.json"]!) as? [String: Any],
               Set(aliases.keys) == ["format_version", "workspace_id", "time_zone", "numeric_ids"],
@@ -87,7 +84,6 @@ enum PortableRuntimeEvidence
     /// @throws Unsupported version, unsafe inventory or checksum mismatch
     static func backupFiles(report: [String: Any], files: FileWrapper) throws -> [String: Data]
     {
-
         if report["format_version"] as? Int == 1
         {
             guard files.fileWrappers?["PortableRuntime"] == nil, report["portable_runtime_files"] == nil else

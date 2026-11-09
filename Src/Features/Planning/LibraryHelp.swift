@@ -17,8 +17,6 @@ import SwiftUI
 ///
 struct PlenactHelpSection: Identifiable
 {
-
-
     let title:      String   /* User-facing title          */
     let paragraphs: [String] /* Rich-text paragraph values */
 
@@ -39,8 +37,6 @@ struct PlenactHelpSection: Identifiable
 ///
 struct PlenactHelpArticle: Identifiable
 {
-
-
     let id:       String               /* Record or view identity     */
     let group:    String               /* Related operation entries   */
     let title:    String               /* User-facing title           */
@@ -61,7 +57,6 @@ struct PlenactHelpArticle: Identifiable
     ///
     func matches(_ query: String) -> Bool
     {
-
         let text = ([group, title, summary] + sections.flatMap /* Text being processed */
             {
                 [$0.title] + $0.paragraphs
@@ -86,8 +81,6 @@ struct PlenactHelpArticle: Identifiable
 ///
 enum PlenactHelpCatalog
 {
-
-
     static let groups = [ /* Groups lookup entries */
             "Plan a life that matters", "Make Plenact your own", "Your Planning Rhythm", "Your first week with v1.0"
     ]
@@ -105,7 +98,6 @@ enum PlenactHelpCatalog
     ///
     private static func section(_ title: String, _ paragraphs: String...) -> PlenactHelpSection
     {
-
         PlenactHelpSection(title: title, paragraphs: paragraphs)
     }
 
@@ -423,8 +415,6 @@ enum PlenactHelpCatalog
 ///
 struct LibraryHelpRows: View
 {
-
-
     let query:  String                         /* Search text                   */
     var onOpen: (PlenactHelpArticle) -> Void = /* Open the selected destination */
     {
@@ -433,15 +423,12 @@ struct LibraryHelpRows: View
 
     var body: some View /* Library Help Rows layout */
     {
-
         let matches = PlenactHelpCatalog.results(for: query) /* Matching source entries */
 
         Section
         {
-
             VStack(alignment: .leading, spacing: 8)
             {
-
                 Label("A little guidance, a useful next step", systemImage: "questionmark.circle").font(.headline)
                 Text(
                                                 "Start with what matters to you. Build a rhythm that fits your life, and return whenever you need a reset."
@@ -460,28 +447,22 @@ struct LibraryHelpRows: View
 
             if !articles.isEmpty
             {
-
                 Section(group)
                 {
-
                     ForEach(articles)
                     {
                         article in
                         Button
                         {
-
                             onOpen(article)
                         }
                         label:
                         {
-
                             HStack(alignment: .top, spacing: 12)
                             {
-
                                 Image(systemName: article.symbol).font(.title3).foregroundStyle(.teal).frame(width: 26)
                                 VStack(alignment: .leading, spacing: 5)
                                 {
-
                                     Text(article.title).font(.headline).foregroundStyle(.primary)
                                     Text(article.summary).font(.subheadline).foregroundStyle(.secondary)
                                 }
@@ -522,8 +503,6 @@ struct LibraryHelpRows: View
 ///
 struct PlenactHelpArticleView: View
 {
-
-
     let article: PlenactHelpArticle                           /* Article operation value        */
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
@@ -531,16 +510,12 @@ struct PlenactHelpArticleView: View
 
     var body: some View /* Plenact Help Article layout */
     {
-
         NavigationStack
         {
-
             List
             {
-
                 Section
                 {
-
                     Text(article.title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                     Text(article.summary).foregroundStyle(.secondary)
                 }
@@ -550,7 +525,6 @@ struct PlenactHelpArticleView: View
                     section in
                     Section(section.title)
                     {
-
                         ForEach(Array(section.paragraphs.enumerated()), id: \.offset)
                         {
                             _, paragraph in
@@ -563,13 +537,10 @@ struct PlenactHelpArticleView: View
 
                 if article.opensPlan
                 {
-
                     Section
                     {
-
                         Button("Open Today's Plan", systemImage: "sun.max")
                         {
-
                             showsPlan = true
 
                         } .disabled(access == nil)

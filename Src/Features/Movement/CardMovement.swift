@@ -17,8 +17,6 @@ import Foundation
 ///
 struct BoardCardDropTarget: Equatable
 {
-
-
     let listID:       Int  /* Destination list identity for the drop             */
     let beforeCardID: Int? /* Insertion anchor; nil appends after existing cards */
 
@@ -33,8 +31,6 @@ struct BoardCardDropTarget: Equatable
 ///
 enum BoardCardMovement
 {
-
-
     ///
     /// @fcn        BoardCardMovement.move(_:to:before:in:)
     /// @brief      Move the complete canonical card to a validated insertion boundary
@@ -61,11 +57,8 @@ enum BoardCardMovement
         in lists: inout [KanbanList]
     ) throws -> Bool
     {
-
-
         let sources = lists.indices.filter /* Source records or files */
         {
-
             lists[$0].cards.contains
             {
                 $0.id == cardID
@@ -96,16 +89,12 @@ enum BoardCardMovement
             })
         else
         {  /* Card position within the source list */
-
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
 
         if beforeCardID == cardID, source == destination
         {
-
-
             return false
         }
 
@@ -116,20 +105,14 @@ enum BoardCardMovement
 
         if let beforeCardID
         {  /* Destination card serving as the insertion anchor */
-
-
             guard
             let position = updated[destination].cards.firstIndex(
                 where:
                 {  /* Current position of the insertion anchor */
-
-
                     $0.id == beforeCardID
                 })
             else
             {
-
-
                 throw CocoaError(.validationMissingMandatoryProperty)
             }
 
@@ -139,8 +122,6 @@ enum BoardCardMovement
         }
         else
         {
-
-
             insertion = updated[destination].cards.count
 
         }
@@ -148,8 +129,6 @@ enum BoardCardMovement
 
         if source == destination && insertion == index
         {
-
-
             return false
         }
 
@@ -188,8 +167,6 @@ enum BoardCardMovement
         cardFrames: [Int: CGRect]
     ) -> BoardCardDropTarget?
     {
-
-
         guard point.x.isFinite, point.y.isFinite,
         viewport.origin.x.isFinite, viewport.origin.y.isFinite,
         viewport.width.isFinite, viewport.height.isFinite,
@@ -202,8 +179,6 @@ enum BoardCardMovement
             })
         else
         {  /* Active list panel under the pointer */
-
-
             return nil
         }
 
@@ -215,35 +190,27 @@ enum BoardCardMovement
 
         let measured = cards.enumerated().filter /* Measured layout result */
         {
-
             cardFrames[$0.element.id] != nil
         }  /* Rows with geometry available for insertion targeting */
 
 
         if let next = measured.first(where:
             {  /* First measured row below the pointer midpoint */
-
-
                 point.y < (cardFrames[$0.element.id]?.midY ?? 0)
             })
         {
-
             return BoardCardDropTarget(listID: list.id, beforeCardID: next.element.id)
         }
 
 
         if let last = measured.last, cards.indices.contains(last.offset + 1)
         {  /* Final measured row preceding an unmeasured successor */
-
-
             return BoardCardDropTarget(listID: list.id, beforeCardID: cards[last.offset + 1].id)
         }
 
 
         guard cards.isEmpty || !measured.isEmpty else
         {
-
-
             return nil
         }
 
@@ -262,8 +229,6 @@ enum BoardCardMovement
 ///
 enum BoardCardReordering
 {
-
-
     ///
     /// @fcn        BoardCardReordering.move(_:to:in:)
     /// @brief      Move a card to a valid position without changing its content
@@ -281,19 +246,13 @@ enum BoardCardReordering
     @discardableResult
     static func move(_ cardID: Int, to destinationIndex: Int, in cards: inout [KanbanCard]) -> Bool
     {
-
-
         guard
         let sourceIndex = cards.firstIndex(where:
             {  /* Current position of the card being moved */
-
-
                 $0.id == cardID
             }), !cards.isEmpty
         else
         {
-
-
             return false
         }
 
@@ -303,8 +262,6 @@ enum BoardCardReordering
 
         guard sourceIndex != safeDestinationIndex else
         {
-
-
             return false
         }
 
@@ -327,8 +284,6 @@ enum BoardCardReordering
 ///
 enum BoardListReordering
 {
-
-
     ///
     /// @fcn        BoardListReordering.boundaryListID(_:in:)
     /// @brief      Resolve the first or last active list identity
@@ -341,12 +296,8 @@ enum BoardListReordering
     ///
     static func boundaryListID(_ boundary: BoardListBoundary, in lists: [KanbanList]) -> Int?
     {
-
-
         switch boundary
         {
-
-
         case .first:
             return lists.first?.id
 
@@ -374,16 +325,12 @@ enum BoardListReordering
         minimumDistance: CGFloat = 48
     ) -> BoardListBoundary?
     {
-
-
         guard translation.width.isFinite, translation.height.isFinite,
         minimumDistance.isFinite, minimumDistance > 0,
         abs(translation.width) >= minimumDistance,
         abs(translation.width) > abs(translation.height) * 1.4
         else
         {
-
-
             return nil
         }
 
@@ -408,13 +355,9 @@ enum BoardListReordering
     @discardableResult
     static func move(_ listID: Int, to destination: Int, in lists: inout [KanbanList]) -> Bool
     {
-
-
         guard
         let source = lists.firstIndex(where:
             {  /* Current position of the list being reordered */
-
-
                 $0.id == listID
             }),
         lists.indices.contains(destination), source != destination
@@ -441,8 +384,6 @@ enum BoardListReordering
     ///
     enum BoardListBoundary
     {
-
-
         case first
         case last
     }
@@ -462,12 +403,8 @@ enum BoardListReordering
     ///
     static func edgeDirection(at x: CGFloat, viewportWidth: CGFloat) -> Int
     {
-
-
         guard x.isFinite, viewportWidth.isFinite, viewportWidth > 0 else
         {
-
-
             return 0
         }
 
@@ -476,16 +413,12 @@ enum BoardListReordering
 
         if x < edgeWidth
         {
-
-
             return -1
         }
 
 
         if x > viewportWidth - edgeWidth
         {
-
-
             return 1
         }
 
@@ -504,8 +437,6 @@ enum BoardListReordering
 ///
 enum PersonalCollectionNoteMovement
 {
-
-
     ///
     /// @fcn        PersonalCollectionNoteMovement.move(noteID:from:to:in:)
     /// @brief      Move one active Note to an active personal List
@@ -525,8 +456,6 @@ enum PersonalCollectionNoteMovement
         in collections: inout [PersonalCollection]
     ) throws -> KanbanCard
     {
-
-
         guard sourceID != destinationID,
         let sourceIndex = collections.firstIndex(where:
             {
@@ -535,13 +464,10 @@ enum PersonalCollectionNoteMovement
         ), /* Active collection currently owning the Note */
         let destinationIndex = collections.firstIndex(where:
             {  /* Active personal List receiving the Note     */
-
                 $0.id == destinationID && $0.kind == .list && $0.isActive
             })
         else
         {
-
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -550,7 +476,6 @@ enum PersonalCollectionNoteMovement
         var destination   = collections[destinationIndex] /* Destination collection snapshot receiving the Note */
         let sourceMatches = source.lists.indices.flatMap /* Source matches */
         {
-
         listIndex in /* Matching Note positions used to reject ambiguity   */
             source.lists[listIndex].cards.indices.compactMap
             {
@@ -573,8 +498,6 @@ enum PersonalCollectionNoteMovement
             })
         else
         {  /* Active destination column accepting the Note */
-
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -588,16 +511,12 @@ enum PersonalCollectionNoteMovement
 
         if destinationIDs.contains(moved.id)
         {
-
-
             let (nextID, overflow) = /* Next ID overflow */
                 (destinationIDs.max() ?? -1).addingReportingOverflow(
                 1) /* Next unused identity and its overflow status */
 
             guard !overflow else
             {
-
-
                 throw CocoaError(.validationNumberTooLarge)
             }
 
@@ -612,8 +531,6 @@ enum PersonalCollectionNoteMovement
 
         if wasSaved
         {
-
-
             destination.savedCardIDs.insert(moved.id)
         }
 
@@ -637,8 +554,6 @@ enum PersonalCollectionNoteMovement
 ///
 enum BoardContentDeletion
 {
-
-
     ///
     /// @fcn        BoardContentDeletion.card(_:in:savedCardIDs:)
     /// @brief      Remove a card from every active/archive partition of its owning Board
@@ -653,12 +568,8 @@ enum BoardContentDeletion
     ///
     static func card(_ id: Int, in lists: inout [KanbanList], savedCardIDs: inout Set<Int>)
     {
-
-
         for index in lists.indices
         {
-
-
             lists[index].cards.removeAll
             {
                 $0.id == id
@@ -689,8 +600,6 @@ enum BoardContentDeletion
     ///
     static func list(_ id: Int, in lists: inout [KanbanList], savedCardIDs: inout Set<Int>)
     {
-
-
         let removedIDs = Set( /* Removed i ds */
             lists.filter
             {
@@ -717,8 +626,6 @@ enum BoardContentDeletion
 ///
 struct CardMoveDestination: Identifiable, Hashable
 {
-
-
     let collectionID: UUID?         /* Collection ID               */
     let listID:       Int           /* Owner-local List identifier */
     let title:        String        /* User-facing title           */
@@ -742,8 +649,6 @@ struct CardMoveDestination: Identifiable, Hashable
 ///
 enum CrossBoardCardMovement
 {
-
-
     ///
     /// @fcn        CrossBoardCardMovement.move
     /// @brief      Move a card between current-week and personal-owner lists
@@ -769,19 +674,16 @@ enum CrossBoardCardMovement
         saved: inout Set<Int>
     ) throws -> KanbanCard
     {
-
         var sourceLists: [KanbanList] /* Source lists */
         var sourceSaved: Set<Int>     /* Source saved */
 
         if let sourceID
         {
-
             guard let source = collections.first(where:
                 {
                     $0.id == sourceID && $0.isActive
                 }) else
             {
-
                 throw CocoaError(.validationMissingMandatoryProperty)
             }
 
@@ -791,7 +693,6 @@ enum CrossBoardCardMovement
         }
         else
         {
-
             sourceLists = week;
             sourceSaved = saved
 
@@ -799,7 +700,6 @@ enum CrossBoardCardMovement
 
         let matches = sourceLists.indices.filter /* Matching source entries */
         {
-
             !sourceLists[$0].isArchived && sourceLists[$0].cards.contains
             {
                 $0.id == card.id
@@ -811,7 +711,6 @@ enum CrossBoardCardMovement
         !(sourceID == destination.collectionID && sourceLists[sourceIndex].id == destination.listID)
         else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -821,20 +720,17 @@ enum CrossBoardCardMovement
 
         if sameBoard
         {
-
             targetLists = sourceLists;
             targetSaved = sourceSaved
 
         }
         else if let targetID = destination.collectionID
         {
-
             guard let target = collections.first(where:
                 {
                     $0.id == targetID && $0.isActive
                 }) else
             {
-
                 throw CocoaError(.validationMissingMandatoryProperty)
             }
 
@@ -844,7 +740,6 @@ enum CrossBoardCardMovement
         }
         else
         {
-
             targetLists = week;
             targetSaved = saved
 
@@ -855,7 +750,6 @@ enum CrossBoardCardMovement
                 $0.id == destination.listID && !$0.isArchived
             }) else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -865,7 +759,6 @@ enum CrossBoardCardMovement
 
         if !sameBoard && reserved.contains(newID)
         {
-
             let (next, overflow) = /* Next overflow */
                 (reserved.max() ?? -1).addingReportingOverflow(1)
 
@@ -885,7 +778,6 @@ enum CrossBoardCardMovement
 
         if sameBoard
         {
-
             targetLists = sourceLists
 
         }
@@ -900,7 +792,6 @@ enum CrossBoardCardMovement
 
         if sameBoard
         {
-
             sourceLists = targetLists;
             sourceSaved = targetSaved
 
@@ -911,14 +802,12 @@ enum CrossBoardCardMovement
                 $0.id == sourceID
             })
         {
-
             collections[index].lists = sourceLists;
             collections[index].savedCardIDs = sourceSaved
 
         }
         else
         {
-
             week = sourceLists;
             saved = sourceSaved
 
@@ -926,20 +815,17 @@ enum CrossBoardCardMovement
 
         if !sameBoard
         {
-
             if let targetID = destination.collectionID, let index = collections.firstIndex(where:
                 {
                     $0.id == targetID
                 })
             {
-
                 collections[index].lists = targetLists;
                 collections[index].savedCardIDs = targetSaved
 
             }
             else
             {
-
                 week = targetLists;
                 saved = targetSaved
 

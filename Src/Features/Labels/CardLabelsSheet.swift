@@ -23,8 +23,6 @@ import SwiftUI
 ///
 struct CardLabelsSheet: View
 {
-
-
     let onSave: (LabelLibrary, [String]) -> Void /* Callback returning the edited catalog and assignments */
 
     @Environment(\.dismiss) private var dismiss                  /* Dismiss action for sheet */
@@ -46,7 +44,6 @@ struct CardLabelsSheet: View
     ///
     private var trimmedLabelName: String /* Trimmed label name */
     {  /* Normalized new-label name */
-
         labelNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -60,7 +57,6 @@ struct CardLabelsSheet: View
     ///
     private var trimmedCategoryName: String /* Trimmed category name */
     {  /* Normalized new-category name */
-
         newCategoryDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -75,19 +71,14 @@ struct CardLabelsSheet: View
     ///
     private var canCreateLabel: Bool /* Create Label availability */
     {  /* Form validity for label creation */
-
         guard !trimmedLabelName.isEmpty else
         {
-
-
             return false
         }
 
 
         if categorySelection == newCategoryID
         {
-
-
             return !trimmedCategoryName.isEmpty
         }
 
@@ -116,8 +107,6 @@ struct CardLabelsSheet: View
     ///
     init(library: LabelLibrary, selectedLabelIDs: [String], onSave: @escaping (LabelLibrary, [String]) -> Void)
     {
-
-
         self.onSave = onSave
         _library = State(initialValue: library)
         _selectedLabelIDs = State(initialValue: selectedLabelIDs)
@@ -140,12 +129,8 @@ struct CardLabelsSheet: View
     ///
     private func toggleLabel(_ labelID: String)
     {
-
-
         if selectedLabelIDs.contains(labelID)
         {
-
-
             selectedLabelIDs.removeAll
             {
                 $0 == labelID
@@ -154,8 +139,6 @@ struct CardLabelsSheet: View
         }
         else
         {
-
-
             selectedLabelIDs.append(labelID)
         }
 
@@ -176,12 +159,8 @@ struct CardLabelsSheet: View
     ///
     private func createLabel()
     {
-
-
         guard canCreateLabel else
         {
-
-
             return
         }
 
@@ -190,25 +169,18 @@ struct CardLabelsSheet: View
 
         if categorySelection == newCategoryID
         {
-
-
             let normalizedName = trimmedCategoryName.lowercased() /* Case-insensitive category lookup key */
 
             if let existingCategory = library.categories.first(where:
                 {
-
-
                     $0.name.lowercased() == normalizedName
                 })
             {  /* Reuse the category matching the normalized name */
-
                 categoryID = existingCategory.id
 
             }
             else
             {
-
-
                 categoryID = UUID().uuidString
 
                 library.categories.append(KanbanLabelCategory(id: categoryID, name: trimmedCategoryName))
@@ -217,8 +189,6 @@ struct CardLabelsSheet: View
         }
         else
         {
-
-
             categoryID = categorySelection
 
         }
@@ -253,59 +223,41 @@ struct CardLabelsSheet: View
     ///
     var body: some View /* Card Labels layout */
     {  /* Categorized label browser and editor */
-
-
         NavigationStack
         {
-
-
             List
             {
-
-
                 ForEach(library.categories)
                 {
                     category in
 
                     Section(category.name)
                     {
-
-
                         let categoryLabels = library.labels.filter /* Category labels */
                         {
-
                             $0.categoryID == category.id
                         }  /* Labels in this category */
 
 
                         if categoryLabels.isEmpty
                         {
-
-
                             Text("No labels yet")
                             .foregroundStyle(.secondary)
                         }
                         else
                         {
-
-
                             ForEach(categoryLabels)
                             {
                                 label in
 
                                 Button
                                 {
-
                                     toggleLabel(label.id)
                                 }
                                 label:
                                 {
-
-
                                     HStack(spacing: 10)
                                     {
-
-
                                         Circle()
                                         .fill(label.color.color)
                                         .frame(width: 10, height: 10)
@@ -317,8 +269,6 @@ struct CardLabelsSheet: View
 
                                         if selectedLabelIDs.contains(label.id)
                                         {
-
-
                                             Image(systemName: "checkmark")
                                             .foregroundStyle(.tint)
                                         }
@@ -340,13 +290,11 @@ struct CardLabelsSheet: View
 
                 Section("Create label")
                 {
-
                     TextField("Label name", text: $labelNameDraft)
                     .textInputAutocapitalization(.words)
 
                     Picker("Category", selection: $categorySelection)
                     {
-
                         ForEach(library.categories)
                         {
                             category in
@@ -360,8 +308,6 @@ struct CardLabelsSheet: View
 
                     if categorySelection == newCategoryID
                     {
-
-
                         TextField("New category name", text: $newCategoryDraft)
                         .textInputAutocapitalization(.words)
                     }
@@ -369,18 +315,15 @@ struct CardLabelsSheet: View
 
                     Picker("Color", selection: $selectedColor)
                     {
-
                         ForEach(KanbanLabelColor.allCases)
                         {
                             color in
                             Label
                             {
-
                                 Text(color.title)
                             }
                             icon:
                             {
-
                                 Circle()
                                 .fill(color.color)
                             }
@@ -394,7 +337,6 @@ struct CardLabelsSheet: View
 
                     Button(action: createLabel)
                     {
-
                         Label("Create and add label", systemImage: "plus")
                     }
 
@@ -407,13 +349,10 @@ struct CardLabelsSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
-
                         dismiss()
                     }
 
@@ -422,10 +361,8 @@ struct CardLabelsSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         onSave(library, selectedLabelIDs)
                         dismiss()
                     }

@@ -15,7 +15,6 @@ import XCTest
 @MainActor
 final class MigrationSettingsTests: XCTestCase
 {
-
     /// @fcn MigrationSettingsTests.fixture
     /// @brief Freeze independent current-Week and personal owners sharing a numeric List ID
     /// @param[in] edit Optional source mutation before source capture
@@ -25,7 +24,6 @@ final class MigrationSettingsTests: XCTestCase
     private func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.SettingsTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -99,7 +97,6 @@ final class MigrationSettingsTests: XCTestCase
     /// @throws Missing or invalid JSON errors
     private func document(_ preview: MigrationPreview) throws -> [String: Any]
     {
-
         try XCTUnwrap(JSONSerialization.jsonObject(with:
             MigrationBackupReader.file("MigrationPreview/SettingsPreview.json", in: preview.files)) as? [String: Any])
     }
@@ -111,7 +108,6 @@ final class MigrationSettingsTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testSavedPrecedenceOwnerMappingsAvatarAndRetry() throws
     {
-
         try fixture { backup, url in
 
             let preview = /* Converted migration preview */
@@ -157,7 +153,6 @@ final class MigrationSettingsTests: XCTestCase
                 try JSONSerialization.data(withJSONObject: document(second), options: .sortedKeys))
             for name in ["SettingsPreview.json", "AssetPreview.json", "IdentityJournal.json", "Report.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
 
@@ -175,7 +170,6 @@ final class MigrationSettingsTests: XCTestCase
 
             for entry in media
             {
-
                 let path = /* Filesystem or navigation path */
                     try XCTUnwrap(entry["path"] as? String)
 
@@ -229,7 +223,6 @@ final class MigrationSettingsTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testProfileFallbackAndAbsentProfileAreExplicit() throws
     {
-
         for removeProfile in [false, true]
         {
             try fixture(edit: { values in
@@ -262,7 +255,6 @@ final class MigrationSettingsTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testOlderPartialPreferencesExposeCompatibilityDefaults() throws
     {
-
         try fixture(edit: { values in
 
             values["Plenact.PlanPreferences.v1"] = try JSONSerialization.data(withJSONObject: [
@@ -289,7 +281,6 @@ final class MigrationSettingsTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testUnresolvedDefaultListIsNotSilentlyUnset() throws
     {
-
         try fixture(edit: { values in
 
             var raw = /* Unprocessed source value */
@@ -317,13 +308,11 @@ final class MigrationSettingsTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testMalformedPreferencesProfileAndPinsFailClosed() throws
     {
-
         for variant in 0..<7
         {
             try fixture(edit: { values in
                 if variant < 3
                 {
-
                     var raw = /* Unprocessed source value */
                         try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.PlanPreferences.v1"] as? Data)) as? [String: Any])
 
@@ -333,19 +322,16 @@ final class MigrationSettingsTests: XCTestCase
                 }
                 else if variant < 5
                 {
-
                     var raw = /* Unprocessed source value */
                         try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.LocalProfile.v1"] as? Data)) as? [String: Any])
 
                     if variant == 3
                     {
-
                         raw["avatarColor"] = ["red": 2, "green": 0, "blue": 0]
 
                     }
                     else
                     {
-
                         raw["avatarPhotoFileName"] = "../outside.png"
 
                     }
@@ -355,7 +341,6 @@ final class MigrationSettingsTests: XCTestCase
                 }
                 else
                 {
-
                     var pins = /* Ordered pinned shortcuts */
                         try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.TodayListShortcuts.v1"] as? Data)) as? [[String: Any]])
 
@@ -365,7 +350,6 @@ final class MigrationSettingsTests: XCTestCase
                     }
                     else
                     {
-
                         pins[0]["listID"] = -999
 
                     }
@@ -395,7 +379,6 @@ final class MigrationSettingsTests: XCTestCase
     /// @throws Fixture, reconstruction or assertion-support errors
     func testPortableSettingsReconstructNativePreferencesProfileAndShortcuts() throws
     {
-
         try fixture { backup, url in
 
             let preview  = /* Converted migration preview */
@@ -427,7 +410,6 @@ final class MigrationSettingsTests: XCTestCase
 
             for (field, kind) in [("preferences", "user_preferences"), ("profile", "user_profile")]
             {
-
                 let draft   = /* Local editing draft */
                     try XCTUnwrap(settings[field] as? [String: Any])
                 var payload = /* Canonical record payload */

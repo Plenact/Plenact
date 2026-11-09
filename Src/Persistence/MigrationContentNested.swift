@@ -12,7 +12,6 @@ import Foundation
 ///     Preserve inactive retained content, attribution and media/history evidence
 extension MigrationContentValues
 {
-
     /// @fcn MigrationContentValues.nested
     /// @brief Map an owned nested UUID into the original Card scope
     /// @param[in] kind Nested identity kind
@@ -22,7 +21,6 @@ extension MigrationContentValues
     /// @throws Invalid/duplicate nested identity errors
     func nested(_ kind: String, _ value: Any?, scope: String) throws -> String
     {
-
         let source = try Self.lowerUUID(value)         /* Source value for this operation */
         let key    = scope + ":" + kind + ":" + source /* Lookup or persistence key       */
 
@@ -42,7 +40,6 @@ extension MigrationContentValues
     /// @throws Invalid nested IDs or timestamps
     func comments(_ values: [[String: Any]], scope: String) throws -> [[String: Any]]
     {
-
         try values.map { value in
             ["id": try nested("comment", value["id"], scope: scope),
                 "author": value["author"]!, "body": value["body"]!,
@@ -61,7 +58,6 @@ extension MigrationContentValues
     /// @throws Nested conversion errors
     func detail(_ value: [String: Any], owner: String, scope: String) throws -> [String: Any]
     {
-
         ["id": try nested("action_detail", value["id"], scope: scope), "description": value["description"]!,
             "checklists": try checklists(value["checklists"] as! [[String: Any]], owner: owner, scope: scope),
             "comments": try comments(value["comments"] as! [[String: Any]], scope: scope)]
@@ -77,7 +73,6 @@ extension MigrationContentValues
     /// @throws Invalid links, divergent retained mirrors or duplicate identities
     func checklists(_ values: [[String: Any]], owner: String, scope: String) throws -> [[String: Any]]
     {
-
         try values.map { list in
 
             let identifier = /* Record identity value */
@@ -97,19 +92,16 @@ extension MigrationContentValues
                 {
                     if originalCollectionIDs[owner] == original
                     {
-
                         linkedOwner = owner
 
                     }
                     else if let candidates = ownerScopesByCollection[original], candidates.count == 1
                     {
-
                         linkedOwner = candidates[0]
 
                     }
                     else
                     {
-
                         linkedOwner = "unresolved_from:" + owner + ":" + original
 
                     }
@@ -162,7 +154,6 @@ extension MigrationContentValues
                     }
                     else
                     {
-
                         retained = try detail(saved, owner: owner, scope: scope)
 
                     }
@@ -186,7 +177,6 @@ extension MigrationContentValues
     /// @throws Unsupported or malformed URL values
     static func webURL(_ value: Any) throws -> String
     {
-
         guard let text = value as? String, let url = URLComponents(string: text),
               ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host?.isEmpty == false,
               text.rangeOfCharacter(from: .whitespacesAndNewlines) == nil else
@@ -205,7 +195,6 @@ extension MigrationContentValues
     /// @throws Unsafe media/URL values
     func attachments(_ values: [[String: Any]]?, scope: String) throws -> Any
     {
-
         guard let values else
         {
             return NSNull()
@@ -235,7 +224,6 @@ extension MigrationContentValues
     /// @throws Invalid identities/timestamps
     func history(_ values: [[String: Any]]?, scope: String) throws -> Any
     {
-
         guard let values else
         {
             return NSNull()
@@ -252,13 +240,11 @@ extension MigrationContentValues
                 {
                     if let data = change[source]
                     {
-
                         result[target] = ["encoding": "base64", "source_format": "swift_codable_json", "source_model_version": "local_legacy", "data": data]
 
                     }
                     else
                     {
-
                         result[target] = NSNull()
 
                     }

@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 final class MigrationContentValues
 {
-
     var journal: MigrationIdentityJournal                  /* Candidate identities; saved only after the slice succeeds */
     var known: Set<String>                          = []    /* Canonical record IDs supplied by converted source records */
     var unavailable: [String: [String: Any]]        = [:]   /* Typed explicit unavailable-reference documents            */
@@ -37,7 +36,6 @@ final class MigrationContentValues
     ///     Refuse incompatible source instead of dropping fields or manufacturing values
     enum Failure: Error
     {
-
         case invalid(String), timezoneRequired, projectionConflict, duplicateIdentity, unsupportedField(String)
     }
 
@@ -50,7 +48,6 @@ final class MigrationContentValues
     /// @return New uncommitted conversion context
     init(journal: MigrationIdentityJournal, timeZoneID: String, mediaDigests: [String: String])
     {
-
         self.journal = journal
         self.timeZoneID = timeZoneID
         self.mediaDigests = mediaDigests
@@ -65,7 +62,6 @@ final class MigrationContentValues
     /// @throws Native encoding/JSON errors
     static func object<T: Encodable>(_ value: T) throws -> [String: Any]
     {
-
         let encoder = JSONEncoder() /* JSON encoding configuration */
 
         encoder.dateEncodingStrategy = .secondsSince1970
@@ -88,7 +84,6 @@ final class MigrationContentValues
     /// @throws Identity journal validation errors
     func id(_ type: String, owner: String, legacy: String, discriminator: String? = nil) throws -> String
     {
-
         try journal.resolve(MigrationSourceIdentity(recordType: type, owner: owner,
             legacyID: legacy, discriminator: discriminator)).uuidString.lowercased()
     }
@@ -102,7 +97,6 @@ final class MigrationContentValues
     /// @return Canonical record object
     func document(_ type: String, id: String, payload: [String: Any]) -> [String: Any]
     {
-
         ["user_data_model_version": "1.0", "payload_schema_version": 1, "record_type": type,
             "id": id, "workspace_id": journal.previewWorkspaceID.uuidString.lowercased(), "payload": payload]
     }
@@ -116,10 +110,8 @@ final class MigrationContentValues
     /// @throws Identity resolution errors
     func reference(_ type: String, _ target: String) throws -> String
     {
-
         if !known.contains(target), unavailable[target] == nil
         {
-
             let record = /* Record being processed */
                 try id("unavailable_reference", owner: "unavailable", legacy: type + ":" + target)
 
@@ -139,7 +131,6 @@ final class MigrationContentValues
     /// @throws Identity errors
     func cardReference(_ value: Int, owner: String) throws -> String
     {
-
         if let target = cardTargets[owner + ":" + String(value)]
         {
             return target
@@ -156,7 +147,6 @@ final class MigrationContentValues
     /// @throws Unsafe filenames or identity errors
     func asset(_ filename: Any?, area: String) throws -> Any
     {
-
         guard let filename, !(filename is NSNull) else
         {
             return NSNull()
@@ -189,7 +179,6 @@ final class MigrationContentValues
     /// @throws Invalid source timestamp
     func utc(_ value: Any, path: String) throws -> String
     {
-
         guard let number = value as? NSNumber, number.doubleValue.isFinite else
         {
             throw Failure.invalid("timestamp")
@@ -228,7 +217,6 @@ final class MigrationContentValues
     /// @throws Invalid source identity
     static func lowerUUID(_ value: Any?) throws -> String
     {
-
         guard let text = value as? String, let id = UUID(uuidString: text) else
         {
             throw Failure.invalid("nested_uuid")

@@ -19,8 +19,6 @@ import SwiftUI
 ///
 enum ObjectiveStatus: String, Codable, CaseIterable, Identifiable
 {
-
-
     case active = "Active", achieved = "Achieved", paused = "Paused", released = "Let go"
     var id: String /* Record or view identity */
     {
@@ -39,8 +37,6 @@ enum ObjectiveStatus: String, Codable, CaseIterable, Identifiable
 ///
 struct ReviewObjective: Codable, Equatable, Identifiable
 {
-
-
     var id                      = UUID()  /* Record UUID              */
     var title                   = ""      /* User-facing title        */
     var status: ObjectiveStatus = .active /* Current operation status */
@@ -59,8 +55,6 @@ struct ReviewObjective: Codable, Equatable, Identifiable
 ///
 struct PeriodicReviewRecord: Codable, Equatable, Identifiable
 {
-
-
     var id = UUID()                                  /* Record UUID                 */
     var title:      String                           /* User-facing title           */
     let startKey:   String                           /* Dated Week boundary key     */
@@ -94,7 +88,6 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
     ///
     init(title: String, start: Date, end: Date, calendar: Calendar, previous: PeriodicReviewRecord? = nil)
     {
-
         self.title = title
         startKey = PlanningDate.key(start, calendar: calendar)
         endKey = PlanningDate.key(end, calendar: calendar)
@@ -125,7 +118,6 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
     ///
     func weeks(in document: WeeklyReviewStore.Document) -> [WeeklyReviewRecord]
     {
-
         document.records.values.filter
         {
             record in
@@ -157,8 +149,6 @@ struct PeriodicReviewRecord: Codable, Equatable, Identifiable
 @MainActor
 enum PeriodicReviewStore
 {
-
-
     static let key = "Plenact.PeriodicReviews.v1" /* Persistence lookup key */
 
 
@@ -170,7 +160,6 @@ enum PeriodicReviewStore
     ///
     struct Document: Codable, Equatable
     {
-
         var version                                 = 1;  /* Serialized format version */
         var records: [String: PeriodicReviewRecord] = [:] /* Records being processed   */
 
@@ -190,7 +179,6 @@ enum PeriodicReviewStore
     ///
     static func validate(_ record: PeriodicReviewRecord) throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         guard let zone = TimeZone(identifier: record.timeZoneID) else
@@ -238,7 +226,6 @@ enum PeriodicReviewStore
     ///
     static func load(from defaults: UserDefaults = .standard) throws -> Document
     {
-
         guard defaults.object(forKey: key) != nil else
         {
             return Document()
@@ -257,7 +244,6 @@ enum PeriodicReviewStore
 
         for (id, record) in document.records
         {
-
             guard id == record.id.uuidString else
             {
                 throw DailyPlanStore.Failure.corrupt
@@ -283,7 +269,6 @@ enum PeriodicReviewStore
     ///
     static func previous(before startKey: String, in document: Document) -> PeriodicReviewRecord?
     {
-
         document.records.values.filter
         {
             $0.endKey < startKey
@@ -318,7 +303,6 @@ enum PeriodicReviewStore
         _ draft: PeriodicReviewRecord, replacing baseline: PeriodicReviewRecord?, to defaults: UserDefaults = .standard
     ) throws -> PeriodicReviewRecord
     {
-
         try validate(draft)
 
         var document = try load(from: defaults) /* Source document snapshot */
@@ -339,7 +323,6 @@ enum PeriodicReviewStore
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
         {
-
             if let previous
             {
                 defaults.set(previous, forKey: key)
@@ -367,8 +350,6 @@ enum PeriodicReviewStore
 ///
 struct PeriodicReviewView: View
 {
-
-
     let calendar:                Calendar /* Date calculation calendar */
     private let defaults:        UserDefaults /* Preference storage domain */
     private let initialReviewID: UUID? /* Initial review ID */
@@ -405,7 +386,6 @@ struct PeriodicReviewView: View
     ///
     init(date: Date = .now, calendar: Calendar, defaults: UserDefaults = .standard, initialReviewID: UUID? = nil)
     {
-
         self.calendar = calendar;
         self.defaults = defaults;
         self.initialReviewID = initialReviewID
@@ -434,16 +414,13 @@ struct PeriodicReviewView: View
     ///
     private func load()
     {
-
         do
         {
-
             document = try PeriodicReviewStore.load(from: defaults)
             weekly = try WeeklyReviewStore.load(from: defaults)
 
             if !loaded, let initialReviewID, let record = document.records[initialReviewID.uuidString]
             {
-
                 draft = record;
                 baseline = record
 
@@ -455,7 +432,6 @@ struct PeriodicReviewView: View
         }
         catch
         {
-
             loaded = true;
             loadFailed = true;
             self.error = error.localizedDescription
@@ -474,7 +450,6 @@ struct PeriodicReviewView: View
     ///
     private func begin()
     {
-
         let key = PlanningDate.key(start, calendar: calendar) /* Local calendar-day key */
 
         draft = PeriodicReviewRecord(
@@ -496,13 +471,11 @@ struct PeriodicReviewView: View
     ///
     private func text(_ path: WritableKeyPath<PeriodicReviewRecord, String>) -> Binding<String>
     {
-
         Binding(get:
             {
                 draft? [keyPath: path] ?? ""
             }, set:
             {
-
                 draft? [keyPath: path] = $0
 
             })
@@ -518,7 +491,6 @@ struct PeriodicReviewView: View
     ///
     private func addObjective()
     {
-
         let value = /* Value being processed */
             objectiveTitle.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -546,7 +518,6 @@ struct PeriodicReviewView: View
     ///
     private func save(advance: Bool)
     {
-
         addObjective()
         guard var value = draft else
         {
@@ -557,13 +528,11 @@ struct PeriodicReviewView: View
         {
             if value.step == 2
             {
-
                 value.completedAt = .now
 
             }
             else
             {
-
                 value.step += 1
 
             }
@@ -572,7 +541,6 @@ struct PeriodicReviewView: View
 
         do
         {
-
             let saved = /* Saved state under review */
                 try PeriodicReviewStore.save(value, replacing: baseline, to: defaults)
 
@@ -583,7 +551,6 @@ struct PeriodicReviewView: View
         }
         catch
         {
-
             self.error = error.localizedDescription
 
         }
@@ -603,7 +570,6 @@ struct PeriodicReviewView: View
     ///
     private func objective(_ id: UUID) -> Binding<ReviewObjective>
     {
-
         Binding(
             get:
             {
@@ -621,7 +587,6 @@ struct PeriodicReviewView: View
                         $0.id == id
                     })
                 {
-
                     draft?.objectives[index] = value
 
                 }
@@ -631,13 +596,10 @@ struct PeriodicReviewView: View
 
     @ViewBuilder private var savedCheckpoints: some View /* Saved checkpoints */
     {
-
         if !document.records.isEmpty
         {
-
             Menu("Open a saved checkpoint")
             {
-
                 ForEach(document.records.values.sorted
                     {
                         $0.endKey > $1.endKey
@@ -646,7 +608,6 @@ struct PeriodicReviewView: View
                     record in
                     Button(record.title + " · " + record.endKey)
                     {
-
                         draft = record;
                         baseline = record
 
@@ -661,19 +622,14 @@ struct PeriodicReviewView: View
 
     var body: some View /* Periodic Review layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 if loadFailed
                 {
-
                     Section
                     {
-
                         Text("Saved records could not be opened. They have been kept unchanged.");
 
                         Button("Try again", action: load)
@@ -682,17 +638,13 @@ struct PeriodicReviewView: View
                 }
                 else
                 {
-
                     Section
                     {
-
                         savedCheckpoints
                         if draft != nil
                         {
-
                             Button("New checkpoint")
                             {
-
                                 draft = nil;
                                 baseline = nil;
                                 title = ""
@@ -704,10 +656,8 @@ struct PeriodicReviewView: View
 
                     if let review = draft
                     {
-
                         Section
                         {
-
                             Text(review.title).font(.title2.bold())
                             Text(review.startKey + " – " + review.endKey).foregroundStyle(.secondary)
                             Text(
@@ -718,15 +668,12 @@ struct PeriodicReviewView: View
 
                         if review.step == 0
                         {
-
                             Section
                             {
-
                                 let weeks = review.weeks(in: weekly) /* Retained dated Weeks */
 
                                 if weeks.isEmpty
                                 {
-
                                     Text(
                                                                                                             "No saved weekly reviews overlap this period. You can reflect and plan without them."
                                     ).foregroundStyle(.secondary)
@@ -737,7 +684,6 @@ struct PeriodicReviewView: View
                                     week in
                                     VStack(alignment: .leading, spacing: 8)
                                     {
-
                                         Text("Week starting " + week.startKey).font(.headline)
                                         if !week.highlights.isEmpty
                                         {
@@ -762,12 +708,10 @@ struct PeriodicReviewView: View
                             }
                             header:
                             {
-
                                 Text("Saved weekly reflections")
                             }
                             footer:
                             {
-
                                 Text(
                                                                                                 "Weeks overlapping the chosen dates are included in full. These are current saved weekly reflections, not a frozen historical summary."
                                 )
@@ -775,7 +719,6 @@ struct PeriodicReviewView: View
 
                             Section("Highlights and achievements")
                             {
-
                                 TextField(
                                                                                                 "What mattered during this period? (optional)", text: text(\.highlights),
                                                                                                 axis: .vertical
@@ -784,7 +727,6 @@ struct PeriodicReviewView: View
 
                             Section("What changed or became clear?")
                             {
-
                                 TextField("Lessons to take forward (optional)", text: text(\.learned), axis: .vertical)
                                 .textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
                             }
@@ -792,10 +734,8 @@ struct PeriodicReviewView: View
                         }
                         else if review.step == 1
                         {
-
                             Section
                             {
-
                                 Text(
                                                                                                 "Objectives carry forward from the latest saved checkpoint ending before this period. Changes here belong to this checkpoint; earlier reviews keep their original record."
                                 ).foregroundStyle(.secondary)
@@ -806,7 +746,6 @@ struct PeriodicReviewView: View
                                 item in
                                 Section
                                 {
-
                                     let value = objective(item.id) /* Value being processed */
 
                                     TextField("Objective", text: value.title, axis: .vertical)
@@ -816,12 +755,10 @@ struct PeriodicReviewView: View
                                             $0.id == item.id
                                         })
                                     {
-
                                         Text("Carried forward: " + previous.title + " · " + previous.status.rawValue)
                                         .font(.caption).foregroundStyle(.secondary)
                                         if !previous.progress.isEmpty
                                         {
-
                                             Text("Previous progress: " + previous.progress).font(.caption)
                                             .foregroundStyle(.secondary)
                                         }
@@ -830,7 +767,6 @@ struct PeriodicReviewView: View
 
                                     Picker("Status", selection: value.status)
                                     {
-
                                         ForEach(ObjectiveStatus.allCases)
                                         {
                                             Text($0.rawValue).tag($0)
@@ -848,7 +784,6 @@ struct PeriodicReviewView: View
 
                             Section
                             {
-
                                 TextField("Something you want to work toward", text: $objectiveTitle, axis: .vertical)
                                 .textInputAutocapitalization(.sentences)
                                 Button("Add objective", systemImage: "plus.circle", action: addObjective).disabled(
@@ -856,12 +791,10 @@ struct PeriodicReviewView: View
                             }
                             header:
                             {
-
                                 Text("Add an objective")
                             }
                             footer:
                             {
-
                                 Text(
                                                                                                 "Pause or let go of an objective when it no longer fits. No objective is required to finish a review."
                                 )
@@ -870,10 +803,8 @@ struct PeriodicReviewView: View
                         }
                         else
                         {
-
                             Section("Direction for the next period")
                             {
-
                                 TextField(
                                                                                                 "What deserves your attention now? (optional)", text: text(\.direction),
                                                                                                 axis: .vertical
@@ -882,7 +813,6 @@ struct PeriodicReviewView: View
 
                             Section
                             {
-
                                 ForEach(review.priorities)
                                 {
                                     priority in
@@ -893,13 +823,11 @@ struct PeriodicReviewView: View
                                     draft?.priorities.remove(atOffsets: $0)
                                 } .onMove
                                 {
-
                                     draft?.priorities.move(fromOffsets: $0, toOffset: $1)
                                 }
 
                                 Button("Choose priorities", systemImage: "plus.circle")
                                 {
-
                                     showsPicker = true
 
                                 } .disabled(
@@ -907,12 +835,10 @@ struct PeriodicReviewView: View
                             }
                             header:
                             {
-
                                 Text("Connect to your work")
                             }
                             footer:
                             {
-
                                 Text(
                                                                                                 "These links support your direction without moving items or replacing weekly or daily plans. Use Edit to reorder or remove links."
                                 )
@@ -920,7 +846,6 @@ struct PeriodicReviewView: View
 
                             Section("Risks and constraints ahead")
                             {
-
                                 TextField(
                                                                                                 "What needs preparation or room? (optional)", text: text(\.risks), axis: .vertical
                                 ).textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
@@ -930,12 +855,10 @@ struct PeriodicReviewView: View
 
                         Section
                         {
-
                             if review.step > 0
                             {
                                 Button("Previous step")
                                 {
-
                                     draft?.step -= 1
 
                                 }
@@ -944,7 +867,6 @@ struct PeriodicReviewView: View
 
                             Button(review.step == 2 ? "Save periodic review" : "Save and continue")
                             {
-
                                 save(advance: true)
                             } .font(.headline)
                             Button("Save progress")
@@ -954,7 +876,6 @@ struct PeriodicReviewView: View
 
                             if let completed = review.completedAt
                             {
-
                                 Text("Reviewed " + completed.formatted(date: .abbreviated, time: .shortened)).font(
                                     .caption
                                 ).foregroundStyle(.secondary)
@@ -965,10 +886,8 @@ struct PeriodicReviewView: View
                     }
                     else
                     {
-
                         Section("Choose a period or checkpoint")
                         {
-
                             TextField("Name this checkpoint", text: $title).textInputAutocapitalization(.sentences)
                             DatePicker("From", selection: $start, displayedComponents: .date)
                             DatePicker("Through", selection: $end, displayedComponents: .date)
@@ -987,15 +906,12 @@ struct PeriodicReviewView: View
             .navigationTitle("Periodic Review").navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Done")
                     {
                         if dirty
                         {
-
                             confirmsDiscard = true
 
                         }
@@ -1029,7 +945,6 @@ struct PeriodicReviewView: View
             .interactiveDismissDisabled(dirty)
             .confirmationDialog("Discard unsaved checkpoint edits?", isPresented: $confirmsDiscard)
             {
-
                 Button("Discard edits", role: .destructive)
                 {
                     dismiss()
@@ -1037,13 +952,11 @@ struct PeriodicReviewView: View
                 ;
                 Button("Keep editing", role: .cancel)
                 {
-
                 }
 
             }
             .sheet(isPresented: $showsPicker)
             {
-
                 DailyPriorityPicker(
                     sources: sources,
                     priorities: Binding(get:
@@ -1051,7 +964,6 @@ struct PeriodicReviewView: View
                             draft?.priorities ?? []
                         }, set:
                         {
-
                             draft?.priorities = $0
 
                         }))
@@ -1063,23 +975,19 @@ struct PeriodicReviewView: View
                     {
                         if !$0
                         {
-
                             error = nil
 
                         }
 
                     }))
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text(error ?? "")
             }
 

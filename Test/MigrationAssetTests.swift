@@ -16,7 +16,6 @@ import PencilKit
 @MainActor
 final class MigrationAssetTests: XCTestCase
 {
-
     /// @fcn MigrationAssetTests.fixture
     /// @brief Capture isolated photo, drawing, audio/video hints and four owned media areas
     /// @param[in] missing Whether to include a deliberately absent referenced photo
@@ -26,7 +25,6 @@ final class MigrationAssetTests: XCTestCase
     /// @throws Synthetic capture or assertion-support errors
     private func fixture(missing: Bool = false, cycle: Bool = false, _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
-
         let domain   = "Plenact.AssetTests." + UUID().uuidString /* Lookup or storage namespace */
         let defaults =                                           /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: domain))
@@ -60,7 +58,6 @@ final class MigrationAssetTests: XCTestCase
 
         for (path, bytes) in originals
         {
-
             let file = root.appendingPathComponent(path) /* File being processed */
 
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -79,7 +76,6 @@ final class MigrationAssetTests: XCTestCase
 
         if cycle
         {
-
             var reverse = /* Inverse identity lookup */
                 KanbanAttachment(fileName: "sketch.drawing", mediaKind: .photo)
 
@@ -123,7 +119,6 @@ final class MigrationAssetTests: XCTestCase
     /// @throws Missing or invalid output errors
     private func assetDocument(_ preview: MigrationPreview) throws -> [String: Any]
     {
-
         try XCTUnwrap(JSONSerialization.jsonObject(with:
             MigrationBackupReader.file("MigrationPreview/AssetPreview.json", in: preview.files)) as? [String: Any])
     }
@@ -135,7 +130,6 @@ final class MigrationAssetTests: XCTestCase
     /// @throws Fixture, conversion or assertion-support errors
     func testOriginalsLinksDrawingAndStableRetry() throws
     {
-
         try fixture { backup, url in
 
             let preview = /* Converted migration preview */
@@ -160,7 +154,6 @@ final class MigrationAssetTests: XCTestCase
 
             for (path, entry) in byPath
             {
-
                 let original = /* Baseline before changes */
                     try MigrationBackupReader.file(path, in: backup.files)
 
@@ -190,7 +183,6 @@ final class MigrationAssetTests: XCTestCase
 
             for path in byPath.keys
             {
-
                 originals[path] = try MigrationBackupReader.file(path, in: backup.files).base64EncodedString()
 
             }
@@ -204,7 +196,6 @@ final class MigrationAssetTests: XCTestCase
             add(originalAttachment)
             for name in ["AssetPreview.json", "ContentGraph.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
 
@@ -235,7 +226,6 @@ final class MigrationAssetTests: XCTestCase
     /// @throws Fixture, conversion or assertion-support errors
     func testMissingOriginalStaysExplicitAndDoesNotBlockOtherFiles() throws
     {
-
         try fixture(missing: true) { backup, url in
 
             let preview = /* Converted migration preview */
@@ -264,7 +254,6 @@ final class MigrationAssetTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testTamperedAndUndeclaredMediaRejectBeforeJournalWrite() throws
     {
-
         for variant in 0..<3
         {
             try fixture { backup, url in
@@ -276,7 +265,6 @@ final class MigrationAssetTests: XCTestCase
 
                 if variant == 0
                 {
-
                     let old = /* Previous operation state */
                         try XCTUnwrap(media.fileWrappers?["photo.png"])
 
@@ -291,7 +279,6 @@ final class MigrationAssetTests: XCTestCase
                 }
                 else
                 {
-
                     let file = /* File being processed */
                         variant == 1 ? FileWrapper(regularFileWithContents: Data([9])) :
                         FileWrapper(symbolicLinkWithDestinationURL: URL(fileURLWithPath: "/private/tmp/unrelated"))
@@ -312,7 +299,6 @@ final class MigrationAssetTests: XCTestCase
     /// @throws Fixture, conversion or assertion-support errors
     func testDrawingCyclesRemainExplicitReviewItems() throws
     {
-
         try fixture(cycle: true) { backup, url in
 
             let preview = /* Converted migration preview */

@@ -15,7 +15,6 @@ import XCTest
 @MainActor
 final class MigrationStudioTests: XCTestCase
 {
-
     /// @fcn MigrationStudioTests.fixture
     /// @brief Capture synthetic materials and originals for Studio and planning-export regressions
     /// @param[in] edit Optional raw source mutation before capture
@@ -25,7 +24,6 @@ final class MigrationStudioTests: XCTestCase
     func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
-
         let domain   = "Plenact.StudioTests." + UUID().uuidString /* Lookup or storage namespace */
         let defaults =                                            /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: domain))
@@ -69,7 +67,6 @@ final class MigrationStudioTests: XCTestCase
         for path in ["Library/Application Support/PlenactStudioArtwork/wall.png",
             "Library/Application Support/PlenactCollectionBackgrounds/board.png"]
         {
-
             let url = root.appendingPathComponent(path) /* Resolved file location */
 
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -90,7 +87,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Missing or malformed output errors
     private func document(_ preview: MigrationPreview) throws -> [String: Any]
     {
-
         try XCTUnwrap(JSONSerialization.jsonObject(with:
             MigrationBackupReader.file("MigrationPreview/StudioPreview.json", in: preview.files)) as? [String: Any])
     }
@@ -102,7 +98,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture, conversion or assertion-support errors
     func testExactSurfacesArtworkSharedFilesAndRetry() throws
     {
-
         try fixture { backup, url in
 
             let preview = /* Converted migration preview */
@@ -149,7 +144,6 @@ final class MigrationStudioTests: XCTestCase
                 try MigrationBackupReader.file("Preferences.plist", in: preview.files))
             for name in ["StudioPreview.json", "AppearancePreview.json", "AssetPreview.json", "IdentityJournal.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
 
@@ -176,13 +170,11 @@ final class MigrationStudioTests: XCTestCase
             for path in ["Library/Application Support/PlenactStudioArtwork/wall.png",
                 "Library/Application Support/PlenactCollectionBackgrounds/board.png"]
             {
-
                 originals[path] = try MigrationBackupReader.file(path, in: backup.files).base64EncodedString()
 
             }
             for (name, value) in [("SourceValues", source as Any), ("Records", output as Any), ("Originals", originals as Any)]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try JSONSerialization.data(withJSONObject: value, options: .sortedKeys), uniformTypeIdentifier: "public.json")
 
@@ -201,7 +193,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testGlobalWeekAppearanceDoesNotBecomePerCollectionOverride() throws
     {
-
         try fixture { backup, url in
 
             let preview = /* Converted migration preview */
@@ -234,9 +225,7 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testAbsentStoresNeverInventSavedLooks() throws
     {
-
         try fixture(edit: {
-
             $0 = [:]
 
         }) { backup, url in
@@ -262,13 +251,11 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testInvalidStudioEvidenceBlocksOnlyItsOwnSlice() throws
     {
-
         for variant in 0..<6
         {
             try fixture(edit: { values in
                 if variant == 5
                 {
-
                     var artwork = /* Reusable artwork definition */
                         try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.Studio.Artwork.v1"] as? Data)) as? [[String: Any]])
 
@@ -287,31 +274,26 @@ final class MigrationStudioTests: XCTestCase
 
                 if variant == 0
                 {
-
                     surface["unknown"] = "future"
 
                 }
                 else if variant == 1
                 {
-
                     surface["color"] = "a1b2c3"
 
                 }
                 else if variant == 2
                 {
-
                     surface["zoom"] = 2.5
 
                 }
                 else if variant == 3
                 {
-
                     surface["photoFileName"] = "../outside.png"
 
                 }
                 else
                 {
-
                     views["Unknown destination"] = surface
 
                 }
@@ -340,7 +322,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture, conversion or assertion-support errors
     func testAppearanceLibraryRetainsExactSourceOrderAndIndependentIds() throws
     {
-
         try fixture { backup, url in
 
             let preview = /* Converted migration preview */
@@ -374,7 +355,6 @@ final class MigrationStudioTests: XCTestCase
 
             for file in records.values
             {
-
                 let record = /* Decoded JSON object */
                     try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(file.regularFileContents)) as? [String: Any])
 
@@ -390,7 +370,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Journal encode/decode or assertion-support errors
     func testJournalUpgradePreservesMappingsAndNeverDowngradesAfterNestedAllocation() throws
     {
-
         var original   = MigrationIdentityJournal() /* Baseline before changes         */
         let source     =                            /* Source value for this operation */
             MigrationSourceIdentity(recordType: "card", owner: "original-owner", legacyID: "1", discriminator: nil)
@@ -425,7 +404,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture, conversion or assertion-support errors
     func testExplicitEmptyLibraryIsDistinctFromMissingModel11Record() throws
     {
-
         for present in [false, true]
         {
             try fixture(edit: { values in
@@ -434,7 +412,6 @@ final class MigrationStudioTests: XCTestCase
 
                 if present
                 {
-
                     values["Plenact.Studio.Artwork.v1"] = Data("[]".utf8)
 
                 }
@@ -450,7 +427,6 @@ final class MigrationStudioTests: XCTestCase
                 XCTAssertEqual(appearance["artwork_library"] is NSNull, !present)
                 if present
                 {
-
                     let library = /* Retained library contents */
                         try XCTUnwrap(appearance["artwork_library"] as? [String: Any])
 
@@ -467,7 +443,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture, mapping, package or serialization errors
     func testCombinedPortableTestPackage() throws
     {
-
         try fixture(edit: { values in
 
             let instant  = Date(timeIntervalSince1970: 1792843200) /* Reference timestamp       */
@@ -624,7 +599,6 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertThrowsError(try PortablePackageReview.review(files: future))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let bytes = /* Serialized or original bytes */
                     try MigrationBackupReader.file("PortableTestPackage/" + name, in: output)
 
@@ -648,7 +622,6 @@ final class MigrationStudioTests: XCTestCase
 
             for entry in mapping
             {
-
                 let blob  = /* Verified original file bytes */
                     try XCTUnwrap(entry["blob"] as? String)
                 let path  = /* Filesystem or navigation path */
@@ -680,7 +653,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture or preview errors
     func testPortablePackageRejectsSourceReview() throws
     {
-
         try fixture(edit: { values in
 
             values["Plenact.FutureUserData.v1"] = "must not disappear"
@@ -701,7 +673,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture, installation or filesystem errors
     func testPortableUndoRejectsCorruptPreviousGeneration() throws
     {
-
         try fixture { backup, url in
 
             let preview  = /* Converted migration preview */
@@ -735,7 +706,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture or reconstruction errors
     func testEditableStudioReconstruction() throws
     {
-
         try fixture { backup, url in
 
             let preview  = /* Converted migration preview */
@@ -795,7 +765,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture, package, media-plan or filesystem failures
     func testVerifiedNativeMediaStaging() throws
     {
-
         try fixture { backup, url in
 
             let preview  = /* Converted migration preview */
@@ -837,7 +806,6 @@ final class MigrationStudioTests: XCTestCase
     /// @throws Fixture, staging, backup or transaction failures
     func testProtectedEditableWorkspaceActivationAndRecovery() throws
     {
-
         try fixture(edit: { values in
 
             var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
@@ -1117,7 +1085,6 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertEqual(try PortablePackageReview.review(files: XCTUnwrap(repeatedDeletion.fileWrappers?["PortableTestPackage"])).cardCount, 0)
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let deletionAttachment = /* Deletion attachment */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: deletedOutput), uniformTypeIdentifier: "public.json")
 
@@ -1453,7 +1420,6 @@ final class MigrationStudioTests: XCTestCase
                 try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: existingReexport))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let item = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: existingOutput), uniformTypeIdentifier: "public.json")
 
@@ -1520,7 +1486,6 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertEqual(listBoard[0].cards.map(\.id), listCalendar.weeks[0].collection.lists[0].cards.map(\.id))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let item = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: listOutput), uniformTypeIdentifier: "public.json")
 
@@ -1561,7 +1526,6 @@ final class MigrationStudioTests: XCTestCase
             existingDefaults.set(try JSONEncoder().encode(changedPreferences), forKey: "Plenact.PlanPreferences.v1")
             if let profileBytes = existingDefaults.data(forKey: "Plenact.LocalProfile.v1")
             {
-
                 var profile = /* Synthetic profile fixture */
                     try JSONDecoder().decode(LocalProfile.self, from: profileBytes)
 
@@ -1595,7 +1559,6 @@ final class MigrationStudioTests: XCTestCase
                 try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: preferencesReexport))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let item = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: preferencesOutput), uniformTypeIdentifier: "public.json")
 
@@ -1615,7 +1578,6 @@ final class MigrationStudioTests: XCTestCase
             for path in ["Documents/ProfileAvatars/synthetic-avatar.png",
                 "Library/Application Support/PlenactStudioArtwork/synthetic-wall.png"]
             {
-
                 let target = /* Target under consideration */
                     existingContainer.appendingPathComponent(path)
 
@@ -1694,7 +1656,6 @@ final class MigrationStudioTests: XCTestCase
                 try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: personalReexport))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let item = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: personalOutput), uniformTypeIdentifier: "public.json")
 
@@ -1769,7 +1730,6 @@ final class MigrationStudioTests: XCTestCase
 
             for index in 1..<7
             {
-
                 let card = /* Synthetic card fixture */
                     newWeek.collection.lists[index].makeItem(id: reusedNumber + index,
                     title: "Rollover bookmark " + String(index), createdAt: Date(timeIntervalSince1970: 1793600000),
@@ -1801,7 +1761,6 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertEqual(try JSONDecoder().decode(PlanningCalendarDocument.self, from: XCTUnwrap(existingDefaults.data(forKey: "Plenact.CalendarWeeks.v1"))), rolloverCalendar)
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let item = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: rolloverOutput), uniformTypeIdentifier: "public.json")
 
@@ -1932,7 +1891,6 @@ final class MigrationStudioTests: XCTestCase
             XCTAssertEqual(try PortableCreationIdentity.reserve(proposed: 7, root: base.appendingPathComponent("Nonportable")), 7)
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let item = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: structuralOutput), uniformTypeIdentifier: "public.json")
 
@@ -2040,7 +1998,6 @@ final class MigrationStudioTests: XCTestCase
     /// @return Void after normalization regression checks
     func testEditedExportIgnoresOnlyNativeSetOrdering() throws
     {
-
         let first     = /* First comparison value */
             Data(#"{"savedCardIDs":[3,1,2],"exampleFocus":{"important":[8,4],"bookmarked":[3,2]},"cards":[1,2]}"#.utf8)
         let reordered = /* Items in the requested order */
@@ -2063,7 +2020,6 @@ final class MigrationStudioTests: XCTestCase
     /// @return Void after tagged scheduling assertions
     func testEditedScheduleUsesPinnedTimeZoneAndPrecision() throws
     {
-
         let instant = /* Reference timestamp */
             Date(timeIntervalSince1970: 1792933200).timeIntervalSinceReferenceDate
         let timed   = /* Timed comparison fixture */
@@ -2088,7 +2044,6 @@ final class MigrationStudioTests: XCTestCase
 
         for (text, occurrence) in [("2026-11-01T06:30:00Z", "first"), ("2026-11-01T07:30:00Z", "second")]
         {
-
             let value    = /* Value being processed */
                 try XCTUnwrap(formatter.date(from: text)).timeIntervalSinceReferenceDate
             let repeated = /* Result of the repeated operation */

@@ -23,8 +23,6 @@ import UIKit
 ///
 struct ItemAppearanceSheet: View
 {
-
-
     let title:                       String /* User-facing title */
     let onSave:                      (ItemAppearance?) -> Bool /* Persist the edited value */
     let onOpenCover:                 (() -> Void)? /* Open cover callback */
@@ -63,7 +61,6 @@ struct ItemAppearanceSheet: View
         onSave: @escaping (ItemAppearance?) -> Bool
     )
     {
-
         self.title = title
         self.showsListBackground = showsListBackground
         self.inheritedAddItemTextColor = inheritedAddItemTextColor
@@ -79,13 +76,10 @@ struct ItemAppearanceSheet: View
 
     var body: some View /* Item Appearance layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 StudioSurfaceSettings(surface: $draft.studioSurface, header: $draft.background, italic: $draft.subtitleItalic,
                                       titleColor: $draft.cardTitleColor, textColor: $draft.cardTextColor)
                 if showsListBackground
@@ -95,10 +89,8 @@ struct ItemAppearanceSheet: View
 
                 if draftDisplay != nil
                 {
-
                     Section("Display as")
                     {
-
                         Picker(
                                                                         "Format",
                                                                         selection: Binding(
@@ -107,14 +99,12 @@ struct ItemAppearanceSheet: View
                                                                                 draftDisplay ?? .card
                                                                             }, set:
                                                                             {
-
                                                                                 draftDisplay = $0
 
                                                                             }
                                                                         )
                         )
                         {
-
                             ForEach(ItemDisplayFormat.allCases)
                             {
                                 format in
@@ -130,7 +120,6 @@ struct ItemAppearanceSheet: View
                         .foregroundStyle(.secondary)
                         if draftDisplay == .picture
                         {
-
                             Text(
                                                                                     "Picture uses the selected Card Cover. Save this format, then choose a picture in Card Cover if needed."
                             )
@@ -157,10 +146,8 @@ struct ItemAppearanceSheet: View
 
                 if draftDisplay == .card
                 {
-
                     Section("Subtitle")
                     {
-
                         Toggle(
                                                                         "Hide subtitle when empty",
                                                                         isOn: Binding(
@@ -170,7 +157,6 @@ struct ItemAppearanceSheet: View
                                                                             },
                                                                             set:
                                                                             {
-
                                                                                 draft.hideEmptySubtitle = $0 ? true : nil
 
                                                                             }
@@ -185,10 +171,8 @@ struct ItemAppearanceSheet: View
 
                     if let onOpenLayout
                     {
-
                         Section("Card Layout")
                         {
-
                             Button("Layout", systemImage: "rectangle.3.group", action: onOpenLayout)
                             .accessibilityIdentifier("appearance.layout")
                         }
@@ -199,10 +183,8 @@ struct ItemAppearanceSheet: View
 
                 if showsListBackground || (draftDisplay != nil && draftDisplay != .divider)
                 {
-
                     Section("Card display")
                     {
-
                         CardDisplayProfilePicker(selection: $draft.cardDetail)
                         Text(
                             showsListBackground
@@ -216,7 +198,6 @@ struct ItemAppearanceSheet: View
 
                 if showsListBackground || draftDisplay != .divider
                 {
-
                     PreviewTextColorsSection(
                         titleColor: $draft.cardTitleColor, textColor: $draft.cardTextColor,
                         explanation: showsListBackground
@@ -227,7 +208,6 @@ struct ItemAppearanceSheet: View
 
                 if showsListBackground
                 {
-
                     AddItemTextColorSection(
                         selection: $draft.addItemTextColor,
                         defaultColor: inheritedAddItemTextColor ?? BoardAppearance().resolvedAddItemTextColor(
@@ -236,10 +216,8 @@ struct ItemAppearanceSheet: View
 
                 Section("Preview")
                 {
-
                     HStack
                     {
-
                         ItemAppearanceMark(appearance: draft)
                         Text(title).font(.headline)
                     }
@@ -248,10 +226,8 @@ struct ItemAppearanceSheet: View
 
                 if showsListBackground && KanbanList.defaultHeaderIcon(for: title) == nil
                 {
-
                     Section("List header")
                     {
-
                         Toggle(
                                                                         "Show icon in title bar",
                                                                         isOn: Binding(
@@ -261,7 +237,6 @@ struct ItemAppearanceSheet: View
                                                                             },
                                                                             set:
                                                                             {
-
                                                                                 draft.showsIconInHeader = $0
 
                                                                             }
@@ -274,10 +249,8 @@ struct ItemAppearanceSheet: View
 
                 if showsListBackground
                 {
-
                     Section("Icon color")
                     {
-
                         ListIconColorPicker(
                             selection: $draft.iconColor, fixedColor: KanbanList.fixedHeaderIconColor(for: title))
                     }
@@ -286,10 +259,8 @@ struct ItemAppearanceSheet: View
 
                 Section("Leading icon")
                 {
-
                     Picker("Icon", selection: $draft.icon)
                     {
-
                         Text("None").tag(Optional<PersonalCollectionIcon>.none)
                         ForEach(PersonalCollectionIcon.allCases, id: \.self)
                         {
@@ -303,13 +274,10 @@ struct ItemAppearanceSheet: View
 
                 if showsListBackground
                 {
-
                     Section("List background")
                     {
-
                         Picker("Background color", selection: $draft.listBackground)
                         {
-
                             Text("Use Board default").tag(Optional<KanbanListTint>.none)
                             ForEach(KanbanListTint.allCases)
                             {
@@ -328,7 +296,6 @@ struct ItemAppearanceSheet: View
                                 },
                                 set:
                                 {
-
                                     draft.listBackgroundOpacity = $0
 
                                 }
@@ -348,13 +315,10 @@ struct ItemAppearanceSheet: View
 
                 if !showsListBackground && draftDisplay != .divider
                 {
-
                     Section("Card background")
                     {
-
                         Picker("Background color", selection: $draft.cardBackground)
                         {
-
                             Text("Use Board default").tag(Optional<KanbanListTint>.none)
                             ForEach(KanbanListTint.allCases)
                             {
@@ -374,10 +338,8 @@ struct ItemAppearanceSheet: View
 
                 Section("Banner background")
                 {
-
                     Picker("Background color", selection: $draft.background)
                     {
-
                         Text(showsListBackground ? "Use Board default" : "None").tag(Optional<ItemAccent>.none)
                         ForEach(ItemAccent.allCases, id: \.self)
                         {
@@ -394,10 +356,8 @@ struct ItemAppearanceSheet: View
 
                 if let onOpenCover
                 {
-
                     Section("Card Cover")
                     {
-
                         Button("Card Cover", systemImage: "photo", action: onOpenCover)
                         .accessibilityIdentifier("appearance.cover")
                         Text(
@@ -411,10 +371,8 @@ struct ItemAppearanceSheet: View
 
                 Section
                 {
-
                     Button("Reset appearance")
                     {
-
                         draft = ItemAppearance()
 
                     }
@@ -431,10 +389,8 @@ struct ItemAppearanceSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -444,23 +400,19 @@ struct ItemAppearanceSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         let appearance = /* Resolved appearance choices */
                             draft.isEmpty ? nil : draft
                         let saved: Bool /* Saved state under review */
 
                         if let draftDisplay, let onSaveDisplay
                         {
-
                             saved = onSaveDisplay(appearance, draftDisplay)
 
                         }
                         else
                         {
-
                             saved = onSave(appearance)
 
                         }
@@ -492,8 +444,6 @@ struct ItemAppearanceSheet: View
 ///
 struct BoardAppearanceSheet: View
 {
-
-
     @State private var isImportingPhoto = false /* Importing Photo state */
     let allowsCollectionBackground:          Bool /* Allows collection background */
 
@@ -549,7 +499,6 @@ struct BoardAppearanceSheet: View
         onSave: @escaping (BoardAppearance, Bool) -> Bool
     )
     {
-
         _draftShowsHeaderIcon = State(initialValue: listSurface?.showsIconInHeader ?? false)
         _draftHeaderIcon = State(
             initialValue: listSurface?.appearance?.icon ?? listHeaderIcon ?? KanbanList.defaultHeaderIcon(
@@ -570,13 +519,10 @@ struct BoardAppearanceSheet: View
 
     var body: some View /* Board Appearance layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 StudioSurfaceSettings(surface: $draft.studioSurface, title: "Board artwork", header: $draft.bannerBackground,
                                       italic: $draft.subtitleItalic, titleColor: $draft.cardTitleColor, textColor: $draft.cardTextColor)
                 StudioSurfaceSettings(surface: $draft.studioCardSurface, title: "Default Card and Note artwork")
@@ -588,17 +534,13 @@ struct BoardAppearanceSheet: View
 
                 if let listSurface
                 {
-
                     if !listSurface.hasFixedHeaderIcon
                     {
-
                         Section("List header")
                         {
-
                             Toggle("Show icon in title bar", isOn: $draftShowsHeaderIcon)
                             Picker("Header icon", selection: $draftHeaderIcon)
                             {
-
                                 ForEach(PersonalCollectionIcon.allCases, id: \.self)
                                 {
                                     icon in
@@ -613,7 +555,6 @@ struct BoardAppearanceSheet: View
 
                     Section("Icon color")
                     {
-
                         ListIconColorPicker(
                             selection: $draftIconColor,
                             fixedColor: KanbanList.fixedHeaderIconColor(for: listSurface.title))
@@ -621,7 +562,6 @@ struct BoardAppearanceSheet: View
 
                     Section("List surface")
                     {
-
                         ListSurfaceOpacityPicker(
                             title: listSurface.title,
                             tint: listSurface.appearance?.listBackground ?? draft.listBackground ?? .neutral,
@@ -636,13 +576,10 @@ struct BoardAppearanceSheet: View
 
                 if onSavePresentation != nil
                 {
-
                     Section("Display")
                     {
-
                         Picker("Board presentation", selection: $draftPresentation)
                         {
-
                             ForEach(BoardPresentation.allCases)
                             {
                                 option in
@@ -664,7 +601,6 @@ struct BoardAppearanceSheet: View
                         },
                         set:
                         {
-
                             draft.subtitleItalic = $0 ? true : nil
 
                         }
@@ -676,7 +612,6 @@ struct BoardAppearanceSheet: View
 
                 Section("Card display")
                 {
-
                     CardDisplayProfilePicker(selection: $draft.cardDetail)
                     Text(
                                                             "Unchanged keeps the existing layout. Compact emphasizes titles and small indicators; Detailed includes supporting content. Lists and individual items can override this choice."
@@ -695,10 +630,8 @@ struct BoardAppearanceSheet: View
                         list: nil, title: listSurface?.title ?? "")?.color ?? .primary)
                 Section("List banner color")
                 {
-
                     Picker("Banner background", selection: $draft.bannerBackground)
                     {
-
                         Text("Default").tag(Optional<ItemAccent>.none)
                         ForEach(ItemAccent.allCases, id: \.self)
                         {
@@ -712,10 +645,8 @@ struct BoardAppearanceSheet: View
 
                 Section("List background color")
                 {
-
                     Picker("List background", selection: $draft.listBackground)
                     {
-
                         Text("Default").tag(Optional<KanbanListTint>.none)
                         ForEach(KanbanListTint.allCases.filter
                             {
@@ -732,10 +663,8 @@ struct BoardAppearanceSheet: View
 
                 Section("Card background color")
                 {
-
                     Picker("Card background", selection: $draft.cardBackground)
                     {
-
                         Text("Default").tag(Optional<KanbanListTint>.none)
                         ForEach(KanbanListTint.allCases.filter
                             {
@@ -757,7 +686,6 @@ struct BoardAppearanceSheet: View
 
                 Section
                 {
-
                     Toggle("Apply to all Lists", isOn: $applyToAll)
                     Text(
                         applyToAll
@@ -773,10 +701,8 @@ struct BoardAppearanceSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -786,10 +712,8 @@ struct BoardAppearanceSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         saveAppearance()
                     }
                     .disabled(isImportingPhoto)
@@ -800,7 +724,6 @@ struct BoardAppearanceSheet: View
         }
         .task(id: photoSelection)
         {
-
             guard let photoSelection else
             {
                 return
@@ -810,24 +733,20 @@ struct BoardAppearanceSheet: View
 
             defer
             {
-
                 isImportingPhoto = false
 
             }
 
             do
             {
-
                 guard let data = try await photoSelection.loadTransferable(type: Data.self) else
                 {
-
                     throw CocoaError(.fileReadCorruptFile)
                 }
 
                 let prepared = /* Prepared operation input */
                     try await Task.detached(priority: .userInitiated)
                 {
-
                     try CollectionBackgroundPhotoStore.preparedPhoto(data)
                 } .value
 
@@ -839,11 +758,9 @@ struct BoardAppearanceSheet: View
             }
             catch is CancellationError
             {
-
             }
             catch
             {
-
                 backgroundError = "This photo could not be opened. Please choose another image."
 
             }
@@ -858,7 +775,6 @@ struct BoardAppearanceSheet: View
                             {
                                 if !$0
                                 {
-
                                     backgroundError = nil
 
                                 }
@@ -866,10 +782,8 @@ struct BoardAppearanceSheet: View
                             })
         )
         {
-
             Button("OK", role: .cancel)
             {
-
                 backgroundError = nil
 
             }
@@ -877,7 +791,6 @@ struct BoardAppearanceSheet: View
         }
         message:
         {
-
             Text(backgroundError ?? "")
         }
         .databaseActivityOverlay()
@@ -886,17 +799,14 @@ struct BoardAppearanceSheet: View
 
     private var collectionBackgroundSection: some View /* Collection background section */
     {
-
         Section("Background")
         {
-
             CollectionBackgroundSurface(
                 background: draft.collectionBackground ?? defaultCollectionBackground, draftPhoto: draftPhoto
             )
             .frame(height: 136)
             .overlay(alignment: .bottomLeading)
             {
-
                 Text((draft.collectionBackground ?? defaultCollectionBackground)?.preset.title ?? "Plenact default")
                 .font(.headline).foregroundStyle(.white).padding(16)
             }
@@ -918,7 +828,6 @@ struct BoardAppearanceSheet: View
 
                                             if preset != .photo
                                             {
-
                                                 draftPhoto = nil
 
                                             }
@@ -932,7 +841,6 @@ struct BoardAppearanceSheet: View
                                     )
             )
             {
-
                 Text("Default").tag(Optional<CollectionBackgroundPreset>.none)
                 ForEach(CollectionBackgroundPreset.allCases.filter
                     {
@@ -945,7 +853,6 @@ struct BoardAppearanceSheet: View
 
                 if draft.collectionBackground?.preset == .photo
                 {
-
                     Text("Your photo").tag(Optional(CollectionBackgroundPreset.photo))
                 }
 
@@ -954,7 +861,6 @@ struct BoardAppearanceSheet: View
             .disabled(isImportingPhoto)
             PhotosPicker(selection: $photoSelection, matching: .images)
             {
-
                 Label("Choose photo", systemImage: "photo")
             }
             .disabled(isImportingPhoto)
@@ -982,7 +888,6 @@ struct BoardAppearanceSheet: View
     ///
     private func saveAppearance()
     {
-
         guard !isImportingPhoto else
         {
             return
@@ -993,10 +898,8 @@ struct BoardAppearanceSheet: View
 
         do
         {
-
             if allowsCollectionBackground, updated.collectionBackground?.preset == .photo, let draftPhoto
             {
-
                 let name = /* Display or lookup name */
                     try CollectionBackgroundPhotoStore.save(draftPhoto)
 
@@ -1007,10 +910,8 @@ struct BoardAppearanceSheet: View
 
             if onSave(updated, applyToAll)
             {
-
                 if listSurface != nil
                 {
-
                     onSaveListSurface?(draftSurfaceOpacity, draftShowsHeaderIcon, draftHeaderIcon, draftIconColor)
                 }
 
@@ -1019,14 +920,12 @@ struct BoardAppearanceSheet: View
             }
             else if let importedName
             {
-
                 CollectionBackgroundPhotoStore.remove(importedName)
             }
 
         }
         catch
         {
-
             if let importedName
             {
                 CollectionBackgroundPhotoStore.remove(importedName)
@@ -1050,17 +949,13 @@ struct BoardAppearanceSheet: View
 ///
 struct AddItemTextColorSection: View
 {
-
-
     @Binding var selection: ProfileColor?    /* Current selection state */
     var defaultColor:       Color = .primary /* Default color           */
 
     var body: some View /* Add Item Text Color layout */
     {
-
         Section("Add Card field")
         {
-
             ColorPicker(
                                     "Text color",
                                     selection: Binding(
@@ -1089,7 +984,6 @@ struct AddItemTextColorSection: View
             .accessibilityIdentifier("appearance.addItemTextColor")
             Button("Use default color")
             {
-
                 selection = nil
 
             }
@@ -1113,8 +1007,6 @@ struct AddItemTextColorSection: View
 ///
 struct PreviewTextColorsSection: View
 {
-
-
     @Binding var titleColor: ListPreviewTextColor? /* Title color              */
     @Binding var textColor:  ListPreviewTextColor? /* Text color               */
     let explanation:         String                /* Explanation display text */
@@ -1132,10 +1024,8 @@ struct PreviewTextColorsSection: View
     ///
     private func picker(_ title: String, selection: Binding<ListPreviewTextColor?>) -> some View
     {
-
         Picker(title, selection: selection)
         {
-
             Text("Unchanged").tag(Optional<ListPreviewTextColor>.none)
             ForEach(ListPreviewTextColor.allCases)
             {
@@ -1149,15 +1039,12 @@ struct PreviewTextColorsSection: View
 
     var body: some View /* Preview Text Colors layout */
     {
-
         Section("Preview text colors")
         {
-
             picker("Title color", selection: $titleColor)
             picker("Supporting text color", selection: $textColor)
             VStack(alignment: .leading, spacing: 6)
             {
-
                 Text("Card or note title").font(.headline).foregroundStyle(titleColor?.color ?? .primary)
                 Text("Subtitle or note preview").font(.subheadline).foregroundStyle(textColor?.color ?? .secondary)
             } .padding(.vertical, 8)
@@ -1178,24 +1065,18 @@ struct PreviewTextColorsSection: View
 ///
 struct ListSurfaceOpacityPicker: View
 {
-
-
     let title:            String                    /* User-facing title     */
     var tint:             KanbanListTint = .neutral /* Resolved display tint */
     @Binding var opacity: Double                    /* Surface opacity       */
 
     var body:             some View /* List Surface Opacity Picker layout */
     {
-
         VStack(alignment: .leading, spacing: 12)
         {
-
             VStack(alignment: .leading, spacing: 8)
             {
-
                 HStack
                 {
-
                     Text("Background opacity")
                     Spacer()
                     Text(opacity, format: .percent.precision(.fractionLength(0)))
@@ -1208,7 +1089,6 @@ struct ListSurfaceOpacityPicker: View
                 .accessibilityIdentifier("appearance.listBackgroundOpacity")
                 HStack
                 {
-
                     Text("Transparent")
                     Spacer()
                     Text("Solid")
@@ -1217,7 +1097,6 @@ struct ListSurfaceOpacityPicker: View
 
             VStack(alignment: .leading, spacing: 10)
             {
-
                 Text(title).font(.headline)
                 Label("Example item", systemImage: "square")
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1248,8 +1127,6 @@ struct ListSurfaceOpacityPicker: View
 ///
 struct ListIconColorPicker: View
 {
-
-
     @Binding var selection: ProfileColor?                  /* Current selection state      */
     var fixedColor:         ProfileColor?            = nil /* Fixed color                  */
     private let presets:    [(String, ProfileColor)] = [   /* Available appearance presets */
@@ -1260,16 +1137,12 @@ struct ListIconColorPicker: View
 
     var body: some View /* List Icon Color Picker layout */
     {
-
         if let fixedColor
         {
-
             LabeledContent("Icon color")
             {
-
                 HStack
                 {
-
                     Circle().fill(fixedColor.color).frame(width: 18, height: 18)
                     Text("Fixed").foregroundStyle(.secondary)
                 }
@@ -1279,17 +1152,14 @@ struct ListIconColorPicker: View
         }
         else
         {
-
             Picker("Icon color", selection: $selection)
             {
-
                 Text("Default").tag(Optional<ProfileColor>.none)
                 ForEach(presets.indices, id: \.self)
                 {
                     index in
                     HStack
                     {
-
                         Circle().fill(presets[index].1.color).frame(width: 18, height: 18)
                         Text(presets[index].0)
                     } .tag(Optional(presets[index].1))

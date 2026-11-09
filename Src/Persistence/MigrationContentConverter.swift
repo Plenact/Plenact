@@ -13,13 +13,11 @@ import Foundation
 @MainActor
 enum MigrationContentConverter
 {
-
     /// Original owner context, distinct from a translated title or current List position
     /// @section Purpose
     ///     Keep copied template content and retained live Weeks independent
     private struct Owner
     {
-
         let collection: PersonalCollection /* Personal collection record */
         let origin:     String             /* Source origin metadata     */
         let timeZoneID: String             /* Time zone ID               */
@@ -33,7 +31,6 @@ enum MigrationContentConverter
     ///     Report records, unresolved references and source precision independently
     struct Result
     {
-
         let records:  [[String: Any]]                    /* Records being processed        */
         let evidence: [[String: Any]]                    /* Retained verification evidence */
         let summary:  [[String: Any]]                    /* Aggregate operation results    */
@@ -56,7 +53,6 @@ enum MigrationContentConverter
     /// @throws Unsupported source fields, versions or decoding errors
     private static func source<T: Decodable>(_ value: Any, as type: T.Type, shape: String, array: Bool = false) throws -> T
     {
-
         guard let data = value as? Data else
         {
             throw MigrationContentValues.Failure.invalid("source_storage_type")
@@ -99,7 +95,6 @@ enum MigrationContentConverter
     static func convert(values: [String: Any], timeZoneID: String, mediaDigests: [String: String],
         existing: [[String: Any]], journal: MigrationIdentityJournal) throws -> Result
     {
-
         let context = /* Operation context */
             MigrationContentValues(journal: journal, timeZoneID: timeZoneID, mediaDigests: mediaDigests)
 
@@ -111,7 +106,6 @@ enum MigrationContentConverter
 
         if let raw = values["Plenact.CalendarWeeks.v1"]
         {
-
             let document = /* Working calendar document */
                 try source(raw, as: PlanningCalendarDocument.self, shape: "PlanningCalendarDocument")
 
@@ -134,7 +128,6 @@ enum MigrationContentConverter
 
             if let rawBoard = values["Plenact.Board.v1"]
             {
-
                 let board = /* Board state under review */
                     try source(rawBoard, as: [KanbanList].self, shape: "KanbanList", array: true)
 
@@ -178,7 +171,6 @@ enum MigrationContentConverter
         }
         if let raw = values["Plenact.PersonalCollections.v1"]
         {
-
             let collections = /* Retained personal collections */
                 try source(raw, as: [PersonalCollection].self, shape: "PersonalCollection", array: true)
 
@@ -187,7 +179,6 @@ enum MigrationContentConverter
         }
         if let raw = values["Plenact.PlanningTemplates.v1"]
         {
-
             let library = /* Retained library contents */
                 try source(raw, as: PlanningRoutineLibrary.self, shape: "PlanningRoutineLibrary")
 
@@ -212,7 +203,6 @@ enum MigrationContentConverter
                 {
                     if let id = card["id"] as? Int
                     {
-
                         context.originalCards[(namespace ?? owner.lowercased()) + ":" + String(id)] = card
 
                     }
@@ -241,18 +231,15 @@ enum MigrationContentConverter
                 {
                     if let collection = entry["collection"] as? [String: Any]
                     {
-
                         let namespace: String? /* Owner identity namespace */
 
                         if key == "Plenact.PlanningTemplates.v1", let template = entry["id"] as? String, let source = collection["id"] as? String
                         {
-
                             namespace = "template:" + template.lowercased() + ":" + source.lowercased()
 
                         }
                         else
                         {
-
                             namespace = nil
 
                         }
@@ -267,7 +254,6 @@ enum MigrationContentConverter
         }
         for owner in owners
         {
-
             let origin = owner.namespace /* Source origin metadata     */
             let target =                 /* Target under consideration */
                 try context.id("collection", owner: "source_collections", legacy: origin)
@@ -314,7 +300,6 @@ enum MigrationContentConverter
 
         for owner in owners
         {
-
             context.timeZoneID = owner.timeZoneID
 
             let origin            = owner.namespace /* Source origin metadata */
@@ -325,7 +310,6 @@ enum MigrationContentConverter
 
             for list in owner.collection.lists
             {
-
                 let listID = /* List record UUID */
                     try context.id("list", owner: origin, legacy: String(list.id))
 
@@ -402,26 +386,22 @@ enum MigrationContentConverter
     static func convertCard(_ card: KanbanCard, archived: Bool, list: String, owner: String,
         context: MigrationContentValues) throws -> [String: Any]
     {
-
         var raw = try MigrationContentValues.object(card) /* Unprocessed source value */
 
         if let source = context.originalCards[owner + ":" + String(card.id)]
         {
             if let empty = source["reactions"] as? [Any], empty.isEmpty
             {
-
                 raw["reactions"] = [Any]()
 
             }
             if let appearance = source["appearance"] as? [String: Any], appearance.isEmpty
             {
-
                 raw["appearance"] = appearance
 
             }
             if let kind = source["itemPresentation"] as? String
             {
-
                 raw["itemPresentation"] = kind
 
             }
@@ -513,13 +493,11 @@ enum MigrationContentConverter
 @MainActor
 enum MigrationSelectionPreview
 {
-
     /// Reviewable entries remain distinct from canonical content_selection records
     /// @section Purpose
     ///     Expose unresolved or conflicting selections without discarding their original stores
     struct Result
     {
-
         let entries: [[String: Any]] /* Entries being processed */
         let issues:  [String]        /* Validation findings     */
 
@@ -537,7 +515,6 @@ enum MigrationSelectionPreview
     static func prepare(values: [String: Any], owners: [(String, PersonalCollection)],
         currentScope: String?, targets: [String: String]) -> Result
     {
-
         var issues: [String]            = []    /* Validation findings               */
         var entries: [[String: Any]]    = []    /* Entries being processed           */
         var levels: [String: Int]       = [:]   /* Owner-qualified importance levels */
@@ -562,7 +539,6 @@ enum MigrationSelectionPreview
 
                 for item in source
                 {
-
                     let owner = /* Normalized owner identifier */
                         item.collectionID.uuidString.lowercased()
                     let key   = owner + ":" + String(item.cardID) /* Lookup or persistence key */
@@ -578,7 +554,6 @@ enum MigrationSelectionPreview
                     if scopes.count == 1, let scope = scopes.first,
                        targets[scope + ":" + String(item.cardID)] != nil
                     {
-
                         levels[scope + ":" + String(item.cardID)] = item.level ?? 1
 
                     }
@@ -597,7 +572,6 @@ enum MigrationSelectionPreview
             }
             catch
             {
-
                 levels = [:]
                 unresolved = []
                 importanceInvalid = true
@@ -620,7 +594,6 @@ enum MigrationSelectionPreview
         }
         for (scope, owner) in owners.sorted(by: { $0.0 < $1.0 })
         {
-
             var cardIDs = owner.savedCardIDs /* Card i ds */
 
             for list in owner.lists
@@ -635,7 +608,6 @@ enum MigrationSelectionPreview
             }
             for card in cardIDs.sorted()
             {
-
                 let key    = scope + ":" + String(card) /* Lookup or persistence key  */
                 let target = targets[key]               /* Target under consideration */
 

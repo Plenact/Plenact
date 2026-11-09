@@ -20,8 +20,6 @@ import SwiftUI
 ///
 struct PreviewTextWidthKey: PreferenceKey
 {
-
-
     static let defaultValue: CGFloat = 0 /* Fallback environment value */
 
 
@@ -37,7 +35,6 @@ struct PreviewTextWidthKey: PreferenceKey
     ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat)
     {
-
         value = nextValue()
 
     }
@@ -53,8 +50,6 @@ struct PreviewTextWidthKey: PreferenceKey
 ///
 struct PreviewViewportWidthKey: PreferenceKey
 {
-
-
     static let defaultValue: CGFloat = 0 /* Fallback environment value */
 
 
@@ -70,7 +65,6 @@ struct PreviewViewportWidthKey: PreferenceKey
     ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat)
     {
-
         value = nextValue()
 
     }
@@ -87,8 +81,6 @@ struct PreviewViewportWidthKey: PreferenceKey
 ///
 struct PreviewVisibility: ViewModifier
 {
-
-
     @Binding var visible: Bool /* Current visibility state */
 
 
@@ -104,13 +96,10 @@ struct PreviewVisibility: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         if #available(iOS 18.0, *)
         {
-
             content.onScrollVisibilityChange(threshold: 0.1)
             {
-
                 visible = $0
 
             }
@@ -118,15 +107,12 @@ struct PreviewVisibility: ViewModifier
         }
         else
         {
-
             content.onAppear
             {
-
                 visible = true
 
             } .onDisappear
             {
-
                 visible = false
 
             }
@@ -147,8 +133,6 @@ struct PreviewVisibility: ViewModifier
 ///
 struct GentleCollectionPreview: View
 {
-
-
     let text: String                         /* Text being processed        */
     var scrolls                 = false      /* Mounted native scroll views */
     var textFont:        Font   = .caption   /* Text font                   */
@@ -176,8 +160,6 @@ struct GentleCollectionPreview: View
 
     private struct Loop: Hashable
     {
-
-
         let text:     String  /* Text being processed              */
         let distance: CGFloat /* Distance between layout positions */
         let active:   Bool    /* Active operation state            */
@@ -186,7 +168,6 @@ struct GentleCollectionPreview: View
 
     private var loop: Loop /* Current retry iteration */
     {
-
         Loop(
             text: text, distance: travelsAcross ? textWidth + viewportWidth : max(0, textWidth - viewportWidth),
             active: scrolls && !reduceMotion && !typeSize.isAccessibilitySize && visible && viewportWidth > 0)
@@ -194,22 +175,17 @@ struct GentleCollectionPreview: View
 
     var body: some View /* Gentle Collection Preview layout */
     {
-
         Group
         {
-
             if scrolls && !reduceMotion && !typeSize.isAccessibilitySize
             {
-
                 Text(text).lineLimit(1).hidden()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .overlay(alignment: .leading)
                 {
-
                     Text(text).fixedSize(horizontal: true, vertical: false)
                     .background
                     {
-
                         GeometryReader
                         {
                             geometry in
@@ -221,7 +197,6 @@ struct GentleCollectionPreview: View
                 }
                 .background
                 {
-
                     GeometryReader
                     {
                         geometry in
@@ -233,7 +208,6 @@ struct GentleCollectionPreview: View
             }
             else
             {
-
                 Text(text).lineLimit(travelsAcross ? nil : (typeSize.isAccessibilitySize ? 2 : 1))
                 .fixedSize(horizontal: false, vertical: travelsAcross)
             }
@@ -243,27 +217,23 @@ struct GentleCollectionPreview: View
         .accessibilityElement(children: .ignore).accessibilityLabel(text)
         .onPreferenceChange(PreviewTextWidthKey.self)
         {
-
             textWidth = $0
 
         }
         .onPreferenceChange(PreviewViewportWidthKey.self)
         {
-
             viewportWidth = $0
 
         }
         .modifier(PreviewVisibility(visible: $visible))
         .task(id: loop)
         {
-
             var reset = Transaction(); /* Requested state reset */
 
             reset.disablesAnimations = true
 
             withTransaction(reset)
             {
-
                 offset = travelsAcross && loop.active ? viewportWidth : 0;
                 opacity = 1
 
@@ -280,14 +250,11 @@ struct GentleCollectionPreview: View
 
             do
             {
-
                 while !Task.isCancelled
                 {
-
                     try await Task.sleep(for: .seconds(startPause))
                     withAnimation(.linear(duration: seconds))
                     {
-
                         offset = travelsAcross ? -textWidth : -distance
 
                     }
@@ -295,7 +262,6 @@ struct GentleCollectionPreview: View
                     try await Task.sleep(for: .seconds(seconds + endPause))
                     withAnimation(.easeOut(duration: 0.4))
                     {
-
                         opacity = 0
 
                     }
@@ -303,14 +269,12 @@ struct GentleCollectionPreview: View
                     try await Task.sleep(for: .seconds(0.4))
                     withTransaction(reset)
                     {
-
                         offset = travelsAcross ? viewportWidth : 0
 
                     }
 
                     withAnimation(.easeIn(duration: 0.6))
                     {
-
                         opacity = 1
 
                     }
@@ -321,7 +285,6 @@ struct GentleCollectionPreview: View
             }
             catch
             {  /* Leaving the row or changing preferences cancels its loop  */
-
             }
 
         }

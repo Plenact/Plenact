@@ -25,42 +25,35 @@ indirect enum PortableJSONValue: Codable
     /// @return Initialized portable value
     init(from decoder: Decoder) throws
     {
-
         let value = try decoder.singleValueContainer() /* Value being processed */
 
         if value.decodeNil()
         {
-
             self = .null
 
         }
         else if let boolean = try? value.decode(Bool.self)
         {
-
             self = .boolean(boolean)
 
         }
         else if let text = try? value.decode(String.self)
         {
-
             self = .string(text)
 
         }
         else if let object = try? value.decode([String: PortableJSONValue].self)
         {
-
             self = .object(object)
 
         }
         else if let array = try? value.decode([PortableJSONValue].self)
         {
-
             self = .array(array)
 
         }
         else
         {
-
             self = .number(try value.decode(Decimal.self))
 
         }
@@ -72,7 +65,6 @@ indirect enum PortableJSONValue: Codable
     /// @return Void; throws on unsupported numeric representation
     func encode(to encoder: Encoder) throws
     {
-
         var value = encoder.singleValueContainer() /* Value being processed */
 
         switch self
@@ -98,7 +90,6 @@ indirect enum PortableJSONValue: Codable
 ///     Exercise shared wire names independently of platform-specific app models
 struct PortableContentDocument: Codable
 {
-
     let modelVersion:   String                      /* Model version            */
     let schemaVersion:  Int                         /* Schema version           */
     let recordType:     String                      /* Record type              */
@@ -120,7 +111,6 @@ struct PortableContentDocument: Codable
 /// Describes a shared fixture expectation without defining runtime sync behavior
 struct FixtureCase: Decodable
 {
-
     let file:   String /* File being processed         */
     let schema: String /* Contract schema under review */
     let valid:  Bool   /* Accepted input value         */
@@ -130,7 +120,6 @@ struct FixtureCase: Decodable
 /// Retains the shared fixture list consumed by prototype codecs
 struct FixtureManifest: Decodable
 {
-
     let cases: [FixtureCase] /* Supported enum cases */
 
 }
@@ -142,7 +131,6 @@ struct FixtureManifest: Decodable
 /// @return Number of emitted fixture files
 func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
 {
-
     let decoder = JSONDecoder() /* JSON decoding configuration */
     let encoder = JSONEncoder() /* JSON encoding configuration */
 
@@ -195,13 +183,11 @@ func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
 
         if contentSchemas.contains(fixture.schema)
         {
-
             result = try encoder.encode(decoder.decode(PortableContentDocument.self, from: input))
 
         }
         else
         {
-
             result = try encoder.encode(decoder.decode(PortableJSONValue.self, from: input))
 
         }

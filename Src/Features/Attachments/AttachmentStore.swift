@@ -23,8 +23,6 @@ import UIKit
 ///
 enum KanbanAttachmentKind: String, Codable, Sendable
 {
-
-
     case photo
     case video
     case audio
@@ -41,8 +39,6 @@ enum KanbanAttachmentKind: String, Codable, Sendable
 ///
 struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
 {
-
-
     let id:              UUID                   /* Stable attachment identity                                */
     let fileName:        String?                /* Device-local media filename                               */
     let url:             URL?                   /* Remote web-link destination                               */
@@ -75,7 +71,6 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
     ///
     var kind: KanbanAttachmentKind /* Content kind discriminator */
     {  /* Resolved kind for legacy and current records */
-
         mediaKind ?? (url == nil ? .photo : .link)
     }
 
@@ -105,8 +100,6 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
         addedAt: Date = .now, exampleImage: ExampleCoverImage? = nil, caption: String? = nil
     )
     {
-
-
         self.id = id
         self.fileName = fileName
         self.url = url
@@ -132,8 +125,6 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
 ///
 enum CardAttachmentStore
 {
-
-
     ///
     /// @fcn        CardAttachmentStore.coverThumbnail(for:)
     /// @brief      Decode a bounded, orientation-correct cover image
@@ -147,8 +138,6 @@ enum CardAttachmentStore
     ///
     static func coverThumbnail(for attachment: KanbanAttachment) throws -> UIImage
     {
-
-
         guard let url = imageURL(for: attachment),                   /* Resolved attachment image URL     */
         let source = CGImageSourceCreateWithURL(url as CFURL, nil),  /* ImageIO source for the attachment */
         let image = CGImageSourceCreateThumbnailAtIndex(
@@ -161,7 +150,6 @@ enum CardAttachmentStore
             ] as CFDictionary) /* Orientation-correct bounded thumbnail */
         else
         {
-
             throw CocoaError(.fileReadCorruptFile)
         }
 
@@ -181,8 +169,6 @@ enum CardAttachmentStore
     ///
     static func fileNames(in lists: [KanbanList]) -> Set<String>
     {
-
-
         Set(lists.flatMap(\.allCards).flatMap
             {
                 $0.attachments ?? []
@@ -205,20 +191,15 @@ enum CardAttachmentStore
     ///
     static func removeDeletedFiles(_ candidates: Set<String>, keeping retained: Set<String>) throws
     {
-
-
         let retained = /* State retained for recovery */
             retained.union(try PlanningRoutineStore.retainedFiles())
 
         for name in candidates.subtracting(retained)
         {
-
-
             guard name == (name as NSString).lastPathComponent,
             !name.isEmpty, name != ".", name != ".."
             else
             {
-
                 throw CocoaError(.fileWriteInvalidFileName)
             }
 
@@ -227,16 +208,12 @@ enum CardAttachmentStore
 
             guard let url = fileURL(for: attachment) else
             {  /* Local destination for the attachment */
-
-
                 throw CocoaError(.fileNoSuchFile)
             }
 
 
             if FileManager.default.fileExists(atPath: url.path)
             {
-
-
                 try FileManager.default.removeItem(at: url)
             }
 
@@ -269,8 +246,6 @@ enum CardAttachmentStore
     static func saveMedia(_ mediaData: Data, kind: KanbanAttachmentKind, fileExtension: String) throws
     -> KanbanAttachment
     {
-
-
         let attachmentID        = UUID() /* Stable identity for the new media file */
         let normalizedExtension = fileExtension.trimmingCharacters( /* Normalized extension */
             in: CharacterSet(charactersIn: ". ")) /* Clean extension input                  */
@@ -305,12 +280,8 @@ enum CardAttachmentStore
     ///
     static func fileURL(for attachment: KanbanAttachment) -> URL?
     {
-
-
         if let exampleImage = attachment.exampleImage
         {  /* Explicit bundled cover selection */
-
-
             return exampleImage.url
         }
 
@@ -320,8 +291,6 @@ enum CardAttachmentStore
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else
         {  /* App Documents directory */
-
-
             return nil
         }
 
@@ -346,12 +315,8 @@ enum CardAttachmentStore
     ///
     static func imageURL(for attachment: KanbanAttachment) -> URL?
     {
-
-
         guard attachment.kind == .photo else
         {
-
-
             return nil
         }
 
@@ -374,8 +339,6 @@ enum CardAttachmentStore
     ///
     static func webURL(from text: String) -> URL?
     {
-
-
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized pasted or typed URL */
 
         guard let components = URLComponents(string: trimmedText), /* Parsed URL components */
@@ -387,8 +350,6 @@ enum CardAttachmentStore
         !host.isEmpty
         else
         {
-
-
             return nil
         }
 
@@ -412,8 +373,6 @@ enum CardAttachmentStore
     ///
     static func removeUnreferencedFiles(keeping fileNames: Set<String>)
     {
-
-
         guard let templateFiles = try? PlanningRoutineStore.retainedFiles() else
         {
             return
@@ -424,8 +383,6 @@ enum CardAttachmentStore
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else
         {  /* App Documents directory */
-
-
             return
         }
 
@@ -437,16 +394,12 @@ enum CardAttachmentStore
         let files = try? FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
         else
         {  /* Files available for cleanup */
-
-
             return
         }
 
 
         for fileURL in files where !fileNames.contains(fileURL.lastPathComponent)
         {
-
-
             try? FileManager.default.removeItem(at: fileURL)
         }
 
@@ -469,13 +422,9 @@ enum CardAttachmentStore
     ///
     private static func attachmentsDirectory() throws -> URL
     {
-
-
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else
         {  /* App Documents directory */
-
-
             throw CocoaError(.fileNoSuchFile)
         }
 

@@ -17,8 +17,6 @@ import Foundation
 ///
 enum ItemAccent: String, CaseIterable, Codable, Sendable
 {
-
-
     case teal, blue, purple, rose, orange, green, coral, graphite
 }
 
@@ -32,8 +30,6 @@ enum ItemAccent: String, CaseIterable, Codable, Sendable
 ///
 enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable
 {
-
-
     case neutral, blue, green, orange, red
     var id: String /* Record or view identity */
     {
@@ -56,8 +52,6 @@ enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable
 ///
 enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable
 {
-
-
     case compact, detailed
     var id: String /* Record or view identity */
     {
@@ -81,8 +75,6 @@ enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Sendable
 {
-
-
     case linen, sage, ocean, plum, sandstone, midnight, photo, tabletop, forestPath, sunlitWall, plain
     var id: String /* Record or view identity */
     {
@@ -91,10 +83,8 @@ enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Se
 
     var title: String /* User-facing title */
     {
-
         switch self
         {
-
         case .linen:
                     "Warm linen"
         case .sage:
@@ -133,8 +123,6 @@ enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Se
 ///
 struct CollectionBackground: Hashable, Codable, Sendable
 {
-
-
     var preset:        CollectionBackgroundPreset /* Selected appearance preset */
     var photoFileName: String? = nil              /* Photo file name            */
 
@@ -153,7 +141,6 @@ struct CollectionBackground: Hashable, Codable, Sendable
     static func defaultListBackground(for title: String, overriding: CollectionBackground? = nil)
     -> CollectionBackground?
     {
-
         if let overriding
         {
             return overriding
@@ -161,7 +148,6 @@ struct CollectionBackground: Hashable, Codable, Sendable
 
         switch title
         {
-
         case "On the Table":
             return CollectionBackground(preset: .tabletop)
         case "In the Queue":
@@ -189,7 +175,6 @@ struct CollectionBackground: Hashable, Codable, Sendable
     ///
     static func isAllowed(collectionID: UUID?, datedWeekIDs: Set<UUID>, isDatedView: Bool) -> Bool
     {
-
         guard let collectionID, !isDatedView else
         {
             return false
@@ -210,8 +195,6 @@ struct CollectionBackground: Hashable, Codable, Sendable
 ///
 struct BoardAppearance: Hashable, Codable, Sendable
 {
-
-
     static let weekStorageKey                       = /* Week storage key */
         "Plenact.WeekAppearance.v1"
     var bannerBackground:     ItemAccent?           = nil /* Banner background */
@@ -238,7 +221,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     func resolvedSubtitleItalic(card: ItemAppearance? = nil, list: ItemAppearance? = nil) -> Bool
     {
-
         card?.subtitleItalic ?? list?.subtitleItalic ?? subtitleItalic ?? false
     }
 
@@ -256,7 +238,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     func resolvedAddItemTextColor(list: ItemAppearance?, title: String) -> ProfileColor?
     {
-
         list?.addItemTextColor ?? addItemTextColor
         ?? (["On the Table", "In the Queue", "Scheduled"].contains(title) ? .white : nil)
     }
@@ -275,7 +256,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     func resolvedTitleColor(card: ItemAppearance?, list: ItemAppearance?) -> ListPreviewTextColor?
     {
-
         card?.cardTitleColor ?? list?.cardTitleColor ?? cardTitleColor
     }
 
@@ -293,7 +273,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     func resolvedTextColor(card: ItemAppearance?, list: ItemAppearance?) -> ListPreviewTextColor?
     {
-
         card?.cardTextColor ?? list?.cardTextColor ?? cardTextColor
     }
 
@@ -315,7 +294,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     func resolvedCardDetail(card: ItemAppearance?, list: ItemAppearance?, fallback: BoardCardDetail = .detailed)
     -> BoardCardDetail
     {
-
         card?.cardDetail ?? list?.cardDetail ?? cardDetail ?? fallback
     }
 
@@ -332,7 +310,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     func resolved(_ appearance: ItemAppearance?) -> ItemAppearance
     {
-
         var result = appearance ?? ItemAppearance() /* Appearance with inherited defaults */
 
         result.background = result.background ?? bannerBackground
@@ -355,7 +332,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     static func inheritingLists(_ lists: [KanbanList]) -> [KanbanList]
     {
-
         lists.map
         {
             list in
@@ -364,7 +340,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
 
             if var appearance = updated.appearance
             {
-
                 appearance.background = nil
                 appearance.listBackground = nil
                 appearance.cardTitleColor = nil
@@ -396,7 +371,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     static func decodeWeek(_ data: Data) throws -> BoardAppearance
     {
-
         data.isEmpty ? BoardAppearance() : try JSONDecoder().decode(BoardAppearance.self, from: data)
     }
 
@@ -412,8 +386,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
 ///
 enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable
 {
-
-
     case graphite, blue, teal, green, plum, rose, amber
     var id: String /* Record or view identity */
     {
@@ -437,8 +409,6 @@ enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable
 {
-
-
     case cards, noteList
     var id: String /* Record or view identity */
     {
@@ -462,8 +432,6 @@ enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable
 ///
 struct ItemAppearance: Hashable, Codable, Sendable
 {
-
-
     var accent:                        ItemAccent?             /* Selected accent color          */
     var icon:                          PersonalCollectionIcon? /* Selected display icon          */
     var background:                    ItemAccent?           = /* Resolved background appearance */
@@ -486,7 +454,6 @@ struct ItemAppearance: Hashable, Codable, Sendable
 
     var resolvedListBackgroundOpacity: Double /* Resolved list background opacity */
     {
-
         guard let value = listBackgroundOpacity, value.isFinite else
         {
             return 1
@@ -508,14 +475,12 @@ struct ItemAppearance: Hashable, Codable, Sendable
     ///
     func hidesSubtitle(_ text: String) -> Bool
     {
-
         hideEmptySubtitle == true && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
 
     var isEmpty: Bool /* Empty state */
     {
-
         sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil
         && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil
         && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil
@@ -534,8 +499,6 @@ struct ItemAppearance: Hashable, Codable, Sendable
 ///
 enum NewCardAppearanceDefaults
 {
-
-
     static let headerPalette:     [ItemAccent]     = /* Header palette */
         [.teal, .blue, .purple, .rose, .orange, .green, .coral]
     static let backgroundPalette: [KanbanListTint] = /* Background palette */
@@ -558,7 +521,6 @@ enum NewCardAppearanceDefaults
         defaults: UserDefaults = .standard, origin: CardHistoryOrigin = .createdHere
     )
     {
-
         if !card.isSectionDivider, card.createdAt != nil, card.creationHistory == nil
         {
             card.recordCreation(origin, author: .local(in: defaults))
@@ -585,14 +547,12 @@ enum NewCardAppearanceDefaults
 
         if preferences.randomizesNewCardHeaders && appearance.background == nil
         {
-
             appearance.background = headerPalette.randomElement()
 
         }
 
         if preferences.randomizesNewCardBackgrounds && appearance.cardBackground == nil
         {
-
             appearance.cardBackground = backgroundPalette.randomElement()
 
         }

@@ -22,8 +22,6 @@ import Foundation
 ///
 struct ProfileColor: Hashable, Codable
 {
-
-
     var red:         Double  /* sRGB red component                                    */
     var green:       Double  /* sRGB green component                                  */
     var blue:        Double  /* sRGB blue component                                   */
@@ -38,8 +36,6 @@ struct ProfileColor: Hashable, Codable
     ///
     private enum CodingKeys: String, CodingKey
     {
-
-
         case red
         case green
         case blue
@@ -61,8 +57,6 @@ struct ProfileColor: Hashable, Codable
     ///
     init(red: Double, green: Double, blue: Double)
     {
-
-
         self.red = red
         self.green = green
         self.blue = blue
@@ -85,8 +79,6 @@ struct ProfileColor: Hashable, Codable
     ///
     init(hue: Double, saturation: Double, brightness: Double)
     {
-
-
         let hue          = (hue - floor(hue)) * 6     /* Wrapped hue sector            */
         let saturation   = min(max(saturation, 0), 1) /* Clamped saturation            */
         let brightness   = min(max(brightness, 0), 1) /* Clamped brightness            */
@@ -97,8 +89,6 @@ struct ProfileColor: Hashable, Codable
 
         switch Int(floor(hue))
         {
-
-
         case 0:
 
             components = (chroma, intermediate, 0)
@@ -164,8 +154,6 @@ struct ProfileColor: Hashable, Codable
     ///
     private init(red: Double, green: Double, blue: Double, legacyToken: String)
     {
-
-
         self.red = red
         self.green = green
         self.blue = blue
@@ -187,7 +175,6 @@ struct ProfileColor: Hashable, Codable
     ///
     var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double) /* Hue saturation brightness */
     {  /* HSB channels derived from the stored RGB values     */
-
         let maximum = max(red, green, blue)  /* Brightest RGB channel                               */
         let minimum = min(red, green, blue)  /* Darkest RGB channel                                 */
         let delta   = maximum - minimum      /* RGB channel range used to derive hue and saturation */
@@ -195,29 +182,21 @@ struct ProfileColor: Hashable, Codable
 
         if delta == 0
         {
-
-
             hue = 0
 
         }
         else if maximum == red
         {
-
-
             hue = ((green - blue) / delta + (green < blue ? 6 : 0)) / 6
 
         }
         else if maximum == green
         {
-
-
             hue = ((blue - red) / delta + 2) / 6
 
         }
         else
         {
-
-
             hue = ((red - green) / delta + 4) / 6
 
         }
@@ -240,16 +219,11 @@ struct ProfileColor: Hashable, Codable
     ///
     init(from decoder: Decoder) throws
     {
-
-
         if let container = try? decoder.singleValueContainer(), /* Legacy single-value decoder     */
         let token = try? container.decode(String.self)
         {  /* Legacy color token              */
-
             guard let color = Self.legacyColor(token) else
             {  /* Recognized legacy palette color */
-
-
                 throw DecodingError.dataCorrupted(
                     .init(
                         codingPath: decoder.codingPath,
@@ -287,20 +261,14 @@ struct ProfileColor: Hashable, Codable
     ///
     func encode(to encoder: Encoder) throws
     {
-
-
         if let legacyToken
         {  /* Preserved legacy palette token */
-
-
             var container = encoder.singleValueContainer() /* Legacy single-token encoding container */
 
             try container.encode(legacyToken)
         }
         else
         {
-
-
             var container = encoder.container( /* Keyed decoding container */
                 keyedBy: CodingKeys.self) /* Current keyed profile-color encoding container */
 
@@ -323,12 +291,8 @@ struct ProfileColor: Hashable, Codable
     ///
     private static func legacyColor(_ token: String) -> Self?
     {
-
-
         switch token
         {
-
-
         case "teal":
             teal
         case "blue":
@@ -387,8 +351,6 @@ typealias ProfileAvatarForegroundColor = ProfileColor
 ///
 enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable
 {
-
-
     case initials
     case person
     case personCircle
@@ -428,8 +390,6 @@ enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable
 ///
 enum TodayFocusOrder: String, Codable, CaseIterable
 {
-
-
     case dayList, chronological
     var title: String /* User-facing title */
     {
@@ -448,8 +408,6 @@ enum TodayFocusOrder: String, Codable, CaseIterable
 ///
 struct TodayFocusEntry: Identifiable
 {
-
-
     let card:      KanbanCard /* Card under consideration */
     let sectionID: Int?       /* Section ID               */
     let heading:   String?    /* Section heading text     */
@@ -462,7 +420,6 @@ struct TodayFocusEntry: Identifiable
     /// Date-only values do not claim a time; a timed start takes precedence over a timed due date
     var previewTime: (date: Date, isStart: Bool)? /* Preview time */
     {
-
         if let start = card.startDate, card.startDateKind != .date
         {
             return (start, true)
@@ -478,10 +435,8 @@ struct TodayFocusEntry: Identifiable
 
     var previewTimeLabel: String? /* Preview time label */
     {
-
         previewTime.map
         {
-
             $0.date.formatted(date: .omitted, time: .shortened)
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "\u{202F}", with: "").lowercased()
@@ -492,7 +447,6 @@ struct TodayFocusEntry: Identifiable
 
     var scheduleLabel: String? /* Schedule label */
     {
-
         if let start = card.startDate
         {
             return "Start · " + card.startDateKind.label(for: start)
@@ -522,8 +476,6 @@ struct TodayFocusEntry: Identifiable
     ///
     func isUpNext(at now: Date, calendar: Calendar) -> Bool
     {
-
-
         ///
         /// @fcn        TodayFocusEntry.isUpNext.resolved
         /// @brief      Resolve a schedule endpoint for Up Next matching
@@ -538,7 +490,6 @@ struct TodayFocusEntry: Identifiable
         ///
         func resolved(_ value: Date?, kind: CardDateKind, end: Bool) -> Date?
         {
-
             guard let value else
             {
                 return nil
@@ -546,7 +497,6 @@ struct TodayFocusEntry: Identifiable
 
             if kind == .time
             {
-
                 let parts = /* Parsed value components */
                     calendar.dateComponents([.hour, .minute, .second], from: value)
 
@@ -557,7 +507,6 @@ struct TodayFocusEntry: Identifiable
 
             if kind == .date
             {
-
                 let start = calendar.startOfDay(for: value) /* Range start */
 
                 return end ? calendar.date(byAdding: .day, value: 1, to: start) : start
@@ -580,7 +529,6 @@ struct TodayFocusEntry: Identifiable
 
         if let finish
         {
-
             // Date-only finish is an exclusive next-midnight boundary
             let remains = /* Remains operation value */
                 card.dueDateKind == .date ? finish > now : finish >= now
@@ -600,7 +548,6 @@ struct TodayFocusEntry: Identifiable
 
         if card.startDateKind == .date
         {
-
             return calendar.isDate(start, inSameDayAs: now)
         }
 
@@ -621,7 +568,6 @@ struct TodayFocusEntry: Identifiable
     ///
     func scheduleDate(on day: Date, calendar: Calendar) -> Date?
     {
-
         guard let value = card.startDate ?? card.dueDate else
         {
             return nil
@@ -632,7 +578,6 @@ struct TodayFocusEntry: Identifiable
 
         if kind == .time
         {
-
             let time = /* Local schedule time */
                 calendar.dateComponents([.hour, .minute, .second], from: value)
 
@@ -656,8 +601,6 @@ struct TodayFocusEntry: Identifiable
 ///
 enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable
 {
-
-
     case tucked, fanned
     var id: String /* Record or view identity */
     {
@@ -681,8 +624,6 @@ enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable
 ///
 enum DayListTimeOrder
 {
-
-
     ///
     /// @fcn        DayListTimeOrder.time
     /// @brief      Resolve a Card's timed start, or timed due value when no timed start exists
@@ -695,10 +636,8 @@ enum DayListTimeOrder
     ///
     static func time(for card: KanbanCard, on day: Date, calendar: Calendar) -> Date?
     {
-
         guard let time = TodayFocusEntry(card: card, sectionID: nil, heading: nil).previewTime?.date else
         {
-
             return nil
         }
 
@@ -722,7 +661,6 @@ enum DayListTimeOrder
     ///
     static func cards(_ cards: [KanbanCard], calendar: Calendar = .current) -> [KanbanCard]
     {
-
         let day                   = calendar.startOfDay(for: .now) /* Day under consideration  */
         var result: [KanbanCard]  = []                             /* Accumulated output value */
         var section: [KanbanCard] = []                             /* Section lookup entries   */
@@ -735,7 +673,6 @@ enum DayListTimeOrder
         ///
         func flush()
         {
-
             let timed = section.enumerated().compactMap /* Only timed slots participate in sorting */
             {
                 offset, card -> (offset: Int, card: KanbanCard, time: Date)? in
@@ -764,17 +701,14 @@ enum DayListTimeOrder
 
         for card in cards
         {
-
             if card.isSectionDivider
             {
-
                 flush()
                 result.append(card)
             }
 
             else
             {
-
                 section.append(card)
             }
 
@@ -797,14 +731,11 @@ enum DayListTimeOrder
     ///
     static func lists(_ lists: [KanbanList], dayListIDs: Set<Int>, calendar: Calendar) -> [KanbanList]
     {
-
         lists.map
         {
-
         list in
             guard dayListIDs.contains(list.id), !list.isArchived else
             {
-
                 return list
             }
 
@@ -812,7 +743,6 @@ enum DayListTimeOrder
 
             guard ordered != list.cards else
             {
-
                 return list
             }
 
@@ -837,8 +767,6 @@ enum DayListTimeOrder
 ///
 struct LocalProfilePreferences: Hashable, Codable
 {
-
-
     var defaultListID:                Int?  /* Preferred Today list */
     var usesReducedContent:           Bool  /* Hide supporting copy */
     var scrollsOverflowingTitles:     Bool /* Scrolls overflowing titles */
@@ -868,8 +796,6 @@ struct LocalProfilePreferences: Hashable, Codable
     ///
     private enum CodingKeys: String, CodingKey
     {
-
-
         case defaultListID
         case usesReducedContent
         case scrollsOverflowingTitles
@@ -948,8 +874,6 @@ struct LocalProfilePreferences: Hashable, Codable
         preferredMapsApp: PreferredMapsApp = .apple
     )
     {
-
-
         self.scrollsOverflowingTitles = scrollsOverflowingTitles
         self.enablesLowerCornerBack = enablesLowerCornerBack
         self.importanceStarStyle = importanceStarStyle
@@ -995,7 +919,6 @@ struct LocalProfilePreferences: Hashable, Codable
         bookmarkedCardIDs: Set<Int> = []
     ) -> [TodayFocusEntry]
     {
-
         var entries: [TodayFocusEntry] = [] /* Entries being processed */
 
         var sectionID: Int?                 /* Section ID              */
@@ -1006,13 +929,10 @@ struct LocalProfilePreferences: Hashable, Codable
 
         for card in orderedCards
         {
-
             if card.isSectionDivider
             {
-
                 if let name = card.sectionHeading
                 {
-
                     sectionID = card.id
                     heading = name
 
@@ -1027,7 +947,6 @@ struct LocalProfilePreferences: Hashable, Codable
                 || (todayFocusIncludesImportant && importantCardIDs.contains(card.id))
                 || (todayFocusIncludesBookmarked && bookmarkedCardIDs.contains(card.id)))
             {
-
                 entries.append(TodayFocusEntry(card: card, sectionID: sectionID, heading: heading))
             }
 
@@ -1035,7 +954,6 @@ struct LocalProfilePreferences: Hashable, Codable
 
         if !keepsDayListsInTimeOrder && todayFocusOrder == .chronological
         {
-
             // Stable ties and undated items retain the user's original sequence
             let sectionOrder = Dictionary( /* Section order */
                 uniqueKeysWithValues:
@@ -1044,7 +962,6 @@ struct LocalProfilePreferences: Hashable, Codable
                     $0.element.sectionHeading != nil
                 } .map
                 {
-
                     ($0.element.id, $0.offset + 1)
                 })
 
@@ -1053,7 +970,6 @@ struct LocalProfilePreferences: Hashable, Codable
                 lhs, rhs in
                 if todayFocusGroupsBySection
                 {
-
                     let l = lhs.element.sectionID.flatMap /* Mapped l values */
                     {
                         sectionOrder[$0]
@@ -1081,7 +997,6 @@ struct LocalProfilePreferences: Hashable, Codable
 
                 switch (l, r)
                 {
-
                 case let (l?, r?) where l != r:
                     return l < r
                 case (_?, nil):
@@ -1111,7 +1026,6 @@ struct LocalProfilePreferences: Hashable, Codable
     ///
     func todayFocusItems(in cards: [KanbanCard]) -> [KanbanCard]
     {
-
         todayFocusEntries(in: cards).map(\.card)
     }
 
@@ -1132,8 +1046,6 @@ struct LocalProfilePreferences: Hashable, Codable
     ///
     init(from decoder: Decoder) throws
     {
-
-
         let container = try decoder.container(keyedBy: CodingKeys.self) /* Saved preference fields */
 
         self.init(
@@ -1184,8 +1096,6 @@ struct LocalProfilePreferences: Hashable, Codable
 ///
 struct LocalProfile: Identifiable, Hashable, Codable
 {
-
-
     let id:                    UUID                     /* Stable local profile ID                         */
     let createdAt:             Date                     /* Profile creation date                           */
     var displayName:           String                   /* User-facing name                                */
@@ -1206,8 +1116,6 @@ struct LocalProfile: Identifiable, Hashable, Codable
     ///
     private enum CodingKeys: String, CodingKey
     {
-
-
         case id
         case createdAt
         case displayName
@@ -1237,8 +1145,6 @@ struct LocalProfile: Identifiable, Hashable, Codable
     ///
     init(from decoder: Decoder) throws
     {
-
-
         let container = try decoder.container(keyedBy: CodingKeys.self) /* Keyed local-profile decoder */
 
         self.init(
@@ -1269,8 +1175,6 @@ struct LocalProfile: Identifiable, Hashable, Codable
     ///
     var initials: String /* Local profile initials */
     {  /* Avatar text */
-
-
         let components = displayName.split(whereSeparator: \.isWhitespace) /* Name components */
         let characters = components.prefix(2).compactMap(\.first)          /* Initial letters */
         let initials   = String(characters).uppercased()                   /* Avatar initials */
@@ -1312,8 +1216,6 @@ struct LocalProfile: Identifiable, Hashable, Codable
         preferences: LocalProfilePreferences = LocalProfilePreferences()
     )
     {
-
-
         self.id = id
         self.createdAt = createdAt
         self.displayName = displayName

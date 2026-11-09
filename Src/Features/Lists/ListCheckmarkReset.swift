@@ -17,8 +17,6 @@ import Foundation
 ///
 struct ListCheckmarkReset: Equatable
 {
-
-
     let previous: [String: Bool] /* Previous value for comparison */
     let cleared:  [String: Bool] /* Value after clearing choices  */
 
@@ -35,7 +33,6 @@ struct ListCheckmarkReset: Equatable
     ///
     static func values(in list: KanbanList) -> [String: Bool]
     {
-
         var values: [String: Bool] = [:] /* Values being processed */
 
         _ = transform(list.cards)
@@ -63,7 +60,6 @@ struct ListCheckmarkReset: Equatable
     ///
     static func reset(_ list: KanbanList) -> (ListCheckmarkReset, [KanbanCard])
     {
-
         let previous = values(in: list)      /* Previous value for comparison    */
         let cards    = transform(list.cards) /* Card records under consideration */
         {
@@ -107,7 +103,6 @@ struct ListCheckmarkReset: Equatable
     ///
     func restoring(_ list: KanbanList) -> [KanbanCard]?
     {
-
         guard canRestore(list) else
         {
             return nil
@@ -135,7 +130,6 @@ struct ListCheckmarkReset: Equatable
     ///
     private static func transform(_ cards: [KanbanCard], change: (String, Bool) -> Bool) -> [KanbanCard]
     {
-
         cards.map
         {
             original in
@@ -172,7 +166,6 @@ struct ListCheckmarkReset: Equatable
     private static func transform(_ lists: [KanbanChecklist], path: String, change: (String, Bool) -> Bool)
     -> [KanbanChecklist]
     {
-
         lists.map
         {
             checklist in
@@ -189,14 +182,12 @@ struct ListCheckmarkReset: Equatable
 
                     if case .actionDetail(var detail) = item.content
                     {
-
                         detail.checklists = transform(detail.checklists, path: key, change: change)
                         item.content = .actionDetail(detail)
 
                     }
                     else if var detail = item.retainedDetail
                     {
-
                         detail.checklists = transform(detail.checklists, path: key + "/retained", change: change)
                         item.retainedDetail = detail
 

@@ -15,14 +15,12 @@ import XCTest
 @MainActor
 extension MigrationStudioTests
 {
-
     /// @fcn MigrationStudioTests.testRetainedTemplateItemCreationEditedExport
     /// @brief Add Card/Note draft items without changing retained content or the live Week
     /// @return Void after isolated defaults/container cleanup
     /// @throws Fixture, identity, export or reconstruction failures
     func testRetainedTemplateItemCreationEditedExport() throws
     {
-
         try retainedTemplateFixture { backup, url in
 
             let preview       = /* Prepared template preview */
@@ -44,7 +42,6 @@ extension MigrationStudioTests
 
             defer
             {
-
                 defaults.removePersistentDomain(forName: domain)
             }
             try candidate.stage(at: stage)
@@ -139,7 +136,6 @@ extension MigrationStudioTests
             XCTAssertFalse((actualContent["cards"] as! [[String: Any]]).contains { $0["id"] as? String == cancelledTarget })
             for record in additions
             {
-
                 let body = record["payload"] as! [String: Any] /* Note or description text */
 
                 XCTAssertEqual(body["list_id"] as? String, listTarget)
@@ -202,7 +198,6 @@ extension MigrationStudioTests
             try validAliases.write(to: aliasURL)
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
@@ -237,7 +232,6 @@ extension MigrationStudioTests
     /// @throws Fixture, reconstruction, export or evidence failures
     func testRetainedTemplateItemDeletionEditedExport() throws
     {
-
         try retainedTemplateFixture { backup, url in
 
             let preview        = /* Prepared template preview */
@@ -260,12 +254,10 @@ extension MigrationStudioTests
 
             for focused in [false, true]
             {
-
                 var baselineAssembly = assembly /* Baseline assembly */
 
                 if focused
                 {
-
                     var export    = /* Prepared export evidence */
                         baselineAssembly["workspace_export"] as! [String: Any]
                     var base      = /* Base value before overrides */
@@ -306,7 +298,6 @@ extension MigrationStudioTests
 
                 defer
                 {
-
                     defaults.removePersistentDomain(forName: domain)
                 }
                 try candidate.stage(at: stage)
@@ -329,7 +320,6 @@ extension MigrationStudioTests
 
                 if focused
                 {
-
                     XCTAssertThrowsError(try PortableEditedExport.prepare(frozen))
                     XCTAssertTrue(NSDictionary(dictionary: source).isEqual(to: try XCTUnwrap(defaults.persistentDomain(forName: domain))))
                     XCTAssertEqual(runtime, try PortableRuntimeEvidence.capture(root: root))
@@ -381,7 +371,6 @@ extension MigrationStudioTests
                     PortableEditedExport.prepare(LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root))))
                 for name in ["Assembly.json", "Manifest.json"]
                 {
-
                     let attachment = /* Synthetic test evidence */
                         XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                         uniformTypeIdentifier: "public.json")
@@ -417,7 +406,6 @@ extension MigrationStudioTests
     /// @throws Fixture, preview, reservation, persistence or export errors
     func testTemplateApplicationEditedExport() throws
     {
-
         try templateApplicationFixture(mode: .add)
     }
 
@@ -428,7 +416,6 @@ extension MigrationStudioTests
     /// @throws Application, reservation, persistence or export failures
     func testTemplateReplacementEditedExport() throws
     {
-
         try templateApplicationFixture(mode: .replace)
     }
 
@@ -439,7 +426,6 @@ extension MigrationStudioTests
     /// @throws Synthetic installation, checked save or portable reconciliation errors
     func testRolloverReplacementReconcilesUnretainedImportance() throws
     {
-
         try retainedTemplateFixture { backup, url in
 
             let preview   = /* Prepared template preview */
@@ -460,7 +446,6 @@ extension MigrationStudioTests
 
             defer
             {
-
                 defaults.removePersistentDomain(forName: domain)
             }
             try candidate.stage(at: stage)
@@ -515,7 +500,6 @@ extension MigrationStudioTests
 
             for id in committed.importantIDs
             {
-
                 importance = LibraryImportanceSelection.settingLevel(cardID: id, collectionID: week.id, level: 1, data: importance)
 
             }
@@ -562,7 +546,6 @@ extension MigrationStudioTests
 
             for (name, data) in [("RolloverLinksFirst", bytes), ("RolloverLinksRepeated", repeated)]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
 
@@ -574,13 +557,11 @@ extension MigrationStudioTests
             XCTAssertEqual(bytes, repeated)
             for _ in 0..<8
             {
-
                 let retry = /* Retry comparison fixture */
                     try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: PortableEditedExport.prepare(frozen))
 
                 if bytes != retry
                 {
-
                     let attachment = /* Synthetic test evidence */
                         XCTAttachment(data: retry, uniformTypeIdentifier: "public.json")
 
@@ -634,7 +615,6 @@ extension MigrationStudioTests
     /// @throws Synthetic application, export or recovery errors
     func testDayTemplateApplicationEditedExport() throws
     {
-
         try templateApplicationFixture(mode: .add, day: true)
     }
 
@@ -645,7 +625,6 @@ extension MigrationStudioTests
     /// @throws Synthetic application, export or recovery errors
     func testDayTemplateReplacementEditedExport() throws
     {
-
         try templateApplicationFixture(mode: .replace, day: true)
     }
 
@@ -658,12 +637,10 @@ extension MigrationStudioTests
     /// @throws Synthetic setup, application or verification failures
     private func templateApplicationFixture(mode: PlanningTemplateApplication.Mode, day: Bool = false) throws
     {
-
         try retainedTemplateFixture(edit: { values in
 
             guard mode == .replace || day else
             {
-
                 return
             }
 
@@ -686,7 +663,6 @@ extension MigrationStudioTests
 
             if day
             {
-
                 week.collection.lists[1].archivedCards = [KanbanCard(id: 5, word: "Retained Tuesday archive",
                     listTitle: week.collection.lists[1].title, checklists: [])]
 
@@ -719,14 +695,12 @@ extension MigrationStudioTests
 
             defer
             {
-
                 defaults.removePersistentDomain(forName: domain)
             }
             try candidate.stage(at: stage)
             try candidate.install(from: stage, root: root, defaults: defaults, domain: domain)
             if mode == .replace || day
             {
-
                 // Establish importance after owner-qualified import, without ambiguous legacy capture owners
                 let imported = /* Imported isolated content */
                     try XCTUnwrap(PlanningCalendarStore.load(from: defaults))
@@ -786,7 +760,6 @@ extension MigrationStudioTests
 
             for iteration in 0..<(mode == .add ? 2 : 1)
             {
-
                 let beforePreview = /* Before preview */
                     try PortableRuntimeEvidence.capture(root: root)
                 let applied       = /* Result after applying changes */
@@ -841,7 +814,6 @@ extension MigrationStudioTests
 
                 for id in committed.importantIDs.sorted(by: >)
                 {
-
                     importance = LibraryImportanceSelection.settingLevel(cardID: id, collectionID: current.id, level: 1, data: importance)
 
                 }
@@ -877,12 +849,10 @@ extension MigrationStudioTests
 
             for key in before.keys where key != "planning" && key != "content_selections"
             {
-
                 XCTAssertTrue(NSDictionary(dictionary: ["v": before[key]!]).isEqual(to: ["v": after[key]!]))
             }
             for key in oldPlanning.keys where key != "content" && key != "weeks"
             {
-
                 XCTAssertTrue(NSDictionary(dictionary: ["v": oldPlanning[key]!]).isEqual(to: ["v": newPlanning[key]!]))
             }
 
@@ -890,12 +860,10 @@ extension MigrationStudioTests
 
             for var oldWeek in oldPlanning["weeks"] as! [[String: Any]]
             {
-
                 var payload = oldWeek["payload"] as! [String: Any] /* Canonical record payload */
 
                 if payload["collection_id"] as? String == current.id.uuidString.lowercased()
                 {
-
                     payload["explicitly_saved"] = true
 
                 }
@@ -916,7 +884,6 @@ extension MigrationStudioTests
             XCTAssertEqual(newCards.count, oldCards.count + (mode == .add ? 4 : 2))
             for card in oldCards
             {
-
                 XCTAssertTrue(NSDictionary(dictionary: card).isEqual(to: try XCTUnwrap(newCards.first { $0["id"] as? String == card["id"] as? String })))
             }
 
@@ -938,7 +905,6 @@ extension MigrationStudioTests
             XCTAssertEqual(rebuiltWeek.collection.savedCardIDs, current.collection.savedCardIDs)
             if mode == .replace
             {
-
                 let dated = /* Calendar-backed owner */
                     day ? Set([try XCTUnwrap(original.dayListIDs[PlanningDate.key(instant, calendar: document.calendar)])])
                     : Set(original.dayListIDs.values)
@@ -956,27 +922,23 @@ extension MigrationStudioTests
                 XCTAssertTrue(Set(rebuiltWeek.collection.lists.flatMap(\.cards).map(\.id)).isDisjoint(with: removed))
                 for list in original.collection.lists
                 {
-
                     let restoredList = /* Restored list */
                         try XCTUnwrap(rebuiltWeek.collection.lists.first { $0.id == list.id })
 
                     XCTAssertEqual(restoredList.archivedCards, list.archivedCards)
                     if !dated.contains(list.id) || list.isArchived
                     {
-
                         XCTAssertEqual(restoredList, list)
                     }
                 }
             }
             if day
             {
-
                 let targetListID = /* Target list ID */
                     try XCTUnwrap(original.dayListIDs[PlanningDate.key(instant, calendar: document.calendar)])
 
                 for list in original.collection.lists where list.id != targetListID
                 {
-
                     XCTAssertEqual(try XCTUnwrap(rebuiltWeek.collection.lists.first { $0.id == list.id }), list)
 
                     let ids = Set(list.allCards.map(\.id)) /* Record identifiers */
@@ -998,7 +960,6 @@ extension MigrationStudioTests
             XCTAssertTrue(expectedImportant.isSubset(of: Set(rebuiltImportance.filter { $0.collectionID == current.id }.map(\.cardID))))
             if day
             {
-
                 let untouchedID = original.collection.lists[0].cards[0].id /* Untouched ID */
 
                 XCTAssertEqual(rebuiltImportance.first { $0.collectionID == original.id && $0.cardID == untouchedID }?.level, 2)
@@ -1049,7 +1010,6 @@ extension MigrationStudioTests
 
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output), uniformTypeIdentifier: "public.json")
 
@@ -1083,7 +1043,6 @@ extension MigrationStudioTests
     /// @throws JSON encoding or normalization failures
     func testImportanceComparisonKeepsIdentityAndUnknownValues() throws
     {
-
         let key                   = LibraryImportanceSelection.key /* Lookup or persistence key */
         let owner                 =                                /* Owning collection or Week */
             "f0000000-0000-4000-8000-000000000001"
@@ -1107,7 +1066,6 @@ extension MigrationStudioTests
 
         for values in [[first, second, first], [unknown, second], [first, first]]
         {
-
             let changed = /* Value with requested edits */
                 try PortableEditedExport.nativeJSON(JSONSerialization.data(withJSONObject: values), store: key)
 

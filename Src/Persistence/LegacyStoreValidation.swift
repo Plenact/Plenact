@@ -14,7 +14,6 @@ import Foundation
 @MainActor
 enum LegacyStoreValidation
 {
-
     static let jsonKeys: Set<String> = [ /* JSON keys */
         "Plenact.Board.v1", "Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1",
         "Plenact.LabelLibrary.v1", "Plenact.LocalProfile.v1", "Plenact.PlanPreferences.v1",
@@ -45,7 +44,6 @@ enum LegacyStoreValidation
     /// @return True for a known key or reviewed dynamic prefix
     static func includes(_ key: String) -> Bool
     {
-
         jsonKeys.contains(key) || nativeKeys.contains(key) || recoveryKeys.contains(key)
             || key.hasPrefix("Plenact.BoardViewport.v1.") || key.hasPrefix("plenact.creationDraft.")
     }
@@ -60,7 +58,6 @@ enum LegacyStoreValidation
     /// @throws Native decoding errors
     private static func decode<T: Decodable>(_ type: T.Type, _ data: Data) throws
     {
-
         _ = try JSONDecoder().decode(type, from: data)
 
     }
@@ -75,7 +72,6 @@ enum LegacyStoreValidation
     /// @return Review diagnostics for missing or unsafe referenced originals
     static func mediaIssues(_ value: Any, store: String, files: Set<String>) -> [String]
     {
-
         var issues: [String] = [] /* Validation findings */
 
         if let object = value as? [String: Any]
@@ -92,7 +88,6 @@ enum LegacyStoreValidation
                     }
                     else
                     {
-
                         let candidates: [String] /* Eligible operation targets */
 
                         switch key
@@ -139,7 +134,6 @@ enum LegacyStoreValidation
     /// @return Optional diagnostic code; nil means the checks available here passed
     static func check(key: String, value: Any) -> String?
     {
-
         if key == "Plenact.DailyReviewTransaction.v1"
         {
             return "pending_recovery_transaction"
@@ -147,7 +141,6 @@ enum LegacyStoreValidation
 
         guard jsonKeys.contains(key) else
         {
-
             let booleans: Set<String> = /* Boolean field names */
                 ["Plenact.CardCovers.enabled", "Plenact.ActivityShowsCovers",
                 "Plenact.ActivityRecentSquareCards", "Plenact.LibraryShowsCollectionPreviews",
@@ -170,7 +163,6 @@ enum LegacyStoreValidation
 
         do
         {
-
             let json = try JSONSerialization.jsonObject(with: data) /* JSON representation */
 
             if let object = json as? [String: Any], let version = object["version"] as? NSNumber,

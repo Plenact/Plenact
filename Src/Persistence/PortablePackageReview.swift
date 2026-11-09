@@ -13,7 +13,6 @@ import Foundation
 ///     Distinguish verified portable-file review from source recovery and workspace installation
 struct ReviewedPortablePackage
 {
-
     let recordCount: Int  /* Record count                                     */
     let cardCount:   Int  /* Card count                                       */
     let listCount:   Int  /* List count                                       */
@@ -29,13 +28,11 @@ struct ReviewedPortablePackage
 @MainActor
 enum PortablePackageReview
 {
-
     /// Review failures retain both the selected package and the current application workspace
     /// @section Purpose
     ///     Reject unsupported versions, inconsistent metadata and corrupted original bytes
     enum Failure: LocalizedError
     {
-
         case invalid, integrity, relationships
 
         /// @fcn Failure.errorDescription
@@ -43,7 +40,6 @@ enum PortablePackageReview
         /// @return Bounded review guidance
         var errorDescription: String? /* Readable failure explanation */
         {
-
             switch self
             {
             case .invalid:
@@ -64,7 +60,6 @@ enum PortablePackageReview
     /// @return Whether the value has the expected numeric type and value
     private static func integer(_ value: Any?, equals expected: Int) -> Bool
     {
-
         guard let number = value as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else
         {
             return false
@@ -79,7 +74,6 @@ enum PortablePackageReview
     /// @return Whether the value is exactly false
     private static func isFalse(_ value: Any?) -> Bool
     {
-
         guard let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else
         {
             return false
@@ -96,7 +90,6 @@ enum PortablePackageReview
     /// @throws Missing, unsafe or malformed JSON errors
     private static func object(_ path: String, files: FileWrapper) throws -> [String: Any]
     {
-
         guard let value = try JSONSerialization.jsonObject(with: MigrationBackupReader.file(path, in: files)) as? [String: Any] else
         {
             throw Failure.invalid
@@ -112,7 +105,6 @@ enum PortablePackageReview
     /// @throws Bounded read, unsupported format, corruption or reference errors
     static func review(at url: URL) throws -> ReviewedPortablePackage
     {
-
         let nested    = /* Owned nested content */
             url.appendingPathComponent("PortableTestPackage", isDirectory: true)
         let selected  = /* Current selection */
@@ -132,7 +124,6 @@ enum PortablePackageReview
     /// @throws Unsupported or inconsistent package evidence
     static func review(files: FileWrapper) throws -> ReviewedPortablePackage
     {
-
         guard files.isDirectory, Set(files.fileWrappers?.keys.map { $0 } ?? []) == ["Manifest.json", "Assembly.json", "Originals"],
               let originals = files.fileWrappers?["Originals"], originals.isDirectory else
         {
@@ -329,7 +320,6 @@ enum PortablePackageReview
     /// @throws Invalid core references
     private static func references(records: [[String: Any]]) throws
     {
-
         let byID = /* By ID */
             Dictionary(uniqueKeysWithValues: records.map { ($0["id"] as! String, $0) })
 
@@ -340,7 +330,6 @@ enum PortablePackageReview
         }
         for record in records
         {
-
             let kind    = record["record_type"] as? String    /* Content kind discriminator */
             let payload = record["payload"] as! [String: Any] /* Canonical record payload   */
 
@@ -364,7 +353,6 @@ enum PortablePackageReview
             }
             if kind == "artwork_library"
             {
-
                 let expected = /* Expected operation result */
                     Set(records.filter { $0["record_type"] as? String == "studio_artwork" }.compactMap { $0["id"] as? String })
 

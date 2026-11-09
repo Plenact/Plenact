@@ -19,8 +19,6 @@ import SwiftUI
 ///
 struct CalendarCardResult: Identifiable
 {
-
-
     let cardID:    Int    /* Stable card identity                  */
     let title:     String /* Card title shown on the selected date */
     let listID:    Int    /* Board list opened when selected       */
@@ -52,8 +50,6 @@ struct CalendarCardResult: Identifiable
 ///
 struct TodayCalendarView: View
 {
-
-
     let lists:           [KanbanList]       /* Current Board snapshot                             */
     let onArchiveCard:   (Int) -> Void      /* Canonical archive callback                         */
     let onDeleteCard:    (Int) -> Bool      /* Confirmed deletion result                          */
@@ -76,7 +72,6 @@ struct TodayCalendarView: View
     ///
     private var weekdaySymbols: [String] /* Weekday symbols */
     {  /* Locale weekday headings ordered by the calendar */
-
         let calendar = Calendar.current                           /* User's local calendar */
         let symbols  = calendar.veryShortStandaloneWeekdaySymbols /* Locale weekday labels */
 
@@ -99,7 +94,6 @@ struct TodayCalendarView: View
     ///
     private var monthDays: [Date?] /* Month days */
     {  /* Month grid dates with leading alignment placeholders */
-
         let calendar = Calendar.current /* User's local calendar                                */
 
         guard
@@ -108,8 +102,6 @@ struct TodayCalendarView: View
         let dayRange = calendar.range(of: .day, in: .month, for: displayedMonth)
         else
         {  /* Valid day numbers for the displayed month */
-
-
             return []
         }
 
@@ -141,7 +133,6 @@ struct TodayCalendarView: View
     ///
     private var selectedDayCards: [CalendarCardResult] /* Selected day cards */
     {  /* Cards scheduled for the chosen calendar date */
-
         cards(on: selectedDate)
     }
 
@@ -157,22 +148,16 @@ struct TodayCalendarView: View
     ///
     var body: some View /* Today Calendar layout */
     {  /* Calendar grid and selected-day card results */
-
-
         ZStack
         {
-
             TodayPaperBackground()
 
             ScrollView
             {
-
                 VStack(alignment: .leading, spacing: 16)
                 {
-
                     VStack(alignment: .leading, spacing: 4)
                     {
-
                         Text("Calendar")
                         .font(.largeTitle.weight(.bold))
                         Text("Dates from your existing cards")
@@ -184,18 +169,14 @@ struct TodayCalendarView: View
 
                     VStack(spacing: 14)
                     {
-
                         HStack
                         {
-
                             Button
                             {
-
                                 moveMonth(by: -1)
                             }
                             label:
                             {
-
                                 Image(systemName: "chevron.left")
                                 .frame(width: 40, height: 40)
                             }
@@ -209,12 +190,10 @@ struct TodayCalendarView: View
 
                             Button
                             {
-
                                 moveMonth(by: 1)
                             }
                             label:
                             {
-
                                 Image(systemName: "chevron.right")
                                 .frame(width: 40, height: 40)
                             }
@@ -226,7 +205,6 @@ struct TodayCalendarView: View
 
                         LazyVGrid(columns: weekdayColumns, spacing: 4)
                         {
-
                             ForEach(Array(weekdaySymbols.enumerated()), id: \.offset)
                             {
                                 _, symbol in
@@ -242,13 +220,10 @@ struct TodayCalendarView: View
                                 index in
                                 if let date = monthDays[index]
                                 {  /* Actual date represented by this grid cell */
-
-
                                     calendarDayButton(date)
                                 }
                                 else
                                 {
-
                                     Color.clear.frame(height: 40)
                                 }
 
@@ -263,40 +238,32 @@ struct TodayCalendarView: View
 
                     VStack(alignment: .leading, spacing: 10)
                     {
-
                         Text(selectedDate.formatted(date: .complete, time: .omitted))
                         .font(.title3.weight(.semibold))
 
                         if selectedDayCards.isEmpty
                         {
-
-
                             Text("No cards with a start or due date on this day.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         }
                         else
                         {
-
                             ForEach(selectedDayCards)
                             {
                                 result in
                                 Button
                                 {
-
                                     onOpenBoardCard(result.listID, result.cardID)
                                 }
                                 label:
                                 {
-
                                     HStack(alignment: .top, spacing: 12)
                                     {
-
                                         Image(systemName: "calendar")
                                         .foregroundStyle(.secondary)
                                         VStack(alignment: .leading, spacing: 3)
                                         {
-
                                             Text(result.title)
                                             .foregroundStyle(.primary)
                                             Text("\(result.listTitle) · \(result.dateLabel)")
@@ -365,8 +332,6 @@ struct TodayCalendarView: View
     ///
     private func calendarDayButton(_ date: Date) -> some View
     {
-
-
         let calendar   = Calendar.current                                  /* User's local calendar   */
         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)  /* Selected day state      */
         let isToday    = calendar.isDateInToday(date)                      /* Current day state       */
@@ -374,17 +339,13 @@ struct TodayCalendarView: View
 
         return Button
         {
-
-
             selectedDate = calendar.startOfDay(for: date)
 
         }
         label:
         {
-
             VStack(spacing: 3)
             {
-
                 Text(date.formatted(.dateTime.day()))
                 .font(.subheadline.weight(isSelected || isToday ? .semibold : .regular))
                 .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
@@ -397,11 +358,8 @@ struct TodayCalendarView: View
             .background(isSelected ? Color.accentColor.opacity(0.12) : .clear, in: Circle())
             .overlay
             {
-
                 if isToday
                 {
-
-
                     Circle().strokeBorder(Color.accentColor.opacity(0.6), lineWidth: 1)
                 }
 
@@ -430,8 +388,6 @@ struct TodayCalendarView: View
     ///
     private func cards(on date: Date) -> [CalendarCardResult]
     {
-
-
         let calendar = Calendar.current /* User's local calendar */
 
         return lists.flatMap
@@ -442,8 +398,6 @@ struct TodayCalendarView: View
                 card in
                 guard !card.isSectionDivider else
                 {
-
-
                     return nil
                 }
 
@@ -465,8 +419,6 @@ struct TodayCalendarView: View
 
                 guard starts || due else
                 {
-
-
                     return nil
                 }
 
@@ -497,13 +449,9 @@ struct TodayCalendarView: View
     ///
     private func moveMonth(by amount: Int)
     {
-
-
         guard let nextMonth = Calendar.current.date(byAdding: .month, value: amount, to: displayedMonth)
         else
         {  /* Month reached by the navigation offset */
-
-
             return
         }
 

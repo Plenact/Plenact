@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 struct CardVisualCompletion: ViewModifier
 {
-
-
     let card:     KanbanCard /* Card under consideration */
     let onToggle: () -> Void /* Toggle item completion   */
 
@@ -38,13 +36,10 @@ struct CardVisualCompletion: ViewModifier
     @ViewBuilder
     func body(content: Content) -> some View
     {
-
         if card.presentation == .card && !card.isSectionDivider
         {
-
             Button
             {
-
                 guard !card.isEditingLocked else
                 {
                     return
@@ -54,14 +49,11 @@ struct CardVisualCompletion: ViewModifier
             }
             label:
             {
-
                 content
                 .overlay(alignment: .bottomTrailing)
                 {
-
                     if card.isTitleChecked
                     {
-
                         Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 16, weight: .semibold))
                         .symbolRenderingMode(.palette)
@@ -83,7 +75,6 @@ struct CardVisualCompletion: ViewModifier
         }
         else
         {
-
             content
         }
 
@@ -100,7 +91,6 @@ struct CardVisualCompletion: ViewModifier
 ///
 struct KanbanCardView: View
 {
-
     @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
@@ -126,7 +116,6 @@ struct KanbanCardView: View
     /// Plain writing keeps previews readable without changing the stored rich note
     private var noteExcerpt: String /* Note excerpt */
     {
-
         PlanRichText.plain(card.descriptionOverride ?? "")
         .replacingOccurrences(of: "\r\n", with: "\n")
         .replacingOccurrences(of: "\r", with: "\n")
@@ -152,7 +141,6 @@ struct KanbanCardView: View
     ///
     private var trimmedRenameDraft: String /* Trimmed rename draft */
     {  /* Normalized rename input */
-
         renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -167,7 +155,6 @@ struct KanbanCardView: View
     ///
     private var cardLabels: [KanbanLabel] /* Card labels */
     {  /* Resolved labels shown on this card */
-
         card.labelIDs.compactMap
         {
             labelID in
@@ -199,8 +186,6 @@ struct KanbanCardView: View
     ///
     private func cardUpdated(title: String, subtitle: String?, description: String?) -> KanbanCard
     {
-
-
         KanbanCard(
             id: card.id,
             word: title,
@@ -245,12 +230,8 @@ struct KanbanCardView: View
     ///
     private func renameCard()
     {
-
-
         guard !trimmedRenameDraft.isEmpty else
         {
-
-
             return
         }
 
@@ -277,17 +258,14 @@ struct KanbanCardView: View
     ///
     private var showsHeaderTimes: Bool /* Header Times visibility */
     {
-
         displaySettings.showDueDateBadges && card.showsDueDateInList && card.usesTimeOnlySchedule(on: listedOnDate)
     }
 
 
     private var headerTimes: some View /* Header times */
     {
-
         VStack(alignment: .trailing, spacing: 2)
         {
-
             ForEach(Array(card.scheduleBadges(on: listedOnDate).enumerated()), id: \.offset)
             {
                 _, badge in
@@ -306,17 +284,12 @@ struct KanbanCardView: View
 
     var body: some View /* Kanban Card layout */
     {  /* Compact card summary and card actions */
-
-
         VStack(alignment: .leading, spacing: compactCards ? 2 : 9)
         {
-
             if (card.displayFormat == .title || card.displayFormat == .text) && !compactCards
             {
-
                 HStack(alignment: .top, spacing: 8)
                 {
-
                     Text(card.word)
                     .font(card.displayFormat == .title ? .title2.weight(.bold) : .body)
                     .foregroundStyle((card.appearance?.cardTitleColor ?? titleColor)?.color ?? .primary)
@@ -325,7 +298,6 @@ struct KanbanCardView: View
                     .accessibilityAddTraits(card.displayFormat == .title ? .isHeader : [])
                     HStack(alignment: .top, spacing: 4)
                     {
-
                         cardActions
                         ImportantItemIndicator(cardID: card.id)
                     }
@@ -335,46 +307,34 @@ struct KanbanCardView: View
             }
             else if card.displayFormat == .picture && !compactCards
             {
-
                 ItemPicturePreview(attachment: card.coverAttachment, title: card.word)
                 .modifier(CardVisualCompletion(card: card, onToggle: onToggle))
                 .overlay(alignment: .topTrailing)
                 {
-
                     ImportantItemIndicator(cardID: card.id).padding(10)
                 }
 
             }
             else
             {
-
-
                 if !compactCards && showsCardCovers, let cover = card.coverAttachment
                 {  /* Featured attachment allowed by the current display settings */
-
-
                     CardCoverPreview(attachment: cover, height: presentation == .overview ? 72 : 128)
                 }
 
 
                 HStack(alignment: .top, spacing: 8)
                 {
-
-
                     if card.displayFormat == .picture
                     {
-
                         Group
                         {
-
                             if let attachment = card.coverAttachment
                             {
-
                                 CardCoverPreview(attachment: attachment, height: 44)
                             }
                             else
                             {
-
                                 Image(systemName: "photo").foregroundStyle(.secondary)
                             }
 
@@ -385,8 +345,6 @@ struct KanbanCardView: View
                     }
                     else if card.presentation == .note
                     {
-
-
                         Image(systemName: "note.text")
                         .font(.headline)
                         .foregroundStyle(.secondary)
@@ -395,16 +353,12 @@ struct KanbanCardView: View
                     }
                     else
                     {
-
-
                         Button
                         {
-
                             onToggle()
                         }
                         label:
                         {
-
                             Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
                             .font(.headline)
                             .foregroundStyle(card.isTitleChecked ? .green : .secondary)
@@ -430,10 +384,8 @@ struct KanbanCardView: View
                     .layoutPriority(1)
                     VStack(alignment: .trailing, spacing: 4)
                     {
-
                         HStack(alignment: .top, spacing: 4)
                         {
-
                             if compactCards
                             {
                                 cardActions
@@ -454,11 +406,8 @@ struct KanbanCardView: View
 
                 if !compactCards && presentation == .standard && card.presentation == .note
                 {
-
-
                     if !noteExcerpt.isEmpty
                     {
-
                         Text(noteExcerpt)
                         .font(.subheadline)
                         .foregroundStyle(
@@ -474,8 +423,6 @@ struct KanbanCardView: View
                 }
                 else if !compactCards && presentation == .standard && !card.subtitle.isEmpty
                 {
-
-
                     Text(card.subtitle)
                     .font((card.appearance?.subtitleItalic ?? inheritedSubtitleItalic) ? .subheadline.italic() : .subheadline)
                     .foregroundStyle((card.appearance?.cardTextColor ?? supportingTextColor)?.color ?? .secondary)
@@ -486,14 +433,10 @@ struct KanbanCardView: View
 
                 if !compactCards && presentation == .standard && !cardLabels.isEmpty
                 {
-
-
                     ViewThatFits(in: .horizontal)
                     {
-
                         HStack(spacing: 5)
                         {
-
                             ForEach(cardLabels.prefix(3))
                             {
                                 label in
@@ -503,8 +446,6 @@ struct KanbanCardView: View
 
                             if cardLabels.count > 3
                             {
-
-
                                 Text("+\(cardLabels.count - 3)")
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(.secondary)
@@ -523,14 +464,10 @@ struct KanbanCardView: View
 
                 HStack(alignment: .center, spacing: 4)
                 {
-
                     ViewThatFits(in: .horizontal)
                     {
-
                         if !dynamicTypeSize.isAccessibilitySize
                         {
-
-
                             HStack(spacing: 10)
                             {
                                 cardBadges
@@ -541,7 +478,6 @@ struct KanbanCardView: View
 
                         VStack(alignment: .leading, spacing: 4)
                         {
-
                             cardBadges
                         }
 
@@ -581,20 +517,16 @@ struct KanbanCardView: View
         )
         .background
         {
-
             ZStack
             {
-
                 if card.displayFormat != .title && card.displayFormat != .text
                 {
-
                     Color(.systemBackground)
                 }
 
                 if ![.title, .text].contains(card.displayFormat) && (compactCards || card.displayFormat != .picture),
                 let tint = card.appearance?.cardBackground ?? cardBackground, tint != .neutral
                 {
-
                     tint.color
                 }
                 StudioItemBackground(appearance: card.appearance, isNote: card.presentation == .note, preview: true)
@@ -610,13 +542,10 @@ struct KanbanCardView: View
         .padding(.horizontal, 4)
         .alert("Rename \(card.displayFormat.title)", isPresented: $isRenaming)
         {
-
-
             TextField("\(card.displayFormat.title) title", text: $renameDraft).textInputAutocapitalization(.sentences)
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
 
@@ -625,26 +554,20 @@ struct KanbanCardView: View
         }
         message:
         {
-
-
             Text("Enter a new title for this \(card.displayFormat.title.lowercased()).")
         }
 
         .confirmationDialog("Delete \(card.word)?", isPresented: $isConfirmingDelete, titleVisibility: .visible)
         {
-
-
             Button("Delete \(card.displayFormat.title)", role: .destructive, action: onDeleteCard)
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
 
         .sheet(isPresented: $isEditingInfo)
         {
-
             CardInfoEditorSheet(card: card)
             {
                 title, subtitle, description in
@@ -667,15 +590,12 @@ struct KanbanCardView: View
     ///
     private var cardActions: some View /* Card actions */
     {  /* Item-kind, cover, archive, deletion, and editing menu */
-
         Menu
         {
-
             ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
             CardDestinationMenu(card: card)
             if !card.isSectionDivider
             {
-
                 Toggle(
                                                 "Show reactions in previews",
                                                 isOn: Binding(
@@ -717,11 +637,8 @@ struct KanbanCardView: View
 
             if card.coverAttachmentID != nil
             {
-
-
                 Button("Remove Cover", systemImage: "photo.badge.minus")
                 {
-
                     var updated = card /* Card snapshot clearing the featured cover without removing attachments */
 
                     updated.coverAttachmentID = nil
@@ -734,52 +651,44 @@ struct KanbanCardView: View
 
             Button(action: onArchiveCard)
             {
-
                 Label("Archive \(card.displayFormat.title)", systemImage: "archivebox")
             }
 
 
             Button(role: .destructive)
             {
-
                 isConfirmingDelete = true
 
             }
             label:
             {
-
                 Label("Delete \(card.displayFormat.title)", systemImage: "trash")
             }
 
             Button
             {
-
                 renameDraft = card.word
                 isRenaming = true
 
             }
             label:
             {
-
                 Label("Rename \(card.displayFormat.title)", systemImage: "pencil")
             }
 
             Button
             {
-
                 isEditingInfo = true
 
             }
             label:
             {
-
                 Label("Update \(card.displayFormat.title) Info", systemImage: "slider.horizontal.3")
             }
 
         }
         label:
         {
-
             Image(systemName: "ellipsis")
             .foregroundStyle(.secondary)
             .frame(width: 44, height: 44)
@@ -803,32 +712,25 @@ struct KanbanCardView: View
     @ViewBuilder
     private var cardBadges: some View /* Card badges */
     {  /* Enabled discussion, checklist-progress, and due-date indicators */
-
         if card.isEditingLocked
         {
-
             Label("Read-only", systemImage: "lock.fill")
         }
 
         if displaySettings.showCommentCounts && (!compactCards || card.commentCount > 0)
         {
-
-
             Label("\(card.commentCount)", systemImage: "text.bubble")
         }
 
 
         if displaySettings.showChecklistProgress && (!compactCards || !card.checklists.isEmpty)
         {
-
-
             Label("\(card.completedChecklistItems)/\(card.checklistItems.count)", systemImage: "checklist")
         }
 
 
         if displaySettings.showDueDateBadges && !showsHeaderTimes
         {
-
             ForEach(Array(card.scheduleBadges(on: listedOnDate).enumerated()), id: \.offset)
             {
                 _, badge in
@@ -859,7 +761,6 @@ struct KanbanCardView: View
 ///
 struct SingleListNoteRow: View
 {
-
     @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
@@ -872,7 +773,6 @@ struct SingleListNoteRow: View
 
     private var preview: String /* Prepared content preview */
     {
-
         let subtitle = /* Supporting item text */
             card.subtitleOverride?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
@@ -897,10 +797,8 @@ struct SingleListNoteRow: View
     ///
     private func dateText(_ date: Date, kind: CardDateKind) -> String
     {
-
         switch kind
         {
-
         case .date:
             date.formatted(date: .abbreviated, time: .omitted)
         case .time:
@@ -913,22 +811,17 @@ struct SingleListNoteRow: View
 
     var body: some View /* Single List Note layout */
     {
-
         VStack(spacing: 0)
         {
-
             HStack(alignment: .top, spacing: 10)
             {
-
                 if card.displayFormat == .note
                 {
-
                     Image(systemName: "note.text").foregroundStyle(.secondary)
                     .frame(width: 36, height: 44).accessibilityHidden(true)
                 }
                 else
                 {
-
                     Button(action:
                         {
                             if !card.isEditingLocked
@@ -938,7 +831,6 @@ struct SingleListNoteRow: View
 
                         })
                     {
-
                         Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
                         .font(.title3).foregroundStyle(card.isTitleChecked ? Color.green : .secondary)
                         .frame(width: 36, height: 44).contentShape(Rectangle())
@@ -950,7 +842,6 @@ struct SingleListNoteRow: View
 
                 VStack(alignment: .leading, spacing: 5)
                 {
-
                     Text(card.word).font(.body.weight(.medium)).foregroundStyle(.primary)
                     .lineLimit(2).strikethrough(card.isTitleChecked)
                     if !preview.isEmpty
@@ -965,10 +856,8 @@ struct SingleListNoteRow: View
                     ItemReactionPreview(card: card)
                     if card.showsDueDateInList
                     {
-
                         if let start = card.startDate
                         {
-
                             Text("Start · " + dateText(start, kind: card.startDateKind)).font(.caption).foregroundStyle(
                                 .secondary)
                             .modifier(CardPreviewDateEditor(card: card, isStart: true, onUpdate: onUpdateCard))
@@ -976,7 +865,6 @@ struct SingleListNoteRow: View
 
                         if let due = card.dueDate
                         {
-
                             Text("Due · " + dateText(due, kind: card.dueDateKind)).font(.caption).foregroundStyle(
                                 .secondary)
                             .modifier(CardPreviewDateEditor(card: card, isStart: false, onUpdate: onUpdateCard))
@@ -990,7 +878,6 @@ struct SingleListNoteRow: View
                 let url = CardAttachmentStore.imageURL(for: cover),
                 let image = UIImage(contentsOfFile: url.path)
                 {
-
                     Image(uiImage: image).resizable().scaledToFill().frame(width: 64, height: 64)
                     .clipped().clipShape(RoundedRectangle(cornerRadius: 6)).accessibilityHidden(true)
                 }
@@ -1003,7 +890,6 @@ struct SingleListNoteRow: View
         .contentShape(Rectangle())
         .contextMenu
         {
-
             if let onArchive
             {
                 Button("Archive", systemImage: "archivebox", action: onArchive)
@@ -1013,7 +899,6 @@ struct SingleListNoteRow: View
             {
                 Button("Delete", systemImage: "trash", role: .destructive)
                 {
-
                     confirmsDelete = true
 
                 }
@@ -1023,7 +908,6 @@ struct SingleListNoteRow: View
         }
         .confirmationDialog("Delete \(card.word)?", isPresented: $confirmsDelete, titleVisibility: .visible)
         {
-
             Button("Delete", role: .destructive)
             {
                 onDelete?()
@@ -1031,13 +915,11 @@ struct SingleListNoteRow: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text("Permanently deletes this item and its details. This cannot be undone.")
         }
 

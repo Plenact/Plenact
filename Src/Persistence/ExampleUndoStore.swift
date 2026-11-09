@@ -16,8 +16,6 @@ import Foundation
 ///
 struct ExampleLoadUndoSnapshot: Codable, Equatable
 {
-
-
     let lists:            [KanbanList]             /* Board lists to restore                   */
     let todayListID:      Int?                     /* Previously selected Today list, when set */
     var week:             DatedPlanningWeek? = nil /* Dated Week under consideration           */
@@ -36,8 +34,6 @@ struct ExampleLoadUndoSnapshot: Codable, Equatable
 ///
 enum ExampleLoadUndoStore
 {
-
-
     /// Versioned storage key for the saved undo snapshot
     private static let storageKey = "Plenact.ExampleLoadUndo.v1" /* Versioned example-load recovery key */
 
@@ -72,8 +68,6 @@ enum ExampleLoadUndoStore
         to defaults: UserDefaults = .standard
     ) -> Bool
     {
-
-
         let snapshot = ExampleLoadUndoSnapshot( /* Working state snapshot */
             lists: lists, todayListID: todayListID,
             week: week, savedCardIDs: savedCardIDs, importantCardIDs: importantCardIDs,
@@ -81,8 +75,6 @@ enum ExampleLoadUndoStore
 
         guard let data = try? JSONEncoder().encode(snapshot) else
         {  /* Encoded recovery snapshot ready for storage */
-
-
             return false
         }
 
@@ -106,12 +98,8 @@ enum ExampleLoadUndoStore
     ///
     static func load(from defaults: UserDefaults = .standard) -> ExampleLoadUndoSnapshot?
     {
-
-
         guard let data = defaults.data(forKey: storageKey) else
         {  /* Stored example-load recovery document */
-
-
             return nil
         }
 
@@ -131,8 +119,6 @@ enum ExampleLoadUndoStore
     ///
     static func clear(from defaults: UserDefaults = .standard)
     {
-
-
         defaults.removeObject(forKey: storageKey)
     }
 

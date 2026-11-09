@@ -24,8 +24,6 @@ import UIKit
 @MainActor
 final class CreationAttachmentDraft: ObservableObject
 {
-
-
     ///
     /// Identifies an in-memory creation attachment
     ///
@@ -35,8 +33,6 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     struct Entry: Identifiable
     {
-
-
         ///
         /// Carries the supported creation attachment payloads
         ///
@@ -46,8 +42,6 @@ final class CreationAttachmentDraft: ObservableObject
         ///
         enum Content
         {
-
-
             case media(Data, KanbanAttachmentKind, String)
             case link(URL)
             case drawing(DrawingCaptureDraft)
@@ -58,10 +52,8 @@ final class CreationAttachmentDraft: ObservableObject
 
         var title:   String /* User-facing title */
         {
-
             switch content
             {
-
             case .media(_, let kind, _):
                 kind == .video ? "Video" : "Photo"
             case .link(let url):
@@ -74,10 +66,8 @@ final class CreationAttachmentDraft: ObservableObject
 
         var symbol: String /* Selected symbol name */
         {
-
             switch content
             {
-
             case .media(_, let kind, _):
                 kind == .video ? "video" : "photo"
             case .link:
@@ -100,15 +90,11 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     enum Sheet: Identifiable
     {
-
-
         case sources, link, drawing(DrawingCaptureDraft)
         var id: String /* Record or view identity */
         {
-
             switch self
             {
-
             case .sources:
                             "sources"
             case .link:
@@ -137,7 +123,6 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     func openSources()
     {
-
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
         sheet = .sources
@@ -155,23 +140,18 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     func paste()
     {
-
         sheet = nil
 
         if let images = UIPasteboard.general.images, !images.isEmpty
         {
-
             for image in images
             {
-
                 if let data = image.pngData()
                 {
-
                     entries.append(Entry(content: .media(data, .photo, "png")))
                 }
                 else
                 {
-
                     notice = "A clipboard image couldn't be prepared. Please try again."
 
                 }
@@ -182,12 +162,10 @@ final class CreationAttachmentDraft: ObservableObject
         else if let url = CardAttachmentStore.webURL(
             from: UIPasteboard.general.url?.absoluteString ?? UIPasteboard.general.string ?? "")
         {
-
             entries.append(Entry(content: .link(url)))
         }
         else
         {
-
             notice = "The clipboard does not contain an image or a valid web link."
 
         }
@@ -205,7 +183,6 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     func importSelection() async
     {
-
         guard !selection.isEmpty else
         {
             return
@@ -218,7 +195,6 @@ final class CreationAttachmentDraft: ObservableObject
 
         defer
         {
-
             isImporting = false;
             selection = []
 
@@ -226,13 +202,10 @@ final class CreationAttachmentDraft: ObservableObject
 
         for item in selected
         {
-
             do
             {
-
                 guard let data = try await item.loadTransferable(type: Data.self), !data.isEmpty else
                 {
-
                     throw CocoaError(.fileReadCorruptFile)
                 }
 
@@ -260,7 +233,6 @@ final class CreationAttachmentDraft: ObservableObject
             }
             catch
             {
-
                 notice =
                                                 "Some attachments couldn't be prepared. Your draft and attachments already added are still here."
 
@@ -287,7 +259,6 @@ final class CreationAttachmentDraft: ObservableObject
     ///
     func save(commit: ([KanbanAttachment]) throws -> Bool) throws -> Bool
     {
-
         guard !isImporting, selection.isEmpty else
         {
             throw CocoaError(.fileReadUnknown)
@@ -297,17 +268,13 @@ final class CreationAttachmentDraft: ObservableObject
 
         do
         {
-
             for entry in entries
             {
-
                 switch entry.content
                 {
-
                 case .media(let data, let kind, let ext):
                     guard !data.isEmpty, kind != .photo || UIImage(data: data) != nil else
                     {
-
                         throw CocoaError(.fileReadCorruptFile)
                     }
 
@@ -330,7 +297,6 @@ final class CreationAttachmentDraft: ObservableObject
         }
         catch
         {
-
             try? CardAttachmentStore.removeDeletedFiles(Set(stored.flatMap(\.storedFileNames)), keeping: [])
             throw error
         }
@@ -348,38 +314,30 @@ final class CreationAttachmentDraft: ObservableObject
 ///
 struct CreationAttachmentList: View
 {
-
-
     @ObservedObject var draft: CreationAttachmentDraft /* Local editing draft */
 
     var body:                  some View /* Creation Attachment List layout */
     {
-
         VStack(alignment: .leading, spacing: 12)
         {
-
             ForEach(draft.entries)
             {
                 entry in
                 HStack
                 {
-
                     if case .media(let data, .photo, _) = entry.content, let image = UIImage(data: data)
                     {
-
                         Image(uiImage: image).resizable().scaledToFill().frame(width: 44, height: 44).clipped()
                         .accessibilityHidden(true)
                     }
                     else
                     {
-
                         Image(systemName: entry.symbol).frame(width: 44)
                     }
 
                     Text(entry.title).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
                     Button(role: .destructive)
                     {
-
                         draft.entries.removeAll
                         {
                             $0.id == entry.id
@@ -388,7 +346,6 @@ struct CreationAttachmentList: View
                     }
                     label:
                     {
-
                         Image(systemName: "trash")
                     }
                     .buttonStyle(.borderless).frame(minWidth: 44, minHeight: 44)
@@ -420,8 +377,6 @@ struct CreationAttachmentList: View
 ///
 struct CreationAttachmentPresentation: ViewModifier
 {
-
-
     @ObservedObject var draft: CreationAttachmentDraft /* Local editing draft */
 
 
@@ -437,20 +392,17 @@ struct CreationAttachmentPresentation: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         content
         .sheet(item: $draft.sheet)
         {
             sheet in
             switch sheet
             {
-
             case .sources:
                 CardAttachmentSourceSheet(
                     photoSelection: $draft.selection,
                     onAddLink:
                     {
-
                         draft.sheet = .link
 
                     }, onPasteClipboard: draft.paste,
@@ -464,7 +416,6 @@ struct CreationAttachmentPresentation: ViewModifier
                     },
                     onAddDrawing:
                     {
-
                         draft.sheet = .drawing(DrawingCaptureDraft())
 
                     })
@@ -499,7 +450,6 @@ struct CreationAttachmentPresentation: ViewModifier
                                 {
                                     if !$0
                                     {
-
                                         draft.notice = nil
 
                                     }
@@ -507,10 +457,8 @@ struct CreationAttachmentPresentation: ViewModifier
                                 })
         )
         {
-
             Button("OK", role: .cancel)
             {
-
                 draft.notice = nil
 
             }
@@ -518,7 +466,6 @@ struct CreationAttachmentPresentation: ViewModifier
         }
         message:
         {
-
             Text(draft.notice ?? "")
         }
 

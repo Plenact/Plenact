@@ -22,8 +22,6 @@ import SwiftUI
 ///
 struct TodayHomeView: View
 {
-
-
     @ScaledMetric(relativeTo: .subheadline) private var browseIconSize: CGFloat = /* Browse icon size */
         30
     @ScaledMetric(relativeTo: .subheadline) private var browseTextSize: CGFloat = /* Browse text size */
@@ -48,7 +46,6 @@ struct TodayHomeView: View
     ///
     private func calendarDayList(_ date: Date, in snapshot: [KanbanList]? = nil) -> KanbanList?
     {
-
         let lists = snapshot ?? self.lists /* Ordered List records */
 
         if let id = planningCalendarAccess?.document.week(for: date)?.dayListIDs[PlanningDate.key(date)],
@@ -57,7 +54,6 @@ struct TodayHomeView: View
                 $0.id == id && !$0.isArchived
             })
         {
-
             return list
         }
 
@@ -142,14 +138,10 @@ struct TodayHomeView: View
     ///
     private var selectedTodayList: KanbanList? /* Selected today list */
     {  /* Board list selected for the current date */
-
-
         let resolvedListID = selectedTodayListID /* Calendar-derived or explicitly chosen Today list */
 
         guard let resolvedListID else
         {  /* Available Week destination for new content */
-
-
             return nil
         }  /* No saved or default list selection */
 
@@ -173,25 +165,19 @@ struct TodayHomeView: View
     ///
     private var todayHeader: some View /* Today header */
     {  /* Today's heading and account controls */
-
-
         HStack(alignment: .center, spacing: 0)
         {
-
             VStack(alignment: .leading, spacing: 4)
             {
-
                 Text("Today")
                 .font(.largeTitle.weight(.bold))
                 Button
                 {
-
                     showsTodayPlan = true
 
                 }
                 label:
                 {
-
                     Text(Date.now.formatted(date: .complete, time: .omitted))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -213,13 +199,11 @@ struct TodayHomeView: View
 
             Button
             {
-
                 showsSearch = true
 
             }
             label:
             {
-
                 WorkspaceHeaderIcon(systemName: "magnifyingglass")
             }
 
@@ -228,13 +212,11 @@ struct TodayHomeView: View
 
             Button
             {
-
                 showsPlanSettings = true
 
             }
             label:
             {
-
                 WorkspaceHeaderIcon(systemName: "gearshape")
             }
             .buttonStyle(.plain)
@@ -243,13 +225,11 @@ struct TodayHomeView: View
 
             Button
             {
-
                 showsAccountSettings = true
 
             }
             label:
             {
-
                 ProfileAvatarView(profile: profile, size: 44)
                 .modifier(TodayWelcomeGlow(highlighted: welcomeCue.highlights(.profile), circular: true))
             }
@@ -273,8 +253,6 @@ struct TodayHomeView: View
     ///
     private var todayHeaderPanel: some View /* Today header panel */
     {  /* Styled container for Today's heading */
-
-
         todayHeader
         .padding(.horizontal, 20)
         .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? -22 : 4)
@@ -282,13 +260,11 @@ struct TodayHomeView: View
         .frame(maxWidth: .infinity)
         .background
         {
-
             GeometryReader
             {
                 geometry in
                 ZStack(alignment: .top)
                 {
-
                     Color(.systemBackground)
 
                     Image("TodayPaper")
@@ -314,11 +290,8 @@ struct TodayHomeView: View
 
         .overlay(alignment: .bottom)
         {
-
             if isContentScrolled
             {
-
-
                 LinearGradient(
                     colors: [.clear, Color.black.opacity(0.14)],
                     startPoint: .top,
@@ -439,8 +412,6 @@ struct TodayHomeView: View
         quickCreateRequest: Int
     )
     {
-
-
         self._lists = lists
         self._archivedLists = archivedLists
         self._savedCardIDs = savedCardIDs
@@ -479,8 +450,6 @@ struct TodayHomeView: View
     ///
     private func cardCount(in list: KanbanList) -> Int
     {
-
-
         list.cards.filter
         {
             !$0.isSectionDivider
@@ -491,7 +460,6 @@ struct TodayHomeView: View
     /// Pinned, owner-qualified list shortcuts chosen by the user and persisted across launches
     private var yourShortcutsSection: some View /* Your shortcuts section */
     {
-
         let owners = WorkspaceBrowseIndex.owners( /* Qualified record owners */
             document: planningCalendarAccess?.document, library: planningCalendarAccess?.library ?? [])
         let available = WorkspaceBrowseIndex.lists(in: owners) /* Available operation inputs */
@@ -508,7 +476,6 @@ struct TodayHomeView: View
 
         return TodayShortcutGrid(pinned: pinned, onOpen:
             {
-
                 openedShortcut = $0
 
             })
@@ -525,20 +492,15 @@ struct TodayHomeView: View
     ///
     private var browseListsAction: some View /* Browse lists action */
     {  /* Library navigation action */
-
-
         Button
         {
-
             listPickerMode = .browseAll
 
         }
         label:
         {
-
             HStack(spacing: 10)
             {
-
                 Spacer(minLength: 0)
                 Text("Browse this week")
                 .font(.system(size: browseTextSize))
@@ -572,22 +534,16 @@ struct TodayHomeView: View
     ///
     private func addQuickCard()
     {
-
-
         let title = quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines) /* Clean card title */
 
         guard !title.isEmpty else
         {
-
-
             return
         }
 
 
         guard let selectedTodayList else
         {  /* Current list targeted by Today actions */
-
-
             listPickerMode = .chooseToday
 
             return
@@ -620,15 +576,11 @@ struct TodayHomeView: View
     ///
     private func openQuickNoteEditor()
     {
-
-
         composerTemplate = nil
         captureAction = nil
 
         guard selectedTodayList != nil else
         {
-
-
             presentComposerAfterListChoice = true
             listPickerMode = .chooseToday
 
@@ -653,7 +605,6 @@ struct TodayHomeView: View
     ///
     private func openCapture(_ action: TodayCaptureAction)
     {
-
         welcomeCue.cancel()
 
         composerTemplate = nil
@@ -661,7 +612,6 @@ struct TodayHomeView: View
 
         guard selectedTodayList != nil else
         {
-
             presentComposerAfterListChoice = true
             listPickerMode = .chooseToday
 
@@ -681,8 +631,6 @@ struct TodayHomeView: View
     ///
     private func presentQuickNoteEditor()
     {
-
-
         quickComposerInitialTitle = quickCaptureTitle
         quickCaptureTitle = ""
         showsQuickNoteEditor = true
@@ -705,8 +653,6 @@ struct TodayHomeView: View
     ///
     private func selectTodayList(_ list: KanbanList)
     {
-
-
         selectedTodayListID = list.id
 
         let shouldPresentComposer = presentComposerAfterListChoice /* Deferred New-button action */
@@ -716,8 +662,6 @@ struct TodayHomeView: View
 
         if shouldPresentComposer
         {
-
-
             Task
             {
                 @MainActor in
@@ -742,10 +686,8 @@ struct TodayHomeView: View
     ///
     private func ensureCurrentWeekdayList()
     {
-
         if let current = calendarDayList(.now)
         {
-
             selectedTodayListID = current.id;
 
             return
@@ -762,8 +704,6 @@ struct TodayHomeView: View
 
         if activeLists != lists
         {
-
-
             lists = activeLists
 
         }
@@ -771,8 +711,6 @@ struct TodayHomeView: View
 
         if retainedLists != archivedLists
         {
-
-
             archivedLists = retainedLists
 
         }
@@ -797,16 +735,10 @@ struct TodayHomeView: View
     ///
     var body: some View /* Today planning workspace */
     {  /* Today screen and list-selection sheets */
-
-
         NavigationStack
         {
-
-
             ScrollView
             {
-
-
                 GeometryReader
                 {
                     geometry in
@@ -820,10 +752,8 @@ struct TodayHomeView: View
 
                 VStack(alignment: .leading, spacing: 16)
                 {
-
                     if UIDevice.current.userInterfaceIdiom == .pad
                     {
-
                         TimelineView(.everyMinute)
                         {
                             context in
@@ -832,7 +762,6 @@ struct TodayHomeView: View
                                 sources: planningCalendarAccess?.searchableItems ?? [],
                                 welcomesPlan: welcomeCue.highlights(.plan), onOpen:
                                 {
-
                                     showsTodayPlan = true
 
                                 }
@@ -845,7 +774,6 @@ struct TodayHomeView: View
 
                     VStack(spacing: 0)
                     {
-
                         TodaySloganView()
                         .frame(minHeight: 40)
                         quickCaptureSection
@@ -859,7 +787,6 @@ struct TodayHomeView: View
                     let importantFocusIDs =              /* Important focus i ds */
                     planningCalendarAccess?.document.weeks.first(where:
                         {
-
                             $0.startKey == planningCalendarAccess?.document.currentWeekKey
                         }).map
                     {
@@ -874,7 +801,6 @@ struct TodayHomeView: View
 
                     Group
                     {
-
                         let focus = calendarDayList( /* Today Focus selection */
                             focusDate, in: focusLists) /* Active list matching the current weekday */
                         let cards = /* Card records under consideration */
@@ -916,7 +842,6 @@ struct TodayHomeView: View
                                 PlanPreferencesStore.save(updated)
                                 if var profile
                                 {
-
                                     profile.preferences = updated;
 
                                     onSaveProfile(profile)
@@ -947,8 +872,6 @@ struct TodayHomeView: View
                                 cardID in
                                 if let focus
                                 {  /* Weekday list available for navigation */
-
-
                                     onToggleCardCompletion(focus.id, cardID)
                                 }
 
@@ -963,7 +886,6 @@ struct TodayHomeView: View
                             onDeleteCard: onDeleteCard,
                             onOpenTodayList:
                             {
-
                                 focusedListID = focus?.id
                                 showsTodayList = focus != nil
 
@@ -980,12 +902,10 @@ struct TodayHomeView: View
                     yourShortcutsSection
                     .onGeometryChange(for: CGFloat.self)
                     {
-
                         $0.frame(in: .named("TodaySectionContent")).maxY
                     }
                     action:
                     {
-
                         shortcutsSectionBottom = $0
 
                     }
@@ -1009,32 +929,27 @@ struct TodayHomeView: View
                         TodayPerspectiveSection(
                             completed: calendarDayList(context.date)?.cards.filter
                             {
-
                                 !$0.isSectionDivider && $0.isTitleChecked
                             }
                             ?? [],
                             tomorrowList: tomorrowList,
                             onReview:
                             {
-
                                 reviewRoute = $0
 
                             },
                             onSettings:
                             {
-
                                 showsReviewRhythmSettings = true
 
                             },
                             onReflect:
                             {
-
                                 showsTodayPlan = true
 
                             },
                             onPrepare:
                             {
-
                                 perspectivePlanDate = tomorrow
                                 showsPerspectivePlan = true
 
@@ -1043,12 +958,10 @@ struct TodayHomeView: View
                     .padding(.top, 16)
                     .onGeometryChange(for: CGFloat.self)
                     {
-
                         $0.frame(in: .named("TodaySectionContent")).minY
                     }
                     action:
                     {
-
                         perspectiveSectionTop = $0
 
                     }
@@ -1069,10 +982,8 @@ struct TodayHomeView: View
             .modifier(TodayScrollFadeTracking(isScrolled: $isContentScrolled))
             .safeAreaInset(edge: .top, spacing: 0)
             {
-
                 HStack(spacing: 0)
                 {
-
                     Spacer(minLength: 0)
                     todayHeaderPanel
                     Spacer(minLength: 0)
@@ -1086,7 +997,6 @@ struct TodayHomeView: View
                 // Advance Up Next and the weekday at least once a minute without caching Card data
                 while !Task.isCancelled
                 {
-
                     focusDate = .now
 
                     do
@@ -1108,7 +1018,6 @@ struct TodayHomeView: View
             }
             .task(id: welcomeCue.requestID)
             {
-
                 await welcomeCue.play(
                     reduceMotion: reduceWelcomeMotion,
                     planPulseSpeed: UIDevice.current.userInterfaceIdiom == .pad ? 1 : 1.3)
@@ -1166,14 +1075,12 @@ struct TodayHomeView: View
             }
             .onDisappear
             {
-
                 removedFocusBookmark = nil
                 bookmarkNoticeRevision = UUID()
 
             }
             .background
             {
-
                 GeometryReader
                 {
                     geometry in
@@ -1207,11 +1114,9 @@ struct TodayHomeView: View
             }
             .task(id: reviewNotifications.pending?.id)
             {
-
                 // Preserve a tapped reminder until the current editor/sheet is closed
                 while let pending = reviewNotifications.pending, !Task.isCancelled
                 {
-
                     let root = /* Workspace or view root */
                         UIApplication.shared.connectedScenes.compactMap
                     {
@@ -1223,7 +1128,6 @@ struct TodayHomeView: View
                     root?.presentedViewController == nil,
                     reviewRoute == nil
                     {
-
                         reviewRoute = pending
                         reviewNotifications.pending = nil
 
@@ -1236,19 +1140,15 @@ struct TodayHomeView: View
             }
             .sheet(isPresented: $showsTodayPlan)
             {
-
                 TodayPlanView(calendar: planningCalendarAccess?.document.calendar ?? .current)
             }
             .sheet(isPresented: $showsPerspectivePlan)
             {
-
                 TodayPlanView(
                     date: perspectivePlanDate, calendar: planningCalendarAccess?.document.calendar ?? .current)
             }
             .sheet(isPresented: $showsAccountSettings)
             {
-
-
                 AccountSettingsView(
                     profile: profile,
                     lists: lists,
@@ -1269,14 +1169,11 @@ struct TodayHomeView: View
             }
             .fullScreenCover(isPresented: $showsTodayList)
             {
-
                 if let focusedList = lists.first(where:
                     {
                         $0.id == focusedListID
                     })
                 {  /* Current list associated with the focus selection */
-
-
                     TodayListDetailView(
                         lists: $lists,
                         reservedLists: archivedLists,
@@ -1286,13 +1183,11 @@ struct TodayHomeView: View
                         currentUserName: profile?.displayName ?? "Justin Reina",
                         onClose:
                         {
-
                             showsTodayList = false
 
                         },
                         onOpenWeek:
                         {
-
                             showsTodayList = false
 
                             onOpenBoardList(focusedList.id)
@@ -1310,11 +1205,8 @@ struct TodayHomeView: View
                 isPresented: $showsQuickNoteEditor,
                 onDismiss:
                 {
-
                     if !quickComposerInitialTitle.isEmpty && quickCaptureTitle.isEmpty
                     {
-
-
                         quickCaptureTitle = quickComposerInitialTitle
 
                     }
@@ -1328,12 +1220,8 @@ struct TodayHomeView: View
                 }
             )
             {
-
-
                 if let selectedTodayList
                 {  /* Current list receiving the Today edit */
-
-
                     QuickNoteComposer(
                         lists: $lists,
                         initialListID: selectedTodayList.id,
@@ -1349,7 +1237,6 @@ struct TodayHomeView: View
 
                             if saved
                             {
-
                                 quickComposerInitialTitle = ""
 
                             }
@@ -1374,7 +1261,6 @@ struct TodayHomeView: View
                 isPresented: $showsTemplates,
                 onDismiss:
                 {
-
                     guard let template = pendingTemplate else
                     {
                         return
@@ -1391,7 +1277,6 @@ struct TodayHomeView: View
                 }
             )
             {
-
                 QuickCaptureTemplatesView
                 {
                     template in
@@ -1406,10 +1291,8 @@ struct TodayHomeView: View
             .modifier(PlanningSharedSearchPresentation(isPresented: $showsSearch))
             .sheet(isPresented: $showsPlanSettings, onDismiss:
             {
-
                 guard opensTemplateLibraryAfterSettings else
                 {
-
                     return
                 }
 
@@ -1418,11 +1301,9 @@ struct TodayHomeView: View
                 openTemplateLibrary?()
             })
             {
-
                 PlanSettingsView(lists: lists, onSaveProfile: onSaveProfile,
                     onOpenTemplateLibrary: openTemplateLibrary == nil ? nil :
                     {
-
                         opensTemplateLibraryAfterSettings = true
                         showsPlanSettings = false
 
@@ -1432,7 +1313,6 @@ struct TodayHomeView: View
 
             .onAppear
             {
-
                 labelLibrary = LabelLibraryStore.load()
 
                 ensureCurrentWeekdayList()
@@ -1453,7 +1333,6 @@ struct TodayHomeView: View
                 ensureCurrentWeekdayList()
                 if showsTodayList
                 {
-
                     focusedListID = calendarDayList(.now)?.id
 
                 }
@@ -1461,7 +1340,6 @@ struct TodayHomeView: View
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification))
             {
-
             _ in
 
                 focusDate = .now
@@ -1469,7 +1347,6 @@ struct TodayHomeView: View
                 ensureCurrentWeekdayList()
                 if showsTodayList
                 {
-
                     focusedListID = calendarDayList(.now)?.id
 
                 }
@@ -1488,23 +1365,16 @@ struct TodayHomeView: View
 
                 NavigationStack
                 {
-
-
                     List
                     {
-
-
                         ForEach(lists)
                         {
                             list in
 
                             Button
                             {
-
                                 switch mode
                                 {
-
-
                                 case .chooseToday:
                                     selectTodayList(list)
                                 case .browseAll:
@@ -1517,14 +1387,10 @@ struct TodayHomeView: View
                             }
                             label:
                             {
-
                                 HStack
                                 {
-
                                     VStack(alignment: .leading, spacing: 4)
                                     {
-
-
                                         Text(list.title)
                                         .foregroundStyle(.primary)
 
@@ -1538,8 +1404,6 @@ struct TodayHomeView: View
 
                                     if selectedTodayListID == list.id
                                     {
-
-
                                         Image(systemName: "checkmark")
                                         .foregroundStyle(.tint)
                                     }
@@ -1572,15 +1436,10 @@ struct TodayHomeView: View
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar
                     {
-
-
                         ToolbarItem(placement: .confirmationAction)
                         {
-
-
                             Button("Done")
                             {
-
                                 listPickerMode = nil
 
                             }
@@ -1630,25 +1489,17 @@ struct TodayHomeView: View
     ///
     private var quickCaptureSection: some View /* Quick capture section */
     {  /* Inline capture controls for the selected list */
-
-
         VStack(alignment: .leading, spacing: 8)
         {
-
-
             HStack(spacing: 8)
             {
-
-
                 Button
                 {
-
                     showsTemplates = true
 
                 }
                 label:
                 {
-
                     Image(systemName: "plus.square")
                     .foregroundStyle(.secondary)
                     .frame(width: 44, height: 44)
@@ -1673,8 +1524,6 @@ struct TodayHomeView: View
 
                 HStack(spacing: 0)
                 {
-
-
                     Button
                     {
                         if quickCaptureTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1689,8 +1538,6 @@ struct TodayHomeView: View
                     }
                     label:
                     {
-
-
                         Image(systemName: "plus.circle.fill")
                         .font(.title2)
                         .frame(width: 44, height: 44)
@@ -1704,8 +1551,6 @@ struct TodayHomeView: View
 
                     Button(action: openQuickNoteEditor)
                     {
-
-
                         Image(systemName: "arrow.up.right")
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
@@ -1721,7 +1566,6 @@ struct TodayHomeView: View
             .padding(.horizontal, 12)
             .background
             {
-
                 RoundedRectangle(cornerRadius: 8)
                 .fill(.background)
                 .allowsHitTesting(false)
@@ -1732,11 +1576,8 @@ struct TodayHomeView: View
 
             if selectedTodayList == nil
             {  /* Keep an explicit way to choose a missing destination */
-
-
                 Button("Choose today's list first")
                 {
-
                     listPickerMode = .chooseToday
 
                 }

@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 enum BoardPanoramicZoom
 {
-
-
     static let initial: CGFloat = 0.62 /* Initial operation state */
 
 
@@ -54,7 +52,6 @@ enum BoardPanoramicZoom
     ///
     static func clamped(_ scale: CGFloat) -> CGFloat
     {
-
         guard scale.isFinite else
         {
             return initial
@@ -77,7 +74,6 @@ enum BoardPanoramicZoom
     ///
     static func scale(start: CGFloat, magnification: CGFloat) -> CGFloat
     {
-
         guard magnification.isFinite, magnification > 0 else
         {
             return clamped(start)
@@ -98,8 +94,6 @@ enum BoardPanoramicZoom
 ///
 enum BoardTabletSizing
 {
-
-
     ///
     /// @fcn        BoardTabletSizing.scale
     /// @brief      Calculate the optional tablet enlargement factor
@@ -115,7 +109,6 @@ enum BoardTabletSizing
     ///
     static func scale(viewportWidth: CGFloat, columnWidth: CGFloat, isTablet: Bool, enabled: Bool) -> CGFloat
     {
-
         guard isTablet, enabled, viewportWidth.isFinite, columnWidth.isFinite, columnWidth > 0 else
         {
             return 1
@@ -137,8 +130,6 @@ enum BoardTabletSizing
 ///
 struct BoardViewportState: Codable, Equatable
 {
-
-
     var scale: Double                   = 1     /* Current layout scale          */
     var panoramic                       = false /* Board overview mode           */
     var gallery                         = false /* Gallery presentation state    */
@@ -159,8 +150,6 @@ struct BoardViewportState: Codable, Equatable
 @MainActor
 final class BoardViewportMemory
 {
-
-
     static let prefix = "Plenact.BoardViewport.v1." /* Viewport persistence key prefix */
     let key:                 String                 /* Lookup or persistence key       */
     private let defaults:    UserDefaults           /* Preference storage domain       */
@@ -183,7 +172,6 @@ final class BoardViewportMemory
     ///
     init(owner: String, defaults: UserDefaults = .standard)
     {
-
         key = Self.prefix + owner
         self.defaults = defaults
         state =
@@ -207,7 +195,6 @@ final class BoardViewportMemory
     /// @return Void; only this owner's existing device-local viewport record is updated
     func resetScrollOffsets()
     {
-
         state.offsets = state.offsets.mapValues { _ in 0 }
         horizontalRestoreAllowed = true
 
@@ -227,7 +214,6 @@ final class BoardViewportMemory
     ///
     func record(_ offset: Double, for key: String)
     {
-
         guard offset.isFinite else
         {
             return
@@ -249,7 +235,6 @@ final class BoardViewportMemory
     ///
     func scheduleSave()
     {
-
         pendingSave?.cancel()
 
         let work = DispatchWorkItem /* Work operation value */
@@ -273,7 +258,6 @@ final class BoardViewportMemory
     ///
     func flush()
     {
-
         pendingSave?.cancel();
 
         pendingSave = nil
@@ -298,8 +282,6 @@ final class BoardViewportMemory
 ///
 struct BoardViewportMemoryKey: EnvironmentKey
 {
-
-
     static let defaultValue: BoardViewportMemory? = nil /* Fallback environment value */
 
 }
@@ -314,11 +296,8 @@ struct BoardViewportMemoryKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var boardViewportMemory: BoardViewportMemory? /* Board viewport memory */
     {
-
         get
         {
             self[BoardViewportMemoryKey.self]
@@ -326,7 +305,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[BoardViewportMemoryKey.self] = newValue
 
         }
@@ -345,8 +323,6 @@ extension EnvironmentValues
 ///
 struct BoardViewportScrollProbe: UIViewRepresentable
 {
-
-
     let memory: BoardViewportMemory?                               /* Owner-scoped viewport state */
     let key:    String                                             /* Lookup or persistence key   */
     var horizontal = false                                         /* Horizontal scrolling axis   */
@@ -362,8 +338,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     ///
     final class Marker: UIView
     {
-
-
         var attached: (() -> Void)? /* Attached callback */
 
 
@@ -413,7 +387,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> Marker
     {
-
         let view = Marker(); /* View being rendered */
 
         view.isUserInteractionEnabled = false
@@ -447,7 +420,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     ///
     func updateUIView(_ view: Marker, context: Context)
     {
-
         context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest)
         if view.window != nil
         {
@@ -484,8 +456,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     @MainActor
     final class Coordinator
     {
-
-
         private var key        = ""                     /* Lookup or persistence key    */
         private var horizontal = false                  /* Horizontal scrolling axis    */
 
@@ -514,13 +484,10 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool, resetRequest: Int = 0)
         {
-
             if self.memory === memory, self.key == key, self.horizontal == horizontal
             {
-
                 if self.resetRequest != resetRequest
                 {
-
                     self.resetRequest = resetRequest
                     desired = 0
                     restored = false
@@ -556,7 +523,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         private func matches(_ view: UIScrollView) -> Bool
         {
-
             if horizontal
             {
                 return view.alwaysBounceHorizontal || view.contentSize.width > view.bounds.width + 1
@@ -578,13 +544,10 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         private func descendant(in view: UIView) -> UIScrollView?
         {
-
             for child in view.subviews
             {
-
                 if let scroll = child as? UIScrollView
                 {
-
                     if matches(scroll)
                     {
                         return scroll
@@ -593,7 +556,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 }
                 else if let found = descendant(in: child)
                 {
-
                     return found
                 }
 
@@ -615,10 +577,8 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         func findScroll(from marker: UIView)
         {
-
             if let scroll
             {
-
                 // SwiftUI may install row actions after the first empty List layout
                 if !horizontal
                 {
@@ -656,7 +616,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
                 for _ in 0 ..< 10
                 {
-
                     guard let view = parent else
                     {
                         break
@@ -664,7 +623,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
                     if let native = view as? UIScrollView
                     {
-
                         if self.matches(native)
                         {
                             self.attach(native);
@@ -711,7 +669,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         private func attach(_ scroll: UIScrollView)
         {
-
             self.scroll = scroll
             observation = scroll.observe(\.contentOffset, options: [.new])
             {
@@ -742,7 +699,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         private func restore()
         {
-
             guard let scroll else
             {
                 return
@@ -756,7 +712,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
             if let desired = memory?.state.offsets[key] ?? desired, !(horizontal && memory?.horizontalRestoreAllowed == false), !scroll.isDragging
             {
-
                 let inset    = /* Viewport content inset */
                     horizontal ? scroll.adjustedContentInset.left : scroll.adjustedContentInset.top
                 let endInset = /* End inset */
@@ -771,13 +726,11 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
                 if horizontal
                 {
-
                     point.x = value
 
                 }
                 else
                 {
-
                     point.y = value
 
                 }
@@ -800,7 +753,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         private func capture()
         {
-
             guard restored, let scroll, let memory else
             {
                 return
@@ -825,7 +777,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         func finish()
         {
-
             capture();
             observation?.invalidate();
 
@@ -849,8 +800,6 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 ///
 final class BoardDragGeometryCache
 {
-
-
     var centers:  [Int: CGFloat] = [:]   /* List centers in the viewport     */
     var cards:    [Int: CGRect]  = [:]   /* Card records under consideration */
     var lists:    [Int: CGRect]  = [:]   /* Ordered List records             */
@@ -868,15 +817,12 @@ final class BoardDragGeometryCache
 ///
 struct BoardZoomHint: View
 {
-
-
     let percentage: Int /* Percentage operation value */
     @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
     @State private var visible = true /* Current visibility state */
 
     var body: some View /* Board Zoom Hint layout */
     {
-
         Text("Pinch to zoom · \(percentage)%")
         .font(.caption.weight(.medium)).padding(.horizontal, 12).padding(.vertical, 6)
         .background(.ultraThinMaterial, in: Capsule())
@@ -884,16 +830,13 @@ struct BoardZoomHint: View
         .allowsHitTesting(false).accessibilityHidden(true)
         .task
         {
-
             visible = true
 
             do
             {
-
                 try await Task.sleep(for: .seconds(3))
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.7))
                 {
-
                     visible = false
 
                 }
@@ -901,7 +844,6 @@ struct BoardZoomHint: View
             }
             catch
             {  /* Leaving the board cancels the hint timer  */
-
             }
 
         }
@@ -919,8 +861,6 @@ struct BoardZoomHint: View
 ///
 struct BoardPinchState
 {
-
-
     var magnification: CGFloat = 1     /* Current pinch scale    */
     var active                 = false /* Active operation state */
 
@@ -935,8 +875,6 @@ struct BoardPinchState
 ///
 struct BoardZoomScrollBehavior: ScrollTargetBehavior
 {
-
-
     let panoramic: Bool /* Board overview mode */
 
 
@@ -953,7 +891,6 @@ struct BoardZoomScrollBehavior: ScrollTargetBehavior
     ///
     func updateTarget(_ target: inout ScrollTarget, context: TargetContext)
     {
-
         if !panoramic
         {
             ViewAlignedScrollTargetBehavior().updateTarget(&target, context: context)

@@ -19,15 +19,11 @@ import SwiftUI
 ///
 enum DailyReviewAction: Codable, Equatable
 {
-
-
     case keep, keepTomorrow, table, complete, archive, queue, tomorrow, date(String)
     var title: String /* User-facing title */
     {
-
         switch self
         {
-
         case .keep:
                     "Leave in place"
         case .keepTomorrow:
@@ -60,8 +56,6 @@ enum DailyReviewAction: Codable, Equatable
 ///
 struct DailyReviewDecision: Codable, Equatable, Identifiable
 {
-
-
     var id = UUID()               /* Record UUID                     */
     let source: DailyPlanPriority /* Source value for this operation */
     let result: DailyPlanPriority /* Result being assembled          */
@@ -80,8 +74,6 @@ struct DailyReviewDecision: Codable, Equatable, Identifiable
 ///
 struct DailyEveningReview: Codable, Equatable
 {
-
-
     var step = 0                                 /* Current review step       */
     var completedAt: Date?                       /* Completed at              */
     var helped                              = "" /* Saved review successes    */
@@ -102,8 +94,6 @@ struct DailyEveningReview: Codable, Equatable
 ///
 enum TodayReviewSelection
 {
-
-
     ///
     /// @fcn        TodayReviewSelection.items
     /// @brief      Select the day's unfinished review candidates
@@ -124,7 +114,6 @@ enum TodayReviewSelection
         plan: DailyPlan, date: Date, access: PlanningCalendarAccess, referenceLabelIDs: Set<String>, calendar: Calendar
     ) -> [PlanningSearchResult]
     {
-
         let day    = /* Day under consideration */
             access.document.week(for: date, calendar: calendar)
         let listID = /* Owner-local List identifier */
@@ -170,7 +159,6 @@ enum TodayReviewSelection
     ///
     static func pending(_ items: [PlanningSearchResult], review: DailyEveningReview?) -> [PlanningSearchResult]
     {
-
         items.filter
         {
             item in
@@ -181,7 +169,6 @@ enum TodayReviewSelection
 
             return !(review?.decisions.contains
                 {
-
                     $0.source.resolve(in: [item]) != nil || $0.result.resolve(in: [item]) != nil
                 }
                 ?? false)
@@ -201,8 +188,6 @@ enum TodayReviewSelection
 ///
 struct TodayReviewView: View
 {
-
-
     @Binding var plan: DailyPlan /* Daily planning record */
     let date:          Date /* Date used by this operation */
     let baseline:      DailyPlan? /* Original state for comparison */
@@ -221,7 +206,6 @@ struct TodayReviewView: View
 
     private var calendar: Calendar /* Date calculation calendar */
     {
-
         var value = access?.document.calendar ?? .current /* Value being processed */
 
         value.timeZone = TimeZone(identifier: plan.timeZoneID) ?? .current
@@ -236,7 +220,6 @@ struct TodayReviewView: View
 
     private var items: [PlanningSearchResult] /* Items being processed */
     {
-
         guard let access else
         {
             return []
@@ -244,7 +227,6 @@ struct TodayReviewView: View
 
         let labels = LabelLibraryStore.load().labels.filter /* Available label definitions */
         {
-
             $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id
         }
 
@@ -263,7 +245,6 @@ struct TodayReviewView: View
 
     private var queueAvailable: Bool /* Queue available */
     {
-
         access?.library.contains
         {
             $0.isActive && $0.kind == .list && $0.title == "In the Queue"
@@ -283,7 +264,6 @@ struct TodayReviewView: View
     ///
     private func text(_ key: WritableKeyPath<DailyEveningReview, String>) -> Binding<String>
     {
-
         Binding(
             get:
             {
@@ -314,7 +294,6 @@ struct TodayReviewView: View
     ///
     private func propose(_ action: DailyReviewAction, source: PlanningSearchResult)
     {
-
         pendingSource = source;
         pendingAction = action
 
@@ -330,7 +309,6 @@ struct TodayReviewView: View
     ///
     private func advance()
     {
-
         let previous = plan.eveningReview /* Previous value for comparison */
         var updated  = review             /* Edited value to publish       */
 
@@ -338,7 +316,6 @@ struct TodayReviewView: View
 
         if step == 2
         {
-
             updated.completedAt = .now
             updated.achievements = achievements.map(DailyPlanPriority.init)
 
@@ -348,14 +325,12 @@ struct TodayReviewView: View
 
         if onSave()
         {
-
             if step == 2
             {
                 dismiss()
             }
             else
             {
-
                 step += 1
 
             }
@@ -363,7 +338,6 @@ struct TodayReviewView: View
         }
         else
         {
-
             plan.eveningReview = previous;
             operationError = true
 
@@ -382,12 +356,10 @@ struct TodayReviewView: View
     ///
     private func perform()
     {
-
         guard let source = pendingSource, let action = pendingAction,
         let saved = access?.applyDailyReview?(source, action, plan, baseline)
         else
         {
-
             operationError = true;
             pendingAction = nil;
             pendingSource = nil;
@@ -404,19 +376,14 @@ struct TodayReviewView: View
 
     var body: some View /* Today Review layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Section
                 {
-
                     VStack(alignment: .leading, spacing: 12)
                     {
-
                         Text(
                                                                         "\(step + 1) of 3 · "
                                                                         + ["Notice your progress", "What belongs next?", "Close the day"] [step]
@@ -428,13 +395,10 @@ struct TodayReviewView: View
 
                 if step == 0
                 {
-
                     Section("What you accomplished")
                     {
-
                         if achievements.isEmpty
                         {
-
                             Text(
                                                                                     "Progress isn't always a checked box. Take a moment to notice what you learned or made room for."
                             ).foregroundStyle(.secondary)
@@ -450,10 +414,8 @@ struct TodayReviewView: View
 
                     Section("Your priorities")
                     {
-
                         if plan.priorities.isEmpty
                         {
-
                             Text("You can review today even without a morning plan.").foregroundStyle(.secondary)
                         }
 
@@ -466,7 +428,6 @@ struct TodayReviewView: View
 
                             VStack(alignment: .leading, spacing: 4)
                             {
-
                                 Text(source?.card.word ?? priority.title)
                                 Text(
                                     source == nil
@@ -485,10 +446,8 @@ struct TodayReviewView: View
                 }
                 else if step == 1
                 {
-
                     Section
                     {
-
                         Text(
                                                                         "Give each item a decision, or leave it for later. Keeping work is a valid outcome; no List has to be empty."
                         ).foregroundStyle(.secondary)
@@ -506,20 +465,17 @@ struct TodayReviewView: View
                             source in
                             VStack(alignment: .leading, spacing: 8)
                             {
-
                                 Text(source.card.word).font(.headline)
                                 Text(source.collectionTitle + " · " + source.listTitle).font(.caption).foregroundStyle(
                                     .secondary)
                                 if let due = source.card.dueDate
                                 {
-
                                     Label("Due · " + source.card.dueDateKind.label(for: due), systemImage: "calendar")
                                     .font(.caption).foregroundStyle(.secondary)
                                 }
 
                                 Menu("Choose what comes next")
                                 {
-
                                     Button("Leave in place")
                                     {
                                         propose(.keep, source: source)
@@ -527,14 +483,11 @@ struct TodayReviewView: View
 
                                     if access?.library.contains(where:
                                         {
-
                                             $0.id == source.collectionID && $0.isActive && $0.title == "On the Table"
                                         }) == true
                                     {
-
                                         Button("Keep on the Table for tomorrow")
                                         {
-
                                             propose(.keepTomorrow, source: source)
                                         }
 
@@ -552,14 +505,12 @@ struct TodayReviewView: View
                                         !queueAvailable)
                                     Button("Choose a day")
                                     {
-
                                         dateSource = source
 
                                     }
 
                                     if source.card.presentation == .card
                                     {
-
                                         Button("Mark complete")
                                         {
                                             propose(.complete, source: source)
@@ -579,22 +530,18 @@ struct TodayReviewView: View
                     }
                     header:
                     {
-
                         Text("Unfinished work")
                     }
 
                     if !review.decisions.isEmpty
                     {
-
                         Section("Decisions saved")
                         {
-
                             ForEach(review.decisions)
                             {
                                 decision in
                                 VStack(alignment: .leading, spacing: 4)
                                 {
-
                                     Text(decision.source.title)
                                     Text(decision.action.title).font(.caption).foregroundStyle(.secondary)
                                 }
@@ -608,10 +555,8 @@ struct TodayReviewView: View
                 }
                 else
                 {
-
                     Section("What helped?")
                     {
-
                         TextField(
                                                                         "A useful step, a person, or a small win (optional)", text: text(\.helped), axis: .vertical
                         ).textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
@@ -619,7 +564,6 @@ struct TodayReviewView: View
 
                     Section("What was difficult?")
                     {
-
                         TextField(
                                                                         "Something to learn from, without judgment (optional)", text: text(\.difficult),
                                                                         axis: .vertical
@@ -628,7 +572,6 @@ struct TodayReviewView: View
 
                     Section("One thought for tomorrow")
                     {
-
                         TextField(
                                                                         "Leave yourself a gentle starting point (optional)", text: text(\.tomorrow), axis: .vertical
                         ).textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
@@ -636,7 +579,6 @@ struct TodayReviewView: View
 
                     if let completed = review.completedAt
                     {
-
                         Text("Last reviewed " + completed.formatted(date: .abbreviated, time: .shortened)).font(
                             .caption
                         ).foregroundStyle(.secondary)
@@ -646,12 +588,10 @@ struct TodayReviewView: View
 
                 Section
                 {
-
                     if step > 0
                     {
                         Button("Previous step")
                         {
-
                             step -= 1
 
                         }
@@ -669,10 +609,8 @@ struct TodayReviewView: View
             .navigationTitle("Today's Review").navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Plan", systemImage: "chevron.left")
                     {
                         dismiss()
@@ -682,7 +620,6 @@ struct TodayReviewView: View
             }
             .onAppear
             {
-
                 step = min(2, max(0, review.completedAt == nil ? review.step : 0))
 
             }
@@ -696,7 +633,6 @@ struct TodayReviewView: View
                     {
                         if !$0
                         {
-
                             pendingAction = nil;
                             pendingSource = nil
 
@@ -706,11 +642,9 @@ struct TodayReviewView: View
                 titleVisibility: .visible
             )
             {
-
                 Button("Confirm", action: perform)
                 Button("Cancel", role: .cancel)
                 {
-
                     pendingAction = nil;
                     pendingSource = nil
 
@@ -719,7 +653,6 @@ struct TodayReviewView: View
             }
             message:
             {
-
                 Text(
                     pendingAction == .keepTomorrow
                     ? "Keeps ‘\(pendingSource?.card.word ?? "")’ on the same Table and records your decision for tomorrow. No copy is created and existing dates are unchanged."
@@ -730,10 +663,8 @@ struct TodayReviewView: View
                 item: $dateSource,
                 onDismiss:
                 {
-
                     if let (source, key) = chosenDateDecision
                     {
-
                         chosenDateDecision = nil;
 
                         propose(.date(key), source: source)
@@ -745,22 +676,18 @@ struct TodayReviewView: View
                 source in
                 NavigationStack
                 {
-
                     Form
                     {
-
                         DatePicker("Choose a day", selection: $selectedDate, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                     }
                     .navigationTitle("Move to a day").navigationBarTitleDisplayMode(.inline)
                     .toolbar
                     {
-
                         ToolbarItem(placement: .cancellationAction)
                         {
                             Button("Cancel")
                             {
-
                                 dateSource = nil
 
                             }
@@ -769,10 +696,8 @@ struct TodayReviewView: View
 
                         ToolbarItem(placement: .confirmationAction)
                         {
-
                             Button("Choose")
                             {
-
                                 chosenDateDecision = (source, PlanningDate.key(selectedDate, calendar: calendar))
                                 dateSource = nil
 
@@ -787,16 +712,13 @@ struct TodayReviewView: View
             }
             .alert("Review not updated", isPresented: $operationError)
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text(
                                                 "The item or saved plan may have changed, or saving failed. Your draft is still open. Return to your plan and retry. No successful review decision has been recorded for the failed action."
                 )
@@ -818,8 +740,6 @@ struct TodayReviewView: View
 ///
 struct WeeklyReviewRecord: Codable, Equatable, Identifiable
 {
-
-
     let id:           String                    /* Record or view identity     */
     let startKey:     String                    /* Dated Week boundary key     */
     let timeZoneID:   String                    /* Time zone ID                */
@@ -849,7 +769,6 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
     ///
     init(date: Date, calendar: Calendar)
     {
-
         startKey = PlanningDate.weekKey(date, calendar: calendar)
         timeZoneID = calendar.timeZone.identifier
         firstWeekday = calendar.firstWeekday
@@ -859,7 +778,6 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
 
     var calendar: Calendar /* Date calculation calendar */
     {
-
         var value = Calendar(identifier: .gregorian) /* Calendar for date calculations */
 
         value.timeZone = TimeZone(identifier: timeZoneID) ?? .current
@@ -870,7 +788,6 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
 
     var dayKeys: Set<String> /* Day keys */
     {
-
         Set(PlanningDate.days(in: startKey, calendar: calendar).map
             {
                 PlanningDate.key($0, calendar: calendar)
@@ -889,7 +806,6 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
     ///
     func dailyPlans(in document: DailyPlanStore.Document) -> [DailyPlan]
     {
-
         document.plans.values.filter
         {
             dayKeys.contains($0.id)
@@ -913,8 +829,6 @@ struct WeeklyReviewRecord: Codable, Equatable, Identifiable
 @MainActor
 enum WeeklyReviewStore
 {
-
-
     static let key = "Plenact.WeeklyReviews.v1" /* Persistence lookup key */
 
 
@@ -927,7 +841,6 @@ enum WeeklyReviewStore
     ///
     struct Document: Codable
     {
-
         var version                               = 1;  /* Serialized format version */
         var records: [String: WeeklyReviewRecord] = [:] /* Records being processed   */
 
@@ -948,7 +861,6 @@ enum WeeklyReviewStore
     ///
     static func load(from defaults: UserDefaults = .standard) throws -> Document
     {
-
         guard defaults.object(forKey: key) != nil else
         {
             return Document()
@@ -967,7 +879,6 @@ enum WeeklyReviewStore
 
         for (id, value) in document.records
         {
-
             guard id == value.id, TimeZone(identifier: value.timeZoneID) != nil, (1 ... 7).contains(value.firstWeekday),
             (0 ... 2).contains(value.step),
             PlanningDate.date(value.startKey, calendar: value.calendar) != nil,
@@ -1002,7 +913,6 @@ enum WeeklyReviewStore
         _ draft: WeeklyReviewRecord, replacing baseline: WeeklyReviewRecord?, to defaults: UserDefaults = .standard
     ) throws -> WeeklyReviewRecord
     {
-
         var document = try load(from: defaults) /* Source document snapshot */
 
         guard document.records[draft.id] == baseline else
@@ -1021,7 +931,6 @@ enum WeeklyReviewStore
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
         {
-
             if let old
             {
                 defaults.set(old, forKey: key)
@@ -1049,8 +958,6 @@ enum WeeklyReviewStore
 ///
 struct WeeklyReviewView: View
 {
-
-
     let calendar:         Calendar                            /* Date calculation calendar      */
     private let defaults: UserDefaults                        /* Preference storage domain      */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
@@ -1088,7 +995,6 @@ struct WeeklyReviewView: View
     ///
     init(date: Date = .now, calendar: Calendar, defaults: UserDefaults = .standard)
     {
-
         self.calendar = calendar;
         self.defaults = defaults
         _selectedDate = State(initialValue: date)
@@ -1098,7 +1004,6 @@ struct WeeklyReviewView: View
 
     private var dirty: Bool /* Unsaved-change flag */
     {
-
         loaded && !loadFailed && draft != (baseline ?? WeeklyReviewRecord(date: selectedDate, calendar: calendar))
     }
 
@@ -1109,7 +1014,6 @@ struct WeeklyReviewView: View
 
     private var queue: [PlanningSearchResult] /* Queue lookup entries */
     {
-
         let owners = Set( /* Qualified record owners */
             access?.library.filter
             {
@@ -1118,7 +1022,6 @@ struct WeeklyReviewView: View
         let reference = Set( /* Qualified record reference */
             LabelLibraryStore.load().labels.filter
             {
-
                 $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id
             } .map(\.id))
 
@@ -1129,7 +1032,6 @@ struct WeeklyReviewView: View
             && Set(item.card.labelIDs).isDisjoint(with: reference)
             && !draft.decisions.contains(where:
                 {
-
                     $0.source.resolve(in: [item]) != nil || $0.result.resolve(in: [item]) != nil
                 })
         }
@@ -1148,10 +1050,8 @@ struct WeeklyReviewView: View
     ///
     private func load(_ record: WeeklyReviewRecord)
     {
-
         do
         {
-
             let document = try WeeklyReviewStore.load(from: defaults) /* Source document snapshot */
 
             daily = try DailyPlanStore.load(from: defaults)
@@ -1169,7 +1069,6 @@ struct WeeklyReviewView: View
         }
         catch
         {
-
             loaded = true;
             loadFailed = true;
             self.error = error.localizedDescription
@@ -1190,13 +1089,11 @@ struct WeeklyReviewView: View
     ///
     private func binding(_ path: WritableKeyPath<WeeklyReviewRecord, String>) -> Binding<String>
     {
-
         Binding(get:
             {
                 draft[keyPath: path]
             }, set:
             {
-
                 draft[keyPath: path] = $0
 
             })
@@ -1215,20 +1112,17 @@ struct WeeklyReviewView: View
     ///
     private func save(advance: Bool)
     {
-
         let before = draft /* State before the operation */
 
         if advance
         {
             if draft.step == 2
             {
-
                 draft.completedAt = .now
 
             }
             else
             {
-
                 draft.step += 1
 
             }
@@ -1237,7 +1131,6 @@ struct WeeklyReviewView: View
 
         do
         {
-
             let saved = /* Saved state under review */
                 try WeeklyReviewStore.save(draft, replacing: baseline, to: defaults)
 
@@ -1253,7 +1146,6 @@ struct WeeklyReviewView: View
         }
         catch
         {
-
             draft = before;
             self.error = error.localizedDescription
 
@@ -1274,7 +1166,6 @@ struct WeeklyReviewView: View
     ///
     private func propose(_ action: DailyReviewAction, _ source: PlanningSearchResult)
     {
-
         pending = source;
         self.action = action
 
@@ -1290,10 +1181,8 @@ struct WeeklyReviewView: View
     ///
     private func apply()
     {
-
         guard let pending, let action, let saved = access?.applyWeeklyReview?(pending, action, draft, baseline) else
         {
-
             error = "The item or review changed, or saving failed. Your draft remains open.";
 
             return
@@ -1306,16 +1195,12 @@ struct WeeklyReviewView: View
 
     var body: some View /* Weekly Review layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Section("Review a week")
                 {
-
                     DatePicker(
                                                             "Week containing",
                                                             selection: Binding(
@@ -1335,10 +1220,8 @@ struct WeeklyReviewView: View
                     .disabled(dirty || loadFailed)
                     if !records.isEmpty
                     {
-
                         Menu("Open a saved week")
                         {
-
                             ForEach(records.sorted
                                 {
                                     $0.startKey > $1.startKey
@@ -1363,10 +1246,8 @@ struct WeeklyReviewView: View
 
                 if loadFailed
                 {
-
                     Section
                     {
-
                         Text("Saved records could not be opened. They have been kept unchanged.");
 
                         Button("Try again")
@@ -1379,10 +1260,8 @@ struct WeeklyReviewView: View
                 }
                 else if draft.step == 0
                 {
-
                     Section("Look back")
                     {
-
                         let days = draft.dailyPlans(in: daily) /* Dates in the selected range */
 
                         Text(
@@ -1393,7 +1272,6 @@ struct WeeklyReviewView: View
                             day in
                             VStack(alignment: .leading, spacing: 6)
                             {
-
                                 Text(day.id).font(.headline)
                                 if !day.intention.isEmpty
                                 {
@@ -1402,7 +1280,6 @@ struct WeeklyReviewView: View
 
                                 if let review = day.eveningReview
                                 {
-
                                     ForEach(review.achievements)
                                     {
                                         Text("✓ " + $0.title)
@@ -1442,7 +1319,6 @@ struct WeeklyReviewView: View
 
                     Section("Your highlights")
                     {
-
                         TextField(
                                                                         "Wins, meaningful moments, or progress (optional)", text: binding(\.highlights),
                                                                         axis: .vertical
@@ -1451,7 +1327,6 @@ struct WeeklyReviewView: View
 
                     Section("What did you learn?")
                     {
-
                         TextField(
                                                                         "What worked, and what would you change? (optional)", text: binding(\.learned),
                                                                         axis: .vertical
@@ -1461,16 +1336,13 @@ struct WeeklyReviewView: View
                 }
                 else if draft.step == 1
                 {
-
                     Section("Review In the Queue")
                     {
-
                         Text(
                                                                         "Keep worthwhile work for later. The Queue does not have to be empty. These are today's live Queue items, even when reviewing a past week."
                         ).foregroundStyle(.secondary)
                         if queue.isEmpty
                         {
-
                             Text(
                                                                                     "No unfinished Queue Cards need a decision. Reference Cards and Notes are left in place."
                             )
@@ -1481,18 +1353,15 @@ struct WeeklyReviewView: View
                             source in
                             VStack(alignment: .leading, spacing: 8)
                             {
-
                                 Text(source.card.word).font(.headline)
                                 if let due = source.card.dueDate
                                 {
-
                                     Label("Due · " + source.card.dueDateKind.label(for: due), systemImage: "calendar")
                                     .font(.caption).foregroundStyle(.secondary)
                                 }
 
                                 Menu("Choose what comes next")
                                 {
-
                                     Button("Bring onto the Table")
                                     {
                                         propose(.table, source)
@@ -1500,7 +1369,6 @@ struct WeeklyReviewView: View
                                     .disabled(
                                         access?.library.contains(where:
                                             {
-
                                                 $0.isActive && $0.kind == .list && $0.title == "On the Table"
                                                 && $0.lists.contains(where:
                                                     {
@@ -1514,7 +1382,6 @@ struct WeeklyReviewView: View
 
                                     Button("Choose a calendar day")
                                     {
-
                                         dateSource = source
 
                                     }
@@ -1538,13 +1405,11 @@ struct WeeklyReviewView: View
 
                     Section("Decisions saved")
                     {
-
                         ForEach(draft.decisions)
                         {
                             decision in
                             VStack(alignment: .leading)
                             {
-
                                 Text(decision.source.title);
 
                                 Text(decision.action.title).font(.caption).foregroundStyle(.secondary)
@@ -1557,10 +1422,8 @@ struct WeeklyReviewView: View
                 }
                 else
                 {
-
                     Section("Next week's direction")
                     {
-
                         TextField(
                                                                         "What deserves your attention? (optional)", text: binding(\.direction), axis: .vertical
                         ).textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
@@ -1568,7 +1431,6 @@ struct WeeklyReviewView: View
 
                     Section
                     {
-
                         ForEach(draft.priorities)
                         {
                             priority in
@@ -1579,13 +1441,11 @@ struct WeeklyReviewView: View
                             draft.priorities.remove(atOffsets: $0)
                         } .onMove
                         {
-
                             draft.priorities.move(fromOffsets: $0, toOffset: $1)
                         }
 
                         Button("Choose next week's priorities", systemImage: "plus.circle")
                         {
-
                             showsPicker = true
 
                         }
@@ -1593,12 +1453,10 @@ struct WeeklyReviewView: View
                     }
                     header:
                     {
-
                         Text("Priorities for next week")
                     }
                     footer:
                     {
-
                         Text(
                                                                         "These links guide next week; they do not automatically move items or replace daily plans. Use Edit to reorder or remove links."
                         )
@@ -1606,7 +1464,6 @@ struct WeeklyReviewView: View
 
                     Section("Make room for")
                     {
-
                         TextField(
                                                                         "Time, energy, or commitments (optional)", text: binding(\.constraints), axis: .vertical
                         ).textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
@@ -1614,7 +1471,6 @@ struct WeeklyReviewView: View
 
                     Section("Risks to consider")
                     {
-
                         TextField("What might get in the way? (optional)", text: binding(\.risks), axis: .vertical)
                         .textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
                     }
@@ -1623,15 +1479,12 @@ struct WeeklyReviewView: View
 
                 if !loadFailed
                 {
-
                     Section
                     {
-
                         if draft.step > 0
                         {
                             Button("Previous step")
                             {
-
                                 draft.step -= 1
 
                             }
@@ -1650,7 +1503,6 @@ struct WeeklyReviewView: View
 
                         if let completed = draft.completedAt
                         {
-
                             Text("Reviewed " + completed.formatted(date: .abbreviated, time: .shortened)).font(.caption)
                             .foregroundStyle(.secondary)
                         }
@@ -1665,15 +1517,12 @@ struct WeeklyReviewView: View
             .navigationTitle("Weekly Review").navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Done")
                     {
                         if dirty
                         {
-
                             confirmsDiscard = true
 
                         }
@@ -1707,7 +1556,6 @@ struct WeeklyReviewView: View
             .interactiveDismissDisabled(dirty)
             .confirmationDialog("Discard unsaved review edits?", isPresented: $confirmsDiscard)
             {
-
                 Button("Discard edits", role: .destructive)
                 {
                     dismiss()
@@ -1715,7 +1563,6 @@ struct WeeklyReviewView: View
                 ;
                 Button("Keep editing", role: .cancel)
                 {
-
                 }
 
             }
@@ -1728,7 +1575,6 @@ struct WeeklyReviewView: View
                     {
                         if !$0
                         {
-
                             action = nil;
                             pending = nil
 
@@ -1738,10 +1584,8 @@ struct WeeklyReviewView: View
                 titleVisibility: .visible
             )
             {
-
                 Button("Confirm")
                 {
-
                     apply();
 
                     action = nil;
@@ -1751,7 +1595,6 @@ struct WeeklyReviewView: View
 
                 Button("Cancel", role: .cancel)
                 {
-
                     action = nil;
                     pending = nil
 
@@ -1760,7 +1603,6 @@ struct WeeklyReviewView: View
             }
             message:
             {
-
                 Text(
                                                 "Applies to ‘\(pending?.card.word ?? "")’ now and saves this review. Moves preserve dates and details. Archive keeps the item recoverable."
                 )
@@ -1771,7 +1613,6 @@ struct WeeklyReviewView: View
                 {
                     if let (source, key) = chosenDate
                     {
-
                         chosenDate = nil;
 
                         propose(.date(key), source)
@@ -1783,18 +1624,15 @@ struct WeeklyReviewView: View
                 source in
                 NavigationStack
                 {
-
                     DatePicker("Move to a day", selection: $targetDate, displayedComponents: .date).datePickerStyle(
                         .graphical
                     ).padding()
                     .toolbar
                     {
-
                         ToolbarItem(placement: .cancellationAction)
                         {
                             Button("Cancel")
                             {
-
                                 dateSource = nil
 
                             }
@@ -1803,10 +1641,8 @@ struct WeeklyReviewView: View
 
                         ToolbarItem(placement: .confirmationAction)
                         {
-
                             Button("Choose")
                             {
-
                                 chosenDate = (source, PlanningDate.key(targetDate, calendar: calendar));
 
                                 dateSource = nil
@@ -1831,23 +1667,19 @@ struct WeeklyReviewView: View
                     {
                         if !$0
                         {
-
                             error = nil
 
                         }
 
                     }))
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text(error ?? "")
             }
 

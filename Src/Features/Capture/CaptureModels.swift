@@ -21,29 +21,22 @@ import SwiftUI
 ///
 struct QuickCaptureTemplatesView: View
 {
-
-
     let onSelect: (QuickCaptureTemplate) -> Void /* Handle the selected value      */
     @Environment(\.dismiss) private var dismiss  /* Close the current presentation */
     @State private var filter: ItemPresentation? /* Active inclusion filter        */
 
     var body: some View /* Quick Capture Templates layout */
     {
-
         NavigationStack
         {
-
             ScrollView
             {
-
                 VStack(alignment: .leading, spacing: 16)
                 {
-
                     Text("Choose a starting point. Make it your own.")
                     .foregroundStyle(.secondary)
                     Picker("Template type", selection: $filter)
                     {
-
                         Text("All").tag(nil as ItemPresentation?)
                         Text("Cards").tag(Optional(ItemPresentation.card))
                         Text("Notes").tag(Optional(ItemPresentation.note))
@@ -53,7 +46,6 @@ struct QuickCaptureTemplatesView: View
                     ForEach(
                         QuickCaptureTemplate.allCases.filter
                         {
-
                             $0 != .blankCard && $0 != .blankNote && (filter == nil || $0.presentation == filter)
                         }
                     )
@@ -68,7 +60,6 @@ struct QuickCaptureTemplatesView: View
                     ForEach(
                         [QuickCaptureTemplate.blankCard, .blankNote].filter
                         {
-
                             filter == nil || $0.presentation == filter
                         }
                     )
@@ -93,10 +84,8 @@ struct QuickCaptureTemplatesView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -122,18 +111,14 @@ struct QuickCaptureTemplatesView: View
     ///
     private func templateButton(_ template: QuickCaptureTemplate) -> some View
     {
-
         Button
         {
-
             onSelect(template)
         }
         label:
         {
-
             VStack(alignment: .leading, spacing: 8)
             {
-
                 Label(template.title, systemImage: template.presentation == .note ? "note.text" : "rectangle")
                 .font(.headline)
                 Text(template.presentation.title)
@@ -143,7 +128,6 @@ struct QuickCaptureTemplatesView: View
                 .font(.subheadline)
                 if !template.body.isEmpty
                 {
-
                     Text(([template.body] + template.actions).joined(separator: "\n"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -172,16 +156,12 @@ struct QuickCaptureTemplatesView: View
 ///
 struct ContentCreationKindPicker: View
 {
-
-
     @Binding var presentation: ItemPresentation /* Current presentation style */
 
     var body:                  some View /* Content Creation Kind Picker layout */
     {
-
         Picker("Create as", selection: $presentation)
         {
-
             Label("Card", systemImage: "rectangle").tag(ItemPresentation.card)
             Label("Note", systemImage: "note.text").tag(ItemPresentation.note)
         } .pickerStyle(.segmented).accessibilityLabel("Create as Card or Note")
@@ -199,8 +179,6 @@ struct ContentCreationKindPicker: View
 ///
 enum TodayCaptureAction: String, CaseIterable, Identifiable
 {
-
-
     case note, checklist, photo, voice, drawing
     var id: Self /* Record or view identity */
     {
@@ -209,10 +187,8 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
 
     var title: String /* User-facing title */
     {
-
         switch self
         {
-
         case .note:
                     "Note";
 
@@ -233,10 +209,8 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
 
     var symbol: String /* Selected symbol name */
     {
-
         switch self
         {
-
         case .note:
                     "square.and.pencil";
 
@@ -272,27 +246,21 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
 ///
 struct TodayCaptureActions: View
 {
-
-
     let onSelect: (TodayCaptureAction) -> Void /* Handle the selected value */
 
     var body:     some View /* Today Capture Actions layout */
     {
-
         HStack(spacing: 8)
         {
-
             ForEach(TodayCaptureAction.allCases)
             {
                 action in
                 Button
                 {
-
                     onSelect(action)
                 }
                 label:
                 {
-
                     Image(systemName: action.symbol)
                     .font(.system(size: 19))
                     .frame(maxWidth: .infinity, minHeight: 44)
@@ -317,8 +285,6 @@ struct TodayCaptureActions: View
 ///
 struct QuickCaptureSchedule: Equatable
 {
-
-
     var start: Date?         /* Range start    */
     var stop:  Date?         /* Range endpoint */
     var includesTime = false /* Includes time  */
@@ -336,7 +302,6 @@ struct QuickCaptureSchedule: Equatable
     ///
     func isValid(calendar: Calendar = .current) -> Bool
     {
-
         guard let start, let stop else
         {
             return true
@@ -358,7 +323,6 @@ struct QuickCaptureSchedule: Equatable
     ///
     func apply(to card: inout KanbanCard, calendar: Calendar = .current)
     {
-
         let kind: CardDateKind = /* Content kind discriminator */
             includesTime ? .dateAndTime : .date
 
@@ -389,8 +353,6 @@ struct QuickCaptureSchedule: Equatable
 ///
 struct QuickCaptureSubmission
 {
-
-
     let listID:       Int                   /* Owner-local List identifier */
     let title:        String                /* User-facing title           */
     let body:         String                /* Note or description text    */
@@ -412,8 +374,6 @@ struct QuickCaptureSubmission
 ///
 enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
 {
-
-
     case audio = "Audio", text = "Text", both = "Both"
     var id: Self /* Record or view identity */
     {
@@ -444,7 +404,6 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
     ///
     func body(existing: String, transcript: String) -> String
     {
-
         let text = /* Text being processed */
             transcript.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -472,8 +431,6 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
 ///
 enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 {
-
-
     case usefulStep, smallPlan, errands, idea, reference, reflection
     case blankCard, blankNote
 
@@ -485,10 +442,8 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 
     var presentation: ItemPresentation /* Current presentation style */
     {
-
         switch self
         {
-
         case .idea, .reference, .reflection, .blankNote:
             .note
         default:
@@ -500,10 +455,8 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 
     var title: String /* User-facing title */
     {
-
         switch self
         {
-
         case .usefulStep:
                     "One useful step"
         case .smallPlan:
@@ -527,10 +480,8 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 
     var summary: String /* Aggregate operation results */
     {
-
         switch self
         {
-
         case .usefulStep:
                     "Name an activity and choose a manageable next step."
         case .smallPlan:
@@ -552,10 +503,8 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 
     var body: String /* Note or description text */
     {
-
         switch self
         {
-
         case .usefulStep:
                     "What matters about this activity?"
         case .smallPlan:
@@ -577,10 +526,8 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 
     var actions: [String] /* Available item operations */
     {
-
         switch self
         {
-
         case .usefulStep:
             ["Choose one next step"]
         case .smallPlan:
@@ -607,10 +554,8 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
     ///
     func draftTitle(capturedTitle: String) -> String
     {
-
         if !capturedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
-
             return capturedTitle
         }
 
@@ -628,8 +573,6 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 ///
 enum MultilineEntry
 {
-
-
     ///
     /// @fcn        MultilineEntry.titles
     /// @brief      Split a multiline entry into usable item titles
@@ -641,7 +584,6 @@ enum MultilineEntry
     ///
     static func titles(_ text: String) -> [String]
     {
-
         text.components(separatedBy: .newlines)
         .map
         {

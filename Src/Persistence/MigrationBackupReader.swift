@@ -14,13 +14,11 @@ import Foundation
 @MainActor
 enum MigrationBackupReader
 {
-
     /// Source-integrity errors block conversion without altering originals
     /// @section Purpose
     ///     Separate invalid snapshot evidence from a legitimate absent source store
     enum Failure: Error
     {
-
         case invalidBackup, integrityMismatch, pendingRecovery
     }
 
@@ -31,7 +29,6 @@ enum MigrationBackupReader
     /// @return Lowercase SHA-256
     static func digest(_ data: Data) -> String
     {
-
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
@@ -44,7 +41,6 @@ enum MigrationBackupReader
     /// @throws Invalid paths or missing/nonregular entries
     static func file(_ path: String, in root: FileWrapper) throws -> Data
     {
-
         let parts = /* Parsed value components */
             path.split(separator: "/", omittingEmptySubsequences: false)
 
@@ -82,7 +78,6 @@ enum MigrationBackupReader
     /// @throws Integrity, unsupported evidence or unresolved recovery errors
     static func values(in backup: LegacyWorkspaceBackup) throws -> [String: Any]
     {
-
         let reportData = try file("NativePreflight.json", in: backup.files) /* Report data */
 
         guard let report = try JSONSerialization.jsonObject(with: reportData) as? [String: Any],
@@ -158,7 +153,6 @@ enum MigrationBackupReader
         /// @throws Unsafe, oversized or undeclared source evidence
         func walkMedia(_ wrapper: FileWrapper, path: String) throws
         {
-
             guard !wrapper.isSymbolicLink else
             {
                 throw Failure.invalidBackup
@@ -189,7 +183,6 @@ enum MigrationBackupReader
         }
         for area in LegacyWorkspaceExport.mediaRoots
         {
-
             var wrapper: FileWrapper? = backup.files /* File or view wrapper */
 
             for part in area.split(separator: "/")

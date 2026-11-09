@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 struct PortableWorkspaceCandidate
 {
-
     let values:       [String: Any]          /* Values being processed    */
     let media:        PortableMediaPlacement /* Original media references */
     let snapshot:     Data                   /* Working state snapshot    */
@@ -31,7 +30,6 @@ struct PortableWorkspaceCandidate
     /// @throws Unsupported ownership, schema shape, runtime context or model reconstruction
     static func prepare(_ package: ReviewedPortablePackage, retainedAliases: [String: Int] = [:], mediaFilenames: [String: String] = [:]) throws -> PortableWorkspaceCandidate
     {
-
         guard let files = FileWrapper(serializedRepresentation: package.snapshot) else
         {
             throw PortableEditableContent.Failure.invalid
@@ -171,7 +169,6 @@ struct PortableWorkspaceCandidate
         /// @return Void after adding encoded bytes to the candidate only
         func put<T: Encodable>(_ key: String, _ value: T) throws
         {
-
             values[key] = try JSONEncoder().encode(value)
 
         }
@@ -230,7 +227,6 @@ struct PortableWorkspaceCandidate
 
             for (key, value) in projected where !(value is NSNull)
             {
-
                 values[key] = value
 
             }
@@ -243,7 +239,6 @@ struct PortableWorkspaceCandidate
             }
             if let bytes = value as? Data
             {
-
                 let object = try JSONSerialization.jsonObject(with: bytes) /* Decoded JSON object */
 
                 guard LegacyStoreValidation.mediaIssues(object, store: key, files: Set(media.files.keys)).isEmpty else
@@ -264,7 +259,6 @@ struct PortableWorkspaceCandidate
     /// @throws Existing destination, serialization, file-placement or readback failure
     func stage(at root: URL) throws
     {
-
         try media.stage(at: root)
 
         var completed = false /* Completion state */
@@ -289,7 +283,6 @@ struct PortableWorkspaceCandidate
         try FileManager.default.createDirectory(at: retained, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         for (name, data) in [("NativeStores.plist", stores), ("CanonicalPackage.bin", snapshot), ("IdentityAliases.json", aliasesData)]
         {
-
             let target = retained.appendingPathComponent(name) /* Target under consideration */
 
             try data.write(to: target, options: [.atomic, .completeFileProtection])
@@ -311,7 +304,6 @@ struct PortableWorkspaceCandidate
 ///     Keep view teardown, backup retention and activation authorization outside pure reconstruction
 extension PortableWorkspaceCandidate
 {
-
     /// @fcn PortableWorkspaceCandidate.install
     /// @brief Replace reviewed managed stores/media from a verified staging directory in the Simulator
     /// @param[in] staging Fully staged candidate
@@ -322,7 +314,6 @@ extension PortableWorkspaceCandidate
     /// @throws Unsupported environment/context, invalid staging or persistence errors; caller must roll back
     func install(from staging: URL, root: URL, defaults: UserDefaults, domain: String) throws
     {
-
         #if targetEnvironment(simulator)
         try media.verify(at: staging)
 
@@ -349,7 +340,6 @@ extension PortableWorkspaceCandidate
 
         for area in LegacyWorkspaceExport.mediaRoots + [PortableRuntimeEvidence.area]
         {
-
             let destination = root.appendingPathComponent(area) /* Destination for the operation */
 
             if manager.fileExists(atPath: destination.path)

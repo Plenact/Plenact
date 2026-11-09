@@ -13,7 +13,6 @@ import Foundation
 ///     Make migration progress inspectable without disguising unsupported source domains
 struct MigrationPreview
 {
-
     let files:           FileWrapper    /* Originals plus private mapping and converted records */
     let recordCount:     Int            /* Canonical documents actually converted               */
     let contentRecordCount: Int         /* Canonical content documents emitted by this slice    */
@@ -42,7 +41,6 @@ struct MigrationPreview
     /// @return Optional action-oriented review guidance; machine details remain in the exported report
     var contentReviewMessage: String? /* Content review message */
     {
-
         guard let code = blockedContentReason else
         {
             return nil
@@ -72,7 +70,6 @@ struct MigrationPreview
     ///     Prevent defaults or partial output from disguising invalid legacy content
     enum Failure: Error
     {
-
         case invalidLabels, unsupportedFields, invalidPreference, invalidSnapshot
     }
 
@@ -97,7 +94,6 @@ struct MigrationPreview
     private static func document(type: String, source: String, payload: [String: Any],
         journal: inout MigrationIdentityJournal) throws -> [String: Any]
     {
-
         let target = /* Target under consideration */
             try journal.resolve(MigrationSourceIdentity(recordType: type,
             owner: "workspace_metadata", legacyID: source, discriminator: nil))
@@ -118,7 +114,6 @@ struct MigrationPreview
     /// @throws Wrong types, unsupported fields, duplicate IDs or missing categories
     private static func labels(_ value: Any?, journal: inout MigrationIdentityJournal) throws -> [[String: Any]]
     {
-
         guard let value else
         {
             return []
@@ -148,7 +143,6 @@ struct MigrationPreview
 
         for category in library.categories
         {
-
             let record = /* Record being processed */
                 try document(type: "label_category", source: category.id,
                 payload: ["name": category.name], journal: &journal)
@@ -178,7 +172,6 @@ struct MigrationPreview
     /// @throws Wrong native types or unknown Board presentation tokens
     private static func displays(_ values: [String: Any], journal: inout MigrationIdentityJournal) throws -> [[String: Any]]
     {
-
         guard displayKeys.keys.contains(where: { values[$0] != nil }) else
         {
             return []
@@ -190,7 +183,6 @@ struct MigrationPreview
         {
             guard let value = values[key] else
             {
-
                 payload[wire] = NSNull()
 
                 continue
@@ -231,7 +223,6 @@ struct MigrationPreview
     @MainActor
     static func prepare(backup: LegacyWorkspaceBackup, journalURL: URL, timeZoneID: String? = nil) throws -> MigrationPreview
     {
-
         let values = try MigrationBackupReader.values(in: backup) /* Values being processed */
 
         guard backup.files.fileWrappers?["PortableRuntime"] == nil else
@@ -247,7 +238,6 @@ struct MigrationPreview
 
         if backup.files.fileWrappers?["Migration"] != nil
         {
-
             let retained = try MigrationIdentityJournal.decode( /* State retained for recovery */
                 MigrationBackupReader.file("Migration/IdentityJournal.json", in: backup.files))
             let current = /* Current operation snapshot */
@@ -283,14 +273,12 @@ struct MigrationPreview
             {
                 do
                 {
-
                     let sourceReport              = /* Source report */
                         try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
                     var digests: [String: String] = [:] /* Expected content hashes */
 
                     for entry in sourceReport["media"] as! [[String: Any]]
                     {
-
                         digests[entry["path"] as! String] = entry["sha256"] as? String
 
                     }
@@ -331,14 +319,12 @@ struct MigrationPreview
                 }
                 catch
                 {
-
                     blockedContentReason = "native_content_decode_failed"
 
                 }
             }
             else
             {
-
                 blockedContentReason = "original_timezone_confirmation_required"
 
             }
@@ -351,7 +337,6 @@ struct MigrationPreview
 
         do
         {
-
             let source  = /* Source value for this operation */
                 try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
             let digests = /* Expected content hashes */
@@ -371,20 +356,17 @@ struct MigrationPreview
         {
             if case .invalid(let code) = error
             {
-
                 settingsBlocker = code
 
             }
             else
             {
-
                 settingsBlocker = "settings_source_requires_review"
 
             }
         }
         catch
         {
-
             settingsBlocker = "settings_source_decode_failed"
 
         }
@@ -396,7 +378,6 @@ struct MigrationPreview
 
         do
         {
-
             let source  = /* Source value for this operation */
                 try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
             let digests = /* Expected content hashes */
@@ -416,20 +397,17 @@ struct MigrationPreview
         {
             if case .invalid(let code) = error
             {
-
                 studioBlocker = code
 
             }
             else
             {
-
                 studioBlocker = "studio_source_requires_review"
 
             }
         }
         catch
         {
-
             studioBlocker = "studio_source_decode_failed"
 
         }
@@ -441,7 +419,6 @@ struct MigrationPreview
 
         do
         {
-
             planning = try MigrationPlanningPreview.prepare(values: values, records: records, journal: &planningJournal)
 
             records.append(contentsOf: planning!.records)
@@ -453,20 +430,17 @@ struct MigrationPreview
         {
             if case .invalid(let code) = error
             {
-
                 planningBlocker = code
 
             }
             else
             {
-
                 planningBlocker = "planning_source_requires_review"
 
             }
         }
         catch
         {
-
             planningBlocker = "planning_source_decode_failed"
 
         }
@@ -564,7 +538,6 @@ struct MigrationPreview
 
         for (index, record) in records.enumerated()
         {
-
             let file = /* File being processed */
                 FileWrapper(regularFileWithContents: encodedRecords[index])
 
@@ -586,7 +559,6 @@ struct MigrationPreview
         preview.addFileWrapper(assetFile)
         if let planning
         {
-
             let file = /* File being processed */
                 FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: planning.document, options: encoderOptions))
 
@@ -596,7 +568,6 @@ struct MigrationPreview
         }
         if let studio
         {
-
             let appearanceFile = /* Appearance file */
                 FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: studio.appearanceDocument, options: encoderOptions))
 
@@ -613,7 +584,6 @@ struct MigrationPreview
         }
         if let settings
         {
-
             let file = /* File being processed */
                 FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: settings.document, options: encoderOptions))
 
@@ -623,7 +593,6 @@ struct MigrationPreview
         }
         if let defaultCatalog
         {
-
             let catalog = /* Available library entries */
                 FileWrapper(regularFileWithContents: defaultCatalog)
 
@@ -633,7 +602,6 @@ struct MigrationPreview
         }
         if let content
         {
-
             let selections = /* Retained selection state */
                 FileWrapper(regularFileWithContents: try JSONSerialization.data(withJSONObject: [
                 "format": "plenact.ios-selection-preview", "format_version": 1,

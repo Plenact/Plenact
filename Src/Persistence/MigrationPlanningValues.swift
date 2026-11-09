@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 struct MigrationPlanningValues
 {
-
     let context: MigrationContentValues /* Operation context */
     let priorityResolver: (([String: Any]) throws -> [String: Any])? /* Priority resolver callback */
 
@@ -25,7 +24,6 @@ struct MigrationPlanningValues
     /// @return Ephemeral value mapper without persistent side effects
     init(context: MigrationContentValues, priorityResolver: (([String: Any]) throws -> [String: Any])? = nil)
     {
-
         self.context = context
         self.priorityResolver = priorityResolver
 
@@ -40,7 +38,6 @@ struct MigrationPlanningValues
     /// @throws Invalid or unsupported source timestamp errors
     func timestamp(_ value: Any?, path: String) throws -> Any
     {
-
         guard let value, !(value is NSNull) else
         {
             return NSNull()
@@ -61,7 +58,6 @@ struct MigrationPlanningValues
     /// @throws Invalid dates or unsupported zones
     func dateAndZone(_ date: String, zone: String) throws
     {
-
         _ = try MigrationCalendarTemplates.date(date)
 
         let zoneContext = /* Zone context */
@@ -80,7 +76,6 @@ struct MigrationPlanningValues
     /// @throws Invalid progress values
     func step(_ value: Any?, optional: Bool = false) throws -> Any
     {
-
         if optional, value == nil || value is NSNull
         {
             return NSNull()
@@ -100,10 +95,8 @@ struct MigrationPlanningValues
     /// @throws Invalid identity or timestamp provenance
     func priority(_ raw: [String: Any]) throws -> [String: Any]
     {
-
         if let priorityResolver
         {
-
             return try priorityResolver(raw)
         }
 
@@ -129,7 +122,6 @@ struct MigrationPlanningValues
     /// @throws Duplicate or malformed source identities
     func priorities(_ value: Any) throws -> [[String: Any]]
     {
-
         let raw               = value as! [[String: Any]] /* Unprocessed source value       */
         var seen: Set<String> = []                        /* Identities already encountered */
 
@@ -155,7 +147,6 @@ struct MigrationPlanningValues
     /// @throws Invalid referenced identity or timestamp
     func checkIn(_ raw: [String: Any], path: String) throws -> [String: Any]
     {
-
         ["focus": try (raw["focus"] as? [String: Any]).map(priority) as Any? ?? NSNull(),
             "changed": raw["changed"]!, "saved_at_utc": try timestamp(raw["savedAt"], path: path + "/check-in")]
     }
@@ -169,7 +160,6 @@ struct MigrationPlanningValues
     /// @throws Duplicate IDs, invalid progress counts or empty mood values
     func entries(_ raw: [[String: Any]], path: String) throws -> [[String: Any]]
     {
-
         var seen: Set<String> = [] /* Identities already encountered */
 
         return try raw.map { item in
@@ -198,7 +188,6 @@ struct MigrationPlanningValues
                 }
                 else
                 {
-
                     output[target] = NSNull()
 
                 }
@@ -227,7 +216,6 @@ struct MigrationPlanningValues
     /// @throws Duplicate identities or invalid date actions
     func decisions(_ value: Any, path: String) throws -> [[String: Any]]
     {
-
         var seen: Set<String> = [] /* Identities already encountered */
 
         return try (value as! [[String: Any]]).map { raw in
@@ -247,7 +235,6 @@ struct MigrationPlanningValues
 
             if key == "date"
             {
-
                 let date = /* Date used by this operation */
                     (source[key] as! [String: Any])["_0"] as! String
 
@@ -270,7 +257,6 @@ struct MigrationPlanningValues
     /// @throws Invalid progress or nested decisions
     func evening(_ raw: [String: Any], path: String) throws -> [String: Any]
     {
-
         ["step": try step(raw["step"]), "completed_at_utc": try timestamp(raw["completedAt"], path: path + "/evening"),
             "helped": raw["helped"]!, "difficult": raw["difficult"]!, "tomorrow": raw["tomorrow"]!,
             "decisions": try decisions(raw["decisions"]!, path: path), "achievements": try priorities(raw["achievements"]!)]
@@ -285,7 +271,6 @@ struct MigrationPlanningValues
     /// @throws Invalid progress, references or timestamps
     func review(_ raw: [String: Any], path: String) throws -> [String: Any]
     {
-
         ["step": try step(raw["step"]), "highlights": raw["highlights"]!, "learned": raw["learned"]!,
             "direction": raw["direction"]!, "risks": raw["risks"]!, "priorities": try priorities(raw["priorities"]!),
             "updated_at_utc": try timestamp(raw["updatedAt"], path: path + "/updated"),
@@ -300,7 +285,6 @@ struct MigrationPlanningValues
     /// @throws Duplicate IDs, empty titles or unsupported statuses
     func objectives(_ value: Any) throws -> [[String: Any]]
     {
-
         var seen: Set<String> = [] /* Identities already encountered */
 
         return try (value as! [[String: Any]]).map { raw in

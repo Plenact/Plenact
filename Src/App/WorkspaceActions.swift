@@ -19,8 +19,6 @@ import SwiftUI
 ///
 extension AppRootView
 {
-
-
     ///
     /// @fcn        AppRootView.setPlanningFirstWeekday
     /// @brief      Save a supported planning week-start change
@@ -33,7 +31,6 @@ extension AppRootView
     ///
     func setPlanningFirstWeekday(_ weekday: Int) -> Bool
     {
-
         guard let previous = calendarDocument else
         {
             return false
@@ -51,7 +48,6 @@ extension AppRootView
                 $0.startKey == updated.currentWeekKey
             })
         {
-
             current.collection.lists = lists
             current.collection.savedCardIDs = savedCardIDs
 
@@ -60,7 +56,6 @@ extension AppRootView
 
         do
         {
-
             try updated.changeFirstWeekday(to: weekday)
 
             let current = updated.weeks.first /* Current operation snapshot */
@@ -75,7 +70,6 @@ extension AppRootView
             }
             catch
             {
-
                 try PlanningCalendarStore.save(previous);
                 throw error
             }
@@ -94,7 +88,6 @@ extension AppRootView
         }
         catch
         {
-
             DatabaseActivity.shared.report(
                                     "Could not change the start of the week: \(error.localizedDescription) Your plans have been retained.")
             return false
@@ -112,20 +105,16 @@ extension AppRootView
     ///
     func applyExampleCardLocations()
     {
-
         guard hasLoadedBoard, let document = calendarDocument else
         {
-
             return
         }
 
         do
         {
-
             guard let updated = try ExampleCardLocations.applyOnce(
                 lists: lists, calendar: document, collections: collections) else
             {
-
                 return
             }
 
@@ -137,7 +126,6 @@ extension AppRootView
 
         catch
         {
-
             DatabaseActivity.shared.report("Could not add example Card locations: \(error.localizedDescription)")
         }
 
@@ -163,7 +151,6 @@ extension AppRootView
 
         for index in document.weeks.indices
         {
-
             let week    = document.weeks[index] /* Dated Week under consideration  */
             let source  =                       /* Source value for this operation */
                 week.startKey == document.currentWeekKey ? lists : week.collection.lists
@@ -174,7 +161,6 @@ extension AppRootView
 
             if week.startKey == document.currentWeekKey
             {
-
                 currentLists = ordered
 
             }
@@ -193,7 +179,6 @@ extension AppRootView
 
             if let displayed = displayedPlanningWeek
             {
-
                 displayedPlanningWeek = document.weeks.first
                 {
                     $0.id == displayed.id
@@ -218,7 +203,6 @@ extension AppRootView
     ///
     func persistCurrentPlanningWeek()
     {
-
         guard hasLoadedBoard, var document = calendarDocument,
         var current = document.weeks.first(where:
             {
@@ -235,10 +219,8 @@ extension AppRootView
         // If a weekday was archived/deleted, its replacement receives the date association
         for date in PlanningDate.days(in: current.startKey) where current.list(on: date) == nil
         {
-
             if let replacement = TodayListSelection.currentDayList(in: lists, date: date)
             {
-
                 current.dayListIDs[PlanningDate.key(date)] = replacement.id
 
             }
@@ -247,13 +229,11 @@ extension AppRootView
 
         if PlanPreferencesStore.load().keepsDayListsInTimeOrder
         {
-
             let ordered = DayListTimeOrder.lists( /* Values in display order */
                 lists, dayListIDs: Set(current.dayListIDs.values), calendar: document.calendar)
 
             if ordered != lists
             {
-
                 lists = ordered
 
             }
@@ -276,7 +256,6 @@ extension AppRootView
         }
         catch
         {
-
             DatabaseActivity.shared.report("Could not save calendar weeks: \(error.localizedDescription)")
         }
 
@@ -293,7 +272,6 @@ extension AppRootView
     ///
     func advancePlanningWeekIfNeeded()
     {
-
         guard !isSwitchingWorkspace, hasLoadedBoard, !hasProtectedAppReturnContext, var document = calendarDocument,
         document.currentWeekKey != PlanningDate.weekKey(.now, calendar: document.calendar)
         else
@@ -303,7 +281,6 @@ extension AppRootView
 
         do
         {
-
             let newWeek = /* New week */
             document.week(for: .now) == nil
             ? try PlanningRoutineStore.newWeek(for: .now, calendar: document.calendar) : nil
@@ -317,14 +294,12 @@ extension AppRootView
 
             if !importantIDs.isEmpty && !importance.isEmpty
             {
-
                 _ = try JSONDecoder().decode([LibraryRecentItem].self, from: importance)
 
             }
 
             for id in importantIDs
             {
-
                 importance = LibraryImportanceSelection.settingLevel(
                     cardID: id, collectionID: next.id,
                     level: LibraryImportanceSelection.demonstrationLevel(
@@ -338,13 +313,11 @@ extension AppRootView
 
             try DailyReviewTransaction.perform(additionalKeys: [LibraryImportanceSelection.key])
             {
-
                 try PlanningCalendarStore.save(document)
                 try KanbanBoardPersistence.saveListsChecked(next.collection.lists)
                 SavedCardPersistence.save(next.collection.savedCardIDs)
                 if !importantIDs.isEmpty
                 {
-
                     UserDefaults.standard.set(importance, forKey: LibraryImportanceSelection.key)
                 }
 
@@ -379,7 +352,6 @@ extension AppRootView
     ///
     func preparePlanningWeek(_ requested: DatedPlanningWeek) -> DatedPlanningWeek?
     {
-
         guard let document = calendarDocument else
         {
             return nil
@@ -395,7 +367,6 @@ extension AppRootView
 
         do
         {
-
             guard let date = PlanningDate.date(requested.startKey, calendar: document.calendar) else
             {
                 return nil
@@ -410,7 +381,6 @@ extension AppRootView
         }
         catch
         {
-
             DatabaseActivity.shared.report(
                                     "Could not prepare this week from its template. Your saved plans were retained.")
             return nil
@@ -431,7 +401,6 @@ extension AppRootView
     ///
     func savePlanningWeek(_ week: DatedPlanningWeek) -> Bool
     {
-
         savePlanningWeek(week, exampleImportantIDs: [])
     }
 
@@ -456,7 +425,6 @@ extension AppRootView
         restoredImportanceLevels: [Int: Int]? = nil
     ) -> Bool
     {
-
         guard var document = calendarDocument else
         {
             return false
@@ -466,7 +434,6 @@ extension AppRootView
 
         if PlanPreferencesStore.load().keepsDayListsInTimeOrder
         {
-
             week.collection.lists = DayListTimeOrder.lists(
                 week.collection.lists, dayListIDs: Set(week.dayListIDs.values), calendar: document.calendar)
 
@@ -477,7 +444,6 @@ extension AppRootView
                 $0.startKey == week.startKey
             }), existing.id != week.id
         {
-
             return false
         }
 
@@ -489,13 +455,11 @@ extension AppRootView
 
         do
         {
-
             let oldData = /* Old data */
                 UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) ?? Data()
 
             if (!exampleImportantIDs.isEmpty || replaceImportant) && !oldData.isEmpty
             {
-
                 _ = try JSONDecoder().decode([LibraryRecentItem].self, from: oldData)
 
             }
@@ -505,10 +469,8 @@ extension AppRootView
 
             if replaceImportant
             {
-
                 for id in LibraryImportanceSelection.cardIDs(collectionID: week.id, data: importance)
                 {
-
                     importance = LibraryImportanceSelection.setting(
                         cardID: id, collectionID: week.id, marked: false, data: importance)
 
@@ -518,7 +480,6 @@ extension AppRootView
 
             for id in exampleImportantIDs
             {
-
                 importance = LibraryImportanceSelection.settingLevel(
                     cardID: id, collectionID: week.id,
                     level: restoredImportanceLevels? [id]
@@ -533,18 +494,15 @@ extension AppRootView
 
             try DailyReviewTransaction.perform(additionalKeys: [LibraryImportanceSelection.key])
             {
-
                 try PlanningCalendarStore.save(document)
                 if week.startKey == document.currentWeekKey
                 {
-
                     try KanbanBoardPersistence.saveListsChecked(week.collection.lists)
                     SavedCardPersistence.save(week.collection.savedCardIDs)
                 }
 
                 if importance != oldData
                 {
-
                     UserDefaults.standard.set(importance, forKey: LibraryImportanceSelection.key)
                 }
 
@@ -554,7 +512,6 @@ extension AppRootView
 
             if week.startKey == document.currentWeekKey
             {
-
                 lists = week.collection.lists;
                 savedCardIDs = week.collection.savedCardIDs
 
@@ -564,7 +521,6 @@ extension AppRootView
         }
         catch
         {
-
             DatabaseActivity.shared.report(
                                     "Could not save this week: \(error.localizedDescription) Your content has been retained.")
             return false
@@ -585,7 +541,6 @@ extension AppRootView
     ///
     func sectionOwners(in document: PlanningCalendarDocument) -> [PersonalCollection]
     {
-
         var document = document /* Source document snapshot */
 
         if let index = document.weeks.firstIndex(where:
@@ -593,7 +548,6 @@ extension AppRootView
                 $0.startKey == document.currentWeekKey
             })
         {
-
             document.weeks[index].collection.lists = lists
             document.weeks[index].collection.savedCardIDs = savedCardIDs
 
@@ -623,18 +577,15 @@ extension AppRootView
         dailyPlans: Data?
     ) throws
     {
-
         var document = original /* Source document snapshot */
 
         for index in document.weeks.indices
         {
-
             if let owner = owners.first(where:
                 {
                     $0.id == document.weeks[index].id
                 })
             {
-
                 document.weeks[index].collection = owner
 
             }
@@ -652,7 +603,6 @@ extension AppRootView
                 $0.startKey == document.currentWeekKey
             }) else
         {
-
             throw CocoaError(.fileReadCorruptFile)
         }
 
@@ -660,44 +610,37 @@ extension AppRootView
 
         if let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1")
         {
-
             _ = try JSONDecoder().decode([PersonalCollection].self, from: data)
 
         }
 
         if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1")
         {
-
             _ = try JSONDecoder().decode([KanbanList].self, from: data)
 
         }
 
         try DailyReviewTransaction.perform(additionalKeys: [LibraryImportanceSelection.key])
         {
-
             try PlanningCalendarStore.save(document)
             try KanbanBoardPersistence.saveListsChecked(current.collection.lists)
             try PersonalCollectionStore.saveChecked(library)
             SavedCardPersistence.save(current.collection.savedCardIDs)
             if let importance
             {
-
                 UserDefaults.standard.set(importance, forKey: LibraryImportanceSelection.key)
             }
             else
             {
-
                 UserDefaults.standard.removeObject(forKey: LibraryImportanceSelection.key)
             }
 
             if let dailyPlans
             {
-
                 UserDefaults.standard.set(dailyPlans, forKey: DailyPlanStore.key)
             }
             else
             {
-
                 UserDefaults.standard.removeObject(forKey: DailyPlanStore.key)
             }
 
@@ -730,10 +673,8 @@ extension AppRootView
         shiftDates: Bool, documentOverride: PlanningCalendarDocument? = nil
     ) -> Bool
     {
-
         do
         {
-
             guard let document = documentOverride ?? calendarDocument,
             let currentID = document.weeks.first(where:
                 {
@@ -754,7 +695,6 @@ extension AppRootView
                     $0.id == sourceID
                 })?.lists.first(where:
                 {
-
                     !$0.isArchived && $0.cards.contains
                     {
                         $0.id == heading.id && $0.createdAt == heading.createdAt
@@ -780,7 +720,6 @@ extension AppRootView
             ///
             func day(owner: UUID, list: Int) -> Date?
             {
-
                 document.weeks.first(where:
                     {
                         $0.id == owner
@@ -808,7 +747,6 @@ extension AppRootView
 
             if let beforeImportance, !beforeImportance.isEmpty
             {
-
                 _ = try JSONDecoder().decode([LibraryRecentItem].self, from: beforeImportance)
 
             }
@@ -817,12 +755,10 @@ extension AppRootView
 
             if sourceID != destinationID
             {
-
                 var data = beforeImportance ?? Data() /* Encoded or loaded bytes */
 
                 for (id, mapped) in receipt.mapping
                 {
-
                     let importanceLevel = LibraryImportanceSelection.level( /* Importance level */
                         cardID: id, collectionID: sourceID, data: beforeImportance ?? Data())
 
@@ -852,10 +788,8 @@ extension AppRootView
                 TransferConfirmation(title: receipt.heading.sectionHeading ?? "Section", destination: destination.title)
             )
             {
-
                 do
                 {
-
                     guard let current = calendarDocument,
                     UserDefaults.standard.data(forKey: LibraryImportanceSelection.key) == afterImportance,
                     UserDefaults.standard.data(forKey: DailyPlanStore.key) == afterPlans
@@ -874,14 +808,12 @@ extension AppRootView
                             $0.id == sourceID
                         })?.lists.first(where:
                         {
-
                             $0.id == sourceList.id
                         })?.cards.first(where:
                         {
                             $0.id == heading.id
                         })
                     {
-
                         CreatedContentReveal.shared.request(listID: sourceList.id, card: original)
                     }
 
@@ -889,7 +821,6 @@ extension AppRootView
                 }
                 catch
                 {
-
                     DatabaseActivity.shared.report(
                                                             "Could not undo the section move. Content may have changed since it moved; your current edits have been retained."
                     )
@@ -902,7 +833,6 @@ extension AppRootView
         }
         catch
         {
-
             DatabaseActivity.shared.report("Could not move this section. Your content has been retained.")
             return false
         }
@@ -924,10 +854,8 @@ extension AppRootView
     ///
     func movePlanningList(_ listID: Int, sourceID: UUID, destinationID: UUID?) -> Bool
     {
-
         do
         {
-
             guard var document = calendarDocument else
             {
                 return false
@@ -938,7 +866,6 @@ extension AppRootView
                     $0.startKey == document.currentWeekKey
                 })
             {
-
                 document.weeks[current].collection.lists = lists
                 document.weeks[current].collection.savedCardIDs = savedCardIDs
 
@@ -960,7 +887,6 @@ extension AppRootView
 
             if let destinationID
             {
-
                 moved = try CrossBoardListMovement.move(
                     listID: listID, from: sourceID, to: destinationID, collections: &combined)
                 newStandalone = nil
@@ -968,7 +894,6 @@ extension AppRootView
             }
             else
             {
-
                 let standalone = try CrossBoardListMovement.detach( /* Standalone operation value */
                     listID: listID, from: sourceID, collections: &combined)
 
@@ -979,26 +904,21 @@ extension AppRootView
 
             for index in document.weeks.indices
             {
-
                 if let updated = combined.first(where:
                     {
                         $0.id == document.weeks[index].id
                     })
                 {
-
                     document.weeks[index].collection = updated
 
                 }
 
                 if document.weeks[index].id == sourceID
                 {
-
                     for key in emptiedDates
                     {
-
                         if let date = PlanningDate.date(key, calendar: document.calendar)
                         {
-
                             _ = document.weeks[index].prepareDay(date)
 
                         }
@@ -1024,7 +944,6 @@ extension AppRootView
                     $0.startKey == document.currentWeekKey
                 }) else
             {
-
                 return false
             }
 
@@ -1036,14 +955,12 @@ extension AppRootView
 
             if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1")
             {
-
                 _ = try JSONDecoder().decode([KanbanList].self, from: data)
 
             }
 
             if let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1")
             {
-
                 _ = try JSONDecoder().decode([PersonalCollection].self, from: data)
 
             }
@@ -1060,7 +977,6 @@ extension AppRootView
 
             do
             {
-
                 try PlanningCalendarStore.save(document)
                 try PersonalCollectionStore.saveChecked(updatedLibrary)
                 try KanbanBoardPersistence.saveListsChecked(current.collection.lists)
@@ -1068,10 +984,8 @@ extension AppRootView
             }
             catch
             {
-
                 for (key, value) in zip(keys, previous)
                 {
-
                     if let value
                     {
                         defaults.set(value, forKey: key)
@@ -1109,7 +1023,6 @@ extension AppRootView
         }
         catch
         {
-
             DatabaseActivity.shared.report(
                                     "Could not move this list: \(error.localizedDescription) Its content has been retained.")
             return false
@@ -1137,19 +1050,16 @@ extension AppRootView
     func mutateReviewItem(_ live: PlanningSearchResult, action: DailyReviewAction, anchor: String) throws
     -> PlanningSearchResult
     {
-
         var result = live /* Accumulated output value */
 
         switch action
         {
-
         case .keep:
             break
         case .keepTomorrow:
             guard !live.card.isTitleChecked,
             collections.contains(where:
                 {
-
                     $0.id == live.collectionID && $0.isActive && $0.kind == .list && $0.title == "On the Table"
                 })
             else
@@ -1195,7 +1105,6 @@ extension AppRootView
 
             if queue.id != live.collectionID || list.id != live.listID
             {
-
                 guard
                 let moved = movePriorityForVision(
                     live, destination: WorkspaceListReference(ownerID: queue.id, listID: list.id))
@@ -1218,10 +1127,8 @@ extension AppRootView
 
             if case .date(let key) = action
             {
-
                 guard let date = PlanningDate.date(key, calendar: document.calendar) else
                 {
-
                     throw CocoaError(.coderInvalidValue)
                 }
 
@@ -1230,7 +1137,6 @@ extension AppRootView
             }
             else
             {
-
                 guard let date = PlanningDate.date(anchor, calendar: document.calendar),
                 let next = document.calendar.date(byAdding: .day, value: 1, to: date)
                 else
@@ -1248,7 +1154,6 @@ extension AppRootView
 
             if week.id != live.collectionID || targetID != live.listID
             {
-
                 let before = Set(week.collection.lists.first /* State before the operation */
                     {
                         $0.id == targetID
@@ -1272,7 +1177,6 @@ extension AppRootView
                     }),
                 let moved = list.cards.first(where:
                     {
-
                         !before.contains($0.id) && $0.createdAt == live.card.createdAt
                     })
                 else
@@ -1314,12 +1218,10 @@ extension AppRootView
 
             if action == .archive
             {
-
                 owner.lists[index].archiveCard(id: live.card.id)
             }
             else
             {
-
                 guard live.card.presentation == .card else
                 {
                     throw CocoaError(.coderInvalidValue)
@@ -1339,7 +1241,6 @@ extension AppRootView
 
             if var week = dated, var document = calendarDocument
             {
-
                 week.collection = owner;
 
                 document.upsert(week)
@@ -1353,7 +1254,6 @@ extension AppRootView
 
                 if week.startKey == document.currentWeekKey
                 {
-
                     lists = owner.lists
 
                 }
@@ -1361,13 +1261,11 @@ extension AppRootView
             }
             else
             {
-
                 guard let index = collections.firstIndex(where:
                     {
                         $0.id == owner.id
                     }) else
                 {
-
                     throw CocoaError(.fileNoSuchFile)
                 }
 
@@ -1405,23 +1303,19 @@ extension AppRootView
         baseline: WeeklyReviewRecord?
     ) -> WeeklyReviewRecord?
     {
-
         let oldDocument = /* Workspace state before transfer */
             calendarDocument, oldLists = lists, oldCollections = collections, oldSaved = savedCardIDs
 
         do
         {
-
             guard
             let live = planningCalendarAccess?.searchableItems.first(where:
                 {
-
                     $0.collectionID == source.collectionID && $0.card.id == source.card.id
                     && $0.card.createdAt == source.card.createdAt
                 }),
             collections.contains(where:
                 {
-
                     $0.id == live.collectionID && $0.isActive && $0.kind == .list && $0.title == "In the Queue"
                 }),
             try WeeklyReviewStore.load().records[draft.id] == baseline,
@@ -1436,7 +1330,6 @@ extension AppRootView
 
             return try DailyReviewTransaction.perform
             {
-
                 let result  = /* Result being assembled */
                     try mutateReviewItem(live, action: action, anchor: draft.startKey)
                 var updated = draft /* Edited value to publish */
@@ -1449,7 +1342,6 @@ extension AppRootView
                         $0.resolve(in: [live]) != nil
                     })
                 {
-
                     updated.priorities[index] = DailyPlanPriority(result)
 
                 }
@@ -1460,7 +1352,6 @@ extension AppRootView
         }
         catch
         {
-
             calendarDocument = oldDocument;
             lists = oldLists;
             collections = oldCollections;
@@ -1468,7 +1359,6 @@ extension AppRootView
 
             if UserDefaults.standard.object(forKey: DailyReviewTransaction.key) != nil
             {
-
                 workspaceRecoveryError = error.localizedDescription
 
             }
@@ -1496,7 +1386,6 @@ extension AppRootView
         _ source: PlanningSearchResult, action: DailyReviewAction, draft: DailyPlan, baseline: DailyPlan?
     ) -> DailyPlan?
     {
-
         let previousDocument    = calendarDocument /* Previous document    */
         let previousLists       = lists            /* Previous lists       */
         let previousCollections = collections      /* Previous collections */
@@ -1504,11 +1393,9 @@ extension AppRootView
 
         do
         {
-
             guard
             let live = planningCalendarAccess?.searchableItems.first(where:
                 {
-
                     $0.collectionID == source.collectionID && $0.card.id == source.card.id
                     && $0.card.createdAt == source.card.createdAt
                 }), try DailyPlanStore.load().plans[draft.id] == baseline
@@ -1519,7 +1406,6 @@ extension AppRootView
 
             return try DailyReviewTransaction.perform
             {
-
                 let result      = /* Result being assembled */
                     try mutateReviewItem(live, action: action, anchor: draft.id)
                 var updatedPlan = draft                     /* Updated plan                  */
@@ -1531,7 +1417,6 @@ extension AppRootView
                         $0.resolve(in: [live]) != nil
                     })
                 {
-
                     updatedPlan.priorities[index] = destination
 
                 }
@@ -1544,7 +1429,6 @@ extension AppRootView
                         $0.source == original
                     }) else
                 {
-
                     throw DailyPlanStore.Failure.conflict
                 }
 
@@ -1558,7 +1442,6 @@ extension AppRootView
         }
         catch
         {
-
             calendarDocument = previousDocument;
             lists = previousLists;
             collections = previousCollections;
@@ -1567,7 +1450,6 @@ extension AppRootView
 
             if UserDefaults.standard.object(forKey: DailyReviewTransaction.key) != nil
             {
-
                 workspaceRecoveryError = error.localizedDescription
 
             }
@@ -1593,11 +1475,9 @@ extension AppRootView
     func movePriorityForVision(_ source: PlanningSearchResult, destination: WorkspaceListReference)
     -> PlanningSearchResult?
     {
-
         guard
         let live = planningCalendarAccess?.searchableItems.first(where:
             {
-
                 $0.collectionID == source.collectionID && $0.card.id == source.card.id
                 && $0.card.createdAt == source.card.createdAt
             }), let owner = collections.first(where:
@@ -1628,7 +1508,6 @@ extension AppRootView
             }),
         let moved = updatedList.cards.first(where:
             {
-
                 !before.contains($0.id) && $0.createdAt == live.card.createdAt
             })
         else
@@ -1660,7 +1539,6 @@ extension AppRootView
         documentOverride: PlanningCalendarDocument? = nil
     ) -> Bool
     {
-
         movePlanningCardWithResult(card, source: source, destination: destination,
             documentOverride: documentOverride) != nil
     }
@@ -1671,10 +1549,8 @@ extension AppRootView
         documentOverride: PlanningCalendarDocument? = nil
     ) -> CardMoveResult?
     {
-
         do
         {
-
             var document  = documentOverride ?? calendarDocument /* Source document snapshot */
             let currentID = document?.weeks.first                /* Current ID               */
             {
@@ -1710,13 +1586,10 @@ extension AppRootView
 
             if var next = document
             {
-
                 for var week in next.weeks
                 {
-
                     if week.id == currentID
                     {
-
                         week.collection.lists = updatedWeek;
                         week.collection.savedCardIDs = updatedSaved
 
@@ -1726,7 +1599,6 @@ extension AppRootView
                             $0.id == week.id
                         })
                     {
-
                         week.collection = collection
 
                     }
@@ -1743,7 +1615,6 @@ extension AppRootView
 
             if let document
             {
-
                 _ = try JSONEncoder().encode(document);
                 _ = try PlanningCalendarStore.load()
 
@@ -1751,14 +1622,12 @@ extension AppRootView
 
             if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1")
             {
-
                 _ = try JSONDecoder().decode([KanbanList].self, from: data)
 
             }
 
             if let data = UserDefaults.standard.data(forKey: "Plenact.PersonalCollections.v1")
             {
-
                 _ = try JSONDecoder().decode([PersonalCollection].self, from: data)
 
             }
@@ -1775,7 +1644,6 @@ extension AppRootView
 
             do
             {
-
                 if let document
                 {
                     try PlanningCalendarStore.save(document)
@@ -1787,10 +1655,8 @@ extension AppRootView
             }
             catch
             {
-
                 for (key, value) in zip(keys, previous)
                 {
-
                     if let value
                     {
                         defaults.set(value, forKey: key)
@@ -1812,7 +1678,6 @@ extension AppRootView
 
             if normalizedSource != normalizedDestination.collectionID
             {
-
                 TransferConfirmationPresenter.shared.show(
                     TransferConfirmation(title: card.word, destination: destination.title))
             }
@@ -1832,7 +1697,6 @@ extension AppRootView
         }
         catch
         {
-
             DatabaseActivity.shared.report(
                                     "Could not move this item: \(error.localizedDescription) Its content has been retained.")
             return nil
@@ -1853,7 +1717,6 @@ extension AppRootView
     ///
     func switchMonthExample(restoring: Bool)
     {
-
         guard !isSwitchingWorkspace else
         {
             return
@@ -1878,11 +1741,9 @@ extension AppRootView
     @MainActor
     func performMonthExampleSwitch(restoring: Bool) async
     {
-
         // Runs only after the navigation tree has disappeared and flushed its saved state
         do
         {
-
             guard var savedDocument = calendarDocument,
             let currentIndex = savedDocument.weeks.firstIndex(where:
                 {
@@ -1911,7 +1772,6 @@ extension AppRootView
 
             try await Task.detached(priority: .userInitiated)
             {
-
                 if restoring
                 {
                     try store.restoreUserData()
@@ -1932,10 +1792,8 @@ extension AppRootView
         }
         catch
         {
-
             if (try? FullMonthExampleStore.live().needsRecovery) == true
             {
-
                 workspaceRecoveryError = error.localizedDescription
 
             }
@@ -1962,7 +1820,6 @@ extension AppRootView
     ///
     func reloadWorkspaceFromStorage() throws
     {
-
         let document = try PlanningCalendarStore.load() /* Working calendar document */
 
         guard let current = document?.weeks.first(where:
@@ -1970,7 +1827,6 @@ extension AppRootView
                 $0.startKey == document?.currentWeekKey
             }) else
         {
-
             throw CocoaError(.fileReadCorruptFile)
         }
 
@@ -2002,7 +1858,6 @@ extension AppRootView
     ///
     func recoverWorkspace()
     {
-
         isSwitchingWorkspace = true
 
         Task
@@ -2010,7 +1865,6 @@ extension AppRootView
             @MainActor in
             do
             {
-
                 try DailyReviewTransaction.recover()
 
                 let store = try FullMonthExampleStore.live() /* Persistence boundary */
@@ -2026,7 +1880,6 @@ extension AppRootView
             }
             catch
             {
-
                 workspaceRecoveryError = error.localizedDescription
 
             }
@@ -2048,7 +1901,6 @@ extension AppRootView
     ///
     func loadExampleWeek() -> Bool
     {
-
         guard let document = calendarDocument,
         var current = document.weeks.first(where:
             {
@@ -2085,14 +1937,12 @@ extension AppRootView
             savedCardIDs: savedCardIDs, importantCardIDs: importance, importanceLevels: levels)
         else
         {
-
             DatabaseActivity.shared.report("Could not save the previous Week Board, so the example was not loaded.")
             return false
         }
 
         do
         {
-
             let template     = /* Reusable planning template */
                 PlanningRoutineLibrary.seeded.templates[0]
             let importantIDs = /* Important i ds */
@@ -2104,7 +1954,6 @@ extension AppRootView
         }
         catch
         {
-
             DatabaseActivity.shared.report("Could not load the example Week Board: \(error.localizedDescription)")
             return false
         }
@@ -2122,7 +1971,6 @@ extension AppRootView
     ///
     func undoExampleWeek() -> Bool
     {
-
         guard let snapshot = ExampleLoadUndoStore.load(),
         let current = calendarDocument?.weeks.first(where:
             {
@@ -2130,7 +1978,6 @@ extension AppRootView
             })
         else
         {
-
             DatabaseActivity.shared.report("The saved Week Board snapshot could not be restored.")
             return false
         }
@@ -2139,7 +1986,6 @@ extension AppRootView
 
         guard restored.id == current.id else
         {
-
             DatabaseActivity.shared.report("Return to the original week before restoring this example load.")
             return false
         }
@@ -2158,7 +2004,6 @@ extension AppRootView
             restored, exampleImportantIDs: snapshot.importantCardIDs ?? [],
             replaceImportant: snapshot.importantCardIDs != nil, restoredImportanceLevels: levels)
         {
-
             ExampleLoadUndoStore.clear()
             return true
         }
@@ -2180,10 +2025,8 @@ extension AppRootView
     ///
     func openToolbarItem(_ presentation: ItemPresentation)
     {
-
         if selectedDestination == .lists, presentation == .note, let action = activePersonalListNewNote
         {
-
             action()
             return
         }
@@ -2212,7 +2055,6 @@ extension AppRootView
     ///
     func openToolbarCollection(_ kind: PersonalCollectionKind)
     {
-
         selectedDestination = .lists
         toolbarCollectionRequest = kind
 
@@ -2231,23 +2073,19 @@ extension AppRootView
     ///
     func selectToolbarDestination(_ destination: AppDestination)
     {
-
         if destination == .saved
         {
-
             activityRevisitDestination = nil
 
         }
 
         if destination == .board
         {
-
             let result = /* Result being assembled */
                 TodayListSelection.ensureCurrentDayList(lists: lists)
 
             if result.lists != lists
             {
-
                 lists = result.lists
 
             }
@@ -2277,20 +2115,15 @@ extension AppRootView
     ///
     func tabButton(_ destination: AppDestination, title: String, systemImage: String) -> some View
     {
-
-
         let geometry   = bottomToolbarLayout                /* Current viewport geometry */
         let isSelected = selectedDestination == destination /* Current tab selection     */
 
         return Button
         {
-
             selectToolbarDestination(destination)
         }
         label:
         {
-
-
             let layout = /* Resolved layout configuration */
             geometry.horizontalLabels /* Adaptive quick-creation action layout */
             ? AnyLayout(HStackLayout(spacing: geometry.tabLabelSpacing))
@@ -2298,15 +2131,11 @@ extension AppRootView
 
             layout
             {
-
-
                 Image(systemName: systemImage)
                 .font(.system(size: geometry.tabIconSize, weight: .semibold))
 
                 if PlanPreferencesStore.load().showsNavigationLabels
                 {
-
-
                     Text(title)
                     .font(.system(geometry.labelStyle))
                 }
@@ -2327,32 +2156,27 @@ extension AppRootView
                 result in
                 switch result
                 {
-
                 case .first:
                     if destination == .today
                     {
-
                         showsToolbarTodayPlan = true
 
                     }
 
                     if destination == .board
                     {
-
                         showsToolbarCalendar = true
 
                     }
 
                     if destination == .lists
                     {
-
                         showsToolbarSearch = true
 
                     }
 
                     if destination == .saved
                     {
-
                         showsToolbarRevisit = true
 
                     }
@@ -2371,10 +2195,8 @@ extension AppRootView
                 },
                 set:
                 {
-
                     if destination == .saved
                     {
-
                         showsToolbarRevisit = $0
 
                     }
@@ -2382,7 +2204,6 @@ extension AppRootView
                 }), arrowEdge: .bottom
         )
         {
-
             ToolbarRevisitMenu
             {
                 choice in
@@ -2396,13 +2217,10 @@ extension AppRootView
         }
         .accessibilityActions
         {
-
             if destination == .today
             {
-
                 Button("Open Today’s Plan")
                 {
-
                     showsToolbarTodayPlan = true
 
                 }
@@ -2411,10 +2229,8 @@ extension AppRootView
 
             if destination == .board
             {
-
                 Button("Open Calendar")
                 {
-
                     showsToolbarCalendar = true
 
                 }
@@ -2423,10 +2239,8 @@ extension AppRootView
 
             if destination == .lists
             {
-
                 Button("Open Search")
                 {
-
                     showsToolbarSearch = true
 
                 }
@@ -2435,10 +2249,8 @@ extension AppRootView
 
             if destination == .saved
             {
-
                 Button("Open Revisit")
                 {
-
                     showsToolbarRevisit = true
 
                 }
@@ -2474,7 +2286,6 @@ extension AppRootView
     ///
     func openBoardList(_ listID: Int)
     {
-
         displayedPlanningWeek = nil
 
         rememberLastViewedList(listID)
@@ -2495,8 +2306,6 @@ extension AppRootView
     ///
     func registerPersonalListNewNote(_ action: (() -> Void)?)
     {
-
-
         activePersonalListNewNote = action
 
     }
@@ -2512,8 +2321,6 @@ extension AppRootView
     ///
     func openSavedDestination()
     {
-
-
         selectedDestination = .saved
 
     }
@@ -2532,16 +2339,12 @@ extension AppRootView
     ///
     func archiveWeekBoard()
     {
-
-
         let archived = PersonalCollection.archivedWeekBoard( /* Archived records or state */
             lists: lists, savedCardIDs: savedCardIDs)  /* Retained copy of the current Week workspace    */
         let updated = collections + [archived]         /* Directory snapshot including the archived Week */
 
         do
         {
-
-
             // Persist the recovery copy before clearing the active Week snapshot
             try PersonalCollectionStore.saveChecked(updated)
 
@@ -2555,8 +2358,6 @@ extension AppRootView
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not archive the Week Board: \(error.localizedDescription) The board has not been removed.")
         }
@@ -2577,20 +2378,14 @@ extension AppRootView
     ///
     func cleanDeletedMedia(_ candidates: Set<String>)
     {
-
-
         guard !isSwitchingWorkspace, !candidates.isEmpty else
         {
-
-
             return
         }
 
 
         do
         {
-
-
             let persistedWeek = /* Persisted week */
             try UserDefaults.standard.data(
                 forKey: "Plenact.Board.v1"
@@ -2631,8 +2426,6 @@ extension AppRootView
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Content was saved, but some unused media could not be removed: \(error.localizedDescription)")
         }
@@ -2649,12 +2442,8 @@ extension AppRootView
     ///
     func deleteWeekContents()
     {
-
-
         do
         {
-
-
             try commitWeekDeletion([], [])
 
             boardTargetListID = nil
@@ -2663,8 +2452,6 @@ extension AppRootView
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not delete Week contents: \(error.localizedDescription) They have been retained.")
         }
@@ -2686,8 +2473,6 @@ extension AppRootView
     ///
     func commitWeekDeletion(_ snapshot: [KanbanList], _ bookmarks: Set<Int>) throws
     {
-
-
         let candidates = /* Eligible operation targets */
             CardAttachmentStore.fileNames(in: lists).subtracting(
             CardAttachmentStore.fileNames(in: snapshot)) /* Media removed by clearing Week content */
@@ -2698,7 +2483,6 @@ extension AppRootView
                 $0.startKey == document.currentWeekKey
             })
         {
-
             current.collection.lists = snapshot;
             current.collection.savedCardIDs = bookmarks
 
@@ -2731,7 +2515,6 @@ extension AppRootView
     @discardableResult
     func deletePersonalBoard(_ id: UUID) -> Bool
     {
-
         guard let collection = collections.first(where: { $0.id == id }), !collection.isPrimaryList else
         {
             return false
@@ -2746,8 +2529,6 @@ extension AppRootView
 
         do
         {
-
-
             try PersonalCollectionStore.saveChecked(updated)
 
             collections = updated
@@ -2756,8 +2537,6 @@ extension AppRootView
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not delete the collection: \(error.localizedDescription) It has been retained.")
 
@@ -2778,16 +2557,11 @@ extension AppRootView
     ///
     func archiveWeekList(_ id: Int)
     {
-
-
         if let index = lists.firstIndex(where:
             {  /* Position of the Week list to archive */
-
-
                 $0.id == id
             })
         {
-
             lists[index].isArchived = true
 
         }
@@ -2807,8 +2581,6 @@ extension AppRootView
     @discardableResult
     func deleteWeekList(_ id: Int) -> Bool
     {
-
-
         var snapshot  = lists        /* Week snapshot for checked deletion         */
         var bookmarks = savedCardIDs /* Bookmarks pruned alongside removed content */
 
@@ -2816,16 +2588,12 @@ extension AppRootView
 
         do
         {
-
-
             try commitWeekDeletion(snapshot, bookmarks)
 
             return true
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not delete the list: \(error.localizedDescription) It has been retained.")
 
@@ -2846,19 +2614,14 @@ extension AppRootView
     ///
     func archiveWeekCard(_ id: Int)
     {
-
-
         if let index = lists.firstIndex(where:
             {  /* Week list containing the card to archive */
-
-
                 $0.cards.contains(where:
                     {
                         $0.id == id
                     })
             })
         {
-
             lists[index].archiveCard(id: id)
         }
 
@@ -2877,8 +2640,6 @@ extension AppRootView
     @discardableResult
     func deleteWeekCard(_ id: Int) -> Bool
     {
-
-
         var snapshot  = lists        /* Week snapshot for checked deletion         */
         var bookmarks = savedCardIDs /* Bookmarks pruned alongside removed content */
 
@@ -2886,16 +2647,12 @@ extension AppRootView
 
         do
         {
-
-
             try commitWeekDeletion(snapshot, bookmarks)
 
             return true
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not delete the card: \(error.localizedDescription) It has been retained.")
 

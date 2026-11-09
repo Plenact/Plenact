@@ -20,8 +20,6 @@ import UniformTypeIdentifiers
 ///
 struct WorkspaceNoteVisibilityKey: EnvironmentKey
 {
-
-
     static let defaultValue: (UUID, Bool) -> Void = /* Fallback environment callback */
     {
         _, _ in
@@ -39,11 +37,8 @@ struct WorkspaceNoteVisibilityKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var workspaceNoteVisibility: (UUID, Bool) -> Void /* Workspace note visibility callback */
     {
-
         get
         {
             self[WorkspaceNoteVisibilityKey.self]
@@ -51,7 +46,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[WorkspaceNoteVisibilityKey.self] = newValue
 
         }
@@ -69,8 +63,6 @@ extension EnvironmentValues
 ///
 struct WorkspaceBottomBarHeightKey: EnvironmentKey
 {
-
-
     static let defaultValue: CGFloat = 0 /* Fallback environment value */
 
 }
@@ -85,11 +77,8 @@ struct WorkspaceBottomBarHeightKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var workspaceBottomBarHeight: CGFloat /* Workspace bottom bar height */
     {
-
         get
         {
             self[WorkspaceBottomBarHeightKey.self]
@@ -97,7 +86,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[WorkspaceBottomBarHeightKey.self] = newValue
 
         }
@@ -119,8 +107,6 @@ extension EnvironmentValues
 ///
 struct CardKeyboardNavigation
 {
-
-
     var previous: (() -> Void)? = nil /* Previous value for comparison */
     var next:     (() -> Void)? = nil /* Candidate next state          */
 
@@ -135,7 +121,6 @@ struct CardKeyboardNavigation
 ///
 struct CardKeyboardNavigationKey: EnvironmentKey
 {
-
     static let defaultValue = CardKeyboardNavigation() /* Fallback environment value */
 
 }
@@ -150,11 +135,8 @@ struct CardKeyboardNavigationKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var cardKeyboardNavigation: CardKeyboardNavigation /* Card keyboard navigation */
     {
-
         get
         {
             self[CardKeyboardNavigationKey.self]
@@ -162,7 +144,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[CardKeyboardNavigationKey.self] = newValue
 
         }
@@ -181,8 +162,6 @@ extension EnvironmentValues
 ///
 enum CardKeyboardNeighbors
 {
-
-
     ///
     /// @fcn        CardKeyboardNeighbors.resolve
     /// @brief      Find navigable neighbors around the current card
@@ -197,11 +176,9 @@ enum CardKeyboardNeighbors
     ///
     static func resolve(_ card: KanbanCard, in lists: [KanbanList]) -> (previous: KanbanCard?, next: KanbanCard?)
     {
-
         guard
         let list = lists.first(where:
             {
-
                 !$0.isArchived && $0.cards.contains(where:
                     {
                         $0.id == card.id && $0.createdAt == card.createdAt
@@ -240,8 +217,6 @@ enum CardKeyboardNeighbors
 ///
 struct KeyboardCardActions
 {
-
-
     var exit:             (() -> Void)? = nil /* Exit callback                 */
     var previous:         (() -> Void)? = nil /* Previous value for comparison */
     var next:             (() -> Void)? = nil /* Candidate next state          */
@@ -261,8 +236,6 @@ struct KeyboardCardActions
 ///
 struct KeyboardFormatting
 {
-
-
     let toggle: (UIFontDescriptor.SymbolicTraits) -> Void /* Toggle callback      */
     let color:  (String) -> Void                          /* Resolved color value */
     let font:   (String?, Double?) -> Void                /* Resolved text font   */
@@ -280,8 +253,6 @@ struct KeyboardFormatting
 @MainActor
 final class PlenactKeyboard
 {
-
-
     static let shared                                           = /* Shared operation value */
         PlenactKeyboard()
     private var observers:        [NSObjectProtocol]            = /* Installed change observers */
@@ -308,7 +279,6 @@ final class PlenactKeyboard
     ///
     func setContext(_ id: UUID, actions: KeyboardCardActions)
     {
-
         contexts.removeAll
         {
             $0.0 == id
@@ -350,7 +320,6 @@ final class PlenactKeyboard
     ///
     func install()
     {
-
         guard observers.isEmpty else
         {
             return
@@ -358,14 +327,12 @@ final class PlenactKeyboard
 
         for name in [UITextField.textDidBeginEditingNotification, UITextView.textDidBeginEditingNotification]
         {
-
             observers.append(
                 NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main)
                 {
                     [weak self] notice in
                     MainActor.assumeIsolated
                     {
-
                         guard let view = notice.object as? UIView else
                         {
                             return
@@ -383,7 +350,6 @@ final class PlenactKeyboard
             .NSUndoManagerDidCloseUndoGroup
         ]
         {
-
             observers.append(
                 NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main)
                 {
@@ -410,15 +376,12 @@ final class PlenactKeyboard
     ///
     private func activate(_ view: UIView)
     {
-
         activeInput = view
 
         if let field = view as? UITextField
         {
-
             if !(field.inputAccessoryView is PlenactKeyboardToolbar)
             {
-
                 field.inputAccessoryView = PlenactKeyboardToolbar(input: field)
 
             }
@@ -427,10 +390,8 @@ final class PlenactKeyboard
         }
         else if let text = view as? UITextView
         {
-
             if !(text.inputAccessoryView is PlenactKeyboardToolbar)
             {
-
                 text.inputAccessoryView = PlenactKeyboardToolbar(input: text)
 
             }
@@ -450,7 +411,6 @@ final class PlenactKeyboard
     ///
     func refreshActive()
     {
-
         let toolbar = /* Available editor controls */
         (activeInput as? UITextField)?.inputAccessoryView ?? (activeInput as? UITextView)?.inputAccessoryView
 
@@ -470,8 +430,6 @@ final class PlenactKeyboard
 @MainActor
 final class PlenactKeyboardToolbar: UIView
 {
-
-
     private weak var input: UIView?                                /* Source operation input  */
     private let formatting: KeyboardFormatting?                    /* Current rich-text style */
     private let keyboardBackdrop                                 = /* Keyboard backdrop       */
@@ -498,7 +456,6 @@ final class PlenactKeyboardToolbar: UIView
     ///
     init(input: UIView, formatting: KeyboardFormatting? = nil)
     {
-
         self.input = input;
         self.formatting = formatting
 
@@ -546,7 +503,6 @@ final class PlenactKeyboardToolbar: UIView
     ///
     override func layoutSubviews()
     {
-
         super.layoutSubviews()
 
         let radius: CGFloat = 24 /* Rounded-corner radius */
@@ -591,7 +547,6 @@ final class PlenactKeyboardToolbar: UIView
     ///
     private func overlaysLightNeutralSurface() -> Bool
     {
-
         guard traitCollection.userInterfaceStyle != .dark else
         {
             return false
@@ -621,7 +576,6 @@ final class PlenactKeyboardToolbar: UIView
     ///
     private func action(_ title: String, symbol: String, run: @escaping () -> Void) -> UIBarButtonItem
     {
-
         let item = UIBarButtonItem( /* Item under consideration */
             image: UIImage(systemName: symbol), primaryAction: UIAction(title: title)
             {
@@ -651,7 +605,6 @@ final class PlenactKeyboardToolbar: UIView
     private func contextual(_ title: String, symbol: String, key: KeyPath<KeyboardCardActions, (() -> Void)?>)
     -> UIBarButtonItem
     {
-
         let item = action(title, symbol: symbol) /* Item under consideration */
         {
             PlenactKeyboard.shared.actions[keyPath: key]?()
@@ -671,7 +624,6 @@ final class PlenactKeyboardToolbar: UIView
     ///
     func rebuild()
     {
-
         contextualButtons = []
 
         let exit     = /* Exit operation value */
@@ -749,7 +701,6 @@ final class PlenactKeyboardToolbar: UIView
 
         if #available(iOS 26.0, *)
         {
-
             // A 44pt accessory has no space for automatic scroll-edge blur
             scroll.topEdgeEffect.isHidden = true;
             scroll.bottomEdgeEffect.isHidden = true
@@ -809,7 +760,6 @@ final class PlenactKeyboardToolbar: UIView
     ///
     func updateAvailability()
     {
-
         setNeedsLayout()
 
         undoButton?.isEnabled = input?.undoManager?.canUndo == true
@@ -817,14 +767,12 @@ final class PlenactKeyboardToolbar: UIView
 
         for (button, key) in contextualButtons
         {
-
             button.isEnabled = PlenactKeyboard.shared.actions[keyPath: key] != nil
 
         }
 
         for (item, button) in buttonViews
         {
-
             button.isEnabled = item.isEnabled
 
         }
@@ -844,7 +792,6 @@ final class PlenactKeyboardToolbar: UIView
     ///
     private func performUndo(redo: Bool)
     {
-
         if redo
         {
             input?.undoManager?.redo()
@@ -861,7 +808,6 @@ final class PlenactKeyboardToolbar: UIView
 
         if let field = input as? UITextField
         {
-
             field.sendActions(for: .editingChanged)
             NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: field)
         }
@@ -880,7 +826,6 @@ final class PlenactKeyboardToolbar: UIView
     ///
     private func formattingMenu() -> UIMenu
     {
-
         let style = UIMenu( /* Selected display style */
             title: "Style", options: .displayInline,
             children: [

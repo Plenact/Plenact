@@ -20,8 +20,6 @@ import Foundation
 ///
 enum SampleData
 {
-
-
     /// Titles assigned to the seven horizontally navigable Board lists
     static let listTitles = [ /* Weekday list ordering for the starter Board */
             "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
@@ -104,8 +102,6 @@ enum SampleData
     private static func actionDetail(title: String, description: String, steps: [String], comment: String)
     -> KanbanChecklistActionDetail
     {
-
-
         let nestedItems = steps.map /* Nested items */
         {
             KanbanChecklistItem(title: $0)
@@ -138,12 +134,8 @@ enum SampleData
     ///
     private static func enrichedChecklists(for card: KanbanCard, linkedCard: KanbanCard) -> [KanbanChecklist]
     {
-
-
         guard let firstChecklist = card.checklists.first else
         {  /* Initial checklist used to seed example actions */
-
-
             return card.checklists
         }
 
@@ -187,8 +179,6 @@ enum SampleData
     /// Complete starter Board generated from weekday lists and planning cards
     static let lists: [KanbanList] = /* Ordered List records */
     {  /* Deterministic seven-day starter Board */
-
-
         var globalIndex = 0 /* Board-wide list/card seed identity counter */
 
         var initializedLists = listTitles.enumerated().map /* Initialized lists */
@@ -210,8 +200,6 @@ enum SampleData
 
                 if listIndex < 3 && cardTitle == cardTitlesByDay[listIndex].first
                 {
-
-
                     let illustration = /* Illustration operation value */
                         ExampleCoverImage.allCases[
                     listIndex] /* Bundled cover selected for this example list */
@@ -228,7 +216,6 @@ enum SampleData
 
                 switch cardTitle
                 {
-
                 case "Review the week ahead":
 
                     gallery = [
@@ -261,7 +248,6 @@ enum SampleData
 
                 if !gallery.isEmpty
                 {
-
                     card.attachments =
                     (card.attachments ?? [])
                     + gallery.map
@@ -278,7 +264,6 @@ enum SampleData
 
                 switch (listIndex, cardTitle)
                 {
-
                 case (1, "Capture a new idea"):
 
                     picture = .writingNotes
@@ -299,7 +284,6 @@ enum SampleData
 
                 if let picture
                 {
-
                     let photo = /* Photo selection or source */
                         KanbanAttachment(mediaKind: .photo, exampleImage: picture)
 
@@ -326,13 +310,9 @@ enum SampleData
         // Insert divider rows into the initialized lists at the specified positions
         for listIndex in dividerPositionsByList.indices
         {
-
-
             // Insert dividers for the current list
             for (dividerOffset, cardPosition) in dividerPositionsByList[listIndex].enumerated()
             {
-
-
                 // Insert a divider card at the calculated position within the current list
                 initializedLists[listIndex].cards.insert(
                     KanbanCard(
@@ -355,8 +335,6 @@ enum SampleData
 
         for listIndex in initializedLists.indices
         {
-
-
             let targetListIndex = (listIndex + 1) % initializedLists.count /* Next Board list */
             let targetCards     = baseLists[targetListIndex].cards.filter  /* Target cards    */
             {
@@ -366,14 +344,10 @@ enum SampleData
 
             for cardIndex in initializedLists[listIndex].cards.indices
             {
-
-
                 let sourceCard = initializedLists[listIndex].cards[cardIndex] /* Card being enriched */
 
                 guard !sourceCard.isSectionDivider, !targetCards.isEmpty else
                 {
-
-
                     continue
                 }
 
@@ -405,8 +379,6 @@ enum SampleData
 ///
 enum DefaultListTutorial
 {
-
-
     ///
     /// @fcn        DefaultListTutorial.guidance(for:)
     /// @brief      Build transient read-only guidance for a built-in List
@@ -419,10 +391,8 @@ enum DefaultListTutorial
     ///
     static func guidance(for title: String) -> KanbanCard?
     {
-
         guard var card = makeStarter(title: title, includesWelcomeCard: true).lists.first?.cards.first else
         {
-
             return nil
         }
 
@@ -449,7 +419,6 @@ enum DefaultListTutorial
     ///
     static func removingUntouchedWelcomeCards(from collection: PersonalCollection) -> PersonalCollection
     {
-
         guard collection.kind == .list else
         {
             return collection
@@ -459,7 +428,6 @@ enum DefaultListTutorial
 
         for index in result.lists.indices
         {
-
             let list = result.lists[index] /* List under consideration */
 
             guard !list.isArchived,
@@ -511,10 +479,8 @@ enum DefaultListTutorial
     ///
     static func defaultBanner(for title: String) -> ItemAccent?
     {
-
         switch title
         {
-
         case "On the Table":
             .coral
         case "In the Queue":
@@ -541,13 +507,11 @@ enum DefaultListTutorial
     ///
     static func makeStarter(title: String, includesWelcomeCard: Bool = false) -> PersonalCollection
     {
-
         let icon: PersonalCollectionIcon /* Selected display icon */
         let color: ProfileColor          /* Resolved color value  */
 
         switch title
         {
-
         case "On the Table":
 
             icon = .tasks;
@@ -585,14 +549,12 @@ enum DefaultListTutorial
 
         if KanbanList.defaultHeaderIcon(for: title) != nil
         {
-
             collection.lists[0].appearance = ItemAppearance(showsIconInHeader: true)
 
         }
 
         switch title
         {
-
         case "On the Table":
 
             collection.boardAppearance = BoardAppearance(bannerBackground: .coral, addItemTextColor: .white)
@@ -615,7 +577,6 @@ enum DefaultListTutorial
 
         switch title
         {
-
         case "On the Table":
 
             heading = "Make room for today"
@@ -663,7 +624,6 @@ enum DefaultListTutorial
 
         if includesWelcomeCard
         {
-
             collection.lists[0].cards = [card]
 
         }

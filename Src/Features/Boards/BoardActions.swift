@@ -20,8 +20,6 @@ import UniformTypeIdentifiers
 ///
 extension ContentView
 {
-
-
     ///
     /// @fcn        ContentView.saveBoardAppearance
     /// @brief      Save board styling and optionally restore list inheritance
@@ -35,19 +33,15 @@ extension ContentView
     ///
     func saveBoardAppearance(_ appearance: BoardAppearance, applyToAll: Bool) -> Bool
     {
-
         do
         {
-
             if let appearanceBinding
             {
-
                 appearanceBinding.wrappedValue = appearance
 
             }
             else
             {
-
                 guard personalCollectionID == nil else
                 {
                     return false
@@ -60,7 +54,6 @@ extension ContentView
 
             if applyToAll
             {
-
                 lists = BoardAppearance.inheritingLists(lists)
                 archivedLists = BoardAppearance.inheritingLists(archivedLists)
 
@@ -70,7 +63,6 @@ extension ContentView
         }
         catch
         {
-
             DatabaseActivity.shared.report(
                                     "Could not save Board Appearance: \(error.localizedDescription). Existing settings have been retained.")
             return false
@@ -88,10 +80,8 @@ extension ContentView
     ///
     func refreshActiveDragGeometry()
     {
-
         if draggedListID != nil || draggedCardID != nil
         {
-
             dragGeometryRevision &+= 1
 
         }
@@ -109,7 +99,6 @@ extension ContentView
     ///
     func persistViewport()
     {
-
         viewportMemory.state.scale = Double(boardScale)
         viewportMemory.state.panoramic = isPanoramic
         viewportMemory.state.gallery = isGallery
@@ -130,7 +119,6 @@ extension ContentView
     ///
     func resetBoardZoom()
     {
-
         guard draggedListID == nil, draggedCardID == nil else
         {
             return
@@ -138,7 +126,6 @@ extension ContentView
 
         withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2))
         {
-
             boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic)
 
         }
@@ -158,7 +145,6 @@ extension ContentView
     ///
     func adjustBoardZoom(_ direction: AccessibilityAdjustmentDirection)
     {
-
         guard !isGallery, draggedListID == nil, draggedCardID == nil else
         {
             return
@@ -166,7 +152,6 @@ extension ContentView
 
         switch direction
         {
-
         case .increment:
 
             boardScale = BoardPanoramicZoom.clamped(boardScale * 1.15)
@@ -192,7 +177,6 @@ extension ContentView
     ///
     func toggleBoardZoom()
     {
-
         guard draggedListID == nil, draggedCardID == nil else
         {
             return
@@ -200,7 +184,6 @@ extension ContentView
 
         withAnimation(reducesMotion ? nil : .smooth(duration: 0.25))
         {
-
             isPanoramic.toggle()
 
             boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic)
@@ -225,8 +208,6 @@ extension ContentView
     ///
     func openPendingBoardTarget(using listProxy: ScrollViewProxy)
     {
-
-
         guard let targetListID = boardTargetListID, /* Requested list identity to reveal */
         lists.contains(where:
             {
@@ -234,8 +215,6 @@ extension ContentView
             })
         else
         {
-
-
             boardTargetListID = nil
             boardTargetCardID = nil
 
@@ -257,7 +236,6 @@ extension ContentView
                 $0.id == targetCardID
             })
         {  /* Requested record resolved in its containing list */
-
             navigationPath = NavigationPath()
 
             navigationPath.append(card)
@@ -285,8 +263,6 @@ extension ContentView
     ///
     func requestBoundaryJump(_ boundary: BoardListReordering.BoardListBoundary)
     {
-
-
         boardBoundaryJumpTarget = boundary
         boardBoundaryJumpRequest += 1
 
@@ -315,14 +291,10 @@ extension ContentView
     ///
     func renameMember(from currentName: String, to proposedName: String)
     {
-
-
         let updatedName = proposedName.trimmingCharacters(in: .whitespacesAndNewlines) /* Trimmed replacement name */
 
         guard !updatedName.isEmpty else
         {
-
-
             return
         }
 
@@ -332,12 +304,8 @@ extension ContentView
 
         for listIndex in lists.indices
         {
-
-
             for cardIndex in lists[listIndex].cards.indices
             {
-
-
                 var updatedCard = lists[listIndex].cards[ /* Updated card */
                 cardIndex]                       /* Copy of the current card for in-place updates     */
                 var seenNames: Set<String> = []  /* Track unique member names within the current card */
@@ -361,8 +329,6 @@ extension ContentView
 
                     guard !renamedMember.isEmpty, seenNames.insert(normalizedName).inserted else
                     {
-
-
                         return nil
                     }
 
@@ -383,8 +349,6 @@ extension ContentView
                     guard comment.author.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == currentKey
                     else
                     {
-
-
                         return comment
                     }
 
@@ -407,8 +371,6 @@ extension ContentView
 
         if currentUserName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == currentKey
         {
-
-
             currentUserName = updatedName
 
         }
@@ -416,8 +378,6 @@ extension ContentView
 
         if currentKey != updatedKey, let existingColor = memberColors.removeValue(forKey: currentKey)
         {  /* Preserve the old icon color */
-
-
             memberColors[updatedKey] = memberColors[updatedKey] ?? existingColor
 
         }
@@ -442,28 +402,20 @@ extension ContentView
     ///
     func removeMember(_ memberName: String)
     {
-
-
         let normalizedMemberName = /* Normalized member name */
             memberName.trimmingCharacters(in: .whitespacesAndNewlines)
         .lowercased() /* Normalized removal key */
 
         guard !normalizedMemberName.isEmpty else
         {
-
-
             return
         }
 
 
         for listIndex in lists.indices
         {
-
-
             for cardIndex in lists[listIndex].cards.indices
             {
-
-
                 lists[listIndex].cards[cardIndex].members.removeAll
                 {
                     member in
@@ -481,8 +433,6 @@ extension ContentView
 
         if currentUserName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedMemberName
         {
-
-
             currentUserName = "You"
 
         }
@@ -506,8 +456,6 @@ extension ContentView
     ///
     func setMemberColor(_ memberName: String, color: Color)
     {
-
-
         memberColors[memberName.lowercased()] = color
 
     }
@@ -525,11 +473,9 @@ extension ContentView
     ///
     func dayDate(for listID: Int) -> Date?
     {
-
         guard let document = planningCalendarAccess?.document,
         let week = document.weeks.first(where:
             {
-
                 personalCollectionID == nil
                 ? $0.startKey == document.currentWeekKey : $0.id == personalCollectionID
             }),
@@ -557,13 +503,10 @@ extension ContentView
     ///
     func addList()
     {
-
-
         let nextListID: Int /* Next list ID */
 
         do
         {
-
             nextListID = try PortableCreationIdentity.reserve(proposed: ((lists + archivedLists).map(\.id).max() ?? -1) + 1)
 
         }
@@ -582,8 +525,6 @@ extension ContentView
 
         while existingTitles.contains(newTitle.lowercased())
         {
-
-
             newTitle = "New List \(suffix)"
             suffix += 1
 
@@ -616,7 +557,6 @@ extension ContentView
     ///
     func addCard(_ capture: QuickCaptureSubmission) -> Bool
     {
-
         guard let listIndex = lists.firstIndex(where:
             {
                 $0.id == capture.listID
@@ -633,7 +573,6 @@ extension ContentView
 
         do
         {
-
             nextCardID = try PortableCreationIdentity.reserve(proposed: proposedCardID,
                 count: max(1, MultilineEntry.titles(capture.title).count))
 
@@ -662,22 +601,18 @@ extension ContentView
 
         do
         {
-
             if let onCommitDeletion
             {
-
                 try onCommitDeletion(snapshot + archivedLists, savedCardIDs)
             }
             else
             {
-
                 try KanbanBoardPersistence.saveListsChecked(snapshot + archivedLists)
             }
 
         }
         catch
         {
-
             DatabaseActivity.shared.report("Could not save the new item. Your draft is still open.")
             return false
         }
@@ -708,8 +643,6 @@ extension ContentView
     @discardableResult
     func deleteCard(_ cardID: Int) -> Bool
     {
-
-
         var snapshot  = lists + archivedLists /* Complete Board snapshot for checked removal  */
         var bookmarks = savedCardIDs          /* Saved identities pruned with removed records */
 
@@ -730,7 +663,6 @@ extension ContentView
     ///
     func deleteList(_ id: Int)
     {
-
         guard allowsRemovingLists, dayDate(for: id) == nil else
         {
             return
@@ -758,22 +690,14 @@ extension ContentView
     @discardableResult
     func commitDeletion(_ snapshot: [KanbanList], bookmarks: Set<Int>) -> Bool
     {
-
-
         do
         {
-
-
             if let onCommitDeletion
             {  /* Caller-supplied save-first deletion boundary */
-
-
                 try onCommitDeletion(snapshot, bookmarks)
             }
             else
             {
-
-
                 lists = snapshot.filter
                 {
                     !$0.isArchived
@@ -789,8 +713,6 @@ extension ContentView
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not delete content: \(error.localizedDescription) It has been retained.")
 
@@ -816,7 +738,6 @@ extension ContentView
     ///
     func moveSection(in listID: Int, sectionID: Int, offset: Int)
     {
-
         guard let index = lists.firstIndex(where:
             {
                 $0.id == listID
@@ -844,19 +765,13 @@ extension ContentView
     ///
     func moveCard(in listID: Int, cardID: Int, toIndex destinationIndex: Int)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the list containing the reordered card */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -877,7 +792,6 @@ extension ContentView
 
         withAnimation(.easeInOut(duration: 0.2))
         {
-
             lists[listIndex].cards = cards
 
         }
@@ -902,19 +816,13 @@ extension ContentView
     ///
     func copyList(with listID: Int)
     {
-
-
         guard
         let sourceIndex = lists.firstIndex(where:
             {  /* List position before the requested reorder */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -943,19 +851,13 @@ extension ContentView
     ///
     func moveList(with listID: Int, by offset: Int)
     {
-
-
         guard
         let sourceIndex = lists.firstIndex(where:
             {  /* List position at the start of a drag reorder */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -964,8 +866,6 @@ extension ContentView
 
         guard lists.indices.contains(destinationIndex) else
         {
-
-
             return
         }
 
@@ -990,24 +890,18 @@ extension ContentView
     ///
     func updateListDrag(_ listID: Int, value: DragGesture.Value?)
     {
-
-
         guard draggedCardID == nil, !boardPinch.active else
         {
-
             return
         }
 
 
         if draggedListID == nil
         {
-
-
             listDragInitialCenter = dragGeometry.centers[listID]
 
             withAnimation(reducesMotion ? nil : .smooth(duration: 0.25))
             {
-
                 draggedListID = listID
 
             }
@@ -1017,16 +911,12 @@ extension ContentView
 
         guard draggedListID == listID, let value else
         {  /* Current gesture sample for the active list drag */
-
-
             return
         }
 
 
         if listDragLocation == nil
         {
-
-
             listDragGrabOffset =
             (value.startLocation.x - (listDragInitialCenter ?? value.startLocation.x))
             * (listDragScale / boardZoomScale)
@@ -1040,8 +930,6 @@ extension ContentView
         guard
         let source = lists.firstIndex(where:
             {  /* Current position of the dragged list */
-
-
                 $0.id == listID
             }),
         let center = dragGeometry.centers[listID]
@@ -1064,7 +952,6 @@ extension ContentView
 
         withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2))
         {
-
             _ = BoardListReordering.move(listID, to: destination, in: &lists)
 
         }
@@ -1087,19 +974,14 @@ extension ContentView
     ///
     func endListDrag(_ listID: Int)
     {
-
-
         guard draggedListID == listID else
         {
-
-
             return
         }
 
 
         withAnimation(reducesMotion ? nil : .spring(response: 0.32, dampingFraction: 0.85))
         {
-
             draggedListID = nil
             listDragLocation = nil
             listDragGrabOffset = 0
@@ -1125,8 +1007,6 @@ extension ContentView
     ///
     func listDragOffset(for listID: Int) -> CGFloat
     {
-
-
         guard draggedListID == listID,
         let location = listDragLocation, /* Pointer position driving the dragged list's offset */
         let center = dragGeometry.centers[listID]
@@ -1156,19 +1036,13 @@ extension ContentView
     ///
     func sortList(with listID: Int, ascending: Bool)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the list whose cards are being sorted */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -1181,12 +1055,8 @@ extension ContentView
         // Iterate through each card in the list, grouping them by sections and sorting within each section
         for card in updatedList.cards
         {  /* Preserve divider-separated sections */
-
-
             guard card.isSectionDivider else
             {
-
-
                 currentSection.append(card)
                 continue
             }
@@ -1197,7 +1067,6 @@ extension ContentView
             sortedCards.append(
                 contentsOf: currentSection.sorted
                 {
-
                     let comparison = $0.word.localizedStandardCompare($1.word) /* Locale-aware title ordering */
 
                     return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
@@ -1210,8 +1079,6 @@ extension ContentView
         sortedCards.append(
             contentsOf: currentSection.sorted
             {
-
-
                 let comparison = $0.word.localizedStandardCompare($1.word) /* Locale-aware title ordering */
 
                 return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
@@ -1239,19 +1106,13 @@ extension ContentView
     ///
     func archiveCompletedCards(in listID: Int)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* List containing completed cards to archive */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -1275,19 +1136,13 @@ extension ContentView
     ///
     func restoreArchivedCard(in listID: Int, cardID: Int)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the list receiving the requested edit */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -1310,13 +1165,9 @@ extension ContentView
     ///
     func archiveCard(_ cardID: Int)
     {
-
-
         guard
         let listIndex = lists.firstIndex(where:
             {  /* Position of the list receiving the requested edit */
-
-
                 $0.cards.contains(where:
                     {
                         $0.id == cardID
@@ -1324,8 +1175,6 @@ extension ContentView
             })
         else
         {
-
-
             return
         }
 
@@ -1347,7 +1196,6 @@ extension ContentView
     ///
     func archiveList(with listID: Int)
     {
-
         guard allowsRemovingLists, dayDate(for: listID) == nil else
         {
             return
@@ -1357,14 +1205,10 @@ extension ContentView
         guard
         let index = lists.firstIndex(where:
             {  /* Position of the active list to archive */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -1398,19 +1242,13 @@ extension ContentView
     ///
     func restoreArchivedList(_ listID: Int)
     {
-
-
         guard
         let index = archivedLists.firstIndex(where:
             {  /* Position of the archived list to restore */
-
-
                 $0.id == listID
             })
         else
         {
-
-
             return
         }
 
@@ -1444,12 +1282,8 @@ extension ContentView
     ///
     func toggleCardTitle(in listIndex: Int, cardID: Int)
     {
-
-
         guard lists.indices.contains(listIndex) else
         {
-
-
             return
         }
 
@@ -1460,14 +1294,10 @@ extension ContentView
         let cardIndex = updatedList.cards.firstIndex(
             where:
             {  /* Position of the card receiving the requested edit */
-
-
                 $0.id == cardID
             })
         else
         {
-
-
             return
         }
 
@@ -1500,7 +1330,6 @@ extension ContentView
     ///
     func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation
     {
-
         let neighbors = CardKeyboardNeighbors.resolve(card, in: lists) /* Adjacent items or Lists */
 
         return CardKeyboardNavigation(
@@ -1508,7 +1337,6 @@ extension ContentView
             ? nil
             :
             {
-
                 guard let target = CardKeyboardNeighbors.resolve(card, in: lists).previous else
                 {
                     return
@@ -1525,7 +1353,6 @@ extension ContentView
             ? nil
             :
             {
-
                 guard let target = CardKeyboardNeighbors.resolve(card, in: lists).next else
                 {
                     return
@@ -1553,26 +1380,18 @@ extension ContentView
     ///
     func updateCard(_ updatedCard: KanbanCard)
     {
-
-
         for listIndex in lists.indices
         {
-
-
             var updatedList = lists[listIndex] /* Mutable list being searched */
 
             guard
             let cardIndex = updatedList.cards.firstIndex(
                 where:
                 {  /* Position of the card receiving the requested edit */
-
-
                     $0.id == updatedCard.id
                 })
             else
             {  /* Matching card position */
-
-
                 continue
             }
 
@@ -1609,17 +1428,13 @@ extension ContentView
     ///
     func pruneUnreferencedAttachments()
     {
-
-
         do
         {
-
             _ = try PlanningCalendarStore.load()
 
         }
         catch
         {
-
             DatabaseActivity.shared.report("Unused media was retained because calendar data could not be read.");
             return
         }
@@ -1658,13 +1473,9 @@ extension ContentView
     ///
     func moveCard(_ cardID: Int, toListID destinationListID: Int)
     {
-
-
         guard
         !lists.contains(where:
             {
-
-
                 $0.id == destinationListID && $0.cards.contains(where:
                     {
                         $0.id == cardID
@@ -1672,22 +1483,16 @@ extension ContentView
             })
         else
         {
-
-
             return
         }
 
 
         do
         {
-
-
             try BoardCardMovement.move(cardID, to: destinationListID, in: &lists)
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not move this card: \(error.localizedDescription) Its content has been retained.")
         }
@@ -1708,12 +1513,8 @@ extension ContentView
     ///
     func updateCardDrag(_ cardID: Int, location: CGPoint)
     {
-
-
         guard draggedCardID == cardID else
         {
-
-
             return
         }
 
@@ -1736,11 +1537,8 @@ extension ContentView
     ///
     func beginCardDrag(_ cardID: Int, location: CGPoint)
     {
-
-
         guard draggedListID == nil, draggedCardID == nil, !boardPinch.active else
         {
-
             return
         }
 
@@ -1770,20 +1568,14 @@ extension ContentView
     @discardableResult
     func endCardDrag(_ cardID: Int, commit: Bool, location: CGPoint? = nil) -> Bool
     {
-
-
         guard draggedCardID == cardID else
         {
-
-
             return false
         }
 
 
         if let location
         {  /* Final pointer sample supplied by the native drag session */
-
-
             cardDragLocation = location
 
         }
@@ -1791,8 +1583,6 @@ extension ContentView
 
         defer
         {
-
-
             draggedCardID = nil
             cardDragLocation = nil
 
@@ -1802,8 +1592,6 @@ extension ContentView
         guard commit,
         let target = location.map(
             {  /* Validated destination for the committed card drop */
-
-
                 BoardCardMovement.target(
                     for: cardID, at: $0, viewport: dragGeometry.viewport,
                     lists: lists, listFrames: dragGeometry.lists, cardFrames: dragGeometry.cards)
@@ -1815,14 +1603,10 @@ extension ContentView
 
         do
         {
-
-
             return try BoardCardMovement.move(cardID, to: target.listID, before: target.beforeCardID, in: &lists)
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not move this card: \(error.localizedDescription) Its content has been retained.")
 

@@ -20,8 +20,6 @@ import SwiftUI
 ///
 struct LibraryImportanceItem: Codable
 {
-
-
     let collectionID:  UUID       /* Collection ID               */
     let cardID:        Int        /* Owner-local Card identifier */
     var level:         Int? = nil /* Saved importance level      */
@@ -43,8 +41,6 @@ struct LibraryImportanceItem: Codable
 ///
 enum LibraryImportanceSelection
 {
-
-
     static let key = "Plenact.LibraryImportant.v1" /* Persistence lookup key */
 
 
@@ -60,7 +56,6 @@ enum LibraryImportanceSelection
     ///
     static func cardIDs(collectionID: UUID, data: Data) -> Set<Int>
     {
-
         let items = /* Items being processed */
             (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
 
@@ -86,7 +81,6 @@ enum LibraryImportanceSelection
     ///
     static func setting(cardID: Int, collectionID: UUID, marked: Bool, data: Data) -> Data
     {
-
         let previous = /* Previous value for comparison */
             level(cardID: cardID, collectionID: collectionID, data: data)
 
@@ -114,7 +108,6 @@ enum LibraryImportanceSelection
         in owners: [PersonalCollection], preserving data: Data = Data(), includesAllExamples: Bool = false
     ) -> Data
     {
-
         let names: Set<String> = [ /* Names used by this operation */
                         "work", "gym", "dinner", "prepare dinner", "dinner with friends",
                         "call accountant", "call the accountant"
@@ -123,7 +116,6 @@ enum LibraryImportanceSelection
 
         for owner in owners
         {
-
             for card in owner.lists.flatMap(\.cards).filter(
                 {
                     !$0.isSectionDivider
@@ -131,7 +123,6 @@ enum LibraryImportanceSelection
             where includesAllExamples
             || names.contains(card.word.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
             {
-
                 let title              = card.word.lowercased()         /* User-facing title   */
                 let demonstrationLevel = demonstrationLevel(for: title) /* Demonstration level */
 
@@ -157,7 +148,6 @@ enum LibraryImportanceSelection
     ///
     static func demonstrationLevel(for title: String) -> Int
     {
-
         let normalized = /* Comparison-normalized value */
             title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
@@ -197,7 +187,6 @@ enum LibraryImportanceSelection
     ///
     static func contains(cardID: Int, collectionID: UUID, data: Data) -> Bool
     {
-
         level(cardID: cardID, collectionID: collectionID, data: data) > 0
     }
 
@@ -215,7 +204,6 @@ enum LibraryImportanceSelection
     ///
     static func level(cardID: Int, collectionID: UUID, data: Data) -> Int
     {
-
         let items = /* Items being processed */
             (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
 
@@ -240,7 +228,6 @@ enum LibraryImportanceSelection
     ///
     static func settingLevel(cardID: Int, collectionID: UUID, level: Int, data: Data) -> Data
     {
-
         var items = /* Items being processed */
             (try? JSONDecoder().decode([LibraryImportanceItem].self, from: data)) ?? []
 
@@ -253,7 +240,6 @@ enum LibraryImportanceSelection
 
         if bounded > 0
         {
-
             items.append(
                 LibraryImportanceItem(collectionID: collectionID, cardID: cardID, level: bounded == 1 ? nil : bounded))
         }
@@ -277,7 +263,6 @@ enum LibraryImportanceSelection
     ///
     static func adjusting(cardID: Int, collectionID: UUID, direction: Int, data: Data) -> Data
     {
-
         guard direction != 0 else
         {
             return data
@@ -300,8 +285,6 @@ enum LibraryImportanceSelection
 ///
 struct LibraryImportanceAccess
 {
-
-
     let contains: (Int) -> Bool       /* Contains callback      */
     let set:      (Int, Bool) -> Void /* Set callback           */
     var level:    (Int) -> Int =      /* Saved importance level */
@@ -327,8 +310,6 @@ struct LibraryImportanceAccess
 ///
 struct OwnerImportanceControls: ViewModifier
 {
-
-
     let ownerID: UUID?                                            /* Record owner identifier  */
     @AppStorage("Plenact.LibraryImportant.v1") private var data = /* Persisted settings bytes */
         Data()
@@ -346,7 +327,6 @@ struct OwnerImportanceControls: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         content.environment(
             \.libraryImportance,
             ownerID.map
@@ -392,8 +372,6 @@ struct OwnerImportanceControls: ViewModifier
 ///
 struct LibraryImportanceKey: EnvironmentKey
 {
-
-
     static let defaultValue: LibraryImportanceAccess? = nil /* Fallback environment value */
 
 }
@@ -408,11 +386,8 @@ struct LibraryImportanceKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var libraryImportance: LibraryImportanceAccess? /* Library importance */
     {
-
         get
         {
             self[LibraryImportanceKey.self]
@@ -420,7 +395,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[LibraryImportanceKey.self] = newValue
 
         }

@@ -19,8 +19,6 @@ import Foundation
 ///
 struct KanbanList: Identifiable, Hashable, Codable, Sendable
 {
-
-
     let id:                 Int           /* Unique identifier for the kanban list               */
     private(set) var title: String        /* Title updated with retained card context            */
     var subtitleOverride:   String? = nil /* nil preserves legacy generated copy; empty hides it */
@@ -30,7 +28,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     {
         didSet
         {
-
             let previous = Dictionary( /* Previous value for comparison */
                 oldValue.map
                 {
@@ -47,7 +44,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
             {
                 if let old = previous[cards[index].id]
                 {
-
                     cards[index] = cards[index].recordingEdits(from: old)
 
                 }
@@ -75,7 +71,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     mutating func setSingleListViewMode(_ mode: SingleListViewMode)
     {
-
         var value = appearance ?? ItemAppearance() /* Value being processed */
 
         value.listViewMode = mode
@@ -97,10 +92,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     static func defaultHeaderIcon(for title: String) -> PersonalCollectionIcon?
     {
-
         switch title
         {
-
         case "On the Table":
             .tasks
         case "In the Queue":
@@ -126,10 +119,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     static func fixedIconColor(for title: String) -> ProfileColor?
     {
-
         switch title
         {
-
         case "On the Table":
             ProfileColor(red: 0.48, green: 0.13, blue: 0.16)
         case "In the Queue":
@@ -154,7 +145,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     static func fixedHeaderIconColor(for title: String) -> ProfileColor?
     {
-
         // A warm highlight remains legible against On the Table's burgundy banner
         title == "On the Table" ? ProfileColor(red: 1, green: 0.84, blue: 0.55) : fixedIconColor(for: title)
     }
@@ -171,7 +161,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     func resolvedIconColor(collectionColor: ProfileColor? = nil) -> ProfileColor?
     {
-
         Self.fixedIconColor(for: title) ?? appearance?.iconColor ?? collectionColor
     }
 
@@ -183,7 +172,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// The three built-in shortcut Lists always retain their header identity
     var showsIconInHeader: Bool /* Icon In Header visibility */
     {
-
         hasFixedHeaderIcon || appearance?.showsIconInHeader == true
     }
 
@@ -202,7 +190,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     func headerAppearance(collectionIcon: PersonalCollectionIcon? = nil, collectionColor: ProfileColor? = nil)
     -> ItemAppearance?
     {
-
         guard showsIconInHeader else
         {
             return nil
@@ -220,7 +207,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// Today focuses the first actionable Card in saved order without moving records
     var firstUncheckedTaskID: Int? /* First unchecked task ID */
     {
-
         guard !isArchived else
         {
             return nil
@@ -240,7 +226,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// Applies only at creation; changing this preference never converts retained items
     var newItemPresentation: ItemPresentation /* New item presentation */
     {  /* Effective creation kind with the legacy Card fallback */
-
         get
         {
             defaultItemPresentation ?? .card
@@ -248,7 +233,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
         set
         {
-
             defaultItemPresentation = newValue == .card ? nil : newValue
 
         }
@@ -280,8 +264,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         origin: CardHistoryOrigin = .createdHere
     ) -> KanbanCard
     {
-
-
         let isDivider    = KanbanCard.isDividerTitle(title) /* Whether the title creates a section separator */
         let presentation = /* Current presentation style */
         isDivider
@@ -348,8 +330,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         newItemPresentation: ItemPresentation = .card
     )
     {
-
-
         self.id = id
         self.title = title
         self.cards = cards
@@ -367,8 +347,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     private enum CodingKeys: String, CodingKey
     {
-
-
         case id, title, cards, archivedCards, isArchived, defaultItemPresentation, subtitleOverride, appearance
     }
 
@@ -386,8 +364,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     init(from decoder: Decoder) throws
     {
-
-
         let container = try decoder.container(keyedBy: CodingKeys.self) /* Keyed fields read from the persisted list */
 
         id = try container.decode(Int.self, forKey: .id)
@@ -397,7 +373,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
         if appearance?.isEmpty == true
         {
-
             appearance = nil
 
         }
@@ -409,8 +384,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
         if defaultItemPresentation == .card
         {
-
-
             defaultItemPresentation = nil
 
         }
@@ -431,8 +404,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     func encode(to encoder: Encoder) throws
     {
-
-
         var container = encoder.container(keyedBy: CodingKeys.self) /* Keyed fields written for the persisted list */
 
         try container.encode(id, forKey: .id)
@@ -444,16 +415,12 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
         if !archivedCards.isEmpty
         {
-
-
             try container.encode(archivedCards, forKey: .archivedCards)
         }
 
 
         if isArchived
         {
-
-
             try container.encode(true, forKey: .isArchived)
         }
 
@@ -471,8 +438,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     mutating func archiveCompletedCards()
     {
-
-
         archivedCards.append(contentsOf: cards.filter
             {
                 !$0.isSectionDivider && $0.isTitleChecked
@@ -498,19 +463,13 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     mutating func archiveCard(id cardID: Int)
     {
-
-
         guard
         let index = cards.firstIndex(where:
             {  /* Position of the active card to archive */
-
-
                 $0.id == cardID && !$0.isSectionDivider
             })
         else
         {
-
-
             return
         }
 
@@ -532,19 +491,13 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     mutating func restoreArchivedCard(id cardID: Int)
     {
-
-
         guard
         let index = archivedCards.firstIndex(where:
             {  /* Position of the archived card to restore */
-
-
                 $0.id == cardID
             })
         else
         {
-
-
             return
         }
 
@@ -563,16 +516,13 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     var subtitle: String /* Supporting item text */
     {  /* Supporting text for the list header */
-
         if let subtitleOverride
         {
-
             return subtitleOverride
         }
 
         switch title
         {
-
         case "On the Table":
             return "Idea taking shape"
         case "In the Queue":
@@ -608,14 +558,11 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     ///
     mutating func edit(title proposedTitle: String, subtitle: String?) throws
     {
-
-
         let trimmedTitle = /* Trimmed title */
             proposedTitle.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedTitle.isEmpty else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -625,14 +572,12 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
         for index in cards.indices
         {
-
             cards[index].listTitle = title
 
         }
 
         for index in archivedCards.indices
         {
-
             archivedCards[index].listTitle = title
 
         }
@@ -651,8 +596,6 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 ///
 extension KanbanList
 {
-
-
     ///
     /// @fcn        KanbanList.makeItems
     /// @brief      Create cards or notes from a multiline title submission
@@ -676,7 +619,6 @@ extension KanbanList
         origin: CardHistoryOrigin = .createdHere
     ) -> [KanbanCard]
     {
-
         MultilineEntry.titles(titles).enumerated().map
         {
             offset, title in
@@ -698,7 +640,6 @@ extension KanbanList
 ///
 struct CardEditChange: Codable, Hashable, Sendable
 {
-
     let field:         String /* Native input field */
     let previousValue: Data?  /* Previous value     */
     let newValue:      Data?  /* New value          */
@@ -709,7 +650,6 @@ struct CardEditChange: Codable, Hashable, Sendable
 /// Stable attribution for a locally authored Card action
 struct CardHistoryAuthor: Codable, Hashable, Sendable
 {
-
     let id: UUID        /* Stable local author identity */
     let name: String?   /* Display name at the time of the action */
 
@@ -717,7 +657,6 @@ struct CardHistoryAuthor: Codable, Hashable, Sendable
 
     static func local(in defaults: UserDefaults = .standard) -> Self
     {
-
         let name = LocalProfileStore.load(from: defaults)?.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return Self(id: LocalReactionIdentity.forUserAction(in: defaults), name: name?.isEmpty == false ? name : nil)
@@ -727,7 +666,6 @@ struct CardHistoryAuthor: Codable, Hashable, Sendable
 
 enum CardHistoryOrigin: Codable, Hashable, Sendable
 {
-
     case createdHere
     case copy(String)
     case template(String)
@@ -746,7 +684,6 @@ enum CardHistoryOrigin: Codable, Hashable, Sendable
 
 struct CardHistoryContext: Codable, Hashable, Sendable
 {
-
     let author: CardHistoryAuthor? /* Author when known */
     var origin: CardHistoryOrigin? /* Creation event when present */
     var undid: String?             /* Summary of the revision undone */
@@ -763,7 +700,6 @@ struct CardHistoryContext: Codable, Hashable, Sendable
 ///
 struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
 {
-
     let id:        UUID             /* Record UUID             */
     let timestamp: Date             /* Stored event timestamp  */
     let changes:   [CardEditChange] /* Requested content edits */
@@ -788,7 +724,6 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
 
     init(from decoder: Decoder) throws
     {
-
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let stored = try container.decode([CardEditChange].self, forKey: .changes)
 
@@ -839,7 +774,6 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
     ///
     var summary: String /* Aggregate operation results */
     {
-
         let names = [ /* Names used by this operation */
             "word": "Title", "subtitleOverride": "Subtitle", "descriptionOverride": "Description",
             "isTitleChecked": "Completion", "startDate": "Start date", "startDateKind": "Start date",
@@ -856,7 +790,6 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
 
         for change in changes
         {
-
             let label = names[change.field] ?? "Card details" /* Resolved display label */
 
             if !labels.contains(label)
@@ -883,8 +816,6 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
 ///
 extension KanbanCard
 {
-
-
     ///
     /// @fcn        KanbanCard.recordingEdits(from:at:)
     /// @brief      Append one history entry only when editable content changed
@@ -901,7 +832,6 @@ extension KanbanCard
     func recordingEdits(from previous: KanbanCard, at date: Date = .now,
         author: CardHistoryAuthor? = nil, undoing revision: CardEditRecord? = nil) -> KanbanCard
     {
-
         var result = self /* Accumulated output value */
 
         result.editHistory = previous.editHistory
@@ -939,7 +869,6 @@ extension KanbanCard
 
         for key in keys
         {
-
             let left  = before[key] as? NSObject /* First comparison operand  */
             let right = after[key] as? NSObject  /* Second comparison operand */
 
@@ -971,7 +900,6 @@ extension KanbanCard
            Array(prepared.dropLast()) == retained,
            prepared.last?.changes == changes
         {
-
             result.editHistory = prepared
 
         }
@@ -982,7 +910,6 @@ extension KanbanCard
                 Set(changes.map(\.field)) == Set(last.changes.map(\.field)),
                 Set(changes.map(\.field)).isSubset(of: ["word", "subtitleOverride", "descriptionOverride"])
         {
-
             // Autosaved typing is one readable update rather than an entry per keystroke
             let merged = changes.map /* Combined content after */
             {
@@ -1004,7 +931,6 @@ extension KanbanCard
         }
         else
         {
-
             let context = CardHistoryContext(author: author ?? .local(), undid: revision?.summary)
 
             result.editHistory = retained + [CardEditRecord(id: UUID(), timestamp: date,
@@ -1018,7 +944,6 @@ extension KanbanCard
 
 extension KanbanCard
 {
-
     var creationHistory: CardEditRecord?
     {
         editHistory?.first { $0.context?.origin != nil }
@@ -1036,7 +961,6 @@ extension KanbanCard
 
     func clearingRevisionHistory() -> KanbanCard
     {
-
         guard let latest = revisions.last else
         {
             return self
@@ -1052,7 +976,6 @@ extension KanbanCard
 
     mutating func recordCreation(_ origin: CardHistoryOrigin, author: CardHistoryAuthor? = nil)
     {
-
         guard !isSectionDivider, creationHistory == nil, let createdAt else
         {
             return
@@ -1075,7 +998,6 @@ enum CardRevisionUndoError: Error
 
 extension CardEditRecord
 {
-
     var undoableChanges: [CardEditChange]
     {
         changes.filter
@@ -1088,7 +1010,6 @@ extension CardEditRecord
     func undo(on card: KanbanCard, replacingConflicts: Bool = false,
         author: CardHistoryAuthor? = nil, at date: Date = .now) throws -> KanbanCard
     {
-
         let changes = undoableChanges
 
         let revisions = card.revisions
@@ -1123,7 +1044,6 @@ extension CardEditRecord
 
         func restore<Value: Codable & Equatable>(_ change: CardEditChange, _ current: Value) throws -> Value
         {
-
             let expected = try decoder.decode(Value.self, from: change.newValue ?? null)
 
             guard replacingConflicts || current == expected else

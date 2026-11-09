@@ -17,8 +17,6 @@ import Foundation
 ///
 enum ExampleCardLocations
 {
-
-
     static let gym                    = /* Workout Card fixture */
         "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902"
     static let work                   = /* Work display text */
@@ -37,7 +35,6 @@ enum ExampleCardLocations
     ///
     struct Snapshot
     {
-
         let lists:       [KanbanList]             /* Ordered List records          */
         let calendar:    PlanningCalendarDocument /* Date calculation calendar     */
         let collections: [PersonalCollection]     /* Retained personal collections */
@@ -56,10 +53,8 @@ enum ExampleCardLocations
     ///
     static func location(for title: String) -> String?
     {
-
         switch title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         {
-
         case "gym":
             return gym
         case "work":
@@ -82,26 +77,21 @@ enum ExampleCardLocations
     ///
     static func updating(_ lists: [KanbanList]) -> [KanbanList]
     {
-
         lists.map
         {
-
         list in
             guard !list.isArchived else
             {
-
                 return list
             }
 
             let cards = list.cards.map /* Card records under consideration */
             {
-
             card in
                 guard card.presentation == .card, !card.isSectionDivider, !card.isEditingLocked,
                 CardLocation.normalized(card.location) == nil,
                 let location = location(for: card.word) else
                 {
-
                     return card
                 }
 
@@ -114,7 +104,6 @@ enum ExampleCardLocations
 
             guard cards != list.cards else
             {
-
                 return list
             }
 
@@ -138,14 +127,11 @@ enum ExampleCardLocations
     ///
     static func updating(_ collections: [PersonalCollection]) -> [PersonalCollection]
     {
-
         collections.map
         {
-
         collection in
             guard collection.isActive else
             {
-
                 return collection
             }
 
@@ -178,10 +164,8 @@ enum ExampleCardLocations
         to defaults: UserDefaults = .standard
     ) throws -> Snapshot?
     {
-
         guard !defaults.bool(forKey: migrationKey) else
         {
-
             return nil
         }
 
@@ -191,19 +175,16 @@ enum ExampleCardLocations
 
         for index in updatedCalendar.weeks.indices
         {
-
             let week = updatedCalendar.weeks[index] /* Dated Week under consideration */
 
             if week.startKey == updatedCalendar.currentWeekKey
             {
-
                 updatedCalendar.weeks[index].collection.lists = updatedLists
 
             }
 
             else if week.collection.isActive
             {
-
                 updatedCalendar.weeks[index].collection.lists = updating(week.collection.lists)
 
             }
@@ -214,7 +195,6 @@ enum ExampleCardLocations
 
         for index in library.templates.indices where library.templates[index].collection.isActive
         {
-
             library.templates[index].collection.lists = updating(library.templates[index].collection.lists)
 
         }
@@ -232,7 +212,6 @@ enum ExampleCardLocations
 
         for key in replacements.keys
         {
-
             previous[key] = defaults.data(forKey: key)
 
         }
@@ -242,16 +221,13 @@ enum ExampleCardLocations
         defaults.set(backup, forKey: backupKey)
         guard defaults.synchronize(), defaults.data(forKey: backupKey) == backup else
         {
-
             throw CocoaError(.fileWriteUnknown)
         }
 
         do
         {
-
             for (key, value) in replacements
             {
-
                 defaults.set(value, forKey: key)
             }
 
@@ -260,14 +236,12 @@ enum ExampleCardLocations
                     defaults.data(forKey: $0.key) == $0.value
                 }) else
             {
-
                 throw CocoaError(.fileWriteUnknown)
             }
 
             defaults.set(true, forKey: migrationKey)
             guard defaults.synchronize(), defaults.bool(forKey: migrationKey) else
             {
-
                 throw CocoaError(.fileWriteUnknown)
             }
 
@@ -275,19 +249,15 @@ enum ExampleCardLocations
 
         catch
         {
-
             for key in replacements.keys
             {
-
                 if let value = previous[key]
                 {
-
                     defaults.set(value, forKey: key)
                 }
 
                 else
                 {
-
                     defaults.removeObject(forKey: key)
                 }
 

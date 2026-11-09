@@ -11,7 +11,6 @@ import SwiftSyntax
 /// Traverses source syntax without executing app code or reading user data
 final class Inventory: SyntaxVisitor
 {
-
     var models: [[String: Any]] = [] /* Models lookup entries       */
     var keys: Set<String>       = [] /* Keys used by this operation */
 
@@ -21,7 +20,6 @@ final class Inventory: SyntaxVisitor
     /// @return Qualified enclosing type path
     func owner(_ node: some SyntaxProtocol) -> String
     {
-
         var names: [String] = []          /* Names used by this operation */
         var parent          = node.parent /* Owning view or model         */
 
@@ -51,7 +49,6 @@ final class Inventory: SyntaxVisitor
     /// @return Void; appends a source-inventory entry when applicable
     func collect(name: String, parent: String, inheritance: InheritanceClauseSyntax?, members: MemberBlockItemListSyntax)
     {
-
         let protocols = /* Mapped protocols values */
             inheritance?.inheritedTypes.map { $0.type.trimmedDescription } ?? []
 
@@ -125,7 +122,6 @@ final class Inventory: SyntaxVisitor
     /// @return Continue traversing children
     override func visit(_ node: StringSegmentSyntax) -> SyntaxVisitorContinueKind
     {
-
         let value = node.content.text /* Value being processed */
 
         if value.hasPrefix("Plenact.") || value.hasPrefix("plenact.creationDraft.")
@@ -144,7 +140,6 @@ var inventory: [[String: Any]] = [] /* Verified source inventory */
 
 for case let file as URL in paths where file.pathExtension == "swift"
 {
-
     let text    = try String(contentsOf: file, encoding: .utf8) /* Text being processed   */
     let visitor = Inventory(viewMode: .sourceAccurate)          /* Swift syntax traversal */
 

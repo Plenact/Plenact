@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testSectionMoveJournalRestoresImportanceAndSupportsLegacyRecovery
     /// @brief      Verify that section Move Journal Restores Importance And Supports Legacy Recovery
@@ -39,7 +37,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testSectionMoveJournalRestoresImportanceAndSupportsLegacyRecovery() throws
     {
-
         let suite    = "SectionMoveJournal." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                           /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -56,7 +53,6 @@ extension PlenactBoardDocumentTests
         XCTAssertThrowsError(
             try DailyReviewTransaction.perform(in: defaults, additionalKeys: [LibraryImportanceSelection.key])
             {
-
                 defaults.set(Data("after".utf8), forKey: LibraryImportanceSelection.key)
                 defaults.set(Data("changed".utf8), forKey: "Plenact.Board.v1")
                 throw CocoaError(.fileWriteUnknown)
@@ -90,7 +86,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWeeklyReviewCalendarBoundariesPersistenceAndRecovery() throws
     {
-
         let name     = "PlenactTests.Weekly." + UUID().uuidString /* Display or lookup name      */
         let defaults = UserDefaults(suiteName: name)!             /* Preference store under test */
 
@@ -115,7 +110,6 @@ extension PlenactBoardDocumentTests
 
         for key in ["2026-10-11", "2026-10-12", "2026-10-18", "2026-10-19"]
         {
-
             let day = /* Day under consideration */
                 DailyPlan(date: PlanningDate.date(key, calendar: calendar)!, calendar: calendar)
 
@@ -167,7 +161,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testEveningReviewTransactionRecoversInterruptedAndFailedWrites() throws
     {
-
         let name     = "PlenactTests.Review." + UUID().uuidString /* Display or lookup name      */
         let defaults = UserDefaults(suiteName: name)!             /* Preference store under test */
 
@@ -193,14 +186,12 @@ extension PlenactBoardDocumentTests
         ///
         enum Forced: Error
         {
-
             case failure
         }
 
         XCTAssertThrowsError(
             try DailyReviewTransaction.perform(in: defaults)
             {
-
                 for key in DailyReviewTransaction.keys
                 {
                     defaults.set("changed", forKey: key)
@@ -210,7 +201,6 @@ extension PlenactBoardDocumentTests
             })
         for key in DailyReviewTransaction.keys where key != DailyPlanStore.key
         {
-
             XCTAssertEqual(defaults.data(forKey: key), Data(key.utf8))
         }
 
@@ -250,7 +240,6 @@ extension PlenactBoardDocumentTests
     ///
     func testFullMonthBackupRejectsCorruptionAndRecoversInterruptedSwitch() throws
     {
-
         let folder   = /* Working folder location */
             FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let name     = "PlenactTests.Month." + UUID().uuidString /* Display or lookup name      */

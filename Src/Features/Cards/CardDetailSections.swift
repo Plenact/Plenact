@@ -19,21 +19,16 @@ import UniformTypeIdentifiers
 ///
 struct NoteCreationDateLabel: View
 {
-
-
     let createdAt: Date /* Original Note creation time shown in the metadata row */
 
     var body: some View /* Note Creation Date Label layout */
     {  /* Formatted Note creation metadata */
-
         ViewThatFits(in: .horizontal)
         {
-
             Text(createdAt, format: .dateTime.month(.abbreviated).day().year().hour().minute())
             .fixedSize()
             VStack(alignment: .leading, spacing: 4)
             {
-
                 Text(createdAt, format: .dateTime.month(.abbreviated).day().year())
                 Text(createdAt, format: .dateTime.hour().minute())
             }
@@ -57,8 +52,6 @@ struct NoteCreationDateLabel: View
 ///
 struct NoteToolbarButtonStyle: ButtonStyle
 {
-
-
     ///
     /// @fcn        NoteToolbarButtonStyle.makeBody(configuration:)
     /// @brief      Apply accessible sizing and pressed-state styling to a toolbar button
@@ -71,7 +64,6 @@ struct NoteToolbarButtonStyle: ButtonStyle
     ///
     func makeBody(configuration: Configuration) -> some View
     {
-
         configuration.label
         .frame(minWidth: 44, minHeight: 44)
         .contentShape(Rectangle())
@@ -95,8 +87,6 @@ struct NoteToolbarButtonStyle: ButtonStyle
 ///
 struct DetailSection<Content: View>: View
 {
-
-
     @State private var isCollapsed = false /* Collapsed state                                    */
     let collapsible:    Bool               /* Collapsible state flag                             */
     let title:          String             /* The title of the detail section                    */
@@ -126,8 +116,6 @@ struct DetailSection<Content: View>: View
         @ViewBuilder content: @escaping () -> Content
     )
     {
-
-
         self.collapsible = collapsible
         self.title = title                    /* The title of the detail section                    */
         self.trailing = trailing              /* The optional trailing symbol of the detail section */
@@ -148,18 +136,12 @@ struct DetailSection<Content: View>: View
     ///
     var body: some View /* Detail layout */
     {  /* Detail subsection heading and content */
-
-
         // Build the detail section container with heading, optional trailing symbol/action, content, and divider
         VStack(alignment: .leading, spacing: isCollapsed ? 0 : 10)
         {
-
-
             // Build the heading row with title and optional trailing symbol/action
             HStack
             {
-
-
                 // Render the section title
                 Text(title)
                 .font(.headline)
@@ -168,16 +150,11 @@ struct DetailSection<Content: View>: View
                 // Render the trailing symbol and optional action if provided
                 if let trailing
                 {  /* Optional trailing symbol */
-
-
                     // Check if a trailing action is provided
                     if let trailingAction
                     {  /* Optional symbol action */
-
-
                         Button(action: trailingAction)
                         {
-
                             Image(systemName: trailing)
                             .foregroundStyle(.secondary)
                         }
@@ -187,8 +164,6 @@ struct DetailSection<Content: View>: View
                     }
                     else
                     {
-
-
                         // Render the trailing symbol without an action
                         Image(systemName: trailing)
                         .foregroundStyle(.secondary)
@@ -198,7 +173,6 @@ struct DetailSection<Content: View>: View
 
                 if collapsible
                 {
-
                     SectionCollapseButton(title: title, isCollapsed: $isCollapsed)
                 }
 
@@ -240,8 +214,6 @@ struct DetailSection<Content: View>: View
 ///
 struct ActionTile: View
 {
-
-
     let title:  String     /* The title of the action tile                  */
     let icon:   String     /* The icon representing the action tile         */
     let color:  Color      /* The color of the action tile                  */
@@ -257,11 +229,8 @@ struct ActionTile: View
     ///
     var body: some View /* Action layout */
     {  /* Compact labeled action button */
-
-
         Button(action: action)
         {
-
             Label(title, systemImage: icon)
             .font(.caption)
             .foregroundStyle(.primary)
@@ -289,8 +258,6 @@ struct ActionTile: View
 ///
 struct DetailRow: View
 {
-
-
     let icon:  String /* The icon representing the detail row     */
     let title: String /* The title or label of the detail row     */
     let value: String /* The value associated with the detail row */
@@ -305,12 +272,8 @@ struct DetailRow: View
     ///
     var body: some View /* Detail layout */
     {  /* Icon, title, and trailing metadata value */
-
-
         HStack(spacing: 12)
         {
-
-
             Image(systemName: icon)
             .frame(width: 22)
             .foregroundStyle(.secondary)
@@ -339,22 +302,17 @@ struct DetailRow: View
 ///
 struct SectionCollapseButton: View
 {
-
-
     let title:                String /* User-facing title */
     @Binding var isCollapsed: Bool   /* Collapsed state   */
 
     var body:                 some View /* Section Collapse Button layout */
     {
-
         Button
         {
-
             isCollapsed.toggle()
         }
         label:
         {
-
             Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)

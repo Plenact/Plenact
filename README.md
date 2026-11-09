@@ -92,31 +92,9 @@ Potential audiences include individuals, teams, therapy and recovery centers, an
 
 The earlier question of a parent surface for Planner, Labels, Notes, and Attachments is now taking shape through Today as the front door and Board as the current source of truth. Schedule, Projects, Notes, and Team remain possible future destinations rather than implemented navigation
 
-## Desktop Expansion Thoughts
+## Desktop expansion
 
-I especially like your decision to establish a stable checkpoint with the database before beginning the Windows port.
-
-That gives us a reliable foundation for developing the Windows application without disrupting the existing iPhone version.
-
-I'd recommend this sequence:
-
-1. Stabilize the iOS application — Finish your current features and establish a tested Git checkpoint.
-
-2. Formalize the database architecture — Define the data models, persistence contracts, identifiers, and migration strategy.
-
-3. Design synchronization — Determine how Windows and iOS will access and update shared records, including offline changes and conflicts.
-
-4. Build the native Windows application — Use C# and WinUI 3, preserving Plenact's existing planning model.
-
-5. Validate cross-platform behavior — Verify that changes made on one device appear correctly on the other.
-
-One important detail: Plenact currently uses local JSON persistence, so synchronizing between Windows and iPhone will require additional infrastructure. We should design that deliberately rather than simply sharing database files.
-
-Our guiding principle should be: One Plenact data model, multiple native experiences.
-
-That will put us in a much stronger position for Windows, macOS, Android, and eventually web support.
-
-I'm excited about where this is heading. We're moving from an iPhone application toward a genuinely cross-platform Personal Operating System! 🚀
+The [Windows demo handoff](Doc/Strategy/Architecture/Windows-Demo-Handoff.md) describes the first C++/Qt demo, the synthetic workspace it can open, and the iOS behaviors to use as reference. The [connected multiplatform roadmap](Doc/Strategy/Architecture/Connected-Multiplatform-Roadmap.md) covers the private service and cross-device synchronization.
 
 ## Exploratory Roadmap
 

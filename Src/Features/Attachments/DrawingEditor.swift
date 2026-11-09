@@ -26,8 +26,6 @@ import UIKit
 ///
 struct DrawingCaptureDraft: Identifiable
 {
-
-
     let id:      UUID      /* Record UUID                   */
     let drawing: PKDrawing /* Drawing content and originals */
     let preview: UIImage   /* Prepared content preview      */
@@ -46,7 +44,6 @@ struct DrawingCaptureDraft: Identifiable
     ///
     init(id: UUID = UUID(), drawing: PKDrawing = PKDrawing())
     {
-
         self.id = id
         self.drawing = drawing
         // Cache a bounded preview so typing in the composer never rerenders every drawing
@@ -66,8 +63,6 @@ struct DrawingCaptureDraft: Identifiable
 ///
 enum DrawingImageFormat: String, CaseIterable
 {
-
-
     case png, jpeg
 }
 
@@ -81,8 +76,6 @@ enum DrawingImageFormat: String, CaseIterable
 ///
 enum DrawingImageExport
 {
-
-
     ///
     /// @fcn        DrawingImageExport.image
     /// @brief      Render a drawing into a bounded raster image
@@ -99,7 +92,6 @@ enum DrawingImageExport
     ///
     static func image(_ drawing: PKDrawing, transparent: Bool, maximumDimension: CGFloat = 4096) -> UIImage
     {
-
         let bounds = drawing.bounds /* Available layout bounds    */
         let rect   =                /* Measured drawing rectangle */
         bounds.isNull || bounds.isEmpty
@@ -143,7 +135,6 @@ enum DrawingImageExport
     ///
     static func data(_ drawing: PKDrawing, format: DrawingImageFormat, transparent: Bool = false) throws -> Data
     {
-
         guard !drawing.strokes.isEmpty else
         {
             throw CocoaError(.fileReadCorruptFile)
@@ -154,7 +145,6 @@ enum DrawingImageExport
 
         guard let data = format == .png ? image.pngData() : image.jpegData(compressionQuality: 0.95) else
         {
-
             throw CocoaError(.fileWriteUnknown)
         }
 
@@ -173,8 +163,6 @@ enum DrawingImageExport
 ///
 enum DrawingAttachmentStore
 {
-
-
     ///
     /// @fcn        DrawingAttachmentStore.save
     /// @brief      Save both editable strokes and a drawing preview
@@ -193,7 +181,6 @@ enum DrawingAttachmentStore
     static func save(_ draft: DrawingCaptureDraft, replacing previous: KanbanAttachment? = nil) throws
     -> KanbanAttachment
     {
-
         guard !draft.drawing.strokes.isEmpty else
         {
             throw CocoaError(.fileReadCorruptFile)
@@ -214,12 +201,10 @@ enum DrawingAttachmentStore
 
         do
         {
-
             try draft.drawing.dataRepresentation().write(to: strokesURL, options: .atomic)
         }
         catch
         {
-
             try? FileManager.default.removeItem(at: previewURL)
             throw error
         }
@@ -247,7 +232,6 @@ enum DrawingAttachmentStore
     ///
     static func load(_ attachment: KanbanAttachment) throws -> DrawingCaptureDraft
     {
-
         guard let name = attachment.drawingFileName, name == URL(fileURLWithPath: name).lastPathComponent,
         let previewURL = CardAttachmentStore.fileURL(for: attachment)
         else
@@ -274,8 +258,6 @@ enum DrawingAttachmentStore
 @MainActor
 final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 {
-
-
     let canvas = DrawingCanvasView() /* Editable drawing surface */
     @Published var hasMarks: Bool    /* Marks availability       */
     @Published var canUndo = false   /* Undo availability        */
@@ -294,7 +276,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     init(drawing: PKDrawing)
     {
-
         hasMarks = !drawing.strokes.isEmpty
 
         super.init()
@@ -322,7 +303,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     func canvasViewDrawingDidChange(_ canvasView: PKCanvasView)
     {
-
         hasMarks = !canvasView.drawing.strokes.isEmpty
 
         // PencilKit registers undo after its drawing-change delegate callback
@@ -344,7 +324,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     func refreshUndo()
     {
-
         canUndo = canvas.undoManager?.canUndo ?? false;
         canRedo = canvas.undoManager?.canRedo ?? false
 
@@ -389,7 +368,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     func clear()
     {
-
         let previous = canvas.drawing /* Previous value for comparison */
 
         canvas.undoManager?.registerUndo(withTarget: self)
@@ -416,7 +394,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     private func restore(_ drawing: PKDrawing)
     {
-
         let previous = canvas.drawing /* Previous value for comparison */
 
         canvas.undoManager?.registerUndo(withTarget: self)
@@ -443,8 +420,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 @MainActor
 final class DrawingCanvasView: PKCanvasView
 {
-
-
     private let picker   = PKToolPicker() /* Native selection control */
     private var lastSize = CGSize.zero    /* Last size                */
 
@@ -458,11 +433,9 @@ final class DrawingCanvasView: PKCanvasView
     ///
     override func didMoveToWindow()
     {
-
         super.didMoveToWindow()
         if window != nil
         {
-
             picker.addObserver(self)
             DispatchQueue.main.async
             {
@@ -473,7 +446,6 @@ final class DrawingCanvasView: PKCanvasView
         }
         else
         {
-
             picker.setVisible(false, forFirstResponder: self)
             picker.removeObserver(self)
         }
@@ -491,7 +463,6 @@ final class DrawingCanvasView: PKCanvasView
     ///
     func showTools()
     {
-
         guard window != nil else
         {
             return
@@ -511,7 +482,6 @@ final class DrawingCanvasView: PKCanvasView
     ///
     override func layoutSubviews()
     {
-
         super.layoutSubviews()
         guard bounds.size != lastSize, bounds.width > 0, bounds.height > 0 else
         {
@@ -540,8 +510,6 @@ final class DrawingCanvasView: PKCanvasView
 ///
 struct DrawingCanvas: UIViewRepresentable
 {
-
-
     let state: DrawingCanvasState /* Current operation state */
 
 
@@ -574,7 +542,6 @@ struct DrawingCanvas: UIViewRepresentable
     ///
     func updateUIView(_ view: DrawingCanvasView, context: Context)
     {
-
     }
 
 }
@@ -588,8 +555,6 @@ struct DrawingCanvas: UIViewRepresentable
 ///
 struct DrawingExportFile: Identifiable
 {
-
-
     let id = UUID() /* Record UUID       */
     let url: URL    /* Resource location */
 
@@ -605,8 +570,6 @@ struct DrawingExportFile: Identifiable
 ///
 struct DrawingShareSheet: UIViewControllerRepresentable
 {
-
-
     let url: URL /* Resource location */
 
 
@@ -622,7 +585,6 @@ struct DrawingShareSheet: UIViewControllerRepresentable
     ///
     func makeUIViewController(context: Context) -> UIActivityViewController
     {
-
         UIActivityViewController(activityItems: [url], applicationActivities: nil)
     }
 
@@ -639,7 +601,6 @@ struct DrawingShareSheet: UIViewControllerRepresentable
     ///
     func updateUIViewController(_ controller: UIActivityViewController, context: Context)
     {
-
     }
 
 }
@@ -654,8 +615,6 @@ struct DrawingShareSheet: UIViewControllerRepresentable
 ///
 struct DrawingCaptureEditor: View
 {
-
-
     let initial:                    DrawingCaptureDraft /* Initial operation state */
     let onSave:                     (DrawingCaptureDraft) -> Bool /* Persist the edited value */
     @StateObject private var state: DrawingCanvasState /* Current operation state */
@@ -680,7 +639,6 @@ struct DrawingCaptureEditor: View
     ///
     init(initial: DrawingCaptureDraft, onSave: @escaping (DrawingCaptureDraft) -> Bool)
     {
-
         self.initial = initial;
         self.onSave = onSave
         _state = StateObject(wrappedValue: DrawingCanvasState(drawing: initial.drawing))
@@ -706,10 +664,8 @@ struct DrawingCaptureEditor: View
     ///
     private func export(_ format: DrawingImageFormat, transparent: Bool = false)
     {
-
         do
         {
-
             let data = /* Encoded or loaded bytes */
                 try DrawingImageExport.data(state.canvas.drawing, format: format, transparent: transparent)
 
@@ -733,7 +689,6 @@ struct DrawingCaptureEditor: View
         }
         catch
         {
-
             cleanExport();
 
             errorMessage = "The image couldn't be exported. Your drawing is still here; please try again."
@@ -753,7 +708,6 @@ struct DrawingCaptureEditor: View
     ///
     private func cleanExport()
     {
-
         if let exportDirectory
         {
             try? FileManager.default.removeItem(at: exportDirectory)
@@ -765,25 +719,20 @@ struct DrawingCaptureEditor: View
 
     var body: some View /* Drawing Capture Editor layout */
     {
-
         NavigationStack
         {
-
             DrawingCanvas(state: state)
             .accessibilityLabel("Drawing canvas")
             .navigationTitle("Drawing")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
                         if changed
                         {
-
                             showsDiscard = true
 
                         }
@@ -798,10 +747,8 @@ struct DrawingCaptureEditor: View
 
                 ToolbarItemGroup(placement: .primaryAction)
                 {
-
                     Menu
                     {
-
                         Button("Drawing tools", systemImage: "pencil.tip.crop.circle")
                         {
                             state.canvas.showTools()
@@ -818,7 +765,6 @@ struct DrawingCaptureEditor: View
                         } .disabled(!state.canRedo)
                         Button("Clear drawing", systemImage: "trash", role: .destructive)
                         {
-
                             showsClear = true
 
                         }
@@ -826,12 +772,10 @@ struct DrawingCaptureEditor: View
                     }
                     label:
                     {
-
                         Image(systemName: "ellipsis.circle")
                     } .accessibilityLabel("Drawing actions")
                     Menu
                     {
-
                         Button("PNG · White background")
                         {
                             export(.png)
@@ -850,23 +794,19 @@ struct DrawingCaptureEditor: View
                     }
                     label:
                     {
-
                         Image(systemName: "square.and.arrow.up")
                     } .accessibilityLabel("Export drawing").disabled(!state.hasMarks)
                     Button("Done")
                     {
-
                         let draft = /* Local editing draft */
                             DrawingCaptureDraft(id: initial.id, drawing: state.canvas.drawing)
 
                         if onSave(draft)
                         {
-
                             dismiss()
                         }
                         else
                         {
-
                             errorMessage =
                                                                                             "The drawing couldn't be saved. Your changes are still here; please try again."
 
@@ -881,7 +821,6 @@ struct DrawingCaptureEditor: View
         .interactiveDismissDisabled(changed)
         .confirmationDialog("Clear this drawing?", isPresented: $showsClear, titleVisibility: .visible)
         {
-
             Button("Clear drawing", role: .destructive)
             {
                 state.clear()
@@ -889,13 +828,11 @@ struct DrawingCaptureEditor: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         .confirmationDialog("Discard drawing changes?", isPresented: $showsDiscard, titleVisibility: .visible)
         {
-
             Button("Discard changes", role: .destructive)
             {
                 dismiss()
@@ -903,7 +840,6 @@ struct DrawingCaptureEditor: View
 
             Button("Keep drawing", role: .cancel)
             {
-
             }
 
         }
@@ -914,17 +850,14 @@ struct DrawingCaptureEditor: View
                 {
                     if !$0
                     {
-
                         errorMessage = nil
 
                     }
 
                 }))
         {
-
             Button("OK", role: .cancel)
             {
-
                 errorMessage = nil
 
             }
@@ -932,7 +865,6 @@ struct DrawingCaptureEditor: View
         }
         message:
         {
-
             Text(errorMessage ?? "")
         }
         .sheet(item: $exportFile, onDismiss: cleanExport)
@@ -942,7 +874,6 @@ struct DrawingCaptureEditor: View
         }
         .task
         {
-
             // Wait for the sheet's navigation controller to finish attaching its canvas
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else

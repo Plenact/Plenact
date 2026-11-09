@@ -20,15 +20,11 @@ import SwiftUI
 ///
 enum PlenactLaunchStage: Int, CaseIterable
 {
-
-
     case restore, plans, ready, welcome
     var symbol: String /* Selected symbol name */
     {
-
         switch self
         {
-
         case .restore:
                     "folder";
 
@@ -46,10 +42,8 @@ enum PlenactLaunchStage: Int, CaseIterable
 
     var label: String /* Resolved display label */
     {
-
         switch self
         {
-
         case .restore:
                     "Restoring your workspace"
         case .plans:
@@ -74,8 +68,6 @@ enum PlenactLaunchStage: Int, CaseIterable
 ///
 struct PlenactLaunchProgress: Equatable
 {
-
-
     ///
     /// Classifies a launch indicator's progress
     ///
@@ -85,7 +77,6 @@ struct PlenactLaunchProgress: Equatable
     ///
     enum Status
     {
-
         case waiting, running, complete
     }
 
@@ -105,7 +96,6 @@ struct PlenactLaunchProgress: Equatable
     ///
     func paced(elapsed: TimeInterval) -> Self
     {
-
         let index = min(3, max(0, Int(max(0, elapsed) / 0.22))) /* Element position */
 
         return Self(
@@ -126,7 +116,6 @@ struct PlenactLaunchProgress: Equatable
     ///
     func status(for step: PlenactLaunchStage) -> Status
     {
-
         if finished || step.rawValue < stage.rawValue
         {
             return .complete
@@ -147,18 +136,14 @@ struct PlenactLaunchProgress: Equatable
 ///
 struct PlenactLaunchIndicators: View
 {
-
-
     let progress: PlenactLaunchProgress /* Operation progress state */
     var animates = true /* Animates state flag */
     @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
 
     var body: some View /* Plenact Launch Indicators layout */
     {
-
         HStack(spacing: 44)
         {
-
             ForEach(PlenactLaunchStage.allCases, id: \.rawValue)
             {
                 step in
@@ -171,7 +156,6 @@ struct PlenactLaunchIndicators: View
                 .foregroundStyle(.white)
                 .phaseAnimator(status == .running && animates && !reduceMotion ? [false, true] : [false])
                 {
-
                 icon, bright in
                     icon.opacity(status == .waiting ? 0 : (status == .complete ? 0.85 : (bright ? 0.9 : 0.4)))
                 }
@@ -199,15 +183,12 @@ struct PlenactLaunchIndicators: View
 ///
 struct PlenactLaunchSequence: View
 {
-
-
     let progress: PlenactLaunchProgress   /* Operation progress state */
     var animates: Bool                    /* Animates state flag      */
     @State private var startedAt = Date() /* Started at               */
 
     var body: some View /* Plenact Launch Sequence layout */
     {
-
         TimelineView(.animation(minimumInterval: 1.0 / 30.0))
         {
             context in
@@ -230,8 +211,6 @@ struct PlenactLaunchSequence: View
 ///
 struct PlenactLoadingView: View
 {
-
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
     var animatesLogo = true /* Animates logo */
     var fadesShadow  = false /* Fades shadow */
@@ -239,16 +218,13 @@ struct PlenactLoadingView: View
 
     var body: some View /* Plenact Loading layout */
     {
-
         GeometryReader
         {
             geometry in
             ZStack
             {
-
                 ZStack
                 {
-
                     Image("LaunchShadow")
                     .resizable().scaledToFit()
                     .frame(width: 240, height: 240)
@@ -274,7 +250,6 @@ struct PlenactLoadingView: View
                 .accessibilityHidden(true)
                 VStack(spacing: 8)
                 {
-
                     Text("Plenact").font(.system(size: 28, weight: .bold)).foregroundStyle(.white)
                     Text("Planning your life into action").font(.system(size: 14)).foregroundStyle(.white.opacity(0.75))
                 }
@@ -284,7 +259,6 @@ struct PlenactLoadingView: View
             .offset(y: -geometry.size.height * 0.125)
             .overlay(alignment: .bottom)
             {
-
                 PlenactLaunchSequence(progress: progress, animates: animatesLogo)
                 .padding(.bottom, max(geometry.safeAreaInsets.bottom, 24) + 36)
             }
@@ -311,8 +285,6 @@ struct PlenactLoadingView: View
 @MainActor
 final class TodayWelcomeCue: ObservableObject
 {
-
-
     ///
     /// Identifies the destination of a welcome cue
     ///
@@ -322,7 +294,6 @@ final class TodayWelcomeCue: ObservableObject
     ///
     enum Target: Equatable
     {
-
         case profile, plan
     }
 
@@ -352,7 +323,6 @@ final class TodayWelcomeCue: ObservableObject
     ///
     init(defaults: UserDefaults = .standard)
     {
-
         self.defaults = defaults
 
     }
@@ -370,7 +340,6 @@ final class TodayWelcomeCue: ObservableObject
     ///
     func becameActive(at now: Date = .now)
     {
-
         let shouldGreet = !hasActivated || departure.map /* Greet decision */
         {
             now.timeIntervalSince($0) >= Self.returnInterval
@@ -382,7 +351,6 @@ final class TodayWelcomeCue: ObservableObject
 
         if shouldGreet
         {
-
             pending = true;
             requestID += 1
 
@@ -402,10 +370,8 @@ final class TodayWelcomeCue: ObservableObject
     ///
     func leftForeground(at now: Date = .now)
     {
-
         if departure == nil
         {
-
             departure = now
 
             defaults.set(now.timeIntervalSince1970, forKey: Self.lastDepartureKey)
@@ -424,7 +390,6 @@ final class TodayWelcomeCue: ObservableObject
     ///
     func cancel()
     {
-
         generation += 1
         pending = false
 
@@ -434,7 +399,6 @@ final class TodayWelcomeCue: ObservableObject
 
         withTransaction(transaction)
         {
-
             illuminated = false;
             target = nil
 
@@ -479,7 +443,6 @@ final class TodayWelcomeCue: ObservableObject
         }
     ) async
     {
-
         guard pending else
         {
             return
@@ -515,19 +478,15 @@ final class TodayWelcomeCue: ObservableObject
         ///
         func light(_ value: Bool)
         {
-
             if reduceMotion
             {
-
                 illuminated = value
 
             }
             else
             {
-
                 withAnimation(.easeInOut(duration: 0.5 / (target == .plan ? planPulseSpeed : 1)))
                 {
-
                     illuminated = value
 
                 }
@@ -540,7 +499,6 @@ final class TodayWelcomeCue: ObservableObject
         {
             if token == generation
             {
-
                 illuminated = false;
                 target = nil
 
@@ -550,11 +508,9 @@ final class TodayWelcomeCue: ObservableObject
 
         do
         {
-
             try await pause(.milliseconds(650))
             for cue in [Target.profile, .plan]
             {
-
                 guard current() else
                 {
                     return
@@ -564,7 +520,6 @@ final class TodayWelcomeCue: ObservableObject
 
                 if reduceMotion
                 {
-
                     light(true)
                     try await pause(.milliseconds(1000))
                     guard current() else
@@ -576,10 +531,8 @@ final class TodayWelcomeCue: ObservableObject
                 }
                 else
                 {
-
                     for _ in 0 ..< 2
                     {
-
                         guard current() else
                         {
                             return
@@ -615,7 +568,6 @@ final class TodayWelcomeCue: ObservableObject
         }
         catch
         {  /* View disappearance/backgrounding cancels the finite sequence  */
-
         }
 
     }
@@ -632,8 +584,6 @@ final class TodayWelcomeCue: ObservableObject
 ///
 struct TodayWelcomeGlow: ViewModifier
 {
-
-
     let highlighted: Bool /* Current-day highlight state */
     var circular         = false /* Circular state flag */
     private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44) /* Soft gold */
@@ -652,11 +602,9 @@ struct TodayWelcomeGlow: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         content
         .background
         {
-
             RoundedRectangle(cornerRadius: circular ? 100 : 10)
             .fill(softGold.opacity(highlighted ? 0.12 : 0))
             .padding(-5)

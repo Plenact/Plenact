@@ -24,8 +24,6 @@ import UniformTypeIdentifiers
 ///
 enum PlanRichText
 {
-
-
     static let prefix = "plenact-rich-v1:" /* Leading lookup or display text */
 
 
@@ -38,8 +36,6 @@ enum PlanRichText
     ///
     struct Run: Codable, Equatable
     {
-
-
         var text:     String          /* Text being processed        */
         var bold:     Bool    = false /* Text weight choice          */
         var italic:   Bool    = false /* Inherited subtitle emphasis */
@@ -67,10 +63,8 @@ enum PlanRichText
     ///
     static func runs(_ value: String) -> [Run]?
     {
-
         guard value.hasPrefix(prefix), let data = Data(base64Encoded: String(value.dropFirst(prefix.count))) else
         {
-
             return nil
         }
 
@@ -105,12 +99,10 @@ enum PlanRichText
     ///
     static func attributed(_ value: String) -> NSAttributedString
     {
-
         let result = NSMutableAttributedString(string: "") /* Result being assembled */
 
         for run in runs(value) ?? [Run(text: value)]
         {
-
             var traits: UIFontDescriptor.SymbolicTraits = [] /* Native display traits */
 
             if run.bold
@@ -147,7 +139,6 @@ enum PlanRichText
                     $0.0 == name
                 })?.1
             {
-
                 attributes[.foregroundColor] = color
                 attributes[NSAttributedString.Key("PlenactColor")] = name
 
@@ -155,14 +146,12 @@ enum PlanRichText
 
             if let name = run.fontName
             {
-
                 attributes[NSAttributedString.Key("PlenactFontName")] = name
 
             }
 
             if let size = run.fontSize
             {
-
                 attributes[NSAttributedString.Key("PlenactFontSize")] = size
 
             }
@@ -186,7 +175,6 @@ enum PlanRichText
     ///
     static func encode(_ value: NSAttributedString) -> String
     {
-
         var runs: [Run] = [] /* Attributed-text runs */
 
         value.enumerateAttributes(in: NSRange(location: 0, length: value.length))
@@ -241,17 +229,14 @@ enum PlanRichText
     ///
     static func display(_ value: String) -> AttributedString
     {
-
         var result = AttributedString(plain(value)) /* Accumulated output value */
 
         if let runs = runs(value)
         {
-
             result = AttributedString()
 
             for run in runs
             {
-
                 var part       = AttributedString(run.text) /* Current parsed content part */
                 let family     =                            /* Family operation value      */
                     run.fontName == "System" ? nil : run.fontName
@@ -269,14 +254,12 @@ enum PlanRichText
 
                 if run.bold
                 {
-
                     font = font.bold()
 
                 }
 
                 if run.italic
                 {
-
                     font = font.italic()
 
                 }
@@ -288,7 +271,6 @@ enum PlanRichText
                         $0.0 == name
                     })?.1
                 {
-
                     part.foregroundColor = Color(uiColor: color)
 
                 }
@@ -313,8 +295,6 @@ enum PlanRichText
 ///
 struct RichTextEditor: UIViewRepresentable
 {
-
-
     let placeholder:   String               /* Empty-field guidance  */
     @Binding var text: String               /* Text being processed  */
     var focus:         Binding<Bool>? = nil /* Today Focus selection */
@@ -349,7 +329,6 @@ struct RichTextEditor: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> UITextView
     {
-
         let view = UITextView() /* View being rendered */
 
         view.autocapitalizationType = .sentences
@@ -419,12 +398,10 @@ struct RichTextEditor: UIViewRepresentable
     ///
     func updateUIView(_ view: UITextView, context: Context)
     {
-
         context.coordinator.parent = self
 
         if PlanRichText.encode(view.attributedText) != text
         {
-
             let selection = view.selectedRange /* Current selection state */
 
             view.attributedText = PlanRichText.attributed(text)
@@ -453,7 +430,6 @@ struct RichTextEditor: UIViewRepresentable
     ///
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize?
     {
-
         guard let width = proposal.width else
         {
             return nil
@@ -475,8 +451,6 @@ struct RichTextEditor: UIViewRepresentable
     ///
     class Coordinator: NSObject, UITextViewDelegate
     {
-
-
         var parent:    RichTextEditor          /* Latest representable bindings */
         weak var view: UITextView?             /* View being rendered           */
         weak var hint: UILabel?                /* Hint operation value          */
@@ -496,7 +470,6 @@ struct RichTextEditor: UIViewRepresentable
         ///
         init(_ parent: RichTextEditor)
         {
-
             self.parent = parent
 
         }
@@ -514,7 +487,6 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func scheduleFocusUpdate(_ view: UITextView)
         {
-
             guard let focus = parent.focus, focus.wrappedValue != view.isFirstResponder,
             !focusUpdatePending
             else
@@ -546,7 +518,6 @@ struct RichTextEditor: UIViewRepresentable
 
                 defer
                 {
-
                     self.applyingFocus = false
 
                 }
@@ -577,7 +548,6 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func textViewDidChange(_ textView: UITextView)
         {
-
             parent.text = PlanRichText.encode(textView.attributedText)
             hint?.isHidden = !textView.text.isEmpty
 
@@ -597,10 +567,8 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func textViewDidBeginEditing(_ textView: UITextView)
         {
-
             if !applyingFocus, parent.focus?.wrappedValue == false
             {
-
                 parent.focus?.wrappedValue = true
 
             }
@@ -620,10 +588,8 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func textViewDidEndEditing(_ textView: UITextView)
         {
-
             if !applyingFocus, parent.focus?.wrappedValue == true
             {
-
                 parent.focus?.wrappedValue = false
 
             }
@@ -645,7 +611,6 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func restore(_ text: NSAttributedString, selection: NSRange, typing: [NSAttributedString.Key: Any])
         {
-
             guard let view else
             {
                 return
@@ -658,7 +623,6 @@ struct RichTextEditor: UIViewRepresentable
 
             view.undoManager?.registerUndo(withTarget: self)
             {
-
                 $0.restore(previous, selection: oldSelection, typing: oldTyping)
             }
 
@@ -684,7 +648,6 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func apply(_ change: ([NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any])
         {
-
             guard let view else
             {
                 return
@@ -697,13 +660,11 @@ struct RichTextEditor: UIViewRepresentable
 
             view.undoManager?.registerUndo(withTarget: self)
             {
-
                 $0.restore(previous, selection: selection, typing: typing)
             }
 
             if selection.length == 0
             {
-
                 view.typingAttributes = change(view.typingAttributes);
 
                 return
@@ -737,7 +698,6 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func toggle(_ trait: UIFontDescriptor.SymbolicTraits)
         {
-
             guard let view else
             {
                 return
@@ -791,7 +751,6 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func font(name: String?, size: Double?)
         {
-
             apply
             {
                 attributes in
@@ -819,14 +778,12 @@ struct RichTextEditor: UIViewRepresentable
 
                 if let name
                 {
-
                     attributes[NSAttributedString.Key("PlenactFontName")] = name
 
                 }
 
                 if let size
                 {
-
                     attributes[NSAttributedString.Key("PlenactFontSize")] = size
 
                 }
@@ -849,7 +806,6 @@ struct RichTextEditor: UIViewRepresentable
         ///
         func color(_ name: String)
         {
-
             apply
             {
                 attributes in

@@ -20,8 +20,6 @@ import UniformTypeIdentifiers
 @MainActor
 enum BoardListSwipePriority
 {
-
-
     ///
     /// @fcn        BoardListSwipePriority.install
     /// @brief      Prioritize native list row gestures over board paging
@@ -35,7 +33,6 @@ enum BoardListSwipePriority
     @discardableResult
     static func install(for list: UIScrollView) -> Int
     {
-
         guard list is UICollectionView || list is UITableView else
         {
             return 0
@@ -45,17 +42,14 @@ enum BoardListSwipePriority
 
         while let view = ancestor
         {
-
             if let board = view as? UIScrollView,
             board.alwaysBounceHorizontal || board.contentSize.width > board.bounds.width + 1
             {
-
                 // Leave the vertical scrolling pan independent; prioritize the
                 // native row-action/editing pans before horizontal Board paging
                 let gestures = /* Installed gesture recognizers */
                     (list.gestureRecognizers ?? []).filter
                 {
-
                     $0 is UIPanGestureRecognizer && $0 !== list.panGestureRecognizer && !($0 is BoardCardSwipeGate)
                 }
 
@@ -86,8 +80,6 @@ enum BoardListSwipePriority
 ///
 enum BoardCardSwipeRouting
 {
-
-
     ///
     /// @fcn        BoardCardSwipeRouting.routesToBoard(start:bounds:)
     /// @brief      Reserve the rightmost quarter of a Card for Board navigation
@@ -101,7 +93,6 @@ enum BoardCardSwipeRouting
     ///
     static func routesToBoard(start: CGPoint, bounds: CGRect) -> Bool
     {
-
         bounds.width > 0 && bounds.contains(start) && (start.x - bounds.minX) / bounds.width >= 0.75
     }
 
@@ -118,8 +109,6 @@ enum BoardCardSwipeRouting
 @MainActor
 final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDelegate
 {
-
-
     let markers = /* Native lifecycle probe views */
         NSHashTable<BoardCardSwipeZone.Marker>.weakObjects()
     weak var board: UIScrollView? /* Board state under review */
@@ -138,7 +127,6 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     ///
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent)
     {
-
         super.touchesBegan(touches, with: event)
         guard let touch = touches.first,
         markers.allObjects.contains(where:
@@ -150,7 +138,6 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
             })
         else
         {
-
             state = .failed;
 
             return
@@ -170,7 +157,6 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     ///
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool
     {
-
         let velocity = velocity(in: view) /* Current gesture velocity */
 
         return velocity.x < 0 && abs(velocity.x) > abs(velocity.y)
@@ -192,7 +178,6 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
     ) -> Bool
     {
-
         otherGestureRecognizer === board?.panGestureRecognizer
     }
 
@@ -209,7 +194,6 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     ///
     static func install(marker: BoardCardSwipeZone.Marker)
     {
-
         guard marker.window != nil else
         {
             return
@@ -220,10 +204,8 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
 
         while let view = ancestor
         {
-
             if let scroll = view as? UIScrollView, scroll is UICollectionView || scroll is UITableView
             {
-
                 list = scroll;
 
                 break
@@ -242,11 +224,9 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
 
         while let view = ancestor
         {
-
             if let board = view as? UIScrollView,
             board.alwaysBounceHorizontal || board.contentSize.width > board.bounds.width + 1
             {
-
                 let gate: BoardCardSwipeGate /* Operation eligibility guard */
 
                 if let existing = list.gestureRecognizers?.compactMap(
@@ -254,13 +234,11 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
                         $0 as? BoardCardSwipeGate
                     }).first
                 {
-
                     gate = existing
 
                 }
                 else
                 {
-
                     gate = BoardCardSwipeGate(target: nil, action: nil)
                     gate.delegate = gate
                     gate.cancelsTouchesInView = false
@@ -278,7 +256,6 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
                 where gesture is UIPanGestureRecognizer
                 && gesture !== list.panGestureRecognizer && gesture !== gate
                 {
-
                     gesture.require(toFail: gate)
                 }
 
@@ -304,8 +281,6 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
 ///
 struct BoardCardSwipeZone: UIViewRepresentable
 {
-
-
     var enabled = true /* Feature availability flag */
 
 
@@ -318,8 +293,6 @@ struct BoardCardSwipeZone: UIViewRepresentable
     ///
     final class Marker: UIView
     {
-
-
         var isEnabled = true /* Enabled state */
 
 
@@ -332,7 +305,6 @@ struct BoardCardSwipeZone: UIViewRepresentable
         ///
         override func didMoveToWindow()
         {
-
             super.didMoveToWindow()
             DispatchQueue.main.async
             {
@@ -360,7 +332,6 @@ struct BoardCardSwipeZone: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> Marker
     {
-
         let marker = Marker() /* Marker operation value */
 
         marker.isUserInteractionEnabled = false
@@ -382,7 +353,6 @@ struct BoardCardSwipeZone: UIViewRepresentable
     ///
     func updateUIView(_ marker: Marker, context: Context)
     {
-
         marker.isEnabled = enabled
 
         DispatchQueue.main.async
@@ -408,8 +378,6 @@ struct BoardCardSwipeZone: UIViewRepresentable
 ///
 struct BoardCardFramePreferenceKey: PreferenceKey
 {
-
-
     static var defaultValue: [Int: CGRect] = [:] /* Empty card-frame measurements before layout */
 
 
@@ -426,8 +394,6 @@ struct BoardCardFramePreferenceKey: PreferenceKey
     ///
     static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect])
     {
-
-
         value.merge(nextValue(), uniquingKeysWith:
             {
                 _, latest in
@@ -446,8 +412,6 @@ struct BoardCardFramePreferenceKey: PreferenceKey
 ///
 struct BoardListFramePreferenceKey: PreferenceKey
 {
-
-
     static var defaultValue: [Int: CGRect] = [:] /* Empty list-frame measurements before layout */
 
 
@@ -464,8 +428,6 @@ struct BoardListFramePreferenceKey: PreferenceKey
     ///
     static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect])
     {
-
-
         value.merge(nextValue(), uniquingKeysWith:
             {
                 _, latest in
@@ -485,8 +447,6 @@ struct BoardListFramePreferenceKey: PreferenceKey
 ///
 struct BoardCardDragSource: UIViewRepresentable
 {
-
-
     static let contentType = UTType( /* Content type */
         exportedAs: "com.plenact.local-board-card", conformingTo: .data)  /* Private transfer type for local Board card drags      */
     let token:     String            /* Board-session token carried by each drag item         */
@@ -505,8 +465,6 @@ struct BoardCardDragSource: UIViewRepresentable
     ///
     final class Probe: UIView
     {
-
-
         weak var coordinator: Coordinator? /* Drag owner notified when the probe attaches or detaches */
 
 
@@ -520,8 +478,6 @@ struct BoardCardDragSource: UIViewRepresentable
         ///
         override func didMoveToWindow()
         {
-
-
             super.didMoveToWindow()
             coordinator?.install(from: self)
         }
@@ -537,8 +493,6 @@ struct BoardCardDragSource: UIViewRepresentable
     ///
     final class Coordinator: NSObject, UIDragInteractionDelegate, UIGestureRecognizerDelegate
     {
-
-
         var source:         BoardCardDragSource  /* Current parent callbacks and transfer token         */
         weak var container: UIView?              /* Collection cell hosting the native drag interaction */
         var interaction:    UIDragInteraction?   /* Native interaction retained through an active drag  */
@@ -562,8 +516,6 @@ struct BoardCardDragSource: UIViewRepresentable
         ///
         init(_ source: BoardCardDragSource)
         {
-
-
             self.source = source
 
         }
@@ -582,12 +534,8 @@ struct BoardCardDragSource: UIViewRepresentable
         ///
         func install(from probe: UIView)
         {
-
-
             guard probe.window != nil else
             {
-
-
                 return
             }
 
@@ -596,12 +544,8 @@ struct BoardCardDragSource: UIViewRepresentable
 
             while let view = ancestor
             {  /* Current ancestor in the collection-cell search */
-
-
                 if let cell = view as? UICollectionViewCell
                 {  /* Cell selected to host the native drag interaction */
-
-
                     guard container !== cell.contentView else
                     {
                         interaction?.isEnabled = source.onDirectDrop == nil
@@ -618,8 +562,6 @@ struct BoardCardDragSource: UIViewRepresentable
 
                     if let interaction
                     {  /* Previous drag interaction removed before reattachment */
-
-
                         container?.removeInteraction(interaction)
                     }
 
@@ -649,7 +591,6 @@ struct BoardCardDragSource: UIViewRepresentable
         /// Give a held Day Card priority over its enclosing List's scrolling gesture
         private func configureDirectReorder(in view: UIView)
         {
-
             guard source.onDirectDrop != nil else
             {
                 if let reorderGesture
@@ -813,8 +754,6 @@ struct BoardCardDragSource: UIViewRepresentable
         ///
         func begin(at point: CGPoint) -> NSItemProvider
         {
-
-
             isDragging = true
 
             source.onBegan(point)
@@ -851,12 +790,8 @@ struct BoardCardDragSource: UIViewRepresentable
         ///
         func finish()
         {
-
-
             guard isDragging else
             {
-
-
                 return
             }
 
@@ -871,8 +806,6 @@ struct BoardCardDragSource: UIViewRepresentable
 
             if isDetached, let interaction
             {  /* Retained drag interaction removed after detached-session completion */
-
-
                 container?.removeInteraction(interaction)
                 if let reorderGesture
                 {
@@ -896,7 +829,6 @@ struct BoardCardDragSource: UIViewRepresentable
         ///
         func canBegin(at point: CGPoint, in coordinateSpace: UIView) -> Bool
         {
-
             guard let container else
             {
                 return false
@@ -919,12 +851,8 @@ struct BoardCardDragSource: UIViewRepresentable
         ///
         func dragInteraction(_ interaction: UIDragInteraction, itemsForBeginning session: UIDragSession) -> [UIDragItem]
         {
-
-
             guard let window = interaction.view?.window else
             {  /* Window defining the global drag-coordinate space */
-
-
                 return []
             }
 
@@ -957,12 +885,8 @@ struct BoardCardDragSource: UIViewRepresentable
         ///
         func dragInteraction(_ interaction: UIDragInteraction, sessionDidMove session: UIDragSession)
         {
-
-
             guard let window = interaction.view?.window else
             {  /* Window used to report the current drag position */
-
-
                 return
             }
 
@@ -989,8 +913,6 @@ struct BoardCardDragSource: UIViewRepresentable
             didEndWith operation: UIDropOperation
         )
         {
-
-
             finish()
         }
 
@@ -1010,8 +932,6 @@ struct BoardCardDragSource: UIViewRepresentable
             _ interaction: UIDragInteraction, sessionIsRestrictedToDraggingApplication session: UIDragSession
         ) -> Bool
         {
-
-
             true
         }
 
@@ -1030,8 +950,6 @@ struct BoardCardDragSource: UIViewRepresentable
         func dragInteraction(_ interaction: UIDragInteraction, sessionAllowsMoveOperation session: UIDragSession)
         -> Bool
         {
-
-
             true
         }
 
@@ -1048,8 +966,6 @@ struct BoardCardDragSource: UIViewRepresentable
     ///
     func makeCoordinator() -> Coordinator
     {
-
-
         Coordinator(self)
     }
 
@@ -1066,8 +982,6 @@ struct BoardCardDragSource: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> Probe
     {
-
-
         let probe = Probe() /* Lightweight UIKit anchor for attaching the drag interaction */
 
         probe.isUserInteractionEnabled = false
@@ -1090,8 +1004,6 @@ struct BoardCardDragSource: UIViewRepresentable
     ///
     func updateUIView(_ probe: Probe, context: Context)
     {
-
-
         context.coordinator.source = self
 
         context.coordinator.install(from: probe)
@@ -1111,8 +1023,6 @@ struct BoardCardDragSource: UIViewRepresentable
     ///
     static func dismantleUIView(_ probe: Probe, coordinator: Coordinator)
     {
-
-
         // A live native session may outlast the source cell while the Board scrolls
         coordinator.isDetached = true
 
@@ -1123,8 +1033,6 @@ struct BoardCardDragSource: UIViewRepresentable
 
         if !coordinator.isDragging, let interaction = coordinator.interaction
         {  /* Idle drag interaction safe to remove during dismantling */
-
-
             coordinator.container?.removeInteraction(interaction)
             if let hold = coordinator.reorderGesture
             {
@@ -1146,8 +1054,6 @@ struct BoardCardDragSource: UIViewRepresentable
 ///
 struct BoardCardDropSurface: UIViewRepresentable
 {
-
-
     let token: String                 /* Board-session token required for local drop acceptance      */
     var isEnabled = true              /* Whether this surface currently accepts card drops           */
     let onChanged: (CGPoint) -> Void  /* Reports the global pointer position during an accepted drop */
@@ -1162,8 +1068,6 @@ struct BoardCardDropSurface: UIViewRepresentable
     ///
     final class RetainedInteraction: UIDropInteraction
     {
-
-
         let receiver: Coordinator /* Strong delegate owner retained by the native drop interaction */
 
 
@@ -1179,8 +1083,6 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///
         init(receiver: Coordinator)
         {
-
-
             self.receiver = receiver
 
             super.init(delegate: receiver)
@@ -1197,8 +1099,6 @@ struct BoardCardDropSurface: UIViewRepresentable
     ///
     final class Probe: UIView
     {
-
-
         weak var coordinator: Coordinator? /* Drop owner notified when the probe moves between containers */
 
 
@@ -1212,8 +1112,6 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///
         override func didMoveToWindow()
         {
-
-
             super.didMoveToWindow()
             coordinator?.install(from: self)
         }
@@ -1229,8 +1127,6 @@ struct BoardCardDropSurface: UIViewRepresentable
     ///
     final class Coordinator: NSObject, UIDropInteractionDelegate, UICollectionViewDropDelegate
     {
-
-
         var surface:          BoardCardDropSurface  /* Current acceptance settings and parent drop callbacks */
         weak var container:   UICollectionView?     /* Collection view hosting drop handling                 */
         weak var interaction: UIDropInteraction?    /* Installed or reused native drop interaction           */
@@ -1250,8 +1146,6 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///
         init(_ surface: BoardCardDropSurface)
         {
-
-
             self.surface = surface
 
         }
@@ -1270,12 +1164,8 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///
         func install(from probe: UIView)
         {
-
-
             guard probe.window != nil else
             {
-
-
                 return
             }
 
@@ -1284,20 +1174,13 @@ struct BoardCardDropSurface: UIViewRepresentable
 
             while let view = ancestor
             {  /* Current ancestor in the collection-view search */
-
-
                 if let collection = view as? UICollectionView
                 {  /* Collection surface selected for native drop handling */
-
-
                     if let existing = collection.interactions.compactMap(
                         {  /* Existing Board drop interaction reused on the collection */
-
-
                             $0 as? RetainedInteraction
                         }).first
                     {
-
                         existing.receiver.surface = surface
                         collection.dropDelegate =
                         surface.isEnabled ? existing.receiver : existing.receiver.originalDropDelegate
@@ -1310,8 +1193,6 @@ struct BoardCardDropSurface: UIViewRepresentable
 
                     guard container !== collection else
                     {
-
-
                         return
                     }
 
@@ -1350,17 +1231,12 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///
         func accepts(_ items: [UIDragItem]) -> Bool
         {
-
-
             surface.isEnabled && items.count == 1
             && items.allSatisfy
             {
-
                 guard let source = $0.localObject as? BoardCardDragSource.Coordinator
                 else
                 {  /* Local card-drag owner used to validate Board provenance */
-
-
                     return false
                 }
 
@@ -1385,12 +1261,8 @@ struct BoardCardDropSurface: UIViewRepresentable
         @discardableResult
         func perform(_ items: [UIDragItem], at point: CGPoint) -> Bool
         {
-
-
             guard accepts(items) else
             {
-
-
                 return false
             }
 
@@ -1414,8 +1286,6 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///
         func dropInteraction(_ interaction: UIDropInteraction, canHandle session: UIDropSession) -> Bool
         {
-
-
             session.localDragSession != nil && accepts(session.items)
         }
 
@@ -1436,13 +1306,9 @@ struct BoardCardDropSurface: UIViewRepresentable
         func dropInteraction(_ interaction: UIDropInteraction, sessionDidUpdate session: UIDropSession)
         -> UIDropProposal
         {
-
-
             guard accepts(session.items), let window = interaction.view?.window
             else
             {  /* Window used to report accepted drag-over coordinates */
-
-
                 return UIDropProposal(operation: .forbidden)
             }
 
@@ -1466,12 +1332,8 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///
         func dropInteraction(_ interaction: UIDropInteraction, performDrop session: UIDropSession)
         {
-
-
             guard let window = interaction.view?.window else
             {  /* Window used to resolve the committed drop point */
-
-
                 return
             }
 
@@ -1493,8 +1355,6 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///
         func collectionView(_ collectionView: UICollectionView, canHandle session: UIDropSession) -> Bool
         {
-
-
             session.localDragSession != nil && accepts(session.items)
         }
 
@@ -1519,13 +1379,9 @@ struct BoardCardDropSurface: UIViewRepresentable
             withDestinationIndexPath destinationIndexPath: IndexPath?
         ) -> UICollectionViewDropProposal
         {
-
-
             guard accepts(session.items), let window = collectionView.window
             else
             {  /* Collection window defining drag-over coordinates */
-
-
                 return UICollectionViewDropProposal(operation: .forbidden)
             }
 
@@ -1552,12 +1408,8 @@ struct BoardCardDropSurface: UIViewRepresentable
             _ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator
         )
         {
-
-
             guard let window = collectionView.window else
             {  /* Collection window defining the final drop coordinates */
-
-
                 return
             }
 
@@ -1578,8 +1430,6 @@ struct BoardCardDropSurface: UIViewRepresentable
     ///
     func makeCoordinator() -> Coordinator
     {
-
-
         Coordinator(self)
     }
 
@@ -1596,8 +1446,6 @@ struct BoardCardDropSurface: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> Probe
     {
-
-
         let probe = Probe() /* Lightweight UIKit anchor for discovering the drop collection */
 
         probe.isUserInteractionEnabled = false
@@ -1620,8 +1468,6 @@ struct BoardCardDropSurface: UIViewRepresentable
     ///
     func updateUIView(_ probe: Probe, context: Context)
     {
-
-
         context.coordinator.surface = self
 
         context.coordinator.install(from: probe)
@@ -1642,8 +1488,6 @@ struct BoardCardDropSurface: UIViewRepresentable
     ///
     static func dismantleUIView(_ probe: Probe, coordinator: Coordinator)
     {
-
-
     // The list retains its one receiver while individual rows are virtualized
 
     }
@@ -1659,8 +1503,6 @@ struct BoardCardDropSurface: UIViewRepresentable
 ///
 struct BoardListCenterPreferenceKey: PreferenceKey
 {
-
-
     /// Current list-center reports keyed by list identity
     static var defaultValue: [Int: CGFloat] = [:] /* Empty card-height measurements before layout */
 
@@ -1679,8 +1521,6 @@ struct BoardListCenterPreferenceKey: PreferenceKey
     ///
     static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat])
     {
-
-
         value.merge(nextValue(), uniquingKeysWith:
             {
                 _, latest in

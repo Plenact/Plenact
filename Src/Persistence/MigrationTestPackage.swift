@@ -14,7 +14,6 @@ import Foundation
 @MainActor
 enum MigrationTestPackage
 {
-
     static let accountID = "f0000000-0000-4000-8000-000000000001" /* Package account identifier */
 
     /// Reject incomplete source coverage, ambiguous values or inconsistent original files
@@ -22,7 +21,6 @@ enum MigrationTestPackage
     ///     Leave the existing backup export available when portable preparation cannot finish
     enum Failure: Error
     {
-
         case reviewRequired, invalidEvidence, unsupportedStore
     }
 
@@ -35,7 +33,6 @@ enum MigrationTestPackage
     /// @throws Invalid or absent evidence errors
     private static func json(_ name: String, files: FileWrapper) throws -> [String: Any]
     {
-
         guard let value = try JSONSerialization.jsonObject(with:
             MigrationBackupReader.file("MigrationPreview/" + name, in: files)) as? [String: Any] else
         {
@@ -52,7 +49,6 @@ enum MigrationTestPackage
     /// @throws JSON serialization errors
     private static func data(_ value: Any) throws -> Data
     {
-
         try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .withoutEscapingSlashes])
     }
 
@@ -64,7 +60,6 @@ enum MigrationTestPackage
     /// @throws Review, coverage, identity, inventory or serialization failures
     static func prepare(_ preview: MigrationPreview) throws -> FileWrapper
     {
-
         let files  = preview.files /* Files used by this operation    */
         let source =               /* Source value for this operation */
             LegacyWorkspaceBackup(files: files, storeCount: 0, mediaCount: 0, reviewCodes: [])
@@ -157,7 +152,6 @@ enum MigrationTestPackage
 
         if files.fileWrappers?["MigrationPreview"]?.fileWrappers?["SelectionPreview.json"] != nil
         {
-
             let draft = try json("SelectionPreview.json", files: files) /* Local editing draft */
 
             guard (draft["issues"] as? [String]) == [], let selections = draft["entries"] as? [[String: Any]] else
@@ -282,7 +276,6 @@ enum MigrationTestPackage
 
         for (name, file) in blobs
         {
-
             let bytes = file.regularFileContents! /* Serialized or original bytes */
 
             manifestFiles.append(["path": "Originals/" + name, "byte_length": bytes.count, "sha256": MigrationBackupReader.digest(bytes)])
@@ -319,7 +312,6 @@ enum MigrationTestPackage
     /// @return Canonical record dictionary
     private static func document(_ kind: String, id: String, workspace: String, payload: [String: Any]) -> [String: Any]
     {
-
         ["user_data_model_version": "1.0", "payload_schema_version": 1, "record_type": kind,
             "id": id, "workspace_id": workspace, "payload": payload]
     }
@@ -334,7 +326,6 @@ enum MigrationTestPackage
     /// @throws Unknown kinds, duplicate singleton or missing ownership errors
     private static func assemble(_ records: [[String: Any]], workspace: String, appearance: [String: Any]) throws -> [String: Any]
     {
-
         let contentKinds  = /* Content kinds */
             ["collection": "collections", "list": "lists", "card": "cards"]
         let planningKinds = /* Planning kinds */
@@ -358,25 +349,21 @@ enum MigrationTestPackage
 
         for key in contentKinds.values
         {
-
             content[key] = [[String: Any]]()
 
         }
         for key in planningKinds.values
         {
-
             planning[key] = [[String: Any]]()
 
         }
         for key in many.values
         {
-
             base[key] = [[String: Any]]()
 
         }
         for key in one.values
         {
-
             base[key] = NSNull()
 
         }
@@ -391,7 +378,6 @@ enum MigrationTestPackage
             }
             if let key = contentKinds[kind]
             {
-
                 var list = content[key] as! [[String: Any]] /* List under consideration */
 
                 list.append(record)
@@ -401,7 +387,6 @@ enum MigrationTestPackage
             }
             else if let key = planningKinds[kind]
             {
-
                 var list = planning[key] as! [[String: Any]] /* List under consideration */
 
                 list.append(record)
@@ -411,7 +396,6 @@ enum MigrationTestPackage
             }
             else if let key = many[kind]
             {
-
                 var list = base[key] as! [[String: Any]] /* List under consideration */
 
                 list.append(record)
@@ -421,7 +405,6 @@ enum MigrationTestPackage
             }
             else if let key = one[kind], base[key] is NSNull
             {
-
                 base[key] = record
 
             }

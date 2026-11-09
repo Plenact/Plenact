@@ -17,8 +17,6 @@ import Foundation
 ///
 struct SectionTransferReceipt
 {
-
-
     let before:      [PersonalCollection]   /* State before the operation      */
     let after:       [PersonalCollection]   /* State after the operation       */
     let source:      WorkspaceListReference /* Source value for this operation */
@@ -41,7 +39,6 @@ struct SectionTransferReceipt
     ///
     func undo(in owners: [PersonalCollection]) throws -> [PersonalCollection]
     {
-
         guard after.allSatisfy(
             {
                 expected in
@@ -51,7 +48,6 @@ struct SectionTransferReceipt
                     }) == expected
             }) else
         {
-
             throw CocoaError(.fileWriteFileExists)
         }
 
@@ -78,8 +74,6 @@ struct SectionTransferReceipt
 ///
 enum SectionTransfer
 {
-
-
     ///
     /// @fcn        SectionTransfer.move
     /// @brief      Transfer a complete named section between active lists
@@ -106,7 +100,6 @@ enum SectionTransfer
         shiftDates: Bool = false, calendar: Calendar = .current
     ) throws -> SectionTransferReceipt
     {
-
         guard source != destination,
         let from = owners.firstIndex(where:
             {
@@ -126,13 +119,11 @@ enum SectionTransfer
             }),
         let start = owners[from].lists[fromList].cards.firstIndex(where:
             {
-
                 $0.id == heading.id && $0.createdAt == heading.createdAt
             }),
         owners[from].lists[fromList].cards[start].sectionHeading != nil
         else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -162,10 +153,8 @@ enum SectionTransfer
 
         for card in block
         {
-
             if !sameOwner && reserved.contains(card.id)
             {
-
                 let (value, overflow) = next.addingReportingOverflow(1) /* Value overflow */
 
                 guard !overflow else
@@ -179,7 +168,6 @@ enum SectionTransfer
             }
             else
             {
-
                 mapping[card.id] = card.id
 
             }
@@ -202,7 +190,6 @@ enum SectionTransfer
 
         if shiftDates, let destinationDay, let anchor
         {
-
             delta =
             calendar.dateComponents(
                 [.day], from: calendar.startOfDay(for: anchor), to: calendar.startOfDay(for: destinationDay)
@@ -211,7 +198,6 @@ enum SectionTransfer
         }
         else
         {
-
             delta = 0
 
         }
@@ -233,7 +219,6 @@ enum SectionTransfer
         ///
         func checklist(_ sourceChecklist: KanbanChecklist, owner: UUID, freeze: Bool) -> KanbanChecklist
         {
-
             let items = sourceChecklist.items.map /* Items being processed */
             {
                 original -> KanbanChecklistItem in
@@ -242,7 +227,6 @@ enum SectionTransfer
 
                 if case .actionDetail(var detail) = item.content
                 {
-
                     detail.checklists = detail.checklists.map
                     {
                         checklist($0, owner: owner, freeze: freeze)
@@ -253,7 +237,6 @@ enum SectionTransfer
                 }
                 else if var detail = item.retainedDetail
                 {
-
                     detail.checklists = detail.checklists.map
                     {
                         checklist($0, owner: owner, freeze: freeze)
@@ -265,7 +248,6 @@ enum SectionTransfer
 
                 let linked: Bool = /* Value linked to another owner */
                 {
-
                     if case .linkedCard = item.content
                     {
                         return true
@@ -276,17 +258,14 @@ enum SectionTransfer
 
                 if freeze && linked && item.linkedCollectionID == nil
                 {
-
                     item.linkedCollectionID = source.ownerID
 
                 }
 
                 if (item.linkedCollectionID ?? owner) == source.ownerID
                 {
-
                     if let id = item.retainedCardID, let newID = mapping[id]
                     {
-
                         item.retainedCardID = newID;
                         item.linkedCollectionID = destination.ownerID
 
@@ -294,7 +273,6 @@ enum SectionTransfer
 
                     if case .linkedCard(let id) = item.content, let newID = mapping[id]
                     {
-
                         item.content = .linkedCard(cardID: newID);
                         item.linkedCollectionID = destination.ownerID
 
@@ -320,17 +298,14 @@ enum SectionTransfer
 
             if delta != 0
             {
-
                 if let value = result.startDate, result.startDateKind != .time
                 {
-
                     result.startDate = calendar.date(byAdding: .day, value: delta, to: value)
 
                 }
 
                 if let value = result.dueDate, result.dueDateKind != .time
                 {
-
                     result.dueDate = calendar.date(byAdding: .day, value: delta, to: value)
 
                 }
@@ -349,16 +324,13 @@ enum SectionTransfer
         snapshot[to].lists[toList].cards.append(contentsOf: moved)
         if !sameOwner
         {
-
             for id in ids where snapshot[from].savedCardIDs.remove(id) != nil
             {
-
                 snapshot[to].savedCardIDs.insert(mapping[id]!)
             }
 
             for index in snapshot.indices
             {
-
                 let owner = snapshot[index].id /* Owning collection or Week */
 
 
@@ -374,7 +346,6 @@ enum SectionTransfer
                 ///
                 func redirect(_ card: KanbanCard) -> KanbanCard
                 {
-
                     var result = card /* Accumulated output value */
 
                     // Moved cards were already redirected; do not apply an ID mapping twice
@@ -396,7 +367,6 @@ enum SectionTransfer
 
                 for listIndex in snapshot[index].lists.indices
                 {
-
                     snapshot[index].lists[listIndex].cards = snapshot[index].lists[listIndex].cards.map(redirect)
                     snapshot[index].lists[listIndex].archivedCards = snapshot[index].lists[listIndex].archivedCards.map(
                         redirect)

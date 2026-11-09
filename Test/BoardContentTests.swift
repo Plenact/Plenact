@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testRandomCardColorPreferencesDefaultOffAndRoundTripWithoutProfile
     /// @brief      Verify that random Card Color Preferences Default Off And Round Trip Without Profile
@@ -36,7 +34,6 @@ extension PlenactBoardDocumentTests
     ///
     func testRandomCardColorPreferencesDefaultOffAndRoundTripWithoutProfile() throws
     {
-
         let old = /* Previous operation state */
             try JSONDecoder().decode(LocalProfilePreferences.self, from: Data("{}".utf8))
 
@@ -60,10 +57,8 @@ extension PlenactBoardDocumentTests
 
         for headers in [false, true]
         {
-
             for backgrounds in [false, true]
             {
-
                 let preferences = LocalProfilePreferences( /* Planning and display choices */
                     randomizesNewCardHeaders: headers, randomizesNewCardBackgrounds: backgrounds)
 
@@ -88,7 +83,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDayDistributionSplitsTagsAndCountsCompletionWithoutInventingTime() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -169,7 +163,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDefaultWeekUsesValidDayAreaTagsWithoutRewritingCustomTags() throws
     {
-
         let labels   = LabelLibrary.starter.includingDayAreas /* Available label definitions */
         let template = PlanningRoutineLibrary.jmr             /* Synthetic template fixture  */
 
@@ -234,7 +227,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLibraryHelpSearchIncludesInstructionsAndExcludesUserCollections() throws
     {
-
         XCTAssertEqual(
             LibraryBrowseFilter.allCases.map(\.rawValue),
             ["All", "Lists", "Boards", "Labels", "Examples", "Templates", "Help"])
@@ -291,16 +283,13 @@ extension PlenactBoardDocumentTests
     ///
     func testCustomMoodRequiresOneEmojiAndMeaningfulShortText()
     {
-
         for emoji in ["🌤️", "👩🏽‍💻", "🇺🇸", "❤️", "🫶🏽", "😊"]
         {
-
             XCTAssertNotNil(CheckInMood.custom(emoji: emoji, label: "Feeling focused"), emoji)
         }
 
         for emoji in ["", "  ", "a", "1", "😊😊", "hello"]
         {
-
             XCTAssertNil(CheckInMood.custom(emoji: emoji, label: "Focused"), emoji)
         }
 
@@ -323,7 +312,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testLowerCornerBackReservesSpaceOnlyWhenEnabledAndBackExists() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -334,7 +322,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -358,7 +345,6 @@ extension PlenactBoardDocumentTests
             ("root", true, false, 0), ("toolbar", true, true, 56)
         ]
         {
-
             var preferences = LocalProfilePreferences() /* Planning and display choices */
 
             preferences.enablesLowerCornerBack = enabled
@@ -370,18 +356,15 @@ extension PlenactBoardDocumentTests
                 rootView: Color.blue
                 .onGeometryChange(for: CGFloat.self)
                 {
-
                     $0.size.height
                 }
                 action:
                 {
-
                     measured = $0
 
                 }
                 .modifier(LowerCornerBackShortcut(action: hasBack ?
                         {
-
                             activations += 1
 
                         } : nil))
@@ -417,7 +400,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCornerBackResolvesLegacyProfileAndHonorsExplicitPreference() throws
     {
-
         let suite    = "CornerBackLegacy." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                         /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -472,7 +454,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCreatedContentRevealFindsDestinationColumnAndGalleryTile() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -483,7 +464,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             if let target = CreatedContentReveal.shared.target
             {
                 CreatedContentReveal.shared.complete(target)
@@ -508,7 +488,6 @@ extension PlenactBoardDocumentTests
         ///
         func scrolls(in view: UIView) -> [UIScrollView]
         {
-
             ((view as? UIScrollView).map
                 {
                     [$0]
@@ -522,7 +501,6 @@ extension PlenactBoardDocumentTests
 
         for gallery in [false, true]
         {
-
             let owner = UUID() /* Owning collection or Week */
             let key   =        /* Lookup or persistence key */
                 BoardViewportMemory.prefix + owner.uuidString
@@ -573,7 +551,6 @@ extension PlenactBoardDocumentTests
                 }, "Creation must reveal the row/tile, gallery: \(gallery)")
             if !gallery
             {
-
                 XCTAssertTrue(native.contains
                     {
                         $0.contentOffset.x > 100
@@ -603,7 +580,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCreatedContentRevealTargetsExactRecordAndRetainsNewerRequests() throws
     {
-
         let reveal = CreatedContentReveal() /* Reveal comparison fixture */
         let first  =                        /* First comparison value    */
             KanbanList(id: 4, title: "Monday", cards: []).makeItem(
@@ -649,7 +625,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDailySlogansStayStableAndRotateThroughSixtyLocalDays() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
@@ -664,7 +639,6 @@ extension PlenactBoardDocumentTests
 
         for day in 0 ..< 60
         {
-
             let morning = /* Morning comparison fixture */
                 try XCTUnwrap(calendar.date(byAdding: .day, value: day, to: anchor))
             let evening = /* Evening comparison fixture */
@@ -703,7 +677,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDailySloganUsesLocalMidnightAcrossTimeZones() throws
     {
-
         let instant = /* Reference time value */
             try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-16T04:30:00Z"))
         var chicago = Calendar(identifier: .gregorian) /* Chicago comparison fixture */
@@ -729,7 +702,6 @@ extension PlenactBoardDocumentTests
     ///
     func testReferenceLabelSupportsLegacyAndExistingCustomCatalogs()
     {
-
         let legacy = LabelLibrary(categories: [], labels: []) /* Earlier-format input */
 
         XCTAssertEqual(legacy.includingReference.labels, [LabelLibrary.referenceLabel])
@@ -755,7 +727,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSessionGuidanceMigrationPreservesCustomizedWelcomeCards() throws
     {
-
         let suite    = "SessionGuidance." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                        /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -767,7 +738,6 @@ extension PlenactBoardDocumentTests
 
         for title in ["On the Table", "In the Queue", "Scheduled"]
         {
-
             let original = /* Baseline before changes */
                 DefaultListTutorial.makeStarter(title: title, includesWelcomeCard: true)
             var edited   = original /* Snapshot after requested edits */
@@ -783,7 +753,6 @@ extension PlenactBoardDocumentTests
             bookmarked.savedCardIDs.insert(0)
             for retained in [edited, completed, bookmarked]
             {
-
                 XCTAssertEqual(DefaultListTutorial.removingUntouchedWelcomeCards(from: retained), retained)
             }
 
@@ -814,12 +783,10 @@ extension PlenactBoardDocumentTests
     ///
     func testDefaultListsDoNotReplaceExistingOrLegacyInstallations() throws
     {
-
         for savedKey in [
                         "Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, TodayListPins.key
         ]
         {
-
             let suite    = /* Isolated preference domain */
                 "Plenact.ExistingInstallTests." + UUID().uuidString
             let defaults = /* Preference store under test */
@@ -852,7 +819,6 @@ extension PlenactBoardDocumentTests
     ///
     func testWorkspaceLabelsCountOnlyActiveItemsAndKeepOwnerIdentity() throws
     {
-
         let catalog = LabelLibrary.starter                /* Available library entries   */
         let label   = try XCTUnwrap(catalog.labels.first) /* Resolved display label      */
         let date    =                                     /* Date used by this operation */
@@ -922,7 +888,6 @@ extension PlenactBoardDocumentTests
     ///
     func testTodayShortcutPinsKeepOrderOwnerAndSixItemLimit()
     {
-
         let first  = WorkspaceListReference(ownerID: UUID(), listID: 0) /* First comparison value */
         let second = /* Second comparison value */
             WorkspaceListReference(ownerID: UUID(), listID: 0)
@@ -953,7 +918,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWelcomeCueLaunchAndFourHourReturnPolicy()
     {
-
         let name     = /* Display or lookup name */
             "PlenactTests.WelcomePolicy." + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)! /* Preference store under test */
@@ -1001,7 +965,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWelcomeCuePulsesInOrderAndSettlesWithoutRepeating() async
     {
-
         let cue = /* Cue comparison fixture */
             TodayWelcomeCue(defaults: UserDefaults(suiteName: "PlenactTests.WelcomeSequence")!)
 
@@ -1045,7 +1008,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWelcomeCueReduceMotionAndInteractionCancellation() async
     {
-
         let cue = /* Cue comparison fixture */
             TodayWelcomeCue(defaults: UserDefaults(suiteName: "PlenactTests.WelcomeCancellation")!)
 
@@ -1106,13 +1068,11 @@ extension PlenactBoardDocumentTests
     ///
     func testLaunchPacingRevealsEvenlyAndWaitsForReadiness()
     {
-
         let ready = /* Ready comparison fixture */
             PlenactLaunchProgress(stage: .welcome, finished: true)
 
         for (time, stage) in [(0.0, PlenactLaunchStage.restore), (0.23, .plans), (0.45, .ready), (0.67, .welcome)]
         {
-
             let visual = ready.paced(elapsed: time) /* Visual comparison fixture */
 
             XCTAssertEqual(visual.stage, stage)
@@ -1139,10 +1099,8 @@ extension PlenactBoardDocumentTests
     ///
     func testDaySelectorResolvesDatesAcrossWeeksWithoutChangingContent() throws
     {
-
         for firstWeekday in [1, 2]
         {
-
             var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
             calendar.firstWeekday = firstWeekday
@@ -1172,7 +1130,6 @@ extension PlenactBoardDocumentTests
             XCTAssertEqual(selection.week, week)
             for offset in -9 ... 9
             {
-
                 let target   = /* Target under consideration */
                     try XCTUnwrap(calendar.date(byAdding: .day, value: offset, to: date))
                 let selected = /* Current selection */
@@ -1204,7 +1161,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCardDisplayProfilesResolveCardThenListThenBoard() throws
     {
-
         var board = BoardAppearance() /* Board state under review */
 
         XCTAssertEqual(board.resolvedCardDetail(card: nil, list: nil), .detailed)
@@ -1250,7 +1206,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCardDisplayProfilesRoundTripWithoutChangingContent() throws
     {
-
         var collection = /* Synthetic collection fixture */
             PersonalCollection(title: "Profiles", kind: .board)
         var card       = /* Synthetic card fixture */
@@ -1304,7 +1259,6 @@ extension PlenactBoardDocumentTests
     ///
     func testWeekTodayHighlightUsesExactDateAcrossWeeksAndTimeZones() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -1316,7 +1270,6 @@ extension PlenactBoardDocumentTests
         XCTAssertFalse(WeekDayHighlight.isToday(nil, now: today, calendar: calendar))
         for key in ["2026-10-10", "2026-10-16", "2026-10-18", "2026-10-24"]
         {
-
             XCTAssertFalse(
                 WeekDayHighlight.isToday(PlanningDate.date(key, calendar: calendar), now: today, calendar: calendar))
         }
@@ -1346,7 +1299,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLegacyMondayFirstBoardUsesFollowingSundayWithoutRelabellingOldWork() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!;
@@ -1416,7 +1368,6 @@ extension PlenactBoardDocumentTests
     ///
     func testMondayStartOnSundayKeepsConsecutiveDatesAndFollowingSundaySeparate() throws
     {
-
         let today    = try XCTUnwrap(PlanningDate.date("2026-10-11")) /* Current local day */
         var calendar = Calendar.current /* Date calculation calendar */
 
@@ -1477,7 +1428,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDueBadgeOmitsOnlyTheOwningListsAssignedDay() throws
     {
-
         let calendar = Calendar.current /* Date calculation calendar */
         let due      = try XCTUnwrap(   /* Due date or time          */
             calendar.date(from: DateComponents(year: 2026, month: 10, day: 11, hour: 17, minute: 46)))
@@ -1531,7 +1481,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testOverflowReadingPreferenceSwitchesMountedReaderWithoutChangingText() async throws
     {
-
         let suite    = "OverflowReaderRender." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                             /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -1556,7 +1505,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -1576,7 +1524,6 @@ extension PlenactBoardDocumentTests
         ///
         func scrolls(_ view: UIView) -> [UIScrollView]
         {
-
             ((view as? UIScrollView).map
                 {
                     [$0]
@@ -1637,7 +1584,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testLibraryLongNamesStayCompactAndExpandForAccessibility() async throws
     {
-
         let title          = /* User-facing title */
             Array(repeating: "On the Table", count: 8).joined(separator: ", ")
         let row            = /* Rendered or stored item row */
@@ -1670,7 +1616,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testEditorBannerDoesNotInsertNativeNavigationBar() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -1681,7 +1626,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -1701,10 +1645,8 @@ extension PlenactBoardDocumentTests
         ///
         func navigationController(in controller: UIViewController) -> UINavigationController?
         {
-
             if let navigation = controller as? UINavigationController
             {
-
                 return navigation
             }
 
@@ -1717,10 +1659,8 @@ extension PlenactBoardDocumentTests
 
         for isNote in [false, true]
         {
-
             for background in [nil, ItemAccent.orange]
             {
-
                 let card = KanbanCard( /* Synthetic card fixture */
                     id: 94, word: "Synthetic banner", listTitle: "Friday",
                     presentation: isNote ? .note : .card,
@@ -1733,7 +1673,6 @@ extension PlenactBoardDocumentTests
                 let controller            = UIHostingController( /* Native view controller */
                     rootView: NavigationStack
                     {
-
                         CardDetailView(card: card, onTitleToggle:
                             {
                                 emitted.append($0)
@@ -1785,12 +1724,10 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBannerBackgroundFillsProposedWidthWithoutLegacyAccentDecoration()
     {
-
         let background = ItemAppearance(background: .green) /* Resolved background appearance */
 
         for scheme in [ColorScheme.light, .dark]
         {
-
             let controller = UIHostingController( /* Native view controller */
                 rootView:
                 HStack
@@ -1828,7 +1765,6 @@ extension PlenactBoardDocumentTests
     ///
     func testBannerBackgroundIsIndependentAndBackwardCompatible() throws
     {
-
         let legacy = try JSONDecoder().decode( /* Earlier-format input */
             ItemAppearance.self, from: Data(#"{"accent":"teal","icon":"heart"}"#.utf8))
 
@@ -1841,7 +1777,6 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(json["background"])
         for color in ItemAccent.allCases
         {
-
             let backgroundOnly = ItemAppearance(background: color) /* Background only */
 
             XCTAssertFalse(backgroundOnly.isEmpty)
@@ -1881,14 +1816,12 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardCardBackgroundIsOptionalAndIndependentOfItemAppearance() throws
     {
-
         let legacy = try JSONDecoder().decode( /* Earlier-format input */
             BoardAppearance.self, from: Data(#"{"bannerBackground":"blue","listBackground":"green"}"#.utf8))
 
         XCTAssertNil(legacy.cardBackground)
         for tint in KanbanListTint.allCases
         {
-
             let theme = BoardAppearance(cardBackground: tint) /* Theme comparison fixture */
 
             XCTAssertEqual(try BoardAppearance.decodeWeek(JSONEncoder().encode(theme)), theme)
@@ -1915,7 +1848,6 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardAppearanceInheritanceAndApplyingAllPreserveContent() throws
     {
-
         let theme = /* Theme comparison fixture */
             BoardAppearance(bannerBackground: .blue, listBackground: .green)
 
@@ -1974,14 +1906,12 @@ extension PlenactBoardDocumentTests
     ///
     func testListBackgroundTintRoundTripsAndKeepsLegacyDefaults() throws
     {
-
         let legacy = /* Earlier-format input */
             try JSONDecoder().decode(ItemAppearance.self, from: Data(#"{"background":"blue"}"#.utf8))
 
         XCTAssertNil(legacy.listBackground)
         for tint in KanbanListTint.allCases where tint != .neutral
         {
-
             let appearance = /* Resolved appearance choices */
                 ItemAppearance(background: .purple, listBackground: tint)
 
@@ -2026,7 +1956,6 @@ extension PlenactBoardDocumentTests
     ///
     func testEmptySubtitleAppearanceIsOptionalAndNeverHidesWriting() throws
     {
-
         let legacy = /* Earlier-format input */
             try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
 
@@ -2071,7 +2000,6 @@ extension PlenactBoardDocumentTests
     ///
     func testOptionalAppearancePreservesLegacyJSONAndRejectsInvalidValues() throws
     {
-
         let card = try JSONDecoder().decode( /* Synthetic card fixture */
             KanbanCard.self, from: Data(#"{"id":1,"word":"Plan","listTitle":"Monday","checklists":[]}"#.utf8))
         let list = /* Synthetic list fixture */
@@ -2081,7 +2009,6 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(list.appearance)
         for data in [try JSONEncoder().encode(card), try JSONEncoder().encode(list)]
         {
-
             let json = /* JSON representation */
                 try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
 
@@ -2102,7 +2029,6 @@ extension PlenactBoardDocumentTests
                 from: Data(#"{"id":0,"title":"Monday","cards":[],"appearance":{"icon":"invalid"}}"#.utf8)))
         for accent in ItemAccent.allCases
         {
-
             let value = ItemAppearance(accent: accent, icon: nil) /* Value being processed */
 
             XCTAssertEqual(try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(value)), value)
@@ -2110,7 +2036,6 @@ extension PlenactBoardDocumentTests
 
         for icon in PersonalCollectionIcon.allCases
         {
-
             let value = ItemAppearance(accent: nil, icon: icon) /* Value being processed */
 
             XCTAssertEqual(try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(value)), value)

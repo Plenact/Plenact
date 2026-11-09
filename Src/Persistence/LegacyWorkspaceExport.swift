@@ -13,7 +13,6 @@ import Foundation
 ///     Preserve current source bytes before any future conversion or cloud write
 struct LegacyWorkspaceBackup
 {
-
     let files:       FileWrapper /* Frozen directory ready for the Files exporter */
     let storeCount:  Int         /* Number of captured present preference values  */
     let mediaCount:  Int         /* Number of original media files                */
@@ -28,7 +27,6 @@ struct LegacyWorkspaceBackup
 @MainActor
 enum LegacyWorkspaceExport
 {
-
     static let mediaRoots = [ /* Media roots */
         "Documents/CardAttachments", "Documents/ProfileAvatars",
         "Library/Application Support/PlenactStudioArtwork",
@@ -43,7 +41,6 @@ enum LegacyWorkspaceExport
     ///     Explain why a consistent, bounded source backup could not be prepared
     enum Failure: LocalizedError
     {
-
         case unsafeFile, changedSource, tooLarge, missingDomain
 
         /// @fcn Failure.errorDescription
@@ -51,7 +48,6 @@ enum LegacyWorkspaceExport
         /// @return A description containing no source values or private paths
         var errorDescription: String? /* Readable failure explanation */
         {
-
             switch self
             {
             case .unsafeFile: return "A media file could not be safely included. Your saved data is unchanged."
@@ -69,7 +65,6 @@ enum LegacyWorkspaceExport
     /// @return Lowercase SHA-256 hexadecimal digest
     private static func digest(_ data: Data) -> String
     {
-
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
@@ -82,14 +77,12 @@ enum LegacyWorkspaceExport
     /// @throws Unsafe paths, unreadable files or the explicit size ceiling
     private static func inventory(root: URL) throws -> [String: Data]
     {
-
         let manager                = FileManager.default /* File access stays within the supplied source container */
         var result: [String: Data] = [:]                 /* Complete media inventory, including unreferenced originals */
         var size                   = 0                   /* Running memory bound */
 
         for area in mediaRoots
         {
-
             var directory = root /* Working directory location */
 
             for component in area.split(separator: "/")
@@ -97,7 +90,6 @@ enum LegacyWorkspaceExport
                 directory.appendPathComponent(String(component))
                 if manager.fileExists(atPath: directory.path)
                 {
-
                     let attributes = /* Attributed-text settings */
                         try manager.attributesOfItem(atPath: directory.path)
 
@@ -120,7 +112,6 @@ enum LegacyWorkspaceExport
 
             for file in entries
             {
-
                 let attributes = /* Attributed-text settings */
                     try manager.attributesOfItem(atPath: file.path)
 
@@ -168,12 +159,10 @@ enum LegacyWorkspaceExport
     /// @throws Unreadable directories, symlinks and special files
     private static func regularFiles(in directory: URL) throws -> [URL]
     {
-
         var files: [URL] = [] /* Files used by this operation */
 
         for child in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
         {
-
             let attributes = /* Attributed-text settings */
                 try FileManager.default.attributesOfItem(atPath: child.path)
 
@@ -199,7 +188,6 @@ enum LegacyWorkspaceExport
     /// @return Void; adds the leaf without writing the source container
     private static func insert(_ data: Data, path: String, directory: FileWrapper)
     {
-
         let parts  = path.split(separator: "/").map(String.init) /* Parsed value components */
         var parent = directory                                   /* Owning view or model    */
 
@@ -207,13 +195,11 @@ enum LegacyWorkspaceExport
         {
             if let existing = parent.fileWrappers?[part]
             {
-
                 parent = existing
 
             }
             else
             {
-
                 let child = FileWrapper(directoryWithFileWrappers: [:]) /* Nested view or record */
 
                 child.preferredFilename = part
@@ -245,7 +231,6 @@ enum LegacyWorkspaceExport
     /// @throws Source changes, unsafe media, invalid plist or bounded-memory failures
     static func capture(defaults: UserDefaults, domain: String, root: URL) throws -> LegacyWorkspaceBackup
     {
-
         KanbanBoardPersistence.waitForPendingSaves()
 
         let migrationURL = root.resolvingSymlinksInPath() /* Migration URL */
@@ -340,7 +325,6 @@ enum LegacyWorkspaceExport
 
         if !portableRuntime.isEmpty
         {
-
             manifest["portable_runtime_files"] = portableRuntime.keys.sorted().map { name in
                 ["name": name, "sha256": digest(portableRuntime[name]!), "byte_length": portableRuntime[name]!.count] as [String: Any]
             }

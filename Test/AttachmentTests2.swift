@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testLargeLocalCoverIsDownsampledAndRemovalKeepsItsMedia()
     /// @brief      Verify actual large-photo decoding and non-destructive cover disabling
@@ -35,8 +33,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLargeLocalCoverIsDownsampledAndRemovalKeepsItsMedia() throws
     {
-
-
         let format = UIGraphicsImageRendererFormat() /* Image-rendering configuration */
 
         format.scale = 1
@@ -57,8 +53,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             try? CardAttachmentStore.removeDeletedFiles([fileName], keeping: [])
         }
 
@@ -96,15 +90,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCoverRowsRemainBoundedAndCanBeDisabledWithoutContentChanges() throws
     {
-
-
         let suite    = "Plenact.CoverLayoutTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -128,8 +118,6 @@ extension PlenactBoardDocumentTests
         ///
         func measure(_ preset: BoardPresentation, enabled: Bool) -> CGFloat
         {
-
-
             defaults.set(enabled, forKey: "Plenact.CardCovers.enabled")
 
             let row = KanbanCardView( /* Rendered collection row */
@@ -182,8 +170,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDeletionMediaCleanupPreservesRetainedCopiesAndUnrelatedFiles() throws
     {
-
-
         let candidate = try CardAttachmentStore.saveMedia( /* Candidate under validation */
             Data([1, 2, 3]), kind: .photo, fileExtension: "jpg") /* Candidate value for validation */
         let unrelated = try CardAttachmentStore.saveMedia( /* Unrelated content bytes */
@@ -193,8 +179,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             try? CardAttachmentStore.removeDeletedFiles([candidateName, unrelatedName], keeping: [])
         }
 
@@ -225,8 +209,6 @@ extension PlenactBoardDocumentTests
 
         for invalidName in ["", ".", "..", "../outside.jpg"]
         {
-
-
             XCTAssertThrowsError(try CardAttachmentStore.removeDeletedFiles([invalidName], keeping: []))
         }
 

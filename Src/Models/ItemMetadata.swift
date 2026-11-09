@@ -19,8 +19,6 @@ import Foundation
 ///
 enum CardAssigneeKind: String, Codable, Sendable
 {
-
-
     case registeredUser  /* Stable server user reference */
     case manual          /* User-entered display name    */
 }
@@ -34,8 +32,6 @@ enum CardAssigneeKind: String, Codable, Sendable
 ///
 struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable
 {
-
-
     let id:          UUID             /* Stable assignment row ID  */
     let kind:        CardAssigneeKind /* Registered or manual      */
     let userID:      String?          /* Stable registered user ID */
@@ -56,8 +52,6 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
     ///
     init(id: UUID = UUID(), kind: CardAssigneeKind, userID: String? = nil, displayName: String)
     {
-
-
         self.id = id
         self.kind = kind
         self.userID = userID
@@ -77,8 +71,6 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
     ///
     static func manual(_ displayName: String) -> CardAssignee
     {
-
-
         CardAssignee(kind: .manual, displayName: displayName)
     }
 
@@ -95,8 +87,6 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
     ///
     static func registered(userID: String, displayName: String) -> CardAssignee
     {
-
-
         CardAssignee(kind: .registeredUser, userID: userID, displayName: displayName)
     }
 
@@ -112,8 +102,6 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
     ///
     init(stringLiteral value: String)
     {
-
-
         self = .manual(value)
 
     }
@@ -129,8 +117,6 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
 ///
 enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable
 {
-
-
     case card
     case note
 
@@ -156,8 +142,6 @@ enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
 {
-
-
     case card, note, divider, picture, title, text
 
     var id: String /* Record or view identity */
@@ -172,10 +156,8 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
 
     var symbol: String /* Selected symbol name */
     {
-
         switch self
         {
-
         case .card:
                     "rectangle.stack"
         case .note:
@@ -204,8 +186,6 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 {
-
-
     case date, time, dateAndTime
     var id: String /* Record or view identity */
     {
@@ -214,10 +194,8 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 
     var title: String /* User-facing title */
     {
-
         switch self
         {
-
         case .date:
                     "Date only";
 
@@ -254,7 +232,6 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
     ///
     func normalized(_ value: Date, calendar: Calendar = .current) -> Date
     {
-
         self == .date ? calendar.startOfDay(for: value) : value
     }
 
@@ -270,7 +247,6 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
     ///
     func label(for value: Date) -> String
     {
-
         let date = DateFormatter() /* Date used by this operation */
 
         date.dateStyle = .medium
@@ -282,7 +258,6 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 
         switch self
         {
-
         case .date:
             return date.string(from: value)
         case .time:
@@ -305,8 +280,6 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 ///
 struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
 {
-
-
     var id = UUID()        /* Record UUID         */
     let emoji:    String   /* Chosen emoji symbol */
     let authorID: UUID     /* Author ID           */
@@ -325,14 +298,12 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
     ///
     static func validatedEmoji(_ input: String) -> String?
     {
-
         let value = /* Value being processed */
             input.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard value.count == 1,
         value.unicodeScalars.contains(where:
             {
-
                 $0.properties.isEmoji
                 && ($0.value > 127 || value.unicodeScalars.contains(where:
                         {
@@ -362,7 +333,6 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
     ///
     static func toggling(_ input: String, authorID: UUID, in reactions: [Self]) -> [Self]?
     {
-
         guard let emoji = validatedEmoji(input) else
         {
             return nil
@@ -373,7 +343,6 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
                 $0.authorID == authorID && $0.emoji == emoji
             })
         {
-
             return reactions.filter
             {
                 !($0.authorID == authorID && $0.emoji == emoji)
@@ -396,8 +365,6 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
 ///
 enum LocalReactionIdentity
 {
-
-
     static let key = "Plenact.LocalReactionAuthor.v1" /* Lookup or persistence key */
 
 
@@ -413,7 +380,6 @@ enum LocalReactionIdentity
     ///
     static func current(in defaults: UserDefaults = .standard) -> UUID?
     {
-
         defaults.string(forKey: key).flatMap(UUID.init(uuidString:))
     }
 
@@ -429,7 +395,6 @@ enum LocalReactionIdentity
     ///
     static func forUserAction(in defaults: UserDefaults = .standard) -> UUID
     {
-
         if let existing = current(in: defaults)
         {
             return existing
@@ -455,8 +420,6 @@ enum LocalReactionIdentity
 ///
 struct KanbanComment: Identifiable, Hashable, Codable, Sendable
 {
-
-
     let id:        UUID   /* Unique identifier for the comment                 */
     let author:    String /* Author of the comment                             */
     let body:      String /* Body text of the comment                          */
@@ -479,8 +442,6 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable
     ///
     init(id: UUID = UUID(), author: String, body: String, createdAt: Date = .now)
     {
-
-
         self.id = id
         self.author = author
         self.body = body
@@ -499,8 +460,6 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable
 ///
 enum NoteTextSharing
 {
-
-
     ///
     /// @fcn        NoteTextSharing.text(for:)
     /// @brief      Compose the shareable text for a Note
@@ -513,26 +472,19 @@ enum NoteTextSharing
     ///
     static func text(for note: KanbanCard) -> String
     {
-
-
         var sections = [note.word] /* Share-text sections beginning with the Note title */
 
         if let body = note.descriptionOverride, !body.isEmpty
         {  /* Nonempty Note body included in shared text */
-
-
             sections.append(PlanRichText.plain(body))
         }
 
         let links = (note.attachments ?? []).compactMap /* Resolved content references */
         {
-
         attachment -> String? in /* Web links appended to the shared Note text */
             guard attachment.kind == .link, let url = attachment.url
             else
             {  /* Address of a shareable link attachment     */
-
-
                 return nil
             }
 
@@ -541,8 +493,6 @@ enum NoteTextSharing
 
         if !links.isEmpty
         {
-
-
             sections.append(links.joined(separator: "\n\n"))
         }
 
@@ -561,8 +511,6 @@ enum NoteTextSharing
 ///
 enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
 {
-
-
     case quickActions, media, description, details, checklists, activity
     var id: String /* Record or view identity */
     {
@@ -571,10 +519,8 @@ enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
 
     var title: String /* User-facing title */
     {
-
         switch self
         {
-
         case .quickActions:
                     "Quick Actions"
         case .media:
@@ -603,14 +549,11 @@ enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
 ///
 struct CardSectionLayout: Hashable, Codable, Sendable
 {
-
-
     var order:    [CardSection]    = CardSection.allCases /* Display ordering policy  */
     var hidden:   Set<CardSection> = []                   /* Content visibility state */
 
     var sections: [CardSection] /* Ordered section groups */
     {
-
         var seen: Set<CardSection> = [] /* Identities already encountered */
 
         return (order + CardSection.allCases).filter
@@ -632,8 +575,6 @@ struct CardSectionLayout: Hashable, Codable, Sendable
 ///
 struct CardScheduleBadge: Equatable
 {
-
-
     let title:       String /* User-facing title     */
     let value:       String /* Value being processed */
     let systemImage: String /* System image          */

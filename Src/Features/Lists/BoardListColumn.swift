@@ -21,8 +21,6 @@ import UniformTypeIdentifiers
 ///
 struct KanbanListView: View
 {
-
-
     @State private var confirmsCheckmarkReset = false              /* Confirms checkmark reset */
 
     @State private var checkmarkReset: ListCheckmarkReset?         /* Checkmark reset          */
@@ -38,8 +36,6 @@ struct KanbanListView: View
     ///
     private enum ActiveSheet: String, Identifiable
     {
-
-
         case listActions
         case newCard
 
@@ -137,7 +133,6 @@ struct KanbanListView: View
         false
     var onFinishNaming: () -> Void                                                          = /* Finish naming callback */
     {
-
     }
 
     var onOpenDayView: (() -> Void)?                  = nil /* Open day view callback */
@@ -151,20 +146,17 @@ struct KanbanListView: View
     var listActionsRequest                            = 0 /* List actions request */
     var onConsumeListActions: () -> Void              = /* Consume list actions callback */
     {
-
     }
 
 
     private var styledListTitle: AttributedString /* Styled list title */
     {
-
         var title = AttributedString(list.title) /* User-facing title */
 
         title.font = .title3.weight(.bold)
 
         if let datedTitle
         {
-
             var date = /* Date used by this operation */
                 AttributedString(String(datedTitle.dropFirst(list.title.count)))
 
@@ -229,10 +221,8 @@ struct KanbanListView: View
 
     private var dayOpeningLabel: String /* Day opening label */
     {
-
         assignedDate.map
         {
-
             (isCurrentDay ? "Today. Open " : "Open ") + $0.formatted(.dateTime.weekday(.wide).month(.wide).day().year())
         }
         ?? list.title
@@ -240,18 +230,14 @@ struct KanbanListView: View
 
     @ViewBuilder private var listSubtitle: some View /* List subtitle */
     {
-
         if canOpenDatedDay
         {
-
             Button
             {
-
                 onOpenDayView?()
             }
             label:
             {
-
                 Text(list.subtitle)
                 .font(boardAppearance.resolvedSubtitleItalic(list: list.appearance) ? .caption.italic() : .caption)
                 .foregroundStyle(.secondary).lineLimit(1)
@@ -264,7 +250,6 @@ struct KanbanListView: View
         }
         else
         {
-
             Text(list.subtitle)
                 .font(boardAppearance.resolvedSubtitleItalic(list: list.appearance) ? .caption.italic() : .caption)
                 .foregroundStyle(.secondary).lineLimit(1)
@@ -275,7 +260,6 @@ struct KanbanListView: View
 
     private var listReorderGesture: some Gesture /* List reorder gesture */
     {  /* Long-press then drag sequence for reordering this list */
-
         LongPressGesture(minimumDuration: 0.45, maximumDistance: 12)
         .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("WeekListsViewport")))
         .updating($isHoldingList)
@@ -283,8 +267,6 @@ struct KanbanListView: View
             value, state, _ in
             if case .second(true, _) = value
             {
-
-
                 state = true
 
             }
@@ -295,8 +277,6 @@ struct KanbanListView: View
             value in
             if case .second(true, let drag) = value
             {  /* Drag sample following a successful list long press */
-
-
                 onListDragChanged(drag)
             }
 
@@ -322,7 +302,6 @@ struct KanbanListView: View
     ///
     private func usesCompactCards(_ card: KanbanCard) -> Bool
     {
-
         boardAppearance.resolvedCardDetail(card: card.appearance, list: list.appearance) == .compact
     }
 
@@ -339,7 +318,6 @@ struct KanbanListView: View
     ///
     private func cardHeight(for card: KanbanCard) -> CGFloat
     {
-
         (usesCompactCards(card) ? 64 : presentation.minimumCardHeight) * cardScale
     }
 
@@ -355,10 +333,8 @@ struct KanbanListView: View
     ///
     private var cardCollectionContentHeight: CGFloat /* Card collection content height */
     {  /* Total card content height including row spacing */
-
         let rowHeight = DaySections.visible(list.cards).reduce(CGFloat.zero) /* Row height */
         {
-
         height, card in /* Accumulated measured or estimated card heights  */
             height
             + (card.isSectionDivider
@@ -384,7 +360,6 @@ struct KanbanListView: View
     ///
     private var cardCollectionHeight: CGFloat /* Card collection height */
     {  /* Card collection height capped by the remaining list viewport */
-
         let availableHeight = max( /* Available height */
             1, availableListHeight - (hidesPanelHeader ? 0 : headerHeight) - 24) /* Vertical space remaining after header and panel padding      */
 
@@ -405,12 +380,8 @@ struct KanbanListView: View
     @ViewBuilder
     private func cardInsertionMarker(before cardID: Int?) -> some View
     {
-
-
         if isCardDropTarget && dropBeforeCardID == cardID
         {
-
-
             Rectangle().fill(Color.accentColor).frame(height: 4)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
@@ -421,7 +392,6 @@ struct KanbanListView: View
 
     private var cardDropSurface: some View /* Card drop surface */
     {  /* Native drop receiver covering the list's card collection */
-
         BoardCardDropSurface(
             token: cardDragToken,
             isEnabled: editMode != .active,
@@ -430,8 +400,6 @@ struct KanbanListView: View
                 point in
                 if let cardID = draggedCardID
                 {  /* Active record identity paired with drop pointer updates */
-
-
                     onCardDragChanged(cardID, point)
                 }
 
@@ -450,20 +418,15 @@ struct KanbanListView: View
     ///
     @ViewBuilder private var panelHeader: some View /* Panel header */
     {
-
         if !hidesPanelHeader
         {
-
             VStack(alignment: .leading, spacing: 0)
             {
-
                 HStack(alignment: .firstTextBaseline, spacing: 8)
                 {
-
                     ItemAppearanceMark(appearance: list.headerAppearance())
                     if isNamingNewList
                     {
-
                         InlineBoardListTitle(
                             list: list,
                             onSave:
@@ -477,7 +440,6 @@ struct KanbanListView: View
                     }
                     else
                     {
-
                         Text(styledListTitle)
                         .font(.title3.weight(.bold))
                         .fixedSize(horizontal: false, vertical: true)
@@ -487,7 +449,6 @@ struct KanbanListView: View
 
                     if isCurrentDay
                     {
-
                         Text("Today")
                         .font(.caption2.weight(.bold))
                         .lineLimit(1).fixedSize()
@@ -507,7 +468,6 @@ struct KanbanListView: View
                 .simultaneousGesture(
                     TapGesture().onEnded
                     {
-
                         if !isNamingNewList && canOpenDatedDay && !isHoldingList
                         {
                             onOpenDayView?()
@@ -526,11 +486,8 @@ struct KanbanListView: View
                 )
                 .accessibilityAction(named: "Move earlier")
                 {
-
                     if canMoveEarlier
                     {
-
-
                         onMoveList(-1)
                     }
 
@@ -538,11 +495,8 @@ struct KanbanListView: View
 
                 .accessibilityAction(named: "Move later")
                 {
-
                     if canMoveLater
                     {
-
-
                         onMoveList(1)
                     }
 
@@ -553,8 +507,6 @@ struct KanbanListView: View
                     _, holding in
                     if !holding
                     {
-
-
                         onListDragEnded()
                     }
 
@@ -563,15 +515,10 @@ struct KanbanListView: View
                 .sensoryFeedback(.selection, trigger: isHoldingList)
                 HStack(spacing: 0)
                 {
-
                     VStack(alignment: .leading, spacing: 3)
                     {
-
-
                         if presentation == .standard
                         {
-
-
                             listSubtitle
                         }
 
@@ -581,8 +528,6 @@ struct KanbanListView: View
 
                     if isWatching
                     {
-
-
                         Image(systemName: "eye.fill")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -591,14 +536,11 @@ struct KanbanListView: View
 
                     Button
                     {
-
                         activeSheet = .listActions
 
                     }
                     label:
                     {
-
-
                         Image(systemName: "ellipsis")
                         .foregroundStyle(.secondary)
                         .frame(width: 44, height: 44)
@@ -618,14 +560,12 @@ struct KanbanListView: View
             .itemBannerBackground(effectiveAppearance)
             .background
             {
-
                 GeometryReader
                 {
                     header in
                     Color.clear
                     .onAppear
                     {
-
                         headerHeight = header.size.height
 
                     }
@@ -653,21 +593,17 @@ struct KanbanListView: View
     ///
     @ViewBuilder private var cardCollection: some View /* Card collection */
     {
-
         List
         {
-
             SessionListGuidance(
                 list: list, labels: labelLibrary,
                 onReveal:
                 {
-
                     guidanceVisible = true
 
                 },
                 onPresentationChange:
                 {
-
                     guidanceFooterVisible = $0
 
                 }
@@ -683,8 +619,6 @@ struct KanbanListView: View
 
                 if card.isSectionDivider
                 {
-
-
                     DaySectionRow(
                         card: card, cards: list.cards, onUpdate: onUpdateCard,
                         onMove:
@@ -705,10 +639,8 @@ struct KanbanListView: View
                     )
                     .background
                     {
-
                         if editMode != .active && card.sectionHeading == nil
                         {
-
                             BoardCardDragSource(
                                 token: cardDragToken,
                                 onBegan:
@@ -733,7 +665,6 @@ struct KanbanListView: View
                     }
                     .background
                     {
-
                         GeometryReader
                         {
                             geometry in
@@ -749,12 +680,10 @@ struct KanbanListView: View
                     }
                     .contextMenu
                     {
-
                         ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
                         CardDestinationMenu(card: card)
                         Button("Delete Divider", systemImage: "trash", role: .destructive)
                         {
-
                             deletingCard = card
 
                         }
@@ -763,7 +692,6 @@ struct KanbanListView: View
 
                     .accessibilityAction(named: "Delete Divider")
                     {
-
                         deletingCard = card
 
                     }
@@ -779,18 +707,12 @@ struct KanbanListView: View
                 }
                 else
                 {
-
-
                     NavigationLink(value: card)
                     {
-
-
                         Group
                         {
-
                             if usesNoteList
                             {
-
                                 SingleListNoteRow(
                                     card: card, onToggle:
                                     {
@@ -806,7 +728,6 @@ struct KanbanListView: View
                             }
                             else
                             {
-
                                 KanbanCardView(
                                     card: card,
                                     height: cardHeight(for: card),
@@ -831,7 +752,6 @@ struct KanbanListView: View
                                     }
                                 )
                                 {
-
                                     toggleCardTitle(card.id)
                                 }
 
@@ -840,7 +760,6 @@ struct KanbanListView: View
                         }
                         .background
                         {
-
                             GeometryReader
                             {
                                 geometry in
@@ -860,11 +779,8 @@ struct KanbanListView: View
                     .modifier(DaySectionRail(cardID: card.id, cards: list.cards))
                     .background
                     {
-
                         if editMode != .active
                         {
-
-
                             BoardCardDragSource(
                                 token: cardDragToken,
                                 onBegan:
@@ -884,7 +800,6 @@ struct KanbanListView: View
                     }
                     .accessibilityActions
                     {
-
                         ForEach(cardMoveDestinations)
                         {
                             list in
@@ -904,7 +819,6 @@ struct KanbanListView: View
                     }
                     .background
                     {
-
                         GeometryReader
                         {
                             geometry in
@@ -923,7 +837,6 @@ struct KanbanListView: View
                     .listRowBackground(Color.clear)
                     .background
                     {
-
                         if !hidesPanelHeader
                         {
                             BoardCardSwipeZone(enabled: editMode != .active)
@@ -935,7 +848,6 @@ struct KanbanListView: View
                             enabled: editMode != .active,
                             onRequest:
                             {
-
                                 deletingCard = card
 
                             }))
@@ -967,7 +879,6 @@ struct KanbanListView: View
                 onCreate: onAddCard,
                 onOpenComposer:
                 {
-
                     activeSheet = .newCard
 
                 }
@@ -1009,7 +920,6 @@ struct KanbanListView: View
                 })
             if updated != measuredCardHeights
             {
-
                 measuredCardHeights = updated
 
             }
@@ -1035,12 +945,8 @@ struct KanbanListView: View
     ///
     var body: some View /* Kanban List layout */
     {  /* List panel and card collection */
-
-
         VStack(spacing: 0)
         {
-
-
             panelHeader
             cardCollection
 
@@ -1057,7 +963,6 @@ struct KanbanListView: View
         }
         .overlay
         {
-
             RoundedRectangle(cornerRadius: 18)
             .stroke(isCardDropTarget ? Color.accentColor : .clear, lineWidth: 3)
             .allowsHitTesting(false)
@@ -1066,10 +971,8 @@ struct KanbanListView: View
 
         .overlay
         {
-
             if isCurrentDay && !hidesPanelHeader
             {
-
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .strokeBorder(isCardDropTarget ? Color.accentColor : WeekDayHighlight.gold, lineWidth: 4)
                 .allowsHitTesting(false).accessibilityHidden(true)
@@ -1088,7 +991,6 @@ struct KanbanListView: View
                             {
                                 if !$0
                                 {
-
                                     deletingCard = nil
 
                                 }
@@ -1097,17 +999,14 @@ struct KanbanListView: View
                         ), titleVisibility: .visible
         )
         {
-
             Button("Delete \(deletingCard?.presentation.title ?? "item")", role: .destructive)
             {
-
                 if let target = deletingCard,
                 list.cards.contains(where:
                     {
                         $0.id == target.id && $0.createdAt == target.createdAt
                     })
                 {
-
                     onDeleteCard(target.id)
                 }
 
@@ -1119,7 +1018,6 @@ struct KanbanListView: View
 
             Button("Cancel", role: .cancel)
             {
-
                 deletingCard = nil
 
             }
@@ -1127,7 +1025,6 @@ struct KanbanListView: View
         }
         message:
         {
-
             Text("Permanently deletes this item, its details, and its bookmark. This cannot be undone.")
         }
 
@@ -1148,7 +1045,6 @@ struct KanbanListView: View
             _, _ in
             if checkmarkReset?.canRestore(list) == false
             {
-
                 checkmarkReset = nil
 
             }
@@ -1158,7 +1054,6 @@ struct KanbanListView: View
         .environment(\.inheritedSubtitleItalic, boardAppearance.resolvedSubtitleItalic(list: list.appearance))
         .onDisappear
         {
-
             checkmarkReset = nil
 
         }
@@ -1166,10 +1061,8 @@ struct KanbanListView: View
             item: $activeSheet,
             onDismiss:
             {
-
                 if opensDayAfterDismissal
                 {
-
                     opensDayAfterDismissal = false
 
                     onOpenDayView?()
@@ -1178,8 +1071,6 @@ struct KanbanListView: View
 
                 guard opensNewCardAfterDismissal else
                 {
-
-
                     return
                 }
 
@@ -1192,7 +1083,6 @@ struct KanbanListView: View
             presentedSheet in
             switch presentedSheet
             {
-
             case .listActions:
                 KanbanListActionsSheet(
                     checkmarkReset: $checkmarkReset,
@@ -1203,7 +1093,6 @@ struct KanbanListView: View
                     isWatching: $isWatching,
                     onAddCard:
                     {
-
                         opensNewCardAfterDismissal = true
                         activeSheet = nil
 
@@ -1228,7 +1117,6 @@ struct KanbanListView: View
                     ? nil
                     :
                     {
-
                         opensDayAfterDismissal = true
                         activeSheet = nil
 

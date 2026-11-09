@@ -19,13 +19,10 @@ import SwiftUI
 ///
 final class ChecklistMigrationTests: XCTestCase
 {
-
-
     /// Holds synthetic live text so each keystroke redraws the checklist row
     @MainActor
     private final class EditingModel: ObservableObject
     {
-
         @Published var text = "Original" /* Text being processed */
 
     }
@@ -34,15 +31,12 @@ final class ChecklistMigrationTests: XCTestCase
     /// Hosts the actual row, including its native editor and focus binding
     private struct EditingRow: View
     {
-
         @ObservedObject var model: EditingModel /* Current data model */
 
         var body: some View /* Editing layout */
         {
-
             ChecklistItemRow(item: model.text, isCompleted: false,
                 onToggle: {}, onUpdate: {
-
                     model.text = $0
 
                 }, onDelete: {},
@@ -57,7 +51,6 @@ final class ChecklistMigrationTests: XCTestCase
     @MainActor
     func testChecklistTypingKeepsNativeKeyboardFocus() async throws
     {
-
         let model    = EditingModel() /* Current data model     */
         let host     =                /* Synthetic SwiftUI host */
             UIHostingController(rootView: EditingRow(model: model))
@@ -72,7 +65,6 @@ final class ChecklistMigrationTests: XCTestCase
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -82,10 +74,8 @@ final class ChecklistMigrationTests: XCTestCase
         host.view.layoutIfNeeded()
         func editor(in view: UIView) -> UITextField?
         {
-
             if let field = view as? UITextField
             {
-
                 return field
             }
             return view.subviews.lazy.compactMap { editor(in: $0) }.first
@@ -103,7 +93,6 @@ final class ChecklistMigrationTests: XCTestCase
             (model.text as NSString).length)
         for text in ["A", "AB", "ABC"]
         {
-
             field.text = text
 
             field.sendActions(for: .editingChanged)
@@ -129,8 +118,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testLegacyBoardSnapshotDecodesChecklistItems() throws
     {
-
-
         let legacyJSON = /* Legacy JSON */
             """
                         [
@@ -184,8 +171,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testLegacyMigrationProducesDeterministicItemIDs() throws
     {
-
-
         let legacyJSON = /* Legacy JSON */
             """
                         {
@@ -217,8 +202,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testExplicitCompletionIndicesPreserveItemIDs()
     {
-
-
         let firstID  = UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!  /* First action ID  */
         let secondID = UUID(uuidString: "BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB")!  /* Second action ID */
 
@@ -253,8 +236,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testCurrentChecklistRoundTripUsesItemRecords() throws
     {
-
-
         let checklist = KanbanChecklist( /* Current checklist */
             id: UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
             title: "Actions",
@@ -290,8 +271,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testEarlierStableItemDefaultsToStandardAction() throws
     {
-
-
         let earlierItemJSON = /* Earlier item JSON */
             """
                         {
@@ -320,8 +299,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testRichActionContentRoundTrips() throws
     {
-
-
         let detail = KanbanChecklistActionDetail( /* Reduced detail */
             description: "Prepare the laundry session.",
             checklists: [KanbanChecklist(title: "Steps", items: ["Sort clothes"])],
@@ -354,8 +331,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testEveryStarterCardDemonstratesRichActions()
     {
-
-
         let cardsByID = Dictionary( /* Starter cards by ID */
             uniqueKeysWithValues: SampleData.lists.flatMap(\.cards).map
             {
@@ -365,12 +340,8 @@ final class ChecklistMigrationTests: XCTestCase
 
         for card in SampleData.lists.flatMap(\.cards)
         {
-
-
             if card.isSectionDivider
             {
-
-
                 XCTAssertTrue(card.checklists.flatMap(\.items).allSatisfy
                     {
                         $0.content == .standard
@@ -386,8 +357,6 @@ final class ChecklistMigrationTests: XCTestCase
 
                 guard case .linkedCard(let cardID /* Linked card ID */) = item.content else
                 {
-
-
                     return nil
                 }
 
@@ -401,8 +370,6 @@ final class ChecklistMigrationTests: XCTestCase
             item in /* Count reduced Action Details     */
                 guard case .actionDetail = item.content else
                 {
-
-
                     return false
                 }
 
@@ -415,8 +382,6 @@ final class ChecklistMigrationTests: XCTestCase
 
             if let linkedCardID = linkedCardIDs.first
             {  /* First seeded linked-card target */
-
-
                 let linkedCard = cardsByID[linkedCardID] /* Resolved sample target          */
 
                 XCTAssertNotNil(linkedCard, "\(card.word) link should resolve")
@@ -438,8 +403,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testStarterBoardUsesWeekdayPlanningLists()
     {
-
-
         let expectedTitles = [ /* Ordered weekday titles */
                         "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
         ]
@@ -448,8 +411,6 @@ final class ChecklistMigrationTests: XCTestCase
 
         for list in SampleData.lists
         {
-
-
             let activityCards = list.cards.filter /* Activity cards */
             {
                 !$0.isSectionDivider
@@ -489,8 +450,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testLegacyCardMemberNamesBecomeManualAssignees() throws
     {
-
-
         let legacyJSON = /* Legacy JSON */
             """
                         {
@@ -524,8 +483,6 @@ final class ChecklistMigrationTests: XCTestCase
     ///
     func testRegisteredCardAssigneeRoundTripsStableUserID() throws
     {
-
-
         let userID = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE" /* Stable demo user ID            */
         let card   = KanbanCard(                            /* Card with directory assignment */
             id: 10,

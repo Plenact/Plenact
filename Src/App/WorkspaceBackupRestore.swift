@@ -13,17 +13,14 @@ import SwiftUI
 ///     Prevent editor autosaves from racing a confirmed test restore
 extension AppRootView
 {
-
     /// @fcn AppRootView.performNativeSourceRestore
     /// @brief Install or undo a reviewed native backup, then reload all root workspace state
     /// @return Void with recovery or completion feedback
     @MainActor
     func performNativeSourceRestore()
     {
-
         defer
         {
-
             pendingNativeRestore = nil
             undoingNativeRestore = false
             isSwitchingWorkspace = false
@@ -70,7 +67,6 @@ extension AppRootView
         {
             if committed || (try? FullMonthExampleStore.live().needsRecovery) == true
             {
-
                 workspaceRecoveryError = error.localizedDescription
 
             }

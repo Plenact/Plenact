@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 struct PortableTestWorkspace
 {
-
     let root: URL /* Workspace or view root */
 
 
@@ -23,7 +22,6 @@ struct PortableTestWorkspace
     /// @throws Application support resolution errors
     static func live() throws -> PortableTestWorkspace
     {
-
         let support = /* Supported operation capability */
             try FileManager.default.url(for: .applicationSupportDirectory,
             in: .userDomainMask, appropriateFor: nil, create: true)
@@ -38,7 +36,6 @@ struct PortableTestWorkspace
     /// @throws Corrupt, unsupported or unsafe state errors
     private func state() throws -> [String: Any]
     {
-
         let path = root.appendingPathComponent("state.json") /* Filesystem or navigation path */
 
         if !FileManager.default.fileExists(atPath: path.path)
@@ -69,7 +66,6 @@ struct PortableTestWorkspace
     /// @throws Hash, package or filesystem failures
     private func read(_ id: String) throws -> ReviewedPortablePackage
     {
-
         guard UUID(uuidString: id) != nil else
         {
             throw PortablePackageReview.Failure.invalid
@@ -98,7 +94,6 @@ struct PortableTestWorkspace
     /// @throws Invalid activation or retained-file errors
     func active() throws -> ReviewedPortablePackage?
     {
-
         guard let id = try state()["active"] as? String else
         {
             return nil
@@ -113,7 +108,6 @@ struct PortableTestWorkspace
     /// @throws Invalid state errors
     func canUndo() throws -> Bool
     {
-
         try state()["can_undo"] as? Bool == true
     }
 
@@ -126,7 +120,6 @@ struct PortableTestWorkspace
     /// @throws Unsupported environment, review, disk or injected failures; existing active state is retained
     func install(_ reviewed: ReviewedPortablePackage, beforeCommit: (() throws -> Void)? = nil) throws -> ReviewedPortablePackage
     {
-
         #if targetEnvironment(simulator)
         guard reviewed.snapshot.count <= LegacyWorkspaceExport.maximumBytes,
               let source = FileWrapper(serializedRepresentation: reviewed.snapshot) else
@@ -140,7 +133,6 @@ struct PortableTestWorkspace
 
         if let active = previous["active"] as? String
         {
-
             _ = try read(active)
 
         }
@@ -200,7 +192,6 @@ struct PortableTestWorkspace
     /// @throws Unsupported environment, missing undo state or corrupted retained package
     func undo() throws -> ReviewedPortablePackage?
     {
-
         #if targetEnvironment(simulator)
 
         let current = try state() /* Current operation snapshot */

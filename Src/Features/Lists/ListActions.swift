@@ -31,8 +31,6 @@ import UniformTypeIdentifiers
 ///
 struct KanbanListActionsSheet: View
 {
-
-
     @State private var confirmsCheckmarkReset = false /* Confirms checkmark reset */
     @Binding var checkmarkReset: ListCheckmarkReset? /* Checkmark reset */
     let onUpdateCard:            (KanbanCard) -> Void /* Update card callback */
@@ -90,44 +88,32 @@ struct KanbanListActionsSheet: View
     ///
     var body: some View /* Kanban List Actions layout */
     {  /* List operation menu */
-
-
         NavigationStack
         {
-
-
             List
             {
-
-
                 Section("List")
                 {
-
                     if let onOpenDayView
                     {
-
                         Button("Switch to Day View", systemImage: "rectangle.portrait", action: onOpenDayView)
                     }
 
 
                     Button
                     {
-
                         onAddCard()
                     }
                     label:
                     {
-
                         Label("Add \(list.newItemPresentation.title.lowercased())", systemImage: "plus")
                     }
 
 
                     if onEditList != nil
                     {
-
                         Button("Edit list", systemImage: "pencil")
                         {
-
                             isEditingList = true
 
                         }
@@ -137,10 +123,8 @@ struct KanbanListActionsSheet: View
 
                     if onAppearance != nil
                     {
-
                         Button("Appearance", systemImage: "paintpalette")
                         {
-
                             isEditingAppearance = true
 
                         }
@@ -149,12 +133,10 @@ struct KanbanListActionsSheet: View
 
                     Button
                     {
-
                         isWatching.toggle()
                     }
                     label:
                     {
-
                         Label(isWatching ? "Unwatch" : "Watch", systemImage: isWatching ? "eye.slash" : "eye")
                     }
 
@@ -163,16 +145,13 @@ struct KanbanListActionsSheet: View
 
                 Section("Organize")
                 {
-
                     ListCheckmarkResetControl(
                         list: list, session: $checkmarkReset, confirmsClear: $confirmsCheckmarkReset,
                         onUpdateCard: onUpdateCard)
                     Button
                     {
-
                         withAnimation(.easeInOut(duration: 0.2))
                         {
-
                             cardEditMode = cardEditMode == .active ? .inactive : .active
 
                         }
@@ -181,7 +160,6 @@ struct KanbanListActionsSheet: View
                     }
                     label:
                     {
-
                         Label(
                             cardEditMode == .active ? "Done reordering cards" : "Reorder cards",
                             systemImage: cardEditMode == .active ? "checkmark.circle" : "arrow.up.arrow.down")
@@ -190,10 +168,8 @@ struct KanbanListActionsSheet: View
 
                     Menu
                     {
-
                         Button("Title A to Z")
                         {
-
                             onSortList(true)
                             dismiss()
                         }
@@ -201,7 +177,6 @@ struct KanbanListActionsSheet: View
 
                         Button("Title Z to A")
                         {
-
                             onSortList(false)
                             dismiss()
                         }
@@ -209,7 +184,6 @@ struct KanbanListActionsSheet: View
                     }
                     label:
                     {
-
                         Label("Sort Alphabetically", systemImage: "arrow.up.arrow.down")
                         .foregroundStyle(.primary)
                     }
@@ -217,28 +191,23 @@ struct KanbanListActionsSheet: View
 
                     Button
                     {
-
                         onCopyList()
                         dismiss()
                     }
                     label:
                     {
-
                         Label("Copy list", systemImage: "doc.on.doc")
                     }
 
                     if let onMoveToBoard
                     {
-
                         Button
                         {
-
                             onMoveToBoard()
                             dismiss()
                         }
                         label:
                         {
-
                             Label("Move list to another board", systemImage: "arrow.right.square")
                         }
 
@@ -247,10 +216,8 @@ struct KanbanListActionsSheet: View
 
                     Menu
                     {
-
                         Button("Move earlier")
                         {
-
                             onMoveList(-1)
                             dismiss()
                         }
@@ -259,7 +226,6 @@ struct KanbanListActionsSheet: View
 
                         Button("Move later")
                         {
-
                             onMoveList(1)
                             dismiss()
                         }
@@ -268,8 +234,6 @@ struct KanbanListActionsSheet: View
                     }
                     label:
                     {
-
-
                         Label("Move list", systemImage: "arrow.left.arrow.right")
                         .foregroundStyle(.primary)
                     }
@@ -279,19 +243,15 @@ struct KanbanListActionsSheet: View
 
                 Section
                 {
-
                     HStack(alignment: .top, spacing: 8)
                     {
-
                         Button
                         {
-
                             showsArchivedCards = true
 
                         }
                         label:
                         {
-
                             footerActionLabel("Archived", symbol: "archivebox")
                         }
                         .accessibilityLabel("View Archived Cards")
@@ -299,13 +259,11 @@ struct KanbanListActionsSheet: View
 
                         Button
                         {
-
                             onArchiveCompleted()
                             dismiss()
                         }
                         label:
                         {
-
                             footerActionLabel("Completed", symbol: "checkmark.circle")
                         }
                         .accessibilityLabel("Archive completed cards")
@@ -315,13 +273,11 @@ struct KanbanListActionsSheet: View
                         {
                             Button
                             {
-
                                 confirmingArchive = true
 
                             }
                             label:
                             {
-
                                 footerActionLabel("Archive list", symbol: "archivebox.fill")
                             }
                             .accessibilityLabel("Archive list")
@@ -329,13 +285,11 @@ struct KanbanListActionsSheet: View
 
                             Button(role: .destructive)
                             {
-
                                 confirmingDelete = true
 
                             }
                             label:
                             {
-
                                 footerActionLabel("Delete", symbol: "trash")
                                 .foregroundStyle(.red)
                             }
@@ -358,13 +312,10 @@ struct KanbanListActionsSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .topBarLeading)
                 {
-
                     Button("Close", systemImage: "xmark")
                     {
-
                         dismiss()
                     }
 
@@ -374,7 +325,6 @@ struct KanbanListActionsSheet: View
 
             .navigationDestination(isPresented: $showsArchivedCards)
             {
-
                 ArchivedCardsView(
                     listTitle: list.title,
                     cards: $archivedCards,
@@ -390,10 +340,8 @@ struct KanbanListActionsSheet: View
             )
             .confirmationDialog("Archive \(list.title)?", isPresented: $confirmingArchive, titleVisibility: .visible)
             {
-
                 Button("Archive list", role: .destructive)
                 {
-
                     onArchiveList()
                     dismiss()
                 }
@@ -401,23 +349,19 @@ struct KanbanListActionsSheet: View
             }
             .confirmationDialog("Delete \(list.title)?", isPresented: $confirmingDelete, titleVisibility: .visible)
             {
-
                 Button("Delete List", role: .destructive)
                 {
-
                     onDeleteList()
                     dismiss()
                 }
 
                 Button("Cancel", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text(
                                                 "Permanently deletes this list, all active and archived cards, and their bookmarks. This cannot be undone."
                 )
@@ -428,7 +372,6 @@ struct KanbanListActionsSheet: View
         .presentationDetents([.height(624), .large], selection: $sheetHeight)
         .onAppear
         {
-
             sheetHeight = dynamicTypeSize.isAccessibilitySize ? .large : .height(624)
 
         }
@@ -437,7 +380,6 @@ struct KanbanListActionsSheet: View
             _, size in
             if size.isAccessibilitySize
             {
-
                 sheetHeight = .large
 
             }
@@ -447,10 +389,8 @@ struct KanbanListActionsSheet: View
         .presentationCornerRadius(28)
         .sheet(isPresented: $isEditingList)
         {
-
             if let onEditList
             {
-
                 ListInfoEditorSheet(list: list, onSave: onEditList)
                 .databaseActivityOverlay()
             }
@@ -458,10 +398,8 @@ struct KanbanListActionsSheet: View
         }
         .sheet(isPresented: $isEditingAppearance)
         {
-
             if let onAppearance
             {
-
                 ItemAppearanceSheet(
                     title: list.title, appearance: list.appearance, showsListBackground: true,
                     inheritedAddItemTextColor: inheritedAddItemTextColor, onSave: onAppearance)
@@ -484,10 +422,8 @@ struct KanbanListActionsSheet: View
     ///
     private func footerActionLabel(_ title: String, symbol: String) -> some View
     {
-
         VStack(spacing: 8)
         {
-
             Image(systemName: symbol)
             .font(.title3)
             .accessibilityHidden(true)
@@ -512,8 +448,6 @@ struct KanbanListActionsSheet: View
 ///
 struct CopyListDestinationSheet: View
 {
-
-
     let source:    KanbanList                   /* Source value for this operation */
     let access:    PlanningCalendarAccess?      /* Checked calendar operations     */
     let currentID: UUID?                        /* Current ID                      */
@@ -533,7 +467,6 @@ struct CopyListDestinationSheet: View
     ///
     private func destinationWeeks(_ access: PlanningCalendarAccess) -> [DatedPlanningWeek]
     {
-
         let sourceID: UUID? = currentID ?? access.document.week(for: .now)?.id /* Source ID */
 
         return access.document.weeks.filter
@@ -557,7 +490,6 @@ struct CopyListDestinationSheet: View
     ///
     private func copy(to week: DatedPlanningWeek, using access: PlanningCalendarAccess)
     {
-
         var updated = week /* Edited value to publish  */
         let copy    =      /* Independent working copy */
             ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
@@ -565,7 +497,6 @@ struct CopyListDestinationSheet: View
         updated.collection.lists.append(copy)
         if access.saveWeek(updated)
         {
-
             dismiss()
             TransferConfirmationPresenter.shared.show(
                 TransferConfirmation(title: source.title, destination: week.rangeTitle, action: .copied))
@@ -575,16 +506,12 @@ struct CopyListDestinationSheet: View
 
     var body: some View /* Copy List Destination layout */
     {
-
         NavigationStack
         {
-
             List
             {
-
                 Section
                 {
-
                     Button("This board")
                     {
                         if copyHere()
@@ -598,16 +525,13 @@ struct CopyListDestinationSheet: View
 
                 if let access
                 {
-
                     Section("Week boards")
                     {
-
                         ForEach(destinationWeeks(access))
                         {
                             week in
                             Button(week.startKey == access.document.currentWeekKey ? "This Week" : week.rangeTitle)
                             {
-
                                 copy(to: week, using: access)
                             }
 
@@ -617,23 +541,19 @@ struct CopyListDestinationSheet: View
 
                     Section("Plans boards")
                     {
-
                         ForEach(access.library.filter
                             {
                                 $0.isActive && $0.kind == .board && $0.id != currentID
                             })
                         {
-
                         board in
                             Button(board.title)
                             {
-
                                 var updated = board /* Edited value to publish */
 
                                 updated.lists.append(ListCopying.copy(source, into: updated.lists, crossBoard: true))
                                 if access.saveLibrary(updated)
                                 {
-
                                     dismiss()
                                     TransferConfirmationPresenter.shared.show(
                                         TransferConfirmation(
@@ -648,7 +568,6 @@ struct CopyListDestinationSheet: View
 
                     Section
                     {
-
                         Text(
                                                                         "Copies cards, archived cards, and list settings. Links to cards outside this list become plain checklist text on another board."
                         )
@@ -689,8 +608,6 @@ struct CopyListDestinationSheet: View
 ///
 struct MoveListDestinationSheet: View
 {
-
-
     let source:    KanbanList                   /* Source value for this operation */
     let access:    PlanningCalendarAccess?      /* Checked calendar operations     */
     let currentID: UUID?                        /* Current ID                      */
@@ -698,7 +615,6 @@ struct MoveListDestinationSheet: View
 
     private var sourceID: UUID? /* Source ID */
     {
-
         currentID ?? access?.document.weeks.first
         {
             $0.startKey == access?.document.currentWeekKey
@@ -718,7 +634,6 @@ struct MoveListDestinationSheet: View
     ///
     private func move(to id: UUID?)
     {
-
         guard let sourceID, access?.moveList?(source.id, sourceID, id) == true else
         {
             return
@@ -729,27 +644,20 @@ struct MoveListDestinationSheet: View
 
     var body: some View /* Move List Destination layout */
     {
-
         NavigationStack
         {
-
             List
             {
-
                 if let access
                 {
-
                     Section
                     {
-
                         Button
                         {
-
                             move(to: nil)
                         }
                         label:
                         {
-
                             Label("Standalone List in Plans", systemImage: "list.bullet.rectangle")
                         }
 
@@ -757,7 +665,6 @@ struct MoveListDestinationSheet: View
 
                     Section("Week boards")
                     {
-
                         ForEach(access.document.weeks.filter
                             {
                                 $0.id != sourceID && $0.collection.isActive
@@ -778,13 +685,11 @@ struct MoveListDestinationSheet: View
 
                     Section("Plans boards")
                     {
-
                         ForEach(access.library.filter
                             {
                                 $0.id != sourceID && $0.isActive && $0.kind == .board
                             })
                         {
-
                         board in
                             Button(board.title)
                             {
@@ -797,7 +702,6 @@ struct MoveListDestinationSheet: View
 
                     Section
                     {
-
                         Text(
                                                                         "Moves the list and all its contents. A dated list leaves an empty day in its original week."
                         )
@@ -838,8 +742,6 @@ struct MoveListDestinationSheet: View
 ///
 struct ListCheckmarkResetControl: View
 {
-
-
     let list:                   KanbanList           /* List under consideration  */
     @Binding var session:       ListCheckmarkReset?  /* Current operation session */
     @Binding var confirmsClear: Bool                 /* Confirms clear            */
@@ -847,23 +749,19 @@ struct ListCheckmarkResetControl: View
 
     var body: some View /* List Checkmark Reset Control layout */
     {
-
         Button(
             session?.canRestore(list) == true ? "Restore previous checkmarks" : "Clear all checkmarks…",
             systemImage: session?.canRestore(list) == true ? "arrow.uturn.backward" : "checkmark.circle"
         )
         {
-
             if let session, let cards = session.restoring(list)
             {
-
                 self.session = nil
 
                 apply(cards)
             }
             else
             {
-
                 confirmsClear = true
 
             }
@@ -885,7 +783,6 @@ struct ListCheckmarkResetControl: View
     ///
     private func apply(_ cards: [KanbanCard])
     {
-
         for card in cards where list.cards.first(where:
             {
                 $0.id == card.id
@@ -908,8 +805,6 @@ struct ListCheckmarkResetControl: View
 ///
 struct ListCheckmarkResetConfirmation: ViewModifier
 {
-
-
     let list:                   KanbanList?          /* List under consideration  */
     @Binding var session:       ListCheckmarkReset?  /* Current operation session */
     @Binding var confirmsClear: Bool                 /* Confirms clear            */
@@ -929,16 +824,13 @@ struct ListCheckmarkResetConfirmation: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         content.confirmationDialog(
                         "Clear all checkmarks in \(list?.title ?? "this list")?", isPresented: $confirmsClear,
                         titleVisibility: .visible
         )
         {
-
             Button("Clear all checkmarks", role: .destructive)
             {
-
                 guard let list else
                 {
                     return
@@ -962,13 +854,11 @@ struct ListCheckmarkResetConfirmation: ViewModifier
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text(
                                     "This unchecks cards and nested checklist items. You can restore these checkmarks until you change a checkmark or leave this list."
             )

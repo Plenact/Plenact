@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard
     /// @brief      Verify that visible Reordering Maps Past Collapsed Content And Reveals The Moved Card
@@ -35,8 +33,6 @@ extension PlenactBoardDocumentTests
     ///
     func testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard() throws
     {
-
-
         ///
         /// @fcn        PlenactBoardDocumentTests.testVisibleReorderingMapsPastCollapsedContentAndRevealsTheMovedCard.card
         /// @brief      Prepare card for the enclosing regression test
@@ -50,7 +46,6 @@ extension PlenactBoardDocumentTests
         ///
         func card(_ id: Int, _ title: String) -> KanbanCard
         {
-
             KanbanCard(id: id, word: title, listTitle: "Day", checklists: [])
         }
 
@@ -102,7 +97,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSingleListViewModePersistsWithoutConvertingOrReorderingContent() throws
     {
-
         var list = KanbanList( /* Synthetic list fixture */
             id: 4, title: "Wednesday",
             cards: [
@@ -157,7 +151,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testKeepTomorrowDecisionPersistsWithoutCopyingOrRetimingTheTableItem() throws
     {
-
         let suite    = "ReviewCarryTests." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                         /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -185,10 +178,8 @@ extension PlenactBoardDocumentTests
                 return false
             }, openCurrentWeek:
             {
-
             }, openToday:
             {
-
             }, openLibraryCard:
             {
                 _ in
@@ -211,7 +202,6 @@ extension PlenactBoardDocumentTests
 
         try DailyReviewTransaction.perform(in: defaults)
         {
-
             _ = try DailyPlanStore.save(plan, replacing: nil, to: defaults)
 
         }
@@ -242,7 +232,6 @@ extension PlenactBoardDocumentTests
     ///
     func testWholeListMoveRejectsUnavailableOrSameBoardWithoutMutation() throws
     {
-
         var source = /* Source value for this operation */
             PersonalCollection(title: "Source", kind: .board)
 
@@ -258,7 +247,6 @@ extension PlenactBoardDocumentTests
 
         for destination in [source.id, archived.id, UUID()]
         {
-
             XCTAssertThrowsError(
                 try CrossBoardListMovement.move(listID: 4, from: source.id, to: destination, collections: &boards))
             XCTAssertEqual(boards, original)
@@ -279,7 +267,6 @@ extension PlenactBoardDocumentTests
     ///
     func testTransferConfirmationsNameDestinationAndDistinguishCopies()
     {
-
         XCTAssertEqual(
             TransferConfirmation(title: "Garden path", destination: "Garden / Ideas").message,
                             "Moved ‘Garden path’ to Garden / Ideas.")
@@ -304,7 +291,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCrossBoardMoveReservesArchivedIdentitiesAndPreservesFormat() throws
     {
-
         var original = SampleData.lists[0].cards[0] /* Baseline before changes */
 
         original.displayFormat = .picture
@@ -340,7 +326,6 @@ extension PlenactBoardDocumentTests
     /// Follow-up edits use the moved Card's owner and identity even when another owner shares its ID
     func testMovedCardSavesEditsAtDestinationAndRejectsReusedIdentity() throws
     {
-
         let date = Date(timeIntervalSince1970: 1_793_016_000)
         var week = DatedPlanningWeek.make(for: date)
         let list = week.collection.lists[0].id
@@ -388,7 +373,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCrossBoardMoveRejectsUnavailableDestinationWithoutMutation() throws
     {
-
         let card            = SampleData.lists[0].cards[0] /* Synthetic card fixture */
         var week            =                              /* Synthetic week fixture */
             [KanbanList(id: 10, title: "Monday", cards: [card])]
@@ -420,7 +404,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testMixedDisplayFormatsPersistMoveRenameAndArchiveWithIndependentDefaults() async throws
     {
-
         let suite    = /* Isolated preference domain */
             "PlenactTests.DisplayFormats.\(UUID().uuidString)"
         let defaults = /* Preference store under test */
@@ -502,7 +485,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListCopyAllocatesIDsAndPreservesContentAndInternalLinks() throws
     {
-
         var first = KanbanCard( /* First comparison value */
             id: 1, word: "First", listTitle: "Source", descriptionOverride: "Keep",
             sectionLayout: CardSectionLayout(hidden: [.details]))
@@ -555,8 +537,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPermanentListDeletionRemovesNestedArchivesAndPreservesRemainingOrder() throws
     {
-
-
         let first = KanbanList( /* First comparison value */
             id: 1, title: "First",
             cards: [ /* First value in the comparison */
@@ -597,8 +577,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListReorderingMovesRestoredMondayToFirstWithoutChangingContent() throws
     {
-
-
         var lists  = SampleData.lists    /* Board lists under verification        */
         let monday = lists.removeFirst() /* Restored Monday List after reordering */
 
@@ -625,8 +603,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListReorderingRejectsMissingAndOutOfBoundsMoves()
     {
-
-
         var lists    = SampleData.lists /* Board lists under verification              */
         let original = lists            /* Pre-operation value for preservation checks */
 
@@ -648,15 +624,11 @@ extension PlenactBoardDocumentTests
     ///
     func testCardReorderingClampsDestinationsAndRejectsMissingOrNoOpMoves()
     {
-
-
         let cardsBeforeMove = SampleData.lists[0].cards /* Original complete card sequence */
         var cards           = cardsBeforeMove           /* Mutable card-order copy         */
 
         guard let lastCardID = cards.last?.id else
         {  /* Stable identity moved to the first position */
-
-
             XCTFail("Expected a sample card for reorder coverage")
             return
         }
@@ -685,8 +657,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCardMovementPreservesCompleteRecordAndRetainedArchives() throws
     {
-
-
         var card = try XCTUnwrap( /* Synthetic card fixture */
             SampleData.lists[0].cards.first
             {
@@ -747,11 +717,8 @@ extension PlenactBoardDocumentTests
     ///
     func testCardMovementSupportsEmptyListsAndSameListInsertionBoundaries() throws
     {
-
-
         let cards = (1 ... 4).map /* Card records under consideration */
         {
-
             KanbanCard(id: $0, word: "Card \($0)", listTitle: "A")
         }  /* Card records under inspection  */
 
@@ -788,8 +755,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCardMovementRejectsStaleArchivedAndAmbiguousSourcesAtomically() throws
     {
-
-
         let card    = KanbanCard(id: 1, word: "Card", listTitle: "A")               /* Card value under verification */
         let divider = KanbanCard(id: 2, word: "", listTitle: "A", isDivider: true)  /* Section-divider fixture       */
         let archive = KanbanCard(id: 3, word: "Retained", listTitle: "A")           /* Archived-card snapshot        */
@@ -803,8 +768,6 @@ extension PlenactBoardDocumentTests
         for (id, destination, before) in [(999, 20, nil), (1, 999, nil), (1, 20, 999), (3, 20, nil)]
         as [(Int, Int, Int?)]
         {
-
-
             XCTAssertThrowsError(try BoardCardMovement.move(id, to: destination, before: before, in: &lists))
             XCTAssertEqual(lists, original)
         }
@@ -857,15 +820,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCardMovementPersistsInWeekAndPersonalBoardWithoutChangingOtherBoards() async throws
     {
-
-
         let suite    = "Plenact.CardMovementTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))    /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -928,15 +887,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBackgroundBoardLoadReportsCorruptionWithoutRemovingData() async throws
     {
-
-
         let suite    = "Plenact.BackgroundBoardTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
             DatabaseActivity.shared.dismissError()
         }

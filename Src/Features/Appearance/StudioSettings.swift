@@ -12,8 +12,6 @@ import SwiftUI
 ///     Makes personalization discoverable from Plan Settings while preserving all existing defaults
 struct StudioSettingsView: View
 {
-
-
     @State private var draft   = StudioSettings.load() /* Local editing draft   */
     @State private var palette =                       /* Artwork color palette */
         StudioSettings.load().palette.joined(separator: ", ")
@@ -31,14 +29,11 @@ struct StudioSettingsView: View
     /// @return (Binding<StudioSurface?>) optional wallpaper draft
     private func destinationBinding(_ destination: StudioDestination) -> Binding<StudioSurface?>
     {
-
-
         Binding(get:
             {
                 draft.views[destination.rawValue]
             }, set:
             {
-
                 draft.views[destination.rawValue] = $0
 
             })
@@ -50,7 +45,6 @@ struct StudioSettingsView: View
     /// @return Void; invalid palette input keeps the draft open for correction
     private func save()
     {
-
         let colors = palette.split(separator: ",").map /* Colors used by this appearance */
         {
             $0.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -61,7 +55,6 @@ struct StudioSettingsView: View
                 $0.count == 6 && UInt32($0, radix: 16) != nil
             }) else
         {
-
             error = "Use comma-separated six-digit RGB colors, such as EDE3CA, DDE8D8.";
 
             return
@@ -71,7 +64,6 @@ struct StudioSettingsView: View
 
         do
         {
-
             data = try JSONEncoder().encode(draft);
 
             dismiss()
@@ -79,7 +71,6 @@ struct StudioSettingsView: View
 
         catch
         {
-
             self.error = error.localizedDescription
 
         }
@@ -94,16 +85,13 @@ struct StudioSettingsView: View
     /// @return Scrollable native form; Back retains edits and Save commits the whole Studio draft
     private func page<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View
     {
-
         Form(content: content)
             .modifier(StudioFormWallpaper(destination: .settings))
             .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save", action: save)
                 }
             }
@@ -120,17 +108,12 @@ struct StudioSettingsView: View
     ///
     var body: some View /* Studio directory and editors */
     {
-
-
         Form
         {
-
             Section("Your artwork")
             {
-
                 Button("My art", systemImage: "paintpalette")
                 {
-
                     showsLibrary = true
 
                 }
@@ -141,13 +124,10 @@ struct StudioSettingsView: View
 
             Section("Creation defaults")
             {
-
                 NavigationLink("New item backgrounds")
                 {
-
                     page("New Item Backgrounds")
                     {
-
                         StudioSurfaceSettings(surface: $draft.defaultCardSurface, title: "New Card background")
                         StudioSurfaceSettings(surface: $draft.defaultNoteSurface, title: "New Note background")
                         Text("With no Note override, new Notes rotate through the background portfolio. Choose Plain for Notes without artwork.")
@@ -156,13 +136,10 @@ struct StudioSettingsView: View
                 }
                 NavigationLink("Coordinated variety")
                 {
-
                     page("Coordinated Variety")
                     {
-
                         Section
                         {
-
                             Toggle("Vary new item colors", isOn: $draft.variesNewSurfaces)
                             Toggle("Vary new item header colors", isOn: $draft.variesNewHeaders)
                             TextField("Palette: comma-separated RGB hex colors", text: $palette)
@@ -170,7 +147,6 @@ struct StudioSettingsView: View
                         }
                         footer:
                         {
-
                             Text("Colors are chosen once when an item is created. Existing items keep their saved appearance.")
                         }
                     }
@@ -178,25 +154,19 @@ struct StudioSettingsView: View
             }
             Section("Wallpapers")
             {
-
                 NavigationLink("View wallpapers")
                 {
-
                     page("View Wallpapers")
                     {
-
                         Section
                         {
-
                             ForEach(StudioDestination.allCases)
                             {
                                 destination in
                                 NavigationLink(destination.rawValue)
                                 {
-
                                     page(destination.rawValue + " Wallpaper")
                                     {
-
                                         StudioSurfaceSettings(surface: destinationBinding(destination), title: "Wallpaper")
                                     }
                                 }
@@ -210,7 +180,6 @@ struct StudioSettingsView: View
         .navigationTitle("Plenact Studio").navigationBarTitleDisplayMode(.inline)
         .toolbar
         {
-
             ToolbarItem(placement: .cancellationAction)
             {
                 Button("Cancel")
@@ -222,7 +191,6 @@ struct StudioSettingsView: View
 
             ToolbarItem(placement: .confirmationAction)
             {
-
                 Button("Save", action: save)
 
             }
@@ -239,7 +207,6 @@ struct StudioSettingsView: View
                 {
                     if !$0
                     {
-
                         error = nil
 
                     }
@@ -248,7 +215,6 @@ struct StudioSettingsView: View
         {
             Button("OK")
             {
-
                 error = nil
 
             }
@@ -271,8 +237,6 @@ struct StudioSettingsView: View
 ///     Shares per-view selection consistently across primary destinations and their existing safe areas
 struct StudioWorkspaceBackground: View
 {
-
-
     let destination: StudioDestination                        /* Destination for the operation */
     @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes      */
 
@@ -286,12 +250,9 @@ struct StudioWorkspaceBackground: View
     ///
     var body: some View /* Studio Workspace Background layout */
     {
-
-
         if let settings = try? JSONDecoder().decode(StudioSettings.self, from: data),
         let surface = settings.views[destination.rawValue]
         {
-
             StudioSurfaceView(surface: surface)
         }
 
@@ -306,8 +267,6 @@ struct StudioWorkspaceBackground: View
 ///     Keeps Settings wallpaper opt-in and avoids changing unconfigured form backgrounds
 struct StudioFormWallpaper: ViewModifier
 {
-
-
     let destination: StudioDestination                        /* Destination for the operation */
     @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes      */
 
@@ -322,12 +281,9 @@ struct StudioFormWallpaper: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
-
         if let settings = try? JSONDecoder().decode(StudioSettings.self, from: data),
         let surface = settings.views[destination.rawValue]
         {
-
             content.scrollContentBackground(.hidden).background
             {
                 StudioSurfaceView(surface: surface)

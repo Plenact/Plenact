@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 struct BoardDisplaySettings
 {
-
-
     /// Whether cards show checklist completion progress
     var showChecklistProgress = true /* Display checklist progress on cards */
     /// Whether cards show their comment count
@@ -39,8 +37,6 @@ struct BoardDisplaySettings
 ///
 enum BoardPresentation: String, CaseIterable, Identifiable
 {
-
-
     case standard
     case overview
 
@@ -106,12 +102,8 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     ///
     func columnWidth(viewportWidth: CGFloat, accessibilitySize: Bool, fillsAvailableWidth: Bool = false) -> CGFloat
     {
-
-
         guard viewportWidth.isFinite, viewportWidth > 28 else
         {
-
-
             return 1
         }
 
@@ -120,15 +112,12 @@ enum BoardPresentation: String, CaseIterable, Identifiable
 
         if accessibilitySize || (self == .standard && fillsAvailableWidth)
         {
-
-
             return available
         }
 
 
         if self == .standard
         {
-
             // Reserve a 15-point neighbor preview and the 17-point gap on each side
             return min(available, 360, max(172, viewportWidth - 64))
         }
@@ -148,8 +137,6 @@ enum BoardPresentation: String, CaseIterable, Identifiable
 ///
 struct BoardCardHeightPreferenceKey: PreferenceKey
 {
-
-
     /// Current card-height reports keyed by card identity
     static var defaultValue: [Int: CGFloat] = [:] /* Empty list-center measurements before layout */
 
@@ -168,8 +155,6 @@ struct BoardCardHeightPreferenceKey: PreferenceKey
     ///
     static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat])
     {
-
-
         value.merge(nextValue(), uniquingKeysWith:
             {
                 _, latest in
@@ -191,7 +176,6 @@ struct BoardCardHeightPreferenceKey: PreferenceKey
 ///
 struct BoardHeader: View
 {
-
     @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
@@ -278,7 +262,6 @@ struct BoardHeader: View
     ///
     private func performPendingBoardAction()
     {
-
         guard let action = pendingBoardAction else
         {
             return
@@ -288,7 +271,6 @@ struct BoardHeader: View
 
         switch action
         {
-
         case .resetZoom:
             onResetZoom?()
         case .gallery:
@@ -322,20 +304,14 @@ struct BoardHeader: View
 
     var titleSwipeArea: some View /* Title swipe area */
     {  /* Header heading surface accepting boundary-navigation swipes */
-
-
         VStack(alignment: .leading, spacing: 2)
         {
-
-
             HStack(spacing: 8)
             {
-
                 ItemAppearanceMark(appearance: titleAppearance)
                 .font(.title2)
                 SlideableHeaderText(text: title, onOverflowChange:
                     {
-
                         titleOverflows = $0
 
                     })
@@ -346,12 +322,10 @@ struct BoardHeader: View
 
             if !subtitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             {
-
                 SlideableHeaderText(
                     text: subtitle, onTap: onSubtitleTap,
                     onOverflowChange:
                     {
-
                         subtitleOverflows = $0
 
                     }
@@ -361,7 +335,6 @@ struct BoardHeader: View
                 .accessibilityIdentifier(onSubtitleTap == nil ? "board.subtitle" : "board.weekSelector")
                 .onDisappear
                 {
-
                     subtitleOverflows = false
 
                 }
@@ -383,8 +356,6 @@ struct BoardHeader: View
                 let action = boundary == .first ? onJumpToFirstList : onJumpToLastList
                 else
                 {  /* Available callback for the selected boundary */
-
-
                     return
                 }
 
@@ -415,19 +386,12 @@ struct BoardHeader: View
     ///
     var body: some View /* Board Header layout */
     {  /* Board header and global actions */
-
-
         AdaptiveWorkspaceHeaderLayout(regularSpacing: 8, layoutDirection: headerLayoutDirection)
         {
-
-
             if let onClose
             {  /* Available return action shown beside the Board heading */
-
-
                 Button(action: onClose)
                 {
-
                     Image(systemName: "chevron.left")
                     .frame(width: 32, height: 44)
                 }
@@ -442,10 +406,8 @@ struct BoardHeader: View
 
             if let onSearch
             {
-
                 Button(action: onSearch)
                 {
-
                     WorkspaceHeaderIcon(systemName: "magnifyingglass").foregroundStyle(.white)
                 }
                 .accessibilityLabel("Search Plenact")
@@ -453,7 +415,6 @@ struct BoardHeader: View
 
             Button(action: onOpenCalendar)
             {
-
                 WorkspaceHeaderIcon(systemName: "calendar").foregroundStyle(.white)
             }
 
@@ -462,10 +423,8 @@ struct BoardHeader: View
 
             if let onToggleZoom
             {
-
                 Button(action: onToggleZoom)
                 {
-
                     WorkspaceHeaderIcon(
                         systemName: isPanoramic
                         ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
@@ -489,20 +448,17 @@ struct BoardHeader: View
 
             Button
             {
-
                 showsBoardOptions = true
 
             }
             label:
             {
-
                 WorkspaceHeaderIcon(systemName: "ellipsis.circle.fill").foregroundStyle(.white)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(onListActions == nil ? "Board options" : "List options")
             .popover(isPresented: $showsBoardOptions, arrowEdge: .top)
             {
-
                 BoardOptionsPopover(
                     canJumpFirst: onJumpToFirstList != nil,
                     canJumpLast: onJumpToLastList != nil, hasAppearance: onAppearance != nil,
@@ -532,7 +488,6 @@ struct BoardHeader: View
         .padding(.bottom, 10)
         .confirmationDialog("Archive this board?", isPresented: $confirmsArchiveBoard, titleVisibility: .visible)
         {
-
             Button("Archive Board")
             {
                 onArchiveBoard?()
@@ -540,19 +495,16 @@ struct BoardHeader: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text("All lists and cards will be kept on this device. Restore the board from Saved.")
         }
 
         .confirmationDialog(deleteBoardTitle + "?", isPresented: $confirmsDeleteBoard, titleVisibility: .visible)
         {
-
             Button(deleteBoardTitle, role: .destructive)
             {
                 onDeleteBoard?()
@@ -560,13 +512,11 @@ struct BoardHeader: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text(
                                     "Removes all active and archived lists, cards, and bookmarks in this board. Other boards and retained archive copies are unchanged."
             )
@@ -574,8 +524,6 @@ struct BoardHeader: View
 
         .sheet(isPresented: $showingSettings)
         {
-
-
             BoardSettingsView(
                 settings: $settings,
                 presentation: $presentation,
@@ -602,8 +550,6 @@ struct BoardHeader: View
 ///
 struct BoardSettingsView: View
 {
-
-
     @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = /* Card Covers visibility */
     true                                         /* Device-only visibility                   */
     @Binding var settings: BoardDisplaySettings  /* Bound to the board's display preferences */
@@ -636,7 +582,6 @@ struct BoardSettingsView: View
     ///
     private var trimmedMemberNameDraft: String /* Trimmed member name draft */
     {  /* Normalized member rename input */
-
         memberNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -655,19 +600,12 @@ struct BoardSettingsView: View
     ///
     var body: some View /* Board Settings layout */
     {  /* Board settings and member management form */
-
-
         NavigationStack
         {
-
-
             Form
             {
-
-
                 Section("Card badges")
                 {
-
                     Toggle("Checklist progress", isOn: $settings.showChecklistProgress)
                     Toggle("Comment counts", isOn: $settings.showCommentCounts)
                     Toggle("Due-date badges", isOn: $settings.showDueDateBadges)
@@ -675,12 +613,10 @@ struct BoardSettingsView: View
 
                 Section
                 {
-
                     Toggle("Show card covers", isOn: $showsCardCovers)
                 }
                 footer:
                 {
-
                     Text(
                                                             "Applies to Board and Today card rows on this device. Turning this off keeps every cover selection and attachment."
                     )
@@ -689,41 +625,30 @@ struct BoardSettingsView: View
 
                 Section("Members")
                 {
-
-
                     if activeMembers.isEmpty
                     {
-
-
                         Text("No active members")
                         .foregroundStyle(.secondary)
                     }
                     else
                     {
-
-
                         ForEach(activeMembers, id: \.self)
                         {
                             member in
 
                             HStack(spacing: 12)
                             {
-
-
                                 let memberColor = /* Member color */
                                 memberColors[member.lowercased()]
                                 ?? .accentColor /* Fallback to accent color if no custom color is set */
 
                                 Button
                                 {
-
                                     selectedMemberColor = MemberColorTarget(member: member, color: memberColor)
 
                                 }
                                 label:
                                 {
-
-
                                     Image(systemName: "person.crop.circle.fill")
                                     .font(.title3)
                                     .foregroundStyle(memberColor)
@@ -739,7 +664,6 @@ struct BoardSettingsView: View
 
                                 Button
                                 {
-
                                     editingMember = member
                                     memberNameDraft = member
                                     isRenamingMember = true
@@ -747,7 +671,6 @@ struct BoardSettingsView: View
                                 }
                                 label:
                                 {
-
                                     Image(systemName: "pencil")
                                     .foregroundStyle(.secondary)
                                     .frame(width: 44, height: 44)
@@ -760,17 +683,13 @@ struct BoardSettingsView: View
 
                             .swipeActions(edge: .trailing, allowsFullSwipe: false)
                             {
-
-
                                 Button(role: .destructive)
                                 {
-
                                     memberToDelete = member
 
                                 }
                                 label:
                                 {
-
                                     Label("Remove", systemImage: "person.crop.circle.badge.minus")
                                 }
 
@@ -788,13 +707,10 @@ struct BoardSettingsView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .topBarTrailing)
                 {
-
                     Button("Done")
                     {
-
                         dismiss()
                     }
 
@@ -804,23 +720,17 @@ struct BoardSettingsView: View
 
             .alert("Edit member", isPresented: $isRenamingMember)
             {
-
-
                 TextField("Name or email", text: $memberNameDraft).textInputAutocapitalization(.sentences)
 
                 Button("Cancel", role: .cancel)
                 {
-
                 }
 
 
                 Button("Save")
                 {
-
                     guard let editingMember else
                     {  /* Assignee currently being renamed */
-
-
                         return
                     }
 
@@ -832,8 +742,6 @@ struct BoardSettingsView: View
             }
             message:
             {
-
-
                 Text("This updates the member name on every assigned card.")
             }
 
@@ -850,7 +758,6 @@ struct BoardSettingsView: View
                                         {
                                             if !$0
                                             {
-
                                                 memberToDelete = nil
 
                                             }
@@ -860,15 +767,10 @@ struct BoardSettingsView: View
                                     titleVisibility: .visible
             )
             {
-
                 Button("Remove member", role: .destructive)
                 {
-
-
                     guard let memberToDelete else
                     {  /* Assignee selected for removal */
-
-
                         return
                     }
 
@@ -882,7 +784,6 @@ struct BoardSettingsView: View
 
                 Button("Cancel", role: .cancel)
                 {
-
                     memberToDelete = nil
 
                 }
@@ -890,7 +791,6 @@ struct BoardSettingsView: View
             }
             message:
             {
-
                 Text("This removes the member from all card assignments. Existing comments are kept.")
             }
 
@@ -927,8 +827,6 @@ struct BoardSettingsView: View
 ///
 struct MemberColorTarget: Identifiable
 {
-
-
     let member: String /* The name of the member whose color is being edited */
     let color:  Color  /* The current color of the member's icon             */
 
@@ -966,8 +864,6 @@ struct MemberColorTarget: Identifiable
 ///
 struct MemberColorEditorSheet: View
 {
-
-
     let memberName: String          /* The name of the member whose color is being edited         */
     let onSave:     (Color) -> Void /* The closure to call when the user saves the selected color */
 
@@ -989,8 +885,6 @@ struct MemberColorEditorSheet: View
     ///
     init(memberName: String, initialColor: Color, onSave: @escaping (Color) -> Void)
     {
-
-
         self.memberName = memberName
         self.onSave = onSave
         _selectedColor = State(initialValue: initialColor)
@@ -1008,18 +902,12 @@ struct MemberColorEditorSheet: View
     ///
     var body: some View /* Member Color Editor layout */
     {  /* Member icon color editor */
-
-
         NavigationStack
         {
-
-
             Form
             {
-
                 Section(memberName)
                 {
-
                     ColorPicker("Icon color", selection: $selectedColor, supportsOpacity: false)
                 }
 
@@ -1029,13 +917,10 @@ struct MemberColorEditorSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
-
                         dismiss()
                     }
 
@@ -1044,10 +929,8 @@ struct MemberColorEditorSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         onSave(selectedColor)
                         dismiss()
                     }
@@ -1073,7 +956,6 @@ struct MemberColorEditorSheet: View
 ///
 enum BoardOptionsAction
 {
-
     case first, last, gallery, resetZoom, appearance, listActions, settings, archived, archive, delete
 }
 
@@ -1087,8 +969,6 @@ enum BoardOptionsAction
 ///
 struct BoardOptionsPopover: View
 {
-
-
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Dynamic type size         */
     let canJumpFirst:  Bool                                     /* Jump First availability   */
     let canJumpLast:   Bool                                     /* Jump Last availability    */
@@ -1123,15 +1003,12 @@ struct BoardOptionsPopover: View
         color: Color = .primary, enabled: Bool = true
     ) -> some View
     {
-
         Button
         {
-
             onAction(action)
         }
         label:
         {
-
             Image(systemName: symbol)
             .font(.system(size: 20, weight: .regular))
             .frame(width: 44, height: 44)
@@ -1146,16 +1023,12 @@ struct BoardOptionsPopover: View
 
     var body: some View /* Board Options layout */
     {
-
         VStack(spacing: 0)
         {
-
             if let listViewMode
             {
-
                 Picker("View as", selection: listViewMode)
                 {
-
                     ForEach(SingleListViewMode.allCases)
                     {
                         Text($0.title).tag($0)
@@ -1170,7 +1043,6 @@ struct BoardOptionsPopover: View
 
             HStack
             {
-
                 icon("backward.end", name: "Jump to First List", action: .first, enabled: canJumpFirst)
                 Spacer()
                 icon("forward.end", name: "Jump to Last List", action: .last, enabled: canJumpLast)
@@ -1179,15 +1051,12 @@ struct BoardOptionsPopover: View
             Divider()
             if canResetZoom
             {
-
                 Button
                 {
-
                     onAction(.resetZoom)
                 }
                 label:
                 {
-
                     Label("Reset board zoom", systemImage: "arrow.counterclockwise")
                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 } .padding(.horizontal, 8)
@@ -1195,15 +1064,12 @@ struct BoardOptionsPopover: View
 
             if hasGallery
             {
-
                 Button
                 {
-
                     onAction(.gallery)
                 }
                 label:
                 {
-
                     Label(
                         isGallery ? "Board view" : "Gallery view",
                         systemImage: isGallery ? "rectangle.split.3x1" : "square.grid.2x2"
@@ -1214,15 +1080,12 @@ struct BoardOptionsPopover: View
 
             if hasListActions
             {
-
                 Button
                 {
-
                     onAction(.listActions)
                 }
                 label:
                 {
-
                     Label("List actions", systemImage: "list.bullet.rectangle")
                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 } .padding(.horizontal, 8)
@@ -1230,18 +1093,14 @@ struct BoardOptionsPopover: View
 
             if hasAppearance
             {
-
                 Button
                 {
-
                     onAction(.appearance)
                 }
                 label:
                 {
-
                     HStack(spacing: 12)
                     {
-
                         Image(systemName: "paintpalette")
                         .font(.system(size: 20, weight: .regular))
                         .frame(width: 24)
@@ -1254,15 +1113,12 @@ struct BoardOptionsPopover: View
 
             Button
             {
-
                 onAction(.settings)
             }
             label:
             {
-
                 HStack(spacing: 12)
                 {
-
                     Image(systemName: "gearshape")
                     .font(.system(size: 20, weight: .regular))
                     .frame(width: 24)
@@ -1274,18 +1130,15 @@ struct BoardOptionsPopover: View
             Divider()
             HStack(spacing: 8)
             {
-
                 icon("archivebox", name: "Archived Lists", action: .archived, color: .accentColor)
                 if canArchive
                 {
-
                     Spacer(minLength: 0)
                     icon("archivebox", name: "Archive Board", action: .archive)
                 }
 
                 if canDelete
                 {
-
                     Spacer(minLength: 0)
                     icon("trash", name: deleteTitle, action: .delete, color: .red)
                 }

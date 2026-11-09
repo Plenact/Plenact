@@ -29,7 +29,6 @@ import UniformTypeIdentifiers
 @discardableResult
 func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: inout [KanbanList]) -> Bool
 {
-
     guard lists.filter(
         {
             $0.id == listID && !$0.isArchived
@@ -40,7 +39,6 @@ func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: ino
         })
     else
     {
-
         DatabaseActivity.shared.report("Could not change this List's appearance. Its content has been retained.")
         return false
     }
@@ -74,11 +72,8 @@ func editBoardList(
     in lists: inout [KanbanList]
 ) -> Bool
 {
-
-
     do
     {
-
         guard lists.filter(
             {
                 $0.id == listID && !$0.isArchived
@@ -89,7 +84,6 @@ func editBoardList(
             })
         else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -99,7 +93,6 @@ func editBoardList(
         try lists[index].edit(title: title, subtitle: subtitleOverride)
         if let newItemPresentation
         {
-
             lists[index].newItemPresentation = newItemPresentation
 
         }
@@ -108,7 +101,6 @@ func editBoardList(
     }
     catch
     {
-
         DatabaseActivity.shared.report(
                         "Could not edit this list: \(error.localizedDescription) Its content has been retained.")
         return false

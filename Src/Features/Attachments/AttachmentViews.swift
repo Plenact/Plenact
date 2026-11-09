@@ -22,8 +22,6 @@ import UIKit
 ///
 enum CardAttachmentSource: String, CaseIterable, Identifiable
 {
-
-
     case trello
     case confluence
     case jira
@@ -58,11 +56,8 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
     ///
     var title: String /* User-facing title */
     {  /* User-facing attachment-source label */
-
         switch self
         {
-
-
         case .trello:
                     "Trello"
         case .confluence:
@@ -99,11 +94,8 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
     ///
     var symbolName: String /* Symbol name */
     {  /* SF Symbol for the picker row */
-
         switch self
         {
-
-
         case .trello:
                     "square.split.2x2"
         case .confluence:
@@ -141,8 +133,6 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
 ///
 struct CardAttachmentSourceSheet: View
 {
-
-
     @Binding var photoSelection: [PhotosPickerItem] /* Current Photos-picker selection */
 
     let onAddLink:        () -> Void           /* Callback opening manual link entry                    */
@@ -168,12 +158,8 @@ struct CardAttachmentSourceSheet: View
     ///
     private func select(_ source: CardAttachmentSource)
     {
-
-
         switch source
         {
-
-
         case .drawing:
             if let onAddDrawing
             {
@@ -210,29 +196,20 @@ struct CardAttachmentSourceSheet: View
     ///
     var body: some View /* Card Attachment Source layout */
     {  /* Attachment-source picker */
-
-
         NavigationStack
         {
-
-
             List
             {
-
-
                 ForEach(CardAttachmentSource.allCases)
                 {
                     source in
 
                     if source == .photoOrVideo
                     {
-
-
                         PhotosPicker(
                             selection: $photoSelection, maxSelectionCount: 12, matching: .any(of: [.images, .videos])
                         )
                         {
-
                             Label(source.title, systemImage: source.symbolName)
                             .foregroundStyle(.primary)
                         }
@@ -240,16 +217,12 @@ struct CardAttachmentSourceSheet: View
                     }
                     else
                     {
-
-
                         Button
                         {
-
                             select(source)
                         }
                         label:
                         {
-
                             Label(source.title, systemImage: source.symbolName)
                             .foregroundStyle(.primary)
                         }
@@ -264,13 +237,10 @@ struct CardAttachmentSourceSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .topBarLeading)
                 {
-
                     Button("Close", systemImage: "xmark")
                     {
-
                         dismiss()
                     }
 
@@ -295,8 +265,6 @@ struct CardAttachmentSourceSheet: View
 ///
 struct CardLinkAttachmentSheet: View
 {
-
-
     let onSave: (URL) -> Void /* Callback receiving the validated URL */
 
     @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
@@ -311,7 +279,6 @@ struct CardLinkAttachmentSheet: View
     ///
     private var validatedURL: URL? /* Validated URL */
     {  /* Parsed URL when the draft is valid */
-
         CardAttachmentStore.webURL(from: urlDraft)
     }
 
@@ -328,20 +295,12 @@ struct CardLinkAttachmentSheet: View
     ///
     var body: some View /* Card Link Attachment layout */
     {  /* Manual web-link form */
-
-
         NavigationStack
         {
-
-
             Form
             {
-
-
                 Section("Link")
                 {
-
-
                     TextField("https://example.com", text: $urlDraft)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
@@ -355,13 +314,10 @@ struct CardLinkAttachmentSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
-
                         dismiss()
                     }
 
@@ -370,10 +326,8 @@ struct CardLinkAttachmentSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Add")
                     {
-
                         saveLink()
                     }
 
@@ -401,12 +355,8 @@ struct CardLinkAttachmentSheet: View
     ///
     private func saveLink()
     {
-
-
         guard let validatedURL else
         {  /* Validated attachment URL */
-
-
             return
         }  /* Require a valid web address */
 
@@ -428,8 +378,6 @@ struct CardLinkAttachmentSheet: View
 ///
 struct CardPhotoGallery: View
 {
-
-
     let photos:                  [KanbanAttachment] /* Photo selections or gallery entries */
     @Binding var photoSelection: [PhotosPickerItem] /* Photo selection */
     let onOpen:                  (KanbanAttachment) -> Void /* Open the selected destination */
@@ -447,16 +395,12 @@ struct CardPhotoGallery: View
 
     var body: some View /* Card Photo Gallery layout */
     {
-
         VStack(alignment: .leading, spacing: 12)
         {
-
             ViewThatFits(in: .horizontal)
             {
-
                 HStack
                 {
-
                     Text("Gallery").font(.headline)
                     Spacer()
                     galleryControls
@@ -464,7 +408,6 @@ struct CardPhotoGallery: View
 
                 VStack(alignment: .leading, spacing: 8)
                 {
-
                     Text("Gallery").font(.headline)
                     galleryControls
                 }
@@ -473,10 +416,8 @@ struct CardPhotoGallery: View
 
             ScrollView(.horizontal)
             {
-
                 LazyHStack(alignment: .top, spacing: 12)
                 {
-
                     ForEach(Array(photos.enumerated()), id: \.element.id)
                     {
                         index, photo in
@@ -500,7 +441,6 @@ struct CardPhotoGallery: View
         }
         .sheet(isPresented: $showsArrangement)
         {
-
             CardPhotoArrangementSheet(photos: photos, onReorder: onReorder)
             .databaseActivityOverlay()
         }
@@ -515,7 +455,6 @@ struct CardPhotoGallery: View
                             {
                                 if !$0
                                 {
-
                                     removalPhoto = nil
 
                                 }
@@ -524,13 +463,10 @@ struct CardPhotoGallery: View
                         ), titleVisibility: .visible
         )
         {
-
             if let photo = removalPhoto
             {
-
                 Button("Remove photo", role: .destructive)
                 {
-
                     onRemove(photo)
 
                     removalPhoto = nil
@@ -541,7 +477,6 @@ struct CardPhotoGallery: View
 
             Button("Cancel", role: .cancel)
             {
-
                 removalPhoto = nil
 
             }
@@ -549,7 +484,6 @@ struct CardPhotoGallery: View
         }
         message:
         {
-
             Text("Removes the photo and its caption from this item. Photos retained elsewhere are kept.")
         }
 
@@ -558,13 +492,10 @@ struct CardPhotoGallery: View
 
     private var galleryControls: some View /* Gallery controls */
     {
-
         HStack(spacing: 12)
         {
-
             Button("Arrange", systemImage: "arrow.left.arrow.right")
             {
-
                 showsArrangement = true
 
             }
@@ -573,7 +504,6 @@ struct CardPhotoGallery: View
             .accessibilityIdentifier("photoGallery.arrange")
             PhotosPicker(selection: $photoSelection, maxSelectionCount: 12, matching: .images)
             {
-
                 Label("Add photos", systemImage: "photo.badge.plus")
             }
             .accessibilityIdentifier("photoGallery.add")
@@ -597,25 +527,19 @@ struct CardPhotoGallery: View
     ///
     private func photoTile(_ photo: KanbanAttachment, index: Int) -> some View
     {
-
         VStack(alignment: .leading, spacing: 0)
         {
-
             Button
             {
-
                 onOpen(photo)
             }
             label:
             {
-
                 CardCoverPreview(attachment: photo, height: photoHeight, unavailableTitle: "Photo unavailable")
                 .overlay(alignment: .bottomLeading)
                 {
-
                     if let caption = photo.caption, !caption.isEmpty
                     {
-
                         Text(caption)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
@@ -624,7 +548,6 @@ struct CardPhotoGallery: View
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background
                         {
-
                             LinearGradient(
                                 colors: [.black.opacity(0.7), .black.opacity(0.95)],
                                 startPoint: .top, endPoint: .bottom)
@@ -649,7 +572,6 @@ struct CardPhotoGallery: View
             }
             .contextMenu
             {
-
                 Button("Set as Cover", systemImage: "photo")
                 {
                     onSetCover(photo.id)
@@ -683,17 +605,14 @@ struct CardPhotoGallery: View
 
             HStack
             {
-
                 Text("Photo \(index + 1)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 Spacer()
                 Menu
                 {
-
                     Button(photo.caption == nil ? "Add caption" : "Edit caption", systemImage: "text.bubble")
                     {
-
                         captionPhoto = photo
 
                     }
@@ -715,7 +634,6 @@ struct CardPhotoGallery: View
 
                     Button("Remove photo", systemImage: "trash", role: .destructive)
                     {
-
                         removalPhoto = photo
 
                     }
@@ -723,7 +641,6 @@ struct CardPhotoGallery: View
                 }
                 label:
                 {
-
                     Image(systemName: "ellipsis")
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
@@ -750,7 +667,6 @@ struct CardPhotoGallery: View
     ///
     private func movePhoto(_ index: Int, by offset: Int)
     {
-
         var ids = photos.map(\.id) /* Record identifiers */
 
         ids.swapAt(index, index + offset)
@@ -771,8 +687,6 @@ struct CardPhotoGallery: View
 ///
 struct CardPhotoCaptionSheet: View
 {
-
-
     let photo:                  KanbanAttachment /* Photo selection or source      */
     let onSave:                 (String) -> Bool /* Persist the edited value       */
     @State private var caption: String           /* Supporting media caption       */
@@ -792,7 +706,6 @@ struct CardPhotoCaptionSheet: View
     ///
     init(photo: KanbanAttachment, onSave: @escaping (String) -> Bool)
     {
-
         self.photo = photo
         self.onSave = onSave
         _caption = State(initialValue: photo.caption ?? "")
@@ -802,22 +715,17 @@ struct CardPhotoCaptionSheet: View
 
     var body: some View /* Card Photo Caption layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Section
                 {
-
                     CardCoverPreview(attachment: photo, height: 180, unavailableTitle: "Photo unavailable")
                 }
 
                 Section("Caption")
                 {
-
                     TextField("Optional caption", text: $caption, axis: .vertical).textInputAutocapitalization(
                         .sentences
                     )
@@ -832,10 +740,8 @@ struct CardPhotoCaptionSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -845,7 +751,6 @@ struct CardPhotoCaptionSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
                         if onSave(caption)
@@ -875,30 +780,23 @@ struct CardPhotoCaptionSheet: View
 ///
 struct CardPhotoArrangementSheet: View
 {
-
-
     let photos:    [KanbanAttachment]           /* Photo selections or gallery entries */
     let onReorder: ([UUID]) -> Bool             /* Reorder callback                    */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation      */
 
     var body: some View /* Card Photo Arrangement layout */
     {
-
         NavigationStack
         {
-
             List
             {
-
                 Section
                 {
-
                     ForEach(Array(photos.enumerated()), id: \.element.id)
                     {
                         index, photo in
                         HStack(spacing: 12)
                         {
-
                             CardCoverPreview(attachment: photo, height: 64, unavailableTitle: "Photo unavailable")
                             .frame(width: 80)
                             Text(photo.caption ?? "Photo \(index + 1)")
@@ -920,7 +818,6 @@ struct CardPhotoArrangementSheet: View
                 }
                 footer:
                 {
-
                     Text(
                                                             "Drag the handles to arrange photos. The cover stays separate. Changes are saved as you move photos."
                     )
@@ -932,10 +829,8 @@ struct CardPhotoArrangementSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Done")
                     {
                         dismiss()
@@ -960,8 +855,6 @@ struct CardPhotoArrangementSheet: View
 ///
 struct CardAttachmentThumbnail: View
 {
-
-
     let attachment: KanbanAttachment /* Attachment represented by the thumbnail */
 
     ///
@@ -977,23 +870,15 @@ struct CardAttachmentThumbnail: View
     ///
     var body: some View /* Card Attachment Thumbnail layout */
     {  /* Local image, remote link, or media fallback */
-
-
         GeometryReader
         {
             geometry in
             Group
             {
-
-
                 if let url = attachment.url
                 {  /* Remote link URL */
-
-
                     VStack(spacing: 6)
                     {
-
-
                         Image(systemName: "link")
                         .font(.title2)
 
@@ -1009,7 +894,6 @@ struct CardAttachmentThumbnail: View
                 }
                 else if attachment.kind == .audio
                 {
-
                     Image(systemName: "waveform")
                     .font(.title2).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1018,8 +902,6 @@ struct CardAttachmentThumbnail: View
                 }
                 else if attachment.kind == .video
                 {
-
-
                     Image(systemName: "play.rectangle.fill")
                     .font(.title2)
                     .foregroundStyle(.secondary)
@@ -1030,16 +912,12 @@ struct CardAttachmentThumbnail: View
 
                 let image = UIImage(contentsOfFile: imageURL.path)
                 {  /* Decoded local image */
-
-
                     Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
                 }
                 else
                 {
-
-
                     Image(systemName: "photo")
                     .font(.title2)
                     .foregroundStyle(.secondary)
@@ -1069,8 +947,6 @@ struct CardAttachmentThumbnail: View
 @MainActor
 final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDelegate
 {
-
-
     @Published private(set) var isPlaying = false /* Playing state             */
     private var player: AVAudioPlayer?            /* Audio playback controller */
 
@@ -1087,7 +963,6 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
     ///
     func toggle(url: URL)
     {
-
         if isPlaying
         {
             stop();
@@ -1096,7 +971,6 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
 
         do
         {
-
             let session = AVAudioSession.sharedInstance() /* Current operation session */
 
             try session.setCategory(.playback, mode: .spokenAudio)
@@ -1111,7 +985,6 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
         }
         catch
         {
-
             isPlaying = false;
             errorMessage = "This recording couldn't be played. The file may be unavailable."
 
@@ -1131,10 +1004,8 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
     ///
     func stop()
     {
-
         guard player != nil else
         {
-
             isPlaying = false;
 
             return
@@ -1162,7 +1033,6 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
     ///
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool)
     {
-
         Task
         {
             @MainActor [weak self] in
@@ -1183,18 +1053,14 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
 ///
 struct AudioAttachmentPlayer: View
 {
-
-
     let url: URL                                               /* Resource location            */
     @StateObject private var playback = CaptureAudioPlayback() /* Current audio playback state */
     @Environment(\.scenePhase) private var scenePhase          /* Scene phase                  */
 
     var body: some View /* Audio Attachment Player layout */
     {
-
         VStack(spacing: 16)
         {
-
             Image(systemName: "waveform").font(.largeTitle).foregroundStyle(.secondary)
             Button(
                 playback.isPlaying ? "Stop playback" : "Play recording",
@@ -1243,8 +1109,6 @@ struct AudioAttachmentPlayer: View
 ///
 struct CardAttachmentPreview: View
 {
-
-
     let attachment: KanbanAttachment /* The media attachment to preview */
 
     var onSaveDrawing:                   ((KanbanAttachment) -> Bool)? = /* Save drawing callback */
@@ -1273,53 +1137,40 @@ struct CardAttachmentPreview: View
     ///
     var body: some View /* Card Attachment Preview layout */
     {  /* Video or image preview with unavailable fallback */
-
-
         NavigationStack
         {
-
             Group
             {
-
-
                 if attachment.kind == .audio, let url = CardAttachmentStore.fileURL(for: currentAttachment)
                 {
-
                     AudioAttachmentPlayer(url: url).padding()
                 }
                 else if attachment.kind == .video,
 
                 let videoURL = CardAttachmentStore.fileURL(for: currentAttachment)
                 {  /* Local video file URL */
-
                     VideoPlayer(player: AVPlayer(url: videoURL))
                 }
                 else
                 {
-
                     ScrollView
                     {
-
                         VStack(spacing: 12)
                         {
-
                             if let imageURL = CardAttachmentStore.imageURL(for: currentAttachment),
                             let image = UIImage(contentsOfFile: imageURL.path)
                             {
-
                                 Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
                             }
                             else
                             {
-
                                 ContentUnavailableView("Photo unavailable", systemImage: "photo")
                             }
 
                             if let caption = attachment.caption, !caption.isEmpty
                             {
-
                                 Text(caption)
                                 .font(.body)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1340,17 +1191,12 @@ struct CardAttachmentPreview: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
-
                 ToolbarItem(placement: .topBarLeading)
                 {
-
                     if currentAttachment.drawingFileName != nil
                     {
-
                         Button("Edit drawing", systemImage: "pencil.tip")
                         {
-
                             showsDrawingEditor = true
 
                         }
@@ -1361,11 +1207,8 @@ struct CardAttachmentPreview: View
 
                 ToolbarItem(placement: .topBarTrailing)
                 {
-
-
                     Button("Done")
                     {
-
                         dismiss()
                     }
 
@@ -1377,10 +1220,8 @@ struct CardAttachmentPreview: View
 
         .sheet(isPresented: $showsDrawingEditor)
         {
-
             if let draft = try? DrawingAttachmentStore.load(currentAttachment)
             {
-
                 DrawingCaptureEditor(initial: draft)
                 {
                     drawing in
@@ -1391,13 +1232,11 @@ struct CardAttachmentPreview: View
 
                     do
                     {
-
                         let replacement = /* Replacement content or state */
                             try DrawingAttachmentStore.save(drawing, replacing: currentAttachment)
 
                         guard onSaveDrawing(replacement) else
                         {
-
                             try? CardAttachmentStore.removeDeletedFiles(
                                 Set(replacement.storedFileNames), keeping: Set(currentAttachment.storedFileNames))
                             return false
@@ -1417,7 +1256,6 @@ struct CardAttachmentPreview: View
             }
             else
             {
-
                 ContentUnavailableView(
                                                 "Drawing unavailable", systemImage: "pencil.tip",
                                                 description: Text(

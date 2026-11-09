@@ -19,8 +19,6 @@ import SwiftUI
 ///
 struct TodayScrollOffsetPreferenceKey: PreferenceKey
 {
-
-
     ///
     /// @section    Purpose
     ///     Carry the latest vertical scroll offset from Today content to its observer
@@ -41,8 +39,6 @@ struct TodayScrollOffsetPreferenceKey: PreferenceKey
     ///
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat)
     {
-
-
         value = nextValue()
 
     }
@@ -59,8 +55,6 @@ struct TodayScrollOffsetPreferenceKey: PreferenceKey
 ///
 struct TodaySectionSnapBehavior: ScrollTargetBehavior
 {
-
-
     var perspectiveTop:  CGFloat /* Perspective top           */
     var shortcutsBottom: CGFloat /* Shortcuts bottom          */
     var enabled:         Bool    /* Feature availability flag */
@@ -88,7 +82,6 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
         enabled: Bool
     ) -> CGFloat?
     {
-
         guard enabled, perspectiveTop > shortcutsBottom, shortcutsBottom > 0, viewport > 0,
         abs(proposed - start) >= 24
         else
@@ -101,13 +94,11 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
         if proposed > start, start < perspectiveTop - 24,
         start <= revealBoundary, proposed >= revealBoundary
         {
-
             return min(maximum, perspectiveTop)
         }
 
         if proposed < start, start >= shortcutsBottom, proposed <= shortcutsBottom
         {
-
             return 0
         }
 
@@ -128,7 +119,6 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
     ///
     func updateTarget(_ target: inout ScrollTarget, context: TargetContext)
     {
-
         guard
         let y = Self.destination(
             start: context.originalTarget.rect.minY,
@@ -156,8 +146,6 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
 ///
 struct TodayScrollFadeTracking: ViewModifier
 {
-
-
     @Binding var isScrolled: Bool /* Header fade visibility state */
 
 
@@ -175,12 +163,8 @@ struct TodayScrollFadeTracking: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
-
         if #available(iOS 18.0, *)
         {
-
-
             content.onScrollGeometryChange(for: Bool.self)
             {
                 geometry in
@@ -197,7 +181,6 @@ struct TodayScrollFadeTracking: ViewModifier
         }
         else
         {
-
             content
             .coordinateSpace(name: "TodayScroll")
             .onPreferenceChange(TodayScrollOffsetPreferenceKey.self)

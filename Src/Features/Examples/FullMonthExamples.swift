@@ -22,8 +22,6 @@ import SwiftUI
 ///
 struct FullMonthExampleStore: Sendable
 {
-
-
     let root:             URL    /* Workspace or view root         */
     let documents:        URL    /* Store document snapshots       */
     let support:          URL    /* Supported operation capability */
@@ -31,7 +29,6 @@ struct FullMonthExampleStore: Sendable
 
     private var defaults: UserDefaults /* Preference storage domain */
     {
-
         domainName == Bundle.main.bundleIdentifier ? .standard : UserDefaults(suiteName: domainName)!
     }
 
@@ -60,8 +57,6 @@ struct FullMonthExampleStore: Sendable
     ///
     private struct Manifest: Codable
     {
-
-
         var version   = 1            /* Serialized format version */
         var createdAt = Date()       /* Created at                */
         let hashes: [String: String] /* Expected content digests  */
@@ -80,7 +75,6 @@ struct FullMonthExampleStore: Sendable
     ///
     static func live() throws -> Self
     {
-
         let fm      = FileManager.default /* Filesystem operations     */
         let library =                     /* Retained library contents */
             try fm.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -100,7 +94,6 @@ struct FullMonthExampleStore: Sendable
 
     var hasUserData: Bool /* User Data availability */
     {
-
         fm.fileExists(atPath: userData.path) && committedOperation() != "restore"
     }
 
@@ -114,7 +107,6 @@ struct FullMonthExampleStore: Sendable
     ///
     private func committedOperation() -> String?
     {
-
         try? String(contentsOf: transition.appendingPathComponent("Committed"), encoding: .utf8)
     }
 
@@ -132,7 +124,6 @@ struct FullMonthExampleStore: Sendable
     ///
     private func digest(_ url: URL) throws -> String
     {
-
         // Stream large attachments rather than loading an entire video into memory
         let handle = try FileHandle(forReadingFrom: url) /* Open file or task handle */
 
@@ -170,7 +161,6 @@ struct FullMonthExampleStore: Sendable
     ///
     private func hashes(in directory: URL) throws -> [String: String]
     {
-
         var result: [String: String] = [:] /* Accumulated output value */
         var enumerationError: Error?       /* Enumeration error        */
 
@@ -187,13 +177,11 @@ struct FullMonthExampleStore: Sendable
             })
         else
         {
-
             throw CocoaError(.fileReadUnknown)
         }
 
         for case let url as URL in entries
         {
-
             let values = /* Values being processed */
                 try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
 
@@ -204,13 +192,11 @@ struct FullMonthExampleStore: Sendable
 
             if values.isRegularFile == true
             {
-
                 let key = /* Persistence lookup key */
                     String(url.path.dropFirst(directory.path.count + 1))
 
                 if key != "Manifest.json"
                 {
-
                     result[key] = try digest(url)
 
                 }
@@ -242,13 +228,11 @@ struct FullMonthExampleStore: Sendable
     ///
     private func verify(_ directory: URL) throws
     {
-
         let manifest = try JSONDecoder().decode( /* Package inventory and hashes */
             Manifest.self, from: Data(contentsOf: directory.appendingPathComponent("Manifest.json")))
 
         guard manifest.version == 1, try hashes(in: directory) == manifest.hashes else
         {
-
             throw CocoaError(.fileReadCorruptFile)
         }
 
@@ -271,13 +255,11 @@ struct FullMonthExampleStore: Sendable
     ///
     private func savedDomain(in directory: URL) throws -> [String: Any]
     {
-
         let data = /* Loaded original file bytes */
             try Data(contentsOf: directory.appendingPathComponent("Defaults.plist"))
 
         guard let domain = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else
         {
-
             throw CocoaError(.fileReadCorruptFile)
         }
 
@@ -299,7 +281,6 @@ struct FullMonthExampleStore: Sendable
     ///
     private func capture(to destination: URL) throws
     {
-
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
 
         let staging = /* Isolated staging workspace */
@@ -324,18 +305,15 @@ struct FullMonthExampleStore: Sendable
         try data.write(to: staging.appendingPathComponent("Defaults.plist"), options: .atomic)
         for (name, source) in [("Documents", documents), ("ApplicationSupport", support)]
         {
-
             let target = /* Target under consideration */
                 staging.appendingPathComponent(name, isDirectory: true)
 
             if fm.fileExists(atPath: source.path)
             {
-
                 try fm.copyItem(at: source, to: target)
             }
             else
             {
-
                 try fm.createDirectory(at: target, withIntermediateDirectories: true)
             }
 
@@ -370,13 +348,11 @@ struct FullMonthExampleStore: Sendable
     ///
     private func setDomain(_ domain: [String: Any]) throws
     {
-
         defaults.setPersistentDomain(domain, forName: domainName)
         guard defaults.synchronize(),
         NSDictionary(dictionary: defaults.persistentDomain(forName: domainName) ?? [:]).isEqual(to: domain)
         else
         {
-
             throw CocoaError(.fileWriteUnknown)
         }
 
@@ -396,11 +372,9 @@ struct FullMonthExampleStore: Sendable
     ///
     private func installFiles(from snapshot: URL) throws
     {
-
         // Each immutable source survives interrupted installation and can be retried at launch
         for (name, target) in [("Documents", documents), ("ApplicationSupport", support)]
         {
-
             let staged = /* Prepared isolated content */
                 root.appendingPathComponent("install-" + UUID().uuidString, isDirectory: true)
 
@@ -431,7 +405,6 @@ struct FullMonthExampleStore: Sendable
     ///
     private func finishCommitted() throws
     {
-
         if committedOperation() == "restore", fm.fileExists(atPath: userData.path)
         {
             try fm.removeItem(at: userData)
@@ -439,7 +412,6 @@ struct FullMonthExampleStore: Sendable
 
         if committedOperation() == "native_restore_undo"
         {
-
             let previous = /* Previous value for comparison */
                 root.appendingPathComponent("BeforeNativeRestore")
 
@@ -450,7 +422,6 @@ struct FullMonthExampleStore: Sendable
         }
         if committedOperation() == "portable_import_undo"
         {
-
             let previous = /* Previous value for comparison */
                 root.appendingPathComponent("BeforePortableImport")
 
@@ -476,7 +447,6 @@ struct FullMonthExampleStore: Sendable
     ///
     func recoverInterruptedSwitch() throws
     {
-
         guard fm.fileExists(atPath: transition.path) else
         {
             return
@@ -508,7 +478,6 @@ struct FullMonthExampleStore: Sendable
     ///
     func loadExample(_ example: FullMonthExample) throws
     {
-
         try recoverInterruptedSwitch()
         if !hasUserData
         {
@@ -523,13 +492,11 @@ struct FullMonthExampleStore: Sendable
         try capture(to: transition)
         do
         {
-
             try setDomain(domain)
             try Data("load".utf8).write(to: transition.appendingPathComponent("Committed"), options: .atomic)
         }
         catch
         {
-
             try recoverInterruptedSwitch()
             throw error
         }
@@ -543,7 +510,6 @@ struct FullMonthExampleStore: Sendable
     /// @return Whether the pre-import workspace can be restored
     var hasPortableImportBackup: Bool /* Portable Import Backup availability */
     {
-
         fm.fileExists(atPath: root.appendingPathComponent("BeforePortableImport").path)
     }
 
@@ -555,7 +521,6 @@ struct FullMonthExampleStore: Sendable
     /// @throws Capture, install, reload or recovery failures
     func installPortableWorkspace(_ install: () throws -> Void) throws
     {
-
         try recoverInterruptedSwitch()
         guard !hasPortableImportBackup else
         {
@@ -574,7 +539,6 @@ struct FullMonthExampleStore: Sendable
         }
         catch
         {
-
             let failure = error /* Reported operation failure */
 
             try recoverInterruptedSwitch()
@@ -591,7 +555,6 @@ struct FullMonthExampleStore: Sendable
     /// @throws Missing backup, verification, persistence or recovery errors
     func undoPortableWorkspace() throws
     {
-
         try recoverInterruptedSwitch()
 
         let previous = /* Previous value for comparison */
@@ -632,7 +595,6 @@ struct FullMonthExampleStore: Sendable
     /// @return True when a prior Simulator restore has an undo snapshot
     var hasNativeRestoreBackup: Bool /* Native Restore Backup availability */
     {
-
         fm.fileExists(atPath: root.appendingPathComponent("BeforeNativeRestore").path)
     }
 
@@ -644,7 +606,6 @@ struct FullMonthExampleStore: Sendable
     /// @throws Capture, installation or recovery errors
     func installNativeSource(_ install: () throws -> Void) throws
     {
-
         try recoverInterruptedSwitch()
         guard !hasNativeRestoreBackup else
         {
@@ -672,7 +633,6 @@ struct FullMonthExampleStore: Sendable
     /// @throws Verification, persistence or rollback errors
     func undoNativeSource() throws
     {
-
         try recoverInterruptedSwitch()
 
         let previous = /* Previous value for comparison */
@@ -707,7 +667,6 @@ struct FullMonthExampleStore: Sendable
     ///
     func restoreUserData() throws
     {
-
         try recoverInterruptedSwitch()
         guard hasUserData else
         {
@@ -718,14 +677,12 @@ struct FullMonthExampleStore: Sendable
         try capture(to: transition)
         do
         {
-
             try installFiles(from: userData)
             try setDomain(savedDomain(in: userData))
             try Data("restore".utf8).write(to: transition.appendingPathComponent("Committed"), options: .atomic)
         }
         catch
         {
-
             try recoverInterruptedSwitch()
             throw error
         }
@@ -745,8 +702,6 @@ struct FullMonthExampleStore: Sendable
 ///
 struct FullMonthExample: Sendable
 {
-
-
     let document:    PlanningCalendarDocument /* Working calendar document     */
     let collections: [PersonalCollection]     /* Retained personal collections */
 
@@ -764,7 +719,6 @@ struct FullMonthExample: Sendable
     ///
     static func make(now: Date = .now, calendar: Calendar = .current) -> Self
     {
-
         let today    = calendar.startOfDay(for: now) /* Current local day */
         let month    = calendar.dateInterval(of: .month, for: today)! /* Calendar month component */
         let days     = /* Dates in the selected range */
@@ -776,7 +730,6 @@ struct FullMonthExample: Sendable
 
         for offset in 0 ..< days.count
         {
-
             let date   = /* Date used by this operation */
                 calendar.date(byAdding: .day, value: offset, to: month.start)!
             var week   = /* Dated Week under consideration */
@@ -829,11 +782,9 @@ struct FullMonthExample: Sendable
 
             if let bookmark = week.collection.lists[index].cards.first(where:
                 {
-
                     !$0.isTitleChecked && $0.dueDateKind == .date && !$0.isSectionDivider
                 })
             {
-
                 week.collection.savedCardIDs.insert(bookmark.id)
             }
 
@@ -844,7 +795,6 @@ struct FullMonthExample: Sendable
         let collections = /* Retained personal collections */
             [PersonalListExample.onTheTable, .inTheQueue, .scheduled].map
         {
-
             $0.makeCollection(existingTitles: [])
         }
 
@@ -853,7 +803,6 @@ struct FullMonthExample: Sendable
 
     var previewLists: [KanbanList] /* Preview lists */
     {
-
         document.weeks.enumerated().flatMap
         {
             weekIndex, week in
@@ -904,13 +853,11 @@ struct FullMonthExample: Sendable
     ///
     func defaultsDomain(preserving original: [String: Any]) throws -> [String: Any]
     {
-
         guard let current = document.weeks.first(where:
             {
                 $0.startKey == document.currentWeekKey
             }) else
         {
-
             throw CocoaError(.coderInvalidValue)
         }
 
@@ -932,16 +879,13 @@ struct FullMonthExample: Sendable
 
         for week in document.weeks
         {
-
             for list in week.collection.lists
             {
-
                 if let card = list.cards.first(where:
                     {
                         !$0.isTitleChecked && $0.displayFormat == .card
                     })
                 {
-
                     importance = LibraryImportanceSelection.setting(
                         cardID: card.id, collectionID: week.id, marked: true, data: importance)
 
@@ -956,19 +900,16 @@ struct FullMonthExample: Sendable
         let savedPreferences = /* Saved preferences */
         (original[PlanPreferencesStore.key] as? Data).flatMap
         {
-
             try? JSONDecoder().decode(LocalProfilePreferences.self, from: $0)
         }
 
         ?? (original[LocalProfileStore.storageKey] as? Data).flatMap
         {
-
             try? JSONDecoder().decode(LocalProfile.self, from: $0)
         }?.preferences
 
         if let existing = savedPreferences
         {
-
             var preferences = LocalProfilePreferences() /* Planning and display choices */
 
             preferences.enablesLowerCornerBack = existing.enablesLowerCornerBack

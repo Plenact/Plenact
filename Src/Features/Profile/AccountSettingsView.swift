@@ -24,8 +24,6 @@ import UIKit
 ///
 struct ProfileAvatarView: View
 {
-
-
     let profile:   LocalProfile? /* Current local profile                                      */
     let size:      CGFloat       /* Stable avatar size                                         */
     var photoData: Data? = nil   /* In-memory photo override for the profile's stored filename */
@@ -43,30 +41,21 @@ struct ProfileAvatarView: View
     ///
     var body: some View /* Profile Avatar layout */
     {  /* Circular local-profile avatar */
-
-
         ZStack
         {
-
             Circle()
             .fill(profile?.avatarColor.color ?? Color.secondary.opacity(0.16))
 
             if let profile
             {  /* Available local profile */
-
-
                 if let symbolName = profile.avatarIcon.symbolName
                 {  /* Chosen icon's SF Symbol */
-
-
                     Image(systemName: symbolName)
                     .font(.system(size: size * 0.4, weight: .semibold))
                     .foregroundStyle(profile.avatarForegroundColor.color)
                 }
                 else
                 {
-
-
                     Text(profile.initials)
                     .font(.system(size: size * 0.36, weight: .semibold))
                     .foregroundStyle(profile.avatarForegroundColor.color)
@@ -75,8 +64,6 @@ struct ProfileAvatarView: View
             }
             else
             {
-
-
                 Image(systemName: "person.crop.circle")
                 .font(.system(size: size * 0.58))
                 .foregroundStyle(.secondary)
@@ -87,12 +74,10 @@ struct ProfileAvatarView: View
         .frame(width: size, height: size)
         .overlay
         {
-
             if let data = photoData
             ?? ProfileAvatarPhotoStore.load(profile?.avatarPhotoFileName), /* Selected or saved avatar bytes */
             let image = UIImage(data: data)
             {  /* Decoded avatar photo           */
-
                 Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
@@ -121,8 +106,6 @@ struct ProfileAvatarView: View
 ///
 struct AccountSettingsView: View
 {
-
-
     ///
     /// Identifies the account editor's settings tabs
     ///
@@ -132,8 +115,6 @@ struct AccountSettingsView: View
     ///
     private enum SettingsTab: String, CaseIterable
     {
-
-
         case account = "Account"
         case settings = "Settings"
     }
@@ -203,7 +184,6 @@ struct AccountSettingsView: View
     ///
     private var trimmedDisplayName: String /* Trimmed display name */
     {  /* Normalized name */
-
         displayName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -229,8 +209,6 @@ struct AccountSettingsView: View
         onRemove: @escaping () -> Void
     )
     {
-
-
         let preferences = PlanPreferencesStore.load() /* Initial settings */
 
         self.profile = profile
@@ -290,25 +268,17 @@ struct AccountSettingsView: View
     ///
     private func saveProfile()
     {
-
-
         let photoFileName: String? /* Stored filename for the new avatar photo */
 
         do
         {
-
-
             if let avatarPhotoData
             {  /* Newly selected avatar-photo bytes */
-
-
                 photoFileName = try ProfileAvatarPhotoStore.save(avatarPhotoData)
 
             }
             else
             {
-
-
                 photoFileName = nil
 
             }
@@ -316,8 +286,6 @@ struct AccountSettingsView: View
         }
         catch
         {
-
-
             photoSaveError = error.localizedDescription
 
             return
@@ -329,7 +297,6 @@ struct AccountSettingsView: View
             didLoadWeekStart ? firstWeekday : (planningAccess?.document.firstWeekday ?? 1)) != false
         else
         {
-
             ProfileAvatarPhotoStore.remove(photoFileName)
             return
         }
@@ -387,18 +354,12 @@ struct AccountSettingsView: View
     ///
     var body: some View /* Profile and preference editor */
     {  /* Local profile form and local example-board controls */
-
-
         NavigationStack
         {
-
-
             VStack(spacing: 0)
             {
-
                 Picker("Account and settings", selection: $selectedTab)
                 {
-
                     ForEach(SettingsTab.allCases, id: \.self)
                     {
                         tab in
@@ -413,16 +374,12 @@ struct AccountSettingsView: View
 
                 if selectedTab == .account
                 {
-
                     Form
                     {
-
                         Section("Profile")
                         {
-
                             NavigationLink
                             {
-
                                 ProfileAvatarIconPicker(
                                     selection: $avatarIcon,
                                     avatarColor: $avatarColor,
@@ -432,14 +389,12 @@ struct AccountSettingsView: View
                                 )
                                 .onAppear
                                 {
-
                                     isChoosingAvatarIcon = true
                                     profileSheetDetent = .height(620)
 
                                 }
                                 .onDisappear
                                 {
-
                                     isChoosingAvatarIcon = false
                                     profileSheetDetent = .large
 
@@ -448,10 +403,8 @@ struct AccountSettingsView: View
                             }
                             label:
                             {
-
                                 HStack(spacing: 14)
                                 {
-
                                     ProfileAvatarView(
                                         profile: LocalProfile(
                                             id: profileID,
@@ -467,7 +420,6 @@ struct AccountSettingsView: View
 
                                     VStack(alignment: .leading, spacing: 2)
                                     {
-
                                         Text(trimmedDisplayName.isEmpty ? "Local profile" : trimmedDisplayName)
                                         .font(.headline)
 
@@ -500,17 +452,13 @@ struct AccountSettingsView: View
 
                         if let profile
                         {  /* Existing profile being edited */
-
-
                             Section
                             {
-
                                 LabeledContent(
                                                                                                 "Created", value: profile.createdAt.formatted(date: .abbreviated, time: .omitted))
 
                                 Button("Remove local profile", role: .destructive)
                                 {
-
                                     confirmsRemoval = true
 
                                 }
@@ -518,12 +466,10 @@ struct AccountSettingsView: View
                             }
                             header:
                             {
-
                                 Text("Local Profile")
                             }
                             footer:
                             {
-
                                 Text("Removing this profile keeps all Board cards, labels, and attachments.")
                             }
 
@@ -534,34 +480,27 @@ struct AccountSettingsView: View
                 }
                 else
                 {
-
                     Form
                     {
-
                         Section
                         {
-
                             Button
                             {
-
                                 showsShortcutEditor = true
 
                             }
                             label:
                             {
-
                                 Label("My shortcuts", systemImage: "square.grid.3x2")
                             }
 
                             Picker("Week starts on", selection: $firstWeekday)
                             {
-
                                 Text("Sunday").tag(1)
                                 Text("Monday").tag(2)
                             }
                             .onAppear
                             {
-
                                 guard !didLoadWeekStart else
                                 {
                                     return
@@ -575,7 +514,6 @@ struct AccountSettingsView: View
                             Toggle("Show due dates on new cards", isOn: $showsDueDatesOnNewCards)
                             Picker("Default Today list", selection: $defaultListID)
                             {
-
                                 Text("Choose each day").tag(nil as Int?)
 
                                 ForEach(lists)
@@ -589,12 +527,10 @@ struct AccountSettingsView: View
                         }
                         header:
                         {
-
                             Text("Planning")
                         }
                         footer:
                         {
-
                             Text(
                                                                                     "The week start applies to Week view and Calendar. Existing plans keep their dates. Due date visibility is a default for new cards and can be changed on each card. Cards without a due date show no date. The default Today list is used only when no list has been chosen for that date."
                             )
@@ -603,10 +539,8 @@ struct AccountSettingsView: View
 
                         Section("Planning rhythm")
                         {
-
                             Button("Review invitations & reminders")
                             {
-
                                 showsReviewRhythmSettings = true
 
                             }
@@ -631,7 +565,6 @@ struct AccountSettingsView: View
 
                         Section
                         {
-
                             Toggle("Reduce supporting content", isOn: $usesReducedContent)
                             Toggle("Use larger primary controls", isOn: $usesLargeControls)
                             Toggle("Show navigation labels", isOn: $showsNavigationLabels)
@@ -644,12 +577,10 @@ struct AccountSettingsView: View
                         }
                         header:
                         {
-
                             Text("Accessibility")
                         }
                         footer:
                         {
-
                             Text(
                                                                                     "Navigation labels appear beneath the Today, Week, New, Calendar, and Saved icons. Plenact also follows system Dynamic Type, VoiceOver, contrast, and Reduce Motion settings."
                             )
@@ -658,7 +589,6 @@ struct AccountSettingsView: View
 
                         Section("Privacy & Data")
                         {
-
                             NavigationLink("Local backup")
                             {
                                 LocalDataExportView()
@@ -688,7 +618,6 @@ struct AccountSettingsView: View
             .navigationTitle(profile == nil ? "Create Profile" : "Account & Settings")
             .sheet(isPresented: $showsShortcutEditor)
             {
-
                 TodayShortcutEditor(
                     pins: TodayListPins.decode(listPinData),
                     owners: WorkspaceBrowseIndex.owners(
@@ -706,17 +635,12 @@ struct AccountSettingsView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 if !isChoosingAvatarIcon
                 {
-
-
                     ToolbarItem(placement: .cancellationAction)
                     {
-
                         Button("Cancel")
                         {
-
                             dismiss()
                         }
 
@@ -725,7 +649,6 @@ struct AccountSettingsView: View
 
                     ToolbarItem(placement: .confirmationAction)
                     {
-
                         Button("Save", action: saveProfile)
                         .disabled(trimmedDisplayName.isEmpty)
                     }
@@ -740,10 +663,8 @@ struct AccountSettingsView: View
                                     titleVisibility: .visible
             )
             {
-
                 Button("Remove profile", role: .destructive)
                 {
-
                     onRemove()
                     ProfileAvatarPhotoStore.remove(profile?.avatarPhotoFileName)
                     dismiss()
@@ -752,13 +673,11 @@ struct AccountSettingsView: View
 
                 Button("Cancel", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text("Your Board, labels, and attachments will remain on this device.")
             }
 
@@ -777,7 +696,6 @@ struct AccountSettingsView: View
                             {
                                 if !$0
                                 {
-
                                     photoSaveError = nil
 
                                 }
@@ -786,10 +704,8 @@ struct AccountSettingsView: View
                         )
         )
         {
-
             Button("OK", role: .cancel)
             {
-
                 photoSaveError = nil
 
             }
@@ -797,7 +713,6 @@ struct AccountSettingsView: View
         }
         message:
         {
-
             Text(photoSaveError ?? "")
         }
 
@@ -815,17 +730,13 @@ struct AccountSettingsView: View
 ///
 struct NewCardColorDefaultsSection: View
 {
-
-
     @Binding var headers:     Bool /* List or Card header settings */
     @Binding var backgrounds: Bool /* Resolved surface choices     */
 
     var body:                 some View /* New Card Color Defaults layout */
     {
-
         Section
         {
-
             Toggle("Random header color", isOn: $headers)
             .accessibilityIdentifier("settings.newCards.randomHeader")
             Toggle("Random background color", isOn: $backgrounds)
@@ -833,12 +744,10 @@ struct NewCardColorDefaultsSection: View
         }
         header:
         {
-
             Text("New Cards")
         }
         footer:
         {
-
             Text(
                                     "Give each new Card a saved color from a soft palette. The switches work independently. Existing items, Notes, and section dividers keep their colors. Change or reset an individual Card's colors in Appearance."
             )
@@ -858,8 +767,6 @@ struct NewCardColorDefaultsSection: View
 ///
 struct TodayFocusSettingsSection: View
 {
-
-
     @Binding var count:          Int             /* Number of entries          */
     @Binding var order:          TodayFocusOrder /* Display ordering policy    */
     @Binding var groups:         Bool            /* Groups state flag          */
@@ -871,13 +778,10 @@ struct TodayFocusSettingsSection: View
 
     var body: some View /* Today Focus Settings layout */
     {
-
         Section
         {
-
             Picker("Visible rows in Today's Focus", selection: $count)
             {
-
                 ForEach(1 ... 12, id: \.self)
                 {
                     Text("\($0)").tag($0)
@@ -895,12 +799,10 @@ struct TodayFocusSettingsSection: View
                 },
                 set:
                 {
-
                     order = $0
 
                 }))
             {
-
                 ForEach(TodayFocusOrder.allCases, id: \.self)
                 {
                     Text($0.title).tag($0)
@@ -917,12 +819,10 @@ struct TodayFocusSettingsSection: View
         }
         header:
         {
-
             Text("Today's Focus")
         }
         footer:
         {
-
             Text(
                                     "Focus includes items matching any selected filter. Up Next shows current or upcoming schedules today and skips ended time slots. Important and Bookmarked can also include unscheduled items. With no filters enabled, all today’s items are eligible. Keep Day Lists in time order is on by default and sorts both Day Lists and Focus by a timed start, or a timed due date when no timed start is set. Untimed and date-only items keep their manually chosen positions. Day List section boundaries stay intact. Turn it off to manually arrange timed Cards and choose a separate Focus order. Grouping uses your section headings; separate chronological Focus order uses start dates, then due dates when no start is set. The row count controls how many items fit in the preview at once, not how many match. Scroll inside Focus to reach every additional match. Section headings do not count as items; progress always counts the whole day."
             )

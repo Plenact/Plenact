@@ -14,7 +14,6 @@ import Foundation
 @MainActor
 enum MigrationSettingsPreview
 {
-
     static let fields: [String: String] = [ /* Record fields under review */
         "defaultListID": "default_list_id", "usesReducedContent": "uses_reduced_content",
         "scrollsOverflowingTitles": "scrolls_overflowing_titles", "importanceStarStyle": "importance_star_style",
@@ -34,7 +33,6 @@ enum MigrationSettingsPreview
     ///     Link profile avatar originals without disguising a local draft as a canonical user record
     struct Result
     {
-
         let document:       [String: Any]   /* Source document snapshot */
         let records:        [[String: Any]] /* Records being processed  */
         let assetRecords:   [[String: Any]] /* Asset records            */
@@ -53,7 +51,6 @@ enum MigrationSettingsPreview
     /// @throws Wrong storage types, malformed JSON or unknown field errors
     private static func object(_ value: Any, allowed: Set<String>) throws -> [String: Any]
     {
-
         guard let data = value as? Data,
               let raw = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               Set(raw.keys).isSubset(of: allowed) else
@@ -71,7 +68,6 @@ enum MigrationSettingsPreview
     /// @throws Invalid field types, source keys, enum tokens or out-of-range row counts
     private static func preferences(_ raw: [String: Any]) throws -> LocalProfilePreferences
     {
-
         guard Set(raw.keys).isSubset(of: Set(fields.keys)) else
         {
             throw MigrationContentValues.Failure.invalid("settings_preference_fields")
@@ -99,7 +95,6 @@ enum MigrationSettingsPreview
     private static func list(owner: String, id: Int, journal: MigrationIdentityJournal,
         records: [[String: Any]]) -> (String, String)?
     {
-
         let collection = journal.entries.first { /* Personal collection record */
             $0.source.recordType == "collection" && $0.source.owner == "source_collections" && $0.source.legacyID == owner
         }?.target.uuidString.lowercased()
@@ -135,7 +130,6 @@ enum MigrationSettingsPreview
     static func prepare(values: [String: Any], records: [[String: Any]], mediaDigests: [String: String],
         journal: inout MigrationIdentityJournal) throws -> Result
     {
-
         let context = /* Operation context */
             MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: mediaDigests)
         var profile: LocalProfile?                  /* Local profile record */
@@ -144,7 +138,6 @@ enum MigrationSettingsPreview
 
         if let value = values["Plenact.LocalProfile.v1"]
         {
-
             rawProfile = try object(value, allowed: ["id", "createdAt", "displayName", "email", "context",
                 "avatarColor", "avatarIcon", "avatarForegroundColor", "avatarPhotoFileName", "preferences"])
 
@@ -173,21 +166,18 @@ enum MigrationSettingsPreview
 
         if let value = values["Plenact.PlanPreferences.v1"]
         {
-
             rawPreferences = try object(value, allowed: Set(fields.keys))
             origin = "saved_planning_preferences"
 
         }
         else if profile != nil
         {
-
             rawPreferences = profilePreferences
             origin = "saved_profile_preferences"
 
         }
         else
         {
-
             rawPreferences = [:]
             origin = "application_defaults"
 
@@ -201,7 +191,6 @@ enum MigrationSettingsPreview
 
         for (source, target) in fields
         {
-
             mapped[target] = encoded[source] ?? NSNull()
 
         }
@@ -215,12 +204,10 @@ enum MigrationSettingsPreview
 
         if let sourceList = effective.defaultListID
         {
-
             var owner: String? /* Owning collection or Week */
 
             if let data = values["Plenact.CalendarWeeks.v1"] as? Data
             {
-
                 let calendar = /* Date calculation calendar */
                     try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
 
@@ -229,7 +216,6 @@ enum MigrationSettingsPreview
             }
             if let owner, let target = list(owner: owner, id: sourceList, journal: context.journal, records: records)
             {
-
                 mapped["default_list_id"] = target.1
 
             }
@@ -251,7 +237,6 @@ enum MigrationSettingsPreview
 
         if let profile
         {
-
             let raw                    = /* Unprocessed source value */
                 try MigrationContentValues.object(profile)
             let id                     = /* Portable record identity */

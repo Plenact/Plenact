@@ -16,8 +16,6 @@ import SwiftUI
 ///
 struct PlanSettingsView: View
 {
-
-
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
     @State private var preferences                     =      /* Planning and display choices   */
@@ -43,16 +41,13 @@ struct PlanSettingsView: View
     /// @return True after preferences can be saved; false when the calendar rejects its boundary change
     private func savePreferences() -> Bool
     {
-
         guard access?.setFirstWeekday(firstWeekday) != false else
         {
-
             return false
         }
         PlanPreferencesStore.save(preferences)
         if var profile = LocalProfileStore.load()
         {
-
             profile.preferences = preferences
 
             onSaveProfile(profile)
@@ -65,10 +60,8 @@ struct PlanSettingsView: View
     /// @return Void; a rejected calendar change keeps the draft and its current page open
     private func commitAndDismiss()
     {
-
         if savePreferences()
         {
-
             dismiss()
         }
     }
@@ -76,41 +69,32 @@ struct PlanSettingsView: View
 
     var body: some View /* Settings directory and sheets */
     {
-
         NavigationStack(path: $path)
         {
-
             Form
             {
-
                 Section
                 {
-
                     ForEach(PlanSettingsPage.menuPages)
                     {
                         page in
                         if page == .review
                         {
-
                             Button
                             {
-
                                 showsReviewRhythmSettings = true
 
                             }
                             label:
                             {
-
                                 PlanSettingsMenuRow(page: page)
                             }
                             .foregroundStyle(.primary)
                         }
                         else
                         {
-
                             NavigationLink(value: page)
                             {
-
                                 Label(page.title, systemImage: page.symbol)
                             }
                             .accessibilityIdentifier("settings.page." + page.rawValue)
@@ -119,7 +103,6 @@ struct PlanSettingsView: View
                 }
                 footer:
                 {
-
                     Text("Save applies your Plan Settings changes. Studio, reminders, shortcuts, and templates save in their own editors.")
                 }
             }
@@ -129,16 +112,13 @@ struct PlanSettingsView: View
                 PlanSettingsModulePage(page: page, preferences: $preferences, firstWeekday: $firstWeekday,
                     lists: lists, onSave: commitAndDismiss,
                     onStudio: {
-
                         showsStudio = true
 
                     }, onTemplates: {
-
                         showsTemplates = true
 
                     },
                     onShortcuts: {
-
                         showsShortcuts = true
 
                     })
@@ -148,15 +128,12 @@ struct PlanSettingsView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     if path.isEmpty
                     {
-
                         Button("Cancel")
                         {
-
                             dismiss()
                         }
                     }
@@ -165,10 +142,8 @@ struct PlanSettingsView: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     if path.isEmpty
                     {
-
                         Button("Save", action: commitAndDismiss)
                     }
                 }
@@ -176,7 +151,6 @@ struct PlanSettingsView: View
             }
             .onAppear
             {
-
                 guard !loaded else
                 {
                     return
@@ -189,10 +163,8 @@ struct PlanSettingsView: View
         }
         .sheet(isPresented: $showsStudio)
         {
-
             NavigationStack
             {
-
                 StudioSettingsView()
             }
         }
@@ -202,10 +174,8 @@ struct PlanSettingsView: View
         }
         .sheet(isPresented: $showsTemplates, onDismiss:
         {
-
             guard opensLibraryAfterTemplates else
             {
-
                 return
             }
 
@@ -216,21 +186,17 @@ struct PlanSettingsView: View
 
             if preferences != PlanPreferencesStore.load() || firstWeekday != savedFirstWeekday
             {
-
                 confirmsTemplateNavigation = true
 
             }
             else
             {
-
                 onOpenTemplateLibrary?()
             }
         })
         {
-
             PlanningTemplatesView(onOpenLibrary: onOpenTemplateLibrary == nil ? nil :
             {
-
                 opensLibraryAfterTemplates = true
                 showsTemplates = false
 
@@ -239,35 +205,28 @@ struct PlanSettingsView: View
         .confirmationDialog("Save settings before opening Templates?", isPresented: $confirmsTemplateNavigation,
             titleVisibility: .visible)
         {
-
             Button("Save and Open Templates")
             {
-
                 if savePreferences()
                 {
-
                     onOpenTemplateLibrary?()
                 }
             }
             Button("Discard Settings Changes and Open Templates", role: .destructive)
             {
-
                 onOpenTemplateLibrary?()
             }
             Button("Keep Editing Settings", role: .cancel)
             {
-
             }
         }
         .sheet(isPresented: $showsShortcuts)
         {
-
             TodayShortcutEditor(
                 pins: TodayListPins.decode(pinData),
                 owners: WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? [])
             )
             {
-
                 pinData = TodayListPins.encode($0)
 
             }

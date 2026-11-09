@@ -23,8 +23,6 @@ import UniformTypeIdentifiers
 ///
 struct ChecklistActionDetailView: View
 {
-
-
     let title:           String                                /* Owning action title */
     let currentUserName: String                                /* Comment author name */
     let onSave:          (KanbanChecklistActionDetail) -> Void /* Save callback       */
@@ -58,8 +56,6 @@ struct ChecklistActionDetailView: View
         onSave: @escaping (KanbanChecklistActionDetail) -> Void
     )
     {
-
-
         self.title = title
         self.currentUserName = currentUserName
         self.onSave = onSave
@@ -86,19 +82,13 @@ struct ChecklistActionDetailView: View
     ///
     private func toggleItem(checklistID: UUID, itemID: UUID)
     {
-
-
         guard
         let checklistIndex = checklists.firstIndex(where:
             {  /* Nested checklist containing the action to toggle */
-
-
                 $0.id == checklistID
             })
         else
         {
-
-
             return
         }
 
@@ -108,14 +98,10 @@ struct ChecklistActionDetailView: View
         guard
         let itemIndex = checklist.items.firstIndex(where:
             {  /* Nested action whose completion state is toggled */
-
-
                 $0.id == itemID
             })
         else
         {
-
-
             return
         }
 
@@ -144,14 +130,10 @@ struct ChecklistActionDetailView: View
     ///
     private func postComment()
     {
-
-
         let trimmedDraft = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized comment */
 
         guard !PlanRichText.plain(trimmedDraft).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else
         {
-
-
             return
         }
 
@@ -174,19 +156,12 @@ struct ChecklistActionDetailView: View
     ///
     var body: some View /* Checklist detail editor */
     {  /* Reduced Action Detail editor form */
-
-
         NavigationStack
         {
-
-
             Form
             {
-
-
                 Section("Description")
                 {
-
                     RichTextEditor(placeholder: "Description", text: $descriptionText)
                 }
 
@@ -196,18 +171,15 @@ struct ChecklistActionDetailView: View
                     checklist in
                     Section(checklist.title)
                     {
-
                         ForEach(checklist.items)
                         {
                             item in
                             Button
                             {
-
                                 toggleItem(checklistID: checklist.id, itemID: item.id)
                             }
                             label:
                             {
-
                                 Label(
                                     item.title,
                                     systemImage: item.isCompleted ? "checkmark.square.fill" : "square"
@@ -227,12 +199,8 @@ struct ChecklistActionDetailView: View
 
                 Section("Comments")
                 {
-
-
                     if comments.isEmpty
                     {
-
-
                         Text("No comments yet")
                         .foregroundStyle(.secondary)
                     }
@@ -243,7 +211,6 @@ struct ChecklistActionDetailView: View
                         comment in
                         VStack(alignment: .leading, spacing: 3)
                         {
-
                             Text(comment.author)
                             .font(.caption.weight(.semibold))
                             Text(PlanRichText.display(comment.body))
@@ -254,13 +221,11 @@ struct ChecklistActionDetailView: View
 
                     HStack
                     {
-
                         RichTextEditor(
                             placeholder: "Add comment", text: $commentDraft, minimumHeight: 24, verticalInset: 2)
 
                         Button(action: postComment)
                         {
-
                             Image(systemName: "paperplane.fill")
                         }
 
@@ -278,13 +243,10 @@ struct ChecklistActionDetailView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
-
                         dismiss()
                     }
 
@@ -293,10 +255,8 @@ struct ChecklistActionDetailView: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         onSave(
                             KanbanChecklistActionDetail(
                                 id: detailID,
@@ -333,8 +293,6 @@ struct ChecklistActionDetailView: View
 ///
 struct ChecklistBlock: View
 {
-
-
     let checklist: KanbanChecklist /* The checklist data rendered by the block */
     let linkedCardsByID:           /* Linked cards by ID                       */
     [Int: KanbanCard]                   /* Linked cards keyed by stable ID                  */
@@ -378,8 +336,6 @@ struct ChecklistBlock: View
     ///
     private var allItemsAreCompleted: Bool /* All items are completed */
     {  /* Non-empty checklist completion state */
-
-
         /// Check if all items in the checklist are completed
         !checklist.items.isEmpty && checklist.completedItemIndices.count == checklist.items.count
     }
@@ -397,8 +353,6 @@ struct ChecklistBlock: View
     ///
     private var visibleItems: [(offset: Int, element: KanbanChecklistItem)] /* Visible items */
     {  /* Filtered actions */
-
-
         /// Filter the checklist items based on the hideCompletedItems flag
         checklist.items.enumerated().filter
         {
@@ -427,12 +381,8 @@ struct ChecklistBlock: View
     @ViewBuilder
     private func actionRow(for entry: (offset: Int, element: KanbanChecklistItem)) -> some View
     {
-
-
         switch entry.element.content
         {
-
-
         case .webLink(let url):
             ChecklistItemRow(
                 item: entry.element.title, isCompleted: entry.element.isCompleted,
@@ -449,7 +399,6 @@ struct ChecklistBlock: View
                 },
                 shouldFocus: false, onFocusHandled:
                 {
-
                 })
         case .standard:
             ChecklistItemRow(
@@ -496,7 +445,6 @@ struct ChecklistBlock: View
                 shouldFocus: false,
                 onFocusHandled:
                 {
-
                 }
             )
 
@@ -524,7 +472,6 @@ struct ChecklistBlock: View
                 shouldFocus: false,
                 onFocusHandled:
                 {
-
                 }
             )
         }
@@ -547,12 +494,10 @@ struct ChecklistBlock: View
     ///
     private func chooseType(_ type: ChecklistItemType, for item: KanbanChecklistItem)
     {
-
         var updated = item /* Edited value to publish */
 
         switch type
         {
-
         case .standard:
 
             updated.content = .standard
@@ -564,13 +509,11 @@ struct ChecklistBlock: View
         case .linkedCard:
             if let id = item.retainedCardID, item.type != .linkedCard
             {
-
                 updated.content = .linkedCard(cardID: id)
 
             }
             else
             {
-
                 requestedType = type;
                 typeDraft = item;
 
@@ -580,13 +523,11 @@ struct ChecklistBlock: View
         case .webLink:
             if let url = item.retainedURL, item.type != .webLink
             {
-
                 updated.content = .webLink(url)
 
             }
             else
             {
-
                 requestedType = type;
                 typeDraft = item;
 
@@ -613,7 +554,6 @@ struct ChecklistBlock: View
     ///
     private func submitNewItems()
     {
-
         guard !MultilineEntry.titles(newItemText).isEmpty else
         {
             return
@@ -628,22 +568,15 @@ struct ChecklistBlock: View
 
     var body: some View /* Checklist controls and actions */
     {  /* Checklist heading, rows, and action menu */
-
-
         VStack(alignment: .leading, spacing: 0)
         {
-
-
             HStack
             {
-
-
                 Text(checklist.title)
                 .font(.subheadline.weight(.semibold))
                 .contentShape(Rectangle())
                 .onLongPressGesture(minimumDuration: 0.5)
                 {
-
                     titleDraft = checklist.title
                     isRenaming = true
 
@@ -659,17 +592,14 @@ struct ChecklistBlock: View
 
                 Button
                 {
-
                     withAnimation(.easeInOut(duration: 0.2))
                     {
-
                         isCollapsed.toggle()
                     }
 
                 }
                 label:
                 {
-
                     Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -682,17 +612,14 @@ struct ChecklistBlock: View
 
                 Menu
                 {
-
                     Toggle("Hide Completed", isOn: $hideCompletedItems)
 
                     Button
                     {
-
                         onToggleAllItems()
                     }
                     label:
                     {
-
                         Label(
                             allItemsAreCompleted ? "Uncheck All" : "Check All",
                             systemImage: allItemsAreCompleted ? "square" : "checkmark.square")
@@ -704,7 +631,6 @@ struct ChecklistBlock: View
 
                     Button("Move to the Top", systemImage: "arrow.up.to.line")
                     {
-
                         onMove(.top)
                     }
 
@@ -712,7 +638,6 @@ struct ChecklistBlock: View
 
                     Button("Move Up", systemImage: "arrow.up")
                     {
-
                         onMove(.up)
                     }
 
@@ -720,7 +645,6 @@ struct ChecklistBlock: View
 
                     Button("Move Down", systemImage: "arrow.down")
                     {
-
                         onMove(.down)
                     }
 
@@ -728,7 +652,6 @@ struct ChecklistBlock: View
 
                     Button("Move to the Bottom", systemImage: "arrow.down.to.line")
                     {
-
                         onMove(.bottom)
                     }
 
@@ -738,34 +661,29 @@ struct ChecklistBlock: View
 
                     Button
                     {
-
                         titleDraft = checklist.title
                         isRenaming = true
 
                     }
                     label:
                     {
-
                         Label("Rename", systemImage: "pencil")
                     }
 
 
                     Button(role: .destructive)
                     {
-
                         confirmsDeletion = true
 
                     }
                     label:
                     {
-
                         Label("Delete", systemImage: "trash")
                     }
 
                 }
                 label:
                 {
-
                     Image(systemName: "ellipsis")
                     .foregroundStyle(.secondary)
                 }
@@ -778,29 +696,23 @@ struct ChecklistBlock: View
 
             if !isCollapsed
             {
-
-
                 ForEach(visibleItems, id: \.element.id)
                 {
                     entry in
                     actionRow(for: entry)
                     .contextMenu
                     {
-
                         if onChangeType != nil
                         {
-
                             ForEach(ChecklistItemType.allCases)
                             {
                                 type in
                                 Button
                                 {
-
                                     chooseType(type, for: entry.element)
                                 }
                                 label:
                                 {
-
                                     Label(
                                         type.title, systemImage: type == entry.element.type ? "checkmark" : "circle"
                                     )
@@ -813,13 +725,10 @@ struct ChecklistBlock: View
                     }
                     .accessibilityActions
                     {
-
                         if onChangeType != nil
                         {
-
                             Button("Change item type")
                             {
-
                                 requestedType = entry.element.type
                                 typeDraft = entry.element
 
@@ -834,7 +743,6 @@ struct ChecklistBlock: View
 
                 HStack
                 {
-
                     TextField("Add item...", text: $newItemText, axis: .vertical).textInputAutocapitalization(
                         .sentences
                     )
@@ -870,17 +778,14 @@ struct ChecklistBlock: View
         .padding(.vertical, 6)
         .alert("Delete checklist?", isPresented: $confirmsDeletion)
         {
-
             Button("Cancel", role: .cancel)
             {
-
             }
 
             Button("Delete Checklist", role: .destructive, action: onDelete)
         }
         message:
         {
-
             Text("Delete “\(checklist.title)” and all of its items? This cannot be undone.")
         }
         .sheet(item: $typeDraft)
@@ -888,7 +793,6 @@ struct ChecklistBlock: View
             item in
             ChecklistItemTypeEditor(item: item, initialType: requestedType, candidates: Array(linkedCardsByID.values))
             {
-
             updated in
                 onChangeType?(updated) ?? false
             }
@@ -896,16 +800,13 @@ struct ChecklistBlock: View
         }
         .alert("Rename Checklist", isPresented: $isRenaming)
         {
-
             TextField("Checklist title", text: $titleDraft).textInputAutocapitalization(.sentences)
             Button("Cancel", role: .cancel)
             {
-
             }
 
             Button("Save")
             {
-
                 onRename(titleDraft)
             }
 
@@ -913,7 +814,6 @@ struct ChecklistBlock: View
         }
         message:
         {
-
             Text("Enter a name for this checklist.")
         }
 
@@ -933,8 +833,6 @@ struct ChecklistBlock: View
 ///
 struct ChecklistItemRow: View
 {
-
-
     @Environment(\.planningCalendarAccess) private var planningAccess /* Planning access      */
     let planningLinkID:     UUID?                                     /* Planning link ID     */
     let linkedCollectionID: UUID?                                     /* Linked collection ID */
@@ -998,8 +896,6 @@ struct ChecklistItemRow: View
         onFocusHandled: @escaping () -> Void
     )
     {
-
-
         self.item = item
         self.isCompleted = isCompleted
         self.planningLinkID = planningLinkID
@@ -1030,23 +926,16 @@ struct ChecklistItemRow: View
     ///
     var body: some View /* Editable checklist row */
     {  /* Checklist action row and swipe-to-delete control */
-
-
         ZStack(alignment: .trailing)
         {
-
-
             Button(role: .destructive)
             {
-
                 horizontalOffset = 0
 
                 onDelete()
             }
             label:
             {
-
-
                 Image(systemName: "trash")
                 .foregroundStyle(.white)
                 .frame(width: 72)
@@ -1059,12 +948,8 @@ struct ChecklistItemRow: View
 
             HStack(spacing: 10)
             {
-
-
                 Button(action: onToggle)
                 {
-
-
                     Image(systemName: isCompleted ? "checkmark.square.fill" : "square")
                     .foregroundStyle(isCompleted ? .blue : .secondary)
                 }
@@ -1074,7 +959,6 @@ struct ChecklistItemRow: View
 
                 if let webURL
                 {
-
                     Link(destination: webURL)
                     {
                         Image(systemName: "globe").frame(width: 32, height: 32)
@@ -1083,10 +967,8 @@ struct ChecklistItemRow: View
                 }
                 else if let linkedCardID
                 {
-
                     if let planningLinkID, planningAccess?.document.checklistLinkWeeks? [planningLinkID] != nil
                     {
-
                         PlanningChecklistLink(itemID: planningLinkID, cardID: linkedCardID, title: item)
                     }
                     else if let owner = linkedCollectionID,
@@ -1094,20 +976,16 @@ struct ChecklistItemRow: View
                     != (linkedSourceID
                         ?? planningAccess?.document.weeks.first(where:
                             {
-
                                 $0.startKey == planningAccess?.document.currentWeekKey
                             })?.id)
                     {
-
                         PlanningChecklistLink(
                             itemID: planningLinkID ?? UUID(), cardID: linkedCardID, title: item, ownerID: owner)
                     }
                     else if let linkedCard
                     {
-
                         NavigationLink(value: linkedCard)
                         {
-
                             Image(systemName: "link").frame(width: 28, height: 28).contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -1115,7 +993,6 @@ struct ChecklistItemRow: View
                     }
                     else
                     {
-
                         Image(systemName: "link.badge.plus")
                         .foregroundStyle(.secondary)
                         .frame(width: 28, height: 28)
@@ -1125,10 +1002,8 @@ struct ChecklistItemRow: View
                 }
                 else if let onOpenDetail
                 {
-
                     Button(action: onOpenDetail)
                     {
-
                         Image(systemName: "doc.text").frame(width: 28, height: 28).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -1146,14 +1021,12 @@ struct ChecklistItemRow: View
                             isTextFocused
                         }, set:
                         {
-
                             isTextFocused = $0
 
                         })
                 )
                 .onAppear
                 {
-
                     guard shouldFocus else
                     {
                         return
@@ -1161,7 +1034,6 @@ struct ChecklistItemRow: View
 
                     DispatchQueue.main.async
                     {
-
                         isTextFocused = true
 
                         onFocusHandled()
@@ -1185,8 +1057,6 @@ struct ChecklistItemRow: View
                     value in
                     guard abs(value.translation.width) > abs(value.translation.height) else
                     {
-
-
                         return
                     }
 
@@ -1199,15 +1069,12 @@ struct ChecklistItemRow: View
                     value in
                     guard abs(value.translation.width) > abs(value.translation.height) else
                     {
-
-
                         return
                     }
 
 
                     withAnimation(.easeOut(duration: 0.2))
                     {
-
                         horizontalOffset = value.translation.width < -36 ? -72 : 0
 
                     }
@@ -1231,8 +1098,6 @@ struct ChecklistItemRow: View
 ///
 struct ChecklistTextField: UIViewRepresentable
 {
-
-
     @Binding var text:  String /* Text being processed  */
     @Binding var focus: Bool   /* Today Focus selection */
 
@@ -1263,7 +1128,6 @@ struct ChecklistTextField: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> UITextField
     {
-
         let field = UITextField() /* Native input field */
 
         field.autocapitalizationType = .sentences
@@ -1296,24 +1160,20 @@ struct ChecklistTextField: UIViewRepresentable
     ///
     func updateUIView(_ field: UITextField, context: Context)
     {
-
         context.coordinator.parent = self
 
         if field.text != text
         {
-
             field.text = text
 
         }
 
         if focus && !field.isFirstResponder
         {
-
             field.becomeFirstResponder()
         }
         else if !focus && field.isFirstResponder
         {
-
             field.resignFirstResponder()
         }
 
@@ -1334,7 +1194,6 @@ struct ChecklistTextField: UIViewRepresentable
     ///
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextField, context: Context) -> CGSize?
     {
-
         guard let width = proposal.width else
         {
             return nil
@@ -1353,8 +1212,6 @@ struct ChecklistTextField: UIViewRepresentable
     ///
     class Coordinator: NSObject, UITextFieldDelegate
     {
-
-
         var parent: ChecklistTextField /* Latest representable bindings */
 
 
@@ -1369,7 +1226,6 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         init(_ parent: ChecklistTextField)
         {
-
             self.parent = parent
 
         }
@@ -1386,7 +1242,6 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         @objc func changed(_ field: UITextField)
         {
-
             parent.text = field.text ?? ""
 
         }
@@ -1403,7 +1258,6 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         func textFieldDidBeginEditing(_ field: UITextField)
         {
-
             parent.focus = true
 
             DispatchQueue.main.async
@@ -1434,7 +1288,6 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         func textFieldDidEndEditing(_ field: UITextField)
         {
-
             parent.focus = false
 
         }
@@ -1452,7 +1305,6 @@ struct ChecklistTextField: UIViewRepresentable
         ///
         func textFieldShouldReturn(_ field: UITextField) -> Bool
         {
-
             field.resignFirstResponder()
             return true
         }

@@ -16,8 +16,6 @@ import Foundation
 ///
 enum PersonalCollectionStore
 {
-
-
     /// Versioned storage key for saved personal collections
     private static let key = "Plenact.PersonalCollections.v1" /* Versioned personal collection persistence key */
 
@@ -35,19 +33,14 @@ enum PersonalCollectionStore
     ///
     static func load(from defaults: UserDefaults = .standard) -> [PersonalCollection]
     {
-
-
         guard let data = defaults.data(forKey: key) else
         {  /* Stored personal collection document */
-
-
             return []
         }
 
 
         return ((try? JSONDecoder().decode([PersonalCollection].self, from: data)) ?? []).map
         {
-
             DefaultListTutorial.removingUntouchedWelcomeCards(from: $0)
         }
 
@@ -68,13 +61,9 @@ enum PersonalCollectionStore
     ///
     static func save(_ collections: [PersonalCollection], to defaults: UserDefaults = .standard)
     {
-
-
         guard let data = try? JSONEncoder().encode(collections)
         else
         {  /* Encoded collection snapshot ready for storage */
-
-
             return
         }
 
@@ -98,8 +87,6 @@ enum PersonalCollectionStore
     ///
     static func saveChecked(_ collections: [PersonalCollection], to defaults: UserDefaults = .standard) throws
     {
-
-
         defaults.set(try JSONEncoder().encode(collections), forKey: key)
     }
 
@@ -124,19 +111,13 @@ enum PersonalCollectionStore
         to defaults: UserDefaults = .standard
     ) throws -> [PersonalCollection]
     {
-
-
         guard
         let index = collections.firstIndex(where:
             {  /* Position of the collection to archive */
-
-
                 $0.id == id && $0.kind == .board && $0.isActive
             })
         else
         {
-
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -168,19 +149,13 @@ enum PersonalCollectionStore
         id: UUID, in collections: [PersonalCollection], to defaults: UserDefaults = .standard
     ) throws -> [PersonalCollection]
     {
-
-
         guard
         let index = collections.firstIndex(where:
             {  /* Position of the active collection to archive */
-
-
                 $0.id == id && $0.isActive && !$0.isPrimaryList
             })
         else
         {
-
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -202,14 +177,12 @@ enum PersonalCollectionStore
 ///     Restore only the deleted owner, preserving unrelated edits and refusing identity collisions
 struct LibraryCollectionDeletion: Identifiable
 {
-
     let collection: PersonalCollection /* Complete deleted owner and its retained content */
     let index: Int                     /* Original directory position */
     let deadline: ContinuousClock.Instant /* Monotonic Undo expiry */
 
     var id: UUID /* Stable identity for the transient notice */
     {
-
         collection.id
     }
 
@@ -223,10 +196,8 @@ struct LibraryCollectionDeletion: Identifiable
     /// @throws CocoaError when the owner no longer exists
     init(id: UUID, in collections: [PersonalCollection], at instant: ContinuousClock.Instant = .now) throws
     {
-
         guard let index = collections.firstIndex(where: { $0.id == id && !$0.isPrimaryList }) else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
         self.collection = collections[index]
@@ -244,10 +215,8 @@ struct LibraryCollectionDeletion: Identifiable
     func restoring(in collections: [PersonalCollection], at instant: ContinuousClock.Instant = .now) throws
         -> [PersonalCollection]
     {
-
         guard instant < deadline, !collections.contains(where: { $0.id == id }) else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 

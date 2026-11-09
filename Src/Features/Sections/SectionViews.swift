@@ -19,19 +19,14 @@ import UniformTypeIdentifiers
 ///
 struct NamedSectionDivider: View
 {
-
-
     let card: KanbanCard /* Card under consideration */
 
     var body: some View /* Named Section Divider layout */
     {
-
         HStack(spacing: 10)
         {
-
             if let heading = card.sectionHeading
             {
-
                 Text(heading).font(.subheadline.weight(.semibold))
                 .foregroundStyle(card.appearance?.accent?.color ?? .secondary).fixedSize(
                     horizontal: false, vertical: true)
@@ -57,8 +52,6 @@ struct NamedSectionDivider: View
 ///
 struct DaySectionRow: View
 {
-
-
     let card:     KanbanCard                                /* Card under consideration         */
     let cards:    [KanbanCard]                              /* Card records under consideration */
     let onUpdate: (KanbanCard) -> Void                      /* Publish item edits               */
@@ -69,10 +62,8 @@ struct DaySectionRow: View
 
     @ViewBuilder private var heading: some View /* Section heading text */
     {
-
         if let onOpen
         {
-
             Button(action: onOpen)
             {
                 NamedSectionDivider(card: card)
@@ -80,7 +71,6 @@ struct DaySectionRow: View
         }
         else
         {
-
             NavigationLink(value: card)
             {
                 NamedSectionDivider(card: card)
@@ -102,17 +92,13 @@ struct DaySectionRow: View
 
     var body: some View /* Day Section layout */
     {
-
         HStack(spacing: 0)
         {
-
             heading
             if card.sectionHeading != nil
             {
-
                 Button
                 {
-
                     var updated    = card /* Edited value to publish     */
                     var appearance =      /* Resolved appearance choices */
                         updated.appearance ?? ItemAppearance()
@@ -124,7 +110,6 @@ struct DaySectionRow: View
                 }
                 label:
                 {
-
                     Image(systemName: card.appearance?.sectionCollapsed == true ? "chevron.up" : "chevron.down")
                     .frame(width: 44, height: 44)
                 } .buttonStyle(.borderless)
@@ -132,13 +117,10 @@ struct DaySectionRow: View
                     card.appearance?.sectionCollapsed == true ? "Expand section" : "Collapse section")
                 Menu
                 {
-
                     if movement.moveSection != nil
                     {
-
                         Button("Move section to…", systemImage: "arrowshape.turn.up.right")
                         {
-
                             showsMove = true
 
                         }
@@ -147,7 +129,6 @@ struct DaySectionRow: View
 
                     Menu("Section color", systemImage: "paintpalette")
                     {
-
                         Button("Default")
                         {
                             setColor(nil)
@@ -158,12 +139,10 @@ struct DaySectionRow: View
                             color in
                             Button
                             {
-
                                 setColor(color)
                             }
                             label:
                             {
-
                                 Label(color.rawValue.capitalized, systemImage: "circle.fill").foregroundStyle(
                                     color.color)
                             }
@@ -185,7 +164,6 @@ struct DaySectionRow: View
                 }
                 label:
                 {
-
                     Image(systemName: "ellipsis").frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Section options for " + (card.sectionHeading ?? ""))
@@ -212,7 +190,6 @@ struct DaySectionRow: View
     ///
     private func setColor(_ color: ItemAccent?)
     {
-
         var updated    = card                                   /* Edited value to publish     */
         var appearance = updated.appearance ?? ItemAppearance() /* Resolved appearance choices */
 
@@ -234,8 +211,6 @@ struct DaySectionRow: View
 ///
 struct DaySectionRail: ViewModifier
 {
-
-
     let cardID: Int          /* Owner-local Card identifier      */
     let cards:  [KanbanCard] /* Card records under consideration */
 
@@ -252,13 +227,10 @@ struct DaySectionRail: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         content.overlay(alignment: .leading)
         {
-
             if let color = DaySections.owner(of: cardID, in: cards)?.appearance?.accent
             {
-
                 RoundedRectangle(cornerRadius: 2).fill(color.color).frame(width: 3)
                 .padding(.vertical, 6).allowsHitTesting(false).accessibilityHidden(true)
             }

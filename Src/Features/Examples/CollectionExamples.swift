@@ -16,8 +16,6 @@ import Foundation
 ///
 enum PersonalListExample: String, CaseIterable, Identifiable
 {
-
-
     case onTheTable = "On the Table"
     case inTheQueue = "In the Queue"
     case scheduled = "Scheduled"
@@ -45,11 +43,8 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     ///
     var coverIllustration: ExampleCoverImage? /* Cover illustration */
     {  /* Offline illustration featured on the example's first card */
-
         switch self
         {
-
-
         case .onTheTable:
             .garden
         case .inTheQueue:
@@ -71,12 +66,8 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     ///
     var summary: String /* Aggregate operation results */
     {  /* Brief description shown in the example picker */
-
-
         switch self
         {
-
-
         case .onTheTable:
                     "Things you would like to get to today."
         case .inTheQueue:
@@ -102,12 +93,8 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     ///
     var cards: [(String, String)] /* Card records under consideration */
     {  /* Seeded example card headings and descriptions */
-
-
         switch self
         {
-
-
         case .onTheTable:
             [
                 ("Water the garden", "Check the soil before watering the pots and garden beds."),
@@ -197,15 +184,11 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     ///
     func makeCollection(existingTitles: [String]) -> PersonalCollection
     {
-
-
         let icon: PersonalCollectionIcon /* Collection symbol selected for this example */
         let color: ProfileColor          /* Collection accent selected for this example */
 
         switch self
         {
-
-
         case .onTheTable:
 
             (icon, color) = (.tasks, .coral)
@@ -240,7 +223,6 @@ enum PersonalListExample: String, CaseIterable, Identifiable
 
         if KanbanList.defaultHeaderIcon(for: title) != nil
         {
-
             collection.lists[0].appearance = ItemAppearance(showsIconInHeader: true)
 
         }  /* New personal List populated from the example */
@@ -258,8 +240,6 @@ enum PersonalListExample: String, CaseIterable, Identifiable
 
             if index == 0, let illustration = coverIllustration
             {  /* Featured offline image for the first seeded card */
-
-
                 let attachment = KanbanAttachment( /* Owned attachment content */
                     mediaKind: .photo, exampleImage: illustration) /* Photo record referencing the bundled example image */
 
@@ -288,8 +268,6 @@ enum PersonalListExample: String, CaseIterable, Identifiable
 ///
 enum PersonalBoardExample: String, CaseIterable, Identifiable
 {
-
-
     case garden = "Garden seasons"
     case home = "A home to love"
     case travel = "Travel dreams"
@@ -301,10 +279,8 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
     var summary: String /* Aggregate operation results */
     {
-
         switch self
         {
-
         case .garden:
                     "Planting ideas, growing plans, seasonal care, and garden reflections."
         case .home:
@@ -319,7 +295,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
     private var topics: [(String, CoverCategory, [String])] /* Available help topics */
     {
-
         let garden: (String, CoverCategory, [String]) = ( /* Garden operation value */
                         "Garden", .nature,
                         [
@@ -384,7 +359,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
         switch self
         {
-
         case .garden:
             return [
                 ("Inspiration", garden.1, garden.2), ("To plant", garden.1, garden.2), ("Growing", garden.1, garden.2),
@@ -419,7 +393,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
     var listSummaries: [(title: String, count: Int)] /* List summaries */
     {
-
         topics.enumerated().map
         {
             index, topic in
@@ -444,7 +417,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
     ///
     func makeCollection(existingTitles: [String], now: Date = .now, calendar: Calendar = .current) -> PersonalCollection
     {
-
         var board = PersonalCollection( /* Board state under review */
             title: PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles), kind: .board,
             icon: self == .garden ? .home : .project, color: self == .garden ? .green : .teal)
@@ -477,14 +449,12 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
             for index in 0 ..< listSummaries[listIndex].count
             {
-
                 let id = nextID; /* Record or view identity */
 
                 nextID += 1
 
                 if index % 10 == 0
                 {
-
                     list.cards.append(
                         list.makeItem(id: id, title: "--- " + ["Ideas", "This week", "Later"] [min(index / 10, 2)]))
                     continue
@@ -504,7 +474,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
                 switch index % 10
                 {
-
                 case 1:
 
                     card.displayFormat = .title
@@ -529,7 +498,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
                 if card.displayFormat == .picture || index % 3 == 0 || index % 10 == 4
                 {
-
                     let image = KanbanAttachment( /* Image used by this operation */
                         mediaKind: .photo, addedAt: now,
                         exampleImage: images[(listIndex * 7 + index) % images.count],
@@ -540,7 +508,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
                     if index % 10 == 3
                     {
-
                         card.attachments?.append(
                             KanbanAttachment(
                                 mediaKind: .photo, addedAt: now,
@@ -552,7 +519,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
                 if card.displayFormat == .card
                 {
-
                     card.isTitleChecked = index % 9 == 0
                     card.startDate = calendar.date(byAdding: .day, value: -2, to: now)
                     card.dueDate = calendar.date(byAdding: .day, value: (index + listIndex) % 9 - 1, to: now)
@@ -597,7 +563,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 
                 if index % 10 == 4
                 {
-
                     card.labelIDs = ["leisure-hobby"];
 
                     board.savedCardIDs.insert(id)
@@ -612,7 +577,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
         // Internal references stay in the draft's own identity space, including across lists
         for listIndex in board.lists.indices
         {
-
             let nextList = board.lists[(listIndex + 1) % board.lists.count] /* Next list */
 
             guard let target = nextList.cards.first(where:
@@ -676,8 +640,6 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
 ///
 enum MixedListTemplate: String, CaseIterable, Identifiable
 {
-
-
     case planDay = "Plan a day"
     case exploreIdea = "Explore an idea"
     case startProject = "Start a project"
@@ -688,10 +650,8 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
 
     var summary: String /* Aggregate operation results */
     {
-
         switch self
         {
-
         case .planDay:
                     "Make room for what matters, then choose a few useful next steps."
         case .exploreIdea:
@@ -704,10 +664,8 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
 
     var illustration: ExampleCoverImage /* Illustration operation value */
     {
-
         switch self
         {
-
         case .planDay:
             .garden;
 
@@ -722,10 +680,8 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
 
     var items: [(String, String, ItemDisplayFormat)] /* Items being processed */
     {
-
         switch self
         {
-
         case .planDay:
             [
                 ("Make room for today", "A heading for your day.", .title),
@@ -791,7 +747,6 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
     ///
     func makeCollection(existingTitles: [String]) -> PersonalCollection
     {
-
         let title      = /* User-facing title */
             PersonalCollection.uniqueTitle(rawValue, existingTitles: existingTitles)
         var collection = /* Personal collection record */
@@ -808,14 +763,12 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
 
             if item.2 == .note
             {
-
                 card.presentation = .note
 
             }
 
             if item.2 == .picture
             {
-
                 let image = /* Image used by this operation */
                     KanbanAttachment(mediaKind: .photo, exampleImage: illustration)
 
@@ -842,8 +795,6 @@ enum MixedListTemplate: String, CaseIterable, Identifiable
 ///
 extension PersonalCollection
 {
-
-
     ///
     /// @fcn        PersonalCollection.exampleWeek
     /// @brief      Create a personal collection from the example week
@@ -856,7 +807,6 @@ extension PersonalCollection
     ///
     static func exampleWeek(existingTitles: [String]) -> PersonalCollection
     {
-
         let title = uniqueTitle("Week View", existingTitles: existingTitles) /* User-facing title */
         var draft = /* Local editing draft */
             PersonalCollection(title: title, kind: .board, icon: .project, color: .teal)

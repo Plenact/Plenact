@@ -13,7 +13,6 @@ import Foundation
 ///     Preserve source provenance independently from titles, list positions and account display names
 struct MigrationSourceIdentity: Codable, Hashable
 {
-
     let recordType:    String  /* Canonical target record type                       */
     let owner:         String  /* Stable source-owner namespace, never display text  */
     let legacyID:      String  /* Original identifier represented without coercion   */
@@ -27,7 +26,6 @@ struct MigrationSourceIdentity: Codable, Hashable
 ///     Retain the same mapping across retries, restarts and explicit export copies
 struct MigrationIdentityEntry: Codable, Equatable
 {
-
     let source: MigrationSourceIdentity /* Exact source provenance  */
     let target: UUID                    /* Stable portable identity */
 
@@ -39,7 +37,6 @@ struct MigrationIdentityEntry: Codable, Equatable
 ///     Allocate stable identities before conversion without pretending a local profile is an account
 struct MigrationIdentityJournal: Codable
 {
-
     private(set) var formatVersion:        Int                      /* Local journal format, independent of Model 1.0 */
     let targetModelVersion:   String                   /* Explicit portable definition target             */
     let sourceInstallationID: UUID                     /* Durable source-installation namespace            */
@@ -53,7 +50,6 @@ struct MigrationIdentityJournal: Codable
     ///     Keep durable provenance independent of transient migration performance state
     private enum CodingKeys: String, CodingKey
     {
-
         case formatVersion, targetModelVersion, sourceInstallationID, previewWorkspaceID, entries
     }
 
@@ -63,7 +59,6 @@ struct MigrationIdentityJournal: Codable
     ///     Fail closed when retry identities cannot be trusted
     enum Failure: Error
     {
-
         case unsupported, corrupt, invalidSource, conflictingWrite, unsafePath
     }
 
@@ -73,7 +68,6 @@ struct MigrationIdentityJournal: Codable
     /// @return An empty journal with fresh local-only UUIDs
     init()
     {
-
         formatVersion = 2
         targetModelVersion = "1.0"
         sourceInstallationID = UUID()
@@ -91,17 +85,14 @@ struct MigrationIdentityJournal: Codable
     /// @throws Invalid or unsupported identity kinds
     mutating func resolve(_ source: MigrationSourceIdentity) throws -> UUID
     {
-
         try Self.validate(source)
         if source.recordType.hasPrefix("nested_")
         {
-
             formatVersion = max(formatVersion, 2)
 
         }
         if ["workspace_appearance", "artwork_library"].contains(source.recordType)
         {
-
             formatVersion = max(formatVersion, 3)
 
         }
@@ -137,7 +128,6 @@ struct MigrationIdentityJournal: Codable
     /// @throws Invalid source errors
     private static func validate(_ source: MigrationSourceIdentity) throws
     {
-
         let types: Set<String> = /* Supported record types */
             ["account", "workspace", "collection", "list", "card", "label",
             "label_category", "calendar_week", "calendar_index", "daily_plan", "weekly_review",
@@ -162,7 +152,6 @@ struct MigrationIdentityJournal: Codable
     /// @throws Encoding failures
     func encoded() throws -> Data
     {
-
         let encoder = JSONEncoder() /* JSON encoding configuration */
 
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
@@ -179,7 +168,6 @@ struct MigrationIdentityJournal: Codable
     /// @throws Corrupt or unsupported journal errors
     static func decode(_ data: Data) throws -> MigrationIdentityJournal
     {
-
         guard data.count <= 32 * 1024 * 1024,
               let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               Set(object.keys) == ["formatVersion", "targetModelVersion", "sourceInstallationID", "previewWorkspaceID", "entries"] else
@@ -248,7 +236,6 @@ struct MigrationIdentityJournal: Codable
 @MainActor
 enum MigrationIdentityStore
 {
-
     /// @fcn MigrationIdentityStore.read
     /// @brief Read a private journal without supplying defaults for an existing corrupt file
     /// @param[in] url Journal location under the app's migration-support directory
@@ -256,14 +243,12 @@ enum MigrationIdentityStore
     /// @throws Unsafe path or filesystem errors
     static func read(at url: URL) throws -> Data?
     {
-
         var current = url /* Current operation snapshot */
 
         while current.path != "/"
         {
             if FileManager.default.fileExists(atPath: current.path)
             {
-
                 let attributes = /* Attributed-text settings */
                     try FileManager.default.attributesOfItem(atPath: current.path)
 
@@ -306,7 +291,6 @@ enum MigrationIdentityStore
     /// @throws Conflict, structural validation or filesystem errors
     static func save(_ journal: MigrationIdentityJournal, at url: URL, expected: Data?) throws
     {
-
         guard try read(at: url) == expected else
         {
             throw MigrationIdentityJournal.Failure.conflictingWrite
@@ -318,7 +302,6 @@ enum MigrationIdentityStore
 
         if let expected
         {
-
             let original = /* Baseline before changes */
                 try MigrationIdentityJournal.decode(expected)
             let retained = /* State retained for recovery */

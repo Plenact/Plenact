@@ -20,8 +20,6 @@ import UniformTypeIdentifiers
 ///
 enum ChecklistMoveDirection
 {
-
-
     case top
     case up
     case down
@@ -41,7 +39,6 @@ enum ChecklistMoveDirection
 ///
 struct ChecklistCandidatesKey: EnvironmentKey
 {
-
     static let defaultValue: [KanbanCard] = [] /* Fallback environment value */
 
 }
@@ -56,11 +53,8 @@ struct ChecklistCandidatesKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var checklistLinkCandidates: [KanbanCard] /* Checklist link candidates */
     {
-
         get
         {
             self[ChecklistCandidatesKey.self]
@@ -68,7 +62,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[ChecklistCandidatesKey.self] = newValue
 
         }
@@ -87,7 +80,6 @@ extension EnvironmentValues
 ///
 struct CardDetailView: View
 {
-
     @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
 
 
@@ -118,8 +110,6 @@ struct CardDetailView: View
     ///
     enum DateField: String, Identifiable, Equatable
     {
-
-
         case start  /* Start date field for the card */
         case due    /* Due date field for the card   */
 
@@ -147,11 +137,8 @@ struct CardDetailView: View
         ///
         var title: String /* User-facing title */
         {  /* User-facing date-field label */
-
             switch self
             {
-
-
             case .start:
                 return "Start date"
             case .due:
@@ -176,8 +163,6 @@ struct CardDetailView: View
     ///
     enum ActiveSheet: Identifiable
     {
-
-
         case date(DateField) /* Date picker sheet for editing a specific date field */
         case location
         case editHistory
@@ -204,12 +189,8 @@ struct CardDetailView: View
         ///
         var id: String /* Record or view identity */
         {  /* Stable identity for the active sheet                */
-
-
             switch self
             {
-
-
             case .date(let field):
                             "date-\(field.id)" /* Selected date field */
             case .location:
@@ -253,8 +234,6 @@ struct CardDetailView: View
     ///
     enum GeneratedActivity: String, CaseIterable, Identifiable
     {
-
-
         case addedCard       /* Card was added to the board           */
         case createdCard     /* Card was created on the board         */
         case initialComment  /* Initial comment was added to the card */
@@ -289,12 +268,8 @@ struct CardDetailView: View
         ///
         func text(for card: KanbanCard, actorName: String) -> String
         {
-
-
             switch self
             {
-
-
             case .addedCard:
                 return "\(actorName) added \(card.word) to this card"
             case .createdCard:
@@ -317,8 +292,6 @@ struct CardDetailView: View
     ///
     enum ActivityFilter: String, CaseIterable, Identifiable
     {
-
-
         case all           /* All activity entries for the card       */
         case comments      /* User-added comments for the card        */
         case cardActivity  /* Generated activity entries for the card */
@@ -347,11 +320,8 @@ struct CardDetailView: View
         ///
         var title: String /* User-facing title */
         {  /* User-facing activity-filter label */
-
             switch self
             {
-
-
             case .all:
                             "All Activity"
             case .comments:
@@ -372,8 +342,6 @@ struct CardDetailView: View
     ///
     enum EditableField: Hashable
     {
-
-
         case title        /* The title field is being edited       */
         case subtitle     /* The subtitle field is being edited    */
         case description  /* The description field is being edited */
@@ -473,7 +441,6 @@ struct CardDetailView: View
     ///
     var linkedCardsByID: [Int: KanbanCard] /* Linked cards by ID */
     {
-
         Dictionary(
             (availableLists.flatMap(\.cards) + checklistLinkCandidates).map
             {
@@ -541,8 +508,6 @@ struct CardDetailView: View
         listedOnDate: Date? = nil
     )
     {
-
-
         self.card = card /* The kanban card being displayed in detail                            */
         self.listedOnDate = listedOnDate
         self._labelLibrary = labelLibrary       /* Shared catalog used by all card label assignments        */
@@ -611,13 +576,10 @@ struct CardDetailView: View
     ///
     var coverControls: some View /* Cover controls */
     {  /* Featured-media selection and removal controls */
-
         DetailSection(title: "Card Cover")
         {
-
             Button("Browse Cover Library", systemImage: "photo.on.rectangle.angled")
             {
-
                 showsCoverLibrary = true
 
             }
@@ -626,19 +588,15 @@ struct CardDetailView: View
 
             if let cover = attachments.first(where:
                 {  /* Attachment currently selected as the cover */
-
-
                     $0.id == coverAttachmentID && $0.kind == .photo
                 })
             {
-
                 CardCoverPreview(attachment: cover)
             }
 
 
             Button(coverAttachmentID == nil ? "Choose Attached Photo" : "Change Cover", systemImage: "photo")
             {
-
                 showsCoverPicker = true
 
             }
@@ -651,7 +609,6 @@ struct CardDetailView: View
 
             PhotosPicker(selection: $selectedCoverPhoto, matching: .images)
             {
-
                 Label("Add Photo as Cover", systemImage: "photo.badge.plus")
                 .frame(minHeight: 44)
             }
@@ -659,11 +616,8 @@ struct CardDetailView: View
 
             if coverAttachmentID != nil || coverImportID != nil
             {
-
-
                 Button("Remove Cover", systemImage: "photo.badge.minus")
                 {
-
                     setCover(nil)
                 }
 
@@ -681,7 +635,6 @@ struct CardDetailView: View
 
         .sheet(isPresented: $showsCoverPicker)
         {
-
             CardCoverPicker(
                 photos: attachments.filter
                 {
@@ -697,7 +650,6 @@ struct CardDetailView: View
 
         .sheet(isPresented: $showsCoverLibrary)
         {
-
             CardCoverLibrary(
                 selectedImage: attachments.first
                 {
@@ -718,7 +670,6 @@ struct CardDetailView: View
     ///
     var attachmentGallery: some View /* Attachment gallery */
     {  /* Attached media displayed with editing actions */
-
         attachmentGallery(workingCardSnapshot.attachmentsExcludingCover)
     }
 
@@ -733,7 +684,6 @@ struct CardDetailView: View
     ///
     var selectedLabels: [KanbanLabel] /* Selected labels */
     {  /* Resolved selected label definitions */
-
         selectedLabelIDs.compactMap
         {
             labelID in
@@ -748,13 +698,11 @@ struct CardDetailView: View
 
     var reactionStrip: some View /* Reaction strip */
     {
-
         ItemReactionStrip(
             reactions: reactions ?? [], authorID: reactionAuthorID,
             onToggle: toggleReaction,
             onAdd:
             {
-
                 dismissEditing();
 
                 activeSheet = .reactions
@@ -771,8 +719,6 @@ struct CardDetailView: View
     ///
     var workingCardSnapshot: KanbanCard /* Working card snapshot */
     {  /* Original record overlaid with all current editor fields */
-
-
         if isEditingLocked, let lockedSnapshot
         {
             return lockedSnapshot
@@ -808,14 +754,12 @@ struct CardDetailView: View
 
         if displayFormat == .card || displayFormat == .note
         {
-
             updated.presentation = presentation
 
         }
 
         if displayFormat == .divider || displayFormat != card.displayFormat || card.listDisplayFormat != nil
         {
-
             updated.displayFormat = displayFormat
 
         }
@@ -826,8 +770,6 @@ struct CardDetailView: View
 
     var noteLocationLabel: some View /* Note location label */
     {  /* Current personal List displayed in the Note header */
-
-
         SlideableHeaderText(text: currentListTitle)
         .font(.caption)
         .foregroundStyle(.secondary)
@@ -837,8 +779,6 @@ struct CardDetailView: View
 
     var isCurrentRecordSaved: Bool /* Current Record Saved state */
     {  /* Bookmark state resolved for the record's current owner */
-
-
         movedNoteIsSaved ?? savedCardIDs.contains(recordID)
     }
 
@@ -846,16 +786,12 @@ struct CardDetailView: View
     @ViewBuilder
     var locationControl: some View /* Location control */
     {  /* List-location picker adapted to Card or Note movement */
-
-
         if cardMovementAccess.move != nil
         {
-
             CardDestinationMenu(
                 card: workingCardSnapshot,
                 onMoved:
                 {
-
                     hasMovedCard = true;
 
                     dismiss()
@@ -864,8 +800,6 @@ struct CardDetailView: View
         }
         else if presentation == .note, onMoveNoteToPersonalList != nil
         {
-
-
             personalListMenu
             {
                 noteLocationLabel
@@ -874,7 +808,6 @@ struct CardDetailView: View
         }
         else
         {
-
             moveCardMenu
             {
                 noteLocationLabel
@@ -893,7 +826,6 @@ struct CardDetailView: View
     ///
     var descriptionEditingBinding: Binding<String> /* Description editing binding */
     {  /* Body draft binding that records explicit edits */
-
         Binding(
             get:
             {
@@ -901,7 +833,6 @@ struct CardDetailView: View
             },
             set:
             {
-
                 hasEditedDescription = true
                 descriptionText = $0
 
@@ -918,21 +849,15 @@ struct CardDetailView: View
     ///
     var noteEditor: some View /* Note editor */
     {  /* Inline Note title and body editor */
-
-
         VStack(alignment: .leading, spacing: 18)
         {
-
-
             VStack(alignment: .leading, spacing: 18)
             {
-
                 locationControl
                 .accessibilityIdentifier("note.locationPicker")
 
                 HStack(alignment: .firstTextBaseline, spacing: 8)
                 {
-
                     ItemAppearanceMark(appearance: appearance)
                     TextField("Note title", text: $titleText, axis: .vertical).textInputAutocapitalization(.sentences)
                     .font(.largeTitle.weight(.bold))
@@ -949,7 +874,6 @@ struct CardDetailView: View
 
                 if let createdAt = card.createdAt
                 {  /* Original Note creation timestamp displayed below its body */
-
                     NoteCreationDateLabel(createdAt: createdAt)
                     .accessibilityIdentifier("note.creationDate")
                 }
@@ -962,7 +886,6 @@ struct CardDetailView: View
 
             if reactions?.isEmpty == false
             {
-
                 reactionStrip
             }
 
@@ -980,15 +903,12 @@ struct CardDetailView: View
 
             if let cover = workingCardSnapshot.coverAttachment
             {
-
                 selectedCoverPreview(cover)
                 .accessibilityIdentifier("note.selectedCoverPreview")
             }
 
             if !workingCardSnapshot.attachmentsExcludingCover.isEmpty
             {
-
-
                 attachmentGallery
             }
 
@@ -1003,27 +923,20 @@ struct CardDetailView: View
 
     var noteAttachmentsSheet: some View /* Note attachments sheet */
     {  /* Note attachment browser and import controls */
-
         NavigationStack
         {
-
             ScrollView
             {
-
                 VStack(alignment: .leading, spacing: 16)
                 {
-
                     if attachments.isEmpty
                     {
-
                         ContentUnavailableView("No attachments", systemImage: "paperclip")
                     }
                     else
                     {
-
                         if let cover = workingCardSnapshot.coverAttachment
                         {
-
                             selectedCoverPreview(cover)
                         }
 
@@ -1033,7 +946,6 @@ struct CardDetailView: View
 
                     Button("Add attachment", systemImage: "plus")
                     {
-
                         activeSheet = .attachmentSources
 
                     }
@@ -1045,13 +957,10 @@ struct CardDetailView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Done")
                     {
-
                         activeSheet = nil
 
                     }
@@ -1067,7 +976,6 @@ struct CardDetailView: View
 
     private var showsPhotoThroughHeader: Bool
     {
-
         let material = (appearance?.studioSurface ?? inheritedStudioSurface)?.material /* Effective material */
 
         return appearance?.background == nil && (material == .photo || material == .unsplash)
@@ -1076,34 +984,25 @@ struct CardDetailView: View
 
     var body: some View /* Card editing interface */
     {  /* Full card-detail presentation */
-
-
         ScrollViewReader
         {
             scrollProxy in
             ZStack
             {
-
                 if isEditingLocked
                 {
-
                     ReadOnlyCardContent(
                         card: workingCardSnapshot, labels: labelLibrary,
                         onOpenAttachment:
                         {
-
                             activeSheet = .attachmentPreview($0)
 
                         })
                 }
                 else if displayFormat == .divider
                 {
-
-
                     VStack(alignment: .leading)
                     {
-
-
                         TextField("Section heading (optional)", text: $titleText, axis: .vertical)
                         .textInputAutocapitalization(.sentences)
                         .font(.title2.weight(.bold))
@@ -1125,7 +1024,6 @@ struct CardDetailView: View
                         .font(.subheadline).foregroundStyle(.secondary)
                         if !titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                         {
-
                             Toggle(
                                                                                     "Collapse section",
                                                                                     isOn: Binding(
@@ -1166,7 +1064,6 @@ struct CardDetailView: View
                                                                                         })
                             )
                             {
-
                                 Text("Default").tag(ItemAccent?.none)
                                 ForEach(ItemAccent.allCases, id: \.self)
                                 {
@@ -1186,22 +1083,14 @@ struct CardDetailView: View
                 }
                 else
                 {
-
-
                     ScrollView
                     {
-
-
                         VStack(alignment: .leading, spacing: 0)
                         {
-
-
                             if displayFormat == .picture
                             {
-
                                 Button
                                 {
-
                                     dismissEditing()
 
                                     activeSheet = .appearance
@@ -1210,7 +1099,6 @@ struct CardDetailView: View
                                 }
                                 label:
                                 {
-
                                     ItemPicturePreview(attachment: workingCardSnapshot.coverAttachment)
                                 }
                                 .buttonStyle(.plain)
@@ -1223,32 +1111,22 @@ struct CardDetailView: View
 
                             if presentation == .note
                             {
-
-
                                 noteEditor
                             }
 
 
                             if presentation == .card || showsNoteDetails
                             {
-
-
                                 Color.clear
                                 .frame(height: 0)
                                 .id("note.detailsStart")
 
                                 if presentation == .card
                                 {
-
-
                                     HStack(alignment: .center, spacing: 12)
                                     {
-
-
                                         Button(action: toggleCardTitle)
                                         {
-
-
                                             Image(systemName: titleChecked ? "checkmark.square.fill" : "square")
                                             .font(.title2)
                                             .foregroundStyle(titleChecked ? .blue : .secondary)
@@ -1259,23 +1137,18 @@ struct CardDetailView: View
 
                                         VStack(alignment: .leading, spacing: 5)
                                         {
-
                                             HStack(alignment: .firstTextBaseline, spacing: 8)
                                             {
-
                                                 ItemAppearanceMark(appearance: appearance)
                                                 Group
                                                 {
-
                                                     if editingHeaderField == .title
                                                     {
-
                                                         TextField("Card title", text: $titleText)
                                                         .textInputAutocapitalization(.sentences)
                                                         .focused($focusedField, equals: .title)
                                                         .task
                                                         {
-
                                                             focusedField = .title
 
                                                         }
@@ -1293,12 +1166,10 @@ struct CardDetailView: View
                                                     }
                                                     else
                                                     {
-
                                                         SlideableHeaderText(
                                                             text: titleText.isEmpty ? "Card title" : titleText,
                                                             onTap:
                                                             {
-
                                                                 editingHeaderField = .title
 
                                                             }
@@ -1316,22 +1187,17 @@ struct CardDetailView: View
                                             if appearance?.hidesSubtitle(subtitleText) != true
                                             || editingHeaderField == .subtitle
                                             {
-
                                                 Group
                                                 {
-
                                                     if editingHeaderField == .subtitle || subtitleText.isEmpty
                                                     {
-
                                                         TextField("Card subtitle", text: $subtitleText)
                                                         .textInputAutocapitalization(.sentences)
                                                         .focused($focusedField, equals: .subtitle)
                                                         .task
                                                         {
-
                                                             if editingHeaderField == .subtitle
                                                             {
-
                                                                 focusedField = .subtitle
 
                                                             }
@@ -1351,12 +1217,10 @@ struct CardDetailView: View
                                                     }
                                                     else
                                                     {
-
                                                         SlideableHeaderText(
                                                             text: subtitleText,
                                                             onTap:
                                                             {
-
                                                                 editingHeaderField = .subtitle
 
                                                             }
@@ -1389,7 +1253,6 @@ struct CardDetailView: View
                                 //****************************************************************************//
                                 if presentation == .card && reactions?.isEmpty == false
                                 {
-
                                     reactionStrip.padding(.horizontal, 16).padding(.vertical, 8)
                                 }
 
@@ -1416,23 +1279,16 @@ struct CardDetailView: View
             .clipped()
             .safeAreaInset(edge: .top, spacing: 0)
             {
-
-
                 HStack(spacing: 12)
                 {
-
-
                     if presentation != .note || displayFormat == .divider
                     {
-
                         Button
                         {
-
                             dismiss()
                         }
                         label:
                         {
-
                             Image(systemName: "chevron.left")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.primary)
@@ -1453,7 +1309,6 @@ struct CardDetailView: View
 
                     if presentation == .card, displayFormat != .divider
                     {
-
                         locationControl
                         .frame(maxWidth: 180, minHeight: 44)
                         .buttonStyle(.plain)
@@ -1464,14 +1319,10 @@ struct CardDetailView: View
 
                     Group
                     {
-
-
                         if displayFormat != .divider
                         {
-
                             Button(action: toggleSavedCard)
                             {
-
                                 Image(systemName: isCurrentRecordSaved ? "bookmark.fill" : "bookmark")
                                 .font(.title2)
                                 .foregroundStyle(isCurrentRecordSaved ? .orange : .primary)
@@ -1485,7 +1336,6 @@ struct CardDetailView: View
 
                             if presentation == .card
                             {
-
                                 addMenu(using: scrollProxy)
                                 .foregroundStyle(.primary)
                                 .disabled(isEditingLocked)
@@ -1495,10 +1345,8 @@ struct CardDetailView: View
 
                         Menu
                         {
-
                             Button("Info & History", systemImage: "clock.arrow.circlepath")
                             {
-
                                 activeSheet = .editHistory
 
                             }
@@ -1506,13 +1354,11 @@ struct CardDetailView: View
 
                             if displayFormat != .divider
                             {
-
                                 Button(
                                     isEditingLocked ? "Unlock editing" : "Lock editing",
                                     systemImage: isEditingLocked ? "lock.open" : "lock"
                                 )
                                 {
-
                                     setEditingLocked(!isEditingLocked)
                                 }
                                 .disabled(onTitleToggle == nil && onUpdateMovedNote == nil)
@@ -1521,13 +1367,10 @@ struct CardDetailView: View
 
                             if !isEditingLocked
                             {
-
                                 if displayFormat != .divider
                                 {
-
                                     Button("Add reaction", systemImage: "face.smiling")
                                     {
-
                                         dismissEditing();
 
                                         activeSheet = .reactions
@@ -1536,22 +1379,18 @@ struct CardDetailView: View
 
                                     if relocatedCard != nil || libraryImportance != nil
                                     {
-
                                         Button(
                                             currentImportanceLevel > 0
                                             ? "Increase importance" : "Mark important", systemImage: "star.fill"
                                         )
                                         {
-
                                             adjustCurrentImportance(by: 1)
                                         }
                                         .disabled(currentImportanceLevel >= 5)
                                         if currentImportanceLevel > 0
                                         {
-
                                             Button("Decrease importance", systemImage: "star")
                                             {
-
                                                 adjustCurrentImportance(by: -1)
                                             }
 
@@ -1577,7 +1416,6 @@ struct CardDetailView: View
 
                                                                                                                     if !syncCardState()
                                                                                                                     {
-
                                                                                                                         showsReactionsInPreviews = previous
 
                                                                                                                     }
@@ -1601,7 +1439,6 @@ struct CardDetailView: View
 
                                                                                                                     if !syncCardState()
                                                                                                                     {
-
                                                                                                                         showsDueDateInList = previous
 
                                                                                                                     }
@@ -1611,10 +1448,8 @@ struct CardDetailView: View
 
                                 if displayFormat == .card, appearance?.hidesSubtitle(subtitleText) == true
                                 {
-
                                     Button("Add subtitle", systemImage: "text.badge.plus")
                                     {
-
                                         editingHeaderField = .subtitle
 
                                     }
@@ -1623,7 +1458,6 @@ struct CardDetailView: View
 
                                 Button("Appearance", systemImage: "paintpalette")
                                 {
-
                                     dismissEditing()
 
                                     activeSheet = .appearance
@@ -1633,27 +1467,22 @@ struct CardDetailView: View
 
                                 if displayFormat != .divider
                                 {
-
                                     Button
                                     {
-
                                         richTextFocusedField = .description
 
                                     }
                                     label:
                                     {
-
                                         Label("Edit description", systemImage: "text.alignleft")
                                     }
 
                                     if cardMovementAccess.move != nil
                                     {
-
                                         CardDestinationMenu(
                                             card: workingCardSnapshot,
                                             onMoved:
                                             {
-
                                                 hasMovedCard = true;
 
                                                 dismiss()
@@ -1662,10 +1491,8 @@ struct CardDetailView: View
                                     }
                                     else
                                     {
-
                                         moveCardMenu
                                         {
-
                                             Label(
                                                                                                                                     "Move \(displayFormat.title.lowercased())",
                                                                                                                                     systemImage: "arrowshape.turn.up.right")
@@ -1675,14 +1502,12 @@ struct CardDetailView: View
 
                                     Button
                                     {
-
                                         showsNoteDetails = true
                                         activityFilter = .all
 
                                     }
                                     label:
                                     {
-
                                         Label("Show all activity", systemImage: "clock.arrow.circlepath")
                                     }
 
@@ -1691,11 +1516,8 @@ struct CardDetailView: View
 
                                 if let onArchive, displayFormat != .divider
                                 {  /* Available archive callback for an actionable record */
-
-
                                     Button
                                     {
-
                                         if relocatedCard != nil
                                         {
                                             let snapshot = workingCardSnapshot.recordingEdits(from: lastSavedHistoryCard)
@@ -1713,20 +1535,16 @@ struct CardDetailView: View
                                         currentPersonalCollectionID, /* Current owner used to route relocated Note archiving */
                                         currentPersonalCollectionID != personalCollectionID
                                         {
-
                                             syncCardState()
                                             if onArchiveMovedNote?(currentPersonalCollectionID, workingCardSnapshot)
                                             == true
                                             {
-
-
                                                 dismiss()
                                             }
 
                                         }
                                         else
                                         {
-
                                             syncCardState()
                                             onArchive()
                                             dismiss()
@@ -1735,7 +1553,6 @@ struct CardDetailView: View
                                     }
                                     label:
                                     {
-
                                         Label("Archive \(displayFormat.title)", systemImage: "archivebox")
                                     }
 
@@ -1744,17 +1561,13 @@ struct CardDetailView: View
 
                                 if onDelete != nil
                                 {
-
-
                                     Button(role: .destructive)
                                     {
-
                                         showingDeleteConfirmation = true
 
                                     }
                                     label:
                                     {
-
                                         Label("Delete \(displayFormat.title)", systemImage: "trash")
                                     }
 
@@ -1765,7 +1578,6 @@ struct CardDetailView: View
                         }
                         label:
                         {
-
                             Image(systemName: "ellipsis")
                             .font(.title2)
                             .foregroundStyle(.secondary)
@@ -1782,12 +1594,10 @@ struct CardDetailView: View
                 .padding(.vertical, 4)
                 .background
                 {
-
                     if !showsPhotoThroughHeader
                     {
                         ZStack
                         {
-
                             Color(.systemGroupedBackground)
                             StudioItemBackground(appearance: appearance, isNote: presentation == .note)
                             Color.clear.itemBannerBackground(appearance)
@@ -1808,10 +1618,8 @@ struct CardDetailView: View
             )
             .safeAreaInset(edge: .bottom, spacing: 0)
             {
-
                 if presentation == .note && displayFormat != .divider
                 {
-
                     noteToolbar(using: scrollProxy)
                 }
 
@@ -1820,7 +1628,6 @@ struct CardDetailView: View
             {
                 ZStack
                 {
-
                     Color(.systemGroupedBackground)
                     StudioItemBackground(appearance: appearance, isNote: presentation == .note)
                 }
@@ -1832,7 +1639,6 @@ struct CardDetailView: View
             .ignoresSafeArea(.keyboard, edges: presentation == .note && displayFormat != .divider ? .bottom : [])
             .onAppear
             {
-
                 guard !card.isSectionDivider else
                 {
                     return
@@ -1844,7 +1650,6 @@ struct CardDetailView: View
                 checklistCollectionID
                 ?? checklistTypePlanningAccess?.document.weeks.first(where:
                     {
-
                         $0.startKey == checklistTypePlanningAccess?.document.currentWeekKey
                     })?.id
 
@@ -1856,13 +1661,11 @@ struct CardDetailView: View
             }
             .onAppear
             {
-
                 PlenactKeyboard.shared.setContext(
                     keyboardContextID,
                     actions: KeyboardCardActions(
                         exit:
                         {
-
                             dismissEditing();
                             syncCardState();
                             dismiss()
@@ -1871,7 +1674,6 @@ struct CardDetailView: View
                         {
                             action in
                             {
-
                                 dismissEditing();
                                 syncCardState();
                                 action()
@@ -1882,7 +1684,6 @@ struct CardDetailView: View
                         {
                             action in
                             {
-
                                 dismissEditing();
                                 syncCardState();
                                 action()
@@ -1891,7 +1692,6 @@ struct CardDetailView: View
                         },
                         attachment:
                         {
-
                             guard !isEditingLocked else
                             {
                                 return
@@ -1904,7 +1704,6 @@ struct CardDetailView: View
                         },
                         checklist:
                         {
-
                             guard !isEditingLocked else
                             {
                                 return
@@ -1945,14 +1744,12 @@ struct CardDetailView: View
                 _, field in
                 if field != nil
                 {
-
                     richTextFocusedField = nil
 
                 }
 
                 if let editingHeaderField, field != editingHeaderField
                 {
-
                     self.editingHeaderField = nil
 
                 }
@@ -1982,14 +1779,11 @@ struct CardDetailView: View
                 _, photoItems in
                 guard !photoItems.isEmpty else
                 {
-
-
                     return
                 }
 
                 Task
                 {
-
                     await importPhotos(from: photoItems)
                 }
 
@@ -1997,16 +1791,13 @@ struct CardDetailView: View
 
             .alert("Attachment notice", isPresented: $showingAttachmentNotice)
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text(attachmentNoticeMessage)
             }
 
@@ -2014,17 +1805,14 @@ struct CardDetailView: View
                                     "Permanently delete this \(displayFormat.title.lowercased())?", isPresented: $showingDeleteConfirmation
             )
             {
-
                 Button("Delete \(displayFormat.title)", role: .destructive, action: deleteCard)
                 Button("Cancel", role: .cancel)
                 {
-
                 }
 
             }
             message:
             {
-
                 Text(
                                                 "This permanently deletes this \(displayFormat.title.lowercased()) and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone."
                 )
@@ -2035,8 +1823,6 @@ struct CardDetailView: View
                 sheet in
                 switch sheet
                 {
-
-
                 case .location:
                     CardLocationEditorSheet(location: location)
                     {
@@ -2048,7 +1834,6 @@ struct CardDetailView: View
 
                         guard syncCardState() else
                         {
-
                             location = previous
 
                             return false
@@ -2099,7 +1884,6 @@ struct CardDetailView: View
                 case .labels:
                     CardLabelsSheet(library: labelLibrary, selectedLabelIDs: selectedLabelIDs)
                     {
-
                     updatedLibrary, updatedLabelIDs in
 
                         labelLibrary = updatedLibrary
@@ -2116,7 +1900,6 @@ struct CardDetailView: View
                         photoSelection: $selectedPhotoItems,
                         onAddLink:
                         {
-
                             activeSheet = .addLink
 
                         },
@@ -2124,7 +1907,6 @@ struct CardDetailView: View
                         onComingSoon: showAttachmentSourceComingSoon,
                         onAddDrawing:
                         {
-
                             activeSheet = .addDrawing(DrawingCaptureDraft())
 
                         }
@@ -2141,13 +1923,11 @@ struct CardDetailView: View
                         appearance: appearance,
                         onOpenCover: displayFormat == .divider ? nil :
                         {
-
                             showsAppearanceCover = true
 
                         },
                         onOpenLayout:
                         {
-
                             showsLayoutEditor = true
 
                         },
@@ -2160,10 +1940,8 @@ struct CardDetailView: View
                     }
                     .sheet(isPresented: $showsAppearanceCover)
                     {
-
                         cardCoverPanel
                         {
-
                             showsAppearanceCover = false
 
                         }
@@ -2171,7 +1949,6 @@ struct CardDetailView: View
                     }
                     .sheet(isPresented: $showsLayoutEditor)
                     {
-
                         CardLayoutEditor(layout: sectionLayout)
                         {
                             updated in
@@ -2196,7 +1973,6 @@ struct CardDetailView: View
                 case .cover:
                     cardCoverPanel
                     {
-
                         activeSheet = nil
 
                     }
@@ -2221,7 +1997,6 @@ struct CardDetailView: View
                                     $0.id == replacement.id
                                 }) else
                             {
-
                                 return false
                             }
 
@@ -2231,7 +2006,6 @@ struct CardDetailView: View
 
                             guard syncCardState(attachments: attachments) else
                             {
-
                                 attachments = previous;
 
                                 return false
@@ -2245,8 +2019,6 @@ struct CardDetailView: View
                 case .actionDetail(let checklistID, let itemID): /* Selected checklist and action IDs        */
                     if let checklist = checklists.first(where:
                         {  /* Checklist containing the selected action */
-
-
                             $0.id == checklistID
                         }), /* Owning checklist              */
                     let item = checklist.items.first(where:
@@ -2256,8 +2028,6 @@ struct CardDetailView: View
                     ), /* Selected action               */
                     case .actionDetail(let detail) = item.content
                     {  /* Reduced Action Detail payload */
-
-
                         ChecklistActionDetailView(
                             title: item.title,
                             detail: detail,
@@ -2276,7 +2046,6 @@ struct CardDetailView: View
                     }
                     else
                     {
-
                         ContentUnavailableView(
                                                                         "Action unavailable",
                                                                         systemImage: "doc.text.magnifyingglass",

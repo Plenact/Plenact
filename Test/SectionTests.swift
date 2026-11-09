@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo
     /// @brief      Verify that section Transfer Keeps Whole Block Links Bookmarks And Undo
@@ -38,8 +36,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo() throws
     {
-
-
         ///
         /// @fcn        PlenactBoardDocumentTests.testSectionTransferKeepsWholeBlockLinksBookmarksAndUndo.card
         /// @brief      Prepare card for the enclosing regression test
@@ -52,7 +48,6 @@ extension PlenactBoardDocumentTests
         ///
         func card(_ id: Int, _ title: String) -> KanbanCard
         {
-
             KanbanCard(id: id, word: title, listTitle: "Source", checklists: [])
         }
 
@@ -148,7 +143,6 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(relocated.checklists[0].items[1].linkedCollectionID, source.id)
         guard case .actionDetail(let detail) = owners[2].lists[0].archivedCards[0].checklists[0].items[0].content else
         {
-
             return XCTFail("Missing detail")
         }
 
@@ -207,7 +201,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSectionTransferShiftsDatesAcrossDSTAndRejectsInvalidMovesAtomically() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -298,7 +291,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testSectionMoveChooserAndUndoNoticeRenderWithoutMovingAndOnlyNoticeReceivesTouches() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -309,7 +301,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             TransferConfirmationPresenter.shared.dismiss();
 
             window.isHidden = true;
@@ -366,7 +357,6 @@ extension PlenactBoardDocumentTests
 
         TransferConfirmationPresenter.shared.showUndo(TransferConfirmation(title: "Morning", destination: "Thursday"))
         {
-
             undoCalls += 1;
 
             return true
@@ -391,7 +381,6 @@ extension PlenactBoardDocumentTests
         let hits = /* Filtered hits entries */
             stride(from: CGFloat(0), through: notice.bounds.height, by: 10).filter
         {
-
             notice.hitTest(CGPoint(x: notice.bounds.midX, y: $0), with: nil) != nil
         }
 
@@ -413,8 +402,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDaySectionsKeepPlainDividersInsideTheirNamedSection() throws
     {
-
-
         ///
         /// @fcn        PlenactBoardDocumentTests.testDaySectionsKeepPlainDividersInsideTheirNamedSection.card
         /// @brief      Prepare card for the enclosing regression test
@@ -427,7 +414,6 @@ extension PlenactBoardDocumentTests
         ///
         func card(_ id: Int, _ title: String) -> KanbanCard
         {
-
             KanbanCard(id: id, word: title, listTitle: "Monday", checklists: [])
         }
 
@@ -494,8 +480,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDaySectionMovementRetainsTheWholeBlockAndItsMetadata() throws
     {
-
-
         ///
         /// @fcn        PlenactBoardDocumentTests.testDaySectionMovementRetainsTheWholeBlockAndItsMetadata.card
         /// @brief      Prepare card for the enclosing regression test
@@ -508,7 +492,6 @@ extension PlenactBoardDocumentTests
         ///
         func card(_ id: Int, _ title: String) -> KanbanCard
         {
-
             KanbanCard(id: id, word: title, listTitle: "Monday", checklists: [])
         }
 
@@ -554,7 +537,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSectionExampleUpgradePreservesExistingRoutinesAndStoredBytes() throws
     {
-
         let suite    = "DaySectionExamples." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                           /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -595,7 +577,6 @@ extension PlenactBoardDocumentTests
         try PlanningRoutineStore.validate(upgraded)
         for example in PlanningRoutineLibrary.sectionExamples
         {
-
             XCTAssertEqual(example.kind, .day)
 
             let cards = /* Card records under consideration */
@@ -650,7 +631,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testDaySectionRowsRenderWithLargeTextAndWithoutEditingOnAppearance() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -661,7 +641,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -674,20 +653,16 @@ extension PlenactBoardDocumentTests
 
         for scheme in [ColorScheme.light, .dark]
         {
-
             let host = UIHostingController( /* Synthetic SwiftUI host */
                 rootView: NavigationStack
                 {
-
                     List
                     {
-
                         ForEach(DaySections.visible(cards))
                         {
                             card in
                             if card.sectionHeading != nil
                             {
-
                                 DaySectionRow(
                                     card: card, cards: cards, onUpdate:
                                     {
@@ -706,7 +681,6 @@ extension PlenactBoardDocumentTests
                             }
                             else
                             {
-
                                 Text(card.word).padding(12).modifier(DaySectionRail(cardID: card.id, cards: cards))
                             }
 
@@ -753,15 +727,12 @@ extension PlenactBoardDocumentTests
     ///
     func testRandomCardCreationColorsAreIndependentAndExcludeNotesAndDividers() throws
     {
-
         let list = KanbanList(id: 1, title: "Ideas", cards: []) /* Synthetic list fixture */
 
         for headers in [false, true]
         {
-
             for backgrounds in [false, true]
             {
-
                 let preferences = LocalProfilePreferences( /* Planning and display choices */
                     randomizesNewCardHeaders: headers, randomizesNewCardBackgrounds: backgrounds)
                 let card = list.makeItem( /* Synthetic card fixture */
@@ -771,13 +742,11 @@ extension PlenactBoardDocumentTests
                 XCTAssertEqual(card.appearance?.cardBackground != nil, backgrounds)
                 if let header = card.appearance?.background
                 {
-
                     XCTAssertTrue(NewCardAppearanceDefaults.headerPalette.contains(header))
                 }
 
                 if let background = card.appearance?.cardBackground
                 {
-
                     XCTAssertTrue(NewCardAppearanceDefaults.backgroundPalette.contains(background))
                 }
 
@@ -837,8 +806,6 @@ extension PlenactBoardDocumentTests
     ///
     func testFocusShapePreservesSectionsStableTiesAndAllMatchesAfterSorting() throws
     {
-
-
         ///
         /// @fcn        PlenactBoardDocumentTests.testFocusShapePreservesSectionsStableTiesAndAllMatchesAfterSorting.item
         /// @brief      Prepare item for the enclosing regression test
@@ -854,7 +821,6 @@ extension PlenactBoardDocumentTests
         ///
         func item(_ id: Int, _ title: String, _ time: Double? = nil, done: Bool = false) -> KanbanCard
         {
-
             var card = /* Synthetic card fixture */
                 KanbanCard(id: id, word: title, listTitle: "Monday", isTitleChecked: done, checklists: [])
 
@@ -923,8 +889,6 @@ extension PlenactBoardDocumentTests
     ///
     func testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion()
     {
-
-
         ///
         /// @fcn        PlenactBoardDocumentTests.testTodaySectionSnapOnlyCrossesBoundariesAndRespectsReducedMotion.snap
         /// @brief      Prepare snap for the enclosing regression test
@@ -940,7 +904,6 @@ extension PlenactBoardDocumentTests
         ///
         func snap(_ start: CGFloat, _ proposed: CGFloat, enabled: Bool = true, maximum: CGFloat = 1200) -> CGFloat?
         {
-
             TodaySectionSnapBehavior.destination(
                 start: start, proposed: proposed, perspectiveTop: 800,
                 shortcutsBottom: 700, viewport: 600, maximum: maximum, enabled: enabled)
@@ -975,7 +938,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testLibraryDaySectionExamplesSearchIncludesHeadingsAndMemberItems()
     {
-
         XCTAssertEqual(LibraryDaySectionExamples.matches(query: "day sections").count, 3)
         XCTAssertEqual(LibraryDaySectionExamples.matches(query: "morning").map(\.name), ["A day in chapters"])
         XCTAssertEqual(LibraryDaySectionExamples.matches(query: "tools teardown").map(\.name), ["A build session"])
@@ -995,7 +957,6 @@ extension PlenactBoardDocumentTests
     ///
     func testGalleryGroupsPreserveItemOrderAndDividerIdentity()
     {
-
         var list = KanbanList(id: 3, title: "Plans", cards: []) /* Synthetic list fixture */
 
         list.cards = [
@@ -1038,7 +999,6 @@ extension PlenactBoardDocumentTests
     ///
     func testNamedDividersPreserveIdentityAndLegacySeparators() throws
     {
-
         let list  = KanbanList(id: 3, title: "Plans", cards: []) /* Synthetic list fixture   */
         var named = list.makeItem(id: 42, title: "--- Ideas")    /* Named comparison fixture */
 
@@ -1090,7 +1050,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDisplayFormatsOverrideLegacyDividersWithoutChangingRetainedContent() throws
     {
-
         let legacy = /* Earlier-format input */
             KanbanCard(id: 71, word: "---", listTitle: "Ideas", isDivider: true)
 
@@ -1120,7 +1079,6 @@ extension PlenactBoardDocumentTests
 
         for format in ItemDisplayFormat.allCases
         {
-
             var changed = original /* Value with requested edits */
 
             changed.displayFormat = format
@@ -1177,7 +1135,6 @@ extension PlenactBoardDocumentTests
     ///
     func testKeyboardNeighborsStayWithinActiveListAndSkipDividers()
     {
-
         let a       = /* A Card example */
             KanbanCard(id: 1, word: "A", listTitle: "Today", checklists: [])
         let divider = /* Structural section divider */
@@ -1213,7 +1170,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCardSectionLayoutPersistsWithoutRemovingHiddenContent() throws
     {
-
         var layout = CardSectionLayout() /* Resolved layout configuration */
 
         layout.order = [.activity, .description, .quickActions, .media, .checklists, .details]
@@ -1264,8 +1220,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListNoteDefaultAppliesOnlyToNewNondividerItems()
     {
-
-
         let existing = KanbanCard( /* Previously retained value */
             id: 1, word: "Existing", listTitle: "Ideas") /* Existing Card retained while applying List defaults */
         var list = KanbanList( /* Synthetic list fixture */
@@ -1314,8 +1268,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCardReorderingMovesDividersAndPreservesCompleteRecords()
     {
-
-
         let first = KanbanCard( /* First comparison value */
             id: 1, word: "First", listTitle: "Synthetic", descriptionOverride: "Keep this") /* First retained card fixture  */
         let divider = KanbanCard( /* Structural section divider */
@@ -1341,7 +1293,6 @@ extension PlenactBoardDocumentTests
     ///
     func testDividerMovementPreservesRecordsWithinAndBetweenLists() throws
     {
-
         let divider = /* Structural section divider */
             KanbanCard(id: 2, word: "---", listTitle: "A", isDivider: true, checklists: [])
         let card    = /* Synthetic card fixture */
@@ -1382,8 +1333,6 @@ extension PlenactBoardDocumentTests
     ///
     func testArchivingAndRestoringPreservesFullCardAndDivider() throws
     {
-
-
         var completed = SampleData.lists[0].cards[0] /* Completed checklist-item fixture */
 
         completed.isTitleChecked = true
@@ -1433,8 +1382,6 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardSearchIncludesEmptyListsAndCardSearchExcludesDividers()
     {
-
-
         let divider = KanbanCard( /* Structural section divider */
             id: 1, word: "Divider", listTitle: "Monday", isDivider: true)  /* Section-divider fixture        */
         let lists = [                                                      /* Board lists under verification */

@@ -20,8 +20,6 @@ import SwiftUI
 /// Optional perspective below Today’s action area; all content derives from canonical lists
 struct TodayPerspectiveSection: View
 {
-
-
     let completed:    [KanbanCard]                /* Completion state  */
     let tomorrowList: KanbanList?                 /* Tomorrow list     */
     let onReview:     (ReviewRhythmRoute) -> Void /* Review callback   */
@@ -31,7 +29,6 @@ struct TodayPerspectiveSection: View
 
     private var tomorrowItems: [KanbanCard] /* Tomorrow items */
     {
-
         tomorrowList?.cards.filter
         {
             !$0.isSectionDivider && !$0.isTitleChecked
@@ -42,13 +39,10 @@ struct TodayPerspectiveSection: View
 
     var body: some View /* Today Perspective layout */
     {
-
         VStack(alignment: .leading, spacing: 18)
         {
-
             VStack(alignment: .leading, spacing: 5)
             {
-
                 Text("A little perspective")
                 .font(.title3.weight(.semibold))
                 .accessibilityAddTraits(.isHeader)
@@ -59,7 +53,6 @@ struct TodayPerspectiveSection: View
 
             VStack(alignment: .leading, spacing: 10)
             {
-
                 heading("Close the loop", symbol: "arrow.triangle.2.circlepath")
                 Text("Plans can change. Give unfinished things a next step when you’re ready.")
                 .font(.subheadline).foregroundStyle(.secondary)
@@ -70,10 +63,8 @@ struct TodayPerspectiveSection: View
 
             if !completed.isEmpty
             {
-
                 VStack(alignment: .leading, spacing: 10)
                 {
-
                     heading("Worth noticing", symbol: "leaf")
                     Text(
                                                             "\(completed.count) \(completed.count == 1 ? "item is" : "items are") complete on today’s list."
@@ -96,23 +87,19 @@ struct TodayPerspectiveSection: View
 
             VStack(alignment: .leading, spacing: 10)
             {
-
                 heading("A glance at tomorrow", symbol: "sunrise")
                 if tomorrowList == nil
                 {
-
                     Text("A little room to think ahead. Tomorrow’s Day list isn’t set up yet.")
                     .font(.subheadline).foregroundStyle(.secondary)
                 }
                 else if tomorrowItems.isEmpty
                 {
-
                     Text("No unfinished items on tomorrow’s Day list. Leave room, or give something a place.")
                     .font(.subheadline).foregroundStyle(.secondary)
                 }
                 else
                 {
-
                     Text(
                                                             "\(tomorrowItems.count) \(tomorrowItems.count == 1 ? "item has" : "items have") a place on tomorrow’s Day list."
                     )
@@ -125,7 +112,6 @@ struct TodayPerspectiveSection: View
 
                     if tomorrowItems.count > 2
                     {
-
                         Text("And \(tomorrowItems.count - 2) more")
                         .font(.caption).foregroundStyle(.secondary)
                     }
@@ -155,7 +141,6 @@ struct TodayPerspectiveSection: View
     ///
     private func heading(_ title: String, symbol: String) -> some View
     {
-
         Label(title, systemImage: symbol).font(.headline)
         .accessibilityAddTraits(.isHeader)
     }

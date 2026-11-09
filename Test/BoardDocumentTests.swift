@@ -23,8 +23,6 @@ import XCTest
 ///
 final class PlenactBoardDocumentTests: XCTestCase
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.routineCalendar
     /// @brief      Prepare routine calendar for the enclosing regression test
@@ -36,7 +34,6 @@ final class PlenactBoardDocumentTests: XCTestCase
     ///
     func routineCalendar(firstWeekday: Int = 2) -> Calendar
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -59,7 +56,6 @@ final class PlenactBoardDocumentTests: XCTestCase
     @MainActor
     func findDetailNavigation(in controller: UIViewController) -> UINavigationController?
     {
-
         if let nav = controller as? UINavigationController, nav.viewControllers.count > 1
         {
             return nav
@@ -67,13 +63,11 @@ final class PlenactBoardDocumentTests: XCTestCase
 
         if let presented = controller.presentedViewController, let found = findDetailNavigation(in: presented)
         {
-
             return found
         }
 
         for child in controller.children
         {
-
             if let found = findDetailNavigation(in: child)
             {
                 return found
@@ -95,7 +89,6 @@ final class PlenactBoardDocumentTests: XCTestCase
     ///
     func planningTestCalendar() -> Calendar
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -116,11 +109,9 @@ final class PlenactBoardDocumentTests: XCTestCase
     @MainActor
     func drawingFixture() -> PKDrawing
     {
-
         let points = /* Mapped points values */
             [CGPoint(x: 100, y: 100), CGPoint(x: 300, y: 180), CGPoint(x: 200, y: 350)].enumerated().map
         {
-
         index, point in
             PKStrokePoint(
                 location: point, timeOffset: Double(index) * 0.1, size: CGSize(width: 8, height: 8), opacity: 1,
@@ -141,8 +132,6 @@ final class PlenactBoardDocumentTests: XCTestCase
     ///
     final class ActivityTestURLProtocol: URLProtocol
     {
-
-
         ///
         /// @fcn        PlenactBoardDocumentTests.ActivityTestURLProtocol.canInit(with:)
         /// @brief      Accept every request in the dedicated ephemeral test session
@@ -154,8 +143,6 @@ final class PlenactBoardDocumentTests: XCTestCase
         ///
         override class func canInit(with request: URLRequest) -> Bool
         {
-
-
             true
         }
 
@@ -171,8 +158,6 @@ final class PlenactBoardDocumentTests: XCTestCase
         ///
         override class func canonicalRequest(for request: URLRequest) -> URLRequest
         {
-
-
             request
         }
 
@@ -189,8 +174,6 @@ final class PlenactBoardDocumentTests: XCTestCase
         ///
         override func startLoading()
         {
-
-
             Task
             {
                 @MainActor in
@@ -199,7 +182,6 @@ final class PlenactBoardDocumentTests: XCTestCase
                 XCTAssertTrue(
                     DatabaseActivity.shared.operations.contains
                     {
-
                         $0.message == "Synchronizing shared database..."
                     })
                 await Task.yield()
@@ -208,8 +190,6 @@ final class PlenactBoardDocumentTests: XCTestCase
 
                 guard let url = request.url /* URL fixture for the request */ else
                 {
-
-
                     XCTFail("Missing synthetic request URL")
                     client?.urlProtocol(self, didFailWithError: URLError(.badURL))
                     return
@@ -218,8 +198,6 @@ final class PlenactBoardDocumentTests: XCTestCase
 
                 if url.host == "success.example.test"
                 {
-
-
                     let response = HTTPURLResponse( /* Synthetic API response */
                         url: url, statusCode: 200, httpVersion: nil,
                         headerFields: ["Content-Type": "application/json"]
@@ -231,8 +209,6 @@ final class PlenactBoardDocumentTests: XCTestCase
                 }
                 else
                 {
-
-
                     client?.urlProtocol(
                         self, didFailWithError: URLError(url.host == "timeout.example.test" ? .timedOut : .cancelled)
                     )
@@ -253,7 +229,6 @@ final class PlenactBoardDocumentTests: XCTestCase
         ///
         override func stopLoading()
         {
-
         }
 
     }

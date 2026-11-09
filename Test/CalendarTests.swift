@@ -22,11 +22,9 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
     /// A date switched inside Day View targets the active List in that date's current Week snapshot
     func testSwitchedCalendarDayTargetsItsOwnWeekAndCurrentListMapping() throws
     {
-
         var calendar = Calendar.current /* Same local date context used by the document */
 
         calendar.firstWeekday = 2
@@ -68,7 +66,6 @@ extension PlenactBoardDocumentTests
     ///
     func testFocusChronologyHonorsTimeOnlyDateOnlyAndDueFallback() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
@@ -90,7 +87,6 @@ extension PlenactBoardDocumentTests
         ///
         func time(_ hour: Int, day date: Int) -> Date
         {
-
             calendar.date(from: DateComponents(year: 2026, month: 10, day: date, hour: hour))!
         }
 
@@ -133,7 +129,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPlanningWeekReplacementPreservesUndatedAndArchivedContent() throws
     {
-
         let calendar = routineCalendar() /* Date calculation calendar   */
         let date     =                   /* Date used by this operation */
             try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
@@ -190,7 +185,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testDailyPlanPreservesUnreadableAndUnsupportedStoredData() throws
     {
-
         let name     = "PlenactTests.DailyPlan." + UUID().uuidString /* Display or lookup name */
         let defaults = UserDefaults(suiteName: name)! /* Preference store under test */
 
@@ -201,7 +195,6 @@ extension PlenactBoardDocumentTests
 
         for bytes in [Data("broken".utf8), Data(#"{"version":99,"plans":{}}"#.utf8)]
         {
-
             defaults.set(bytes, forKey: DailyPlanStore.key)
             XCTAssertThrowsError(try DailyPlanStore.load(from: defaults))
             XCTAssertThrowsError(try DailyPlanStore.save(DailyPlan(date: .now), replacing: nil, to: defaults))
@@ -226,7 +219,6 @@ extension PlenactBoardDocumentTests
     ///
     func testFullMonthBackupRestoresAllPreferencesAndLocalFilesAndKeepsOriginal() throws
     {
-
         let folder   = /* Working folder location */
             FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let name     = "PlenactTests.Month." + UUID().uuidString /* Display or lookup name      */
@@ -295,7 +287,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCollectionBackgroundsPersistAndExcludeDatedViews() throws
     {
-
         let personalID = UUID(), weekID = UUID() /* Distinct collection and Week IDS */
 
         XCTAssertTrue(
@@ -310,7 +301,6 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(legacy.collectionBackground)
         for preset in CollectionBackgroundPreset.allCases
         {
-
             var collection = /* Synthetic collection fixture */
                 PersonalCollection(title: "Personal space", kind: .board)
 
@@ -343,7 +333,6 @@ extension PlenactBoardDocumentTests
     ///
     func testFreshInstallationSeedsTutorialListsAndOrderedShortcutsOnlyOnce() throws
     {
-
         let suite    = /* Isolated preference domain */
             "Plenact.FreshInstallTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -398,7 +387,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSameDayDateOnlySchedulesDoNotRepeatTheListDate() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Chicago"))
@@ -446,17 +434,14 @@ extension PlenactBoardDocumentTests
     ///
     func testWeekCalendarGridAlignsRowsAcrossMonthsAndWeekStarts() throws
     {
-
         for firstWeekday in [1, 2]
         {
-
             var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
             calendar.firstWeekday = firstWeekday
 
             for key in ["2026-10-14", "2026-12-31", "2027-01-01", "2028-02-29"]
             {
-
                 let date = /* Date used by this operation */
                     try XCTUnwrap(PlanningDate.date(key, calendar: calendar))
                 let days = /* Dates in the selected range */
@@ -466,7 +451,6 @@ extension PlenactBoardDocumentTests
                 XCTAssertEqual(calendar.component(.weekday, from: days[0]), firstWeekday)
                 for row in 0 ..< 6
                 {
-
                     let keys = /* Keys used by this operation */
                         Set(days[(row * 7) ..< (row * 7 + 7)].map
                         {
@@ -504,10 +488,8 @@ extension PlenactBoardDocumentTests
     ///
     func testCalendarContentMatchesPlannedAndScheduledItemsAcrossWeekBoundaries() throws
     {
-
         for firstWeekday in [1, 2]
         {
-
             var calendar = Calendar.current; /* Date calculation calendar */
 
             calendar.firstWeekday = firstWeekday
@@ -558,10 +540,8 @@ extension PlenactBoardDocumentTests
                     false
                 }, openCurrentWeek:
                 {
-
                 }, openToday:
                 {
-
                 },
                 openLibraryCard:
                 {
@@ -610,7 +590,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWeekCalendarPickerRendersSelectedWeekAndDay() async throws
     {
-
         let date     = /* Date used by this operation */
             try XCTUnwrap(PlanningDate.date("2026-10-14"))
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
@@ -648,10 +627,8 @@ extension PlenactBoardDocumentTests
                 false
             }, openCurrentWeek:
             {
-
             }, openToday:
             {
-
             },
             openLibraryCard:
             {
@@ -682,7 +659,6 @@ extension PlenactBoardDocumentTests
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -718,15 +694,12 @@ extension PlenactBoardDocumentTests
     ///
     func testLaunchProgressRevealsOnlyStartedStagesAndKeepsCompletedStagesSteady()
     {
-
         for stage in PlenactLaunchStage.allCases
         {
-
             let progress = PlenactLaunchProgress(stage: stage) /* Operation progress state */
 
             for step in PlenactLaunchStage.allCases
             {
-
                 XCTAssertEqual(
                     progress.status(for: step),
                     step.rawValue < stage.rawValue ? .complete : (step == stage ? .running : .waiting))
@@ -758,7 +731,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLibraryPlateRanksUrgencyAndExcludesCompletedArchivedAndUndatedItems() throws
     {
-
         let calendar = Calendar.current /* Date calculation calendar */
         let now      =                  /* Current reference instant */
             try XCTUnwrap(PlanningDate.date("2026-10-11"))
@@ -800,7 +772,6 @@ extension PlenactBoardDocumentTests
         ///
         func task(_ id: Int, _ days: Int) -> KanbanCard
         {
-
             var card = /* Synthetic card fixture */
                 KanbanCard(id: id, word: "Task \(id)", listTitle: "Projects", dueDate: due(days))
 
@@ -858,7 +829,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListCreationDraftSurvivesRecreationAndStaysInItsCollection() throws
     {
-
         let suite    = "ListDraftTests.\(UUID().uuidString)" /* Isolated preference domain  */
         let defaults =                                       /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -895,7 +865,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCardDateKindsPersistAndCopyWithoutInventingDates() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone.current
@@ -905,7 +874,6 @@ extension PlenactBoardDocumentTests
 
         for kind in CardDateKind.allCases
         {
-
             var card = KanbanCard( /* Synthetic card fixture */
                 id: 1, word: "Scheduled", listTitle: "Monday", startDate: date, dueDate: date,
                 showsDueDateInList: true, startDateKind: kind, dueDateKind: kind)
@@ -918,13 +886,11 @@ extension PlenactBoardDocumentTests
             XCTAssertEqual(decoded.dueDate, date)
             if kind.includesTime
             {
-
                 XCTAssertTrue(decoded.startDateLabel.contains("8:45 PM"))
                 XCTAssertTrue(decoded.listDueDateLabel?.contains("8:45 PM") ?? false)
             }
             else
             {
-
                 XCTAssertFalse(decoded.dueDateLabel.contains("PM"))
             }
 
@@ -984,7 +950,6 @@ extension PlenactBoardDocumentTests
     ///
     func testNewCardDueDateDefaultPreferencesPersistAndLegacyDefaultsToTrue() throws
     {
-
         let suite    = UUID().uuidString /* Isolated preference domain  */
         let defaults =                   /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -1040,7 +1005,6 @@ extension PlenactBoardDocumentTests
     ///
     func testMondayWeekStartAcrossYearBoundaryAndStoredReload() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -1090,7 +1054,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testPlanningHostedCalendarLayoutDoesNotPersistBrowsing() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -1101,7 +1064,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -1125,10 +1087,8 @@ extension PlenactBoardDocumentTests
             },
             openCurrentWeek:
             {
-
             }, openToday:
             {
-
             }, openLibraryCard:
             {
                 _ in
@@ -1144,7 +1104,6 @@ extension PlenactBoardDocumentTests
 
         for size in [DynamicTypeSize.large, .accessibility3]
         {
-
             let controller = UIHostingController( /* Native view controller */
                 rootView: PlanningCalendarView().environment(\.planningCalendarAccess, access)
                 .environment(\.dynamicTypeSize, size))
@@ -1189,7 +1148,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPlanningDateKeysAcrossDSTAndYearBoundary() throws
     {
-
         let calendar = planningTestCalendar() /* Date calculation calendar   */
         let date     =                        /* Date used by this operation */
             try XCTUnwrap(PlanningDate.date("2026-11-01", calendar: calendar))
@@ -1210,7 +1168,6 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(
             PlanningDate.days(in: "2026-12-27", calendar: calendar).last.map
             {
-
                 PlanningDate.key($0, calendar: calendar)
             }, "2027-01-02")
     }
@@ -1228,7 +1185,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPlanningCardsMoveBetweenDatedWeekLibraryAndCurrentWeek() throws
     {
-
         let calendar = planningTestCalendar() /* Date calculation calendar   */
         let date     =                        /* Date used by this operation */
             try XCTUnwrap(PlanningDate.date("2026-12-25", calendar: calendar))
@@ -1289,7 +1245,6 @@ extension PlenactBoardDocumentTests
     ///
     func testFocusTrailingTimePrefersTimedStartAndSkipsDateOnlyValues() throws
     {
-
         let start = Date(timeIntervalSince1970: 1700000000) /* Range start            */
         let due   = start.addingTimeInterval(3600)          /* Due date or time       */
         var card  = KanbanCard(                             /* Synthetic card fixture */
@@ -1347,8 +1302,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCanonicalListEditorSaveRetainsLatestRecordsAndWeekdayRecreation() throws
     {
-
-
         var lists           = /* Ordered List records */
             [KanbanList(id: 4, title: "Thursday", cards: [])]
         let defaultSubtitle = lists[0].subtitle /* Default subtitle    */
@@ -1400,7 +1353,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCaptureStartStopDatesAreOptionalValidatedAndPersistAsCalendarDates() throws
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -1412,10 +1364,8 @@ extension PlenactBoardDocumentTests
 
         for times in [false, true]
         {
-
             for pair: (Date?, Date?) in [(nil, nil), (start, nil), (nil, stop), (start, stop)]
             {
-
                 let schedule = /* Item date and time settings */
                     QuickCaptureSchedule(start: pair.0, stop: pair.1, includesTime: times)
 
@@ -1466,8 +1416,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testHostedStandardBoardCentersRequestedListWithEqualNeighborPreviews() async throws
     {
-
-
         let suite    = "Plenact.CenteredBoard.\(UUID().uuidString)" /* Isolated preference domain */
         let defaults = /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -1484,7 +1432,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -1505,7 +1452,6 @@ extension PlenactBoardDocumentTests
         ///
         func collections(in view: UIView) -> [UICollectionView]
         {
-
             if let collection = view as? UICollectionView
             {
                 return [collection]
@@ -1532,7 +1478,6 @@ extension PlenactBoardDocumentTests
                         targetListID
                     }, set:
                     {
-
                         targetListID = $0
 
                     }),
@@ -1553,7 +1498,6 @@ extension PlenactBoardDocumentTests
         // The native card collection is inset four points inside each List panel
         let frames = collections(in: controller.view).map /* Ordered frames entries */
         {
-
             $0.convert($0.bounds, to: window).insetBy(dx: -4, dy: 0)
         } .sorted
         {
@@ -1590,15 +1534,11 @@ extension PlenactBoardDocumentTests
     ///
     func testPersonalBoardArchiveSavesBeforeReturningUpdatedState() throws
     {
-
-
         let suite    = "Plenact.ArchiveCommitTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -1630,8 +1570,6 @@ extension PlenactBoardDocumentTests
     ///
     func testTodayFocusFollowsEveryLocalWeekdayWithoutChangingRecords() throws
     {
-
-
         var calendar = Calendar(identifier: .gregorian) /* Fixed calendar for date assertions */
 
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
@@ -1644,8 +1582,6 @@ extension PlenactBoardDocumentTests
 
         for (offset, name) in names.enumerated()
         {
-
-
             let date = try XCTUnwrap( /* Date used by this operation */
                 calendar.date(from: DateComponents(year: 2026, month: 10, day: 5 + offset))) /* Date value for boundary checks */
 
@@ -1681,8 +1617,6 @@ extension PlenactBoardDocumentTests
     ///
     func testQuickCaptureCreatesMissingCurrentWeekdayList() throws
     {
-
-
         let renamed = KanbanList( /* Item after renaming */
             id: 7, title: "Renamed Thursday",
             cards: [

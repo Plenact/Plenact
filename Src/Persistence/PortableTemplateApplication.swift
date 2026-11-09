@@ -14,7 +14,6 @@ import Foundation
 @MainActor
 enum PortableTemplateApplication
 {
-
     /// @fcn PortableTemplateApplication.reserve
     /// @brief Reserve new List/Card aliases while preserving the exact prepared preview content
     /// @param[in] preview Prepared additive or replacement Week
@@ -27,15 +26,12 @@ enum PortableTemplateApplication
         root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws
         -> (week: DatedPlanningWeek, importantIDs: Set<Int>)
     {
-
         guard let original, !(try PortableRuntimeEvidence.capture(root: root)).isEmpty else
         {
-
             return (preview, importantIDs)
         }
         guard preview.collection.id == original.collection.id, preview.startKey == original.startKey else
         {
-
             throw PortableEditedExport.Failure.structureChanged
         }
 
@@ -49,7 +45,6 @@ enum PortableTemplateApplication
         guard Set(lists).count == lists.count, Set(cards).count == cards.count,
               importantIDs.isSubset(of: Set(cards)) else
         {
-
             throw PortableEditedExport.Failure.inconsistent
         }
 
@@ -59,7 +54,6 @@ enum PortableTemplateApplication
 
         guard count > 0 else
         {
-
             return (preview, importantIDs)
         }
 
@@ -68,7 +62,6 @@ enum PortableTemplateApplication
 
         guard maximum < Int.max else
         {
-
             throw PortableEditedExport.Failure.unsupported
         }
 
@@ -85,23 +78,18 @@ enum PortableTemplateApplication
         /// @return Translated subtree with preserved authored values
         func references(_ value: Any) -> Any
         {
-
             if var object = value as? [String: Any]
             {
-
                 for field in ["cardID", "retainedCardID"]
                 {
-
                     if let number = object[field] as? Int, let target = cardMap[number]
                     {
-
                         object[field] = target
 
                     }
                 }
                 for field in object.keys where field != "editHistory"
                 {
-
                     object[field] = references(object[field]!)
 
                 }
@@ -109,7 +97,6 @@ enum PortableTemplateApplication
             }
             if let array = value as? [Any]
             {
-
                 return array.map(references)
             }
             return value
@@ -122,27 +109,22 @@ enum PortableTemplateApplication
 
         for index in rawLists.indices
         {
-
             let number = rawLists[index]["id"] as! Int /* Local numeric value */
 
             rawLists[index]["id"] = listMap[number] ?? number
 
             for field in ["cards", "archivedCards"]
             {
-
                 guard var items = rawLists[index][field] as? [[String: Any]] else
                 {
-
                     continue
                 }
                 for item in items.indices
                 {
-
                     let number = items[item]["id"] as! Int /* Local numeric value */
 
                     if let target = cardMap[number]
                     {
-
                         items[item] = references(items[item]) as! [String: Any]
                         items[item]["id"] = target
 
@@ -158,7 +140,6 @@ enum PortableTemplateApplication
 
         if let saved = collection["savedCardIDs"] as? [Int]
         {
-
             collection["savedCardIDs"] = saved.map { cardMap[$0] ?? $0 }.sorted()
 
         }
@@ -167,7 +148,6 @@ enum PortableTemplateApplication
 
         if let days = raw["dayListIDs"] as? [String: Int]
         {
-
             raw["dayListIDs"] = days.mapValues { listMap[$0] ?? $0 }
 
         }
@@ -190,10 +170,8 @@ enum PortableTemplateApplication
     static func importanceForSavedWeek(_ week: DatedPlanningWeek, data: Data,
         root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws -> Data
     {
-
         guard !data.isEmpty else
         {
-
             return data
         }
 
@@ -202,7 +180,6 @@ enum PortableTemplateApplication
 
         guard let raw = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], raw.count == items.count else
         {
-
             throw PortableEditedExport.Failure.inconsistent
         }
 
@@ -210,12 +187,10 @@ enum PortableTemplateApplication
 
         for (item, object) in zip(items, raw)
         {
-
             guard Set(object.keys).isSubset(of: ["collectionID", "cardID", "level"]),
                   (1...5).contains(item.level ?? 1),
                   seen.insert(item.collectionID.uuidString + ":" + String(item.cardID)).inserted else
             {
-
                 throw PortableEditedExport.Failure.inconsistent
             }
         }
@@ -225,7 +200,6 @@ enum PortableTemplateApplication
 
         guard items.contains(where: { $0.collectionID == week.id && !actual.contains($0.cardID) }) else
         {
-
             return data
         }
 
@@ -233,32 +207,27 @@ enum PortableTemplateApplication
 
         guard let baseline = runtime["NativeStores.plist"] else
         {
-
             return data
         }
         guard let stores = try PropertyListSerialization.propertyList(from: baseline, format: nil) as? [String: Any] else
         {
-
             throw PortableEditedExport.Failure.inconsistent
         }
 
         let retained = /* State retained for recovery */
             try (stores[LibraryImportanceSelection.key] as? Data).map
         {
-
             try JSONDecoder().decode([LibraryImportanceItem].self, from: $0)
         } ?? []
         let retainedIDs = /* Retained i ds */
             Set(retained.filter { $0.collectionID == week.id }.map(\.cardID))
         let kept        = zip(items, raw).filter /* Entries retained after filtering */
         {
-
             $0.0.collectionID != week.id || actual.contains($0.0.cardID) || retainedIDs.contains($0.0.cardID)
         }.map { $0.1 }
 
         guard kept.count != raw.count else
         {
-
             return data
         }
         return try JSONSerialization.data(withJSONObject: kept, options: .sortedKeys)

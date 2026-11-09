@@ -24,8 +24,6 @@ import XCTest
 @MainActor
 final class NoteNavigationProbe: ObservableObject
 {
-
-
     @Published var path: [KanbanCard] = [] /* Filesystem or navigation path */
     var visibleNotes:    Set<UUID>    = [] /* Visible notes                 */
 
@@ -45,16 +43,12 @@ final class NoteNavigationProbe: ObservableObject
 ///
 struct NoteNavigationTestView: View
 {
-
-
     @ObservedObject var probe: NoteNavigationProbe /* Probe comparison fixture */
 
     var body:                  some View /* Note Navigation Test layout */
     {
-
         NavigationStack(path: $probe.path)
         {
-
             Text("Week")
             .navigationDestination(for: KanbanCard.self)
             {
@@ -92,8 +86,6 @@ struct NoteNavigationTestView: View
 @MainActor
 final class DirectReturnTestProbe: ObservableObject
 {
-
-
     @Published var presented = false /* Presented state flag */
 
 }
@@ -108,8 +100,6 @@ final class DirectReturnTestProbe: ObservableObject
 ///
 struct DirectReturnTestView: View
 {
-
-
     @ObservedObject var probe: DirectReturnTestProbe /* Probe comparison fixture    */
     let owner:                 PersonalCollection    /* Owning collection or Week   */
     let week:                  DatedPlanningWeek?    /* Synthetic week fixture      */
@@ -117,14 +107,11 @@ struct DirectReturnTestView: View
 
     var body:                  some View /* Direct Return Test layout */
     {
-
         Text("Origin remains here")
         .fullScreenCover(isPresented: $probe.presented)
         {
-
             if let week
             {
-
                 PlanningCalendarWeekView(
                     week: week, initialDayID: listID, initialCardID: 701,
                     onLeaveForHome:
@@ -134,7 +121,6 @@ struct DirectReturnTestView: View
             }
             else
             {
-
                 PlanningSearchLibraryView(
                     collection: owner, initialListID: listID, initialCardID: 701,
                     onLeaveForHome:

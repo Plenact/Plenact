@@ -12,7 +12,6 @@ import Foundation
 ///     Keep complete saved history separate from current Card state and runtime workflow actions
 struct PortablePlanningDocuments
 {
-
     let daily:    DailyPlanStore.Document      /* Daily planning state          */
     let weekly:   WeeklyReviewStore.Document   /* Weekly review state           */
     let periodic: PeriodicReviewStore.Document /* Periodic review state         */
@@ -26,7 +25,6 @@ struct PortablePlanningDocuments
 ///     Preserve unavailable references and authored historical text rather than replacing them with live Cards
 extension PortableEditableContent
 {
-
     /// @fcn PortableEditableContent.priority
     /// @brief Restore original historical title/location and canonical owner-qualified aliases
     /// @param[in] value Canonical historical priority
@@ -34,7 +32,6 @@ extension PortableEditableContent
     /// @throws Unsupported fields or undeclared identity targets
     func priority(_ value: [String: Any]) throws -> [String: Any]
     {
-
         var raw = /* Unprocessed source value */
             try mapped(value, fields: ["source_collection_id": "ownerID", "card_id": "cardID",
             "title": "title", "source_location": "location", "source_created_at_utc": "sourceCreatedAt"])
@@ -80,7 +77,6 @@ extension PortableEditableContent
     /// @throws Duplicate or invalid references
     func priorities(_ value: Any?) throws -> [[String: Any]]
     {
-
         var seen = Set<String>() /* Identities already encountered */
 
         return try array(value).map { item in
@@ -101,7 +97,6 @@ extension PortableEditableContent
     /// @throws Unsupported action, malformed dates or duplicate IDs
     func decisions(_ value: Any?) throws -> [[String: Any]]
     {
-
         var seen = Set<String>() /* Identities already encountered */
 
         return try array(value).map { item in
@@ -154,7 +149,6 @@ extension PortableEditableContent
     /// @throws Invalid non-null shape
     func optionalPriority(_ value: Any?) throws -> Any
     {
-
         if value is NSNull
         {
             return NSNull()
@@ -174,7 +168,6 @@ extension PortableEditableContent
     /// @throws Invalid snapshot shape
     func checkIn(_ value: Any?) throws -> Any
     {
-
         if value is NSNull
         {
             return NSNull()
@@ -201,7 +194,6 @@ extension PortableEditableContent
     /// @throws Duplicate IDs, invalid counts or unsupported fields
     func checkIns(_ value: Any?) throws -> Any
     {
-
         if value is NSNull
         {
             return NSNull()
@@ -228,7 +220,6 @@ extension PortableEditableContent
 
             if let mood = item["mood"] as? [String: Any]
             {
-
                 _ = try mapped(mood, fields: ["emoji": "emoji", "label": "label"])
 
             }
@@ -259,7 +250,6 @@ extension PortableEditableContent
     /// @throws Invalid progress or snapshot values
     func evening(_ value: Any?) throws -> Any
     {
-
         if value is NSNull
         {
             return NSNull()
@@ -293,7 +283,6 @@ extension PortableEditableContent
     /// @throws Invalid status, duplicate identity or unknown fields
     func objectives(_ value: Any?) throws -> [[String: Any]]
     {
-
         var seen = Set<String>() /* Identities already encountered */
 
         return try array(value).map { item in
@@ -321,7 +310,6 @@ extension PortableEditableContent
     /// @throws Unsupported values, duplicate logical store keys or missing historical evidence
     func planningDocuments() throws -> PortablePlanningDocuments
     {
-
         var daily: [String: Any]    = [:] /* Daily planning state       */
         var weekly: [String: Any]   = [:] /* Weekly review state        */
         var periodic: [String: Any] = [:] /* Periodic review state      */
@@ -342,7 +330,6 @@ extension PortableEditableContent
             }
             if kind == "daily_plan"
             {
-
                 var raw = /* Unprocessed source value */
                     try mapped(payload, fields: ["date": "id", "time_zone": "timeZoneID", "intention": "intention",
                     "constraints": "constraints", "concerns": "concerns", "priorities": "priorities", "updated_at_utc": "updatedAt",
@@ -373,7 +360,6 @@ extension PortableEditableContent
             }
             else
             {
-
                 let extra = kind == "weekly_review" /* Extra operation value */
                     ? ["source_review_key": "id", "start_date": "startKey", "time_zone": "timeZoneID", "first_weekday": "firstWeekday",
                        "constraints": "constraints", "decisions": "decisions"]

@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 extension CardDetailView
 {
-
-
     ///
     /// @fcn        CardDetailView.richTextFocusBinding
     /// @brief      Bridge one rich-text field into shared editor focus
@@ -35,7 +33,6 @@ extension CardDetailView
     ///
     func richTextFocusBinding(for field: EditableField) -> Binding<Bool>
     {
-
         Binding(
             get:
             {
@@ -46,14 +43,12 @@ extension CardDetailView
                 isFocused in
                 if isFocused
                 {
-
                     focusedField = nil
                     richTextFocusedField = field
 
                 }
                 else if richTextFocusedField == field
                 {
-
                     richTextFocusedField = nil
 
                 }
@@ -71,7 +66,6 @@ extension CardDetailView
     ///
     func dismissEditing()
     {
-
         richTextFocusedField = nil
         focusedField = nil
         editingHeaderField = nil
@@ -92,8 +86,6 @@ extension CardDetailView
     ///
     func memberIconColor(for memberName: String) -> Color
     {
-
-
         let normalizedName = /* Normalized name */
             memberName.trimmingCharacters(in: .whitespacesAndNewlines)
         .lowercased() /* Member-color lookup key */
@@ -114,8 +106,6 @@ extension CardDetailView
     ///
     func setCover(_ id: UUID?)
     {
-
-
         guard !isEditingLocked else
         {
             return
@@ -128,8 +118,6 @@ extension CardDetailView
 
         do
         {
-
-
             try updated.setCover(id)
 
             coverImportID = nil
@@ -140,8 +128,6 @@ extension CardDetailView
         }
         catch
         {
-
-
             DatabaseActivity.shared.report(
                                     "Could not set this cover: \(error.localizedDescription) Choose an attached photo.")
         }
@@ -160,12 +146,8 @@ extension CardDetailView
     ///
     func useLibraryCover(_ image: ExampleCoverImage) -> Bool
     {
-
-
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else
         {
-
-
             return false
         }
 
@@ -176,8 +158,6 @@ extension CardDetailView
 
         do
         {
-
-
             try updated.useLibraryCover(image)
 
             attachments = updated.attachments ?? []
@@ -191,8 +171,6 @@ extension CardDetailView
         }
         catch
         {
-
-
             DatabaseActivity.shared.report("Could not select this cover: \(error.localizedDescription)")
 
             return false
@@ -213,33 +191,23 @@ extension CardDetailView
     @ViewBuilder
     func attachmentContent(for attachment: KanbanAttachment) -> some View
     {
-
-
         if let url = attachment.url
         {  /* Remote link target */
-
-
             Link(destination: url)
             {
-
-
                 CardAttachmentThumbnail(attachment: attachment)
             }
 
         }
         else
         {
-
-
             Button
             {
-
                 activeSheet = .attachmentPreview(attachment)
 
             }
             label:
             {
-
                 CardAttachmentThumbnail(attachment: attachment)
             }
 
@@ -260,19 +228,13 @@ extension CardDetailView
     ///
     func attachmentGalleryItem(_ attachment: KanbanAttachment) -> some View
     {
-
-
         attachmentContent(for: attachment)
         .contextMenu
         {
-
             if attachment.kind == .photo
             {
-
-
                 Button(coverAttachmentID == attachment.id ? "Remove Cover" : "Set as Cover")
                 {
-
                     setCover(coverAttachmentID == attachment.id ? nil : attachment.id)
                 }
 
@@ -281,7 +243,6 @@ extension CardDetailView
 
             Button("Remove attachment", systemImage: "trash", role: .destructive)
             {
-
                 removeAttachment(attachment)
             }
 
@@ -290,14 +251,10 @@ extension CardDetailView
         .accessibilityLabel(attachment.url == nil ? "View attached media" : "Open attached link")
         .accessibilityActions
         {
-
             if attachment.kind == .photo
             {
-
-
                 Button(coverAttachmentID == attachment.id ? "Remove Cover" : "Set as Cover")
                 {
-
                     setCover(coverAttachmentID == attachment.id ? nil : attachment.id)
                 }
 
@@ -326,7 +283,6 @@ extension CardDetailView
     ///
     func attachmentGallery(_ visibleAttachments: [KanbanAttachment]) -> some View
     {
-
         let photos = visibleAttachments.filter /* Photo selections or gallery entries */
         {
             $0.kind == .photo
@@ -339,16 +295,13 @@ extension CardDetailView
 
         return VStack(alignment: .leading, spacing: 16)
         {
-
             if !photos.isEmpty
             {
-
                 CardPhotoGallery(
                     photos: photos,
                     photoSelection: $selectedPhotoItems,
                     onOpen:
                     {
-
                         activeSheet = .attachmentPreview($0)
 
                     },
@@ -366,13 +319,10 @@ extension CardDetailView
 
             if !otherMedia.isEmpty
             {
-
                 DetailSection(title: "Attachments")
                 {
-
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8)
                     {
-
                         ForEach(otherMedia)
                         {
                             attachment in
@@ -403,12 +353,10 @@ extension CardDetailView
     ///
     func updatePhotoCaption(_ id: UUID, _ caption: String) -> Bool
     {
-
         var updated = workingCardSnapshot /* Edited value to publish */
 
         do
         {
-
             try updated.setPhotoCaption(caption, for: id)
             guard syncCardState(attachments: updated.attachments ?? []) else
             {
@@ -421,7 +369,6 @@ extension CardDetailView
         }
         catch
         {
-
             DatabaseActivity.shared.report("Could not save this photo caption: \(error.localizedDescription)")
             return false
         }
@@ -441,12 +388,10 @@ extension CardDetailView
     ///
     func reorderGalleryPhotos(_ ids: [UUID]) -> Bool
     {
-
         var updated = workingCardSnapshot /* Edited value to publish */
 
         do
         {
-
             try updated.reorderGalleryPhotos(ids)
             guard syncCardState(attachments: updated.attachments ?? []) else
             {
@@ -459,7 +404,6 @@ extension CardDetailView
         }
         catch
         {
-
             DatabaseActivity.shared.report("Could not arrange these photos: \(error.localizedDescription)")
             return false
         }
@@ -478,16 +422,13 @@ extension CardDetailView
     ///
     func selectedCoverPreview(_ cover: KanbanAttachment) -> some View
     {
-
         Button
         {
-
             activeSheet = .attachmentPreview(cover)
 
         }
         label:
         {
-
             CardCoverPreview(attachment: cover)
         }
         .buttonStyle(.plain)
@@ -518,20 +459,14 @@ extension CardDetailView
     @MainActor
     func importPhotos(from photoItems: [PhotosPickerItem], coverRequestID: UUID? = nil) async
     {
-
-
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else
         {
-
-
             return
         }
 
 
         if let coverRequestID, coverImportID != coverRequestID
         {  /* Cover request checked against the latest import */
-
-
             return
         }
 
@@ -540,17 +475,11 @@ extension CardDetailView
 
         for photoItem in photoItems
         {  /* Selected Photos-library item */
-
-
             do
             {
-
-
                 guard let mediaData = try await photoItem.loadTransferable(type: Data.self)
                 else
                 {  /* Transferred media bytes */
-
-
                     importFailed = true
 
                     continue
@@ -559,16 +488,12 @@ extension CardDetailView
 
                 guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else
                 {
-
-
                     return
                 }
 
 
                 if let coverRequestID, coverImportID != coverRequestID
                 {  /* Cover request checked before importing media */
-
-
                     return
                 }
 
@@ -576,7 +501,6 @@ extension CardDetailView
                 let contentType = photoItem.supportedContentTypes.first /* Preferred selected-media type        */
                 let isVideo     = photoItem.supportedContentTypes.contains /* Video state */
                 {  /* Whether the selection is video media */
-
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
                 }
 
@@ -593,8 +517,6 @@ extension CardDetailView
 
                 if coverRequestID != nil && mediaKind == .photo
                 {
-
-
                     coverAttachmentID = attachment.id
 
                 }
@@ -602,8 +524,6 @@ extension CardDetailView
             }
             catch
             {
-
-
                 importFailed = true
 
             }
@@ -613,24 +533,18 @@ extension CardDetailView
 
         if let coverRequestID, coverImportID != coverRequestID
         {  /* Cover request checked before publishing saved media */
-
-
             return
         }
 
 
         if coverRequestID != nil
         {
-
-
             coverImportID = nil
             selectedCoverPhoto = nil
 
         }
         else
         {
-
-
             selectedPhotoItems = []
             activeSheet = nil
 
@@ -641,8 +555,6 @@ extension CardDetailView
 
         if importFailed
         {
-
-
             attachmentNoticeMessage = "One or more selected photos or videos could not be added. Please try again."
             showingAttachmentNotice = true
 
@@ -665,7 +577,6 @@ extension CardDetailView
     ///
     func addDrawingAttachment(_ draft: DrawingCaptureDraft) -> Bool
     {
-
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else
         {
             return false
@@ -675,14 +586,12 @@ extension CardDetailView
 
         do
         {
-
             return try QuickCaptureMediaCommit.save([], drawings: [draft])
             {
                 imported in
                 attachments.append(contentsOf: imported)
                 guard syncCardState(attachments: attachments) else
                 {
-
                     attachments = previous
 
                     return false
@@ -694,7 +603,6 @@ extension CardDetailView
         }
         catch
         {
-
             attachments = previous
 
             return false
@@ -718,8 +626,6 @@ extension CardDetailView
     ///
     func addWebLink(_ url: URL)
     {
-
-
         attachments.append(KanbanAttachment(url: url, mediaKind: .link))
 
         activeSheet = nil
@@ -741,7 +647,6 @@ extension CardDetailView
     ///
     func addClipboardAttachment()
     {
-
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else
         {
             return
@@ -753,19 +658,15 @@ extension CardDetailView
 
         if let images = pasteboard.images, !images.isEmpty
         {
-
             let previous                     = attachments /* Previous value for comparison */
             var imported: [KanbanAttachment] = []          /* Imported isolated content     */
 
             do
             {
-
                 for image in images
                 {
-
                     guard let data = image.pngData() else
                     {
-
                         throw CocoaError(.fileReadCorruptFile)
                     }
 
@@ -775,14 +676,12 @@ extension CardDetailView
                 attachments.append(contentsOf: imported)
                 guard syncCardState(attachments: attachments) else
                 {
-
                     throw CocoaError(.fileWriteUnknown)
                 }
 
             }
             catch
             {
-
                 attachments = previous
 
                 try? CardAttachmentStore.removeDeletedFiles(
@@ -802,7 +701,6 @@ extension CardDetailView
 
         guard let url = CardAttachmentStore.webURL(from: clipboardText) else
         {
-
             attachmentNoticeMessage = "The clipboard does not contain an image or a valid web link."
             showingAttachmentNotice = true
 
@@ -826,8 +724,6 @@ extension CardDetailView
     ///
     func showAttachmentSourceComingSoon(_ source: String)
     {
-
-
         attachmentNoticeMessage = "\(source) attachments are coming soon."
         showingAttachmentNotice = true
         activeSheet = nil
@@ -852,8 +748,6 @@ extension CardDetailView
     ///
     func removeAttachment(_ attachment: KanbanAttachment)
     {
-
-
         let removesCover = /* Removes cover */
         coverAttachmentID == attachment.id  /* Whether removing this attachment also clears the cover */
         var updated = card                  /* Card snapshot excluding the removed attachment         */
@@ -868,8 +762,6 @@ extension CardDetailView
 
         if removesCover
         {
-
-
             coverImportID = nil
             selectedCoverPhoto = nil
 
@@ -927,12 +819,8 @@ extension CardDetailView
         editingLocked: Bool? = nil               /* Explicit lock or unlock request  */
     ) -> Bool
     {
-
-
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked || editingLocked == false else
         {
-
-
             return false
         }
 
@@ -941,7 +829,6 @@ extension CardDetailView
 
         if let editingLocked
         {
-
             updatedCard.isEditingLocked = editingLocked
 
         }
@@ -949,48 +836,36 @@ extension CardDetailView
 
         if let title
         {  /* Submitted replacement title */
-
-
             updatedCard.word = title
 
         }
 
         if let subtitle
         {  /* Submitted replacement subtitle */
-
-
             updatedCard.subtitleOverride = subtitle
 
         }
 
         if let members
         {  /* Submitted replacement assignees */
-
-
             updatedCard.members = members
 
         }
 
         if let labelIDs
         {  /* Submitted replacement label assignments */
-
-
             updatedCard.labelIDs = labelIDs
 
         }
 
         if let attachments
         {  /* Submitted replacement attachment collection */
-
-
             updatedCard.attachments = attachments
 
         }
 
         if let titleChecked
         {  /* Submitted title completion state */
-
-
             updatedCard.isTitleChecked = titleChecked
 
         }
@@ -1007,7 +882,6 @@ extension CardDetailView
     /// Route an already prepared edit through the active owner
     private func saveEditedSnapshot(_ updatedCard: KanbanCard) -> Bool
     {
-
         if relocatedCard != nil
         {
             guard saveRelocatedChange({ owner, list, item in
@@ -1020,19 +894,14 @@ extension CardDetailView
         else if let currentPersonalCollectionID, /* Current collection used to route relocated Note edits */
         currentPersonalCollectionID != personalCollectionID
         {
-
             guard onUpdateMovedNote?(currentPersonalCollectionID, updatedCard) == true else
             {
-
-
                 return false
             }
 
         }
         else
         {
-
-
             guard let onTitleToggle else
             {
                 return false
@@ -1048,7 +917,6 @@ extension CardDetailView
 
     func clearRevisionHistory() -> Bool
     {
-
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked, !lastSavedHistoryCard.revisions.isEmpty else
         {
             return false
@@ -1060,7 +928,6 @@ extension CardDetailView
 
     func undoRevision(_ revision: CardEditRecord, replacingConflicts: Bool) throws
     {
-
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else
         {
             throw CardRevisionUndoError.unavailable
@@ -1097,7 +964,6 @@ extension CardDetailView
     ///
     func setEditingLocked(_ locked: Bool)
     {
-
         dismissEditing()
         guard syncCardState(editingLocked: locked) else
         {
@@ -1106,7 +972,6 @@ extension CardDetailView
 
         if locked
         {
-
             var snapshot = workingCardSnapshot /* Working state snapshot */
 
             snapshot.isEditingLocked = true
@@ -1115,7 +980,6 @@ extension CardDetailView
         }
         else
         {
-
             lockedSnapshot = nil
 
         }
@@ -1141,7 +1005,6 @@ extension CardDetailView
     ///
     func toggleReaction(_ emoji: String)
     {
-
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked, !workingCardSnapshot.isSectionDivider,
         ItemEmojiReaction.validatedEmoji(emoji) != nil
         else
@@ -1163,7 +1026,6 @@ extension CardDetailView
 
         if !syncCardState()
         {
-
             reactions = previous
 
         }
@@ -1187,12 +1049,8 @@ extension CardDetailView
     ///
     func deleteCard()
     {
-
-
         guard let onDelete, !hasDeletedCard else
         {  /* Original-owner deletion callback available for this record */
-
-
             return
         }
 
@@ -1212,14 +1070,11 @@ extension CardDetailView
         else if let currentPersonalCollectionID,  /* Current owner used to route relocated Note deletion       */
         currentPersonalCollectionID != personalCollectionID
         {
-
             deleted = onDeleteMovedNote?(currentPersonalCollectionID, workingCardSnapshot) == true
 
         }
         else
         {
-
-
             deleted = onDelete()
 
         }
@@ -1227,8 +1082,6 @@ extension CardDetailView
 
         guard deleted else
         {
-
-
             hasDeletedCard = false
 
             return
@@ -1252,8 +1105,6 @@ extension CardDetailView
     ///
     func toggleCardTitle()
     {
-
-
         let nextChecked = !titleChecked /* Inverted title completion state */
 
         titleChecked = nextChecked
@@ -1273,8 +1124,6 @@ extension CardDetailView
     ///
     func toggleSavedCard()
     {
-
-
         let isSaved = isCurrentRecordSaved /* Bookmark state before toggling */
 
         if relocatedCard != nil
@@ -1297,11 +1146,8 @@ extension CardDetailView
         else if let currentPersonalCollectionID, /* Current owner used to route relocated Note bookmarking */
         currentPersonalCollectionID != personalCollectionID
         {
-
             guard onToggleMovedNoteBookmark?(currentPersonalCollectionID, recordID, !isSaved) == true else
             {
-
-
                 return
             }
 
@@ -1310,8 +1156,6 @@ extension CardDetailView
         }
         else if isSaved
         {
-
-
             savedCardIDs.remove(recordID)
 
             movedNoteIsSaved = nil
@@ -1319,8 +1163,6 @@ extension CardDetailView
         }
         else
         {
-
-
             savedCardIDs.insert(recordID)
 
             movedNoteIsSaved = nil
@@ -1345,14 +1187,10 @@ extension CardDetailView
     ///
     func postComment()
     {
-
-
         let text = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized comment draft */
 
         guard !PlanRichText.plain(text).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else
         {
-
-
             return
         }
 
@@ -1381,8 +1219,6 @@ extension CardDetailView
     ///
     func deleteComment(with commentID: UUID)
     {
-
-
         comments.removeAll
         {
             $0.id == commentID
@@ -1408,8 +1244,6 @@ extension CardDetailView
     ///
     func dismissGeneratedActivity(_ activity: GeneratedActivity)
     {
-
-
         dismissedActivityIDs.insert(activity.id)
         syncCardState()
     }
@@ -1429,10 +1263,8 @@ extension CardDetailView
     ///
     func resetDate(for field: DateField)
     {
-
         if saveDate(nil, kind: .date, for: field)
         {
-
             activeSheet = nil
 
         }
@@ -1456,7 +1288,6 @@ extension CardDetailView
     ///
     func saveDate(_ value: Date?, kind: CardDateKind, for field: DateField) -> Bool
     {
-
         let previousStart = startDate, previousDue = dueDate /* Schedule before editing   */
         let previousStartKind =                              /* Prior schedule date kinds */
             startDateKind, previousDueKind = dueDateKind
@@ -1467,7 +1298,6 @@ extension CardDetailView
 
         switch field
         {
-
         case .start:
 
             startDate = normalized;
@@ -1484,7 +1314,6 @@ extension CardDetailView
         syncCardState(clearStartDate: field == .start && value == nil, clearDueDate: field == .due && value == nil)
         else
         {
-
             startDate = previousStart;
             dueDate = previousDue
             startDateKind = previousStartKind;
@@ -1514,16 +1343,13 @@ extension CardDetailView
     @ViewBuilder
     func moveCardMenu<Label: View>(@ViewBuilder label: () -> Label) -> some View
     {
-
         Menu
         {
-
             ForEach(availableLists)
             {
                 list in
                 Button(list.title)
                 {
-
                     onMoveToList?(list.id)
                     dismiss()
                 }
@@ -1533,7 +1359,6 @@ extension CardDetailView
         }
         label:
         {
-
             label()
         }
 
@@ -1555,15 +1380,11 @@ extension CardDetailView
     ///
     func moveNote(to collectionID: UUID)
     {
-
-
         guard let onMoveNoteToPersonalList,          /* Callback handling checked movement between personal Lists */
         let sourceID = currentPersonalCollectionID,  /* Collection currently owning the Note                      */
         let moved = onMoveNoteToPersonalList(workingCardSnapshot, sourceID, collectionID)
         else
         {  /* Persisted Note with its destination-local identity        */
-
-
             return
         }
 
@@ -1578,7 +1399,6 @@ extension CardDetailView
 
     var currentImportanceLevel: Int
     {
-
         if let relocatedCard
         {
             return LibraryImportanceSelection.level(cardID: recordID, collectionID: relocatedCard.ownerID,
@@ -1591,7 +1411,6 @@ extension CardDetailView
 
     func adjustCurrentImportance(by direction: Int)
     {
-
         if let relocatedCard
         {
             movedImportanceData = LibraryImportanceSelection.adjusting(cardID: recordID,
@@ -1607,7 +1426,6 @@ extension CardDetailView
     /// Adopt the saved destination without closing the Card or Note editor
     func followMovedCard(_ result: CardMoveResult)
     {
-
         relocatedCard = result
         recordID = result.card.id
         currentListTitle = result.card.listTitle
@@ -1627,7 +1445,6 @@ extension CardDetailView
     @discardableResult
     func saveRelocatedChange(_ change: (inout PersonalCollection, Int, Int) -> Void) -> Bool
     {
-
         guard let relocatedCard, let access = checklistTypePlanningAccess,
               relocatedCard.saveChange(using: access, change) else
         {
@@ -1650,16 +1467,12 @@ extension CardDetailView
     ///
     func personalListDestinationButton(_ collection: PersonalCollection) -> some View
     {
-
-
         Button
         {
-
             moveNote(to: collection.id)
         }
         label:
         {
-
             Label(
                 collection.title,
                 systemImage: currentPersonalCollectionID == collection.id ? "checkmark" : "folder"
@@ -1682,10 +1495,8 @@ extension CardDetailView
     @ViewBuilder
     func personalListMenu<Label: View>(@ViewBuilder label: () -> Label) -> some View
     {
-
         Menu
         {
-
             ForEach(availablePersonalLists)
             {
                 collection in
@@ -1695,7 +1506,6 @@ extension CardDetailView
         }
         label:
         {
-
             label()
         }
         .disabled(availablePersonalLists.isEmpty || onMoveNoteToPersonalList == nil)
@@ -1717,8 +1527,6 @@ extension CardDetailView
     @ViewBuilder
     func dateRow(for field: DateField) -> some View
     {
-
-
         let currentDate = field == .start ? startDate : dueDate /* Date currently stored for the selected field */
         let timeOnly    = workingCardSnapshot.usesTimeOnlySchedule(on: relocatedCard.map(\.day) ?? listedOnDate) /* Time only */
         let iconName    = /* Icon name */
@@ -1738,8 +1546,6 @@ extension CardDetailView
 
         let row = HStack(alignment: .center) /* Rendered or stored item row */
         {  /* Shared date-row presentation */
-
-
             Image(systemName: iconName)
             .foregroundStyle(.secondary)
 
@@ -1750,14 +1556,11 @@ extension CardDetailView
 
             Button
             {
-
-
                 activeSheet = .date(field)
 
             }
             label:
             {
-
                 Text(dateLabel)
             }
 
@@ -1768,8 +1571,6 @@ extension CardDetailView
 
         if currentDate != nil
         {
-
-
             ActivitySwipeRow(
                 onDelete:
                 {
@@ -1778,14 +1579,12 @@ extension CardDetailView
                 deletionAccessibilityLabel: "Remove \(fieldName)"
             )
             {
-
                 row
             }
 
         }
         else
         {
-
             row
         }
 
@@ -1806,8 +1605,6 @@ extension CardDetailView
     ///
     func addChecklist(using scrollProxy: ScrollViewProxy)
     {
-
-
         let checklist = KanbanChecklist(title: "Checklist", items: [""]) /* New checklist with an initial item */
 
         checklists.append(checklist)
@@ -1818,11 +1615,8 @@ extension CardDetailView
 
         DispatchQueue.main.async
         {
-
-
             withAnimation(.easeInOut)
             {
-
                 scrollProxy.scrollTo(checklist.id, anchor: .center)
             }
 
@@ -1844,8 +1638,6 @@ extension CardDetailView
     ///
     func deleteChecklist(with checklistID: UUID)
     {
-
-
         checklists.removeAll
         {
             $0.id == checklistID
@@ -1872,19 +1664,13 @@ extension CardDetailView
     ///
     func renameChecklist(with checklistID: UUID, to title: String)
     {
-
-
         guard
         let checklistIndex = checklists.firstIndex(where:
             {  /* Position of the checklist to rename */
-
-
                 $0.id == checklistID
             })
         else
         {
-
-
             return
         }
 
@@ -1893,8 +1679,6 @@ extension CardDetailView
 
         guard !trimmedTitle.isEmpty else
         {
-
-
             return
         }
 
@@ -1927,20 +1711,14 @@ extension CardDetailView
     ///
     func toggleAllItems(in checklistID: UUID)
     {
-
-
         guard
         let checklistIndex = checklists.firstIndex(
             where:
             {  /* Checklist whose action completion states are toggled together */
-
-
                 $0.id == checklistID
             })
         else
         {
-
-
             return
         }
 
@@ -1979,21 +1757,15 @@ extension CardDetailView
     ///
     func moveChecklist(with checklistID: UUID, direction: ChecklistMoveDirection)
     {
-
-
         // Ensure the checklist exists and there is more than one checklist to move
         guard
         let sourceIndex = checklists.firstIndex(where:
             {  /* Checklist position before reordering */
-
-
                 $0.id == checklistID
             }), /* Current checklist position */
         checklists.count > 1
         else
         {
-
-
             return
         }
 
@@ -2002,8 +1774,6 @@ extension CardDetailView
 
         switch direction
         {
-
-
         case .top:
 
             destinationIndex = 0
@@ -2025,8 +1795,6 @@ extension CardDetailView
 
         guard sourceIndex != destinationIndex else
         {
-
-
             return
         }
 
@@ -2054,20 +1822,14 @@ extension CardDetailView
     ///
     func addItem(to checklistID: UUID, text: String)
     {
-
-
         // Find the index of the checklist to which the new item will be added
         guard
         let checklistIndex = checklists.firstIndex(where:
             {  /* Checklist receiving the new action */
-
-
                 $0.id == checklistID
             })
         else
         {  /* Target checklist position */
-
-
             return
         }
 
@@ -2110,20 +1872,14 @@ extension CardDetailView
     ///
     func toggleItem(in checklistID: UUID, at itemIndex: Int)
     {
-
-
         // Find the index of the checklist being updated
         guard
         let checklistIndex = checklists.firstIndex(where:
             {  /* Checklist containing the action to toggle */
-
-
                 $0.id == checklistID
             })
         else
         {  /* Checklist being toggled */
-
-
             return
         }
 
@@ -2134,14 +1890,10 @@ extension CardDetailView
         // Toggle the completion state of the specified item within the checklist
         if completedItemIndices.contains(itemIndex)
         {
-
-
             completedItemIndices.remove(itemIndex)
         }
         else
         {
-
-
             completedItemIndices.insert(itemIndex)
         }
 
@@ -2175,20 +1927,14 @@ extension CardDetailView
     ///
     func updateItem(in checklistID: UUID, at itemIndex: Int, with text: String)
     {
-
-
         // Find the index of the checklist being updated
         guard
         let checklistIndex = checklists.firstIndex(where:
             {  /* Checklist containing the action to replace */
-
-
                 $0.id == checklistID
             })
         else
         {  /* Checklist being edited */
-
-
             return
         }
 
@@ -2199,8 +1945,6 @@ extension CardDetailView
         // Ensure the item index is within the bounds of the checklist's items array
         guard checklist.items.indices.contains(itemIndex) else
         {
-
-
             return
         }
 
@@ -2236,20 +1980,14 @@ extension CardDetailView
     ///
     func deleteItem(in checklistID: UUID, at itemIndex: Int)
     {
-
-
         // Find the index of the checklist being updated
         guard
         let checklistIndex = checklists.firstIndex(where:
             {  /* Checklist containing the action to delete */
-
-
                 $0.id == checklistID
             })
         else
         {  /* Checklist being edited */
-
-
             return
         }
 
@@ -2260,8 +1998,6 @@ extension CardDetailView
         // Ensure the item index is within the bounds of the checklist's items array
         guard checklist.items.indices.contains(itemIndex) else
         {
-
-
             return
         }
 
@@ -2280,8 +2016,6 @@ extension CardDetailView
                 // Skip the index if it matches the deleted item index
                 guard index != itemIndex else
                 {
-
-
                     return nil
                 }
 
@@ -2319,20 +2053,14 @@ extension CardDetailView
     ///
     func updateActionDetail(checklistID: UUID, itemID: UUID, detail: KanbanChecklistActionDetail)
     {
-
-
         guard
         let checklistIndex = checklists.firstIndex(
             where:
             {  /* Position of the checklist containing the requested action */
-
-
                 $0.id == checklistID
             })
         else
         {
-
-
             return
         }
 
@@ -2342,14 +2070,10 @@ extension CardDetailView
         guard
         let itemIndex = checklist.items.firstIndex(where:
             {  /* Position of the requested checklist action */
-
-
                 $0.id == itemID
             })
         else
         {
-
-
             return
         }
 
@@ -2385,8 +2109,6 @@ extension CardDetailView
     @ViewBuilder
     func checklistBlock(for checklist: KanbanChecklist) -> some View
     {
-
-
         let checklistIndex = /* Checklist index */
         checklists.firstIndex(where:
             {
@@ -2398,8 +2120,6 @@ extension CardDetailView
             linkedCardsByID: linkedCardsByID,
             onDelete:
             {
-
-
                 deleteChecklist(with: checklist.id)
             },
             onAddItem:
@@ -2436,7 +2156,6 @@ extension CardDetailView
             },
             onToggleAllItems:
             {
-
                 toggleAllItems(in: checklist.id)
             },
             onMove:
@@ -2449,7 +2168,6 @@ extension CardDetailView
             focusFirstItem: checklist.id == checklistToFocus,
             onFirstItemFocused:
             {
-
                 checklistToFocus = nil
 
             },
@@ -2475,12 +2193,10 @@ extension CardDetailView
 
                 if case .linkedCard = updated.content, updated.linkedCollectionID == nil
                 {
-
                     updated.linkedCollectionID =
                     currentPersonalCollectionID ?? checklistCollectionID
                     ?? checklistTypePlanningAccess?.document.weeks.first(where:
                         {
-
                             $0.startKey == checklistTypePlanningAccess?.document.currentWeekKey
                         })?.id
 
@@ -2493,7 +2209,6 @@ extension CardDetailView
 
                 if !syncCardState()
                 {
-
                     checklists = previous;
 
                     return false
@@ -2518,7 +2233,6 @@ extension CardDetailView
     ///
     func saveDisplayAppearance(_ updated: ItemAppearance?, format: ItemDisplayFormat) -> Bool
     {
-
         let previousAppearance   = appearance       /* Previous appearance   */
         let previousFormat       = displayFormat    /* Previous format       */
         let previousPresentation = presentation     /* Previous presentation */
@@ -2534,7 +2248,6 @@ extension CardDetailView
 
         if !hasEditedDescription
         {
-
             descriptionText = presentation == .note
                 ? (lastSavedHistoryCard.descriptionOverride ?? "") : lastSavedHistoryCard.funParagraph
 
@@ -2542,7 +2255,6 @@ extension CardDetailView
 
         guard syncCardState() else
         {
-
             appearance = previousAppearance
             displayFormat = previousFormat
             presentation = previousPresentation
@@ -2568,10 +2280,8 @@ extension CardDetailView
     ///
     func cardCoverPanel(onDone: @escaping () -> Void) -> some View
     {
-
         NavigationStack
         {
-
             ScrollView
             {
                 coverControls
@@ -2580,7 +2290,6 @@ extension CardDetailView
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .confirmationAction)
                 {
                     Button("Done", action: onDone)
@@ -2606,16 +2315,12 @@ extension CardDetailView
     ///
     func addMenu(using scrollProxy: ScrollViewProxy) -> some View
     {
-
         Menu
         {
-
             if displayFormat != .divider
             {
-
                 Button("Add reaction", systemImage: "face.smiling")
                 {
-
                     dismissEditing()
 
                     activeSheet = .reactions
@@ -2624,7 +2329,6 @@ extension CardDetailView
 
                 Button(workingCardSnapshot.coverAttachment == nil ? "Add cover" : "Change cover", systemImage: "photo")
                 {
-
                     dismissEditing()
 
                     activeSheet = .cover
@@ -2636,58 +2340,49 @@ extension CardDetailView
 
             Button
             {
-
                 showsNoteDetails = true
 
                 addChecklist(using: scrollProxy)
             }
             label:
             {
-
                 Label("Add checklist", systemImage: "checklist")
             }
 
             Button
             {
-
                 activeSheet = .date(.start)
 
             }
             label:
             {
-
                 Label(startDate == nil ? "Add start date" : "Edit start date", systemImage: "calendar")
             }
 
             Button
             {
-
                 activeSheet = .date(.due)
 
             }
             label:
             {
-
                 Label(dueDate == nil ? "Add due date" : "Edit due date", systemImage: "calendar.badge.clock")
             }
 
             Button
             {
-
                 showsNoteDetails = true
                 richTextFocusedField = .comment
 
             }
             label:
             {
-
                 Label("Add comment", systemImage: "text.bubble")
             }
 
         }
         label:
         {
-
             Image(systemName: "plus.circle")
             .font(.title2)
             .frame(minWidth: 44, minHeight: 44)

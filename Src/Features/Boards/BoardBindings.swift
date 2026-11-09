@@ -18,8 +18,6 @@ import UniformTypeIdentifiers
 ///
 extension Binding where Value == [KanbanList]
 {
-
-
     ///
     /// @fcn        Binding.activeLists
     /// @brief      Expose the active partition of a complete Board list binding
@@ -32,7 +30,6 @@ extension Binding where Value == [KanbanList]
     ///
     var activeLists: Binding<[KanbanList]> /* Active lists */
     {  /* Mutable active partition of the Board document */
-
         Binding(
             get:
             {
@@ -44,7 +41,6 @@ extension Binding where Value == [KanbanList]
             },
             set:
             {
-
                 wrappedValue = $0 + wrappedValue.filter(\.isArchived)
 
             }
@@ -63,7 +59,6 @@ extension Binding where Value == [KanbanList]
     ///
     var archivedLists: Binding<[KanbanList]> /* Archived lists */
     {  /* Mutable archived partition of the Board document */
-
         Binding(
             get:
             {

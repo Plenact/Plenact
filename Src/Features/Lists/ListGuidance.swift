@@ -20,13 +20,10 @@ import UniformTypeIdentifiers
 ///
 struct SessionListGuidance: View
 {
-
-
     let list:     KanbanList   /* List under consideration    */
     let labels:   LabelLibrary /* Available label definitions */
     var onReveal: () -> Void = /* Reveal callback             */
     {
-
     }
 
     var toggleRequest:        Int            = 0 /* Toggle request               */
@@ -63,7 +60,6 @@ struct SessionListGuidance: View
     init(
         list: KanbanList, labels: LabelLibrary, onReveal: @escaping () -> Void =
         {
-
         }, toggleRequest: Int = 0,
         onPresentationChange: @escaping (Bool) -> Void =
         {
@@ -71,7 +67,6 @@ struct SessionListGuidance: View
         }
     )
     {
-
         self.list = list
         self.labels = labels
         self.onReveal = onReveal
@@ -84,25 +79,19 @@ struct SessionListGuidance: View
 
     var body: some View /* Session List Guidance layout */
     {
-
         VStack(spacing: 0)
         {
-
             if let guide = DefaultListTutorial.guidance(for: list.title)
             {
-
                 Button
                 {
-
                     showsReadingView = true
 
                 }
                 label:
                 {
-
                     VStack(alignment: .leading, spacing: 10)
                     {
-
                         Label("About this List", systemImage: "info.circle").font(.caption).foregroundStyle(.secondary)
                         Text(guide.word).font(.headline).foregroundStyle(.primary)
                         Text(guide.descriptionOverride ?? "").font(.subheadline).foregroundStyle(.secondary).lineLimit(
@@ -127,7 +116,6 @@ struct SessionListGuidance: View
                     height in
                     if height > 0
                     {
-
                         guideHeight = height
 
                     }
@@ -145,7 +133,6 @@ struct SessionListGuidance: View
         .clipped()
         .onAppear
         {
-
             guard !reportedInitialPresentation else
             {
                 return
@@ -157,7 +144,6 @@ struct SessionListGuidance: View
         }
         .task(id: toggleRequest)
         {
-
             guard DefaultListTutorial.guidance(for: list.title) != nil else
             {
                 return
@@ -165,7 +151,6 @@ struct SessionListGuidance: View
 
             if toggleRequest > 0
             {
-
                 guard handledToggleRequest != toggleRequest else
                 {
                     return
@@ -177,7 +162,6 @@ struct SessionListGuidance: View
 
             if toggleRequest == 0
             {
-
                 guard entryWasEmpty, !automaticRevealAttempted else
                 {
                     return
@@ -197,12 +181,10 @@ struct SessionListGuidance: View
             }
             else if isVisible
             {
-
                 // Retract the card and its reserved row together, using the entrance curve.
                 // Capture remains available and follows the shrinking row back toward the header
                 withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
                 {
-
                     isVisible = false
                     hasPreparedLayout = false
 
@@ -218,11 +200,9 @@ struct SessionListGuidance: View
 
             if toggleRequest > 0
             {
-
                 // Expand the reserved space with the card so capture follows the same curve
                 withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
                 {
-
                     hasPreparedLayout = true
                     isVisible = true
 
@@ -240,7 +220,6 @@ struct SessionListGuidance: View
 
             withTransaction(layoutTransaction)
             {
-
                 hasPreparedLayout = true
 
                 onReveal()
@@ -266,13 +245,10 @@ struct SessionListGuidance: View
         }
         .sheet(isPresented: $showsReadingView)
         {
-
             if let guide = DefaultListTutorial.guidance(for: list.title)
             {
-
                 NavigationStack
                 {
-
                     ReadOnlyCardContent(card: guide, labels: labels, onOpenAttachment:
                         {
                             _ in
@@ -281,12 +257,10 @@ struct SessionListGuidance: View
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar
                     {
-
                         ToolbarItem(placement: .confirmationAction)
                         {
                             Button("Done")
                             {
-
                                 showsReadingView = false
 
                             }

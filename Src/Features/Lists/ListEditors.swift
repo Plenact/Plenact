@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 struct InlineBoardListTitle: View
 {
-
-
     let list:                 KanbanList /* List under consideration */
     let onSave:               (String) -> Bool /* Persist the edited value */
     let onFinish:             () -> Void /* Finish callback */
@@ -45,7 +43,6 @@ struct InlineBoardListTitle: View
     ///
     init(list: KanbanList, onSave: @escaping (String) -> Bool, onFinish: @escaping () -> Void)
     {
-
         self.list = list
         self.onSave = onSave
         self.onFinish = onFinish
@@ -56,7 +53,6 @@ struct InlineBoardListTitle: View
 
     var body: some View /* Inline Board List Title layout */
     {
-
         ListTitleField(
             text: $title, focused: $focused, selectsInitialTitle: true,
             returnKeyType: .done, textStyle: .headline, identifier: "board.newListTitle", onNext: finish
@@ -64,7 +60,6 @@ struct InlineBoardListTitle: View
         .frame(height: titleHeight)
         .task
         {
-
             focused = true
 
         }
@@ -95,7 +90,6 @@ struct InlineBoardListTitle: View
     ///
     private func finish()
     {
-
         guard !finished else
         {
             return
@@ -106,7 +100,6 @@ struct InlineBoardListTitle: View
 
         guard onSave(trimmed.isEmpty ? list.title : trimmed) else
         {
-
             focused = true;
 
             return
@@ -130,8 +123,6 @@ struct InlineBoardListTitle: View
 ///
 struct ListTitleField: UIViewRepresentable
 {
-
-
     @Binding var text:       String                                 /* Text being processed    */
     @Binding var focused:    Bool                                   /* Current focus selection */
     let selectsInitialTitle: Bool                                   /* Selects initial title   */
@@ -166,7 +157,6 @@ struct ListTitleField: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> UITextField
     {
-
         let field = UITextField() /* Native input field */
 
         field.placeholder = "List title"
@@ -202,12 +192,10 @@ struct ListTitleField: UIViewRepresentable
     ///
     func updateUIView(_ field: UITextField, context: Context)
     {
-
         context.coordinator.parent = self
 
         if field.text != text
         {
-
             field.text = text
 
         }
@@ -224,12 +212,10 @@ struct ListTitleField: UIViewRepresentable
 
             if coordinator.parent.focused, !field.isFirstResponder
             {
-
                 field.becomeFirstResponder()
             }
             else if !coordinator.parent.focused, field.isFirstResponder
             {
-
                 field.resignFirstResponder()
             }
 
@@ -247,8 +233,6 @@ struct ListTitleField: UIViewRepresentable
     ///
     final class Coordinator: NSObject, UITextFieldDelegate
     {
-
-
         var parent: ListTitleField               /* Latest representable bindings */
         private var selectedInitialTitle = false /* Selected initial title        */
 
@@ -264,7 +248,6 @@ struct ListTitleField: UIViewRepresentable
         ///
         init(_ parent: ListTitleField)
         {
-
             self.parent = parent
 
         }
@@ -281,7 +264,6 @@ struct ListTitleField: UIViewRepresentable
         ///
         @objc func changed(_ field: UITextField)
         {
-
             parent.text = field.text ?? ""
 
         }
@@ -299,10 +281,8 @@ struct ListTitleField: UIViewRepresentable
         ///
         func textFieldDidBeginEditing(_ field: UITextField)
         {
-
             if !parent.focused
             {
-
                 parent.focused = true
 
             }
@@ -340,10 +320,8 @@ struct ListTitleField: UIViewRepresentable
         ///
         func textFieldDidEndEditing(_ field: UITextField)
         {
-
             if parent.focused
             {
-
                 parent.focused = false
 
             }
@@ -363,7 +341,6 @@ struct ListTitleField: UIViewRepresentable
         ///
         func textFieldShouldReturn(_ field: UITextField) -> Bool
         {
-
             parent.onNext()
             return false
         }
@@ -382,8 +359,6 @@ struct ListTitleField: UIViewRepresentable
 ///
 struct ListInfoEditorSheet: View
 {
-
-
     let onSave:                       (String, String, ItemPresentation) -> Bool /* Persist the edited value */
     private let focusesTitleOnAppear: Bool /* Focuses title on appear */
     @State private var titleFocused = false /* Title focused */
@@ -408,7 +383,6 @@ struct ListInfoEditorSheet: View
     ///
     init(list: KanbanList, focusesTitleOnAppear: Bool = false, onSave: @escaping (String, String) -> Bool)
     {
-
         self.init(list: list, focusesTitleOnAppear: focusesTitleOnAppear)
         {
             title, subtitle, _ in
@@ -435,7 +409,6 @@ struct ListInfoEditorSheet: View
         onSave: @escaping (String, String, ItemPresentation) -> Bool
     )
     {
-
         self.focusesTitleOnAppear = focusesTitleOnAppear
         _defaultPresentation = State(initialValue: list.newItemPresentation)
         self.onSave = onSave
@@ -447,23 +420,17 @@ struct ListInfoEditorSheet: View
 
     var body: some View /* List Info Editor layout */
     {
-
-
         NavigationStack
         {
-
             Form
             {
-
                 Section("Title")
                 {
-
                     ListTitleField(
                         text: $title, focused: $titleFocused,
                         selectsInitialTitle: focusesTitleOnAppear,
                         onNext:
                         {
-
                             titleFocused = false;
                             subtitleFocused = true
 
@@ -472,7 +439,6 @@ struct ListInfoEditorSheet: View
 
                 Section
                 {
-
                     TextField("Subtitle", text: $subtitle, axis: .vertical).textInputAutocapitalization(.sentences)
                     .lineLimit(2 ... 5)
                     .focused($subtitleFocused)
@@ -480,12 +446,10 @@ struct ListInfoEditorSheet: View
                 }
                 header:
                 {
-
                     Text("Subtitle")
                 }
                 footer:
                 {
-
                     Text(
                                                             "Leave empty to hide the subtitle. Renaming a weekday list makes it an ordinary list; Today creates a new weekday list when needed."
                     )
@@ -493,10 +457,8 @@ struct ListInfoEditorSheet: View
 
                 Section("New item default")
                 {
-
                     Picker("Display as", selection: $defaultPresentation)
                     {
-
                         ForEach(ItemPresentation.allCases)
                         {
                             format in
@@ -513,10 +475,8 @@ struct ListInfoEditorSheet: View
             }
             .task
             {
-
                 if focusesTitleOnAppear
                 {
-
                     titleFocused = true
 
                 }
@@ -527,7 +487,6 @@ struct ListInfoEditorSheet: View
                 _, focused in
                 if focused
                 {
-
                     subtitleFocused = false
 
                 }
@@ -538,7 +497,6 @@ struct ListInfoEditorSheet: View
                 _, focused in
                 if focused
                 {
-
                     titleFocused = false
 
                 }
@@ -548,10 +506,8 @@ struct ListInfoEditorSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -561,15 +517,12 @@ struct ListInfoEditorSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         if onSave(
                             title.trimmingCharacters(in: .whitespacesAndNewlines),
                             subtitle.trimmingCharacters(in: .whitespacesAndNewlines), defaultPresentation)
                         {
-
                             dismiss()
                         }
 

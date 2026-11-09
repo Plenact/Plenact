@@ -15,11 +15,9 @@ import XCTest
 @MainActor
 final class PlanSettingsTests: XCTestCase
 {
-
     /// Verify a saved layout seeds new Cards and respects explicit layouts and other item types
     func testDefaultCardLayoutSeedsNewCardsAndResetsForFutureCards() throws
     {
-
         let suite    = "Plenact.NewCardLayout.Tests." + UUID().uuidString /* Isolated settings */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Test storage */
         let layout   = CardSectionLayout(order: [.checklists, .details], hidden: [.activity, .media])
@@ -62,7 +60,6 @@ final class PlanSettingsTests: XCTestCase
 
     private final class Draft: ObservableObject
     {
-
         @Published var preferences = LocalProfilePreferences() /* Planning and display choices */
         @Published var weekday     = 2                         /* Calendar weekday number      */
         var saves                  = 0                         /* Number of requested saves    */
@@ -73,20 +70,16 @@ final class PlanSettingsTests: XCTestCase
     /// Binds the same synthetic draft into each focused page
     private struct Page: View
     {
-
         @ObservedObject var draft: Draft /* Local editing draft          */
         let page: PlanSettingsPage       /* Current settings destination */
 
         var body: some View /* Page layout */
         {
-
             NavigationStack
             {
-
                 PlanSettingsModulePage(page: page, preferences: $draft.preferences,
                     firstWeekday: $draft.weekday, lists: [KanbanList(id: 1, title: "Synthetic List", cards: [])],
                     onSave: {
-
                         draft.saves += 1
 
                     }, onStudio: {}, onTemplates: {}, onShortcuts: {})
@@ -102,7 +95,6 @@ final class PlanSettingsTests: XCTestCase
     /// @return Matching views including the root
     private func descendants<T: UIView>(_ view: UIView, of type: T.Type) -> [T]
     {
-
         ((view as? T).map { [$0] } ?? [])
             + view.subviews.flatMap { descendants($0, of: type) }
     }
@@ -113,7 +105,6 @@ final class PlanSettingsTests: XCTestCase
     /// @throws Window or rendering failures
     func testFocusedPagesFitPhoneWithoutSaving() async throws
     {
-
         let scene    = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window        */
@@ -125,7 +116,6 @@ final class PlanSettingsTests: XCTestCase
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -134,7 +124,6 @@ final class PlanSettingsTests: XCTestCase
 
         for page in PlanSettingsPage.allCases where page != .review
         {
-
             let host = /* Synthetic SwiftUI host */
                 UIHostingController(rootView: Page(draft: draft, page: page)
                 .environment(\.dynamicTypeSize, .large))
@@ -158,7 +147,6 @@ final class PlanSettingsTests: XCTestCase
             let image = /* Image used by this operation */
                 UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
-
                 _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
             }
             let attachment = XCTAttachment(image: image) /* Synthetic test evidence */
@@ -181,7 +169,6 @@ final class PlanSettingsTests: XCTestCase
     /// @throws Window or rendering failures
     func testDirectoriesAndReminderEditorFitPhone() async throws
     {
-
         let scene                      = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous                   = /* Prior key window */
@@ -198,7 +185,6 @@ final class PlanSettingsTests: XCTestCase
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -207,7 +193,6 @@ final class PlanSettingsTests: XCTestCase
 
         for (name, view) in views
         {
-
             let host = /* Synthetic SwiftUI host */
                 UIHostingController(rootView: view.environment(\.dynamicTypeSize, .large))
 
@@ -230,7 +215,6 @@ final class PlanSettingsTests: XCTestCase
             let image = /* Image used by this operation */
                 UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
-
                 _ in host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
             }
             let attachment = XCTAttachment(image: image) /* Synthetic test evidence */
@@ -250,7 +234,6 @@ final class PlanSettingsTests: XCTestCase
     /// @throws Window, control or rendering failures
     func testEditingAndSwitchingModulesRetainsUnsavedDraft() async throws
     {
-
         let scene    = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window        */
@@ -266,7 +249,6 @@ final class PlanSettingsTests: XCTestCase
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 

@@ -14,15 +14,12 @@ import XCTest
 @MainActor
 extension MigrationStudioTests
 {
-
-
     /// @fcn MigrationStudioTests.testTodayShortcutEditedExport
     /// @brief Create, reorder, replace and clear shortcuts, then pin a newly generated Week
     /// @return Void after isolated source/container cleanup
     /// @throws Fixture, export, identity, reconstruction or recovery errors
     func testTodayShortcutEditedExport() throws
     {
-
         try retainedTemplateFixture(edit:
         {
             values in
@@ -55,7 +52,6 @@ extension MigrationStudioTests
 
             defer
             {
-
                 defaults.removePersistentDomain(forName: domain)
             }
             try candidate.stage(at: stage)
@@ -70,7 +66,6 @@ extension MigrationStudioTests
 
             for phase in 0..<6
             {
-
                 var calendar = /* Date calculation calendar */
                     try XCTUnwrap(PlanningCalendarStore.load(from: defaults))
                 let personal = /* Personal collection fixture */
@@ -85,7 +80,6 @@ extension MigrationStudioTests
 
                 switch phase
                 {
-
                 case 0:
 
                     pins = []
@@ -157,12 +151,10 @@ extension MigrationStudioTests
 
                 if let singletonID
                 {
-
                     XCTAssertEqual(id, singletonID)
                 }
                 else
                 {
-
                     XCTAssertEqual(id, try PortableRichCardExport.identity(namespace: candidate.workspaceID,
                         name: "today_shortcuts:" + TodayListPins.key))
 
@@ -176,7 +168,6 @@ extension MigrationStudioTests
                 XCTAssertEqual(items.map { $0["collection_id"] as! String }, pins.map { $0.ownerID.uuidString.lowercased() })
                 if phase < 5
                 {
-
                     let priorExport = /* Prior export */
                         previous["workspace_export"] as! [String: Any]
                     var priorBase   = /* Prior base */
@@ -188,7 +179,6 @@ extension MigrationStudioTests
                     let changedGroups = /* Changed groups */
                         Set(base.keys).union(priorBase.keys).filter
                     {
-
                         !NSDictionary(dictionary: ["value": base[$0] ?? NSNull()])
                             .isEqual(to: ["value": priorBase[$0] ?? NSNull()])
                     }
@@ -252,7 +242,6 @@ extension MigrationStudioTests
             for invalid in [[raw[0], raw[0]], [unknown], [wrongOwner], [wrongList], [fractional],
                 [mismatchedOwner], Array(repeating: raw[0], count: 7)]
             {
-
                 defaults.set(try JSONSerialization.data(withJSONObject: invalid), forKey: TodayListPins.key)
 
                 let before  = /* State before the operation */
@@ -269,7 +258,6 @@ extension MigrationStudioTests
             defaults.set(saved, forKey: TodayListPins.key)
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name,
                     in: XCTUnwrap(output)), uniformTypeIdentifier: "public.json")

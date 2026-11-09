@@ -19,8 +19,6 @@ import SwiftUI
 ///
 struct TodayPaperBackground: View
 {
-
-
     ///
     /// @fcn        TodayPaperBackground.body
     /// @brief      Fill the available surface with the shared Today paper texture
@@ -32,7 +30,6 @@ struct TodayPaperBackground: View
     ///
     var body: some View /* Today Paper Background layout */
     {  /* Noninteractive paper texture behind Today surfaces */
-
         GeometryReader
         {
             geometry in
@@ -59,8 +56,6 @@ struct TodayPaperBackground: View
 ///
 struct TodayPanelSurface: ViewModifier
 {
-
-
     var backgroundOpacity: Double = 1 /* Background opacity */
 
 
@@ -78,13 +73,10 @@ struct TodayPanelSurface: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
-
         content
         .padding(16)
         .background
         {
-
             RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(.regularMaterial)
             .opacity(backgroundOpacity)
@@ -92,7 +84,6 @@ struct TodayPanelSurface: ViewModifier
         }
         .overlay
         {
-
             RoundedRectangle(cornerRadius: 8, style: .continuous)
             .strokeBorder(Color.white.opacity(0.68), lineWidth: 1)
             .allowsHitTesting(false)

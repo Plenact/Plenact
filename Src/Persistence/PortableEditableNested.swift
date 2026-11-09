@@ -12,7 +12,6 @@ import Foundation
 ///     Keep authored content and inactive retained values when bridging the portable contract
 extension PortableEditableContent
 {
-
     /// @fcn PortableEditableContent.array
     /// @brief Require a JSON object array without coercing malformed values to empty
     /// @param[in] value Required canonical array
@@ -20,7 +19,6 @@ extension PortableEditableContent
     /// @throws Invalid shape
     func array(_ value: Any?) throws -> [[String: Any]]
     {
-
         guard let values = value as? [[String: Any]] else
         {
             throw Failure.invalid
@@ -36,7 +34,6 @@ extension PortableEditableContent
     /// @throws Unrepresentable author identity or malformed values
     func comments(_ values: [[String: Any]]) throws -> [[String: Any]]
     {
-
         try values.map { value in
             guard value["author_account_id"] is NSNull else
             {
@@ -63,7 +60,6 @@ extension PortableEditableContent
     /// @throws Unsupported or malformed content
     func detail(_ value: [String: Any]) throws -> [String: Any]
     {
-
         var raw = /* Unprocessed source value */
             try mapped(value, fields: ["id": "id", "description": "description", "checklists": "checklists", "comments": "comments"])
 
@@ -81,7 +77,6 @@ extension PortableEditableContent
     /// @throws Missing references, malformed content or unsupported actions
     func checklists(_ values: [[String: Any]]) throws -> [[String: Any]]
     {
-
         try values.map { list in
 
             var raw = /* Unprocessed source value */
@@ -136,7 +131,6 @@ extension PortableEditableContent
                 }
                 if let retained = item["retained_detail"] as? [String: Any]
                 {
-
                     result["retainedDetail"] = try detail(retained)
 
                 }
@@ -158,7 +152,6 @@ extension PortableEditableContent
     /// @throws Missing originals or malformed metadata
     func attachments(_ value: Any?) throws -> Any
     {
-
         if value is NSNull
         {
             return NSNull()
@@ -186,7 +179,6 @@ extension PortableEditableContent
     /// @throws Unsupported opaque encoding or malformed source values
     func history(_ value: Any?) throws -> Any
     {
-
         if value is NSNull
         {
             return NSNull()
@@ -235,7 +227,6 @@ extension PortableEditableContent
     /// @throws New or authenticated identity semantics that require a separate account adapter
     func members(_ values: [[String: Any]]) throws -> [[String: Any]]
     {
-
         try values.map { value in
 
             let kind = value["kind"] as? String /* Content kind discriminator */
@@ -266,7 +257,6 @@ extension PortableEditableContent
     /// @throws Authenticated attribution or malformed data unsupported by the native model
     func reactions(_ value: Any?) throws -> Any
     {
-
         if value is NSNull
         {
             return NSNull()

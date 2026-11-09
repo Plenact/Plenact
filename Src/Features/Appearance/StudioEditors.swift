@@ -14,8 +14,6 @@ import UniformTypeIdentifiers
 ///     Keeps per-owner editing inside the caller's existing checked Save and Cancel transaction
 struct StudioSurfaceSettings: View
 {
-
-
     @Binding var surface: StudioSurface? /* Artwork surface definition */
     var title                                       = "Background artwork" /* User-facing title */
     var header:     Binding<ItemAccent?>?           = nil /* Resolved header appearance */
@@ -33,29 +31,22 @@ struct StudioSurfaceSettings: View
     ///
     var body: some View /* Studio Surface Settings layout */
     {
-
-
         Section(title)
         {
-
             NavigationLink
             {
-
                 StudioSurfaceEditor(surface: $surface, header: header, italic: italic, titleColor: titleColor, textColor: textColor)
             }
 
             label:
             {
-
                 Label(surface?.material.title ?? "Inherit existing appearance", systemImage: "paintpalette")
             }
             .accessibilityIdentifier("studio.surfaceEditor")
             if surface != nil
             {
-
                 Button("Use inherited appearance")
                 {
-
                     surface = nil
 
                 }
@@ -75,8 +66,6 @@ struct StudioSurfaceSettings: View
 ///     Provides consistent color, texture, photo, and online-image controls for all surface destinations
 struct StudioSurfaceEditor: View
 {
-
-
     let header:                         Binding<ItemAccent?>? /* Resolved header appearance */
     let italic:                         Binding<Bool?>? /* Inherited subtitle emphasis */
     let titleColor:                     Binding<ListPreviewTextColor?>? /* Title color */
@@ -113,8 +102,6 @@ struct StudioSurfaceEditor: View
     init(surface: Binding<StudioSurface?>, header: Binding<ItemAccent?>? = nil, italic: Binding<Bool?>? = nil,
         titleColor: Binding<ListPreviewTextColor?>? = nil, textColor: Binding<ListPreviewTextColor?>? = nil)
     {
-
-
         _surface = surface
         self.header = header
         self.italic = italic
@@ -137,14 +124,11 @@ struct StudioSurfaceEditor: View
     /// @return (Binding<Color>) editable RGB color
     private func colorBinding(_ path: WritableKeyPath<StudioSurface, String>) -> Binding<Color>
     {
-
-
         Binding(get:
             {
                 StudioSurfaceView.color(draft[keyPath: path])
             }, set:
             {
-
             color in
 
                 var r: CGFloat = /* Resolved RGBA channels */
@@ -169,11 +153,8 @@ struct StudioSurfaceEditor: View
     /// @return (Void) updates the draft after successful storage, otherwise presents an error
     private func importImage(_ data: Data)
     {
-
-
         do
         {
-
             guard data.count <= 30_000_000 else
             {
                 throw CocoaError(.fileReadTooLarge)
@@ -190,7 +171,6 @@ struct StudioSurfaceEditor: View
 
         catch
         {
-
             self.error = error.localizedDescription
 
         }
@@ -208,8 +188,6 @@ struct StudioSurfaceEditor: View
     /// @throws Encoding or malformed-library errors are presented by the caller
     private func saveArtwork(name: String, surface: StudioSurface) throws
     {
-
-
         var saved = /* Saved state under review */
             libraryData.isEmpty ? [] : try JSONDecoder().decode([StudioArtwork].self, from: libraryData)
 
@@ -229,8 +207,6 @@ struct StudioSurfaceEditor: View
     /// @return (Void) starts a cancellable, checked application of the selected artwork
     private func applySurface()
     {
-
-
         let chosen           = draft           /* Explicit user selection */
         let chosenHeader     = draftHeader     /* Chosen header           */
         let chosenItalic     = draftItalic     /* Chosen italic           */
@@ -241,22 +217,18 @@ struct StudioSurfaceEditor: View
 
         applyTask = Task
         {
-
             isApplying = true
 
             defer
             {
-
                 isApplying = false
 
             }
 
             do
             {
-
                 if chosen.material == .unsplash, let remote = chosen.remotePhoto
                 {
-
                     _ = try await StudioUnsplash.request(remote.downloadURL)
 
                 }
@@ -274,12 +246,10 @@ struct StudioSurfaceEditor: View
 
             catch is CancellationError
             {
-
             }
 
             catch
             {
-
                 self.error = "Artwork could not be applied. Check the connection and Unsplash access key."
 
             }
@@ -300,21 +270,15 @@ struct StudioSurfaceEditor: View
     ///
     var body: some View /* Studio Surface Editor layout */
     {
-
-
         Form
         {
-
             Section("Live preview")
             {
-
                 ZStack
                 {
-
                     StudioSurfaceView(surface: draft)
                     VStack(alignment: .leading, spacing: 8)
                     {
-
                         Text("A little room to think").font(.headline).foregroundStyle(draftTitleColor?.color ?? .primary)
                         Text("Your words stay readable over your artwork.").font(draftItalic == true ? .subheadline.italic() : .subheadline)
                         .foregroundStyle(draftTextColor?.color ?? .secondary)
@@ -327,10 +291,8 @@ struct StudioSurfaceEditor: View
 
             Section("Surface")
             {
-
                 Picker("Material", selection: $draft.material)
                 {
-
                     ForEach(StudioMaterial.allCases)
                     {
                     material in
@@ -348,7 +310,6 @@ struct StudioSurfaceEditor: View
                 Toggle("Show artwork in item previews", isOn: $draft.showsInPreviews)
                 if [.photo, .unsplash].contains(draft.material)
                 {
-
                     Text("Vertical position")
                     Slider(value: $draft.verticalPosition, in: 0 ... 1)
                     Text("Zoom")
@@ -359,16 +320,12 @@ struct StudioSurfaceEditor: View
 
             if header != nil || titleColor != nil || textColor != nil || italic != nil
             {
-
                 Section("Complete look")
                 {
-
                     if header != nil
                     {
-
                         Picker("Header", selection: $draftHeader)
                         {
-
                             Text("Inherit").tag(Optional<ItemAccent>.none)
                             ForEach(ItemAccent.allCases, id: \.self)
                             {
@@ -382,10 +339,8 @@ struct StudioSurfaceEditor: View
 
                     if italic != nil
                     {
-
                         Picker("Italic subtitle", selection: $draftItalic)
                         {
-
                             Text("Inherit").tag(Optional<Bool>.none)
                             Text("Regular").tag(Optional(false))
                             Text("Italic").tag(Optional(true))
@@ -395,10 +350,8 @@ struct StudioSurfaceEditor: View
 
                     if titleColor != nil
                     {
-
                         Picker("Title text", selection: $draftTitleColor)
                         {
-
                             Text("Inherit").tag(Optional<ListPreviewTextColor>.none)
                             ForEach(ListPreviewTextColor.allCases)
                             {
@@ -412,10 +365,8 @@ struct StudioSurfaceEditor: View
 
                     if textColor != nil
                     {
-
                         Picker("Supporting text", selection: $draftTextColor)
                         {
-
                             Text("Inherit").tag(Optional<ListPreviewTextColor>.none)
                             ForEach(ListPreviewTextColor.allCases)
                             {
@@ -433,16 +384,13 @@ struct StudioSurfaceEditor: View
 
             Section("Background portfolio")
             {
-
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 12)
                 {
-
                     ForEach(CardBackgroundPortfolio.titles.indices, id: \.self)
                     {
                         index in
                         Button
                         {
-
                             do
                             {
                                 draft = try CardBackgroundPortfolio.surface(at: index)
@@ -454,10 +402,8 @@ struct StudioSurfaceEditor: View
                         }
                         label:
                         {
-
                             VStack(spacing: 5)
                             {
-
                                 Image(CardBackgroundPortfolio.assetName(at: index))
                                     .resizable().scaledToFill().frame(height: 90).clipped()
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -476,30 +422,25 @@ struct StudioSurfaceEditor: View
 
             Section("My art")
             {
-
                 Button("Choose a saved look", systemImage: "square.grid.2x2")
                 {
-
                     showsLibrary = true
 
                 }
 
                 PhotosPicker(selection: $photo, matching: .images)
                 {
-
                     Label("Import from Photos", systemImage: "photo")
                 }
 
                 Button("Import from Files", systemImage: "folder")
                 {
-
                     importsFile = true
 
                 }
 
                 Button("Find a photo on Unsplash", systemImage: "magnifyingglass")
                 {
-
                     showsUnsplash = true
 
                 }
@@ -513,7 +454,6 @@ struct StudioSurfaceEditor: View
                 TextField("Name this look", text: $artworkName)
                 Button("Save this look to My art", systemImage: "bookmark")
                 {
-
                     do
                     {
                         try saveArtwork(name: artworkName, surface: draft)
@@ -521,7 +461,6 @@ struct StudioSurfaceEditor: View
 
                     catch
                     {
-
                         self.error = error.localizedDescription
 
                     }
@@ -534,7 +473,6 @@ struct StudioSurfaceEditor: View
         .navigationTitle("Make it yours").navigationBarTitleDisplayMode(.inline)
         .toolbar
         {
-
             ToolbarItem(placement: .cancellationAction)
             {
                 Button("Cancel")
@@ -546,7 +484,6 @@ struct StudioSurfaceEditor: View
 
             ToolbarItem(placement: .confirmationAction)
             {
-
                 Button("Done", action: applySurface)
                 .disabled(isApplying || (draft.material == .photo && draft.photoFileName == nil)
                     || (draft.material == .unsplash && draft.remotePhoto == nil))
@@ -559,10 +496,8 @@ struct StudioSurfaceEditor: View
         }
         .sheet(isPresented: $showsLibrary)
         {
-
             StudioLibraryView
             {
-
             look in
 
                 draft = look.surface
@@ -576,10 +511,8 @@ struct StudioSurfaceEditor: View
         }
         .sheet(isPresented: $showsUnsplash)
         {
-
             StudioUnsplashPicker
             {
-
             remote in
 
                 draft.material = .unsplash
@@ -591,14 +524,11 @@ struct StudioSurfaceEditor: View
         }
         .onChange(of: photo)
         {
-
         _, item in
             Task
             {
-
                 do
                 {
-
                     if let data = try await item?.loadTransferable(type: Data.self)
                     {
                         importImage(data)
@@ -608,7 +538,6 @@ struct StudioSurfaceEditor: View
 
                 catch
                 {
-
                     self.error = error.localizedDescription
 
                 }
@@ -618,11 +547,9 @@ struct StudioSurfaceEditor: View
         }
         .fileImporter(isPresented: $importsFile, allowedContentTypes: [.image])
         {
-
         result in
             do
             {
-
                 let url    = try result.get() /* Resource location             */
                 let access =                  /* Security-scoped access result */
                     url.startAccessingSecurityScopedResource()
@@ -641,7 +568,6 @@ struct StudioSurfaceEditor: View
 
             catch
             {
-
                 self.error = error.localizedDescription
 
             }
@@ -654,17 +580,14 @@ struct StudioSurfaceEditor: View
                 {
                     if !$0
                     {
-
                         error = nil
 
                     }
 
                 }))
         {
-
             Button("OK")
             {
-
                 error = nil
 
             }
@@ -687,8 +610,6 @@ struct StudioSurfaceEditor: View
 ///     Reuses looks, permits renaming, and removes favorites while retaining underlying image files
 struct StudioLibraryView: View
 {
-
-
     var onSelect: ((StudioArtwork) -> Void)?                = nil /* Handle the selected value */
     @AppStorage(StudioSettings.libraryKey) private var data = Data() /* Persisted settings bytes */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
@@ -709,8 +630,6 @@ struct StudioLibraryView: View
     /// @return (Void) commits the renamed library entry when valid
     private func saveRename()
     {
-
-
         guard let id = renaming?.id else
         {
             return
@@ -726,7 +645,6 @@ struct StudioLibraryView: View
 
         do
         {
-
             var saved = artworks /* Saved state under review */
 
             guard let index = saved.firstIndex(where:
@@ -745,7 +663,6 @@ struct StudioLibraryView: View
 
         catch
         {
-
             self.error = error.localizedDescription
 
         }
@@ -764,28 +681,21 @@ struct StudioLibraryView: View
     ///
     var body: some View /* Studio Library layout */
     {
-
-
         NavigationStack
         {
-
             List
             {
-
                 if artworks.isEmpty
                 {
-
                     ContentUnavailableView("Your art belongs here", systemImage: "paintpalette",
                         description: Text("Save a look or import an image from a background editor."))
                 }
 
                 ForEach(artworks)
                 {
-
                 look in
                     Button
                     {
-
                         onSelect?(look)
                         if onSelect != nil
                         {
@@ -794,7 +704,6 @@ struct StudioLibraryView: View
 
                         else
                         {
-
                             renamed = look.name;
                             renaming = look
 
@@ -804,15 +713,12 @@ struct StudioLibraryView: View
 
                     label:
                     {
-
                         HStack(spacing: 12)
                         {
-
                             StudioSurfaceView(surface: look.surface).frame(width: 70, height: 65)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                             VStack(alignment: .leading)
                             {
-
                                 Text(look.name).foregroundStyle(.primary)
                                 Text(look.surface.material.title).font(.caption).foregroundStyle(.secondary)
                             }
@@ -824,11 +730,9 @@ struct StudioLibraryView: View
                 }
                 .onDelete
                 {
-
                 indices in
                     do
                     {
-
                         var retained = artworks /* State retained for recovery */
 
                         retained.remove(atOffsets: indices)
@@ -839,7 +743,6 @@ struct StudioLibraryView: View
 
                     catch
                     {
-
                         self.error = error.localizedDescription
 
                     }
@@ -862,7 +765,6 @@ struct StudioLibraryView: View
             }
             .safeAreaInset(edge: .bottom)
             {
-
                 Text("Removing a saved look keeps artwork already used by your Cards and views.")
                 .font(.caption).padding().background(.regularMaterial)
             }
@@ -873,19 +775,16 @@ struct StudioLibraryView: View
                     {
                         if !$0
                         {
-
                             renaming = nil
 
                         }
 
                     }))
             {
-
                 TextField("Name", text: $renamed)
                 Button("Save", action: saveRename)
                 Button("Cancel", role: .cancel)
                 {
-
                     renaming = nil
 
                 }
@@ -898,17 +797,14 @@ struct StudioLibraryView: View
                     {
                         if !$0
                         {
-
                             error = nil
 
                         }
 
                     }))
             {
-
                 Button("OK")
                 {
-
                     error = nil
 
                 }

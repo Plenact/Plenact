@@ -20,8 +20,6 @@ import XCTest
 ///
 final class LocalProfileStoreTests: XCTestCase
 {
-
-
     private var defaults: UserDefaults!                      /* Isolated test preferences */
     private let suiteName = "Plenact.LocalProfileStoreTests" /* Test suite key            */
 
@@ -35,8 +33,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     override func setUp()
     {
-
-
         super.setUp()
 
         defaults = UserDefaults(suiteName: suiteName)
@@ -54,8 +50,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     override func tearDown()
     {
-
-
         defaults.removePersistentDomain(forName: suiteName)
 
         defaults = nil
@@ -75,8 +69,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testProfileRoundTripPreservesPersonalization() throws
     {
-
-
         let profile = LocalProfile( /* Complete profile fixture */
             id: UUID(uuidString: "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE")!,
             createdAt: Date(timeIntervalSince1970: 1_790_467_200),
@@ -112,8 +104,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testOlderPreferencesDefaultToShowingNavigationLabels() throws
     {
-
-
         let legacyPreferencesJSON = Data( /* Legacy preferences JSON */
                         #"{"defaultListID":3,"usesReducedContent":false,"usesLargeControls":false}"#.utf8
         ) /* Preferences snapshot without navigation-caption field */
@@ -136,8 +126,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testOlderProfilesDefaultToInitialsAvatar() throws
     {
-
-
         let legacyProfileJSON = Data( /* Legacy profile JSON without avatar options */
                         #"{"id":"EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE","createdAt":0,"displayName":"Jamie Rivera","email":"","context":"","avatarColor":"teal","preferences":{}}"#
                         .utf8
@@ -163,8 +151,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testLegacyAvatarColorTokensStillDecode() throws
     {
-
-
         let legacyProfileJSON = Data( /* Legacy profile JSON with named-color tokens */
                         #"{"id":"EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE","createdAt":0,"displayName":"Jamie Rivera","email":"","context":"","avatarColor":"teal","avatarIcon":"leaf","avatarForegroundColor":"coral","preferences":{}}"#
                         .utf8
@@ -188,8 +174,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testRemoveClearsOnlyProfileValue()
     {
-
-
         let profile = LocalProfile(displayName: "Jamie Rivera") /* Saved profile */
 
         LocalProfileStore.save(profile, to: defaults)
@@ -208,8 +192,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testInitialsUseTwoNameComponents()
     {
-
-
         XCTAssertEqual(LocalProfile(displayName: "Jamie Lee Rivera").initials, "JL")
         XCTAssertEqual(LocalProfile(displayName: "").initials, "P")
     }
@@ -226,15 +208,11 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testAvatarPhotoFileRoundTripAndRemoval() throws
     {
-
-
         let data     = Data([1, 2, 3, 4])                     /* Synthetic avatar-image bytes */
         let fileName = try ProfileAvatarPhotoStore.save(data) /* Stored avatar filename       */
 
         defer
         {
-
-
             ProfileAvatarPhotoStore.remove(fileName)
         }
 
@@ -257,8 +235,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testAvatarCropConstrainsPanToImageEdges()
     {
-
-
         XCTAssertEqual(
             AvatarPhotoCrop.constrainedOffset(
                 CGSize(width: 500, height: -500),
@@ -287,8 +263,6 @@ final class LocalProfileStoreTests: XCTestCase
     ///
     func testAvatarCropExportsSelectedRegionAsBoundedJPEG() throws
     {
-
-
         let format = UIGraphicsImageRendererFormat() /* Image-rendering configuration */
 
         format.scale = 1
@@ -296,7 +270,6 @@ final class LocalProfileStoreTests: XCTestCase
         let image = /* Image used by this operation */
             UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100), format: format).image
         {
-
         context in /* Synthetic two-color crop source */
             UIColor.red.setFill()
             context.fill(CGRect(x: 0, y: 0, width: 100, height: 100))

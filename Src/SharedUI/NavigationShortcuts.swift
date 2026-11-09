@@ -23,8 +23,6 @@ import UniformTypeIdentifiers
 ///
 struct HideNavigationLinkIndicator: ViewModifier
 {
-
-
     ///
     /// @fcn        HideNavigationLinkIndicator.body(content:)
     /// @brief      Configure navigation indicator visibility for the modified content
@@ -41,18 +39,12 @@ struct HideNavigationLinkIndicator: ViewModifier
     @ViewBuilder
     func body(content: Content) -> some View
     {
-
-
         if #available(iOS 18.0, *)
         {
-
-
             content.navigationLinkIndicatorVisibility(.hidden)
         }
         else
         {
-
-
             content
         }
 
@@ -70,8 +62,6 @@ struct HideNavigationLinkIndicator: ViewModifier
 ///
 struct LowerCornerBackShortcut: ViewModifier
 {
-
-
     let action: (() -> Void)? /* Requested user operation */
     @AppStorage(PlanPreferencesStore.key) private var preferencesData = /* Preferences data */
         Data()
@@ -81,7 +71,6 @@ struct LowerCornerBackShortcut: ViewModifier
 
     private var enabled: Bool /* Feature availability flag */
     {
-
         PlanPreferencesStore.resolved(preferencesData: preferencesData, profileData: profileData).enablesLowerCornerBack
     }
 
@@ -98,14 +87,11 @@ struct LowerCornerBackShortcut: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         content
         .safeAreaInset(edge: .bottom, spacing: 0)
         {
-
             if enabled, !keyboardVisible, let action
             {
-
                 GeometryReader
                 {
                     geometry in
@@ -117,7 +103,6 @@ struct LowerCornerBackShortcut: ViewModifier
 
                     HStack(spacing: 0)
                     {
-
                         Color.clear
                         .frame(width: 88, height: 44 + bottomExtension)
                         .contentShape(Rectangle())

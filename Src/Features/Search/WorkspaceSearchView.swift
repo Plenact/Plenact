@@ -21,8 +21,6 @@ import SwiftUI
 ///
 struct TodaySearchView: View
 {
-
-
     let lists:           [KanbanList]       /* Current locally stored Board snapshot    */
     let onOpenBoardList: (Int) -> Void      /* Navigate to a result's containing list   */
     let onOpenBoardCard: (Int, Int) -> Void /* Route to a Week card by list/card IDs    */
@@ -54,7 +52,6 @@ struct TodaySearchView: View
     ///
     private var results: [TodaySearchResult] /* Collected operation results */
     {  /* Matches for the current query and scope */
-
         resultProvider?(query, scope, labelLibrary)
         ?? TodaySearchIndex.results(query: query, scope: scope, lists: lists, library: labelLibrary)
     }
@@ -72,8 +69,6 @@ struct TodaySearchView: View
     ///
     private func rememberSearch()
     {
-
-
         recentSearches = RecentSearchStore.remember(query)
 
     }
@@ -90,19 +85,15 @@ struct TodaySearchView: View
     ///
     private var recentSearchList: some View /* Recent search list */
     {  /* Previously entered queries available for reuse */
-
         List
         {
-
             Section
             {
-
                 ForEach(recentSearches, id: \.self)
                 {
                     search in
                     Button
                     {
-
                         query = search
 
                         rememberSearch()
@@ -112,7 +103,6 @@ struct TodaySearchView: View
                     }
                     label:
                     {
-
                         Label(search, systemImage: "clock.arrow.circlepath")
                         .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -125,15 +115,12 @@ struct TodaySearchView: View
             }
             header:
             {
-
                 HStack
                 {
-
                     Text("Recent searches")
                     Spacer()
                     Button("Clear")
                     {
-
                         RecentSearchStore.clear()
 
                         recentSearches = []
@@ -163,17 +150,12 @@ struct TodaySearchView: View
     ///
     var body: some View /* Today Search layout */
     {  /* Board search controls and matching destinations */
-
-
         NavigationStack
         {
-
             VStack(spacing: 0)
             {
-
                 HStack(spacing: 10)
                 {
-
                     Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
 
@@ -187,7 +169,6 @@ struct TodaySearchView: View
                     .accessibilityLabel("Search Plenact")
                     .onSubmit
                     {
-
                         rememberSearch()
 
                         searchFieldFocused = false
@@ -197,18 +178,14 @@ struct TodaySearchView: View
 
                     if !query.isEmpty
                     {
-
-
                         Button
                         {
-
                             query = ""
                             searchFieldFocused = true
 
                         }
                         label:
                         {
-
                             Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
                         }
@@ -237,7 +214,6 @@ struct TodaySearchView: View
                 .padding(.horizontal).padding(.bottom, 6)
                 Picker("Search by", selection: $scope)
                 {
-
                     ForEach(TodaySearchScope.allCases)
                     {
                         scope in
@@ -252,51 +228,39 @@ struct TodaySearchView: View
 
                 if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 {
-
-
                     if recentSearches.isEmpty
                     {
-
-
                         searchEmptyState(title: "No recent searches", detail: "")
                     }
                     else
                     {
-
                         recentSearchList
                     }
 
                 }
                 else if results.isEmpty
                 {
-
                     searchEmptyState(title: "No results", detail: "Try another word or phrase.")
                 }
                 else
                 {
-
                     List(results)
                     {
                         result in
                         Button
                         {
-
                             rememberSearch()
 
                             if let onSelectResult
                             {
-
                                 onSelectResult(result)
                             }
                             else if let cardID = result.cardID
                             {  /* Matching card identity for direct navigation */
-
-
                                 onOpenBoardCard(result.listID, cardID)
                             }
                             else
                             {
-
                                 onOpenBoardList(result.listID)
                             }
 
@@ -309,10 +273,8 @@ struct TodaySearchView: View
                         }
                         label:
                         {
-
                             VStack(alignment: .leading, spacing: 4)
                             {
-
                                 Text(result.cardTitle)
                                 .font(.headline)
                                 .foregroundStyle(.primary)
@@ -342,27 +304,20 @@ struct TodaySearchView: View
                                 title: result.cardTitle, kind: result.cardID == nil ? "List" : "Card",
                                 onArchive:
                                 {
-
                                     if let id = result.cardID
                                     {  /* Card identity targeted by the search action */
-
-
                                         onArchiveCard(id)
                                     }
                                     else
                                     {
-
                                         onArchiveList(result.listID)
                                     }
 
                                 },
                                 onDelete:
                                 {
-
                                     if let id = result.cardID
                                     {  /* Card identity targeted by the search action */
-
-
                                         return onDeleteCard(id)
                                     }
 
@@ -386,13 +341,10 @@ struct TodaySearchView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
-
                         dismiss()
                     }
 
@@ -425,11 +377,8 @@ struct TodaySearchView: View
     ///
     private func searchEmptyState(title: String, detail: String) -> some View
     {
-
-
         VStack(spacing: 10)
         {
-
             Image(systemName: "magnifyingglass")
             .font(.largeTitle)
             .foregroundStyle(.tertiary)
@@ -457,8 +406,6 @@ struct TodaySearchView: View
 ///
 struct SharedSearchLifecycleActions: ViewModifier
 {
-
-
     let enabled:   Bool       /* Feature availability flag  */
     let title:     String     /* User-facing title          */
     let kind:      String     /* Content kind discriminator */
@@ -477,16 +424,13 @@ struct SharedSearchLifecycleActions: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         if enabled
         {
-
             content.modifier(
                 ContentLifecycleActions(title: title, kind: kind, onArchive: onArchive, onDelete: onDelete))
         }
         else
         {
-
             content
         }
 
@@ -504,12 +448,9 @@ struct SharedSearchLifecycleActions: ViewModifier
 ///
 struct PlanningSharedSearchPresentation: ViewModifier
 {
-
-
     @Binding var isPresented: Bool         /* Presentation visibility */
     var onLeaveForHome:       () -> Void = /* Leave for home callback */
     {
-
     }
 
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations      */
@@ -528,11 +469,9 @@ struct PlanningSharedSearchPresentation: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         content
         .sheet(isPresented: $isPresented)
         {
-
             TodaySearchView(
                 lists: [], onOpenBoardList:
                 {
@@ -585,13 +524,11 @@ struct PlanningSharedSearchPresentation: ViewModifier
                         $0.startKey == key
                     })
                 {
-
                     PlanningCalendarWeekView(
                         week: week,
                         initialDayID: route.result.listID, initialCardID: route.result.cardID,
                         onLeaveForHome:
                         {
-
                             self.route = nil;
                             isPresented = false;
 
@@ -603,13 +540,11 @@ struct PlanningSharedSearchPresentation: ViewModifier
                         $0.id == route.result.ownerID
                     })
                 {
-
                     PlanningSearchLibraryView(
                         collection: collection, initialListID: route.result.listID,
                         initialCardID: route.result.cardID,
                         onLeaveForHome:
                         {
-
                             self.route = nil;
                             isPresented = false;
 

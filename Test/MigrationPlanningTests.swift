@@ -16,7 +16,6 @@ import SwiftUI
 @MainActor
 final class MigrationPlanningTests: XCTestCase
 {
-
     /// @fcn MigrationPlanningTests.fixture
     /// @brief Capture rich planning history plus one live Card with deliberately different current text
     /// @param[in] edit Optional source mutation before capture
@@ -26,7 +25,6 @@ final class MigrationPlanningTests: XCTestCase
     private func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
-
         let domain   = /* Lookup or storage namespace */
             "Plenact.PlanningMigrationTests." + UUID().uuidString
         let defaults = /* Preference store under test */
@@ -61,7 +59,6 @@ final class MigrationPlanningTests: XCTestCase
         /// @throws Synthetic encoding/decoding errors
         func priority(owner: UUID, created: Date) throws -> DailyPlanPriority
         {
-
             let raw: [String: Any] = /* Unprocessed source value */
                 ["ownerID": owner.uuidString, "cardID": 1, "title": "  Original priority 🪴  ",
                 "location": "Original location", "sourceCreatedAt": created.timeIntervalSinceReferenceDate]
@@ -159,7 +156,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Missing or malformed output errors
     private func records(_ preview: MigrationPreview) throws -> [[String: Any]]
     {
-
         let files = /* Files used by this operation */
             try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
 
@@ -175,7 +171,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture, conversion or assertion-support errors
     func testHistoryReferencesAndStableRetry() throws
     {
-
         try fixture { backup, url in
 
             let preview = /* Converted migration preview */
@@ -183,7 +178,6 @@ final class MigrationPlanningTests: XCTestCase
 
             guard preview.planningRecordCount == 5 else
             {
-
                 let report = /* Validation findings */
                     try MigrationBackupReader.file("MigrationPreview/Report.json", in: preview.files)
 
@@ -242,7 +236,6 @@ final class MigrationPlanningTests: XCTestCase
                 try MigrationBackupReader.file("Preferences.plist", in: preview.files))
             for name in ["PlanningPreview.json", "IdentityJournal.json", "Report.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
 
@@ -263,7 +256,6 @@ final class MigrationPlanningTests: XCTestCase
 
             for (name, value) in [("Records", output as Any), ("SourceValues", rawSource as Any)]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try JSONSerialization.data(withJSONObject: value, options: .sortedKeys), uniformTypeIdentifier: "public.json")
 
@@ -282,7 +274,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testAbsentAndExplicitlyEmptyStoresStayDistinct() throws
     {
-
         for empty in [false, true]
         {
             try fixture(edit: { values in
@@ -292,7 +283,6 @@ final class MigrationPlanningTests: XCTestCase
                 }
                 if empty
                 {
-
                     values["Plenact.DailyPlans.v1"] = try JSONEncoder().encode(DailyPlanStore.Document())
 
                 }
@@ -318,7 +308,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testMalformedPlanningDoesNotReplaceHistory() throws
     {
-
         for variant in 0..<7
         {
             try fixture(edit: { values in
@@ -330,19 +319,16 @@ final class MigrationPlanningTests: XCTestCase
 
                 if variant == 6
                 {
-
                     document["dailyMinutes"] = 1440
 
                 }
                 else if variant == 0
                 {
-
                     document["version"] = 2
 
                 }
                 else
                 {
-
                     var plans = /* Saved daily planning records */
                         try XCTUnwrap(document["plans"] as? [String: Any])
                     let id    = /* Record or view identity */
@@ -352,25 +338,21 @@ final class MigrationPlanningTests: XCTestCase
 
                     if variant == 1
                     {
-
                         plan["unknown"] = "future"
 
                     }
                     else if variant == 2
                     {
-
                         plan["visionStep"] = 3
 
                     }
                     else if variant == 3
                     {
-
                         plan["timeZoneID"] = "Unsupported/Zone"
 
                     }
                     else if variant == 4
                     {
-
                         var entries = /* Entries being processed */
                             try XCTUnwrap(plan["checkIns"] as? [[String: Any]])
 
@@ -381,7 +363,6 @@ final class MigrationPlanningTests: XCTestCase
                     }
                     else
                     {
-
                         var review    = /* Review record being inspected */
                             try XCTUnwrap(plan["eveningReview"] as? [String: Any])
                         var decisions = /* Saved review decisions */
@@ -421,7 +402,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testExplicitEmptyHistoryDoesNotBecomeLegacyProjection() throws
     {
-
         try fixture(edit: { values in
 
             var document = /* Daily-plan store snapshot */
@@ -430,7 +410,6 @@ final class MigrationPlanningTests: XCTestCase
 
             for key in document.plans.keys
             {
-
                 document.plans[key]?.checkIns = []
 
             }
@@ -448,7 +427,6 @@ final class MigrationPlanningTests: XCTestCase
 
             for record in output where record["record_type"] as? String == "daily_plan"
             {
-
                 let payload = /* Canonical record payload */
                     try XCTUnwrap(record["payload"] as? [String: Any])
 
@@ -465,13 +443,11 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture or assertion-support errors
     func testInvalidReviewRangesAndDuplicateHistoryFailClosed() throws
     {
-
         for variant in 0..<4
         {
             try fixture(edit: { values in
                 if variant == 0
                 {
-
                     var doc = /* Decoded store document */
                         try JSONDecoder().decode(WeeklyReviewStore.Document.self,
                         from: XCTUnwrap(values["Plenact.WeeklyReviews.v1"] as? Data))
@@ -483,7 +459,6 @@ final class MigrationPlanningTests: XCTestCase
                 }
                 else if variant == 1 || variant == 3
                 {
-
                     var raw     = /* Unprocessed source value */
                         try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.PeriodicReviews.v1"] as? Data)) as? [String: Any])
                     var entries = /* Entries being processed */
@@ -494,13 +469,11 @@ final class MigrationPlanningTests: XCTestCase
 
                     if variant == 1
                     {
-
                         review["endKey"] = "1900-01-01"
 
                     }
                     else
                     {
-
                         let objectives = /* Period review objectives */
                             try XCTUnwrap(review["objectives"] as? [[String: Any]])
 
@@ -515,7 +488,6 @@ final class MigrationPlanningTests: XCTestCase
                 }
                 else
                 {
-
                     var doc = /* Decoded store document */
                         try JSONDecoder().decode(DailyPlanStore.Document.self,
                         from: XCTUnwrap(values["Plenact.DailyPlans.v1"] as? Data))
@@ -546,7 +518,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture or reconstruction failures
     func testEditablePlanningReconstruction() throws
     {
-
         try fixture { backup, url in
 
             let preview = /* Converted migration preview */
@@ -613,7 +584,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture preparation or assertion-support failures
     private func portableFixture(_ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
-
         try fixture(edit: { values in
 
             let bytes     = /* Serialized or original bytes */
@@ -633,16 +603,12 @@ final class MigrationPlanningTests: XCTestCase
             /// @return Subtree with explicit live source identity and original authored writing
             func bind(_ value: Any) -> Any
             {
-
                 if var object = value as? [String: Any]
                 {
-
                     if object["ownerID"] != nil, object["cardID"] != nil
                     {
-
                         for key in ["ownerID", "cardID", "sourceCreatedAt"]
                         {
-
                             object[key] = reference[key]
 
                         }
@@ -657,13 +623,10 @@ final class MigrationPlanningTests: XCTestCase
             /// @return Content with unchanged identity and integral creation precision
             func exact(_ value: Any) -> Any
             {
-
                 if var object = value as? [String: Any]
                 {
-
                     if object["word"] is String, let created = object["createdAt"] as? Double
                     {
-
                         object["createdAt"] = floor(created)
 
                     }
@@ -673,13 +636,11 @@ final class MigrationPlanningTests: XCTestCase
             }
             for key in ["Plenact.Board.v1", "Plenact.CalendarWeeks.v1"]
             {
-
                 values[key] = try JSONSerialization.data(withJSONObject: exact(JSONSerialization.jsonObject(with: values[key] as! Data)))
 
             }
             for key in ["Plenact.DailyPlans.v1", "Plenact.WeeklyReviews.v1", "Plenact.PeriodicReviews.v1"]
             {
-
                 values[key] = try JSONSerialization.data(withJSONObject: bind(JSONSerialization.jsonObject(with: values[key] as! Data)))
 
             }
@@ -693,7 +654,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Synthetic JSON serialization or comparison errors
     func testDailyTimestampComparisonPrecision() throws
     {
-
         let source   = /* Source value for this operation */
             Data(#"{"updatedAt":814536000.123456,"checkIns":[{"savedAt":814536000.123456,"notes":1,"changed":"Exact reflection"}]}"#.utf8)
         let same     = /* Same content bytes */
@@ -721,7 +681,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Missing scene, control or binding errors
     func testEveningReflectionFieldsAcceptFocusAndTyping() async throws
     {
-
         let scene    = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
@@ -729,7 +688,6 @@ final class MigrationPlanningTests: XCTestCase
 
         defer
         {
-
             window.endEditing(true)
 
             window.isHidden = true
@@ -745,12 +703,10 @@ final class MigrationPlanningTests: XCTestCase
 
         let host = UIHostingController(rootView: TodayReviewView( /* Synthetic SwiftUI host */
             plan: Binding(get: { plan }, set: {
-
                 plan = $0
 
             }), date: Date(timeIntervalSince1970: 1793016000),
             baseline: plan, onSave: { true }, onCommitted: {
-
                 plan = $0
 
             }))
@@ -768,7 +724,6 @@ final class MigrationPlanningTests: XCTestCase
         /// @return Native descendant views
         func descendants(_ view: UIView) -> [UIView]
         {
-
             [view] + view.subviews.flatMap(descendants)
         }
 
@@ -778,7 +733,6 @@ final class MigrationPlanningTests: XCTestCase
         XCTAssertEqual(fields.count, 3)
         for (index, field) in fields.enumerated()
         {
-
             window.endEditing(true)
             try await Task.sleep(for: .milliseconds(300))
             field.superview?.layoutIfNeeded()
@@ -807,7 +761,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Missing scene, control or binding errors
     func testNestedEveningReflectionFieldsAcceptFocusAndTyping() async throws
     {
-
         let scene    = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
@@ -815,7 +768,6 @@ final class MigrationPlanningTests: XCTestCase
 
         defer
         {
-
             window.endEditing(true)
 
             window.isHidden = true
@@ -836,7 +788,6 @@ final class MigrationPlanningTests: XCTestCase
 
         defer
         {
-
             defaults.removePersistentDomain(forName: domain)
         }
         defaults.set(try JSONEncoder().encode(DailyPlanStore.Document(plans: [plan.id: plan])), forKey: "Plenact.DailyPlans.v1")
@@ -844,7 +795,6 @@ final class MigrationPlanningTests: XCTestCase
         let host = /* Synthetic SwiftUI host */
             UIHostingController(rootView: Color.clear.sheet(isPresented: .constant(true))
         {
-
             TodayPlanView(date: Date(timeIntervalSince1970: 1793016000), defaults: defaults, opensEveningReview: true)
         }.environment(\.editMode, .constant(.active)))
 
@@ -861,7 +811,6 @@ final class MigrationPlanningTests: XCTestCase
         /// @return Native descendant views
         func descendants(_ view: UIView) -> [UIView]
         {
-
             [view] + view.subviews.flatMap(descendants)
         }
 
@@ -869,7 +818,6 @@ final class MigrationPlanningTests: XCTestCase
 
         while let presented = top.presentedViewController
         {
-
             top = presented
 
         }
@@ -880,7 +828,6 @@ final class MigrationPlanningTests: XCTestCase
         XCTAssertEqual(fields.count, 3)
         for (index, field) in fields.enumerated()
         {
-
             window.endEditing(true)
             try await Task.sleep(for: .milliseconds(300))
             field.superview?.layoutIfNeeded()
@@ -908,7 +855,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture, conversion or installation failures
     func testWeeklyReviewEditedExport() throws
     {
-
         try portableFixture { backup, url in
 
             let preview   = /* Converted migration preview */
@@ -929,7 +875,6 @@ final class MigrationPlanningTests: XCTestCase
 
             defer
             {
-
                 defaults.removePersistentDomain(forName: domain)
             }
             try candidate.stage(at: stage)
@@ -1025,10 +970,8 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertEqual(Array(try XCTUnwrap(restored.records[id]).decisions.dropLast()), previousDecisions)
             for (store, value) in candidate.values where store != key
             {
-
                 if let before = value as? Data, let after = rebuilt.values[store] as? Data
                 {
-
                     XCTAssertTrue(NSDictionary(dictionary: ["v": try PortableEditedExport.nativeJSON(before, store: store)])
                         .isEqual(to: ["v": try PortableEditedExport.nativeJSON(after, store: store)]))
                 }
@@ -1043,7 +986,6 @@ final class MigrationPlanningTests: XCTestCase
                 PortableEditedExport.prepare(LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root))))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
@@ -1067,7 +1009,6 @@ final class MigrationPlanningTests: XCTestCase
             for patch: [String: Any] in [["step": 3], ["futureField": true], ["firstWeekday": 1],
                 ["startKey": "2026-02-30"], ["timeZoneID": "Invalid/Zone"]]
             {
-
                 var raw     = /* Unprocessed source value */
                     try JSONSerialization.jsonObject(with: valid) as! [String: Any]
                 var records = raw["records"] as! [String: Any] /* Records being processed */
@@ -1121,7 +1062,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture, conversion or installation failures
     func testPeriodicReviewEditedExport() throws
     {
-
         try portableFixture { backup, url in
 
             let preview   = /* Converted migration preview */
@@ -1142,7 +1082,6 @@ final class MigrationPlanningTests: XCTestCase
 
             defer
             {
-
                 defaults.removePersistentDomain(forName: domain)
             }
             try candidate.stage(at: stage)
@@ -1245,10 +1184,8 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertEqual(restored.records[added.id.uuidString]?.id, added.id)
             for (store, value) in candidate.values where store != key
             {
-
                 if let before = value as? Data, let after = rebuilt.values[store] as? Data
                 {
-
                     XCTAssertTrue(NSDictionary(dictionary: ["v": try PortableEditedExport.nativeJSON(before, store: store)])
                         .isEqual(to: ["v": try PortableEditedExport.nativeJSON(after, store: store)]))
                 }
@@ -1263,7 +1200,6 @@ final class MigrationPlanningTests: XCTestCase
                 PortableEditedExport.prepare(LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root))))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
@@ -1287,7 +1223,6 @@ final class MigrationPlanningTests: XCTestCase
             for patch: [String: Any] in [["step": 3], ["futureField": true], ["title": " "],
                 ["startKey": "2026-02-30"], ["endKey": "1900-01-01"], ["endKey": "2026-11-30"], ["timeZoneID": "Invalid/Zone"]]
             {
-
                 var raw     = /* Unprocessed source value */
                     try JSONSerialization.jsonObject(with: valid) as! [String: Any]
                 var records = raw["records"] as! [String: Any] /* Records being processed */
@@ -1315,7 +1250,6 @@ final class MigrationPlanningTests: XCTestCase
 
             for objectives in [[objective, objective], [unknownStatus], [unknownField]]
             {
-
                 var raw     = /* Unprocessed source value */
                     try JSONSerialization.jsonObject(with: valid) as! [String: Any]
                 var records = raw["records"] as! [String: Any] /* Records being processed */
@@ -1368,7 +1302,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture, package, capture or installation errors
     func testEveningReviewEditedExport() throws
     {
-
         try portableFixture { backup, url in
 
             let preview   = /* Converted migration preview */
@@ -1389,7 +1322,6 @@ final class MigrationPlanningTests: XCTestCase
 
             defer
             {
-
                 defaults.removePersistentDomain(forName: domain)
             }
             try candidate.stage(at: stage)
@@ -1458,7 +1390,6 @@ final class MigrationPlanningTests: XCTestCase
 
             for day in original.plans.keys
             {
-
                 unaffected.plans[day]?.eveningReview = original.plans[day]?.eveningReview
                 unaffected.plans[day]?.updatedAt = original.plans[day]?.updatedAt
 
@@ -1482,10 +1413,8 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertEqual(restored.plans[other]?.eveningReview?.helped, "New evening reflection")
             for (store, value) in candidate.values where store != key
             {
-
                 if let before = value as? Data, let after = rebuilt.values[store] as? Data
                 {
-
                     XCTAssertTrue(NSDictionary(dictionary: ["v": try PortableEditedExport.nativeJSON(before, store: store)])
                         .isEqual(to: ["v": try PortableEditedExport.nativeJSON(after, store: store)]))
                 }
@@ -1500,7 +1429,6 @@ final class MigrationPlanningTests: XCTestCase
                 PortableEditedExport.prepare(LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root))))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
@@ -1524,7 +1452,6 @@ final class MigrationPlanningTests: XCTestCase
 
             for patch: [String: Any] in [["step": 3], ["futureField": true], ["decisions": [duplicate, duplicate]]]
             {
-
                 var raw     = /* Unprocessed source value */
                     try JSONSerialization.jsonObject(with: JSONEncoder().encode(restored)) as! [String: Any]
                 var plans   = raw["plans"] as! [String: Any] /* Saved daily planning records */
@@ -1552,7 +1479,6 @@ final class MigrationPlanningTests: XCTestCase
                 defaults: defaults, domain: domain, root: root)))
             for remove in [false, true]
             {
-
                 var cleared = restored /* Value after clearing choices */
 
                 cleared.plans[date]?.eveningReview = remove ? nil : DailyEveningReview()
@@ -1583,7 +1509,6 @@ final class MigrationPlanningTests: XCTestCase
     /// @throws Fixture, conversion, installation or assertion-support failures
     func testDailyPlanEditedExport() throws
     {
-
         try portableFixture { backup, url in
 
             let preview   = /* Converted migration preview */
@@ -1605,7 +1530,6 @@ final class MigrationPlanningTests: XCTestCase
 
             defer
             {
-
                 defaults.removePersistentDomain(forName: domain)
             }
             try candidate.stage(at: stage)
@@ -1692,7 +1616,6 @@ final class MigrationPlanningTests: XCTestCase
 
             if var entries = projected.checkIns, let last = entries.popLast()
             {
-
                 entries.append(DailyCheckInEntry(id: last.id, savedAt: projected.updatedAt!, changed: last.changed,
                     focus: last.focus, intention: last.intention, constraints: last.constraints, concerns: last.concerns,
                     priorities: last.priorities, completedTasks: last.completedTasks, totalTasks: last.totalTasks,
@@ -1711,10 +1634,8 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertEqual(Array(try XCTUnwrap(restored.plans[date]).checkInHistory.dropLast()), retainedHistory)
             for (store, value) in candidate.values where store != key
             {
-
                 if let before = value as? Data, let after = rebuilt.values[store] as? Data
                 {
-
                     XCTAssertTrue(NSDictionary(dictionary: ["v": try PortableEditedExport.nativeJSON(before, store: store)])
                         .isEqual(to: ["v": try PortableEditedExport.nativeJSON(after, store: store)]))
                 }
@@ -1733,7 +1654,6 @@ final class MigrationPlanningTests: XCTestCase
             XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: reexport))
             for name in ["Assembly.json", "Manifest.json"]
             {
-
                 let attachment = /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                     uniformTypeIdentifier: "public.json")
@@ -1797,7 +1717,6 @@ final class MigrationPlanningTests: XCTestCase
             for patch: [String: Any] in [["ownerID": UUID().uuidString], ["cardID": 999999],
                 ["sourceCreatedAt": 1.0]]
             {
-
                 var invalid    = /* Input expected to be rejected */
                     try JSONSerialization.jsonObject(with: valid) as! [String: Any]
                 var plans      = /* Saved daily planning records */
@@ -1819,7 +1738,6 @@ final class MigrationPlanningTests: XCTestCase
             }
             for patch: [String: Any] in [["timeZoneID": "Invalid/Zone"], ["id": "2026-02-30"], ["visionStep": 3]]
             {
-
                 var invalid = /* Input expected to be rejected */
                     try JSONSerialization.jsonObject(with: valid) as! [String: Any]
                 var plans   = invalid["plans"] as! [String: Any] /* Saved daily planning records */
@@ -1850,7 +1768,6 @@ final class MigrationPlanningTests: XCTestCase
 @MainActor
 extension MigrationStudioTests
 {
-
     /// @fcn MigrationStudioTests.testReviewRhythmEditedExport
     /// @brief Verify newly saved and retained rhythm preferences through complete isolated export
     /// @details Checks all seven choices, identity, unchanged history, source immutability, strict
@@ -1859,10 +1776,8 @@ extension MigrationStudioTests
     /// @throws Fixture, package, capture or installation failures
     func testReviewRhythmEditedExport() throws
     {
-
         for existing in [false, true]
         {
-
             try fixture(edit: { values in
 
                 var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
@@ -1887,7 +1802,6 @@ extension MigrationStudioTests
 
                 if existing
                 {
-
                     values["Plenact.ReviewRhythm.v1"] = try JSONEncoder().encode(ReviewRhythmPreferences())
 
                 }
@@ -1912,7 +1826,6 @@ extension MigrationStudioTests
 
                 defer
                 {
-
                     defaults.removePersistentDomain(forName: domain)
                 }
                 try candidate.stage(at: stage)
@@ -1985,7 +1898,6 @@ extension MigrationStudioTests
                 XCTAssertEqual(changed.count, 1)
                 if existing
                 {
-
                     XCTAssertEqual(previous.first?["id"] as? String, changed.first?["id"] as? String)
                 }
 
@@ -2018,7 +1930,6 @@ extension MigrationStudioTests
                 XCTAssertEqual(bytes, try MigrationBackupReader.file("PortableTestPackage/Assembly.json", in: reexport))
                 for name in ["Assembly.json", "Manifest.json"]
                 {
-
                     let item = /* Synthetic test evidence */
                         XCTAttachment(data: try MigrationBackupReader.file("PortableTestPackage/" + name, in: output),
                         uniformTypeIdentifier: "public.json")
@@ -2050,7 +1961,6 @@ extension MigrationStudioTests
                 for patch: [String: Any] in [["dailyMinutes": -1], ["weeklyMinutes": 1440],
                     ["weeklyWeekday": 0], ["dailyInvitations": "false"], ["futureField": true]]
                 {
-
                     var raw = /* Unprocessed source value */
                         try JSONSerialization.jsonObject(with: valid) as! [String: Any]
 

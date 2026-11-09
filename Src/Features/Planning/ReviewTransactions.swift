@@ -18,8 +18,6 @@ import SwiftUI
 @MainActor
 enum DailyReviewTransaction
 {
-
-
     static let key  = "Plenact.DailyReviewTransaction.v1" /* Lookup or persistence key   */
     static let keys = [                                   /* Keys used by this operation */
         PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1",
@@ -42,7 +40,6 @@ enum DailyReviewTransaction
     ///
     static func begin(in defaults: UserDefaults = .standard, additionalKeys: [String] = []) throws -> Data
     {
-
         guard defaults.object(forKey: key) == nil else
         {
             throw CocoaError(.fileWriteUnknown)
@@ -52,7 +49,6 @@ enum DailyReviewTransaction
 
         guard Set(additionalKeys).isSubset(of: ["Plenact.LibraryImportant.v1"]) else
         {
-
             throw CocoaError(.fileWriteUnknown)
         }
 
@@ -60,7 +56,6 @@ enum DailyReviewTransaction
 
         for name in capturedKeys
         {
-
             previous[name] = defaults.object(forKey: name)
 
         }
@@ -92,7 +87,6 @@ enum DailyReviewTransaction
     ///
     static func recover(in defaults: UserDefaults = .standard) throws
     {
-
         guard defaults.object(forKey: key) != nil else
         {
             return
@@ -119,15 +113,12 @@ enum DailyReviewTransaction
 
         for name in capturedKeys
         {
-
             if let value = previous[name]
             {
-
                 defaults.set(value, forKey: name)
             }
             else
             {
-
                 defaults.removeObject(forKey: name)
             }
 
@@ -166,13 +157,11 @@ enum DailyReviewTransaction
         in defaults: UserDefaults = .standard, additionalKeys: [String] = [], _ action: () throws -> T
     ) throws -> T
     {
-
         let snapshot = /* Working state snapshot */
             try begin(in: defaults, additionalKeys: additionalKeys)
 
         do
         {
-
             let result = try action() /* Result being assembled */
 
             guard defaults.synchronize() else
@@ -190,7 +179,6 @@ enum DailyReviewTransaction
         }
         catch
         {
-
             defaults.set(snapshot, forKey: key)
             try recover(in: defaults)
             throw error

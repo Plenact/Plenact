@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testTodayInitialTaskFocusSkipsCompletedAndNonTaskFormatsWithoutReordering
     /// @brief      Verify that today Initial Task Focus Skips Completed And Non Task Formats Without Reordering
@@ -33,7 +31,6 @@ extension PlenactBoardDocumentTests
     ///
     func testTodayInitialTaskFocusSkipsCompletedAndNonTaskFormatsWithoutReordering()
     {
-
         let cards = [ /* Card records under consideration */
             KanbanCard(id: 1, word: "Done", listTitle: "Plans", isTitleChecked: true),
             KanbanCard(id: 2, word: "Note", listTitle: "Plans", presentation: .note),
@@ -79,7 +76,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testNewBoardListEditorSelectsTitleAndNextFocusesSubtitle() async throws
     {
-
         var list = KanbanList(id: 7, title: "New List 2", cards: []) /* Synthetic list fixture */
 
         list.subtitleOverride = "Initial subtitle"
@@ -95,7 +91,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.endEditing(true)
 
             window.isHidden = true
@@ -186,11 +181,8 @@ extension PlenactBoardDocumentTests
     ///
     func testStandardBoardHasEqualFifteenPointNeighborPreviews()
     {
-
-
         for viewport: CGFloat in [320, 360, 393, 414, 424]
         {
-
             let width     = /* Measured layout width */
                 BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
             let sideInset = (viewport - width) / 2 /* Side inset */
@@ -216,8 +208,6 @@ extension PlenactBoardDocumentTests
     ///
     func testTodayFocusHasNoFallbackForUnavailableOrAmbiguousDay() throws
     {
-
-
         var calendar = Calendar(identifier: .gregorian) /* Fixed calendar for date assertions */
 
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))

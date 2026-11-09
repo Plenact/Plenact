@@ -17,8 +17,6 @@ import Foundation
 ///
 enum ListCopying
 {
-
-
     ///
     /// @fcn        ListCopying.copy
     /// @brief      Copy a list with destination-safe identities
@@ -33,7 +31,6 @@ enum ListCopying
     ///
     static func copy(_ source: KanbanList, into destination: [KanbanList], crossBoard: Bool) -> KanbanList
     {
-
         let listID      = (destination.map(\.id).max() ?? -1) + 1 /* Owner-local List identifier */
         let firstCardID = (destination.flatMap                    /* First card ID               */
             {
@@ -60,7 +57,6 @@ enum ListCopying
         ///
         func copyCard(_ card: KanbanCard) -> KanbanCard
         {
-
             var copy = /* Independent working copy */
                 card.replacingLocation(id: ids[card.id]!, listTitle: title,
                     creationDate: card.isSectionDivider ? nil : createdAt)
@@ -82,7 +78,6 @@ enum ListCopying
 
                     if let id = item.retainedCardID, let copiedID = ids[id]
                     {
-
                         item.retainedCardID = copiedID
                         item.linkedCollectionID = nil
 
@@ -90,16 +85,13 @@ enum ListCopying
 
                     if case .linkedCard(let id) = item.content
                     {
-
                         if let copiedID = ids[id]
                         {
-
                             item.content = .linkedCard(cardID: copiedID)
 
                         }
                         else if crossBoard
                         {
-
                             item.content = .standard
 
                         }
@@ -139,8 +131,6 @@ enum ListCopying
 ///
 enum CrossBoardListMovement
 {
-
-
     ///
     /// @fcn        CrossBoardListMovement.detach
     /// @brief      Detach one board list into a standalone collection
@@ -160,7 +150,6 @@ enum CrossBoardListMovement
         collections: inout [PersonalCollection]
     ) throws -> PersonalCollection
     {
-
         guard let source = collections.first(where:
             {
                 $0.id == sourceID && $0.isActive && $0.kind == .board
@@ -171,7 +160,6 @@ enum CrossBoardListMovement
             })
         else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -223,7 +211,6 @@ enum CrossBoardListMovement
         collections: inout [PersonalCollection]
     ) throws -> KanbanList
     {
-
         guard sourceID != destinationID,
         let sourceIndex = collections.firstIndex(where:
             {
@@ -231,7 +218,6 @@ enum CrossBoardListMovement
             }),
         let destinationIndex = collections.firstIndex(where:
             {
-
                 $0.id == destinationID && $0.isActive && $0.kind == .board
             }),
         let listIndex = collections[sourceIndex].lists.firstIndex(where:
@@ -240,7 +226,6 @@ enum CrossBoardListMovement
             })
         else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -261,10 +246,8 @@ enum CrossBoardListMovement
 
         for card in source.allCards
         {
-
             if targetIDs.contains(card.id)
             {
-
                 let (next, overflow) = nextID.addingReportingOverflow(1) /* Next overflow */
 
                 guard !overflow else
@@ -278,7 +261,6 @@ enum CrossBoardListMovement
             }
             else
             {
-
                 mapping[card.id] = card.id
 
             }
@@ -292,7 +274,6 @@ enum CrossBoardListMovement
                 $0.id == source.id
             })
         {
-
             let (next, overflow) = /* Next overflow */
                 (destinationLists.map(\.id).max() ?? -1).addingReportingOverflow(1)
 
@@ -323,7 +304,6 @@ enum CrossBoardListMovement
         ///
         func relocate(_ card: KanbanCard) -> KanbanCard
         {
-
             var result = /* Accumulated output value */
                 card.replacingLocation(id: mapping[card.id]!, listTitle: source.title)
 
@@ -341,7 +321,6 @@ enum CrossBoardListMovement
                     if item.retainedCardID != nil
                     ||
                     {
-
                         if case .linkedCard = item.content
                         {
                             return true
@@ -350,7 +329,6 @@ enum CrossBoardListMovement
                         return false
                     }()
                     {
-
                         item.linkedCollectionID = item.linkedCollectionID ?? sourceID
 
                     }
@@ -373,14 +351,12 @@ enum CrossBoardListMovement
         snapshot[destinationIndex].lists.append(moved)
         for id in sourceIDs where snapshot[sourceIndex].savedCardIDs.remove(id) != nil
         {
-
             snapshot[destinationIndex].savedCardIDs.insert(mapping[id]!)
         }
 
         // Redirect references from every retained board to each moved card's new owner and identity
         for boardIndex in snapshot.indices
         {
-
             let owner = snapshot[boardIndex].id /* Owning collection or Week */
 
 
@@ -396,7 +372,6 @@ enum CrossBoardListMovement
             ///
             func redirect(_ card: KanbanCard) -> KanbanCard
             {
-
                 var card = card /* Card under consideration */
 
                 card.checklists = card.checklists.map
@@ -416,7 +391,6 @@ enum CrossBoardListMovement
 
                         if let id = item.retainedCardID, let next = mapping[id]
                         {
-
                             item.retainedCardID = next
                             item.linkedCollectionID = destinationID
 
@@ -424,7 +398,6 @@ enum CrossBoardListMovement
 
                         if case .linkedCard(let id) = item.content, let next = mapping[id]
                         {
-
                             item.content = .linkedCard(cardID: next)
                             item.linkedCollectionID = destinationID
 
@@ -443,7 +416,6 @@ enum CrossBoardListMovement
 
             for index in snapshot[boardIndex].lists.indices
             {
-
                 snapshot[boardIndex].lists[index].cards = snapshot[boardIndex].lists[index].cards.map(redirect)
                 snapshot[boardIndex].lists[index].archivedCards = snapshot[boardIndex].lists[index].archivedCards.map(
                     redirect)

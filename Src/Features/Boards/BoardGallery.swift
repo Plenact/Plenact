@@ -18,8 +18,6 @@ import UniformTypeIdentifiers
 ///
 struct BoardGalleryGroup: Identifiable
 {
-
-
     let id:      Int          /* Owner-local numeric ID           */
     let divider: KanbanCard?  /* Structural section divider       */
     var cards:   [KanbanCard] /* Card records under consideration */
@@ -38,20 +36,16 @@ struct BoardGalleryGroup: Identifiable
     ///
     static func groups(in list: KanbanList) -> [BoardGalleryGroup]
     {
-
         var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])] /* Groups lookup entries */
 
         for card in DaySections.visible(list.cards)
         {
-
             if card.isSectionDivider
             {
-
                 groups.append(BoardGalleryGroup(id: groups.count, divider: card, cards: []))
             }
             else
             {
-
                 groups[groups.count - 1].cards.append(card)
             }
 
@@ -72,8 +66,6 @@ struct BoardGalleryGroup: Identifiable
 ///
 struct BoardGalleryView: View
 {
-
-
     @Environment(\.boardViewportMemory) private var viewportMemory /* Viewport memory */
 
     let lists:     [KanbanList]              /* Ordered List records          */
@@ -95,31 +87,24 @@ struct BoardGalleryView: View
 
     private var columns: [GridItem] /* Visible Board List columns */
     {
-
         [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 260 : 156), spacing: 12, alignment: .top)]
     }
 
     var body: some View /* Board Gallery layout */
     {
-
         ScrollView
         {
-
             LazyVStack(alignment: .leading, spacing: 24)
             {
-
                 ForEach(lists)
                 {
                     list in
                     VStack(alignment: .leading, spacing: 12)
                     {
-
                         if showsListHeadings
                         {
-
                             HStack
                             {
-
                                 Text(listTitle(list)).font(.title3.weight(.semibold)).accessibilityAddTraits(.isHeader)
                                 Spacer()
                                 Text("\(list.cards.filter { !$0.isSectionDivider } .count) items").font(.caption)
@@ -133,7 +118,6 @@ struct BoardGalleryView: View
                             group in
                             if let divider = group.divider
                             {
-
                                 DaySectionRow(
                                     card: divider, cards: list.cards, onUpdate: onUpdate,
                                     onMove:
@@ -151,18 +135,15 @@ struct BoardGalleryView: View
 
                             LazyVGrid(columns: columns, alignment: .leading, spacing: 12)
                             {
-
                                 ForEach(group.cards)
                                 {
                                     card in
                                     Button
                                     {
-
                                         onOpen(card, list.id)
                                     }
                                     label:
                                     {
-
                                         BoardGalleryTile(
                                             card: card, appearance: list.appearance, boardAppearance: boardAppearance
                                         )
@@ -178,7 +159,6 @@ struct BoardGalleryView: View
 
                         if list.cards.isEmpty
                         {
-
                             Text("Room for your next idea").font(.subheadline).foregroundStyle(.secondary)
                         }
 
@@ -211,41 +191,33 @@ struct BoardGalleryView: View
 ///
 struct BoardGalleryTile: View
 {
-
-
     let card:       KanbanCard                          /* Card under consideration    */
     var appearance: ItemAppearance? = nil               /* Resolved appearance choices */
     var boardAppearance             = BoardAppearance() /* Board appearance            */
 
     private var excerpt: String /* Short content preview */
     {
-
         PlanRichText.plain(card.descriptionOverride ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var body: some View /* Board Gallery layout */
     {
-
         VStack(alignment: .leading, spacing: 10)
         {
-
             if let cover = card.coverAttachment
             {
-
                 CardCoverPreview(attachment: cover, height: card.displayFormat == .picture ? 150 : 112)
                 .frame(height: card.displayFormat == .picture ? 150 : 112)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             else if card.displayFormat == .picture
             {
-
                 Image(systemName: "photo").font(.largeTitle).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 112)
             }
 
             HStack(alignment: .top, spacing: 6)
             {
-
                 Text(card.word).font(card.displayFormat == .title ? .title3.weight(.semibold) : .headline)
                 .foregroundStyle(
                     boardAppearance.resolvedTitleColor(card: card.appearance, list: appearance)?.color ?? .primary
@@ -256,7 +228,6 @@ struct BoardGalleryTile: View
             .itemBannerBackground(card.appearance)
             if card.presentation == .note && !excerpt.isEmpty && card.displayFormat != .picture
             {
-
                 Text(excerpt).font(.subheadline).foregroundStyle(
                     boardAppearance.resolvedTextColor(card: card.appearance, list: appearance)?.color ?? .secondary
                 ).lineLimit(3).lineSpacing(3)
@@ -265,11 +236,9 @@ struct BoardGalleryTile: View
             ItemReactionPreview(card: card)
             HStack(spacing: 8)
             {
-
                 Label(card.displayFormat.title, systemImage: card.displayFormat.symbol)
                 if card.isTitleChecked
                 {
-
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).accessibilityLabel("Completed")
                 }
 
@@ -281,7 +250,6 @@ struct BoardGalleryTile: View
             } .font(.caption).foregroundStyle(.secondary)
             if card.showsDueDateInList && card.dueDate != nil
             {
-
                 Text(card.dueDateLabel).font(.caption).foregroundStyle(.secondary)
             }
 
@@ -289,11 +257,9 @@ struct BoardGalleryTile: View
         .padding(12).frame(maxWidth: .infinity, minHeight: 140, alignment: .topLeading)
         .background
         {
-
             RoundedRectangle(cornerRadius: 14).fill(Color(.systemBackground))
             if let tint = card.appearance?.cardBackground ?? boardAppearance.cardBackground, tint != .neutral
             {
-
                 RoundedRectangle(cornerRadius: 14).fill(tint.color)
             }
 

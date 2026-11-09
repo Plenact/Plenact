@@ -19,8 +19,6 @@ import UniformTypeIdentifiers
 ///
 struct CreatedContentTarget: Identifiable, Equatable
 {
-
-
     let id = UUID()     /* Record UUID                 */
     let listID:    Int  /* Owner-local List identifier */
     let cardID:    Int  /* Owner-local Card identifier */
@@ -38,7 +36,6 @@ struct CreatedContentTarget: Identifiable, Equatable
     ///
     func matches(_ list: KanbanList) -> Bool
     {
-
         list.id == listID && list.cards.contains
         {
             $0.id == cardID && $0.createdAt == createdAt
@@ -59,8 +56,6 @@ struct CreatedContentTarget: Identifiable, Equatable
 @MainActor
 final class CreatedContentReveal: ObservableObject
 {
-
-
     static let shared = CreatedContentReveal()                /* Shared operation value     */
     @Published private(set) var target: CreatedContentTarget? /* Target under consideration */
 
@@ -78,7 +73,6 @@ final class CreatedContentReveal: ObservableObject
     ///
     func request(listID: Int, card: KanbanCard)
     {
-
         guard let createdAt = card.createdAt else
         {
             return
@@ -100,10 +94,8 @@ final class CreatedContentReveal: ObservableObject
     ///
     func complete(_ request: CreatedContentTarget)
     {
-
         if target?.id == request.id
         {
-
             target = nil
 
         }
@@ -122,8 +114,6 @@ final class CreatedContentReveal: ObservableObject
 ///
 struct RevealCreatedContent: ViewModifier
 {
-
-
     let lists:         [KanbanList] /* Ordered List records */
     var existingProxy: ScrollViewProxy? = nil /* Existing proxy */
     @ObservedObject private var reveal  = CreatedContentReveal.shared /* Reveal operation value */
@@ -131,7 +121,6 @@ struct RevealCreatedContent: ViewModifier
 
     private var request: CreatedContentTarget? /* Pending lookup request */
     {
-
         reveal.target.flatMap
         {
             target in
@@ -153,15 +142,12 @@ struct RevealCreatedContent: ViewModifier
     @ViewBuilder
     func body(content: Content) -> some View
     {
-
         if let existingProxy
         {
-
             revealing(content, using: existingProxy)
         }
         else
         {
-
             ScrollViewReader
             {
                 proxy in
@@ -186,10 +172,8 @@ struct RevealCreatedContent: ViewModifier
     ///
     private func revealing(_ content: Content, using proxy: ScrollViewProxy) -> some View
     {
-
         content.task(id: request?.id)
         {
-
             guard let request else
             {
                 return
@@ -197,7 +181,6 @@ struct RevealCreatedContent: ViewModifier
 
             do
             {
-
                 try await Task.sleep(for: .milliseconds(350))
                 guard !Task.isCancelled, reveal.target?.id == request.id else
                 {
@@ -206,12 +189,10 @@ struct RevealCreatedContent: ViewModifier
 
                 if reduceMotion
                 {
-
                     proxy.scrollTo(request.cardID, anchor: .center)
                 }
                 else
                 {
-
                     withAnimation(.easeInOut(duration: 0.25))
                     {
                         proxy.scrollTo(request.cardID, anchor: .center)
@@ -230,7 +211,6 @@ struct RevealCreatedContent: ViewModifier
             }
             catch
             {  /* A changed destination or dismissed view cancels its reveal  */
-
             }
 
         }

@@ -13,7 +13,6 @@ import Foundation
 @MainActor
 enum MigrationCalendarTemplates
 {
-
     /// @fcn MigrationCalendarTemplates.date
     /// @brief Validate an exact Gregorian source day without device timezone normalization
     /// @param[in] key Original yyyy-MM-dd source key
@@ -21,7 +20,6 @@ enum MigrationCalendarTemplates
     /// @throws Malformed, normalized or unsupported source date errors
     static func date(_ key: String) throws -> Date
     {
-
         guard key.range(of: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", options: .regularExpression) != nil else
         {
             throw MigrationContentValues.Failure.invalid("calendar_date_key")
@@ -61,7 +59,6 @@ enum MigrationCalendarTemplates
     private static func listTarget(_ id: Int, collection: PersonalCollection, scope: String,
         context: MigrationContentValues, active: Bool) throws -> String
     {
-
         guard let list = collection.lists.first(where: { $0.id == id }), !active || !list.isArchived else
         {
             throw MigrationContentValues.Failure.invalid("calendar_template_list_mapping")
@@ -80,7 +77,6 @@ enum MigrationCalendarTemplates
     /// @throws Invalid civil dates, mappings, source provenance or ambiguous checklist ownership
     static func convert(values: [String: Any], context: MigrationContentValues, originalTimeZoneID: String) throws -> [[String: Any]]
     {
-
         var records: [[String: Any]] = [] /* Records being processed   */
         var calendar                 =    /* Date calculation calendar */
             Calendar(identifier: .gregorian)
@@ -89,7 +85,6 @@ enum MigrationCalendarTemplates
 
         if let data = values["Plenact.CalendarWeeks.v1"] as? Data
         {
-
             let source      = /* Source value for this operation */
                 try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
             let zoneContext = /* Zone context */
@@ -102,7 +97,6 @@ enum MigrationCalendarTemplates
 
             if let links = raw["checklistLinkWeeks"] as? [String]
             {
-
                 let keys = /* Keys used by this operation */
                     stride(from: 0, to: links.count, by: 2).map { links[$0].lowercased() }
 
@@ -116,7 +110,6 @@ enum MigrationCalendarTemplates
 
             for week in source.weeks
             {
-
                 let scope = week.collection.id.uuidString.lowercased() /* Owner or search scope */
 
                 guard let collection = context.collectionTargets[scope] else
@@ -136,7 +129,6 @@ enum MigrationCalendarTemplates
 
                 for key in week.dayListIDs.keys.sorted()
                 {
-
                     let day      = try date(key) /* Day under consideration           */
                     let distance =               /* Distance between layout positions */
                         calendar.dateComponents([.day], from: start, to: day).day ?? -1
@@ -195,7 +187,6 @@ enum MigrationCalendarTemplates
         }
         if let data = values["Plenact.PlanningTemplates.v1"] as? Data
         {
-
             let library = /* Retained library contents */
                 try JSONDecoder().decode(PlanningRoutineLibrary.self, from: data)
 
@@ -209,7 +200,6 @@ enum MigrationCalendarTemplates
 
             for template in library.templates
             {
-
                 _ = try date(template.anchorKey)
 
                 guard (1...7).contains(template.firstWeekday), !template.weekdays.isEmpty,
@@ -251,12 +241,10 @@ enum MigrationCalendarTemplates
 
                 if let source = template.exampleFocus
                 {
-
                     var mapped: [String: Any] = [:] /* Value after identity translation */
 
                     for (key, originals) in [("important", source.important), ("bookmarked", source.bookmarked), ("all_day", source.allDay)]
                     {
-
                         var targets: [String] = [] /* Resolved operation targets */
 
                         for original in originals.sorted()

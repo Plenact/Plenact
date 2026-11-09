@@ -18,20 +18,16 @@ import SwiftUI
 ///
 enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
 {
-
-
     case apple, google
 
     var id: String /* Record or view identity */
     {
-
         rawValue
     }
 
 
     var title: String /* User-facing title */
     {
-
         self == .apple ? "Apple Maps" : "Google Maps"
     }
 
@@ -47,10 +43,8 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
     ///
     func placeURL(for location: String?) -> URL?
     {
-
         guard let query = CardLocation.normalized(location) else
         {
-
             return nil
         }
 
@@ -81,8 +75,6 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
 ///
 enum CardLocation
 {
-
-
     ///
     /// @fcn        CardLocation.normalized
     /// @brief      Convert a location draft into optional persisted place text
@@ -92,10 +84,8 @@ enum CardLocation
     ///
     static func normalized(_ value: String?) -> String?
     {
-
         guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else
         {
-
             return nil
         }
 
@@ -115,13 +105,10 @@ enum CardLocation
 ///
 struct CardLocationRow: View
 {
-
-
     let location: String?          /* Resolved place metadata */
     var canEdit            = false /* Edit availability       */
     var onEdit: () -> Void =       /* Edit callback           */
     {
-
     }
 
     @AppStorage(PlanPreferencesStore.key) private var preferencesData = /* Preferences data */
@@ -138,22 +125,18 @@ struct CardLocationRow: View
     ///
     var body: some View /* Card Location layout */
     {
-
         let maps = PlanPreferencesStore.resolved( /* Preferred maps provider */
             preferencesData: preferencesData, profileData: profileData).preferredMapsApp
 
         if let location = CardLocation.normalized(location), let url = maps.placeURL(for: location)
         {
-
             HStack(spacing: 10)
             {
-
                 Image(systemName: "mappin.and.ellipse")
                 .frame(width: 22)
                 .foregroundStyle(.secondary)
                 VStack(alignment: .leading, spacing: 3)
                 {
-
                     Text("Location")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -166,10 +149,8 @@ struct CardLocationRow: View
                 Spacer(minLength: 0)
                 if canEdit
                 {
-
                     Button(action: onEdit)
                     {
-
                         Image(systemName: "pencil")
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
@@ -185,10 +166,8 @@ struct CardLocationRow: View
 
         else if canEdit
         {
-
             Button(action: onEdit)
             {
-
                 Label("Add location", systemImage: "mappin.and.ellipse")
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 .contentShape(Rectangle())
@@ -212,8 +191,6 @@ struct CardLocationRow: View
 ///
 struct CardLocationEditorSheet: View
 {
-
-
     let onSave: (String?) -> Bool               /* Persist the edited value       */
     private let hasLocation: Bool               /* Location availability          */
     @State private var text: String             /* Text being processed           */
@@ -231,7 +208,6 @@ struct CardLocationEditorSheet: View
     ///
     init(location: String?, onSave: @escaping (String?) -> Bool)
     {
-
         self.onSave = onSave
         self.hasLocation = CardLocation.normalized(location) != nil
         self._text = State(initialValue: location ?? "")
@@ -249,16 +225,13 @@ struct CardLocationEditorSheet: View
     ///
     private func save(_ value: String?)
     {
-
         if onSave(CardLocation.normalized(value))
         {
-
             dismiss()
         }
 
         else
         {
-
             saveFailed = true
 
         }
@@ -276,16 +249,12 @@ struct CardLocationEditorSheet: View
     ///
     var body: some View /* Card Location Editor layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Section("Place or address")
                 {
-
                     TextField("Enter a place or address", text: $text, axis: .vertical)
                     .lineLimit(2 ... 5)
                     .autocorrectionDisabled()
@@ -295,7 +264,6 @@ struct CardLocationEditorSheet: View
                     {
                         CardLocationSearchView(query: text)
                         {
-
                             text = $0
 
                         }
@@ -310,10 +278,8 @@ struct CardLocationEditorSheet: View
 
                 if hasLocation
                 {
-
                     Button("Remove location", role: .destructive)
                     {
-
                         save(nil)
                     }
 
@@ -324,13 +290,10 @@ struct CardLocationEditorSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
-
                         dismiss()
                     }
 
@@ -338,10 +301,8 @@ struct CardLocationEditorSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         save(text)
                     }
 
@@ -350,17 +311,14 @@ struct CardLocationEditorSheet: View
             }
             .alert("Couldn’t save location", isPresented: $saveFailed)
             {
-
                 Button("OK", role: .cancel)
                 {
-
                 }
 
             }
 
             message:
             {
-
                 Text("This Card could not be updated. It may have been locked or removed.")
             }
 
@@ -381,8 +339,6 @@ struct CardLocationEditorSheet: View
 ///
 struct MapsAppSettingsSection: View
 {
-
-
     @Binding var selection: PreferredMapsApp /* Current selection state */
 
 
@@ -394,16 +350,12 @@ struct MapsAppSettingsSection: View
     ///
     var body: some View /* Maps App Settings layout */
     {
-
         Section("Maps")
         {
-
             Picker("Preferred maps app", selection: $selection)
             {
-
                 ForEach(PreferredMapsApp.allCases)
                 {
-
                 maps in
                     Text(maps.title).tag(maps)
                 }

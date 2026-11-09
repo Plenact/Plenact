@@ -19,8 +19,6 @@ import Foundation
 ///
 struct PlanningExampleFocus: Codable, Hashable
 {
-
-
     var important:  Set<Int> = [] /* Importance selection state */
     var bookmarked: Set<Int> = [] /* Saved Card selection state */
     var allDay:     Set<Int> = [] /* All day                    */
@@ -37,8 +35,6 @@ struct PlanningExampleFocus: Codable, Hashable
 ///
 struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 {
-
-
     ///
     /// Distinguishes Day routines from Week routines
     ///
@@ -48,7 +44,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     ///
     enum Kind: String, Codable, CaseIterable
     {
-
         case day = "Day", week = "Week"
     }
 
@@ -65,7 +60,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 
     var calendar:     Calendar /* Date calculation calendar */
     {
-
         var value = Calendar(identifier: .gregorian) /* Calendar for date calculations */
 
         value.timeZone = TimeZone(identifier: timeZoneID) ?? .current
@@ -95,13 +89,11 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     ///
     func demonstratingFocus() -> Self
     {
-
         var copy  = self                   /* Independent working copy */
         var focus = PlanningExampleFocus() /* Today Focus selection    */
 
         for list in collection.lists
         {
-
             let tasks = list.cards.filter /* Linked priority tasks */
             {
                 !$0.isSectionDivider && $0.displayFormat == .card
@@ -109,7 +101,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 
             if id == PlanningRoutineLibrary.jmrID
             {
-
                 focus.important.formUnion(tasks.filter
                     {
                         ["Work", "Gym"].contains($0.word)
@@ -121,7 +112,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
             }
             else
             {
-
                 if let first = tasks.first
                 {
                     focus.important.insert(first.id)
@@ -137,7 +127,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
                         $0.startDate == nil && $0.dueDate == nil
                     })
                 {
-
                     focus.allDay.insert(untimed.id)
                 }
 
@@ -168,7 +157,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
     ///
     static func capture(name: String, week: DatedPlanningWeek, day: Date? = nil, calendar: Calendar) throws -> Self
     {
-
         var collection = week.collection /* Personal collection record */
 
         collection.savedCardIDs = []
@@ -182,7 +170,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 
         if let day
         {
-
             guard let id = week.dayListIDs[PlanningDate.key(day, calendar: calendar)],
             let list = sourceLists.first(where:
                 {
@@ -199,18 +186,15 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
         }
         else
         {
-
             collection.lists = sourceLists
 
             for (key, id) in week.dayListIDs
             {
-
                 if let date = PlanningDate.date(key, calendar: calendar), sourceLists.contains(where:
                     {
                         $0.id == id
                     })
                 {
-
                     weekdays[calendar.component(.weekday, from: date)] = id
 
                 }
@@ -232,7 +216,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
         ///
         func reusableChecklist(_ source: KanbanChecklist) -> KanbanChecklist
         {
-
             let items = source.items.map /* Items being processed */
             {
                 item -> KanbanChecklistItem in
@@ -241,7 +224,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 
                 if case .actionDetail(let detail) = content
                 {
-
                     content = .actionDetail(
                         KanbanChecklistActionDetail(
                             id: detail.id, description: detail.description,
@@ -262,7 +244,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 
         for index in collection.lists.indices
         {
-
             collection.lists[index].archivedCards = []
             collection.lists[index].subtitleOverride = collection.lists[index].subtitle
             collection.lists[index].cards = collection.lists[index].cards.map
@@ -309,8 +290,6 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
 ///
 struct PlanningRoutineLibrary: Codable, Equatable
 {
-
-
     var version = 1                              /* Serialized format version   */
     var templates:     [PlanningRoutineTemplate] /* Reusable planning templates */
     var defaultWeekID: UUID?                     /* Default week ID             */
@@ -320,7 +299,6 @@ struct PlanningRoutineLibrary: Codable, Equatable
         UUID(uuidString: "B28FA7CD-1928-44CA-99E0-CDA2EE840003")!
     static let jmr: PlanningRoutineTemplate = /* Matching jmr entry */
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
@@ -355,7 +333,6 @@ struct PlanningRoutineLibrary: Codable, Equatable
 
         for day in PlanningDate.days(in: week.startKey, calendar: calendar)
         {
-
             let weekday = calendar.component(.weekday, from: day) /* Calendar weekday number    */
             let slots   =                                         /* Available layout positions */
                 weekday == 7 ? saturday : (weekday == 1 ? sunday : weekdays)
@@ -372,7 +349,6 @@ struct PlanningRoutineLibrary: Codable, Equatable
                 slot in
                 defer
                 {
-
                     nextID += 1
 
                 }
@@ -409,7 +385,6 @@ struct PlanningRoutineLibrary: Codable, Equatable
     /// Optional examples are added to the library without replacing an existing routine
     static let sectionExamples: [PlanningRoutineTemplate] = /* Section examples */
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -461,7 +436,6 @@ struct PlanningRoutineLibrary: Codable, Equatable
 
             for (heading, color, titles) in sections
             {
-
                 cards.append(
                     KanbanCard(
                         id: cards.count, word: "--- " + heading,
@@ -469,7 +443,6 @@ struct PlanningRoutineLibrary: Codable, Equatable
                         appearance: ItemAppearance(accent: color)))
                 for title in titles
                 {
-
                     cards.append(
                         KanbanCard(
                             id: cards.count, word: title,
@@ -491,7 +464,6 @@ struct PlanningRoutineLibrary: Codable, Equatable
     }()
     static let seeded: Self = /* Built-in initial content */
     {
-
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -540,8 +512,6 @@ struct PlanningRoutineLibrary: Codable, Equatable
 ///
 enum PlanningRoutineStore
 {
-
-
     static let key = "Plenact.PlanningTemplates.v1" /* Persistence lookup key */
 
 
@@ -559,7 +529,6 @@ enum PlanningRoutineStore
     ///
     static func validate(_ value: PlanningRoutineLibrary) throws
     {
-
         guard value.version == 1, (0 ... 5).contains(value.bundledRoutineRevision ?? 0),
         Set(value.templates.map(\.id)).count == value.templates.count,
         value.defaultWeekID == nil
@@ -574,7 +543,6 @@ enum PlanningRoutineStore
 
         for template in value.templates
         {
-
             let lists = template.collection.lists /* Ordered List records */
 
             guard !template.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -586,7 +554,6 @@ enum PlanningRoutineStore
             template.kind != .day || (lists.count == 1 && template.weekdays.count == 1),
             lists.flatMap(\.cards).allSatisfy(
                 {
-
                     $0.id >= 0 && !$0.word.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 }),
             template.weekdays.keys.allSatisfy(
@@ -608,7 +575,6 @@ enum PlanningRoutineStore
 
                 }) else
             {
-
                 throw CocoaError(.coderReadCorrupt)
             }
 
@@ -631,7 +597,6 @@ enum PlanningRoutineStore
     ///
     static func load(from defaults: UserDefaults = .standard) throws -> PlanningRoutineLibrary
     {
-
         guard let data = defaults.data(forKey: key) else
         {
             return .seeded
@@ -643,14 +608,12 @@ enum PlanningRoutineStore
         try validate(result)
         if (result.bundledRoutineRevision ?? 0) == 0
         {
-
             // Upgrade in memory only. Explicit template saves persist the marker; scheduled weeks are untouched
             if !result.templates.contains(where:
                 {
                     $0.id == PlanningRoutineLibrary.jmrID
                 })
             {
-
                 result.templates.append(PlanningRoutineLibrary.jmr)
             }
 
@@ -662,29 +625,24 @@ enum PlanningRoutineStore
 
         if (result.bundledRoutineRevision ?? 0) < 2
         {
-
             // Add tags only to untagged known bundled examples, never to scheduled weeks or user routines
             if let index = result.templates.firstIndex(where:
                 {
                     $0.id == PlanningRoutineLibrary.jmrID
                 })
             {
-
                 let seeds = Dictionary( /* Initial demonstration records */
                     grouping: PlanningRoutineLibrary.jmr.collection.lists.flatMap(\.cards), by: \.word)
 
                 for listIndex in result.templates[index].collection.lists.indices
                 {
-
                     for cardIndex in result.templates[index].collection.lists[listIndex].cards.indices
                     {
-
                         let card = /* Card under consideration */
                             result.templates[index].collection.lists[listIndex].cards[cardIndex]
 
                         if card.labelIDs.isEmpty, let tags = seeds[card.word]?.first?.labelIDs
                         {
-
                             result.templates[index].collection.lists[listIndex].cards[cardIndex].labelIDs = tags
 
                         }
@@ -701,14 +659,12 @@ enum PlanningRoutineStore
 
         if (result.bundledRoutineRevision ?? 0) < 3
         {
-
             for example in PlanningRoutineLibrary.sectionExamples
             where !result.templates.contains(where:
                 {
                     $0.id == example.id
                 })
             {
-
                 result.templates.append(example)
             }
 
@@ -718,13 +674,11 @@ enum PlanningRoutineStore
 
         if (result.bundledRoutineRevision ?? 0) < 4
         {
-
             // Add presentation markers only to recognizable bundled layouts; never rewrite scheduled days
             let seeds = PlanningRoutineLibrary.seeded.templates /* Initial demonstration records */
 
             for index in result.templates.indices where result.templates[index].exampleFocus == nil
             {
-
                 let template = result.templates[index] /* Reusable planning template */
 
                 if let seed = seeds.first(where:
@@ -740,7 +694,6 @@ enum PlanningRoutineStore
                         $0.cards.map(\.word)
                     })
                 {
-
                     result.templates[index] = template.demonstratingFocus()
 
                 }
@@ -756,7 +709,6 @@ enum PlanningRoutineStore
             for index in result.templates.indices
             where result.templates[index].id == PlanningRoutineLibrary.jmrID && result.templates[index].collection.isActive
             {
-
                 result.templates[index].collection.lists = ExampleCardLocations.updating(
                     result.templates[index].collection.lists)
 
@@ -787,7 +739,6 @@ enum PlanningRoutineStore
         _ value: PlanningRoutineLibrary, baseline: PlanningRoutineLibrary, to defaults: UserDefaults = .standard
     ) throws
     {
-
         guard try load(from: defaults) == baseline else
         {
             throw CocoaError(.fileWriteFileExists)
@@ -801,7 +752,6 @@ enum PlanningRoutineStore
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
         {
-
             if let previous
             {
                 defaults.set(previous, forKey: key)
@@ -830,7 +780,6 @@ enum PlanningRoutineStore
     ///
     static func retainedFiles(from defaults: UserDefaults = .standard) throws -> Set<String>
     {
-
         Set(
             try load(from: defaults).templates.flatMap
             {
@@ -859,7 +808,6 @@ enum PlanningRoutineStore
     static func newWeekImportantIDs(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws
     -> Set<Int>
     {
-
         let library = try load(from: defaults) /* Retained library contents */
 
         guard let template = library.templates.first(where:
@@ -892,7 +840,6 @@ enum PlanningRoutineStore
     static func newWeek(for date: Date, calendar: Calendar, defaults: UserDefaults = .standard) throws
     -> DatedPlanningWeek
     {
-
         let library = try load(from: defaults) /* Retained library contents */
         let blank   =                          /* Empty initial value       */
             DatedPlanningWeek.make(for: date, calendar: calendar)
@@ -920,8 +867,6 @@ enum PlanningRoutineStore
 ///
 enum PlanningTemplateApplication
 {
-
-
     ///
     /// Selects additive or replacement template application
     ///
@@ -931,7 +876,6 @@ enum PlanningTemplateApplication
     ///
     enum Mode: String, CaseIterable
     {
-
         case add = "Add to existing", replace = "Replace"
     }
 
@@ -949,7 +893,6 @@ enum PlanningTemplateApplication
     ///
     static func exampleImportantIDs(_ template: PlanningRoutineTemplate, in original: DatedPlanningWeek) -> Set<Int>
     {
-
         let start = /* Range start */
             (original.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
 
@@ -984,11 +927,9 @@ enum PlanningTemplateApplication
         calendar: Calendar, mode: Mode, now: Date = .now
     ) throws -> DatedPlanningWeek
     {
-
         try PlanningRoutineStore.validate(PlanningRoutineLibrary(templates: [template], defaultWeekID: nil))
         guard PlanningDate.weekKey(date, calendar: calendar) == original.startKey else
         {
-
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -1006,7 +947,6 @@ enum PlanningTemplateApplication
 
         for card in cards
         {
-
             mapping[card.id] = nextCard;
             nextCard += 1
 
@@ -1026,7 +966,6 @@ enum PlanningTemplateApplication
         ///
         func shifted(_ value: Date?, kind: CardDateKind) -> Date?
         {
-
             guard let value else
             {
                 return nil
@@ -1045,13 +984,11 @@ enum PlanningTemplateApplication
 
             if template.kind == .day
             {
-
                 target = calendar.date(byAdding: .day, value: offset, to: calendar.startOfDay(for: date))!
 
             }
             else
             {
-
                 let weekday     = /* Calendar weekday number */
                     template.calendar.component(.weekday, from: value)
                 let sameWeekday = targetDays.first /* Same weekday */
@@ -1089,7 +1026,6 @@ enum PlanningTemplateApplication
         ///
         func freshChecklist(_ source: KanbanChecklist) -> KanbanChecklist
         {
-
             let items = source.items.map /* Items being processed */
             {
                 item -> KanbanChecklistItem in
@@ -1098,7 +1034,6 @@ enum PlanningTemplateApplication
 
                 switch content
                 {
-
                 case .linkedCard(let id):
 
                     let local = /* Local workspace representation */
@@ -1140,7 +1075,6 @@ enum PlanningTemplateApplication
         ///
         func fresh(_ card: KanbanCard, title: String) -> KanbanCard
         {
-
             var cover: UUID?                        /* Selected Card cover      */
             let attachments = card.attachments?.map /* Owned attachment records */
             {
@@ -1154,7 +1088,6 @@ enum PlanningTemplateApplication
 
                 if source.id == card.coverAttachmentID
                 {
-
                     cover = copy.id
 
                 }
@@ -1182,12 +1115,10 @@ enum PlanningTemplateApplication
 
         if template.kind == .week && mode == .replace
         {
-
             for index in result.collection.lists.indices
             where result.dayListIDs.values.contains(result.collection.lists[index].id)
             && !result.collection.lists[index].isArchived
             {
-
                 result.collection.savedCardIDs.subtract(result.collection.lists[index].cards.map(\.id))
 
                 result.collection.lists[index].cards = []
@@ -1198,7 +1129,6 @@ enum PlanningTemplateApplication
 
         for source in template.collection.lists
         {
-
             let weekday = template.weekdays.first /* Calendar weekday number */
             {
                 $0.value == source.id
@@ -1213,7 +1143,6 @@ enum PlanningTemplateApplication
 
             if let destinationDate
             {
-
                 let key = /* Local calendar-day key */
                     PlanningDate.key(destinationDate, calendar: calendar)
 
@@ -1232,7 +1161,6 @@ enum PlanningTemplateApplication
             }
             else
             {
-
                 let id = /* Record or view identity */
                     (result.collection.lists.map(\.id).max() ?? -1) + 1
 
@@ -1245,7 +1173,6 @@ enum PlanningTemplateApplication
 
             if mode == .replace && template.kind == .day
             {
-
                 result.collection.savedCardIDs.subtract(result.collection.lists[index].cards.map(\.id))
 
                 result.collection.lists[index].cards = []
@@ -1254,7 +1181,6 @@ enum PlanningTemplateApplication
 
             if result.collection.lists[index].cards.isEmpty
             {
-
                 result.collection.lists[index].appearance = source.appearance
                 result.collection.lists[index].subtitleOverride = source.subtitleOverride
                 result.collection.lists[index].newItemPresentation = source.newItemPresentation
@@ -1271,7 +1197,6 @@ enum PlanningTemplateApplication
                 if template.exampleFocus?.allDay.contains(card.id) == true,
                 item.startDate == nil, item.dueDate == nil, let destinationDate
                 {
-
                     item.dueDate = calendar.startOfDay(for: destinationDate)
                     item.dueDateKind = .date
                     item.showsDueDateInList = true
@@ -1281,7 +1206,6 @@ enum PlanningTemplateApplication
                 if template.collection.savedCardIDs.contains(card.id)
                 || template.exampleFocus?.bookmarked.contains(card.id) == true
                 {
-
                     result.collection.savedCardIDs.insert(item.id)
                 }
 
@@ -1294,7 +1218,6 @@ enum PlanningTemplateApplication
 
         if !original.hasContent
         {
-
             result.collection.boardAppearance = template.collection.boardAppearance
 
         }

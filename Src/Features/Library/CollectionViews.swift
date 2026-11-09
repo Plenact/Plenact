@@ -20,15 +20,11 @@ import SwiftUI
 ///
 extension PersonalCollection
 {
-
-
     /// Match the default On the Table identity to its banner without changing custom colors
     var libraryIdentityColor: Color /* Library identity color */
     {
-
         if kind == .list, title == "On the Table", color == .coral
         {
-
             return ItemAccent.coral.darkHeaderColor
         }
 
@@ -47,8 +43,6 @@ extension PersonalCollection
 ///
 struct LibraryCollectionRow: View
 {
-
-
     let title:    String         /* User-owned collection or Week Board title       */
     let subtitle: String         /* Collection kind and active-list context         */
     let icon:     String         /* SF Symbol representing the organizing space     */
@@ -69,12 +63,8 @@ struct LibraryCollectionRow: View
     ///
     var body: some View /* Library Collection layout */
     {  /* Adaptive collection directory row with a labeled card count */
-
-
         HStack(spacing: 12)
         {
-
-
             RoundedRectangle(cornerRadius: 2)
             .fill(color)
             .frame(width: 4, height: 38)
@@ -94,10 +84,8 @@ struct LibraryCollectionRow: View
 
             layout
             {
-
                 VStack(alignment: .leading, spacing: 5)
                 {
-
                     Text(title)
                     .font(.headline)
                     .foregroundStyle(.primary)
@@ -106,7 +94,6 @@ struct LibraryCollectionRow: View
                     .fixedSize(horizontal: false, vertical: true)
                     if !preview.isEmpty
                     {
-
                         GentleCollectionPreview(text: preview, scrolls: scrollsPreview)
                     }
 
@@ -140,8 +127,6 @@ struct LibraryCollectionRow: View
 ///
 struct CollectionFilterPopover: View
 {
-
-
     let selection: LibraryBrowseFilter /* Current selection state */
     let onSelect:  (LibraryBrowseFilter) -> Void /* Handle the selected value */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
@@ -153,16 +138,13 @@ struct CollectionFilterPopover: View
 
     var body: some View /* Collection Filter layout */
     {
-
         VStack(spacing: 0)
         {
-
             ForEach(LibraryBrowseFilter.allCases)
             {
                 filter in
                 Button
                 {
-
                     opacity = 1
 
                     onSelect(filter)
@@ -172,10 +154,8 @@ struct CollectionFilterPopover: View
                 }
                 label:
                 {
-
                     HStack(spacing: 12)
                     {
-
                         Image(systemName: filter.symbol).frame(width: 22)
                         Text(filter.rawValue)
                         Spacer(minLength: 24)
@@ -200,7 +180,6 @@ struct CollectionFilterPopover: View
         .opacity(opacity)
         .task(id: pendingSelection)
         {
-
             guard pendingSelection != nil else
             {
                 return
@@ -208,11 +187,9 @@ struct CollectionFilterPopover: View
 
             do
             {
-
                 try await Task.sleep(for: .milliseconds(voiceOver ? 900 : 450))
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16))
                 {
-
                     opacity = 0
 
                 }
@@ -226,7 +203,6 @@ struct CollectionFilterPopover: View
             }
             catch
             {  /* A newer selection or outside dismissal cancels this dismissal  */
-
             }
 
         }
@@ -244,8 +220,6 @@ struct CollectionFilterPopover: View
 ///
 struct PersonalCollectionBoardView: View
 {
-
-
     @Binding var collection:        PersonalCollection    /* Live collection shown by the shared Board view */
     @Binding var boardTargetListID: Int?                  /* Collection-local list requested from Saved     */
     @Binding var boardTargetCardID: Int?                  /* Collection-local card requested from Saved     */
@@ -282,7 +256,6 @@ struct PersonalCollectionBoardView: View
     ///
     var body: some View /* Personal Collection Board layout */
     {  /* Collection Board wired to canonical persistence callbacks */
-
         ContentView(
             lists: $collection.lists.activeLists,
             archivedLists: $collection.lists.archivedLists,
@@ -300,17 +273,13 @@ struct PersonalCollectionBoardView: View
             },
             onArchiveBoard: collection.isPrimaryList ? nil :
             {
-
                 do
                 {
-
-
                     try onArchive()
                     dismiss()
                 }
                 catch
                 {
-
                     DatabaseActivity.shared.report(
                                                             "Could not archive the board: \(error.localizedDescription) The board has not been removed.")
                 }
@@ -318,17 +287,13 @@ struct PersonalCollectionBoardView: View
             },
             onDeleteBoard: collection.isPrimaryList ? nil :
             {
-
                 do
                 {
-
-
                     try onDelete()
                     dismiss()
                 }
                 catch
                 {
-
                     DatabaseActivity.shared.report(
                                                             "Could not delete the collection: \(error.localizedDescription) It has been retained.")
                 }
@@ -351,7 +316,6 @@ struct PersonalCollectionBoardView: View
                 updatedLists in
                 if collection.kind == .list, let list = updatedLists.first
                 {
-
                     collection.title = list.title
 
                 }
@@ -368,12 +332,10 @@ struct PersonalCollectionBoardView: View
                 note, sourceID, destinationID in
                 do
                 {
-
                     return try onMoveNote(note, sourceID, destinationID)
                 }
                 catch
                 {
-
                     DatabaseActivity.shared.report(
                                                             "Could not move the Note: \(error.localizedDescription) Its content remains in the current List."
                     )
@@ -390,14 +352,10 @@ struct PersonalCollectionBoardView: View
         .databaseActivityOverlay()
         .onAppear
         {
-
             if collection.kind == .list
             {
-
-
                 registerNewNote
                 {
-
                     showsNewNoteComposer = true
 
                 }
@@ -407,12 +365,10 @@ struct PersonalCollectionBoardView: View
         }
         .onDisappear
         {
-
             registerNewNote(nil)
         }
         .sheet(isPresented: $showsNewNoteComposer)
         {
-
             NewPersonalNoteComposer(
                 initialCollectionID: collection.id,
                 availablePersonalLists: availablePersonalLists,
@@ -434,8 +390,6 @@ struct PersonalCollectionBoardView: View
 ///
 struct PersonalCollectionSettingsView: View
 {
-
-
     let isNew:                Bool                          /* Whether this form creates a new collection */
     let onSave:               (PersonalCollection) -> Void  /* Submit the complete collection draft       */
     @State private var draft: PersonalCollection            /* Isolated editable collection copy          */
@@ -455,8 +409,6 @@ struct PersonalCollectionSettingsView: View
     ///
     init(collection: PersonalCollection, isNew: Bool, onSave: @escaping (PersonalCollection) -> Void)
     {
-
-
         _draft = State(initialValue: collection)
         self.isNew = isNew
         self.onSave = onSave
@@ -474,7 +426,6 @@ struct PersonalCollectionSettingsView: View
     ///
     private var trimmedTitle: String /* Trimmed title */
     {
-
         draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
     }  /* Validated collection name without surrounding whitespace */
 
@@ -492,8 +443,6 @@ struct PersonalCollectionSettingsView: View
     ///
     private func save()
     {
-
-
         draft.rename(to: trimmedTitle)
         onSave(draft)
         dismiss()
@@ -511,16 +460,12 @@ struct PersonalCollectionSettingsView: View
     ///
     var body: some View /* Personal Collection Settings layout */
     {  /* Collection name, kind, icon, and color form */
-
         NavigationStack
         {
-
             Form
             {
-
                 Section
                 {
-
                     TextField("Name", text: $draft.title).textInputAutocapitalization(.sentences)
                     TextField(
                                                             "Description (optional)",
@@ -531,7 +476,6 @@ struct PersonalCollectionSettingsView: View
                                                                 },
                                                                 set:
                                                                 {
-
                                                                     draft.collectionDescription = $0
 
                                                                 }
@@ -541,7 +485,6 @@ struct PersonalCollectionSettingsView: View
                     LabeledContent("Type", value: draft.kind.rawValue)
                     Picker("Icon", selection: $draft.icon)
                     {
-
                         ForEach(PersonalCollectionIcon.allCases, id: \.self)
                         {
                             icon in
@@ -553,7 +496,6 @@ struct PersonalCollectionSettingsView: View
                     .pickerStyle(.menu)
                     if draft.kind == .list, let list = draft.lists.first, !list.hasFixedHeaderIcon
                     {
-
                         Toggle(
                                                                         "Show icon in title bar",
                                                                         isOn: Binding(
@@ -577,7 +519,6 @@ struct PersonalCollectionSettingsView: View
 
                     Picker("Color", selection: $draft.color)
                     {
-
                         ForEach(
                             [
                                 ("Teal", ProfileColor.teal), ("Blue", .blue), ("Green", .green),
@@ -588,7 +529,6 @@ struct PersonalCollectionSettingsView: View
                             name, color in
                             HStack
                             {
-
                                 Circle().fill(color.color).frame(width: 16, height: 16)
                                 Text(name)
                             }
@@ -604,10 +544,8 @@ struct PersonalCollectionSettingsView: View
 
                 if draft.kind == .list, !draft.lists.isEmpty
                 {
-
                     Section("List background")
                     {
-
                         ListSurfaceOpacityPicker(
                             title: draft.title,
                             tint: draft.lists[0].appearance?.listBackground ?? draft.boardAppearance?.listBackground
@@ -640,10 +578,8 @@ struct PersonalCollectionSettingsView: View
 
                 if draft.kind == .list, !draft.lists.isEmpty
                 {
-
                     Section("Icon color")
                     {
-
                         ListIconColorPicker(
                             selection: Binding(
                                 get:
@@ -669,10 +605,8 @@ struct PersonalCollectionSettingsView: View
 
                 if draft.kind == .list, !draft.lists.isEmpty
                 {
-
                     Section("View as")
                     {
-
                         Picker(
                                                                         "List layout",
                                                                         selection: Binding(
@@ -687,7 +621,6 @@ struct PersonalCollectionSettingsView: View
                                                                         )
                         )
                         {
-
                             ForEach(SingleListViewMode.allCases)
                             {
                                 Text($0.title).tag($0)
@@ -704,13 +637,11 @@ struct PersonalCollectionSettingsView: View
 
                 Section("New item defaults")
                 {
-
                     ForEach($draft.lists)
                     {
                         $list in
                         Picker(list.title, selection: $list.newItemPresentation)
                         {
-
                             ForEach(ItemPresentation.allCases)
                             {
                                 presentation in
@@ -730,11 +661,8 @@ struct PersonalCollectionSettingsView: View
 
                 if isNew && draft.cardCount > 0
                 {
-
-
                     Section("Cards included")
                     {
-
                         Text("These example cards will be added only when you save this new personal list.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -743,8 +671,6 @@ struct PersonalCollectionSettingsView: View
                             card in
                             if let cover = card.coverAttachment
                             {  /* Featured attachment displayed above the card preview */
-
-
                                 CardCoverPreview(attachment: cover, height: 96)
                             }
 
@@ -762,7 +688,6 @@ struct PersonalCollectionSettingsView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .topBarLeading)
                 {
                     Button("Cancel")
@@ -774,7 +699,6 @@ struct PersonalCollectionSettingsView: View
 
                 ToolbarItem(placement: .topBarTrailing)
                 {
-
                     Button("Save", action: save).disabled(trimmedTitle.isEmpty)
                 }
 

@@ -19,8 +19,6 @@ import SwiftUI
 ///
 struct PersonalListExamplesView: View
 {
-
-
     var onLoadExampleWeek:     (() -> Bool)? = nil /* Load example week callback */
     var onUndoExampleWeek:     (() -> Bool)? = nil /* Undo example week callback */
     let onSelect:              (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
@@ -59,7 +57,6 @@ struct PersonalListExamplesView: View
         onSelect: @escaping (PersonalListExample) -> Void
     )
     {
-
         self.onLoadExampleWeek = onLoadExampleWeek
         self.onUndoExampleWeek = onUndoExampleWeek
         self.onSelect = onSelect
@@ -78,16 +75,12 @@ struct PersonalListExamplesView: View
     ///
     var body: some View /* Personal List Examples layout */
     {  /* Personal List example chooser with expandable card previews */
-
         NavigationStack
         {
-
             List
             {
-
                 Section
                 {
-
                     Text(
                                                             "Explore Lists and Boards and make them your own. Selecting an example opens a draft; only Save adds it to Plans. Your Week and existing collections stay unchanged."
                     )
@@ -97,23 +90,18 @@ struct PersonalListExamplesView: View
 
                 if onLoadExampleWeek != nil
                 {
-
                     Section("Example Week View")
                     {
-
                         Button("Load Example Week View", systemImage: "square.and.arrow.down")
                         {
-
                             confirmsLoadWeek = true
 
                         }
                         .accessibilityIdentifier("library.examples.loadWeek")
                         if hasUndoableWeek, onUndoExampleWeek != nil
                         {
-
                             Button("Undo Last Load", systemImage: "arrow.uturn.backward")
                             {
-
                                 confirmsUndoWeek = true
 
                             }
@@ -132,23 +120,19 @@ struct PersonalListExamplesView: View
 
                 if let onSelectBoardExample
                 {
-
                     Section("Board examples")
                     {
-
                         ForEach(PersonalBoardExample.allCases)
                         {
                             example in
                             DisclosureGroup
                             {
-
                                 Text(example.summary).foregroundStyle(.secondary)
                                 ForEach(Array(example.listSummaries.enumerated()), id: \.offset)
                                 {
                                     _, list in
                                     HStack
                                     {
-
                                         Label(list.title, systemImage: "rectangle.split.3x1")
                                         Spacer()
                                         Text("\(list.count) items").font(.caption).foregroundStyle(.secondary)
@@ -168,10 +152,8 @@ struct PersonalListExamplesView: View
                             }
                             label:
                             {
-
                                 VStack(alignment: .leading, spacing: 4)
                                 {
-
                                     Label(example.rawValue, systemImage: "rectangle.3.group").font(.headline)
                                     Text(
                                                                                                             "\(example.listSummaries.count) lists · \(example.listSummaries.reduce(0) { $0 + $1.count }) items"
@@ -190,16 +172,13 @@ struct PersonalListExamplesView: View
 
                 if let onSelectMixedTemplate
                 {
-
                     Section("Templates")
                     {
-
                         ForEach(MixedListTemplate.allCases)
                         {
                             template in
                             DisclosureGroup(template.rawValue)
                             {
-
                                 Text(template.summary).foregroundStyle(.secondary)
                                 ForEach(template.items.indices, id: \.self)
                                 {
@@ -209,10 +188,8 @@ struct PersonalListExamplesView: View
 
                                     VStack(alignment: .leading, spacing: 6)
                                     {
-
                                         if item.2 == .picture
                                         {
-
                                             CardCoverPreview(
                                                 attachment: KanbanAttachment(
                                                     mediaKind: .photo, exampleImage: template.illustration))
@@ -226,7 +203,6 @@ struct PersonalListExamplesView: View
 
                                 Button("Use \(template.rawValue)", systemImage: "plus")
                                 {
-
                                     onSelectMixedTemplate(template)
                                 }
 
@@ -244,21 +220,16 @@ struct PersonalListExamplesView: View
                     example in
                     Section(example.rawValue)
                     {
-
                         Text(example.summary)
                         DisclosureGroup("Preview \(example.cards.count) example cards")
                         {
-
                             ForEach(example.cards.indices, id: \.self)
                             {
                                 index in
                                 VStack(alignment: .leading, spacing: 4)
                                 {
-
                                     if index == 0, let illustration = example.coverIllustration
                                     {  /* Example's featured offline cover image */
-
-
                                         CardCoverPreview(
                                             attachment: KanbanAttachment(
                                                 mediaKind: .photo, exampleImage: illustration
@@ -283,7 +254,6 @@ struct PersonalListExamplesView: View
 
                         Button("Use \(example.rawValue)", systemImage: "plus")
                         {
-
                             onSelect(example)
                         }
 
@@ -297,10 +267,8 @@ struct PersonalListExamplesView: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
                         dismiss()
@@ -316,20 +284,16 @@ struct PersonalListExamplesView: View
                         "Replace the Week Board with the example?", isPresented: $confirmsLoadWeek, titleVisibility: .visible
         )
         {
-
             Button("Load Example Week View", role: .destructive)
             {
-
                 if onLoadExampleWeek?() == true
                 {
-
                     hasUndoableWeek = true
 
                     dismiss()
                 }
                 else
                 {
-
                     operationError =
                                                             "The example Week Board could not be loaded. Your current Week Board was not changed."
 
@@ -339,13 +303,11 @@ struct PersonalListExamplesView: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text(
                                     "This replaces the current active and archived Week lists and cards. Your previous Week Board is kept locally for undo. Personal collections stay unchanged."
             )
@@ -354,20 +316,16 @@ struct PersonalListExamplesView: View
                         "Restore the previous Week Board?", isPresented: $confirmsUndoWeek, titleVisibility: .visible
         )
         {
-
             Button("Undo Last Load", role: .destructive)
             {
-
                 if onUndoExampleWeek?() == true
                 {
-
                     hasUndoableWeek = false
 
                     dismiss()
                 }
                 else
                 {
-
                     operationError = "The saved Week Board snapshot could not be restored."
 
                 }
@@ -376,13 +334,11 @@ struct PersonalListExamplesView: View
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text(
                                     "This replaces the current Week Board, including edits made since loading the example, with the saved Week Board from before the last load."
             )
@@ -398,7 +354,6 @@ struct PersonalListExamplesView: View
                             {
                                 if !$0
                                 {
-
                                     operationError = nil
 
                                 }
@@ -407,10 +362,8 @@ struct PersonalListExamplesView: View
                         )
         )
         {
-
             Button("OK", role: .cancel)
             {
-
                 operationError = nil
 
             }
@@ -418,7 +371,6 @@ struct PersonalListExamplesView: View
         }
         message:
         {
-
             Text(operationError ?? "")
         }
 
@@ -436,8 +388,6 @@ struct PersonalListExamplesView: View
 ///
 struct LibraryDaySectionExamples: View
 {
-
-
     var query = ""                                   /* Search text                */
     let onPreview: (PlanningRoutineTemplate) -> Void /* Preview callback           */
     let onApply:   (PlanningRoutineTemplate) -> Void /* Apply the prepared changes */
@@ -454,7 +404,6 @@ struct LibraryDaySectionExamples: View
     ///
     static func matches(query: String) -> [PlanningRoutineTemplate]
     {
-
         PlanningRoutineLibrary.sectionExamples.filter
         {
             template in
@@ -471,21 +420,17 @@ struct LibraryDaySectionExamples: View
 
     var body: some View /* Library Day Section Examples layout */
     {
-
         let examples = Self.matches(query: query) /* Seeded demonstration content */
 
         if !examples.isEmpty
         {
-
             Section
             {
-
                 ForEach(examples)
                 {
                     template in
                     DisclosureGroup
                     {
-
                         Text("Three colored sections, six example items. Make this rhythm your own.")
                         .font(.subheadline).foregroundStyle(.secondary)
                         ForEach(template.collection.lists.flatMap(\.cards).filter
@@ -493,7 +438,6 @@ struct LibraryDaySectionExamples: View
                                 $0.sectionHeading != nil
                             })
                         {
-
                         heading in
                             Label(heading.sectionHeading ?? "", systemImage: "circle.fill")
                             .foregroundStyle(heading.appearance?.accent?.color ?? .secondary)
@@ -512,10 +456,8 @@ struct LibraryDaySectionExamples: View
                     }
                     label:
                     {
-
                         VStack(alignment: .leading, spacing: 4)
                         {
-
                             Label(template.name, systemImage: "rectangle.3.group")
                             Text(
                                 template.collection.lists.flatMap(\.cards).compactMap(\.sectionHeading).joined(
@@ -530,12 +472,10 @@ struct LibraryDaySectionExamples: View
             }
             header:
             {
-
                 Text("Day section examples")
             }
             footer:
             {
-
                 Text(
                                                 "Explore a daily rhythm, a build session, or a workout journey. Preview freely, then choose a day to apply. Existing plans stay unchanged until you confirm."
                 )
@@ -557,8 +497,6 @@ struct LibraryDaySectionExamples: View
 ///
 struct LibraryExamplePreview: Identifiable
 {
-
-
     var id = UUID()           /* Record UUID                 */
     let title:   String       /* User-facing title           */
     let summary: String       /* Aggregate operation results */
@@ -576,30 +514,23 @@ struct LibraryExamplePreview: Identifiable
 ///
 struct LibraryExamplePreviewView: View
 {
-
-
     let preview: LibraryExamplePreview          /* Prepared content preview       */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
 
     var body: some View /* Library Example Preview layout */
     {
-
         NavigationStack
         {
-
             ScrollView
             {
-
                 VStack(alignment: .leading, spacing: 20)
                 {
-
                     Text(preview.summary).foregroundStyle(.secondary)
                     ForEach(preview.lists)
                     {
                         list in
                         VStack(alignment: .leading, spacing: 12)
                         {
-
                             if preview.lists.count > 1
                             {
                                 Text(list.title).font(.title2.bold())
@@ -610,12 +541,10 @@ struct LibraryExamplePreviewView: View
                                 card in
                                 if card.isSectionDivider
                                 {
-
                                     NamedSectionDivider(card: card)
                                 }
                                 else
                                 {
-
                                     KanbanCardView(
                                         card: card, height: 100, displaySettings: BoardDisplaySettings(),
                                         labelLibrary: .starter,
@@ -624,13 +553,10 @@ struct LibraryExamplePreviewView: View
                                             _ in
                                         }, onDeleteCard:
                                         {
-
                                         }, onArchiveCard:
                                         {
-
                                         }, onToggle:
                                         {
-
                                         }
                                     )
                                     .modifier(DaySectionRail(cardID: card.id, cards: list.cards))

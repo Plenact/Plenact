@@ -20,8 +20,6 @@ import UniformTypeIdentifiers
 /// screen confirms the action and performs its existing checked deletion
 struct ListItemSwipeDelete: ViewModifier
 {
-
-
     let enabled:   Bool       /* Feature availability flag */
     let onRequest: () -> Void /* Request callback          */
 
@@ -38,13 +36,10 @@ struct ListItemSwipeDelete: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         content.swipeActions(edge: .trailing, allowsFullSwipe: false)
         {
-
             if enabled
             {
-
                 Button(action: onRequest)
                 {
                     Label("Delete", systemImage: "trash")
@@ -69,8 +64,6 @@ struct ListItemSwipeDelete: ViewModifier
 ///
 struct ContentLifecycleActions: ViewModifier
 {
-
-
     let title:     String                        /* Canonical content name used for confirmation              */
     let kind:      String                        /* Card or List                                              */
     let onArchive: (() -> Void)?                 /* Optional retention action; dividers support deletion only */
@@ -90,19 +83,13 @@ struct ContentLifecycleActions: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
-
         content
         .contextMenu
         {
-
             if let onArchive
             {  /* Archive action offered by the menu's owner */
-
-
                 Button("Archive \(kind)", systemImage: "archivebox")
                 {
-
                     onArchive();
                     dismiss()
                 }
@@ -112,7 +99,6 @@ struct ContentLifecycleActions: ViewModifier
 
             Button("Delete \(kind)", systemImage: "trash", role: .destructive)
             {
-
                 confirmsDelete = true
 
             }
@@ -120,14 +106,10 @@ struct ContentLifecycleActions: ViewModifier
         }
         .accessibilityActions
         {
-
             if let onArchive
             {  /* Archive action invoked after confirmation */
-
-
                 Button("Archive \(kind)")
                 {
-
                     onArchive();
                     dismiss()
                 }
@@ -137,7 +119,6 @@ struct ContentLifecycleActions: ViewModifier
 
             Button("Delete \(kind)")
             {
-
                 confirmsDelete = true
 
             }
@@ -146,7 +127,6 @@ struct ContentLifecycleActions: ViewModifier
 
         .confirmationDialog("Delete \(title)?", isPresented: $confirmsDelete, titleVisibility: .visible)
         {
-
             Button("Delete \(kind)", role: .destructive)
             {
                 if onDelete()
@@ -158,13 +138,11 @@ struct ContentLifecycleActions: ViewModifier
 
             Button("Cancel", role: .cancel)
             {
-
             }
 
         }
         message:
         {
-
             Text(
                                         "Permanently deletes this \(kind.lowercased()) and its contents and bookmarks. This cannot be undone. Other retained copies are unchanged."
             )

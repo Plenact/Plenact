@@ -22,8 +22,6 @@ import Foundation
 ///
 struct PlenactBoardDocument: Codable, Equatable
 {
-
-
     static let currentSchemaVersion = 1 /* Current supported Board document shape */
 
     var schemaVersion: Int          /* Board JSON schema version */
@@ -40,8 +38,6 @@ struct PlenactBoardDocument: Codable, Equatable
     ///
     enum CodingKeys: String, CodingKey
     {
-
-
         case schemaVersion = "schema_version"
         case boardKey = "board_key"
         case lists
@@ -64,8 +60,6 @@ struct PlenactBoardDocument: Codable, Equatable
     ///
     init(boardKey: String = "shared-demo", lists: [KanbanList], labelLibrary: LabelLibrary)
     {
-
-
         self.schemaVersion = Self.currentSchemaVersion
         self.boardKey = boardKey
         self.lists = lists
@@ -87,13 +81,10 @@ struct PlenactBoardDocument: Codable, Equatable
     ///
     var validationMessage: String? /* Validation message */
     {  /* Snapshot validation result */
-
-
         guard schemaVersion == Self.currentSchemaVersion,
         boardKey == "shared-demo"
         else
         {
-
             return "Unsupported Board document version or missing board key."
         }
 
@@ -103,20 +94,14 @@ struct PlenactBoardDocument: Codable, Equatable
 
         for list in lists
         {
-
-
             guard !list.isArchived else
             {
-
-
                 return "Archived lists are stored locally and cannot be published to the shared Board."
             }
 
 
             guard list.archivedCards.isEmpty else
             {
-
-
                 return "Archived cards are stored locally and cannot be published to the shared Board."
             }
 
@@ -126,55 +111,41 @@ struct PlenactBoardDocument: Codable, Equatable
             !list.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             else
             {
-
-
                 return "Each Board list needs a unique nonnegative ID and a title."
             }
 
 
             for card in list.cards
             {
-
-
                 guard card.id >= 0,
                 cardIDs.insert(card.id).inserted,
                 !card.word.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                 card.listTitle == list.title
                 else
                 {
-
-
                     return "Each Board card needs a unique nonnegative ID, title, and matching list title."
                 }
 
 
                 for assignee in card.members
                 {
-
-
                     let displayName = assignee.displayName.trimmingCharacters( /* Display name */
                         in: .whitespacesAndNewlines) /* Normalized assignee label */
 
                     guard !displayName.isEmpty else
                     {
-
-
                         return "Each card assignee needs a display name."
                     }
 
 
                     switch assignee.kind
                     {
-
-
                     case .registeredUser:
 
                         guard let userID = assignee.userID, /* Registered account reference */
                         UUID(uuidString: userID) != nil
                         else
                         {
-
-
                             return "Registered card assignees need a valid stable user ID."
                         }
 
@@ -183,8 +154,6 @@ struct PlenactBoardDocument: Codable, Equatable
 
                         guard assignee.userID == nil else
                         {
-
-
                             return "Manual card assignees cannot contain a registered user ID."
                         }
 
@@ -214,8 +183,6 @@ struct PlenactBoardDocument: Codable, Equatable
 ///
 struct PlenactBoardSnapshotResponse: Decodable
 {
-
-
     let revision:       Int64                /* Current immutable revision */
     let document:       PlenactBoardDocument /* Complete Board content     */
     let storedAtUTC:    String               /* Server storage timestamp   */
@@ -231,8 +198,6 @@ struct PlenactBoardSnapshotResponse: Decodable
     ///
     enum CodingKeys: String, CodingKey
     {
-
-
         case revision
         case document
         case storedAtUTC = "stored_at_utc"

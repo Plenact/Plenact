@@ -13,13 +13,11 @@ import Foundation
 @MainActor
 enum MigrationAssetPreview
 {
-
     /// Local file evidence with separate verified, unavailable and review counts
     /// @section Purpose
     ///     Keep file preservation distinct from complete portable conversion or upload success
     struct Result
     {
-
         let document:     [String: Any] /* Source document snapshot */
         let verifiedCount: Int          /* Verified count           */
         let missingCount:  Int          /* Missing count            */
@@ -34,7 +32,6 @@ enum MigrationAssetPreview
     /// @return Kind and MIME where a supported signature is recognized; binary otherwise
     static func signature(_ bytes: Data) -> (String, String)
     {
-
         let prefix = Array(bytes.prefix(16)) /* Leading lookup or display text */
 
         if prefix.starts(with: [137, 80, 78, 71, 13, 10, 26, 10])
@@ -51,7 +48,6 @@ enum MigrationAssetPreview
         }
         if prefix.count >= 12, String(bytes: prefix[4..<8], encoding: .ascii) == "ftyp"
         {
-
             let brand = String(bytes: prefix[8..<12], encoding: .ascii) /* App brand appearance */
 
             if ["M4A ", "M4B "].contains(brand)
@@ -93,7 +89,6 @@ enum MigrationAssetPreview
     static func prepare(backup: LegacyWorkspaceBackup, records: [[String: Any]],
         journal: inout MigrationIdentityJournal) throws -> Result
     {
-
         _ = try MigrationBackupReader.values(in: backup)
 
         let report                             = /* Validation findings */
@@ -109,7 +104,6 @@ enum MigrationAssetPreview
 
         for entry in media
         {
-
             let path   = entry["path"] as! String   /* Filesystem or navigation path */
             let digest = entry["sha256"] as! String /* Verified content hash         */
             let id     =                            /* Record or view identity       */
@@ -151,7 +145,6 @@ enum MigrationAssetPreview
         /// @return Void; accumulates local source linkage evidence only
         func walk(_ value: Any, record: String, path: String)
         {
-
             if let object = value as? [String: Any]
             {
                 if let image = object["asset_id"] as? String, let drawing = object["drawing_asset_id"] as? String
@@ -160,13 +153,11 @@ enum MigrationAssetPreview
                 }
                 for key in object.keys.sorted()
                 {
-
                     let child = object[key]!     /* Nested view or record */
                     let next  = path + "/" + key /* Candidate next state  */
 
                     if ["asset_id", "drawing_asset_id", "photo_asset_id", "avatar_asset_id"].contains(key), let asset = child as? String
                     {
-
                         let role = /* Declared content role */
                             key == "drawing_asset_id" ? "drawing_original" :
                             (key == "photo_asset_id" ? "appearance_photo" :
@@ -183,7 +174,6 @@ enum MigrationAssetPreview
                         }
                         else
                         {
-
                             let kind = object["kind"] as? String /* Content kind discriminator */
 
                             roles[asset, default: []].insert(kind == "photo" ? "image" :
@@ -216,7 +206,6 @@ enum MigrationAssetPreview
         {
             if candidates.count == 1, let parent = candidates.first, parent != child, paths[parent] != nil
             {
-
                 derivations[child] = parent
 
             }
@@ -230,7 +219,6 @@ enum MigrationAssetPreview
 
         for child in proposed.keys
         {
-
             var visited: Set<String> = []    /* Records already traversed  */
             var current: String?     = child /* Current operation snapshot */
 
@@ -252,7 +240,6 @@ enum MigrationAssetPreview
 
         for id in paths.keys.sorted()
         {
-
             let path        = paths[id]! /* Filesystem or navigation path */
             let filename    =            /* Original file basename        */
                 String(path.split(separator: "/").last ?? "")

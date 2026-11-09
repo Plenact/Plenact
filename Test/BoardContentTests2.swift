@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testListAppearanceChangesOnlyCanonicalMetadataAndResetsToNil
     /// @brief      Verify that list Appearance Changes Only Canonical Metadata And Resets To Nil
@@ -37,7 +35,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testListAppearanceChangesOnlyCanonicalMetadataAndResetsToNil() throws
     {
-
         let photo = /* Photo selection or source */
             KanbanAttachment(exampleImage: .camping, caption: "A day outdoors")
         let card  = KanbanCard( /* Synthetic card fixture */
@@ -103,7 +100,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testPictureRowsHaveNoFooterOrInternalPaddingAtBothBoardDensities() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -114,7 +110,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -129,10 +124,8 @@ extension PlenactBoardDocumentTests
 
         for density in BoardPresentation.allCases
         {
-
             for title in ["", "A long retained title that must not add a footer to this Picture row"]
             {
-
                 var card = KanbanCard( /* Synthetic card fixture */
                     id: 81, word: title, listTitle: "Ideas", attachments: [photo], coverAttachmentID: photo.id)
 
@@ -172,7 +165,6 @@ extension PlenactBoardDocumentTests
                 try await Task.sleep(for: .milliseconds(300))
                 for width: CGFloat in [320, 430]
                 {
-
                     let size = /* Content or layout size */
                         host.sizeThatFits(in: CGSize(width: width, height: 10_000))
 
@@ -214,8 +206,6 @@ extension PlenactBoardDocumentTests
     ///
     func testListEditingPreservesRetainedRecordsAndRoundTripsSubtitle() throws
     {
-
-
         let card    = /* Synthetic card fixture */
             KanbanCard(id: 10, word: "Synthetic", listTitle: "Thursday", descriptionOverride: "Retained body")
         let divider = /* Structural section divider */
@@ -272,7 +262,6 @@ extension PlenactBoardDocumentTests
     ///
     func testVoiceSaveOptionsKeepOnlySelectedContentAndPreserveRichWriting() throws
     {
-
         let rich = /* Rich comparison fixture */
         PlanRichText.prefix
         + (try JSONEncoder().encode([PlanRichText.Run(text: "Keep this writing", bold: true)]))
@@ -282,7 +271,6 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(VoiceCaptureSaveOption.audio.body(existing: rich, transcript: transcript), rich)
         for option in [VoiceCaptureSaveOption.text, .both]
         {
-
             let body = /* Note or description text */
                 option.body(existing: rich, transcript: transcript)
 
@@ -310,8 +298,6 @@ extension PlenactBoardDocumentTests
     ///
     func testLegacyItemsRemainCardsAndRejectInvalidPresentations() throws
     {
-
-
         let data = Data( /* Encoded or loaded bytes */
                         #"{"id":1,"title":"Legacy","cards":[{"id":2,"word":"Retain","listTitle":"Legacy","checklists":[]}]}"#.utf8) /* JSON fixture bytes for the compatibility check */
         let list = try JSONDecoder().decode( /* Synthetic list fixture */
@@ -352,7 +338,6 @@ extension PlenactBoardDocumentTests
     ///
     func testMultilineEntriesPreserveOrderIgnoreBlankLinesAndCreateDistinctCards() throws
     {
-
         let input = " A\r\nB\n\n C \rD\nA\n" /* Source operation input */
 
         XCTAssertEqual(MultilineEntry.titles(input), ["A", "B", "C", "D", "A"])
@@ -400,15 +385,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWeekSaveCompletionRunsOnlyAfterSuccessfulWrite() async throws
     {
-
-
         let suite    = "Plenact.DeletionCompletionTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))          /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
             DatabaseActivity.shared.dismissError()
         }
@@ -420,8 +401,6 @@ extension PlenactBoardDocumentTests
             [], suiteName: suite,
             onSuccess:
             {
-
-
                 XCTAssertNotNil(defaults.data(forKey: "Plenact.Board.v1"))
                 success.fulfill()
             })
@@ -465,8 +444,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testLibraryContainsOnlyPersonalCollectionsWithoutChangingWeek() async throws
     {
-
-
         let week     = SampleData.lists    /* Archived weekly-board fixture */
         var archived = PersonalCollection( /* Archived records or state     */
             title: "Archived fixture", kind: .board) /* Archived value for restoration checks */
@@ -488,8 +465,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -508,12 +483,8 @@ extension PlenactBoardDocumentTests
         ///
         func collectionView(in view: UIView) -> UICollectionView?
         {
-
-
             if let collection = view as? UICollectionView /* Matched native List collection view */
             {
-
-
                 return collection
             }
 
@@ -527,8 +498,6 @@ extension PlenactBoardDocumentTests
 
         for fixtures in [[personal], collections, []]
         {
-
-
             var current = fixtures /* Current collections displayed by the Library */
 
             let controller = UIHostingController( /* Native view controller */
@@ -539,7 +508,6 @@ extension PlenactBoardDocumentTests
                             current
                         }, set:
                         {
-
                             current = $0
 
                         }),
@@ -565,8 +533,6 @@ extension PlenactBoardDocumentTests
 
             let count = (0 ..< list.numberOfSections).reduce(0) /* Number of entries */
             {  /* Number of matching values */
-
-
                 $0 + list.numberOfItems(inSection: $1)
             }
 
@@ -592,12 +558,8 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testLibraryRowsFitLongTitlesAndAccessibilityText()
     {
-
-
         for width: CGFloat in [280, 700]
         {
-
-
             let row = LibraryCollectionRow( /* Rendered collection row */
                 title: "Ideas and plans for the coming season",
                 subtitle: "Board · 3 lists", icon: "square.stack.3d.up", color: .blue, count: 12
@@ -633,8 +595,6 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardPresentationWidthsInPortraitLandscapeAndAccessibility()
     {
-
-
         XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 393, accessibilitySize: false), 329)
         XCTAssertEqual(BoardPresentation.overview.columnWidth(viewportWidth: 393, accessibilitySize: false), 240)
         XCTAssertEqual(BoardPresentation.standard.columnWidth(viewportWidth: 852, accessibilitySize: false), 360)
@@ -644,15 +604,11 @@ extension PlenactBoardDocumentTests
 
         for preset in BoardPresentation.allCases
         {
-
-
             XCTAssertEqual(preset.columnWidth(viewportWidth: 320, accessibilitySize: true), 292)
             XCTAssertEqual(preset.columnWidth(viewportWidth: 200, accessibilitySize: false), 172)
 
             for width: CGFloat in [0, 28, -1, .nan, .infinity]
             {
-
-
                 XCTAssertEqual(preset.columnWidth(viewportWidth: width, accessibilitySize: false), 1)
             }
 
@@ -671,12 +627,8 @@ extension PlenactBoardDocumentTests
     ///
     func testSingleListCollectionUsesAvailableStandardWidthWithoutChangingOverview()
     {
-
-
         for width: CGFloat in [320, 393, 852]
         {
-
-
             XCTAssertEqual(
                 BoardPresentation.standard.columnWidth(
                     viewportWidth: width, accessibilitySize: false, fillsAvailableWidth: true
@@ -701,8 +653,6 @@ extension PlenactBoardDocumentTests
 
         for width: CGFloat in [0, 28, -1, .nan, .infinity]
         {
-
-
             XCTAssertEqual(
                 BoardPresentation.standard.columnWidth(
                     viewportWidth: width, accessibilitySize: false, fillsAvailableWidth: true
@@ -725,15 +675,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBoardPresentationPreferenceIsLocalAndLeavesBoardSnapshotsUntouched() throws
     {
-
-
         let suite    = "Plenact.BoardPresentationTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))         /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -782,15 +728,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCardSummaryDoesNotStretchToFillListHeight()
     {
-
-
         let card = KanbanCard( /* Synthetic card fixture */
             id: 101, word: "Review the week ahead", listTitle: "Synthetic list") /* Card value under verification */
 
         for preset in BoardPresentation.allCases
         {
-
-
             let controller = UIHostingController( /* Native view controller */
                 rootView: KanbanCardView( /* Hosted controller for layout assertions */
                     card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
@@ -802,13 +744,10 @@ extension PlenactBoardDocumentTests
                     },
                     onDeleteCard:
                     {
-
                     }, onArchiveCard:
                     {
-
                     }, onToggle:
                     {
-
                     }
                 ).environment(\.dynamicTypeSize, .large))
 
@@ -837,8 +776,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testNavigationLinkedCardRowsRemainCompactInAList() async throws
     {
-
-
         let card = KanbanCard( /* Synthetic card fixture */
             id: 102, word: "Review the week ahead", listTitle: "Synthetic list") /* Card value under verification   */
         let scene = try XCTUnwrap( /* Owning window scene */
@@ -851,8 +788,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -871,12 +806,8 @@ extension PlenactBoardDocumentTests
         ///
         func collectionView(in view: UIView) -> UICollectionView?
         {
-
-
             if let collection = view as? UICollectionView /* Matched native List collection view */
             {
-
-
                 return collection
             }
 
@@ -890,22 +821,16 @@ extension PlenactBoardDocumentTests
 
         for preset in BoardPresentation.allCases
         {
-
-
             let view = NavigationStack /* View being rendered */
             {  /* Hosted view under test */
-
                 List
                 {
-
                     NavigationLink
                     {
-
                         Text("Synthetic card detail")
                     }
                     label:
                     {
-
                         KanbanCardView(
                             card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
                             presentation: preset, labelLibrary: .starter,
@@ -916,13 +841,10 @@ extension PlenactBoardDocumentTests
                             },
                             onDeleteCard:
                             {
-
                             }, onArchiveCard:
                             {
-
                             }, onToggle:
                             {
-
                             }
                         )
                     }
@@ -964,8 +886,6 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardBoundaryNavigationTargetsFirstAndLastActiveLists()
     {
-
-
         let lists    = SampleData.lists /* Board lists under verification              */
         let original = lists            /* Pre-operation value for preservation checks */
 
@@ -993,8 +913,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testNativeCardDropCommitsOriginalRecordAndRejectsForeignOrEndedSessions() throws
     {
-
-
         let card  = KanbanCard(id: 1, word: "Synthetic", listTitle: "Source") /* Card value under verification  */
         var lists = [ /* Ordered List records */
             KanbanList(id: 10, title: "Source", cards: [card]), /* Board lists under verification */
@@ -1011,7 +929,6 @@ extension PlenactBoardDocumentTests
                 _ in
             }, onEnded:
             {
-
                 ends += 1
 
             }
@@ -1042,14 +959,10 @@ extension PlenactBoardDocumentTests
 
                 do
                 {
-
-
                     return try BoardCardMovement.move(card.id, to: target.listID, in: &lists)
                 }
                 catch
                 {
-
-
                     XCTFail("Drop failed: \(error)");
                     return false
                 }
@@ -1111,15 +1024,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBackgroundBoardSavesPreserveLatestSnapshot() async throws
     {
-
-
         let suite    = "Plenact.BackgroundBoardTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -1158,15 +1067,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBackgroundBoardSaveFailurePreservesPreviousSnapshot() async throws
     {
-
-
         let suite    = "Plenact.BackgroundBoardTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
             DatabaseActivity.shared.dismissError()
         }
@@ -1205,8 +1110,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSearchScopesUseOnlyTheirSelectedFields()
     {
-
-
         let card = KanbanCard( /* Card value under verification */
             id: 1, word: "Proposal", listTitle: "Monday",
             members: [.manual("Jamie")], labelIDs: ["work-scheduled"],
@@ -1227,8 +1130,6 @@ extension PlenactBoardDocumentTests
         ///
         func matches(_ term: String, _ scope: TodaySearchScope) -> [TodaySearchResult]
         {
-
-
             TodaySearchIndex.results(query: term, scope: scope, lists: lists, library: .starter)
         }
 
@@ -1256,8 +1157,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPersonalCollectionRenameAndSearchPreserveCardIdentity()
     {
-
-
         var collection = PersonalCollection(title: "Shopping", kind: .list) /* Collection state under verification */
 
         collection.lists[0].cards = [
@@ -1297,8 +1196,6 @@ extension PlenactBoardDocumentTests
     ///
     func testRegisteredAssigneeRequiresUUID()
     {
-
-
         var card = SampleData.lists[0].cards[0] /* Starter card */
 
         card.members = [.registered(userID: "Jim", displayName: "Jim")]
@@ -1321,8 +1218,6 @@ extension PlenactBoardDocumentTests
     ///
     func testManualAssigneeCannotContainUserID()
     {
-
-
         var card = SampleData.lists[0].cards[0] /* Starter card */
 
         card.members = [CardAssignee(kind: .manual, userID: UUID().uuidString, displayName: "Jim")]
@@ -1347,8 +1242,6 @@ extension PlenactBoardDocumentTests
     ///
     func testSampleDataSeedRequestFitsJSONBodyLimit() throws
     {
-
-
         let jim = PlenactRemoteUser( /* Synthetic directory-user fixture */
             userID: "fb13a9ee-9107-47c3-bb4f-dff07fe57eba",
             username: "jim",
@@ -1375,8 +1268,6 @@ extension PlenactBoardDocumentTests
     ///
     func testJSONBodySizeLimitIncludesExactBoundary()
     {
-
-
         let maximumBody = Data( /* Maximum body */
             repeating: 0, count: PlenactAPIClient.maximumJSONBodyBytes) /* Allowed request-body size */
         let oversizedBody = Data( /* Oversized body */
@@ -1396,8 +1287,6 @@ extension PlenactBoardDocumentTests
     ///
     func testAPIClientRejectsPlainHTTPEndpoint()
     {
-
-
         let insecureURL = URL(string: "http://demo.example.test/api/")! /* Test-only plaintext endpoint */
 
         XCTAssertThrowsError(try PlenactAPIClient(baseURL: insecureURL))
@@ -1409,8 +1298,6 @@ extension PlenactBoardDocumentTests
             case .invalidEndpoint = apiError
             else
             {
-
-
                 XCTFail("Expected the API client to reject plain HTTP.")
 
                 return
@@ -1429,20 +1316,17 @@ extension PlenactBoardDocumentTests
 
 extension PlenactBoardDocumentTests
 {
-
     /// @fcn PlenactBoardDocumentTests.testBuiltInListSubtitlesUseDistinctConciseDefaults
     /// @brief Distinguish built-in Lists even when their owner-local numeric IDs are identical
     /// @return Void; no source records or preferences are changed
     func testBuiltInListSubtitlesUseDistinctConciseDefaults() throws
     {
-
         for (example, subtitle) in [
             (PersonalListExample.onTheTable, "Idea taking shape"),
             (.inTheQueue, "Things you got started"),
             (.scheduled, "Upcoming activities")
         ]
         {
-
             let collection = DefaultListTutorial.makeStarter(title: example.rawValue) /* Synthetic built-in List */
             let list = try XCTUnwrap(collection.lists.first) /* Owner-local List with no saved subtitle */
             let original = list /* Snapshot proving rendering does not rewrite the model */

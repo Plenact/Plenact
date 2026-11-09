@@ -18,11 +18,8 @@ import SwiftUI
 ///
 struct PlanningCalendarView: View
 {
-
-
     var onLeaveForHome: () -> Void = /* Leave for home callback */
     {
-
     }
 
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
@@ -51,10 +48,8 @@ struct PlanningCalendarView: View
     ///
     init(initialDate: Date = .now, onLeaveForHome: @escaping () -> Void =
         {
-
         })
     {
-
         self.onLeaveForHome = onLeaveForHome
         _month = State(initialValue: Calendar.current.dateInterval(of: .month, for: initialDate)?.start ?? initialDate)
         _selectedDate = State(initialValue: Calendar.current.startOfDay(for: initialDate))
@@ -68,7 +63,6 @@ struct PlanningCalendarView: View
 
     private var rows: [[Date]] /* Rows used by this layout */
     {
-
         let calendar = displayCalendar /* Date calculation calendar */
 
         guard let first = calendar.dateInterval(of: .month, for: month)?.start,
@@ -97,7 +91,6 @@ struct PlanningCalendarView: View
 
     private var symbols: [String] /* Available SF Symbols */
     {
-
         let calendar = displayCalendar                            /* Date calculation calendar */
         let values   = calendar.veryShortStandaloneWeekdaySymbols /* Values being processed    */
 
@@ -121,7 +114,6 @@ struct PlanningCalendarView: View
     ///
     private func week(on date: Date) -> DatedPlanningWeek
     {
-
         access?.document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: displayCalendar)
     }
 
@@ -139,7 +131,6 @@ struct PlanningCalendarView: View
     ///
     private func items(on date: Date) -> [PlanningSearchResult]
     {
-
         guard let access else
         {
             return []
@@ -161,19 +152,16 @@ struct PlanningCalendarView: View
     ///
     private func open(_ result: PlanningSearchResult)
     {
-
         if let key = result.weekKey, let savedWeek = access?.document.weeks.first(where:
             {
                 $0.startKey == key
             })
         {
-
             route = PlanningWeekRoute(week: savedWeek, dayID: result.listID, cardID: result.card.id)
 
         }
         else
         {
-
             access?.openLibraryCard(
                 PersonalSavedCardTarget(
                     collectionID: result.collectionID, listID: result.listID, cardID: result.card.id))
@@ -185,16 +173,12 @@ struct PlanningCalendarView: View
 
     var body: some View /* Planning Calendar layout */
     {
-
         NavigationStack
         {
-
             ScrollView
             {
-
                 VStack(alignment: .leading, spacing: 20)
                 {
-
                     monthGrid.dynamicTypeSize(.large)  // Seven columns stay legible; full dates are announced by VoiceOver
                     daySummary
                 }
@@ -221,7 +205,6 @@ struct PlanningCalendarView: View
                     isPresented: $showsSearch,
                     onLeaveForHome:
                     {
-
                         dismiss();
                         onLeaveForHome()
                     })
@@ -233,7 +216,6 @@ struct PlanningCalendarView: View
                     week: route.week, initialDayID: route.dayID, initialCardID: route.cardID,
                     onLeaveForHome:
                     {
-
                         self.route = nil;
 
                         dismiss();
@@ -247,24 +229,19 @@ struct PlanningCalendarView: View
 
     private var calendarHeader: some View /* Calendar header */
     {
-
         HStack(spacing: 0)
         {
-
             Button
             {
-
                 dismiss()
             }
             label:
             {
-
                 WorkspaceHeaderIcon(systemName: "chevron.left")
             }
             .accessibilityLabel("Close Calendar")
             VStack(alignment: .leading, spacing: 4)
             {
-
                 Text("Calendar")
                 .font(.largeTitle.weight(.bold))
                 .lineLimit(1)
@@ -276,39 +253,33 @@ struct PlanningCalendarView: View
             .frame(maxWidth: .infinity, alignment: .leading)
             Button
             {
-
                 showsSearch = true
 
             }
             label:
             {
-
                 WorkspaceHeaderIcon(systemName: "magnifyingglass")
             }
             .accessibilityLabel("Search Plenact")
             Button
             {
-
                 access?.openCurrentWeek();
                 dismiss();
                 onLeaveForHome()
             }
             label:
             {
-
                 WorkspaceHeaderIcon(systemName: "rectangle.split.3x1")
             }
             .accessibilityLabel("Open This Week")
             Button
             {
-
                 access?.openToday();
                 dismiss();
                 onLeaveForHome()
             }
             label:
             {
-
                 WorkspaceHeaderIcon(systemName: "sun.max")
             }
             .accessibilityLabel("Open Today")
@@ -322,7 +293,6 @@ struct PlanningCalendarView: View
         .frame(maxWidth: .infinity)
         .background
         {
-
             LinearGradient(
                 colors: [Color(red: 0.10, green: 0.18, blue: 0.25), Color(red: 0.22, green: 0.34, blue: 0.38)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
@@ -335,21 +305,16 @@ struct PlanningCalendarView: View
 
     private var monthGrid: some View /* Month grid */
     {
-
         VStack(spacing: 10)
         {
-
             HStack
             {
-
                 Button
                 {
-
                     moveMonth(-1)
                 }
                 label:
                 {
-
                     Image(systemName: "chevron.left").frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Previous month")
@@ -358,12 +323,10 @@ struct PlanningCalendarView: View
                 Spacer()
                 Button
                 {
-
                     moveMonth(1)
                 }
                 label:
                 {
-
                     Image(systemName: "chevron.right").frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Next month")
@@ -371,7 +334,6 @@ struct PlanningCalendarView: View
 
             HStack(spacing: 2)
             {
-
                 Color.clear.frame(width: 44, height: 24)
                 ForEach(Array(symbols.enumerated()), id: \.offset)
                 {
@@ -396,19 +358,15 @@ struct PlanningCalendarView: View
 
                 HStack(spacing: 2)
                 {
-
                     if let rowWeek
                     {
-
                         Button
                         {
-
                             route = PlanningWeekRoute(week: rowWeek)
 
                         }
                         label:
                         {
-
                             Image(
                                 systemName: rowWeek.hasContent || isCurrent
                                 ? "rectangle.split.3x1.fill" : "rectangle.split.3x1"
@@ -445,7 +403,6 @@ struct PlanningCalendarView: View
 
             HStack(spacing: 5)
             {
-
                 Circle().fill(Color.accentColor).frame(width: 5, height: 5)
                 Text("Items planned or scheduled · highlighted row is this week")
                 .font(.caption2).foregroundStyle(.secondary)
@@ -469,23 +426,19 @@ struct PlanningCalendarView: View
     ///
     private func dayButton(_ date: Date) -> some View
     {
-
         let selected = /* Current selection */
             Calendar.current.isDate(date, inSameDayAs: selectedDate)
         let count    = items(on: date).count /* Number of entries */
 
         return Button
         {
-
             selectedDate = date
 
         }
         label:
         {
-
             VStack(spacing: 4)
             {
-
                 Text(date.formatted(.dateTime.day()))
                 .font(
                     displayCalendar.isDateInToday(date)
@@ -506,18 +459,14 @@ struct PlanningCalendarView: View
 
     private var daySummary: some View /* Day summary */
     {
-
         VStack(alignment: .leading, spacing: 14)
         {
-
             HStack
             {
-
                 Text(selectedDate.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())).font(.headline)
                 Spacer()
                 Button
                 {
-
                     var target = week(on: selectedDate)          /* Target under consideration  */
                     let listID = target.prepareDay(selectedDate) /* Owner-local List identifier */
 
@@ -526,7 +475,6 @@ struct PlanningCalendarView: View
                 }
                 label:
                 {
-
                     Image(systemName: "arrow.up.right.square").font(.title3).frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Open this day's list")
@@ -536,7 +484,6 @@ struct PlanningCalendarView: View
 
             if selectedItems.isEmpty
             {
-
                 Text("Nothing planned yet. Open this day to add your first item.").foregroundStyle(.secondary)
             }
 
@@ -545,12 +492,10 @@ struct PlanningCalendarView: View
                 result in
                 Button
                 {
-
                     open(result)
                 }
                 label:
                 {
-
                     PlanningCalendarResultRow(result: result)
                 }
                 .buttonStyle(.plain)
@@ -579,10 +524,8 @@ struct PlanningCalendarView: View
     ///
     private func moveMonth(_ amount: Int)
     {
-
         if let next = Calendar.current.date(byAdding: .month, value: amount, to: month)
         {
-
             month = next
 
         }
@@ -601,16 +544,12 @@ struct PlanningCalendarView: View
 ///
 struct PlanningCalendarResultRow: View
 {
-
-
     let result: PlanningSearchResult /* Result being assembled */
 
     var body:   some View /* Planning Calendar Result layout */
     {
-
         HStack(alignment: .top, spacing: 12)
         {
-
             Image(
                 systemName: result.card.displayFormat == .card
                 ? (result.card.isTitleChecked ? "checkmark.square.fill" : "square") : "doc.text"
@@ -618,7 +557,6 @@ struct PlanningCalendarResultRow: View
             .foregroundStyle(result.card.isTitleChecked ? Color.green : Color.secondary)
             VStack(alignment: .leading, spacing: 4)
             {
-
                 Text(result.card.word).foregroundStyle(.primary)
                 Text("\(result.collectionTitle) · \(result.listTitle)").font(.caption).foregroundStyle(.secondary)
             }
@@ -641,8 +579,6 @@ struct PlanningCalendarResultRow: View
 ///
 struct PlanningWeekSelector: View
 {
-
-
     let document:                          PlanningCalendarDocument /* Working calendar document */
     let sources:                           [PlanningSearchResult] /* Source records or files */
     let onSelect:                          (DatedPlanningWeek, Date) -> Void /* Handle the selected value */
@@ -674,7 +610,6 @@ struct PlanningWeekSelector: View
         onSelect: @escaping (DatedPlanningWeek, Date) -> Void
     )
     {
-
         self.document = document
         self.onSelect = onSelect
         self.sources = sources
@@ -698,7 +633,6 @@ struct PlanningWeekSelector: View
     ///
     static func choices(document: PlanningCalendarDocument, referenceDate: Date) -> [DatedPlanningWeek]
     {
-
         var choices = /* Available user selections */
             Dictionary(uniqueKeysWithValues: document.weeks.map
             {
@@ -707,10 +641,8 @@ struct PlanningWeekSelector: View
 
         for offset in -8 ... 8
         {
-
             guard let date = document.calendar.date(byAdding: .weekOfYear, value: offset, to: referenceDate) else
             {
-
                 continue
             }
 
@@ -719,7 +651,6 @@ struct PlanningWeekSelector: View
 
             if choices[key] == nil
             {
-
                 choices[key] = DatedPlanningWeek.make(for: date, calendar: document.calendar)
 
             }
@@ -747,7 +678,6 @@ struct PlanningWeekSelector: View
     ///
     static func monthDays(_ date: Date, calendar: Calendar) -> [Date]
     {
-
         guard let first = calendar.dateInterval(of: .month, for: date)?.start,
         let gridStart = calendar.dateInterval(of: .weekOfYear, for: first)?.start
         else
@@ -764,7 +694,6 @@ struct PlanningWeekSelector: View
 
     private var rows: [[Date]] /* Rows used by this layout */
     {
-
         let days = /* Dates in the selected range */
             Self.monthDays(referenceDate, calendar: document.calendar)
 
@@ -777,7 +706,6 @@ struct PlanningWeekSelector: View
 
     private var weekdaySymbols: [String] /* Weekday symbols */
     {
-
         let symbols = document.calendar.veryShortStandaloneWeekdaySymbols /* Available SF Symbols */
 
         return (0 ..< 7).map
@@ -799,11 +727,9 @@ struct PlanningWeekSelector: View
     ///
     private func changeMonth(_ amount: Int)
     {
-
         if let first = document.calendar.dateInterval(of: .month, for: referenceDate)?.start,
         let next = document.calendar.date(byAdding: .month, value: amount, to: first)
         {
-
             referenceDate = next
 
         }
@@ -823,7 +749,6 @@ struct PlanningWeekSelector: View
     ///
     private func select(_ date: Date)
     {
-
         guard !isSelecting else
         {
             return
@@ -836,7 +761,6 @@ struct PlanningWeekSelector: View
 
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12))
         {
-
             highlightedWeekKey = key
             selectedDate = date
 
@@ -865,40 +789,31 @@ struct PlanningWeekSelector: View
 
     var body: some View /* Planning Week Selector layout */
     {
-
         NavigationStack
         {
-
             ScrollView
             {
-
                 VStack(spacing: 12)
                 {
-
                     HStack
                     {
-
                         Text(referenceDate.formatted(.dateTime.month(.wide).year())).font(.headline)
                         Spacer()
                         Button
                         {
-
                             changeMonth(-1)
                         }
                         label:
                         {
-
                             Image(systemName: "chevron.left").frame(width: 44, height: 44)
                         }
                         .accessibilityLabel("Previous month")
                         Button
                         {
-
                             changeMonth(1)
                         }
                         label:
                         {
-
                             Image(systemName: "chevron.right").frame(width: 44, height: 44)
                         }
                         .accessibilityLabel("Next month")
@@ -906,7 +821,6 @@ struct PlanningWeekSelector: View
                     .foregroundStyle(.primary)
                     HStack(spacing: 0)
                     {
-
                         ForEach(Array(weekdaySymbols.enumerated()), id: \.offset)
                         {
                             _, symbol in
@@ -918,7 +832,6 @@ struct PlanningWeekSelector: View
 
                     VStack(spacing: 4)
                     {
-
                         ForEach(rows.indices, id: \.self)
                         {
                             row in
@@ -927,14 +840,12 @@ struct PlanningWeekSelector: View
                             let highlighted =           /* Current-day highlight state  */
                             dates.first.map
                             {
-
                                 PlanningDate.weekKey($0, calendar: document.calendar) == highlightedWeekKey
                             }
                             ?? false
 
                             HStack(spacing: 0)
                             {
-
                                 ForEach(dates, id: \.self)
                                 {
                                     date in
@@ -950,15 +861,12 @@ struct PlanningWeekSelector: View
 
                                     Button
                                     {
-
                                         select(date)
                                     }
                                     label:
                                     {
-
                                         VStack(spacing: 2)
                                         {
-
                                             Text(String(document.calendar.component(.day, from: date)))
                                             .font(.body.weight(selected ? .semibold : .regular))
                                             .foregroundStyle(
@@ -992,7 +900,6 @@ struct PlanningWeekSelector: View
 
                     HStack(spacing: 5)
                     {
-
                         Circle().fill(Color.blue).frame(width: 5, height: 5).accessibilityHidden(true)
                         Text("Items planned or scheduled").font(.caption).foregroundStyle(.secondary)
                     }
@@ -1039,8 +946,6 @@ struct PlanningWeekSelector: View
 ///
 struct PlanningDaySelector: View
 {
-
-
     @State private var date: Date               /* Date used by this operation    */
     let onSelect:            (Date) -> Void     /* Handle the selected value      */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
@@ -1058,7 +963,6 @@ struct PlanningDaySelector: View
     ///
     init(initialDate: Date, onSelect: @escaping (Date) -> Void)
     {
-
         _date = State(initialValue: initialDate)
         self.onSelect = onSelect
 
@@ -1066,10 +970,8 @@ struct PlanningDaySelector: View
 
     var body: some View /* Planning Day Selector layout */
     {
-
         NavigationStack
         {
-
             DatePicker("Choose a day", selection: $date, displayedComponents: .date)
             .datePickerStyle(.graphical)
             .padding()
@@ -1077,7 +979,6 @@ struct PlanningDaySelector: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -1089,10 +990,8 @@ struct PlanningDaySelector: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Show day")
                     {
-
                         dismiss();
                         onSelect(date)
                     }

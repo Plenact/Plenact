@@ -13,13 +13,11 @@ import Foundation
 @MainActor
 enum MigrationStudioPreview
 {
-
     /// Independent local appearance evidence and canonical saved artwork records
     /// @section Purpose
     ///     Keep source-order/global-default preservation distinct from final contract integration
     struct Result
     {
-
         let document:      [String: Any]       /* Source document snapshot */
         let appearanceDocument: [String: Any]  /* Appearance document      */
         let appearanceRecords: [[String: Any]] /* Appearance records       */
@@ -40,7 +38,6 @@ enum MigrationStudioPreview
     /// @throws Invalid colors, numeric bounds, URL/file references or native metadata
     private static func surface(_ source: StudioSurface, context: MigrationContentValues) throws -> Any
     {
-
         for hex in [source.color, source.secondaryColor]
         {
             guard hex.range(of: "^[0-9A-F]{6}$", options: .regularExpression) != nil else
@@ -65,7 +62,6 @@ enum MigrationStudioPreview
     static func prepare(values: [String: Any], records: [[String: Any]], mediaDigests: [String: String],
         journal: inout MigrationIdentityJournal, assetTargets: [String: String] = [:]) throws -> Result
     {
-
         let context = /* Operation context */
             MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: mediaDigests)
 
@@ -167,7 +163,6 @@ enum MigrationStudioPreview
             }
             for item in artwork
             {
-
                 let id = /* Portable record identity */
                     try context.id("studio_artwork", owner: "artwork_library", legacy: item.id.uuidString.lowercased())
 
@@ -196,7 +191,6 @@ enum MigrationStudioPreview
             // Validate complete surfaces even where the generic appearance mapper preserves strings
             for item in [saved.studioSurface, saved.studioCardSurface].compactMap({ $0 })
             {
-
                 _ = try surface(item, context: context)
 
             }

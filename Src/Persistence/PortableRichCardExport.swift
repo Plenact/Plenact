@@ -14,7 +14,6 @@ import Foundation
 @MainActor
 enum PortableRichCardExport
 {
-
     /// @fcn PortableRichCardExport.identity
     /// @brief Derive a repeatable UUIDv5 within an explicit retained namespace
     /// @param[in] namespace Existing workspace or account UUID
@@ -23,7 +22,6 @@ enum PortableRichCardExport
     /// @throws Invalid namespace
     static func identity(namespace: String, name: String) throws -> String
     {
-
         guard var uuid = UUID(uuidString: namespace)?.uuid else
         {
             throw PortableEditedExport.Failure.inconsistent
@@ -56,7 +54,6 @@ enum PortableRichCardExport
     static func enrich(backup: LegacyWorkspaceBackup, snapshot: FileWrapper,
         baseline: PortableWorkspaceCandidate) throws -> (files: FileWrapper, names: [String: String])
     {
-
         let report    = /* Validation findings */
             try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as! [String: Any]
         let inventory = report["media"] as! [[String: Any]]          /* Verified source inventory */
@@ -98,7 +95,6 @@ enum PortableRichCardExport
 
         for path in paths.subtracting(baseline.media.files.keys).sorted()
         {
-
             let bytes = /* Serialized or original bytes */
                 try MigrationBackupReader.file(path, in: backup.files)
             let hash  = MigrationBackupReader.digest(bytes)  /* Content integrity digest */
@@ -165,7 +161,6 @@ enum PortableRichCardExport
 
         for (name, file) in blobs
         {
-
             let bytes = file.regularFileContents! /* Serialized or original bytes */
 
             files.append(["path": "Originals/" + name, "byte_length": bytes.count, "sha256": MigrationBackupReader.digest(bytes)])

@@ -12,7 +12,6 @@ import SwiftUI
 ///     Make portable test installation visible independently of the original native backup
 struct PortableWorkspaceInspector: View
 {
-
     let package: ReviewedPortablePackage /* Portable package contents */
 
 
@@ -21,7 +20,6 @@ struct PortableWorkspaceInspector: View
     /// @return Canonical base workspace, or an empty value if presentation decoding unexpectedly fails
     private var base: [String: Any] /* Base value before overrides */
     {
-
         guard let files = FileWrapper(serializedRepresentation: package.snapshot),
               let bytes = try? MigrationBackupReader.file("Assembly.json", in: files),
               let assembly = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any],
@@ -36,7 +34,6 @@ struct PortableWorkspaceInspector: View
 
         if var planning = base["planning"] as? [String: Any], var content = planning["content"] as? [String: Any]
         {
-
             content["cards"] = (content["cards"] as? [[String: Any]] ?? []).filter { !deleted.contains($0["id"] as? String ?? "") }
             content["lists"] = (content["lists"] as? [[String: Any]] ?? []).map { record in
 
@@ -46,7 +43,6 @@ struct PortableWorkspaceInspector: View
                 {
                     for key in ["card_ids", "archived_card_ids"]
                     {
-
                         payload[key] = (payload[key] as? [String] ?? []).filter { !deleted.contains($0) }
 
                     }
@@ -69,7 +65,6 @@ struct PortableWorkspaceInspector: View
     /// @return Read-only List and Card navigation with summary metadata
     var body: some View /* Portable Workspace Inspector layout */
     {
-
         let base       = base /* Base value before overrides */
         let planning   = base["planning"] as? [String: Any] ?? [:] /* Planning store projection */
         let content    = planning["content"] as? [String: Any] ?? [:] /* Content being processed */

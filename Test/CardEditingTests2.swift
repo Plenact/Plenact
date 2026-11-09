@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testHostedNoteToolbarLayoutPreservesContent()
     /// @brief      Verify the hosted Note toolbar layout does not mutate the Note
@@ -37,8 +35,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testHostedNoteToolbarLayoutPreservesContent() async throws
     {
-
-
         var note = KanbanCard( /* Note value under verification */
             id: 93, word: "Synthetic toolbar Note", listTitle: "Synthetic ideas",
             descriptionOverride: "A calm writing area with attachments below.",
@@ -65,8 +61,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -82,13 +76,10 @@ extension PlenactBoardDocumentTests
 
         for (name, size, textSize) in layouts
         {
-
-
             var emitted: [KanbanCard] = []                   /* Captured callback results */
             let controller            = UIHostingController( /* Native view controller    */
                 rootView: NavigationStack
                 {  /* Hosted controller for layout assertions */
-
                     CardDetailView(card: note, onTitleToggle:
                         {
                             emitted.append($0)
@@ -134,8 +125,6 @@ extension PlenactBoardDocumentTests
     ///
     func testNoteSharingIncludesOnlyWrittenTextAndAttachedWebLinks() throws
     {
-
-
         var note = SampleData.lists[0].cards[0] /* Note value under verification */
 
         note.word = "Synthetic shared note"
@@ -171,8 +160,6 @@ extension PlenactBoardDocumentTests
     ///
     func testNoteSharingDoesNotFillEmptyBodyWithGeneratedDescription()
     {
-
-
         var note = KanbanCard( /* Note content record */
             id: 92, word: "Empty synthetic Note", listTitle: "Private list", presentation: .note) /* Note value under verification */
 
@@ -200,8 +187,6 @@ extension PlenactBoardDocumentTests
     ///
     func testNewPersonalNoteDraftSavesOnlyToSelectedList() throws
     {
-
-
         let initial = PersonalCollection( /* Initial operation state */
             title: "Initial ideas", kind: .list) /* Initial destination collection to preserve   */
         let selected = PersonalCollection( /* Current selection */
@@ -261,8 +246,6 @@ extension PlenactBoardDocumentTests
     ///
     func testNewPersonalNoteDraftRejectsUnavailableDestinationsAndBlankTitle()
     {
-
-
         let active = PersonalCollection( /* Active operation state */
             title: "Active ideas", kind: .list) /* Active personal collection used as an invalid target */
         let board = PersonalCollection( /* Board state under review */
@@ -282,8 +265,6 @@ extension PlenactBoardDocumentTests
 
         for id in [board.id, archived.id, empty.id, UUID()]
         {
-
-
             let draft = PersonalListNoteDraft( /* Local editing draft */
                 destinationID: id, title: "Idea", body: "Unsaved body") /* Uncommitted draft under test */
 
@@ -322,8 +303,6 @@ extension PlenactBoardDocumentTests
     ///
     func testNewPersonalNoteDraftPreservesSelectionAndTextAfterFailedSave() throws
     {
-
-
         let initial = PersonalCollection( /* Initial operation state */
             title: "Initial ideas", kind: .list) /* Initial destination collection to preserve   */
         let selected = PersonalCollection( /* Current selection */
@@ -383,8 +362,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPersonalNoteMovePreservesContentAndResolvesCollectionLocalIDCollision() throws
     {
-
-
         let attachment = KanbanAttachment( /* Owned attachment content */
             fileName: "synthetic-moved-note.jpg", mediaKind: .photo)  /* Attachment fixture under test */
         var note = KanbanCard(                                        /* Note value under verification */
@@ -467,8 +444,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPersonalNoteMovePreservesNonconflictingID() throws
     {
-
-
         var source = PersonalCollection(title: "Ideas", kind: .list) /* Source state before the operation */
         var note   = KanbanCard( /* Note content record */
             id: 14, word: "Read later", listTitle: "Ideas", checklists: [], presentation: .note) /* Note value under verification     */
@@ -503,8 +478,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testHostedNoteBodyEditsEmitCompleteRetainedSnapshots() async throws
     {
-
-
         var note = SampleData.lists[0].cards[0] /* Note value under verification */
 
         note.appearance = ItemAppearance(accent: .blue, icon: .heart, background: .rose)
@@ -522,8 +495,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -542,8 +513,6 @@ extension PlenactBoardDocumentTests
         ///
         func textViews(in view: UIView) -> [UITextView]
         {
-
-
             (view as? UITextView).map
             {
                 [$0]
@@ -563,8 +532,6 @@ extension PlenactBoardDocumentTests
 
         for fixture in [note, emptyNote]
         {
-
-
             var emitted: [KanbanCard] = [] /* Captured callback results */
 
             let controller = UIHostingController( /* Native view controller */
@@ -648,8 +615,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWeekRootRequestPopsCardDetailWithoutChangingContent() async throws
     {
-
-
         var lists    = SampleData.lists /* Board lists under verification              */
         let original = lists            /* Pre-operation value for preservation checks */
         let card     = try XCTUnwrap(   /* Synthetic card fixture                      */
@@ -673,15 +638,12 @@ extension PlenactBoardDocumentTests
         ///
         func board(_ request: Int) -> ContentView
         {
-
-
             ContentView(
                 lists: Binding(get:
                     {
                         lists
                     }, set:
                     {
-
                         lists = $0
 
                     }),
@@ -690,7 +652,6 @@ extension PlenactBoardDocumentTests
                         targetList
                     }, set:
                     {
-
                         targetList = $0
 
                     }),
@@ -699,7 +660,6 @@ extension PlenactBoardDocumentTests
                         targetCard
                     }, set:
                     {
-
                         targetCard = $0
 
                     }),
@@ -709,7 +669,6 @@ extension PlenactBoardDocumentTests
                         saved
                     }, set:
                     {
-
                         saved = $0
 
                     }),
@@ -737,13 +696,9 @@ extension PlenactBoardDocumentTests
         ///
         func navigation(in controller: UIViewController) -> UINavigationController?
         {
-
-
             if let navigation = controller
             as? UINavigationController /* Navigation controller found in the hosted hierarchy */
             {
-
-
                 return navigation
             }
 
@@ -766,8 +721,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -812,7 +765,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testDayViewNativeDragReordersCanonicalNotesAndPreservesCancelledDrags() async throws
     {
-
         let note = KanbanCard( /* Note content record */
             id: 10, word: "Synthetic Note", listTitle: "Thursday",
             checklists: [], descriptionOverride: "Retained body", presentation: .note)
@@ -833,7 +785,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -853,7 +804,6 @@ extension PlenactBoardDocumentTests
         ///
         func collectionView(in view: UIView) -> UICollectionView?
         {
-
             if let collection = view as? UICollectionView
             {
                 return collection
@@ -872,17 +822,14 @@ extension PlenactBoardDocumentTests
                         lists
                     }, set:
                     {
-
                         lists = $0
 
                     }), reservedLists: [],
                 labelLibrary: .constant(.starter), savedCardIDs: .constant([note.id]),
                 listID: 4, currentUserName: "Synthetic", onClose:
                 {
-
                 }, onOpenWeek:
                 {
-
                 },
                 onPermanentDelete:
                 {
@@ -924,7 +871,6 @@ extension PlenactBoardDocumentTests
         let source     = try XCTUnwrap( /* Source value for this operation */
             noteCell.contentView.interactions.compactMap
             {
-
                 ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator
             } .first)
 
@@ -967,7 +913,6 @@ extension PlenactBoardDocumentTests
         let currentSource = try XCTUnwrap( /* Current source */
             currentCell.contentView.interactions.compactMap
             {
-
                 ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator
             } .first)
 
@@ -1003,7 +948,6 @@ extension PlenactBoardDocumentTests
         let dividerSource      = try XCTUnwrap( /* Divider source */
             movableDividerCell.contentView.interactions.compactMap
             {
-
                 ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator
             } .first)
         let dividerItem = UIDragItem( /* Divider item */

@@ -25,8 +25,6 @@ import UniformTypeIdentifiers
 ///
 struct CardMembersSheet: View
 {
-
-
     let onSave:       ([CardAssignee]) -> Void  /* Save typed card assignments                        */
     let memberColors: [String: Color]           /* Shared icon colors keyed by normalized member name */
 
@@ -44,8 +42,6 @@ struct CardMembersSheet: View
     ///
     private var trimmedMemberDraft: String /* Trimmed member draft */
     {  /* Normalized manual-assignee input */
-
-
         memberDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -61,12 +57,9 @@ struct CardMembersSheet: View
     ///
     private var canAddMember: Bool /* Add Member availability */
     {  /* Draft is non-empty and not already assigned */
-
-
         !trimmedMemberDraft.isEmpty
         && !members.contains
         {
-
             $0.displayName.localizedCaseInsensitiveCompare(trimmedMemberDraft) == .orderedSame
         }
 
@@ -84,8 +77,6 @@ struct CardMembersSheet: View
     ///
     private var normalizedMembers: [CardAssignee] /* Normalized members */
     {  /* Deduplicated assignments prepared for saving */
-
-
         var seenAssignments: Set<String> = [] /* Identity keys already emitted */
 
         let manualDraft = /* Manual draft */
@@ -105,8 +96,6 @@ struct CardMembersSheet: View
 
             guard !trimmedName.isEmpty, seenAssignments.insert(identityKey).inserted else
             {
-
-
                 return nil
             }
 
@@ -135,8 +124,6 @@ struct CardMembersSheet: View
     ///
     init(members: [CardAssignee], memberColors: [String: Color], onSave: @escaping ([CardAssignee]) -> Void)
     {
-
-
         self.onSave = onSave
         self.memberColors = memberColors
         _members = State(initialValue: members)
@@ -158,12 +145,8 @@ struct CardMembersSheet: View
     ///
     private func addMember()
     {
-
-
         guard canAddMember else
         {
-
-
             return
         }
 
@@ -187,24 +170,14 @@ struct CardMembersSheet: View
     ///
     var body: some View /* Card Members layout */
     {  /* Member assignment editor */
-
-
         NavigationStack
         {
-
-
             List
             {
-
-
                 Section("Assigned users")
                 {
-
-
                     if members.isEmpty
                     {
-
-
                         Text("No users assigned")
                         .foregroundStyle(.secondary)
                     }
@@ -216,8 +189,6 @@ struct CardMembersSheet: View
 
                         HStack(spacing: 10)
                         {
-
-
                             Image(
                                 systemName: members[index].kind == .registeredUser
                                 ? "person.crop.circle.fill" : "person.crop.circle"
@@ -226,8 +197,6 @@ struct CardMembersSheet: View
 
                             if members[index].kind == .manual
                             {
-
-
                                 TextField(
                                                                                                 "Name or email",
                                                                                                 text: Binding(
@@ -237,7 +206,6 @@ struct CardMembersSheet: View
                                                                                                     },
                                                                                                     set:
                                                                                                     {
-
                                                                                                         members[index].displayName = $0
 
                                                                                                     }
@@ -246,7 +214,6 @@ struct CardMembersSheet: View
                             }
                             else
                             {
-
                                 Text(members[index].displayName)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -255,16 +222,12 @@ struct CardMembersSheet: View
 
                         .swipeActions(edge: .trailing, allowsFullSwipe: true)
                         {
-
-
                             Button(role: .destructive)
                             {
-
                                 members.remove(at: index)
                             }
                             label:
                             {
-
                                 Label("Remove", systemImage: "trash")
                             }
 
@@ -277,18 +240,13 @@ struct CardMembersSheet: View
 
                 Section("Add user")
                 {
-
-
                     HStack
                     {
-
-
                         TextField("Name or email", text: $memberDraft).textInputAutocapitalization(.sentences)
                         .onSubmit(addMember)
 
                         Button(action: addMember)
                         {
-
                             Image(systemName: "plus.circle.fill")
                         }
 
@@ -304,14 +262,10 @@ struct CardMembersSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
-
                     Button("Cancel")
                     {
-
                         dismiss()
                     }
 
@@ -320,11 +274,8 @@ struct CardMembersSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
-
                     Button("Save")
                     {
-
                         onSave(normalizedMembers)
                         dismiss()
                     }
@@ -350,8 +301,6 @@ struct CardMembersSheet: View
 ///
 struct CardLayoutEditor: View
 {
-
-
     @State var layout: CardSectionLayout           /* Resolved layout configuration  */
     var title = "Card Layout"                      /* Editor title */
     let onSave:        (CardSectionLayout) -> Bool /* Persist the edited value       */
@@ -359,16 +308,12 @@ struct CardLayoutEditor: View
 
     var body: some View /* Card Layout Editor layout */
     {
-
         NavigationStack
         {
-
             List
             {
-
                 Section
                 {
-
                     ForEach(layout.order)
                     {
                         section in
@@ -401,13 +346,11 @@ struct CardLayoutEditor: View
                 }
                 footer:
                 {
-
                     Text("Drag to reorder sections. Turn a section off to hide it. Its content is kept.")
                 }
 
                 Button("Reset layout")
                 {
-
                     layout = CardSectionLayout()
 
                 }
@@ -418,7 +361,6 @@ struct CardLayoutEditor: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -459,8 +401,6 @@ struct CardLayoutEditor: View
 ///
 struct CardDateEditorSheet: View
 {
-
-
     let title:            String                        /* User-facing title              */
     let hasExistingValue: Bool                          /* Existing Value availability    */
     let onSave:           (Date?, CardDateKind) -> Bool /* Persist the edited value       */
@@ -484,7 +424,6 @@ struct CardDateEditorSheet: View
     ///
     init(title: String, date: Date?, kind: CardDateKind, onSave: @escaping (Date?, CardDateKind) -> Bool)
     {
-
         self.title = title
         self.hasExistingValue = date != nil
         self.onSave = onSave
@@ -495,19 +434,14 @@ struct CardDateEditorSheet: View
 
     var body: some View /* Card Date Editor layout */
     {
-
         NavigationStack
         {
-
             ScrollView
             {
-
                 VStack(spacing: 16)
                 {
-
                     Picker("Set", selection: $kind)
                     {
-
                         ForEach(CardDateKind.allCases)
                         {
                             kind in
@@ -518,14 +452,12 @@ struct CardDateEditorSheet: View
                     .pickerStyle(.segmented)
                     if kind.includesDate
                     {
-
                         DatePicker("Date", selection: $date, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                     }
 
                     if kind.includesTime
                     {
-
                         DatePicker("Time", selection: $date, displayedComponents: .hourAndMinute)
                         .datePickerStyle(.wheel)
                         .environment(\.locale, Locale(identifier: "en_US_POSIX"))
@@ -534,10 +466,8 @@ struct CardDateEditorSheet: View
 
                     if hasExistingValue
                     {
-
                         Button("Remove", role: .destructive)
                         {
-
                             if onSave(nil, .date)
                             {
                                 dismiss()
@@ -553,7 +483,6 @@ struct CardDateEditorSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -565,7 +494,6 @@ struct CardDateEditorSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
                         if onSave(kind.normalized(date), kind)
@@ -595,8 +523,6 @@ struct CardDateEditorSheet: View
 ///
 struct ChecklistItemTypeEditor: View
 {
-
-
     let item:                   KanbanChecklistItem           /* Item under consideration       */
     let candidates:             [KanbanCard]                  /* Eligible operation targets     */
     let onSave:                 (KanbanChecklistItem) -> Bool /* Persist the edited value       */
@@ -625,7 +551,6 @@ struct ChecklistItemTypeEditor: View
         onSave: @escaping (KanbanChecklistItem) -> Bool
     )
     {
-
         self.item = item;
         self.candidates = candidates;
         self.onSave = onSave
@@ -637,7 +562,6 @@ struct ChecklistItemTypeEditor: View
 
     private var url: URL? /* Resource location */
     {
-
         let text = /* Text being processed */
             urlText.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -653,16 +577,12 @@ struct ChecklistItemTypeEditor: View
 
     var body: some View /* Checklist Item Type Editor layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Picker("Item type", selection: $type)
                 {
-
                     ForEach(ChecklistItemType.allCases)
                     {
                         Text($0.title).tag($0)
@@ -672,13 +592,10 @@ struct ChecklistItemTypeEditor: View
 
                 if type == .linkedCard
                 {
-
                     Section("Choose a card from this board")
                     {
-
                         Picker("Card", selection: $cardID)
                         {
-
                             Text("Choose a card").tag(Optional<Int>.none)
                             ForEach(candidates.filter
                                 {
@@ -699,7 +616,6 @@ struct ChecklistItemTypeEditor: View
                 }
                 else if type == .webLink
                 {
-
                     TextField("https://example.com", text: $urlText).keyboardType(.URL).textInputAutocapitalization(
                         .never
                     ).autocorrectionDisabled()
@@ -710,7 +626,6 @@ struct ChecklistItemTypeEditor: View
             .navigationTitle("Checklist item type").navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -722,15 +637,12 @@ struct ChecklistItemTypeEditor: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         var updated = item /* Edited value to publish */
 
                         switch type
                         {
-
                         case .standard:
 
                             updated.content = .standard
@@ -738,10 +650,8 @@ struct ChecklistItemTypeEditor: View
                         case .linkedCard:
                             if let cardID
                             {
-
                                 if cardID != item.retainedCardID
                                 {
-
                                     updated.linkedCollectionID = nil
 
                                 }
@@ -758,7 +668,6 @@ struct ChecklistItemTypeEditor: View
                         case .webLink:
                             if let url
                             {
-
                                 updated.content = .webLink(url)
 
                             }
@@ -797,8 +706,6 @@ struct ChecklistItemTypeEditor: View
 ///
 struct CardInfoEditorSheet: View
 {
-
-
     let onSave:       (String, String, String) -> Void  /* Callback receiving the edited card text       */
     let presentation: ItemPresentation                  /* Item kind used for accessible creation labels */
 
@@ -820,7 +727,6 @@ struct CardInfoEditorSheet: View
     ///
     private var trimmedTitle: String /* Trimmed title */
     {  /* Normalized card title draft */
-
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -841,8 +747,6 @@ struct CardInfoEditorSheet: View
     ///
     init(card: KanbanCard, onSave: @escaping (String, String, String) -> Void)
     {
-
-
         self.onSave = onSave
         self.presentation = card.presentation
         _title = State(initialValue: card.word)
@@ -866,19 +770,12 @@ struct CardInfoEditorSheet: View
     ///
     var body: some View /* Card Info Editor layout */
     {  /* Card title, subtitle, and description form */
-
-
         NavigationStack
         {
-
-
             Form
             {
-
                 Section("Card details")
                 {
-
-
                     TextField("Title", text: $title).textInputAutocapitalization(.sentences)
 
                     TextField("Subtitle", text: $subtitle).textInputAutocapitalization(.sentences)
@@ -887,7 +784,6 @@ struct CardInfoEditorSheet: View
 
                 Section("Description")
                 {
-
                     RichTextEditor(placeholder: "Description", text: $description)
                 }
 
@@ -897,13 +793,10 @@ struct CardInfoEditorSheet: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
-
                     Button("Cancel")
                     {
-
                         dismiss()
                     }
 
@@ -912,10 +805,8 @@ struct CardInfoEditorSheet: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Save")
                     {
-
                         onSave(trimmedTitle, subtitle, description)
                         dismiss()
                     }
@@ -943,7 +834,6 @@ struct CardInfoEditorSheet: View
 ///
 struct CardPreviewDateEditor: ViewModifier
 {
-
     let card:     KanbanCard               /* Card under consideration */
     let isStart:  Bool                     /* Start state              */
     let onUpdate: (KanbanCard) -> Void     /* Publish item edits       */
@@ -962,10 +852,8 @@ struct CardPreviewDateEditor: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-
         Button
         {
-
             isPresented = true
 
         }
@@ -1001,14 +889,12 @@ struct CardPreviewDateEditor: ViewModifier
 
                 if isStart
                 {
-
                     updated.startDate = value
                     updated.startDateKind = value == nil ? .date : kind
 
                 }
                 else
                 {
-
                     updated.dueDate = value
                     updated.dueDateKind = value == nil ? .date : kind
 
@@ -1032,7 +918,6 @@ struct CardPreviewDateEditor: ViewModifier
 ///
 struct CardEditHistorySheet: View
 {
-
     @Binding var card: KanbanCard                         /* Latest accepted content */
     let canUndo: Bool                                    /* Editor can save a reversal */
     let onUndo: (CardEditRecord, Bool) throws -> Void      /* Confirmed undo callback */
@@ -1045,7 +930,6 @@ struct CardEditHistorySheet: View
 
     var body: some View
     {
-
         NavigationStack
         {
             List
@@ -1142,7 +1026,6 @@ struct CardEditHistorySheet: View
 
     private func revisionRow(_ record: CardEditRecord) -> some View
     {
-
         VStack(alignment: .leading, spacing: 8)
         {
             Text(record.summary)
@@ -1186,7 +1069,6 @@ struct CardEditHistorySheet: View
 
     private func applyUndo(_ record: CardEditRecord, replacingConflicts: Bool = false)
     {
-
         do
         {
             try onUndo(record, replacingConflicts)
@@ -1225,7 +1107,6 @@ struct CardEditHistorySheet: View
 
     private func valueLabel(_ value: Data?, field: String) -> String
     {
-
         guard let value else { return "None" }
 
         let decoder = JSONDecoder()

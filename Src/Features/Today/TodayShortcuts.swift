@@ -20,8 +20,6 @@ import SwiftUI
 ///
 enum TodayListPins
 {
-
-
     static let key = "Plenact.TodayListShortcuts.v1" /* Lookup or persistence key */
 
 
@@ -39,7 +37,6 @@ enum TodayListPins
     ///
     static func loadInitialCollections(from defaults: UserDefaults = .standard) -> [PersonalCollection]
     {
-
         let existing  = PersonalCollectionStore.load(from: defaults) /* Previously retained value */
         let savedKeys =                                              /* Saved keys                */
             ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, key]
@@ -62,7 +59,6 @@ enum TodayListPins
 
         do
         {
-
             try PersonalCollectionStore.saveChecked(initial, to: defaults)
 
             let pins = initial.map /* Ordered pinned shortcuts */
@@ -75,7 +71,6 @@ enum TodayListPins
         }
         catch
         {
-
             return existing
         }
 
@@ -94,7 +89,6 @@ enum TodayListPins
     ///
     static func normalized(_ pins: [WorkspaceListReference]) -> [WorkspaceListReference]
     {
-
         var seen = Set<WorkspaceListReference>() /* Identities already encountered */
 
         return Array(pins.filter
@@ -116,7 +110,6 @@ enum TodayListPins
     ///
     static func decode(_ data: Data) -> [WorkspaceListReference]
     {
-
         normalized((try? JSONDecoder().decode([WorkspaceListReference].self, from: data)) ?? [])
     }
 
@@ -133,7 +126,6 @@ enum TodayListPins
     ///
     static func encode(_ pins: [WorkspaceListReference]) -> Data
     {
-
         (try? JSONEncoder().encode(normalized(pins))) ?? Data()
     }
 
@@ -149,8 +141,6 @@ enum TodayListPins
 ///
 struct TodayShortcutEditor: View
 {
-
-
     @State private var pins: [WorkspaceListReference]           /* Ordered pinned shortcuts       */
     let owners:              [PersonalCollection]               /* Qualified record owners        */
     let onSave:              ([WorkspaceListReference]) -> Void /* Persist the edited value       */
@@ -174,7 +164,6 @@ struct TodayShortcutEditor: View
         onSave: @escaping ([WorkspaceListReference]) -> Void
     )
     {
-
         _pins = State(initialValue: TodayListPins.normalized(pins))
         self.owners = owners;
         self.onSave = onSave
@@ -188,16 +177,12 @@ struct TodayShortcutEditor: View
 
     var body: some View /* Pinned-shortcut editor */
     {
-
         NavigationStack
         {
-
             List
             {
-
                 Section
                 {
-
                     ForEach(pins)
                     {
                         reference in
@@ -209,7 +194,6 @@ struct TodayShortcutEditor: View
 
                         VStack(alignment: .leading, spacing: 3)
                         {
-
                             Text(destination?.list.title ?? "Unavailable list")
                             Text(
                                 destination?.owner.title ?? "Archived or removed; remove this shortcut to free a space"
@@ -230,12 +214,10 @@ struct TodayShortcutEditor: View
                 }
                 header:
                 {
-
                     Text("Pinned · \(pins.count) of 6")
                 }
                 footer:
                 {
-
                     Text("Drag to reorder. Removing a shortcut keeps its list and cards.")
                 }
 
@@ -244,7 +226,6 @@ struct TodayShortcutEditor: View
                     owner in
                     Section(owner.title)
                     {
-
                         ForEach(owner.lists.filter
                             {
                                 !$0.isArchived
@@ -257,7 +238,6 @@ struct TodayShortcutEditor: View
 
                             Button
                             {
-
                                 guard pins.count < 6, !pins.contains(reference) else
                                 {
                                     return
@@ -267,10 +247,8 @@ struct TodayShortcutEditor: View
                             }
                             label:
                             {
-
                                 HStack
                                 {
-
                                     Label(
                                         list.title, systemImage: list.appearance?.icon?.rawValue ?? owner.icon.rawValue)
                                     Spacer()
@@ -291,7 +269,6 @@ struct TodayShortcutEditor: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
-
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -303,10 +280,8 @@ struct TodayShortcutEditor: View
 
                 ToolbarItem(placement: .confirmationAction)
                 {
-
                     Button("Done")
                     {
-
                         onSave(pins);
                         dismiss()
                     }
@@ -331,8 +306,6 @@ struct TodayShortcutEditor: View
 ///
 struct TodayShortcutGrid: View
 {
-
-
     let pinned:                 [WorkspaceListDestination]       /* Ordered shortcut selection    */
     let onOpen:                 (WorkspaceListReference) -> Void /* Open the selected destination */
 
@@ -344,24 +317,19 @@ struct TodayShortcutGrid: View
 
     var body: some View /* Today Shortcut Grid layout */
     {
-
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10)
         {
-
             ForEach(pinned)
             {
                 destination in
                 Button
                 {
-
                     onOpen(destination.reference)
                 }
                 label:
                 {
-
                     VStack(spacing: usesLargeIcons ? 12 : 8)
                     {
-
                         Image(
                             systemName: destination.list.appearance?.icon?.rawValue ?? destination.owner.icon.rawValue
                         )

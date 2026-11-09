@@ -22,8 +22,6 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
-
-
     ///
     /// @fcn        PlenactBoardDocumentTests.testTodayShortcutGridRendersTwoRowsWithoutOpeningOrEditing
     /// @brief      Verify that today Shortcut Grid Renders Two Rows Without Opening Or Editing
@@ -37,13 +35,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testTodayShortcutGridRendersTwoRowsWithoutOpeningOrEditing() async throws
     {
-
         var owner = /* Owning collection or Week */
             PersonalCollection(title: "Projects", kind: .board)
 
         owner.lists = (0 ..< 6).map
         {
-
             KanbanList(id: $0, title: ["On the Table", "Garden", "Shopping", "Reading", "Ideas", "Home"] [$0], cards: [])
         }
 
@@ -70,7 +66,6 @@ extension PlenactBoardDocumentTests
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -107,7 +102,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testTodayPlanRendersWithoutChangingStoredPlans() async throws
     {
-
         let before = /* State before the operation */
             UserDefaults.standard.dictionaryRepresentation().filter
         {
@@ -129,7 +123,6 @@ extension PlenactBoardDocumentTests
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -174,7 +167,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testLoadingScreenResourcesAndReducedMotionLayout() async throws
     {
-
         XCTAssertNotNil(UIImage(named: "LaunchLogo"))
         XCTAssertNotNil(UIImage(named: "LaunchShadow"))
         XCTAssertNotNil(UIColor(named: "LaunchBackground"))
@@ -196,7 +188,6 @@ extension PlenactBoardDocumentTests
         window.makeKeyAndVisible()
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -245,7 +236,6 @@ extension PlenactBoardDocumentTests
 
         for size in [CGSize(width: 393, height: 852), CGSize(width: 852, height: 393)]
         {
-
             let fitted = host.sizeThatFits(in: size) /* Fitted comparison fixture */
 
             XCTAssertTrue(fitted.width.isFinite && fitted.height.isFinite)
@@ -269,7 +259,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWeekTodayHighlightRendersInPanoramicWithoutChangingCards() async throws
     {
-
         let date   = Date.now                          /* Date used by this operation */
         let week   = DatedPlanningWeek.make(for: date) /* Synthetic week fixture      */
         let target =                                   /* Target under consideration  */
@@ -282,10 +271,8 @@ extension PlenactBoardDocumentTests
                 false
             }, openCurrentWeek:
             {
-
             }, openToday:
             {
-
             }, openLibraryCard:
             {
                 _ in
@@ -305,7 +292,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -373,7 +359,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testTabletBoardRendersProportionalLists() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -384,7 +369,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
 
             previous?.makeKeyAndVisible()
@@ -441,10 +425,8 @@ extension PlenactBoardDocumentTests
     ///
     func testTabletStandardZoomPreservesProportionsAndNeighborPreviews()
     {
-
         for viewport: CGFloat in [744, 820, 1180]
         {
-
             let column = /* Column comparison fixture */
                 BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
             let scale  = BoardTabletSizing.scale( /* Current layout scale */
@@ -480,7 +462,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBoardOptionsPopoverLayoutDoesNotInvokeDestructiveActions() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -491,7 +472,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -500,7 +480,6 @@ extension PlenactBoardDocumentTests
 
         for size in [DynamicTypeSize.large, .accessibility3]
         {
-
             let menu = BoardOptionsPopover( /* Menu comparison fixture */
                 canJumpFirst: true, canJumpLast: true, hasAppearance: true,
                 canArchive: true, canDelete: true, deleteTitle: "Delete Board", hasGallery: true, canResetZoom: true
@@ -552,7 +531,6 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardZoomPresetsResetAfterPinchingFromEitherMode()
     {
-
         XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: false), 1)
         XCTAssertEqual(BoardPanoramicZoom.preset(panoramic: true), 0.62)
         XCTAssertEqual(BoardPanoramicZoom.scale(start: 1, magnification: 0.5), 0.5)
@@ -573,7 +551,6 @@ extension PlenactBoardDocumentTests
     ///
     func testPanoramicPinchZoomClampsAndReversesAtBothLimits()
     {
-
         XCTAssertEqual(BoardPanoramicZoom.initial, 0.62)
         XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 1.5), 0.93, accuracy: 0.001)
         XCTAssertEqual(BoardPanoramicZoom.scale(start: 0.62, magnification: 0.1), 0.25)
@@ -585,13 +562,11 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(BoardPanoramicZoom.clamped(.infinity), BoardPanoramicZoom.initial)
         for viewport: CGFloat in [320, 393, 852]
         {
-
             let width = /* Measured layout width */
                 BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
 
             for scale in [BoardPanoramicZoom.minimum, BoardPanoramicZoom.initial, BoardPanoramicZoom.maximum]
             {
-
                 XCTAssertGreaterThan(width * scale, 0)
                 XCTAssertTrue((viewport / scale).isFinite)
             }
@@ -614,7 +589,6 @@ extension PlenactBoardDocumentTests
     ///
     func testHeaderSpacingCompactsOnlyWhenIntrinsicTextWouldClip()
     {
-
         XCTAssertEqual(
             WorkspaceHeaderSpacing.gap(
                 availableWidth: 360, titleIdealWidth: 100,
@@ -651,7 +625,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testAdaptiveHeaderRetainsControlTargetsAndGivesLongTextTheGapSpace() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -662,7 +635,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -677,8 +649,6 @@ extension PlenactBoardDocumentTests
             ("rtl", "A long name that needs additional space before the toolbar controls", .rightToLeft)
         ]
         {
-
-
             ///
             /// @fcn        PlenactBoardDocumentTests.testAdaptiveHeaderRetainsControlTargetsAndGivesLongTextTheGapSpace.control
             /// @brief      Prepare control for the enclosing regression test
@@ -692,16 +662,13 @@ extension PlenactBoardDocumentTests
             ///
             func control(_ id: Int) -> some View
             {
-
                 Color.blue.frame(width: 44, height: 44)
                 .onGeometryChange(for: CGRect.self)
                 {
-
                     $0.frame(in: .named("headerFixture"))
                 }
                 action:
                 {
-
                     results[name, default: [:]] [id] = $0
 
                 }
@@ -711,17 +678,14 @@ extension PlenactBoardDocumentTests
             let view = /* View being rendered */
                 AdaptiveWorkspaceHeaderLayout(regularSpacing: 12, layoutDirection: direction)
             {
-
                 control(0)
                 Text(title).lineLimit(1).frame(maxWidth: .infinity)
                 .onGeometryChange(for: CGRect.self)
                 {
-
                     $0.frame(in: .named("headerFixture"))
                 }
                 action:
                 {
-
                     results[name, default: [:]] [1] = $0
 
                 }
@@ -745,10 +709,8 @@ extension PlenactBoardDocumentTests
 
         for frames in [short, long, rtl]
         {
-
             for id in [0, 2, 3, 4]
             {
-
                 XCTAssertEqual(try XCTUnwrap(frames[id]).width, 44, accuracy: 0.5)
                 XCTAssertEqual(try XCTUnwrap(frames[id]).height, 44, accuracy: 0.5)
             }
@@ -776,7 +738,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testSlideableHeaderTextScrollsOnlyOverflowAndRetainsReadingPosition() async throws
     {
-
         let suite    = "HeaderReadingTests." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                           /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -798,7 +759,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -818,7 +778,6 @@ extension PlenactBoardDocumentTests
         ///
         func scrolls(_ view: UIView) -> [UIScrollView]
         {
-
             (view as? UIScrollView).map
             {
                 [$0]
@@ -832,10 +791,8 @@ extension PlenactBoardDocumentTests
         let host             = UIHostingController( /* Synthetic SwiftUI host  */
             rootView: VStack(spacing: 20)
             {
-
                 SlideableHeaderText(text: long, onTap:
                     {
-
                     }, onOverflowChange:
                     {
                         overflow.append($0)
@@ -886,7 +843,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testLongListAndBoardHeadersExposeIndependentNativeReaders() async throws
     {
-
         let suite    = "HeaderReadingTests." + UUID().uuidString /* Isolated preference domain  */
         let defaults =                                           /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -908,7 +864,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true;
             window.rootViewController = nil;
 
@@ -928,7 +883,6 @@ extension PlenactBoardDocumentTests
         ///
         func scrolls(_ view: UIView) -> [UIScrollView]
         {
-
             ((view as? UIScrollView).map
                 {
                     [$0]
@@ -958,14 +912,11 @@ extension PlenactBoardDocumentTests
                 _, _ in
             }, onOpenCalendar:
             {
-
             }, title: title, subtitle: subtitle,
             allowsAddingLists: false, onClose:
             {
-
             }, onViewArchivedLists:
             {
-
             }, onArchiveBoard: nil,
             onDeleteBoard: nil, deleteBoardTitle: "Delete Board",
             onJumpToFirstList:
@@ -977,7 +928,6 @@ extension PlenactBoardDocumentTests
                 XCTFail("Layout must not navigate")
             }, onAddList:
             {
-
             })
 
         for (name, view) in [
@@ -989,11 +939,9 @@ extension PlenactBoardDocumentTests
                                         lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
                                         savedCardIDs: .constant([]), listID: list.id, currentUserName: "Test", onClose:
                                         {
-
                                         },
                                         onOpenWeek:
                                         {
-
                                         }, onPermanentDelete:
                                         {
                                             _ in
@@ -1002,7 +950,6 @@ extension PlenactBoardDocumentTests
             )
         ]
         {
-
             let host = /* Synthetic SwiftUI host */
                 UIHostingController(rootView: view.defaultAppStorage(defaults))
 
@@ -1016,7 +963,6 @@ extension PlenactBoardDocumentTests
             // its single-line content height identifies the reader, not its UIKit bounds
             let readers = scrolls(host.view).filter /* Filtered readers entries */
             {
-
                 $0.contentSize.width > $0.bounds.width + 1 && $0.contentSize.height < 70
             }
 
@@ -1056,7 +1002,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testHostedMixedDisplayFormatsAndPicturePlaceholdersDoNotMutateRecords() async throws
     {
-
         let scene = /* Owning window scene */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
@@ -1067,7 +1012,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -1076,10 +1020,8 @@ extension PlenactBoardDocumentTests
 
         for textSize in [DynamicTypeSize.large, .accessibility3]
         {
-
             for format in ItemDisplayFormat.allCases
             {
-
                 var item = KanbanCard( /* Item under consideration */
                     id: 73, word: "A long example title for a mixed List", listTitle: "Ideas",
                     descriptionOverride: "Retained writing")
@@ -1133,7 +1075,6 @@ extension PlenactBoardDocumentTests
                 let detail = UIHostingController( /* Owned action detail */
                     rootView: NavigationStack
                     {
-
                         CardDetailView(card: item, onTitleToggle:
                             {
                                 _ in
@@ -1148,7 +1089,6 @@ extension PlenactBoardDocumentTests
                 try await Task.sleep(for: .milliseconds(150))
                 if format == .title || format == .text
                 {
-
                     let row = KanbanCardView( /* Rendered or stored item row */
                         card: item, height: 100, displaySettings: BoardDisplaySettings(), labelLibrary: .starter,
                         onUpdateCard:
@@ -1198,7 +1138,6 @@ extension PlenactBoardDocumentTests
 
         for cover in [nil, ExampleCoverImage.garden]
         {
-
             let photo = cover.map /* Photo selection or source */
             {
                 KanbanAttachment(mediaKind: .photo, exampleImage: $0)
@@ -1270,8 +1209,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testHostedListEditorPrefillsWithoutMutatingRecords() async throws
     {
-
-
         var list = /* Synthetic list fixture */
             KanbanList(id: 4, title: "Synthetic plans", cards: [])
 
@@ -1287,7 +1224,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -1307,7 +1243,6 @@ extension PlenactBoardDocumentTests
         ///
         func fields(in view: UIView) -> [UITextField]
         {
-
             (view as? UITextField).map
             {
                 [$0]
@@ -1332,7 +1267,6 @@ extension PlenactBoardDocumentTests
         ///
         func textViews(in view: UIView) -> [UITextView]
         {
-
             (view as? UITextView).map
             {
                 [$0]
@@ -1388,7 +1322,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testSharedKeyboardAttachesToPlainFieldsAndRendersNarrowAndWide() throws
     {
-
         PlenactKeyboard.shared.install()
 
         let field = UITextField(); /* Native input field */
@@ -1417,19 +1350,14 @@ extension PlenactBoardDocumentTests
         PlenactKeyboard.shared.setContext(
             token, actions: KeyboardCardActions(exit:
                 {
-
                 }, previous:
                 {
-
                 }, next:
                 {
-
                 }, attachment:
                 {
-
                 }, checklist:
                 {
-
                 }))
         defer
         {
@@ -1442,7 +1370,6 @@ extension PlenactBoardDocumentTests
 
         for width: CGFloat in [320, 393, 820]
         {
-
             let toolbar = PlenactKeyboardToolbar( /* Available editor controls */
                 input: field, formatting: KeyboardFormatting(toggle:
                     {
@@ -1492,8 +1419,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testPersonalCollectionListWidthReachesTheHostedCardContainer() async throws
     {
-
-
         let suite    = "Plenact.CollectionWidthTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))       /* Isolated test preferences      */
         let scene    = try XCTUnwrap( /* Owning window scene */
@@ -1506,8 +1431,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -1527,12 +1450,8 @@ extension PlenactBoardDocumentTests
         ///
         func collectionView(in view: UIView) -> UICollectionView?
         {
-
-
             if let collection = view as? UICollectionView /* Matched native List collection view */
             {
-
-
                 return collection
             }
 
@@ -1546,20 +1465,14 @@ extension PlenactBoardDocumentTests
 
         for width: CGFloat in [393, 852]
         {
-
-
             for preset in BoardPresentation.allCases
             {
-
-
                 defaults.set(preset.rawValue, forKey: BoardPresentation.storageKey)
 
                 var measured: [PersonalCollectionKind: CGFloat] = [:] /* Measured layout dimensions */
 
                 for kind in [PersonalCollectionKind.list, .board]
                 {
-
-
                     var fixture = PersonalCollection( /* Synthetic test workspace */
                         title: "Synthetic collection", kind: kind) /* Synthetic collection fixture */
 
@@ -1574,7 +1487,6 @@ extension PlenactBoardDocumentTests
                                     fixture
                                 }, set:
                                 {
-
                                     fixture = $0
 
                                 }),
@@ -1675,8 +1587,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testRenderedCardsFitContentWithoutQuarterScreenHeights()
     {
-
-
         let card = KanbanCard( /* Synthetic card fixture */
             id: 100, word: "Prepare a plan", listTitle: "Synthetic list") /* Card value under verification */
 
@@ -1695,8 +1605,6 @@ extension PlenactBoardDocumentTests
         ///
         func measuredHeight(_ preset: BoardPresentation, size: DynamicTypeSize, width: CGFloat) -> CGFloat
         {
-
-
             let view = KanbanCardView( /* Hosted view under test */
                 card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
                 presentation: preset, labelLibrary: .starter,
@@ -1750,15 +1658,11 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBoardRelayoutAndPresetChangesDoNotMutateRetainedContent() async throws
     {
-
-
         let suite    = "Plenact.BoardRelayoutTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Isolated test preferences      */
 
         defer
         {
-
-
             defaults.removePersistentDomain(forName: suite)
         }
 
@@ -1789,7 +1693,6 @@ extension PlenactBoardDocumentTests
                     lists
                 }, set:
                 {
-
                     lists = $0
 
                 }),
@@ -1798,7 +1701,6 @@ extension PlenactBoardDocumentTests
                     archives
                 }, set:
                 {
-
                     archives = $0
 
                 }),
@@ -1807,7 +1709,6 @@ extension PlenactBoardDocumentTests
                     targetList
                 }, set:
                 {
-
                     targetList = $0
 
                 }),
@@ -1816,7 +1717,6 @@ extension PlenactBoardDocumentTests
                     targetCard
                 }, set:
                 {
-
                     targetCard = $0
 
                 }),
@@ -1825,7 +1725,6 @@ extension PlenactBoardDocumentTests
                     saved
                 }, set:
                 {
-
                     saved = $0
 
                 }),
@@ -1837,8 +1736,6 @@ extension PlenactBoardDocumentTests
 
                 if listID == focusedListID && !didRevealTarget
                 {
-
-
                     didRevealTarget = true
 
                     revealedTarget.fulfill()
@@ -1874,8 +1771,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -1887,14 +1782,10 @@ extension PlenactBoardDocumentTests
 
         for preset in BoardPresentation.allCases
         {
-
-
             defaults.set(preset.rawValue, forKey: BoardPresentation.storageKey)
 
             for size in [CGSize(width: 393, height: 852), CGSize(width: 852, height: 393)]
             {
-
-
                 window.frame.size = size
                 controller.view.frame = window.bounds
 
@@ -1924,12 +1815,8 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testBoardHeaderSwipeAreaFillsAvailableWidth()
     {
-
-
         for hasBackAction in [false, true]
         {
-
-
             let header = BoardHeader( /* Rendered Board header */
                 settings: .constant(BoardDisplaySettings()),
                 presentation: .constant(.standard),
@@ -1949,18 +1836,15 @@ extension PlenactBoardDocumentTests
                 },
                 onOpenCalendar:
                 {
-
                 },
                 title: "Week",
                 subtitle: "Plan",
                 allowsAddingLists: true,
                 onClose: hasBackAction ?
                 {
-
                 } : nil,
                 onViewArchivedLists:
                 {
-
                 },
                 onArchiveBoard: nil,
                 onDeleteBoard: nil,
@@ -1975,7 +1859,6 @@ extension PlenactBoardDocumentTests
                 },
                 onAddList:
                 {
-
                 }
             )
             let controller = UIHostingController( /* Native view controller */
@@ -1983,8 +1866,6 @@ extension PlenactBoardDocumentTests
 
             for width in [CGFloat(180), 280, 600]
             {
-
-
                 let size = controller.sizeThatFits( /* Content or layout size */
                     in: CGSize(width: width, height: 200)) /* Proposed layout dimensions */
 
@@ -2007,8 +1888,6 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardHeaderSwipeMapsDeliberateHorizontalGesturesToBoundaries()
     {
-
-
         XCTAssertEqual(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: -60, height: 8)), .last)
         XCTAssertEqual(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: 60, height: -8)), .first)
         XCTAssertNil(BoardListReordering.boundary(forHorizontalSwipe: CGSize(width: -47, height: 0)))
@@ -2032,8 +1911,6 @@ extension PlenactBoardDocumentTests
     ///
     func testCardDropGeometryUsesMidpointsAndRejectsOutsideViewport()
     {
-
-
         let lists = [ /* Ordered List records */
             KanbanList(
                 id: 10, title: "A",
@@ -2069,8 +1946,6 @@ extension PlenactBoardDocumentTests
         ///
         func target(_ x: CGFloat, _ y: CGFloat, frames: [Int: CGRect] = frames) -> BoardCardDropTarget?
         {
-
-
             BoardCardMovement.target(
                 for: 99, at: CGPoint(x: x + viewport.minX, y: y + viewport.minY), viewport: viewport,
                 lists: lists, listFrames: listFrames, cardFrames: frames)
@@ -2114,8 +1989,6 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWholeCardDragSourcesAndInsertionMarkersKeepNativeListRowIdentityAndLayout() async throws
     {
-
-
         let list = KanbanList( /* Synthetic list fixture */
             id: 1, title: "Synthetic",
             cards: [ /* List state under verification */
@@ -2133,8 +2006,6 @@ extension PlenactBoardDocumentTests
 
         defer
         {
-
-
             window.isHidden = true
             window.rootViewController = nil
 
@@ -2154,12 +2025,8 @@ extension PlenactBoardDocumentTests
         ///
         func collectionView(in view: UIView) -> UICollectionView?
         {
-
-
             if let collection = view as? UICollectionView /* Matched native List collection view */
             {
-
-
                 return collection
             }
 
@@ -2182,7 +2049,6 @@ extension PlenactBoardDocumentTests
         ///
         func importanceMarker(in view: UIView) -> ImportanceInteractionRegion.Marker?
         {
-
             (view as? ImportanceInteractionRegion.Marker) ?? view.subviews.compactMap
             {
                 importanceMarker(in: $0)
@@ -2196,7 +2062,6 @@ extension PlenactBoardDocumentTests
             (.standard, .accessibility5, 320.0)
         ]
         {
-
             let view = KanbanListView( /* Hosted view under test */
                 list: list, availableListHeight: 700, displaySettings: BoardDisplaySettings(),
                 presentation: preset, labelLibrary: .starter, toggleCardTitle:
@@ -2210,7 +2075,6 @@ extension PlenactBoardDocumentTests
                 },
                 onCopyList:
                 {
-
                 }, onMoveList:
                 {
                     _ in
@@ -2219,7 +2083,6 @@ extension PlenactBoardDocumentTests
                     _ in
                 }, onArchiveCompleted:
                 {
-
                 },
                 archivedCards: .constant([]), onRestoreArchivedCard:
                 {
@@ -2230,10 +2093,8 @@ extension PlenactBoardDocumentTests
                     _ in
                 }, onArchiveList:
                 {
-
                 }, onDeleteList:
                 {
-
                 },
                 onDeleteCard:
                 {
@@ -2257,7 +2118,6 @@ extension PlenactBoardDocumentTests
                     _ in
                 }, onListDragEnded:
                 {
-
                 },
                 draggedCardID: 10, dropBeforeCardID: 12, isCardDropTarget: true,
                 onCardDragChanged:
@@ -2297,7 +2157,6 @@ extension PlenactBoardDocumentTests
                 collectionView(in: controller.view)) /* Collection state under verification */
             let itemCount = (0 ..< collection.numberOfSections).reduce(0) /* Item count */
             {  /* Expected item count                 */
-
                 $0 + collection.numberOfItems(inSection: $1)
             }
 
@@ -2321,7 +2180,6 @@ extension PlenactBoardDocumentTests
                     $0 as? UIDragInteraction
                 } .filter
                 {
-
                     $0.delegate is BoardCardDragSource.Coordinator
                 }
 
@@ -2363,14 +2221,12 @@ extension PlenactBoardDocumentTests
             XCTAssertTrue(
                 dividerCell.contentView.interactions.contains
                 {
-
                     ($0 as? UIDragInteraction)?.delegate is BoardCardDragSource.Coordinator
                 }, "Divider rows must support the same native drag as Cards and Notes")
             XCTAssertTrue(dragSources.allSatisfy(\.isEnabled))
             XCTAssertEqual(
                 collection.interactions.filter
                 {
-
                     ($0 as? UIDropInteraction)?.delegate is BoardCardDropSurface.Coordinator
                 } .count, 1, "Visible row probes must share exactly one native list drop receiver")
             XCTAssertTrue(

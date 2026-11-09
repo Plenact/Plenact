@@ -20,8 +20,6 @@ import SwiftUI
 ///
 enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 {
-
-
     case all = "All", lists = "Lists", boards = "Boards", labels = "Labels", examples = "Examples", templates =
             "Templates", help = "Help"
     var id: String /* Record or view identity */
@@ -31,10 +29,8 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 
     var searchPrompt: String /* Search prompt */
     {
-
         switch self
         {
-
         case .all:
                     "Find in your Plans"
         case .lists:
@@ -55,10 +51,8 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 
     var symbol: String /* Selected symbol name */
     {
-
         switch self
         {
-
         case .all:
                     "books.vertical";
 
@@ -85,10 +79,8 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 
     var accent: Color /* Selected accent color */
     {
-
         switch self
         {
-
         case .all:
             .blue;
 
@@ -120,10 +112,8 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 
     var searchHint: String /* Search hint */
     {
-
         switch self
         {
-
         case .templates:
                     "Search saved routines and template starting points"
         case .examples:
@@ -140,10 +130,8 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 
     var searchContext: String /* Search context */
     {
-
         switch self
         {
-
         case .templates:
                     "Templates · Routines and reusable starting points"
         case .examples:
@@ -171,7 +159,6 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
     ///
     func includes(_ collection: PersonalCollection) -> Bool
     {
-
         collection.isActive && browsesCollections
         && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
     }
@@ -188,8 +175,6 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 ///
 struct LibraryPlateItem: Identifiable
 {
-
-
     let collection: PersonalCollection /* Personal collection record        */
     let list:       KanbanList         /* List under consideration          */
     let card:       KanbanCard         /* Card under consideration          */
@@ -214,8 +199,6 @@ struct LibraryPlateItem: Identifiable
 ///
 enum LibraryPlateSelection
 {
-
-
     ///
     /// @fcn        LibraryPlateSelection.items
     /// @brief      Rank unfinished Library content for the upcoming-items preview
@@ -234,7 +217,6 @@ enum LibraryPlateSelection
         calendar: Calendar = .current
     ) -> [LibraryPlateItem]
     {
-
         let today                     = calendar.startOfDay(for: now) /* Current local day      */
         let horizon                   =                               /* Visible schedule range */
             calendar.date(byAdding: .day, value: 7, to: today) ?? today
@@ -242,13 +224,10 @@ enum LibraryPlateSelection
 
         for collection in collections where collection.isActive
         {
-
             for list in collection.lists where !list.isArchived
             {
-
                 for card in list.cards where !card.isSectionDivider && !card.isTitleChecked
                 {
-
                     let marked = /* Owner-qualified importance state */
                         important.contains(LibraryRecentItem(collectionID: collection.id, cardID: card.id))
                     var due    = card.dueDate /* Due date or time */
@@ -256,7 +235,6 @@ enum LibraryPlateSelection
                     // A time without a date cannot be assigned an urgency day
                     if !card.dueDateKind.includesDate
                     {
-
                         due = nil
 
                     }
@@ -266,14 +244,12 @@ enum LibraryPlateSelection
 
                     if let due, due < today || (card.dueDateKind.includesTime && due < now)
                     {
-
                         rank = 0;
                         reason = "Overdue · " + card.dueDateLabel
 
                     }
                     else if let due, calendar.isDate(due, inSameDayAs: now)
                     {
-
                         rank = 1;
 
                         reason =
@@ -282,21 +258,18 @@ enum LibraryPlateSelection
                     }
                     else if let due, due < horizon
                     {
-
                         rank = 2;
                         reason = "Due " + card.dueDateLabel
 
                     }
                     else if marked
                     {
-
                         rank = 3;
                         reason = "Marked important"
 
                     }
                     else
                     {
-
                         continue
                     }
 
@@ -313,7 +286,6 @@ enum LibraryPlateSelection
         return Array(
             items.sorted
             {
-
                 if $0.rank != $1.rank
                 {
                     return $0.rank < $1.rank
@@ -340,8 +312,6 @@ enum LibraryPlateSelection
 ///
 struct LibraryItemOpenedKey: EnvironmentKey
 {
-
-
     static let defaultValue: (Int) -> Void = /* Fallback environment callback */
     {
         _ in
@@ -359,11 +329,8 @@ struct LibraryItemOpenedKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-
-
     var libraryItemOpened: (Int) -> Void /* Library item opened callback */
     {
-
         get
         {
             self[LibraryItemOpenedKey.self]
@@ -371,7 +338,6 @@ extension EnvironmentValues
 
         set
         {
-
             self[LibraryItemOpenedKey.self] = newValue
 
         }
@@ -390,21 +356,16 @@ extension EnvironmentValues
 ///
 struct LibraryPlateTile: View
 {
-
-
     let item:                                                LibraryPlateItem /* Item under consideration */
     @ScaledMetric(relativeTo: .body) private var tileWidth:  CGFloat = 132 /* Tile width */
     @ScaledMetric(relativeTo: .body) private var tileHeight: CGFloat = 110 /* Tile height */
 
     var body: some View /* Library Plate layout */
     {
-
         VStack(alignment: .leading, spacing: 8)
         {
-
             HStack
             {
-
                 Image(
                     systemName: item.rank == 0
                     ? "exclamationmark.circle.fill" : (item.rank == 3 ? "star.fill" : "clock")
@@ -423,13 +384,11 @@ struct LibraryPlateTile: View
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
         .overlay
         {
-
             RoundedRectangle(cornerRadius: 14).fill(item.collection.libraryIdentityColor.opacity(0.10))
             .allowsHitTesting(false)
         }
         .overlay
         {
-
             RoundedRectangle(cornerRadius: 14).strokeBorder(
                 item.collection.libraryIdentityColor.opacity(0.3), lineWidth: 1
             ).allowsHitTesting(false)
@@ -451,8 +410,6 @@ struct LibraryPlateTile: View
 ///
 struct LibraryLabelMatchesView: View
 {
-
-
     let label: KanbanLabel                                    /* Resolved display label         */
     @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
     @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
@@ -462,7 +419,6 @@ struct LibraryLabelMatchesView: View
 
     private var matches: [PlanningSearchResult] /* Matching source entries */
     {
-
         let owners = /* Qualified record owners */
             WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? [])
         let all    = /* Matching all entry */
@@ -476,7 +432,6 @@ struct LibraryLabelMatchesView: View
 
         return all.filter
         {
-
             query.isEmpty || $0.card.word.localizedStandardContains(query)
             || $0.listTitle.localizedStandardContains(query) || $0.collectionTitle.localizedStandardContains(query)
         }
@@ -485,13 +440,10 @@ struct LibraryLabelMatchesView: View
 
     var body: some View /* Library Label Matches layout */
     {
-
         NavigationStack
         {
-
             List
             {
-
                 if matches.isEmpty
                 {
                     Text("No active cards or notes match this label.").foregroundStyle(.secondary)
@@ -502,21 +454,17 @@ struct LibraryLabelMatchesView: View
                     result in
                     Button
                     {
-
                         openedCard = result
 
                     }
                     label:
                     {
-
                         HStack(spacing: 12)
                         {
-
                             Image(systemName: result.card.presentation == .note ? "note.text" : "rectangle")
                             .foregroundStyle(label.color.color)
                             VStack(alignment: .leading, spacing: 4)
                             {
-
                                 Text(result.card.word).font(.headline).foregroundStyle(.primary)
                                 Text(result.collectionTitle + " · " + result.listTitle).font(.caption).foregroundStyle(
                                     .secondary)
@@ -552,12 +500,10 @@ struct LibraryLabelMatchesView: View
                         $0.id == result.collectionID
                     })
                 {
-
                     PlanningCalendarWeekView(
                         week: week, initialDayID: result.listID, initialCardID: result.card.id,
                         onLeaveForHome:
                         {
-
                             openedCard = nil;
 
                             dismiss()
@@ -568,12 +514,10 @@ struct LibraryLabelMatchesView: View
                         $0.id == result.collectionID && $0.isActive
                     })
                 {
-
                     PlanningSearchLibraryView(
                         collection: collection, initialListID: result.listID, initialCardID: result.card.id,
                         onLeaveForHome:
                         {
-
                             openedCard = nil;
 
                             dismiss()

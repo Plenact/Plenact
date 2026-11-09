@@ -22,8 +22,6 @@ import UniformTypeIdentifiers
 ///
 struct ActivityRow: View
 {
-
-
     let text:       String     /* The main text content of the activity row */
     let actorColor: Color      /* The icon color for the activity actor     */
     let onDelete:   () -> Void /* Activity deletion callback                */
@@ -40,23 +38,15 @@ struct ActivityRow: View
     ///
     var body: some View /* Activity layout */
     {  /* Generated activity text and timestamp */
-
-
         ActivitySwipeRow(onDelete: onDelete)
         {
-
-
             HStack(alignment: .top, spacing: 10)
             {
-
-
                 Image(systemName: "person.crop.circle.fill")
                 .foregroundStyle(actorColor)
 
                 VStack(alignment: .leading, spacing: 3)
                 {
-
-
                     Text(text)
                     .font(.subheadline)
 
@@ -82,8 +72,6 @@ struct ActivityRow: View
 ///
 struct CommentActivityRow: View
 {
-
-
     let comment:     KanbanComment /* The comment data rendered by the row           */
     let memberColor: Color         /* The assigned icon color for the comment author */
     let onDelete:    () -> Void    /* The action invoked when the comment is deleted */
@@ -99,22 +87,15 @@ struct CommentActivityRow: View
     ///
     var body: some View /* Comment Activity layout */
     {  /* Posted comment and authoring time */
-
         ActivitySwipeRow(onDelete: onDelete)
         {
-
-
             HStack(alignment: .top, spacing: 10)
             {
-
-
                 Image(systemName: "person.crop.circle.fill")
                 .foregroundStyle(memberColor)
 
                 VStack(alignment: .leading, spacing: 3)
                 {
-
-
                     (Text(comment.author).fontWeight(.semibold) + Text(" ") + Text(PlanRichText.display(comment.body)))
                     .font(.subheadline)
 
@@ -143,8 +124,6 @@ struct CommentActivityRow: View
 ///
 struct ActivitySwipeRow<Content: View>: View
 {
-
-
     let onDelete:                        () -> Void     /* The action invoked when the row is deleted     */
     let deletionAccessibilityLabel:      String         /* Accessibility label for the swipe action       */
     @ViewBuilder let content:            () -> Content  /* The content view rendered inside the swipe row */
@@ -169,8 +148,6 @@ struct ActivitySwipeRow<Content: View>: View
         @ViewBuilder content: @escaping () -> Content
     )
     {
-
-
         self.onDelete = onDelete
         self.deletionAccessibilityLabel = deletionAccessibilityLabel
         self.content = content
@@ -190,16 +167,10 @@ struct ActivitySwipeRow<Content: View>: View
     ///
     var body: some View /* Activity Swipe layout */
     {  /* Swipe-to-delete activity container */
-
-
         ZStack(alignment: .trailing)
         {
-
-
             Button(role: .destructive, action: onDelete)
             {
-
-
                 Image(systemName: "trash")
                 .foregroundStyle(.white)
                 .frame(width: 72)
@@ -224,8 +195,6 @@ struct ActivitySwipeRow<Content: View>: View
                     value in
                     guard abs(value.translation.width) > abs(value.translation.height) else
                     {
-
-
                         return
                     }
 
@@ -238,23 +207,17 @@ struct ActivitySwipeRow<Content: View>: View
                     value in
                     guard abs(value.translation.width) > abs(value.translation.height) else
                     {
-
-
                         return
                     }
 
                     withAnimation(.easeOut(duration: 0.2))
                     {
-
                         if value.translation.width < -120
                         {
-
-
                             onDelete()
                         }
                         else
                         {
-
                             horizontalOffset = value.translation.width < -36 ? -72 : 0
 
                         }
@@ -280,8 +243,6 @@ struct ActivitySwipeRow<Content: View>: View
 ///
 struct ItemReactionStrip: View
 {
-
-
     let reactions:      [ItemEmojiReaction] /* Stored item reactions  */
     let authorID:       UUID?               /* Author ID              */
     let onToggle:       (String) -> Void    /* Toggle item completion */
@@ -302,13 +263,10 @@ struct ItemReactionStrip: View
 
     var body: some View /* Item Reaction Strip layout */
     {
-
         ScrollView(.horizontal)
         {
-
             HStack(spacing: 8)
             {
-
                 ForEach(emojis, id: \.self)
                 {
                     emoji in
@@ -325,15 +283,12 @@ struct ItemReactionStrip: View
 
                     Button
                     {
-
                         onToggle(emoji)
                     }
                     label:
                     {
-
                         HStack(spacing: 4)
                         {
-
                             Text(emoji).font(.title3)
                             if matching.count > 1
                             {
@@ -352,7 +307,6 @@ struct ItemReactionStrip: View
 
                 Button(action: onAdd)
                 {
-
                     Label("Add reaction", systemImage: "face.smiling").font(.subheadline).frame(minHeight: 44)
                 }
                 .buttonStyle(.plain).foregroundStyle(.tint)
@@ -376,8 +330,6 @@ struct ItemReactionStrip: View
 ///
 struct ItemReactionPicker: View
 {
-
-
     let selected: Set<String>                   /* Current selection              */
     let onChoose: (String) -> Void              /* Choose callback                */
     @Environment(\.dismiss) private var dismiss /* Close the current presentation */
@@ -406,30 +358,23 @@ struct ItemReactionPicker: View
 
     var body: some View /* Item Reaction Picker layout */
     {
-
         NavigationStack
         {
-
             Form
             {
-
                 Section
                 {
-
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 48))], spacing: 12)
                     {
-
                         ForEach(choices, id: \.self)
                         {
                             emoji in
                             Button
                             {
-
                                 choose(emoji)
                             }
                             label:
                             {
-
                                 Text(emoji).font(.largeTitle).frame(width: 48, height: 48)
                                 .background(
                                     selected.contains(emoji) ? Color.accentColor.opacity(0.15) : Color.clear,
@@ -445,7 +390,6 @@ struct ItemReactionPicker: View
                 }
                 footer:
                 {
-
                     Text(
                                                             "Choose what feels right. Tap one of your reactions again to remove it. Reactions do not change importance, bookmarks, or completion."
                     )
@@ -453,7 +397,6 @@ struct ItemReactionPicker: View
 
                 Section("Another emoji")
                 {
-
                     TextField("Type or paste one emoji", text: $custom).textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     Button("Use emoji")
@@ -498,13 +441,10 @@ struct ItemReactionPicker: View
 ///
 struct ItemReactionPreview: View
 {
-
-
     let card:           KanbanCard /* Card under consideration */
 
     private var emojis: [String] /* Available emoji choices */
     {
-
         card.previewReactions.reduce(into: [])
         {
             if !$0.contains($1.emoji)
@@ -518,13 +458,10 @@ struct ItemReactionPreview: View
 
     var body: some View /* Item Reaction Preview layout */
     {
-
         if !emojis.isEmpty
         {
-
             ViewThatFits(in: .horizontal)
             {
-
                 summary(emojis)
                 summary(Array(emojis.prefix(3)), remaining: max(0, emojis.count - 3))
                 Text("😊 \(card.previewReactions.count)").font(.caption)
@@ -555,16 +492,13 @@ struct ItemReactionPreview: View
     ///
     private func summary(_ values: [String], remaining: Int = 0) -> some View
     {
-
         HStack(spacing: 6)
         {
-
             ForEach(values, id: \.self)
             {
                 emoji in
                 HStack(spacing: 2)
                 {
-
                     Text(emoji)
 
                     let count = card.previewReactions.filter /* Number of entries */

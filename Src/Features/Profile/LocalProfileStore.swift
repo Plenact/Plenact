@@ -313,3 +313,40 @@ enum PlanPreferencesStore
     }
 
 }
+
+
+/// Stores the layout copied into new Cards on this device
+enum NewCardLayoutStore
+{
+
+    private static let key = "Plenact.NewCardLayout.v1" /* Device preference key */
+
+    static func load(from defaults: UserDefaults = .standard) -> CardSectionLayout?
+    {
+
+        guard let data = defaults.data(forKey: key) else
+        {
+            return nil
+        }
+
+        return try? JSONDecoder().decode(CardSectionLayout.self, from: data)
+    }
+
+    static func save(_ layout: CardSectionLayout, to defaults: UserDefaults = .standard) -> Bool
+    {
+
+        if layout == CardSectionLayout()
+        {
+            defaults.removeObject(forKey: key)
+            return true
+        }
+
+        guard let data = try? JSONEncoder().encode(layout) else
+        {
+            return false
+        }
+
+        defaults.set(data, forKey: key)
+        return true
+    }
+}

@@ -553,14 +553,25 @@ enum NewCardAppearanceDefaults
     ///
     /// @return     (Void) no return value
     ///
-    static func apply(to card: inout KanbanCard, preferences: LocalProfilePreferences = PlanPreferencesStore.load())
+    static func apply(
+        to card: inout KanbanCard, preferences: LocalProfilePreferences = PlanPreferencesStore.load(),
+        defaults: UserDefaults = .standard
+    )
     {
 
         StudioSettings.apply(to: &card)
 
-        guard card.presentation == .card, !card.isSectionDivider,
-        preferences.randomizesNewCardHeaders || preferences.randomizesNewCardBackgrounds
-        else
+        guard card.presentation == .card, !card.isSectionDivider else
+        {
+            return
+        }
+
+        if card.sectionLayout == nil
+        {
+            card.sectionLayout = NewCardLayoutStore.load(from: defaults)
+        }
+
+        guard preferences.randomizesNewCardHeaders || preferences.randomizesNewCardBackgrounds else
         {
             return
         }

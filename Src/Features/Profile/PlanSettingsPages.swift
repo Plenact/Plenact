@@ -109,6 +109,7 @@ struct PlanSettingsModulePage: View
     let onStudio: () -> Void                          /* Studio callback              */
     let onTemplates: () -> Void                       /* Templates callback           */
     let onShortcuts: () -> Void                       /* Shortcuts callback           */
+    @State private var showsDefaultCardLayout = false /* Layout editor visibility */
 
     var body: some View /* Focused preference controls */
     {
@@ -121,6 +122,14 @@ struct PlanSettingsModulePage: View
         .modifier(StudioFormWallpaper(destination: .settings))
         .navigationTitle(page.title)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showsDefaultCardLayout)
+        {
+
+            CardLayoutEditor(layout: NewCardLayoutStore.load() ?? CardSectionLayout(), title: "Default Card Layout")
+            {
+                NewCardLayoutStore.save($0)
+            }
+        }
         .toolbar
         {
 
@@ -161,6 +170,19 @@ struct PlanSettingsModulePage: View
             }
             NewCardColorDefaultsSection(headers: $preferences.randomizesNewCardHeaders,
                 backgrounds: $preferences.randomizesNewCardBackgrounds)
+            Section
+            {
+
+                Button("Default Card Layout", systemImage: "rectangle.3.group")
+                {
+                    showsDefaultCardLayout = true
+                }
+            }
+            footer:
+            {
+
+                Text("Choose which sections new Cards show and in what order. Save applies this default on this device.")
+            }
 
         case .focus:
             focusLayout

@@ -16,6 +16,50 @@ import XCTest
 final class PlanSettingsTests: XCTestCase
 {
 
+    /// Verify a saved layout seeds new Cards and respects explicit layouts and other item types
+    func testDefaultCardLayoutSeedsNewCardsAndResetsForFutureCards() throws
+    {
+
+        let suite    = "Plenact.NewCardLayout.Tests." + UUID().uuidString /* Isolated settings */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))     /* Test storage */
+        let layout   = CardSectionLayout(order: [.checklists, .details], hidden: [.activity, .media])
+        let settings = LocalProfilePreferences()
+
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        XCTAssertNil(NewCardLayoutStore.load(from: defaults))
+        XCTAssertTrue(NewCardLayoutStore.save(layout, to: defaults))
+        XCTAssertEqual(NewCardLayoutStore.load(from: defaults), layout)
+
+        var card    = KanbanCard(id: 1, word: "New Card", listTitle: "Synthetic List")
+        var note    = KanbanCard(id: 2, word: "New Note", listTitle: "Synthetic List", presentation: .note,
+            appearance: ItemAppearance(studioSurface: StudioSurface(material: .plain)))
+        var divider = KanbanCard(id: 3, word: "Section", listTitle: "Synthetic List", isDivider: true)
+        var custom  = KanbanCard(id: 4, word: "Template Card", listTitle: "Synthetic List",
+            sectionLayout: CardSectionLayout(hidden: [.details]))
+        let authored = custom.sectionLayout /* Explicit Card override */
+
+        NewCardAppearanceDefaults.apply(to: &card, preferences: settings, defaults: defaults)
+        NewCardAppearanceDefaults.apply(to: &note, preferences: settings, defaults: defaults)
+        NewCardAppearanceDefaults.apply(to: &divider, preferences: settings, defaults: defaults)
+        NewCardAppearanceDefaults.apply(to: &custom, preferences: settings, defaults: defaults)
+
+        XCTAssertEqual(card.sectionLayout, layout)
+        XCTAssertNil(note.sectionLayout)
+        XCTAssertNil(divider.sectionLayout)
+        XCTAssertEqual(custom.sectionLayout, authored)
+        XCTAssertEqual(try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card)).sectionLayout, layout)
+
+        XCTAssertTrue(NewCardLayoutStore.save(CardSectionLayout(), to: defaults))
+        XCTAssertNil(NewCardLayoutStore.load(from: defaults))
+        var next = KanbanCard(id: 5, word: "After reset", listTitle: "Synthetic List")
+
+        NewCardAppearanceDefaults.apply(to: &next, preferences: settings, defaults: defaults)
+        XCTAssertNil(next.sectionLayout)
+        XCTAssertEqual(card.sectionLayout, layout)
+    }
+
+
     private final class Draft: ObservableObject
     {
 

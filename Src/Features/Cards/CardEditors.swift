@@ -353,6 +353,7 @@ struct CardLayoutEditor: View
 
 
     @State var layout: CardSectionLayout           /* Resolved layout configuration  */
+    var title = "Card Layout"                      /* Editor title */
     let onSave:        (CardSectionLayout) -> Bool /* Persist the edited value       */
     @Environment(\.dismiss) private var dismiss    /* Close the current presentation */
 
@@ -413,7 +414,7 @@ struct CardLayoutEditor: View
 
             }
             .environment(\.editMode, .constant(.active))
-            .navigationTitle("Card Layout")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {

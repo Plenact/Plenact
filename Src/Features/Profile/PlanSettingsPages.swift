@@ -357,7 +357,7 @@ struct PlanSettingsModulePage: View
         footer:
         {
 
-            Text("Rows set preview height; every match remains scrollable. Time ordering uses start, then due times; untimed items follow in their existing order. Day List sections stay intact. Turn time ordering off for manual Day List arrangement and a separate Focus order. Section headings do not count as rows.")
+            Text("Rows set preview height; every match remains scrollable. Time ordering uses start, then due times; untimed items keep their manually chosen positions. Day List sections stay intact. Turn time ordering off to manually arrange timed Cards and choose a separate Focus order. Section headings do not count as rows.")
         }
     }
 }

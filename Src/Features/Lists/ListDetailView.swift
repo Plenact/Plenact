@@ -241,7 +241,8 @@ struct TodayListDetailView: View
                             clearCardDrag()
                         }
 
-                    }
+                    },
+                    onDirectDrop: finishCardDrag
                 )
             }
 
@@ -274,7 +275,7 @@ struct TodayListDetailView: View
         }
 
         guard
-        let target = BoardCardMovement.target(
+        let target = cardDropTarget ?? BoardCardMovement.target(
             for: cardID, at: point, viewport: cardViewport,
             lists: [focusedList], listFrames: [listID: cardViewport], cardFrames: cardFrames
         )

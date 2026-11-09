@@ -494,6 +494,8 @@ struct BoardCardDragSource: UIViewRepresentable
     let onChanged: (CGPoint) -> Void /* Reports subsequent global card-drag positions         */
     let onEnded:   () -> Void        /* Clears parent state when the native drag session ends */
 
+    var onDirectDrop: ((CGPoint) -> Bool)? = nil /* Optional hold-and-drag movement within a Day List */
+
 
     ///
     /// Provides a UIKit view lifecycle hook for locating the enclosing card cell
@@ -533,13 +535,17 @@ struct BoardCardDragSource: UIViewRepresentable
     /// @section    Purpose
     ///     Own drag delegate state and forward location changes to the SwiftUI source callbacks
     ///
-    final class Coordinator: NSObject, UIDragInteractionDelegate
+    final class Coordinator: NSObject, UIDragInteractionDelegate, UIGestureRecognizerDelegate
     {
 
 
         var source:         BoardCardDragSource  /* Current parent callbacks and transfer token         */
         weak var container: UIView?              /* Collection cell hosting the native drag interaction */
         var interaction:    UIDragInteraction?   /* Native interaction retained through an active drag  */
+        private(set) var reorderGesture: UILongPressGestureRecognizer? /* Day hold-and-drag priority */
+        private weak var reorderScroll: UIScrollView? /* List scrolled during a held drag */
+        private var reorderDisplayLink: CADisplayLink? /* Edge scrolling while the finger is still */
+        private var reorderPoint: CGPoint?            /* Latest global pointer location */
         private(set) var isDragging = false      /* Whether a native drag session is in progress        */
         var isDetached              = false      /* Whether SwiftUI has dismantled the source probe     */
 
@@ -598,9 +604,15 @@ struct BoardCardDragSource: UIViewRepresentable
 
                     guard container !== cell.contentView else
                     {
-
-
+                        interaction?.isEnabled = source.onDirectDrop == nil
+                        configureDirectReorder(in: cell.contentView)
                         return
+                    }
+
+                    if let reorderGesture
+                    {
+                        container?.removeGestureRecognizer(reorderGesture)
+                        self.reorderGesture = nil
                     }
 
 
@@ -615,12 +627,13 @@ struct BoardCardDragSource: UIViewRepresentable
                     let drag = UIDragInteraction( /* Active drag translation */
                         delegate: self) /* Native drag interaction installed on the hosting cell */
 
-                    drag.isEnabled = true
+                    drag.isEnabled = source.onDirectDrop == nil
 
                     cell.contentView.addInteraction(drag)
 
                     container = cell.contentView
                     interaction = drag
+                    configureDirectReorder(in: cell.contentView)
 
                     return
                 }
@@ -630,6 +643,160 @@ struct BoardCardDragSource: UIViewRepresentable
 
             }
 
+        }
+
+
+        /// Give a held Day Card priority over its enclosing List's scrolling gesture
+        private func configureDirectReorder(in view: UIView)
+        {
+
+            guard source.onDirectDrop != nil else
+            {
+                if let reorderGesture
+                {
+                    view.removeGestureRecognizer(reorderGesture)
+                    self.reorderGesture = nil
+                }
+                return
+            }
+            guard reorderGesture == nil else
+            {
+                return
+            }
+
+            let hold = UILongPressGestureRecognizer(target: self, action: #selector(directReorderChanged(_:)))
+
+            hold.minimumPressDuration = 0.3
+            hold.allowableMovement = 10
+            hold.delaysTouchesBegan = false
+            hold.cancelsTouchesInView = true
+            hold.delegate = self
+            view.addGestureRecognizer(hold)
+            reorderGesture = hold
+
+            var ancestor = view.superview /* Enclosing List scroll surface */
+
+            while let parent = ancestor
+            {
+                if let scroll = parent as? UIScrollView
+                {
+                    scroll.panGestureRecognizer.require(toFail: hold)
+                    reorderScroll = scroll
+                    break
+                }
+                ancestor = parent.superview
+            }
+        }
+
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool
+        {
+            guard let container else
+            {
+                return false
+            }
+            return canBegin(at: touch.location(in: container), in: container)
+        }
+
+
+        @objc private func directReorderChanged(_ gesture: UILongPressGestureRecognizer)
+        {
+            guard let window = gesture.view?.window else
+            {
+                return
+            }
+            handleDirectReorder(gesture.state, at: gesture.location(in: window))
+        }
+
+
+        /// Commit only a completed hold; cancelled gestures leave canonical content unchanged
+        func handleDirectReorder(_ state: UIGestureRecognizer.State, at point: CGPoint)
+        {
+            guard source.onDirectDrop != nil else
+            {
+                return
+            }
+
+            switch state
+            {
+            case .began:
+                guard !isDragging else
+                {
+                    return
+                }
+                _ = begin(at: point)
+                reorderPoint = point
+                reorderDisplayLink?.invalidate()
+                let link = CADisplayLink(target: self, selector: #selector(scrollDirectReorder(_:)))
+                link.add(to: .main, forMode: .common)
+                reorderDisplayLink = link
+            case .changed:
+                if isDragging
+                {
+                    reorderPoint = point
+                    source.onChanged(point)
+                }
+            case .ended:
+                guard isDragging else
+                {
+                    return
+                }
+                // Commit the tracked insertion position even if release coordinates are no longer usable
+                _ = source.onDirectDrop?(reorderPoint ?? point)
+                finish()
+            case .cancelled, .failed:
+                finish()
+            default:
+                break
+            }
+        }
+
+
+        /// Keep a held Card moving through a long Day List near either visible edge
+        @objc private func scrollDirectReorder(_ link: CADisplayLink)
+        {
+            guard isDragging, let scroll = reorderScroll, let point = reorderPoint,
+            let window = scroll.window else
+            {
+                return
+            }
+
+            let pointer = scroll.convert(point, from: window) /* Pointer in scrolling coordinates */
+            let top     = scroll.bounds.minY + scroll.adjustedContentInset.top
+            let bottom  = scroll.bounds.maxY - scroll.adjustedContentInset.bottom
+            guard pointer.x >= scroll.bounds.minX - 32, pointer.x <= scroll.bounds.maxX + 32,
+            pointer.y >= top - 80, pointer.y <= bottom + 80 else
+            {
+                return
+            }
+
+            let edge: CGFloat = 56                            /* Edge activation distance */
+            let speed: CGFloat                                /* Signed points per second */
+
+            if pointer.y < top + edge
+            {
+                speed = -450 * min(1, max(0, (top + edge - pointer.y) / edge))
+            }
+            else if pointer.y > bottom - edge
+            {
+                speed = 450 * min(1, max(0, (pointer.y - bottom + edge) / edge))
+            }
+            else
+            {
+                return
+            }
+
+            let minimum = -scroll.adjustedContentInset.top
+            let maximum = max(minimum, scroll.contentSize.height - scroll.bounds.height
+                + scroll.adjustedContentInset.bottom)
+            let elapsed = min(1.0 / 30, max(0, link.targetTimestamp - link.timestamp))
+            let offset  = min(maximum, max(minimum, scroll.contentOffset.y + speed * elapsed))
+
+            if offset != scroll.contentOffset.y
+            {
+                scroll.setContentOffset(CGPoint(x: scroll.contentOffset.x, y: offset), animated: false)
+                source.onChanged(point)
+            }
         }
 
 
@@ -694,6 +861,10 @@ struct BoardCardDragSource: UIViewRepresentable
             }
 
 
+            reorderDisplayLink?.invalidate()
+            reorderDisplayLink = nil
+            reorderPoint = nil
+
             isDragging = false
 
             source.onEnded()
@@ -703,6 +874,10 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
                 container?.removeInteraction(interaction)
+                if let reorderGesture
+                {
+                    container?.removeGestureRecognizer(reorderGesture)
+                }
             }
 
         }
@@ -941,11 +1116,20 @@ struct BoardCardDragSource: UIViewRepresentable
         // A live native session may outlast the source cell while the Board scrolls
         coordinator.isDetached = true
 
+        if coordinator.source.onDirectDrop != nil
+        {
+            coordinator.finish()
+        }
+
         if !coordinator.isDragging, let interaction = coordinator.interaction
         {  /* Idle drag interaction safe to remove during dismantling */
 
 
             coordinator.container?.removeInteraction(interaction)
+            if let hold = coordinator.reorderGesture
+            {
+                coordinator.container?.removeGestureRecognizer(hold)
+            }
         }
 
     }

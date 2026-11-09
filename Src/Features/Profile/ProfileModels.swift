@@ -714,8 +714,8 @@ enum DayListTimeOrder
     ///
     /// @fcn        DayListTimeOrder.cards
     /// @brief      Sort each existing section by time while keeping its divider in place
-    /// @details    Stable ties preserve manual order. Untimed and date-only Cards follow timed
-    ///             Cards in their own section; no Card is removed or moved into another section
+    /// @details    Stable timed ties preserve manual order. Untimed and date-only Cards retain their
+    ///             manually chosen slots; no Card is removed or moved into another section
     /// @param[in]  cards    Complete canonical List contents, including section dividers
     /// @param[in]  calendar Calendar used to interpret schedule clock components
     /// @return     ([KanbanCard]) stably ordered contents retaining all original Card values
@@ -736,30 +736,27 @@ enum DayListTimeOrder
         func flush()
         {
 
-            result += section.enumerated().sorted
+            let timed = section.enumerated().compactMap /* Only timed slots participate in sorting */
             {
-
-            lhs, rhs in
-
-                let left  = /* First comparison operand */
-                    time(for: lhs.element, on: day, calendar: calendar)
-                let right = /* Second comparison operand */
-                    time(for: rhs.element, on: day, calendar: calendar)
-
-                switch (left, right)
+                offset, card -> (offset: Int, card: KanbanCard, time: Date)? in
+                guard let value = time(for: card, on: day, calendar: calendar) else
                 {
-
-                case let (left?, right?) where left != right:
-                    return left < right
-                case (_?, nil):
-                    return true
-                case (nil, _?):
-                    return false
-                default:
-                    return lhs.offset < rhs.offset
+                    return nil
                 }
+                return (offset, card, value)
+            }
+            .sorted
+            {
+                lhs, rhs in
+                lhs.time == rhs.time ? lhs.offset < rhs.offset : lhs.time < rhs.time
+            }
+            var iterator = timed.makeIterator() /* Refill timed slots while retaining untimed positions */
 
-            } .map(\.element)
+            result += section.map
+            {
+                card in
+                time(for: card, on: day, calendar: calendar) == nil ? card : (iterator.next()?.card ?? card)
+            }
 
             section.removeAll(keepingCapacity: true)
         }
@@ -1004,7 +1001,10 @@ struct LocalProfilePreferences: Hashable, Codable
         var sectionID: Int?                 /* Section ID              */
         var heading: String?                /* Section heading text    */
 
-        for card in cards
+        let orderedCards = keepsDayListsInTimeOrder /* Follow the canonical Day arrangement */
+            ? DayListTimeOrder.cards(cards, calendar: calendar) : cards
+
+        for card in orderedCards
         {
 
             if card.isSectionDivider
@@ -1033,7 +1033,7 @@ struct LocalProfilePreferences: Hashable, Codable
 
         }
 
-        if keepsDayListsInTimeOrder || todayFocusOrder == .chronological
+        if !keepsDayListsInTimeOrder && todayFocusOrder == .chronological
         {
 
             // Stable ties and undated items retain the user's original sequence

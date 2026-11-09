@@ -22,7 +22,7 @@ The initial experience remains one calm list that dwindles as you finish:
 
 | Choice | Initial value | Optional behavior |
 | --- | --- | --- |
-| Keep Day Lists in time order | On: timed first, untimed last | Off: manually arrange Day Lists and choose Day list or chronological Focus order |
+| Keep Day Lists in time order | On: timed Cards stay chronological; untimed Cards keep manual positions | Off: manually arrange Day Lists and choose Day list or chronological Focus order |
 | Grouping | Continuous list | Day list sections |
 | Inclusion filters | All eligible items | Up Next, Important, Bookmarked, or any combination |
 | Completed items | Hidden | Keep visible and allow unchecking |
@@ -45,11 +45,11 @@ match your Focus choices,” distinct from the entire Day list being complete.
 “Keep Day Lists in time order” is enabled by default, including for older saved
 preferences without this field. It maintains canonical date-associated Day Lists
 in time order and applies the same policy to Focus. Equal times retain their
-relative order; untimed and date-only Cards follow timed Cards. Existing section
+relative order; untimed and date-only Cards keep their manually chosen positions. Existing section
 boundaries stay intact in the actual Lists. Personal Lists and archived Lists are
 excluded, and sorting does not change Card content or create edit-history records.
 
-Turning the switch off stops automatic sorting and allows manual Day arrangement.
+Turning the switch off also allows manual arrangement of timed Cards.
 The separately saved Focus order then controls the preview. Sorting a preview
 alone does not rewrite its Day List. Both settings screens retain Save/Cancel.
 

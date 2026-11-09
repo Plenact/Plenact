@@ -10,6 +10,7 @@
 import AVFoundation
 import PencilKit
 import SwiftUI
+import UIKit.UIGestureRecognizerSubclass
 import UserNotifications
 import XCTest
 
@@ -22,6 +23,142 @@ import XCTest
 ///
 extension PlenactBoardDocumentTests
 {
+
+    /// A held Day Card scrolls at the edge and detaching cancels without committing a drop
+    @MainActor
+    func testDayCardEdgeScrollingStopsWhenSourceDetaches() async throws
+    {
+
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window   = UIWindow(windowScene: scene)
+        let root     = UIViewController()
+        let scroll   = UIScrollView(frame: CGRect(x: 0, y: 100, width: 393, height: 400))
+        let cell     = UICollectionViewCell(frame: CGRect(x: 0, y: 0, width: 393, height: 100))
+        let probe    = BoardCardDragSource.Probe()
+        var ended    = 0
+        var dropped  = 0
+        let source   = BoardCardDragSource(token: "Synthetic", onBegan: { _ in },
+            onChanged: { _ in }, onEnded: { ended += 1 }, onDirectDrop: { _ in dropped += 1; return true })
+        let coordinator = source.makeCoordinator()
+
+        defer
+        {
+            coordinator.finish()
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        root.view.addSubview(scroll)
+        scroll.contentSize = CGSize(width: 393, height: 1600)
+        scroll.addSubview(cell)
+        cell.contentView.addSubview(probe)
+        coordinator.install(from: probe)
+
+        let point = scroll.convert(CGPoint(x: 180, y: 395), to: window)
+
+        coordinator.handleDirectReorder(.began, at: point)
+        try await Task.sleep(for: .milliseconds(200))
+        XCTAssertGreaterThan(scroll.contentOffset.y, 15)
+        BoardCardDragSource.dismantleUIView(probe, coordinator: coordinator)
+
+        let stopped = scroll.contentOffset.y
+
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(scroll.contentOffset.y, stopped, accuracy: 1)
+        XCTAssertFalse(coordinator.isDragging)
+        XCTAssertEqual(ended, 1)
+        XCTAssertEqual(dropped, 0)
+        XCTAssertTrue(scroll.isScrollEnabled)
+    }
+
+
+    /// Exercise the mounted Day List's actual native source and receiver against its live binding
+    @MainActor
+    func testDayViewDragReordersCardsInLiveList() async throws
+    {
+
+        let scene    = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window   = UIWindow(windowScene: scene)
+        let suite    = "Plenact.DayDrag.Tests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let owner    = UUID()
+        let date     = Date(timeIntervalSince1970: 1_793_016_000)
+        var records  = [KanbanList(id: 4, title: "Synthetic day", cards: (0 ..< 3).map
+            { KanbanCard(id: $0, word: "Synthetic \($0)", listTitle: "Synthetic day") })]
+        let original = records[0].cards
+        let view     = TodayListDetailView(
+            lists: Binding(get: { records }, set: { records = $0 }), reservedLists: [],
+            labelLibrary: .constant(.starter), savedCardIDs: .constant([]), listID: 4,
+            currentUserName: "Test", onClose: {}, onOpenWeek: {}, onPermanentDelete: { _ in false },
+            representedDate: date)
+            .defaultAppStorage(defaults)
+            .environment(\.cardMovementSource, owner)
+        let host = UIHostingController(rootView: view)
+
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+            defaults.removePersistentDomain(forName: suite)
+            UserDefaults.standard.removeObject(forKey: BoardViewportMemory.prefix + owner.uuidString + ".focused." + PlanningDate.key(date))
+        }
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        try await Task.sleep(for: .milliseconds(500))
+        host.view.layoutIfNeeded()
+
+        func descendants(_ view: UIView) -> [UIView]
+        {
+            [view] + view.subviews.flatMap(descendants)
+        }
+
+        let native = try XCTUnwrap(descendants(host.view).compactMap { $0 as? UICollectionView }.first)
+        let sources = descendants(native).flatMap(\.interactions).compactMap
+            { ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator }
+            .sorted { ($0.container?.convert(.zero, to: window).y ?? 0) < ($1.container?.convert(.zero, to: window).y ?? 0) }
+
+        XCTAssertEqual(sources.count, 3, "Every Day Card needs a native drag source")
+
+        let source = try XCTUnwrap(sources.first)
+        let first  = try XCTUnwrap(source.container)
+        let last   = try XCTUnwrap(sources.dropFirst().first?.container)
+        let start  = first.convert(CGPoint(x: first.bounds.midX, y: first.bounds.midY), to: window)
+        let end    = last.convert(CGPoint(x: last.bounds.midX, y: last.bounds.maxY - 1), to: window)
+
+        let hold = try XCTUnwrap(source.reorderGesture)
+
+        XCTAssertTrue(hold.isEnabled)
+        XCTAssertEqual(hold.minimumPressDuration, 0.3)
+        XCTAssertEqual(hold.allowableMovement, 10)
+        XCTAssertFalse(try XCTUnwrap(source.interaction).isEnabled)
+        XCTAssertTrue(source.canBegin(at: start, in: window))
+
+        source.handleDirectReorder(.began, at: start)
+        source.handleDirectReorder(.changed, at: end)
+        source.handleDirectReorder(.cancelled, at: end)
+        XCTAssertEqual(records[0].cards, original)
+        XCTAssertFalse(source.isDragging)
+
+        source.handleDirectReorder(.began, at: start)
+        hold.state = .began
+        source.handleDirectReorder(.changed, at: end)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertTrue(source.isDragging, "A recognized hold must survive the SwiftUI insertion-marker update")
+        XCTAssertNotNil(hold.view, "The active gesture must stay attached until release")
+        // Simulate release without usable coordinates; keep the visible insertion position
+        source.handleDirectReorder(.ended, at: .zero)
+
+        XCTAssertFalse(source.isDragging)
+        XCTAssertEqual(records[0].cards.map(\.id), [1, 0, 2])
+        XCTAssertEqual(Set(records[0].cards), Set(original))
+    }
 
 
     ///
@@ -659,14 +796,44 @@ extension PlenactBoardDocumentTests
 
 
 
+    /// Manual untimed placements survive the same normalization used after saving and reopening
+    func testUntimedDayCardsCanMoveAroundTimedCards() throws
+    {
+
+        var early = KanbanCard(id: 1, word: "Early", listTitle: "Day", checklists: [])
+        var late  = KanbanCard(id: 2, word: "Late", listTitle: "Day", checklists: [])
+        let free  = KanbanCard(id: 3, word: "Untimed", listTitle: "Day", checklists: [])
+
+        early.startDate = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: .now)
+        early.startDateKind = .time
+        late.startDate = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: .now)
+        late.startDateKind = .time
+
+        for (anchor, expected) in [(Optional(1), [3, 1, 2]), (Optional(2), [1, 3, 2]), (nil, [1, 2, 3])]
+        {
+
+            var lists = [KanbanList(id: 4, title: "Day", cards: [early, free, late])]
+
+            _ = try BoardCardMovement.move(3, to: 4, before: anchor, in: &lists)
+            lists = DayListTimeOrder.lists(lists, dayListIDs: [4], calendar: .current)
+            XCTAssertEqual(lists[0].cards.map(\.id), expected)
+            XCTAssertEqual(Set(lists[0].cards), Set([early, late, free]))
+
+            let reopened = try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(lists))
+
+            XCTAssertEqual(DayListTimeOrder.lists(reopened, dayListIDs: [4], calendar: .current), lists)
+        }
+    }
+
+
     ///
-    /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingKeepsUntimedLastAndFocusInSync
-    /// @brief      Sort timed Day Cards and Focus consistently after an edited time
+    /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingPreservesUntimedSlotsAndFocusInSync
+    /// @brief      Sort timed Day slots and retain interleaved untimed Cards after an edited time
     /// @details    Covers stable equal times, untimed and date-only contents, due-time fallback,
     ///             time-only normalization, start-time precedence, and manual opt-out
     /// @return     (Void) records ordering and live rescheduling regressions
     ///
-    func testDayTimeOrderingKeepsUntimedLastAndFocusInSync()
+    func testDayTimeOrderingPreservesUntimedSlotsAndFocusInSync()
     {
 
         var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
@@ -676,7 +843,7 @@ extension PlenactBoardDocumentTests
         let day = Date(timeIntervalSince1970: 1792800000) /* Day under consideration */
 
         ///
-        /// @fcn        testDayTimeOrderingKeepsUntimedLastAndFocusInSync.card
+        /// @fcn        testDayTimeOrderingPreservesUntimedSlotsAndFocusInSync.card
         /// @brief      Build a Card with an optional timed start on one controlled day
         /// @details    Fixture offsets produce independent identities without relying on wall-clock time
         /// @param[in]  id   Stable fixture identity
@@ -720,7 +887,7 @@ extension PlenactBoardDocumentTests
         let ordered = /* Values in display order */
             DayListTimeOrder.cards(input, calendar: calendar)
 
-        XCTAssertEqual(ordered.map(\.id), [1, 3, 6, 5, 7, 2, 4, 8])
+        XCTAssertEqual(ordered.map(\.id), [1, 2, 3, 4, 6, 5, 7, 8])
         XCTAssertEqual(DayListTimeOrder.cards(ordered, calendar: calendar), ordered)
         XCTAssertEqual(Set(ordered), Set(input), "Sorting must preserve every Card value")
 
@@ -733,9 +900,9 @@ extension PlenactBoardDocumentTests
 
         edited[0].startDate = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: day)
 
-        XCTAssertEqual(DayListTimeOrder.cards(edited, calendar: calendar).map(\.id), [3, 6, 1, 5, 7, 2, 4, 8])
+        XCTAssertEqual(DayListTimeOrder.cards(edited, calendar: calendar).map(\.id), [3, 2, 6, 4, 1, 5, 7, 8])
         XCTAssertEqual(preferences.todayFocusEntries(in: edited, on: day, calendar: calendar).map(\.id),
-            [3, 6, 1, 5, 7, 2, 4, 8])
+            [3, 2, 6, 4, 1, 5, 7, 8])
 
         let manual = /* Manual comparison fixture */
             LocalProfilePreferences(keepsDayListsInTimeOrder: false)
@@ -786,7 +953,7 @@ extension PlenactBoardDocumentTests
         let normalized = /* Comparison-normalized value */
             DayListTimeOrder.lists([day, personal, archived], dayListIDs: [10, 12], calendar: .current)
 
-        XCTAssertEqual(normalized[0].cards.map(\.id), [1, 2, 3, 4, 6, 5])
+        XCTAssertEqual(normalized[0].cards.map(\.id), [3, 1, 2, 4, 5, 6])
         XCTAssertEqual(normalized[1], personal)
         XCTAssertEqual(normalized[2], archived)
         XCTAssertTrue(normalized[0].cards.allSatisfy

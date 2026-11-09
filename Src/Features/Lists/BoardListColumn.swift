@@ -986,6 +986,8 @@ struct KanbanListView: View
         }
 
         .listStyle(.plain)
+        // List sizes its rows from this environment; hidden guidance must occupy zero height
+        .environment(\.defaultMinListRowHeight, 0)
         .environment(\.editMode, $editMode)
         .scrollContentBackground(.hidden)
         .contentMargins(.vertical, 0, for: .scrollContent)

@@ -2304,6 +2304,15 @@ extension PlenactBoardDocumentTests
 
             XCTAssertEqual(itemCount, 5, "Three content rows, the collapsed guidance placeholder, and Add card")
 
+            let guidanceFrame = try XCTUnwrap(collection.layoutAttributesForItem(
+                at: IndexPath(item: 0, section: 0))).frame /* Hidden guidance row */
+            let firstCardFrame = try XCTUnwrap(collection.layoutAttributesForItem(
+                at: IndexPath(item: 1, section: 0))).frame /* First visible Card row */
+
+            XCTAssertLessThanOrEqual(guidanceFrame.height, 1, "Hidden guidance must not reserve a row")
+            XCTAssertLessThanOrEqual(firstCardFrame.minY, 6, "Cards should begin at the top of the List content")
+
+
             let dragSources = collection.visibleCells.flatMap /* Drag sources */
             {
             cell in /* Registered drag-source views */

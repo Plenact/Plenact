@@ -853,22 +853,37 @@ struct CardDetailView: View
         {
             VStack(alignment: .leading, spacing: 18)
             {
-                locationControl
-                .accessibilityIdentifier("note.locationPicker")
-
-                HStack(alignment: .firstTextBaseline, spacing: 8)
+                HStack(alignment: .top, spacing: 8)
                 {
-                    ItemAppearanceMark(appearance: appearance)
-                    TextField("Note title", text: $titleText, axis: .vertical).textInputAutocapitalization(.sentences)
-                    .font(.largeTitle.weight(.bold))
-                    .focused($focusedField, equals: .title)
-                    .accessibilityLabel("Note title")
-                    .onChange(of: titleText)
+                    VStack(alignment: .leading, spacing: 18)
                     {
-                        _, newValue in
-                        syncCardState(title: newValue)
-                    }
+                        locationControl
+                        .accessibilityIdentifier("note.locationPicker")
 
+                        HStack(alignment: .firstTextBaseline, spacing: 8)
+                        {
+                            ItemAppearanceMark(appearance: appearance)
+                            TextField("Note title", text: $titleText, axis: .vertical)
+                            .textInputAutocapitalization(.sentences)
+                            .font(.largeTitle.weight(.bold))
+                            .focused($focusedField, equals: .title)
+                            .accessibilityLabel("Note title")
+                            .onChange(of: titleText)
+                            {
+                                _, newValue in
+                                syncCardState(title: newValue)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    HStack(spacing: 0)
+                    {
+                        ImportantItemIndicator(
+                            cardID: recordID, ownerID: currentPersonalCollectionID ?? checklistCollectionID)
+                        recordBookmarkButton
+                        recordActionsMenu
+                    }
                 }
 
 
@@ -971,6 +986,347 @@ struct CardDetailView: View
 
         }
         .presentationDetents([.medium, .large])
+    }
+
+
+    private var recordBookmarkButton: some View /* Save or unsave the current record */
+    {
+        Button(action: toggleSavedCard)
+        {
+            Image(systemName: isCurrentRecordSaved ? "bookmark.fill" : "bookmark")
+            .font(.title2)
+            .foregroundStyle(isCurrentRecordSaved ? .orange : .primary)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+        }
+
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            isCurrentRecordSaved ? "Remove from Saved" : "Save \(displayFormat.title.lowercased())")
+    }
+
+
+    private var recordActionsMenu: some View /* Actions for the current record */
+    {
+        Menu
+        {
+            Button("Info & History", systemImage: "clock.arrow.circlepath")
+            {
+                activeSheet = .editHistory
+
+            }
+            .accessibilityIdentifier("card.editHistory")
+
+            if displayFormat != .divider
+            {
+                Button(
+                    isEditingLocked ? "Unlock editing" : "Lock editing",
+                    systemImage: isEditingLocked ? "lock.open" : "lock"
+                )
+                {
+                    setEditingLocked(!isEditingLocked)
+                }
+                .disabled(onTitleToggle == nil && onUpdateMovedNote == nil)
+                .accessibilityIdentifier("card.editingLockAction")
+            }
+
+            if !isEditingLocked
+            {
+                if displayFormat != .divider
+                {
+                    Button("Add reaction", systemImage: "face.smiling")
+                    {
+                        dismissEditing();
+
+                        activeSheet = .reactions
+
+                    }
+
+                    if relocatedCard != nil || libraryImportance != nil
+                    {
+                        Button(
+                            currentImportanceLevel > 0
+                            ? "Increase importance" : "Mark important", systemImage: "star.fill"
+                        )
+                        {
+                            adjustCurrentImportance(by: 1)
+                        }
+                        .disabled(currentImportanceLevel >= 5)
+                        if currentImportanceLevel > 0
+                        {
+                            Button("Decrease importance", systemImage: "star")
+                            {
+                                adjustCurrentImportance(by: -1)
+                            }
+
+                        }
+
+                    }
+
+                    Toggle(
+                                                                                            "Show reactions in previews",
+                                                                                            isOn: Binding(
+                                                                                                get:
+                                                                                                {
+                                                                                                    showsReactionsInPreviews != false
+                                                                                                },
+                                                                                                set:
+                                                                                                {
+                                                                                                    visible in
+
+                                                                                                    let previous = /* Previous value for comparison */
+                                                                                                        showsReactionsInPreviews
+
+                                                                                                    showsReactionsInPreviews = visible
+
+                                                                                                    if !syncCardState()
+                                                                                                    {
+                                                                                                        showsReactionsInPreviews = previous
+
+                                                                                                    }
+
+                                                                                                }))
+                    Toggle(
+                                                                                            "Show due date in lists",
+                                                                                            isOn: Binding(
+                                                                                                get:
+                                                                                                {
+                                                                                                    showsDueDateInList
+                                                                                                },
+                                                                                                set:
+                                                                                                {
+                                                                                                    visible in
+
+                                                                                                    let previous = /* Previous value for comparison */
+                                                                                                        showsDueDateInList
+
+                                                                                                    showsDueDateInList = visible
+
+                                                                                                    if !syncCardState()
+                                                                                                    {
+                                                                                                        showsDueDateInList = previous
+
+                                                                                                    }
+
+                                                                                                }))
+                }
+
+                if displayFormat == .card, appearance?.hidesSubtitle(subtitleText) == true
+                {
+                    Button("Add subtitle", systemImage: "text.badge.plus")
+                    {
+                        editingHeaderField = .subtitle
+
+                    }
+
+                }
+
+                Button("Appearance", systemImage: "paintpalette")
+                {
+                    dismissEditing()
+
+                    activeSheet = .appearance
+
+                }
+                .disabled(onTitleToggle == nil)
+
+                if displayFormat != .divider
+                {
+                    Button
+                    {
+                        richTextFocusedField = .description
+
+                    }
+                    label:
+                    {
+                        Label("Edit description", systemImage: "text.alignleft")
+                    }
+
+                    if cardMovementAccess.move != nil
+                    {
+                        CardDestinationMenu(
+                            card: workingCardSnapshot,
+                            onMoved:
+                            {
+                                hasMovedCard = true;
+
+                                dismiss()
+                            }, onCardMoved: followMovedCard, sourceOverride: relocatedCard?.ownerID,
+                            sourceListID: relocatedCard?.listID)
+                    }
+                    else
+                    {
+                        moveCardMenu
+                        {
+                            Label(
+                                                                                                                    "Move \(displayFormat.title.lowercased())",
+                                                                                                                    systemImage: "arrowshape.turn.up.right")
+                        }
+
+                    }
+
+                    Button
+                    {
+                        showsNoteDetails = true
+                        activityFilter = .all
+
+                    }
+                    label:
+                    {
+                        Label("Show all activity", systemImage: "clock.arrow.circlepath")
+                    }
+
+                }
+
+
+                if let onArchive, displayFormat != .divider
+                {  /* Available archive callback for an actionable record */
+                    Button
+                    {
+                        if relocatedCard != nil
+                        {
+                            let snapshot = workingCardSnapshot.recordingEdits(from: lastSavedHistoryCard)
+
+                            if saveRelocatedChange({ owner, list, item in
+                                owner.lists[list].cards[item] = snapshot
+                                owner.lists[list].archiveCard(id: recordID)
+                            })
+                            {
+                                hasMovedCard = true
+                                dismiss()
+                            }
+                        }
+                        else if let
+                        currentPersonalCollectionID, /* Current owner used to route relocated Note archiving */
+                        currentPersonalCollectionID != personalCollectionID
+                        {
+                            syncCardState()
+                            if onArchiveMovedNote?(currentPersonalCollectionID, workingCardSnapshot)
+                            == true
+                            {
+                                dismiss()
+                            }
+
+                        }
+                        else
+                        {
+                            syncCardState()
+                            onArchive()
+                            dismiss()
+                        }
+
+                    }
+                    label:
+                    {
+                        Label("Archive \(displayFormat.title)", systemImage: "archivebox")
+                    }
+
+                }
+
+
+                if onDelete != nil
+                {
+                    Button(role: .destructive)
+                    {
+                        showingDeleteConfirmation = true
+
+                    }
+                    label:
+                    {
+                        Label("Delete \(displayFormat.title)", systemImage: "trash")
+                    }
+
+                }
+
+            }
+
+        }
+        label:
+        {
+            Image(systemName: "ellipsis")
+            .font(.title2)
+            .foregroundStyle(.secondary)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+        }
+
+        .accessibilityLabel("\(displayFormat.title) actions")
+    }
+
+
+    private func topHeader(using scrollProxy: ScrollViewProxy) -> some View
+    {
+        HStack(spacing: 12)
+        {
+            if presentation != .note || displayFormat == .divider
+            {
+                Button
+                {
+                    dismiss()
+                }
+                label:
+                {
+                    Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .background(Color(.systemGray5), in: Circle())
+                    .contentShape(Circle())
+                }
+
+                .buttonStyle(.plain)
+                .accessibilityLabel("Back")
+            }
+
+
+            Spacer()
+
+            ImportantItemIndicator(
+                cardID: recordID, ownerID: currentPersonalCollectionID ?? checklistCollectionID)
+
+            if presentation == .card, displayFormat != .divider
+            {
+                locationControl
+                .frame(maxWidth: 180, minHeight: 44)
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("card.locationPicker")
+                .disabled(isEditingLocked)
+            }
+
+
+            if displayFormat != .divider
+            {
+                recordBookmarkButton
+
+                if presentation == .card
+                {
+                    addMenu(using: scrollProxy)
+                    .foregroundStyle(.primary)
+                    .disabled(isEditingLocked)
+                }
+            }
+
+            recordActionsMenu
+
+        }
+
+        .padding(.horizontal, 16)
+        .padding(.vertical, 4)
+        .background
+        {
+            if !showsPhotoThroughHeader
+            {
+                ZStack
+                {
+                    Color(.systemGroupedBackground)
+                    StudioItemBackground(appearance: appearance, isNote: presentation == .note)
+                    Color.clear.itemBannerBackground(appearance)
+                }
+                .ignoresSafeArea(.container, edges: .top)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+        }
     }
 
 
@@ -1279,333 +1635,9 @@ struct CardDetailView: View
             .clipped()
             .safeAreaInset(edge: .top, spacing: 0)
             {
-                HStack(spacing: 12)
+                if presentation != .note || displayFormat == .divider || isEditingLocked
                 {
-                    if presentation != .note || displayFormat == .divider
-                    {
-                        Button
-                        {
-                            dismiss()
-                        }
-                        label:
-                        {
-                            Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: 44, height: 44)
-                            .background(Color(.systemGray5), in: Circle())
-                            .contentShape(Circle())
-                        }
-
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Back")
-                    }
-
-
-                    Spacer()
-
-                    ImportantItemIndicator(
-                        cardID: recordID, ownerID: currentPersonalCollectionID ?? checklistCollectionID)
-
-                    if presentation == .card, displayFormat != .divider
-                    {
-                        locationControl
-                        .frame(maxWidth: 180, minHeight: 44)
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("card.locationPicker")
-                        .disabled(isEditingLocked)
-                    }
-
-
-                    Group
-                    {
-                        if displayFormat != .divider
-                        {
-                            Button(action: toggleSavedCard)
-                            {
-                                Image(systemName: isCurrentRecordSaved ? "bookmark.fill" : "bookmark")
-                                .font(.title2)
-                                .foregroundStyle(isCurrentRecordSaved ? .orange : .primary)
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                            }
-
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(
-                                isCurrentRecordSaved ? "Remove from Saved" : "Save \(displayFormat.title.lowercased())")
-
-                            if presentation == .card
-                            {
-                                addMenu(using: scrollProxy)
-                                .foregroundStyle(.primary)
-                                .disabled(isEditingLocked)
-                            }
-
-                        }
-
-                        Menu
-                        {
-                            Button("Info & History", systemImage: "clock.arrow.circlepath")
-                            {
-                                activeSheet = .editHistory
-
-                            }
-                            .accessibilityIdentifier("card.editHistory")
-
-                            if displayFormat != .divider
-                            {
-                                Button(
-                                    isEditingLocked ? "Unlock editing" : "Lock editing",
-                                    systemImage: isEditingLocked ? "lock.open" : "lock"
-                                )
-                                {
-                                    setEditingLocked(!isEditingLocked)
-                                }
-                                .disabled(onTitleToggle == nil && onUpdateMovedNote == nil)
-                                .accessibilityIdentifier("card.editingLockAction")
-                            }
-
-                            if !isEditingLocked
-                            {
-                                if displayFormat != .divider
-                                {
-                                    Button("Add reaction", systemImage: "face.smiling")
-                                    {
-                                        dismissEditing();
-
-                                        activeSheet = .reactions
-
-                                    }
-
-                                    if relocatedCard != nil || libraryImportance != nil
-                                    {
-                                        Button(
-                                            currentImportanceLevel > 0
-                                            ? "Increase importance" : "Mark important", systemImage: "star.fill"
-                                        )
-                                        {
-                                            adjustCurrentImportance(by: 1)
-                                        }
-                                        .disabled(currentImportanceLevel >= 5)
-                                        if currentImportanceLevel > 0
-                                        {
-                                            Button("Decrease importance", systemImage: "star")
-                                            {
-                                                adjustCurrentImportance(by: -1)
-                                            }
-
-                                        }
-
-                                    }
-
-                                    Toggle(
-                                                                                                            "Show reactions in previews",
-                                                                                                            isOn: Binding(
-                                                                                                                get:
-                                                                                                                {
-                                                                                                                    showsReactionsInPreviews != false
-                                                                                                                },
-                                                                                                                set:
-                                                                                                                {
-                                                                                                                    visible in
-
-                                                                                                                    let previous = /* Previous value for comparison */
-                                                                                                                        showsReactionsInPreviews
-
-                                                                                                                    showsReactionsInPreviews = visible
-
-                                                                                                                    if !syncCardState()
-                                                                                                                    {
-                                                                                                                        showsReactionsInPreviews = previous
-
-                                                                                                                    }
-
-                                                                                                                }))
-                                    Toggle(
-                                                                                                            "Show due date in lists",
-                                                                                                            isOn: Binding(
-                                                                                                                get:
-                                                                                                                {
-                                                                                                                    showsDueDateInList
-                                                                                                                },
-                                                                                                                set:
-                                                                                                                {
-                                                                                                                    visible in
-
-                                                                                                                    let previous = /* Previous value for comparison */
-                                                                                                                        showsDueDateInList
-
-                                                                                                                    showsDueDateInList = visible
-
-                                                                                                                    if !syncCardState()
-                                                                                                                    {
-                                                                                                                        showsDueDateInList = previous
-
-                                                                                                                    }
-
-                                                                                                                }))
-                                }
-
-                                if displayFormat == .card, appearance?.hidesSubtitle(subtitleText) == true
-                                {
-                                    Button("Add subtitle", systemImage: "text.badge.plus")
-                                    {
-                                        editingHeaderField = .subtitle
-
-                                    }
-
-                                }
-
-                                Button("Appearance", systemImage: "paintpalette")
-                                {
-                                    dismissEditing()
-
-                                    activeSheet = .appearance
-
-                                }
-                                .disabled(onTitleToggle == nil)
-
-                                if displayFormat != .divider
-                                {
-                                    Button
-                                    {
-                                        richTextFocusedField = .description
-
-                                    }
-                                    label:
-                                    {
-                                        Label("Edit description", systemImage: "text.alignleft")
-                                    }
-
-                                    if cardMovementAccess.move != nil
-                                    {
-                                        CardDestinationMenu(
-                                            card: workingCardSnapshot,
-                                            onMoved:
-                                            {
-                                                hasMovedCard = true;
-
-                                                dismiss()
-                                            }, onCardMoved: followMovedCard, sourceOverride: relocatedCard?.ownerID,
-                                            sourceListID: relocatedCard?.listID)
-                                    }
-                                    else
-                                    {
-                                        moveCardMenu
-                                        {
-                                            Label(
-                                                                                                                                    "Move \(displayFormat.title.lowercased())",
-                                                                                                                                    systemImage: "arrowshape.turn.up.right")
-                                        }
-
-                                    }
-
-                                    Button
-                                    {
-                                        showsNoteDetails = true
-                                        activityFilter = .all
-
-                                    }
-                                    label:
-                                    {
-                                        Label("Show all activity", systemImage: "clock.arrow.circlepath")
-                                    }
-
-                                }
-
-
-                                if let onArchive, displayFormat != .divider
-                                {  /* Available archive callback for an actionable record */
-                                    Button
-                                    {
-                                        if relocatedCard != nil
-                                        {
-                                            let snapshot = workingCardSnapshot.recordingEdits(from: lastSavedHistoryCard)
-
-                                            if saveRelocatedChange({ owner, list, item in
-                                                owner.lists[list].cards[item] = snapshot
-                                                owner.lists[list].archiveCard(id: recordID)
-                                            })
-                                            {
-                                                hasMovedCard = true
-                                                dismiss()
-                                            }
-                                        }
-                                        else if let
-                                        currentPersonalCollectionID, /* Current owner used to route relocated Note archiving */
-                                        currentPersonalCollectionID != personalCollectionID
-                                        {
-                                            syncCardState()
-                                            if onArchiveMovedNote?(currentPersonalCollectionID, workingCardSnapshot)
-                                            == true
-                                            {
-                                                dismiss()
-                                            }
-
-                                        }
-                                        else
-                                        {
-                                            syncCardState()
-                                            onArchive()
-                                            dismiss()
-                                        }
-
-                                    }
-                                    label:
-                                    {
-                                        Label("Archive \(displayFormat.title)", systemImage: "archivebox")
-                                    }
-
-                                }
-
-
-                                if onDelete != nil
-                                {
-                                    Button(role: .destructive)
-                                    {
-                                        showingDeleteConfirmation = true
-
-                                    }
-                                    label:
-                                    {
-                                        Label("Delete \(displayFormat.title)", systemImage: "trash")
-                                    }
-
-                                }
-
-                            }
-
-                        }
-                        label:
-                        {
-                            Image(systemName: "ellipsis")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                        }
-
-                        .accessibilityLabel("\(displayFormat.title) actions")
-                    }
-
-                }
-
-                .padding(.horizontal, 16)
-                .padding(.vertical, 4)
-                .background
-                {
-                    if !showsPhotoThroughHeader
-                    {
-                        ZStack
-                        {
-                            Color(.systemGroupedBackground)
-                            StudioItemBackground(appearance: appearance, isNote: presentation == .note)
-                            Color.clear.itemBannerBackground(appearance)
-                        }
-                        .ignoresSafeArea(.container, edges: .top)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                    }
+                    topHeader(using: scrollProxy)
                 }
             }
 

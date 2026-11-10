@@ -17,7 +17,7 @@ import Foundation
 enum PersonalCollectionStore
 {
     /// Versioned storage key for saved personal collections
-    private static let key = "Plenact.PersonalCollections.v1" /* Versioned personal collection persistence key */
+    private static let key = "Plenact.PersonalCollections.v1"           /* Versioned personal collection persistence key */
 
 
     ///
@@ -34,7 +34,7 @@ enum PersonalCollectionStore
     static func load(from defaults: UserDefaults = .standard) -> [PersonalCollection]
     {
         guard let data = defaults.data(forKey: key) else
-        {  /* Stored personal collection document */
+        {                                                       /* Stored personal collection document */
             return []
         }
 
@@ -43,7 +43,6 @@ enum PersonalCollectionStore
         {
             DefaultListTutorial.removingUntouchedWelcomeCards(from: $0)
         }
-
     }
 
 
@@ -63,7 +62,7 @@ enum PersonalCollectionStore
     {
         guard let data = try? JSONEncoder().encode(collections)
         else
-        {  /* Encoded collection snapshot ready for storage */
+        {               /* Encoded collection snapshot ready for storage */
             return
         }
 
@@ -113,7 +112,7 @@ enum PersonalCollectionStore
     {
         guard
         let index = collections.firstIndex(where:
-            {  /* Position of the collection to archive */
+            {                                                   /* Position of the collection to archive */
                 $0.id == id && $0.kind == .board && $0.isActive
             })
         else
@@ -122,7 +121,7 @@ enum PersonalCollectionStore
         }
 
 
-        var updated = collections /* Directory snapshot carrying the archive state change */
+        var updated = collections       /* Directory snapshot carrying the archive state change */
 
         updated[index].isArchived = true
 
@@ -151,7 +150,7 @@ enum PersonalCollectionStore
     {
         guard
         let index = collections.firstIndex(where:
-            {  /* Position of the active collection to archive */
+            {                                                   /* Position of the active collection to archive */
                 $0.id == id && $0.isActive && !$0.isPrimaryList
             })
         else
@@ -160,7 +159,7 @@ enum PersonalCollectionStore
         }
 
 
-        var updated = collections /* Directory snapshot carrying the archived collection */
+        var updated = collections       /* Directory snapshot carrying the archived collection */
 
         updated[index].isArchived = true
 
@@ -168,7 +167,6 @@ enum PersonalCollectionStore
 
         return updated
     }
-
 }
 
 
@@ -177,11 +175,11 @@ enum PersonalCollectionStore
 ///     Restore only the deleted owner, preserving unrelated edits and refusing identity collisions
 struct LibraryCollectionDeletion: Identifiable
 {
-    let collection: PersonalCollection /* Complete deleted owner and its retained content */
-    let index: Int                     /* Original directory position */
-    let deadline: ContinuousClock.Instant /* Monotonic Undo expiry */
+    let collection: PersonalCollection          /* Complete deleted owner and its retained content */
+    let index: Int                              /* Original directory position                     */
+    let deadline: ContinuousClock.Instant       /* Monotonic Undo expiry                           */
 
-    var id: UUID /* Stable identity for the transient notice */
+    var id: UUID        /* Stable identity for the transient notice */
     {
         collection.id
     }
@@ -220,7 +218,7 @@ struct LibraryCollectionDeletion: Identifiable
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var restored = collections /* Current directory receiving only the deleted owner */
+        var restored = collections      /* Current directory receiving only the deleted owner */
 
         restored.insert(collection, at: min(index, restored.count))
         return restored

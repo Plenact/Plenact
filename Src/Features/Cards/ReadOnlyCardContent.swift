@@ -20,15 +20,15 @@ import UniformTypeIdentifiers
 ///
 struct ReadOnlyCardContent: View
 {
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic         /* Inherited subtitle styling */
 
 
-    let card:             KanbanCard                 /* Card under consideration    */
-    let labels:           LabelLibrary               /* Available label definitions */
-    let onOpenAttachment: (KanbanAttachment) -> Void /* Open attachment callback    */
-    var showsUnlockHint = true                       /* Unlock Hint visibility      */
+    let card:             KanbanCard                    /* Card under consideration    */
+    let labels:           LabelLibrary                  /* Available label definitions */
+    let onOpenAttachment: (KanbanAttachment) -> Void    /* Open attachment callback    */
+    var showsUnlockHint = true                          /* Unlock Hint visibility      */
 
-    var body: some View /* Read Only Card Content layout */
+    var body: some View         /* Read Only Card Content layout */
     {
         ScrollView
         {
@@ -69,7 +69,7 @@ struct ReadOnlyCardContent: View
                     .buttonStyle(.plain).accessibilityLabel("View cover")
                 }
 
-                let body = /* Note or description text */
+                let body =                                                                              /* Note or description text */
                     card.presentation == .note ? card.descriptionOverride ?? "" : card.funParagraph
 
                 if !PlanRichText.plain(body).isEmpty
@@ -105,7 +105,6 @@ struct ReadOnlyCardContent: View
                     {
                         KanbanLabelChip(label: $0)
                     }
-
                 }
 
                 if !card.members.isEmpty
@@ -115,7 +114,6 @@ struct ReadOnlyCardContent: View
                     {
                         Text($0.displayName)
                     }
-
                 }
 
                 if !(card.attachmentsExcludingCover).isEmpty
@@ -134,7 +132,6 @@ struct ReadOnlyCardContent: View
                                     {
                                         CardAttachmentThumbnail(attachment: attachment)
                                     }
-
                                 }
                                 else
                                 {
@@ -148,13 +145,9 @@ struct ReadOnlyCardContent: View
                                     }
                                     .buttonStyle(.plain).accessibilityLabel("View attachment")
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
 
                 ItemReactionPreview(card: card)
@@ -170,17 +163,13 @@ struct ReadOnlyCardContent: View
                             Text(comment.author).font(.subheadline.bold())
                             Text(PlanRichText.display(comment.body)).textSelection(.enabled)
                         }
-
                     }
-
                 }
-
             }
             .padding(16).frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier("card.readOnlyContent")
     }
-
 }
 
 
@@ -193,9 +182,9 @@ struct ReadOnlyCardContent: View
 ///
 struct ReadOnlyChecklistContent: View
 {
-    let checklists: [KanbanChecklist] /* Owned checklist groups */
+    let checklists: [KanbanChecklist]           /* Owned checklist groups */
 
-    var body: some View /* Read Only Checklist Content layout */
+    var body: some View         /* Read Only Checklist Content layout */
     {
         ForEach(checklists)
         {
@@ -232,17 +221,10 @@ struct ReadOnlyChecklistContent: View
                                 comment in
                                 Text(comment.author + ": " + PlanRichText.plain(comment.body))
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }

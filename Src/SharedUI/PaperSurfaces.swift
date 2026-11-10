@@ -14,7 +14,7 @@ import SwiftUI
 /// Softens the edges of a horizontal card shelf beyond its resting content margins
 struct CardShelfEdgeFade: ViewModifier
 {
-    static let edgeWidth: CGFloat = 16 /* Width of each fade */
+    static let edgeWidth: CGFloat = 16          /* Width of each fade */
 
     func body(content: Content) -> some View
     {
@@ -25,7 +25,7 @@ struct CardShelfEdgeFade: ViewModifier
             GeometryReader
             {
                 geometry in
-                let fade = min(Self.edgeWidth / max(geometry.size.width, 1), 0.5) /* Fraction of shelf width per edge */
+                let fade = min(Self.edgeWidth / max(geometry.size.width, 1), 0.5)       /* Fraction of shelf width per edge */
 
                 LinearGradient(
                     stops: [
@@ -61,8 +61,8 @@ struct TodayPaperBackground: View
     /// @return     (some View) noninteractive full-surface background
     /// @post       Rendering does not affect app or navigation state
     ///
-    var body: some View /* Today Paper Background layout */
-    {  /* Noninteractive paper texture behind Today surfaces */
+    var body: some View         /* Today Paper Background layout                      */
+    {                           /* Noninteractive paper texture behind Today surfaces */
         GeometryReader
         {
             geometry in
@@ -77,7 +77,6 @@ struct TodayPaperBackground: View
         .accessibilityHidden(true)
         .allowsHitTesting(false)
     }
-
 }
 
 
@@ -89,7 +88,7 @@ struct TodayPaperBackground: View
 ///
 struct TodayPanelSurface: ViewModifier
 {
-    var backgroundOpacity: Double = 1 /* Background opacity */
+    var backgroundOpacity: Double = 1           /* Background opacity */
 
 
     ///
@@ -124,5 +123,4 @@ struct TodayPanelSurface: ViewModifier
 
         .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 5)
     }
-
 }

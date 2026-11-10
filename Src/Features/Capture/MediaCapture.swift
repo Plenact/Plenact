@@ -21,17 +21,17 @@ import SwiftUI
 @MainActor
 final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelegate
 {
-    @Published private(set) var isRecording    = false    /* Recording state               */
-    @Published private(set) var isStarting     = false    /* Starting state                */
-    @Published private(set) var isTranscribing = false    /* Transcribing state            */
-    @Published var transcript                  = ""                        /* Recognized speech text        */
-    @Published var errorMessage: String?                  /* User-facing failure message   */
-    private var generation = 0                            /* Current navigation generation */
+    @Published private(set) var isRecording    = false          /* Recording state               */
+    @Published private(set) var isStarting     = false          /* Starting state                */
+    @Published private(set) var isTranscribing = false          /* Transcribing state            */
+    @Published var transcript                  = ""             /* Recognized speech text        */
+    @Published var errorMessage: String?                        /* User-facing failure message   */
+    private var generation = 0                                  /* Current navigation generation */
 
-    @Published private(set) var recordingURL: URL?        /* Recording URL                 */
-    private var recorder:        AVAudioRecorder?         /* Audio recording controller    */
-    private var speechTask:      SFSpeechRecognitionTask? /* Speech task                   */
-    private var timeout:         Task<Void, Never>?       /* Foreground return threshold   */
+    @Published private(set) var recordingURL: URL?              /* Recording URL               */
+    private var recorder:        AVAudioRecorder?               /* Audio recording controller  */
+    private var speechTask:      SFSpeechRecognitionTask?       /* Speech task                 */
+    private var timeout:         Task<Void, Never>?             /* Foreground return threshold */
 
 
     ///
@@ -51,16 +51,15 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
         isStarting = true
 
-        let permissionToken = generation /* Permission token */
+        let permissionToken = generation        /* Permission token */
 
         NotificationCenter.default.post(name: Notification.Name("Plenact.StopAudioPreview"), object: nil)
         defer
         {
             isStarting = false
-
         }
 
-        let granted = /* Requested access result */
+        let granted =                                           /* Requested access result */
             await AVAudioApplication.requestRecordPermission()
 
         guard granted else
@@ -77,18 +76,18 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
         cleanup()
 
-        let url = /* Resolved file location */
+        let url =                                                               /* Resolved file location */
             FileManager.default.temporaryDirectory.appendingPathComponent(
-                        "plenact-voice-" + UUID().uuidString + ".m4a")
+                "plenact-voice-" + UUID().uuidString + ".m4a")
 
         do
         {
-            let session = AVAudioSession.sharedInstance() /* Current operation session */
+            let session = AVAudioSession.sharedInstance()       /* Current operation session */
 
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
             try session.setActive(true)
 
-            let recorder = try AVAudioRecorder( /* Audio recording controller */
+            let recorder = try AVAudioRecorder(         /* Audio recording controller */
                 url: url,
                 settings: [
                     AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 44_100, AVNumberOfChannelsKey: 1,
@@ -105,7 +104,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             self.recorder = recorder;
             recordingURL = url;
             isRecording = true
-
         }
         catch
         {
@@ -113,9 +111,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
 
             errorMessage = "Recording couldn't start. Your draft is still here; please try again."
-
         }
-
     }
 
 
@@ -167,11 +163,8 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             if !flag
             {
                 self.errorMessage = "Recording was interrupted. Preview the recording before saving."
-
             }
-
         }
-
     }
 
 
@@ -194,15 +187,14 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
         errorMessage = nil
         generation += 1
 
-        let token  = generation                    /* Retained operation token */
-        let status = await withCheckedContinuation /* Current operation status */
+        let token  = generation                         /* Retained operation token */
+        let status = await withCheckedContinuation      /* Current operation status */
         {
             continuation in
             SFSpeechRecognizer.requestAuthorization
             {
                 continuation.resume(returning: $0)
             }
-
         }
 
         guard !Task.isCancelled, token == generation, recordingURL == url else
@@ -228,7 +220,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             return
         }
 
-        let request = SFSpeechURLRecognitionRequest(url: url) /* Pending lookup request */
+        let request = SFSpeechURLRecognitionRequest(url: url)           /* Pending lookup request */
 
         request.shouldReportPartialResults = true
         request.requiresOnDeviceRecognition = recognizer.supportsOnDeviceRecognition
@@ -236,9 +228,9 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
         {
             [weak self] result, error in
 
-            let text   = result?.bestTranscription.formattedString /* Text being processed      */
-            let final  = result?.isFinal == true                   /* Final operation value     */
-            let failed = error != nil                              /* Rejected operation result */
+            let text   = result?.bestTranscription.formattedString      /* Text being processed      */
+            let final  = result?.isFinal == true                        /* Final operation value     */
+            let failed = error != nil                                   /* Rejected operation result */
 
             Task
             {
@@ -251,7 +243,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
                 if let text
                 {
                     self.transcript = text
-
                 }
 
                 if final || failed
@@ -265,13 +256,9 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
                     {
                         self.errorMessage =
                                                                         "Transcription couldn't finish. Review any text below, retry, or save Audio instead."
-
                     }
-
                 }
-
             }
-
         }
 
         timeout?.cancel()
@@ -296,9 +283,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
             self.cancelTranscription()
 
             self.errorMessage = "Transcription took too long. Retry, enter text yourself, or save Audio instead."
-
         }
-
     }
 
 
@@ -321,7 +306,6 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
         timeout = nil;
         isTranscribing = false
-
     }
 
 
@@ -364,9 +348,7 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 
         recordingURL = nil;
         transcript = ""
-
     }
-
 }
 
 
@@ -379,15 +361,14 @@ final class QuickCaptureVoice: NSObject, ObservableObject, AVAudioRecorderDelega
 ///
 struct QuickCapturePhoto: Identifiable
 {
-    let id = UUID()           /* Record UUID             */
-    let data:          Data   /* Encoded or loaded bytes */
-    let fileExtension: String /* File extension          */
+    let id = UUID()                     /* Record UUID             */
+    let data:          Data             /* Encoded or loaded bytes */
+    let fileExtension: String           /* File extension          */
 
-    var image:         UIImage? /* Image used by this operation */
+    var image:         UIImage?         /* Image used by this operation */
     {
         UIImage(data: data)
     }
-
 }
 
 
@@ -422,7 +403,7 @@ enum QuickCaptureMediaCommit
         commit: ([KanbanAttachment]) -> Bool
     ) throws -> Bool
     {
-        var saved: [KanbanAttachment] = [] /* Saved state under review */
+        var saved: [KanbanAttachment] = []      /* Saved state under review */
 
         do
         {
@@ -465,9 +446,7 @@ enum QuickCaptureMediaCommit
             try? CardAttachmentStore.removeDeletedFiles(Set(saved.flatMap(\.storedFileNames)), keeping: [])
             throw error
         }
-
     }
-
 }
 
 
@@ -480,8 +459,8 @@ enum QuickCaptureMediaCommit
 ///
 struct QuickCaptureCamera: UIViewControllerRepresentable
 {
-    let onPhoto: (UIImage) -> Void              /* Photo callback                 */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    let onPhoto: (UIImage) -> Void                      /* Photo callback                 */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
 
 
     ///
@@ -509,7 +488,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     ///
     func makeUIViewController(context: Context) -> UIImagePickerController
     {
-        let picker = UIImagePickerController() /* Native selection control */
+        let picker = UIImagePickerController()          /* Native selection control */
 
         picker.sourceType = .camera;
         picker.delegate = context.coordinator
@@ -542,7 +521,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
     ///
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate
     {
-        let parent: QuickCaptureCamera /* Latest representable bindings */
+        let parent: QuickCaptureCamera          /* Latest representable bindings */
 
 
         ///
@@ -558,7 +537,6 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
         init(parent: QuickCaptureCamera)
         {
             self.parent = parent
-
         }
 
 
@@ -600,7 +578,5 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
 
             parent.dismiss()
         }
-
     }
-
 }

@@ -22,10 +22,10 @@ import Foundation
 ///
 struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable
 {
-    let id:          UUID              /* Stable Action Detail ID */
-    var description: String            /* Supporting action text  */
-    var checklists:  [KanbanChecklist] /* Nested standard actions */
-    var comments:    [KanbanComment]   /* Action discussion       */
+    let id:          UUID                       /* Stable Action Detail ID */
+    var description: String                     /* Supporting action text  */
+    var checklists:  [KanbanChecklist]          /* Nested standard actions */
+    var comments:    [KanbanComment]            /* Action discussion       */
 
 
     ///
@@ -49,9 +49,7 @@ struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable
         self.description = description
         self.checklists = checklists
         self.comments = comments
-
     }
-
 }
 
 
@@ -68,9 +66,9 @@ struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable
 enum KanbanChecklistActionContent: Hashable, Codable, Sendable
 {
     case webLink(URL)
-    case standard                                   /* Plain text action       */
-    case linkedCard(cardID: Int)                    /* Existing card reference */
-    case actionDetail(KanbanChecklistActionDetail)  /* Owned reduced detail    */
+    case standard                                       /* Plain text action       */
+    case linkedCard(cardID: Int)                        /* Existing card reference */
+    case actionDetail(KanbanChecklistActionDetail)      /* Owned reduced detail    */
 
 
     ///
@@ -82,9 +80,9 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
     private enum Kind: String, Codable
     {
         case webLink
-        case standard      /* Plain text action kind  */
-        case linkedCard    /* Existing card link kind */
-        case actionDetail  /* Reduced detail kind     */
+        case standard           /* Plain text action kind  */
+        case linkedCard         /* Existing card link kind */
+        case actionDetail       /* Reduced detail kind     */
     }
 
 
@@ -97,9 +95,9 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
     private enum CodingKeys: String, CodingKey
     {
         case url
-        case kind    /* Content discriminator */
-        case cardID  /* Linked card identity  */
-        case detail  /* Owned Action Detail   */
+        case kind       /* Content discriminator */
+        case cardID     /* Linked card identity  */
+        case detail     /* Owned Action Detail   */
     }
 
 
@@ -116,8 +114,8 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
     ///
     init(from decoder: Decoder) throws
     {
-        let container = try decoder.container(keyedBy: CodingKeys.self) /* Persisted fields */
-        let kind      = try container.decode(Kind.self, forKey: .kind)  /* Action kind      */
+        let container = try decoder.container(keyedBy: CodingKeys.self)         /* Persisted fields */
+        let kind      = try container.decode(Kind.self, forKey: .kind)          /* Action kind      */
 
         switch kind
         {
@@ -136,9 +134,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
         case .actionDetail:
 
             self = .actionDetail(try container.decode(KanbanChecklistActionDetail.self, forKey: .detail))
-
         }
-
     }
 
 
@@ -155,7 +151,7 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
     ///
     func encode(to encoder: Encoder) throws
     {
-        var container = encoder.container(keyedBy: CodingKeys.self) /* Output fields */
+        var container = encoder.container(keyedBy: CodingKeys.self)     /* Output fields */
 
         switch self
         {
@@ -164,16 +160,14 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
             try container.encode(url, forKey: .url)
         case .standard:
             try container.encode(Kind.standard, forKey: .kind)
-        case .linkedCard(let cardID): /* Referenced Board card identity */
+        case .linkedCard(let cardID):                                   /* Referenced Board card identity */
             try container.encode(Kind.linkedCard, forKey: .kind)
             try container.encode(cardID, forKey: .cardID)
-        case .actionDetail(let detail): /* Owned reduced Action Detail payload */
+        case .actionDetail(let detail):                                 /* Owned reduced Action Detail payload */
             try container.encode(Kind.actionDetail, forKey: .kind)
             try container.encode(detail, forKey: .detail)
         }
-
     }
-
 }
 
 
@@ -190,12 +184,12 @@ enum KanbanChecklistActionContent: Hashable, Codable, Sendable
 enum ChecklistItemType: String, CaseIterable, Identifiable
 {
     case standard, linkedCard, actionDetail, webLink
-    var id: String /* Record or view identity */
+    var id: String                                      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -211,9 +205,7 @@ enum ChecklistItemType: String, CaseIterable, Identifiable
         case .webLink:
                     "Web Link"
         }
-
     }
-
 }
 
 
@@ -226,23 +218,22 @@ enum ChecklistItemType: String, CaseIterable, Identifiable
 ///
 struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable
 {
-    let id:          UUID   /* Stable checklist action ID */
-    var title:       String /* User-facing action text    */
-    var isCompleted: Bool   /* Current completion state   */
+    let id:          UUID       /* Stable checklist action ID */
+    var title:       String     /* User-facing action text    */
+    var isCompleted: Bool       /* Current completion state   */
 
-    var content:     KanbanChecklistActionContent /* Content being processed */
+    var content:     KanbanChecklistActionContent       /* Content being processed */
     {
         didSet
         {
             retainActiveContent()
         }
-
     }
 
-    var retainedDetail:     KanbanChecklistActionDetail? = nil /* Retained detail      */
-    var retainedCardID:     Int?                         = nil /* Retained card ID     */
-    var retainedURL:        URL?                         = nil /* Retained URL         */
-    var linkedCollectionID: UUID?                        = nil /* Linked collection ID */
+    var retainedDetail:     KanbanChecklistActionDetail? = nil          /* Retained detail      */
+    var retainedCardID:     Int?                         = nil          /* Retained card ID     */
+    var retainedURL:        URL?                         = nil          /* Retained URL         */
+    var linkedCollectionID: UUID?                        = nil          /* Linked collection ID */
 
 
     ///
@@ -270,13 +261,11 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         case .webLink(let url):
 
             retainedURL = url
-
         }
-
     }
 
 
-    var type: ChecklistItemType /* Content type discriminator */
+    var type: ChecklistItemType         /* Content type discriminator */
     {
         switch content
         {
@@ -292,7 +281,6 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
         case .webLink:
             .webLink
         }
-
     }
 
 
@@ -347,7 +335,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     ///
     init(from decoder: Decoder) throws
     {
-        let container = try decoder.container(keyedBy: CodingKeys.self) /* Persisted fields */
+        let container = try decoder.container(keyedBy: CodingKeys.self)         /* Persisted fields */
 
         id = try container.decode(UUID.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
@@ -375,7 +363,7 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     ///
     func encode(to encoder: Encoder) throws
     {
-        var container = encoder.container(keyedBy: CodingKeys.self) /* Output fields */
+        var container = encoder.container(keyedBy: CodingKeys.self)     /* Output fields */
 
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
@@ -396,13 +384,12 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
     ///
     private enum CodingKeys: String, CodingKey
     {
-        case id           /* Stable action identity  */
-        case title        /* User-facing action text */
-        case isCompleted  /* Direct completion state */
-        case content      /* Action behavior payload */
+        case id                                                                 /* Stable action identity  */
+        case title                                                              /* User-facing action text */
+        case isCompleted                                                        /* Direct completion state */
+        case content                                                            /* Action behavior payload */
         case retainedDetail, retainedCardID, retainedURL, linkedCollectionID
     }
-
 }
 
 
@@ -417,9 +404,9 @@ struct KanbanChecklistItem: Identifiable, Hashable, Codable, ExpressibleByString
 ///
 struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
 {
-    let id:    UUID                  /* Stable checklist ID     */
-    let title: String                /* Checklist display title */
-    let items: [KanbanChecklistItem] /* Ordered action records  */
+    let id:    UUID                     /* Stable checklist ID     */
+    let title: String                   /* Checklist display title */
+    let items: [KanbanChecklistItem]    /* Ordered action records  */
 
     ///
     /// @fcn        KanbanChecklist.completedItemIndices
@@ -431,8 +418,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     /// @pre        items contains the current ordered checklist actions
     /// @post       No item state is modified
     ///
-    var completedItemIndices: Set<Int> /* Completed item indices */
-    {  /* Completed UI positions */
+    var completedItemIndices: Set<Int>          /* Completed item indices */
+    {                                           /* Completed UI positions */
         Set(items.indices.filter
             {
                 items[$0].isCompleted
@@ -450,8 +437,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     /// @pre        items contains the current checklist actions
     /// @post       No item state is modified
     ///
-    var completed: Int /* Completion state */
-    {  /* Completed action count */
+    var completed: Int                          /* Completion state       */
+    {                                           /* Completed action count */
         items.lazy.filter(\.isCompleted).count
     }
 
@@ -474,32 +461,27 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
         completedItemIndices: Set<Int>? = nil
     )
     {
-        var normalizedItems = items /* Mutable item snapshot */
+        var normalizedItems = items     /* Mutable item snapshot */
 
         if let completedItemIndices
-        {  /* Explicit completion positions */
+        {                                               /* Explicit completion positions */
             for index in normalizedItems.indices
             {
                 normalizedItems[index].isCompleted = completedItemIndices.contains(index)
-
             }
-
         }
         else if let completed
-        {  /* Leading completion count */
+        {                                               /* Leading completion count */
             for index in normalizedItems.indices
             {
                 normalizedItems[index].isCompleted = index < min(completed, normalizedItems.count)
-
             }
-
         }
 
 
         self.id = id
         self.title = title
         self.items = normalizedItems
-
     }
 
 
@@ -517,20 +499,18 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     ///
     init(from decoder: Decoder) throws
     {
-        let container = try decoder.container(keyedBy: CodingKeys.self)   /* Persisted fields */
-        let id        = try container.decode(UUID.self, forKey: .id)      /* Checklist ID     */
-        let title     = try container.decode(String.self, forKey: .title) /* Checklist title  */
+        let container = try decoder.container(keyedBy: CodingKeys.self)         /* Persisted fields */
+        let id        = try container.decode(UUID.self, forKey: .id)            /* Checklist ID     */
+        let title     = try container.decode(String.self, forKey: .title)       /* Checklist title  */
 
         if var currentItems = try? container.decode([KanbanChecklistItem].self, forKey: .items)
-        {  /* Current actions */
+        {                                                                                       /* Current actions */
             if let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices)
-            {  /* Legacy completion */
+            {                                           /* Legacy completion */
                 for index in currentItems.indices
                 {
                     currentItems[index].isCompleted = legacyCompletedIndices.contains(index)
-
                 }
-
             }
 
 
@@ -540,12 +520,12 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
         }
 
 
-        let legacyTitles           = try container.decode([String].self, forKey: .items) /* Legacy action text */
-        let legacyCompletedIndices = /* Legacy completed indices */
-        try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) ?? [] /* Legacy completion  */
-        let migratedItems = legacyTitles.enumerated().map /* Migrated items */
+        let legacyTitles           = try container.decode([String].self, forKey: .items)        /* Legacy action text       */
+        let legacyCompletedIndices =                                                            /* Legacy completed indices */
+        try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices) ?? []       /* Legacy completion        */
+        let migratedItems = legacyTitles.enumerated().map                                       /* Migrated items           */
         {
-        index, itemTitle in /* Migrated actions   */
+        index, itemTitle in             /* Migrated actions   */
             KanbanChecklistItem(
                 id: Self.migratedItemID(checklistID: id, itemIndex: index),
                 title: itemTitle,
@@ -572,7 +552,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     ///
     func encode(to encoder: Encoder) throws
     {
-        var container = encoder.container(keyedBy: CodingKeys.self) /* Output fields */
+        var container = encoder.container(keyedBy: CodingKeys.self)     /* Output fields */
 
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
@@ -588,10 +568,10 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     ///
     private enum CodingKeys: String, CodingKey
     {
-        case id                    /* Checklist identity        */
-        case title                 /* Checklist display title   */
-        case items                 /* Current or legacy actions */
-        case completedItemIndices  /* Revision 0 completion     */
+        case id                         /* Checklist identity        */
+        case title                      /* Checklist display title   */
+        case items                      /* Current or legacy actions */
+        case completedItemIndices       /* Revision 0 completion     */
     }
 
 
@@ -611,7 +591,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     ///
     private static func migratedItemID(checklistID: UUID, itemIndex: Int) -> UUID
     {
-        let components = checklistID.uuidString.split(separator: "-") /* UUID components */
+        let components = checklistID.uuidString.split(separator: "-")           /* UUID components */
 
         guard components.count == 5 else
         {
@@ -619,11 +599,10 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
         }
 
 
-        let itemComponent = String(format: "%012llX", UInt64(itemIndex)) /* Position suffix */
-        let migratedValue =                                              /* Migrated value  */
-                        "\(components[0])-\(components[1])-\(components[2])-\(components[3])-\(itemComponent)" /* Migrated UUID text */
+        let itemComponent = String(format: "%012llX", UInt64(itemIndex))        /* Position suffix */
+        let migratedValue =                                                     /* Migrated value  */
+                        "\(components[0])-\(components[1])-\(components[2])-\(components[3])-\(itemComponent)"          /* Migrated UUID text */
 
         return UUID(uuidString: migratedValue) ?? UUID()
     }
-
 }

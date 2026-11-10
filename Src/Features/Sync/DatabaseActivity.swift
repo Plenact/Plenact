@@ -19,14 +19,14 @@ import SwiftUI
 final class DatabaseActivity: ObservableObject
 {
     /// Process-wide activity state observed by database-backed views
-    static let shared = DatabaseActivity() /* Process-wide activity state observed by database-backed views */
+    static let shared = DatabaseActivity()      /* Process-wide activity state observed by database-backed views */
 
     /// Active operation identifiers paired with their visible progress messages
-    @Published private(set) var operations: [(id: UUID, message: String)] = /* Queued content operations */
-    [] /* Active operation identifiers and visible progress messages */
+    @Published private(set) var operations: [(id: UUID, message: String)] =     /* Queued content operations                                  */
+    []                                                                          /* Active operation identifiers and visible progress messages */
 
     /// Latest error message awaiting dismissal
-    @Published private(set) var errorMessage: String? /* Latest database error awaiting dismissal */
+    @Published private(set) var errorMessage: String?           /* Latest database error awaiting dismissal */
 
     ///
     /// @fcn        DatabaseActivity.isWorking
@@ -35,10 +35,10 @@ final class DatabaseActivity: ObservableObject
     ///
     /// @return     (Bool) true while at least one operation is active
     ///
-    var isWorking: Bool /* Working state */
+    var isWorking: Bool         /* Working state */
     {
         !operations.isEmpty
-    }  /* Whether database work is active */
+    }                           /* Whether database work is active */
 
 
     ///
@@ -48,10 +48,10 @@ final class DatabaseActivity: ObservableObject
     ///
     /// @return     (String?) active message, or nil when no operation is active
     ///
-    var message: String? /* User-facing status message */
+    var message: String?        /* User-facing status message */
     {
         operations.first?.message
-    }  /* Earliest active operation message */
+    }                                   /* Earliest active operation message */
 
 
     ///
@@ -66,7 +66,7 @@ final class DatabaseActivity: ObservableObject
     @discardableResult
     func begin(_ message: String) -> UUID
     {
-        let id = UUID() /* Identifier for this active operation */
+        let id = UUID()         /* Identifier for this active operation */
 
         operations.append((id, message))
 
@@ -89,7 +89,6 @@ final class DatabaseActivity: ObservableObject
         {
             $0.id == id
         }
-
     }
 
 
@@ -105,7 +104,6 @@ final class DatabaseActivity: ObservableObject
     func report(_ message: String)
     {
         errorMessage = message
-
     }
 
 
@@ -119,9 +117,7 @@ final class DatabaseActivity: ObservableObject
     func dismissError()
     {
         errorMessage = nil
-
     }
-
 }
 
 
@@ -134,8 +130,8 @@ final class DatabaseActivity: ObservableObject
 struct DatabaseActivityOverlay: ViewModifier
 {
     /// Shared database activity observed by this modifier
-    @ObservedObject private var activity = DatabaseActivity /* Activity operation value */
-    .shared /* Shared activity source rendered by this overlay */
+    @ObservedObject private var activity = DatabaseActivity     /* Activity operation value                        */
+    .shared                                                     /* Shared activity source rendered by this overlay */
 
 
     ///
@@ -156,7 +152,7 @@ struct DatabaseActivityOverlay: ViewModifier
                 VStack(alignment: .leading, spacing: 8)
                 {
                     if let message = activity.message
-                    {  /* Active operation progress text */
+                    {                                   /* Active operation progress text */
                         HStack(spacing: 12)
                         {
                             ProgressView()
@@ -166,7 +162,6 @@ struct DatabaseActivityOverlay: ViewModifier
                                 Text(message).font(.subheadline.weight(.semibold))
                                 Text("Please wait a moment.").font(.caption)
                             }
-
                         }
 
                         .accessibilityElement(children: .combine)
@@ -176,7 +171,7 @@ struct DatabaseActivityOverlay: ViewModifier
 
 
                     if let errorMessage = activity.errorMessage
-                    {  /* Reported database error text */
+                    {                                           /* Reported database error text */
                         HStack(alignment: .top, spacing: 12)
                         {
                             Text(errorMessage).font(.subheadline)
@@ -188,9 +183,7 @@ struct DatabaseActivityOverlay: ViewModifier
                             .labelStyle(.iconOnly)
                             .accessibilityLabel("Dismiss database error")
                         }
-
                     }
-
                 }
 
                 .padding(14)
@@ -199,11 +192,8 @@ struct DatabaseActivityOverlay: ViewModifier
                 .padding()
                 .allowsHitTesting(activity.errorMessage != nil)
             }
-
         }
-
     }
-
 }
 
 
@@ -226,5 +216,4 @@ extension View
     {
         modifier(DatabaseActivityOverlay())
     }
-
 }

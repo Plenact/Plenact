@@ -47,10 +47,10 @@ final class CreationAttachmentDraft: ObservableObject
             case drawing(DrawingCaptureDraft)
         }
 
-        let id = UUID()      /* Record UUID             */
-        let content: Content /* Content being processed */
+        let id = UUID()         /* Record UUID             */
+        let content: Content    /* Content being processed */
 
-        var title:   String /* User-facing title */
+        var title:   String     /* User-facing title */
         {
             switch content
             {
@@ -61,10 +61,9 @@ final class CreationAttachmentDraft: ObservableObject
             case .drawing:
                             "Drawing"
             }
-
         }
 
-        var symbol: String /* Selected symbol name */
+        var symbol: String      /* Selected symbol name */
         {
             switch content
             {
@@ -75,9 +74,7 @@ final class CreationAttachmentDraft: ObservableObject
             case .drawing:
                             "pencil.tip.crop.circle"
             }
-
         }
-
     }
 
 
@@ -91,7 +88,7 @@ final class CreationAttachmentDraft: ObservableObject
     enum Sheet: Identifiable
     {
         case sources, link, drawing(DrawingCaptureDraft)
-        var id: String /* Record or view identity */
+        var id: String                                          /* Record or view identity */
         {
             switch self
             {
@@ -102,16 +99,14 @@ final class CreationAttachmentDraft: ObservableObject
             case .drawing(let draft):
                             "drawing-" + draft.id.uuidString
             }
-
         }
-
     }
 
-    @Published var entries:   [Entry] = []               /* Entries being processed        */
-    @Published var sheet:     Sheet?                     /* Active editor presentation     */
-    @Published var selection: [PhotosPickerItem] = []    /* Current selection state        */
-    @Published var isImporting                   = false /* Importing state                */
-    @Published var notice: String?                       /* Status or confirmation surface */
+    @Published var entries:   [Entry] = []                      /* Entries being processed        */
+    @Published var sheet:     Sheet?                            /* Active editor presentation     */
+    @Published var selection: [PhotosPickerItem] = []           /* Current selection state        */
+    @Published var isImporting                   = false        /* Importing state                */
+    @Published var notice: String?                              /* Status or confirmation surface */
 
 
     ///
@@ -126,7 +121,6 @@ final class CreationAttachmentDraft: ObservableObject
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
         sheet = .sources
-
     }
 
 
@@ -153,11 +147,8 @@ final class CreationAttachmentDraft: ObservableObject
                 else
                 {
                     notice = "A clipboard image couldn't be prepared. Please try again."
-
                 }
-
             }
-
         }
         else if let url = CardAttachmentStore.webURL(
             from: UIPasteboard.general.url?.absoluteString ?? UIPasteboard.general.string ?? "")
@@ -167,9 +158,7 @@ final class CreationAttachmentDraft: ObservableObject
         else
         {
             notice = "The clipboard does not contain an image or a valid web link."
-
         }
-
     }
 
 
@@ -188,7 +177,7 @@ final class CreationAttachmentDraft: ObservableObject
             return
         }
 
-        let selected = selection /* Current selection */
+        let selected = selection        /* Current selection */
 
         isImporting = true
         sheet = nil
@@ -197,7 +186,6 @@ final class CreationAttachmentDraft: ObservableObject
         {
             isImporting = false;
             selection = []
-
         }
 
         for item in selected
@@ -211,7 +199,7 @@ final class CreationAttachmentDraft: ObservableObject
 
                 try Task.checkCancellation()
 
-                let video = item.supportedContentTypes.contains /* Selected video attachment */
+                let video = item.supportedContentTypes.contains         /* Selected video attachment */
                 {
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
                 }
@@ -235,11 +223,8 @@ final class CreationAttachmentDraft: ObservableObject
             {
                 notice =
                                                 "Some attachments couldn't be prepared. Your draft and attachments already added are still here."
-
             }
-
         }
-
     }
 
 
@@ -264,7 +249,7 @@ final class CreationAttachmentDraft: ObservableObject
             throw CocoaError(.fileReadUnknown)
         }
 
-        var stored: [KanbanAttachment] = [] /* Value loaded from persistence */
+        var stored: [KanbanAttachment] = []     /* Value loaded from persistence */
 
         do
         {
@@ -284,7 +269,6 @@ final class CreationAttachmentDraft: ObservableObject
                 case .drawing(let drawing):
                     stored.append(try DrawingAttachmentStore.save(drawing))
                 }
-
             }
 
             if try commit(stored)
@@ -300,9 +284,7 @@ final class CreationAttachmentDraft: ObservableObject
             try? CardAttachmentStore.removeDeletedFiles(Set(stored.flatMap(\.storedFileNames)), keeping: [])
             throw error
         }
-
     }
-
 }
 
 
@@ -314,9 +296,9 @@ final class CreationAttachmentDraft: ObservableObject
 ///
 struct CreationAttachmentList: View
 {
-    @ObservedObject var draft: CreationAttachmentDraft /* Local editing draft */
+    @ObservedObject var draft: CreationAttachmentDraft          /* Local editing draft */
 
-    var body:                  some View /* Creation Attachment List layout */
+    var body:                  some View        /* Creation Attachment List layout */
     {
         VStack(alignment: .leading, spacing: 12)
         {
@@ -342,7 +324,6 @@ struct CreationAttachmentList: View
                         {
                             $0.id == entry.id
                         }
-
                     }
                     label:
                     {
@@ -351,7 +332,6 @@ struct CreationAttachmentList: View
                     .buttonStyle(.borderless).frame(minWidth: 44, minHeight: 44)
                     .accessibilityLabel("Remove attachment: " + entry.title)
                 }
-
             }
 
             if draft.isImporting
@@ -363,9 +343,7 @@ struct CreationAttachmentList: View
             .frame(minHeight: 44).disabled(draft.isImporting)
             .accessibilityIdentifier("creation.addAttachment")
         }
-
     }
-
 }
 
 
@@ -377,7 +355,7 @@ struct CreationAttachmentList: View
 ///
 struct CreationAttachmentPresentation: ViewModifier
 {
-    @ObservedObject var draft: CreationAttachmentDraft /* Local editing draft */
+    @ObservedObject var draft: CreationAttachmentDraft          /* Local editing draft */
 
 
     ///
@@ -404,7 +382,6 @@ struct CreationAttachmentPresentation: ViewModifier
                     onAddLink:
                     {
                         draft.sheet = .link
-
                     }, onPasteClipboard: draft.paste,
                     onComingSoon:
                     {
@@ -412,12 +389,10 @@ struct CreationAttachmentPresentation: ViewModifier
 
                         draft.sheet = nil;
                         draft.notice = source + " isn't available yet."
-
                     },
                     onAddDrawing:
                     {
                         draft.sheet = .drawing(DrawingCaptureDraft())
-
                     })
             case .link:
                 CardLinkAttachmentSheet
@@ -433,42 +408,34 @@ struct CreationAttachmentPresentation: ViewModifier
                     draft.entries.append(.init(content: .drawing(drawing)))
                     return true
                 }
-
             }
-
         }
         .task(id: draft.selection)
         {
             await draft.importSelection()
         }
         .alert(
-                            "Attachments",
-                            isPresented: Binding(get:
-                                {
-                                    draft.notice != nil
-                                }, set:
-                                {
-                                    if !$0
-                                    {
-                                        draft.notice = nil
-
-                                    }
-
-                                })
+            "Attachments",
+            isPresented: Binding(get:
+                {
+                    draft.notice != nil
+                }, set:
+                {
+                    if !$0
+                    {
+                        draft.notice = nil
+                    }
+                })
         )
         {
             Button("OK", role: .cancel)
             {
                 draft.notice = nil
-
             }
-
         }
         message:
         {
             Text(draft.notice ?? "")
         }
-
     }
-
 }

@@ -24,11 +24,11 @@ final class MigrationPreviewTests: XCTestCase
     private func fixture(_ values: [String: Any] = [:],
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
-        let domain   = /* Lookup or storage namespace */
+        let domain   =                                          /* Lookup or storage namespace */
             "Plenact.MigrationTests." + UUID().uuidString
-        let defaults = /* Preference store under test */
+        let defaults =                                          /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: domain))
-        let root     = /* Synthetic workspace root */
+        let root     =                                          /* Synthetic workspace root    */
             FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
 
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -39,7 +39,7 @@ final class MigrationPreviewTests: XCTestCase
             try? FileManager.default.removeItem(at: root)
         }
 
-        let backup = /* Recoverable native snapshot */
+        let backup =                                                                            /* Recoverable native snapshot */
             try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
 
         try body(backup, root.appendingPathComponent("Library/Application Support/PlenactMigration/source-identities-v1.json"))
@@ -67,7 +67,7 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Missing output or invalid JSON
     private func records(_ preview: MigrationPreview) throws -> [[String: Any]]
     {
-        let folder = /* Working folder location */
+        let folder =                                                                                    /* Working folder location */
             try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"])
 
         return try (folder.fileWrappers ?? [:]).sorted { $0.key < $1.key }.map {
@@ -82,11 +82,11 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Journal resolution/encoding errors
     func testIdentitySurvivesRestartAndPreservesOwnerDiscriminators() throws
     {
-        var journal  = MigrationIdentityJournal() /* Migration identity journal      */
-        let source   =                            /* Source value for this operation */
+        var journal  = MigrationIdentityJournal()                       /* Migration identity journal      */
+        let source   =                                                  /* Source value for this operation */
             MigrationSourceIdentity(recordType: "card", owner: "collection-A", legacyID: "7", discriminator: nil)
-        let identity = try journal.resolve(source) /* Stable record reference        */
-        var reopened =                             /* Instance reloaded from storage */
+        let identity = try journal.resolve(source)                      /* Stable record reference         */
+        var reopened =                                                  /* Instance reloaded from storage  */
             try MigrationIdentityJournal.decode(journal.encoded())
 
         XCTAssertEqual(try reopened.resolve(source), identity)
@@ -110,11 +110,11 @@ final class MigrationPreviewTests: XCTestCase
     {
         XCTAssertThrowsError(try MigrationIdentityJournal.decode(Data("not-json".utf8)))
 
-        var journal = MigrationIdentityJournal() /* Migration identity journal */
+        var journal = MigrationIdentityJournal()        /* Migration identity journal */
 
         _ = try journal.resolve(MigrationSourceIdentity(recordType: "label", owner: "labels", legacyID: "one", discriminator: nil))
 
-        var object = /* Decoded JSON object */
+        var object =                                                                                    /* Decoded JSON object */
             try XCTUnwrap(JSONSerialization.jsonObject(with: journal.encoded()) as? [String: Any])
 
         object["formatVersion"] = 4
@@ -127,7 +127,7 @@ final class MigrationPreviewTests: XCTestCase
         XCTAssertThrowsError(try MigrationIdentityJournal.decode(JSONSerialization.data(withJSONObject: object)))
         object.removeValue(forKey: "future")
 
-        let entries = /* Entries being processed */
+        let entries =                                                   /* Entries being processed */
             try XCTUnwrap(object["entries"] as? [[String: Any]])
 
         object["entries"] = entries + entries
@@ -149,11 +149,11 @@ final class MigrationPreviewTests: XCTestCase
     {
         try fixture { _, url in
 
-            let journal = MigrationIdentityJournal() /* Migration identity journal */
+            let journal = MigrationIdentityJournal()    /* Migration identity journal */
 
             try MigrationIdentityStore.save(journal, at: url, expected: nil)
 
-            let original = /* Baseline before changes */
+            let original =                                              /* Baseline before changes */
                 try XCTUnwrap(MigrationIdentityStore.read(at: url))
 
             XCTAssertThrowsError(try MigrationIdentityStore.save(MigrationIdentityJournal(), at: url, expected: nil))
@@ -168,27 +168,27 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture, conversion or output-decoding errors
     func testConvertedRecordsAreStableAndRetainExactWriting() throws
     {
-        let source = try library() /* Source value for this operation */
+        let source = try library()      /* Source value for this operation */
 
         try fixture(["Plenact.LabelLibrary.v1": source, "Plenact.ActivityShowsCovers": false,
             "Plenact.BoardPresentation.v1": "overview", "Plenact.Board.v1": Data("[]".utf8)]) { backup, url in
 
-            let first  = /* First comparison value */
+            let first  =                                                        /* First comparison value  */
                 try MigrationPreview.prepare(backup: backup, journalURL: url)
-            let second = /* Second comparison value */
+            let second =                                                        /* Second comparison value */
                 try MigrationPreview.prepare(backup: backup, journalURL: url)
 
             XCTAssertEqual(first.recordCount, 3)
 
-            let documents = try records(first)  /* Store document snapshots         */
-            let repeated  = try records(second) /* Result of the repeated operation */
+            let documents = try records(first)          /* Store document snapshots         */
+            let repeated  = try records(second)         /* Result of the repeated operation */
 
             XCTAssertEqual(try JSONSerialization.data(withJSONObject: documents, options: .sortedKeys),
                 try JSONSerialization.data(withJSONObject: repeated, options: .sortedKeys))
 
-            let category = /* Category comparison fixture */
+            let category =                                                      /* Category comparison fixture */
                 try XCTUnwrap(documents[0]["payload"] as? [String: Any])
-            let label    = /* Resolved display label */
+            let label    =                                                      /* Resolved display label      */
                 try XCTUnwrap(documents[1]["payload"] as? [String: Any])
 
             XCTAssertEqual(category["name"] as? String, "  Personal 🪴  ")
@@ -197,15 +197,15 @@ final class MigrationPreviewTests: XCTestCase
             XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: first.files),
                 try MigrationBackupReader.file("Preferences.plist", in: backup.files))
 
-            let copy = /* Independent working copy */
+            let copy =          /* Independent working copy */
                 try MigrationBackupReader.file("MigrationPreview/IdentityJournal.json", in: first.files)
 
             XCTAssertEqual(copy, try MigrationIdentityStore.read(at: url))
             XCTAssertEqual(first.remainingStores, ["Plenact.Board.v1"])
 
-            let attachment = /* Synthetic test evidence */
+            let attachment =    /* Synthetic test evidence */
                 XCTAttachment(data: try JSONSerialization.data(withJSONObject: documents, options: [.prettyPrinted, .sortedKeys]),
-                uniformTypeIdentifier: "public.json")
+                    uniformTypeIdentifier: "public.json")
 
             attachment.name = "native-migration-records.json"
             attachment.lifetime = .keepAlways
@@ -223,7 +223,7 @@ final class MigrationPreviewTests: XCTestCase
     {
         try fixture(["Plenact.CardCovers.enabled": false, "Plenact.ActivityShowsCovers": true]) { backup, url in
 
-            let payload = /* Canonical record payload */
+            let payload =       /* Canonical record payload */
                 try XCTUnwrap(records(MigrationPreview.prepare(backup: backup, journalURL: url)).first?["payload"] as? [String: Any])
 
             XCTAssertEqual(payload["card_covers_enabled"] as? Bool, false)
@@ -242,12 +242,12 @@ final class MigrationPreviewTests: XCTestCase
     {
         try fixture { backup, url in
 
-            let result = /* Result being assembled */
+            let result =                                                        /* Result being assembled */
                 try MigrationPreview.prepare(backup: backup, journalURL: url)
 
             XCTAssertEqual(result.recordCount, 0)
 
-            let report = /* Validation findings */
+            let report =        /* Validation findings */
                 try XCTUnwrap(JSONSerialization.jsonObject(with: MigrationBackupReader.file("MigrationPreview/Report.json", in: result.files)) as? [String: Any])
 
             XCTAssertEqual(report["portable_conversion_complete"] as? Bool, false)
@@ -276,9 +276,9 @@ final class MigrationPreviewTests: XCTestCase
     /// @throws Fixture encoding errors
     func testDuplicateLabelsAndUnknownSourceFieldsAreRejected() throws
     {
-        var object = /* Decoded JSON object */
+        var object =                                                                            /* Decoded JSON object         */
             try XCTUnwrap(JSONSerialization.jsonObject(with: library()) as? [String: Any])
-        let labels = /* Available label definitions */
+        let labels =                                                                            /* Available label definitions */
             try XCTUnwrap(object["labels"] as? [[String: Any]])
 
         object["labels"] = labels + labels
@@ -321,12 +321,12 @@ final class MigrationPreviewTests: XCTestCase
     {
         try fixture { backup, url in
 
-            let original = /* Baseline before changes */
+            let original =                                                      /* Baseline before changes */
                 try XCTUnwrap(backup.files.fileWrappers?["Preferences.plist"])
 
             backup.files.removeFileWrapper(original)
 
-            let changed = /* Value with requested edits */
+            let changed =       /* Value with requested edits */
                 FileWrapper(regularFileWithContents: try PropertyListSerialization.data(fromPropertyList: ["changed": true], format: .binary, options: 0))
 
             changed.preferredFilename = "Preferences.plist"
@@ -360,12 +360,12 @@ final class MigrationPreviewTests: XCTestCase
         try fixture(["Plenact.ActivityRecents.v1": Data("[]".utf8), "Plenact.ExampleLoadUndo.v1": Data("old-source".utf8),
             "Plenact.SavedCardIDs.v1": [7]]) { backup, url in
 
-            let result = /* Result being assembled */
+            let result =                                                        /* Result being assembled */
                 try MigrationPreview.prepare(backup: backup, journalURL: url)
 
             XCTAssertEqual(result.remainingStores, ["Plenact.SavedCardIDs.v1"])
 
-            let report = /* Validation findings */
+            let report =        /* Validation findings */
                 try XCTUnwrap(JSONSerialization.jsonObject(with: MigrationBackupReader.file("MigrationPreview/Report.json", in: result.files)) as? [String: Any])
 
             XCTAssertEqual(report["device_local_stores_preserved"] as? [String], ["Plenact.ActivityRecents.v1"])
@@ -383,7 +383,7 @@ final class MigrationPreviewTests: XCTestCase
         try fixture(["Plenact.LabelLibrary.v1": library()]) { backup, url in
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
 
-            let original = Data("corrupt-journal".utf8) /* Baseline before changes */
+            let original = Data("corrupt-journal".utf8)         /* Baseline before changes */
 
             try original.write(to: url)
             XCTAssertThrowsError(try MigrationPreview.prepare(backup: backup, journalURL: url))
@@ -399,11 +399,11 @@ final class MigrationPreviewTests: XCTestCase
     {
         try fixture { _, url in
 
-            let original = MigrationIdentityJournal() /* Baseline before changes */
+            let original = MigrationIdentityJournal()           /* Baseline before changes */
 
             try MigrationIdentityStore.save(original, at: url, expected: nil)
 
-            let baseline = /* Original state for comparison */
+            let baseline =                                              /* Original state for comparison */
                 try XCTUnwrap(MigrationIdentityStore.read(at: url))
 
             XCTAssertThrowsError(try MigrationIdentityStore.save(MigrationIdentityJournal(), at: url, expected: baseline))
@@ -420,13 +420,13 @@ final class MigrationPreviewTests: XCTestCase
     {
         try fixture(["Plenact.LabelLibrary.v1": library()]) { backup, url in
 
-            let first    = /* First comparison value */
+            let first    =                                                      /* First comparison value        */
                 try MigrationPreview.prepare(backup: backup, journalURL: url)
-            let baseline = /* Original state for comparison */
+            let baseline =                                                      /* Original state for comparison */
                 try XCTUnwrap(MigrationIdentityStore.read(at: url))
-            let domain   = /* Lookup or storage namespace */
+            let domain   =                                                      /* Lookup or storage namespace   */
                 "Plenact.MigrationResumeTests." + UUID().uuidString
-            let defaults = /* Preference store under test */
+            let defaults =                                                      /* Preference store under test   */
                 try XCTUnwrap(UserDefaults(suiteName: domain))
 
             defaults.setPersistentDomain(try MigrationBackupReader.values(in: backup), forName: domain)
@@ -435,24 +435,23 @@ final class MigrationPreviewTests: XCTestCase
                 defaults.removePersistentDomain(forName: domain)
             }
 
-            var root = url /* Synthetic workspace root */
+            var root = url      /* Synthetic workspace root */
 
             for _ in 0..<4
             {
                 root.deleteLastPathComponent()
             }
 
-            let resumedBackup = /* Resumed backup */
+            let resumedBackup =                                                                         /* Resumed backup */
                 try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
 
             XCTAssertEqual(try MigrationBackupReader.file("Migration/IdentityJournal.json", in: resumedBackup.files), baseline)
 
-            let resumed = /* Resumed comparison fixture */
+            let resumed =                                                               /* Resumed comparison fixture */
                 try MigrationPreview.prepare(backup: resumedBackup, journalURL: url)
 
             XCTAssertEqual(try JSONSerialization.data(withJSONObject: records(first), options: .sortedKeys),
                 try JSONSerialization.data(withJSONObject: records(resumed), options: .sortedKeys))
         }
     }
-
 }

@@ -22,12 +22,12 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 {
     case all = "All", lists = "Lists", boards = "Boards", labels = "Labels", examples = "Examples", templates =
             "Templates", help = "Help"
-    var id: String /* Record or view identity */
+    var id: String                      /* Record or view identity */
     {
         rawValue
     }
 
-    var searchPrompt: String /* Search prompt */
+    var searchPrompt: String    /* Search prompt */
     {
         switch self
         {
@@ -46,10 +46,9 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
         case .help:
                     "Find in Help"
         }
-
     }
 
-    var symbol: String /* Selected symbol name */
+    var symbol: String          /* Selected symbol name */
     {
         switch self
         {
@@ -74,10 +73,9 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
         case .help:
                     "questionmark.circle"
         }
-
     }
 
-    var accent: Color /* Selected accent color */
+    var accent: Color           /* Selected accent color */
     {
         switch self
         {
@@ -102,15 +100,14 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
         case .help:
             .teal
         }
-
     }
 
-    var browsesCollections: Bool /* Browses collections */
+    var browsesCollections: Bool        /* Browses collections */
     {
         self == .all || self == .lists || self == .boards
     }
 
-    var searchHint: String /* Search hint */
+    var searchHint: String      /* Search hint */
     {
         switch self
         {
@@ -125,10 +122,9 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
         default:
                     "Search your personal collections, cards, and notes"
         }
-
     }
 
-    var searchContext: String /* Search context */
+    var searchContext: String           /* Search context */
     {
         switch self
         {
@@ -143,7 +139,6 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
         default:
                     "Your Plans · Collections, cards, and notes"
         }
-
     }
 
 
@@ -162,7 +157,6 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
         collection.isActive && browsesCollections
         && (self == .all || (self == .lists ? collection.kind == .list : collection.kind == .board))
     }
-
 }
 
 
@@ -175,18 +169,17 @@ enum LibraryBrowseFilter: String, CaseIterable, Identifiable
 ///
 struct LibraryPlateItem: Identifiable
 {
-    let collection: PersonalCollection /* Personal collection record        */
-    let list:       KanbanList         /* List under consideration          */
-    let card:       KanbanCard         /* Card under consideration          */
-    let reason:     String             /* Validation or failure explanation */
-    let rank:       Int                /* Item sort priority                */
-    let date:       Date               /* Date used by this operation       */
+    let collection: PersonalCollection          /* Personal collection record        */
+    let list:       KanbanList                  /* List under consideration          */
+    let card:       KanbanCard                  /* Card under consideration          */
+    let reason:     String                      /* Validation or failure explanation */
+    let rank:       Int                         /* Item sort priority                */
+    let date:       Date                        /* Date used by this operation       */
 
-    var id:         String /* Record or view identity */
+    var id:         String      /* Record or view identity */
     {
             "\(collection.id.uuidString).\(card.id)"
     }
-
 }
 
 
@@ -218,10 +211,10 @@ enum LibraryPlateSelection
         calendar: Calendar = .current, limit: Int? = 4
     ) -> [LibraryPlateItem]
     {
-        let today                     = calendar.startOfDay(for: now) /* Current local day      */
-        let horizon                   =                               /* Visible schedule range */
+        let today                     = calendar.startOfDay(for: now)           /* Current local day      */
+        let horizon                   =                                         /* Visible schedule range */
             calendar.date(byAdding: .day, value: 7, to: today) ?? today
-        var items: [LibraryPlateItem] = [] /* Items being processed */
+        var items: [LibraryPlateItem] = []                                      /* Items being processed  */
 
         for collection in collections where collection.isActive
         {
@@ -229,25 +222,23 @@ enum LibraryPlateSelection
             {
                 for card in list.cards where !card.isSectionDivider && !card.isTitleChecked
                 {
-                    let marked = /* Owner-qualified importance state */
+                    let marked =                        /* Owner-qualified importance state */
                         important.contains(LibraryRecentItem(collectionID: collection.id, cardID: card.id))
-                    var due    = card.dueDate /* Due date or time */
+                    var due    = card.dueDate           /* Due date or time                 */
 
                     // A time without a date cannot be assigned an urgency day
                     if !card.dueDateKind.includesDate
                     {
                         due = nil
-
                     }
 
-                    let rank: Int      /* Item sort priority                */
-                    let reason: String /* Validation or failure explanation */
+                    let rank: Int               /* Item sort priority                */
+                    let reason: String          /* Validation or failure explanation */
 
                     if let due, due < today || (card.dueDateKind.includesTime && due < now)
                     {
                         rank = 0;
                         reason = "Overdue · " + card.dueDateLabel
-
                     }
                     else if let due, calendar.isDate(due, inSameDayAs: now)
                     {
@@ -255,19 +246,16 @@ enum LibraryPlateSelection
 
                         reason =
                         card.dueDateKind.includesTime ? "Due at " + CardDateKind.time.label(for: due) : "Due today"
-
                     }
                     else if let due, due < horizon
                     {
                         rank = 2;
                         reason = "Due " + card.dueDateLabel
-
                     }
                     else if marked
                     {
                         rank = 3;
                         reason = "Marked important"
-
                     }
                     else
                     {
@@ -279,9 +267,7 @@ enum LibraryPlateSelection
                             collection: collection, list: list, card: card, reason: reason, rank: rank,
                             date: due ?? .distantFuture))
                 }
-
             }
-
         }
 
         return Array(
@@ -300,7 +286,6 @@ enum LibraryPlateSelection
                 return $0.id < $1.id
             } .prefix(limit ?? items.count))
     }
-
 }
 
 
@@ -313,11 +298,10 @@ enum LibraryPlateSelection
 ///
 struct LibraryItemOpenedKey: EnvironmentKey
 {
-    static let defaultValue: (Int) -> Void = /* Fallback environment callback */
+    static let defaultValue: (Int) -> Void =    /* Fallback environment callback */
     {
         _ in
     }
-
 }
 
 
@@ -330,7 +314,7 @@ struct LibraryItemOpenedKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-    var libraryItemOpened: (Int) -> Void /* Library item opened callback */
+    var libraryItemOpened: (Int) -> Void        /* Library item opened callback */
     {
         get
         {
@@ -340,11 +324,8 @@ extension EnvironmentValues
         set
         {
             self[LibraryItemOpenedKey.self] = newValue
-
         }
-
     }
-
 }
 
 
@@ -357,11 +338,11 @@ extension EnvironmentValues
 ///
 struct LibraryPlateTile: View
 {
-    let item:                                                LibraryPlateItem /* Item under consideration */
-    @ScaledMetric(relativeTo: .body) private var tileWidth:  CGFloat = 132 /* Tile width */
-    @ScaledMetric(relativeTo: .body) private var tileHeight: CGFloat = 110 /* Tile height */
+    let item:                                                LibraryPlateItem           /* Item under consideration */
+    @ScaledMetric(relativeTo: .body) private var tileWidth:  CGFloat = 132              /* Tile width               */
+    @ScaledMetric(relativeTo: .body) private var tileHeight: CGFloat = 110              /* Tile height              */
 
-    var body: some View /* Library Plate layout */
+    var body: some View         /* Library Plate layout */
     {
         VStack(alignment: .leading, spacing: 8)
         {
@@ -398,7 +379,6 @@ struct LibraryPlateTile: View
         .accessibilityElement(children: .combine)
         .accessibilityValue(item.collection.title + ", " + item.reason)
     }
-
 }
 
 
@@ -411,24 +391,24 @@ struct LibraryPlateTile: View
 ///
 struct LibraryLabelMatchesView: View
 {
-    let label: KanbanLabel                                    /* Resolved display label         */
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @State private var query = ""                             /* Search text                    */
+    let label: KanbanLabel                                              /* Resolved display label         */
+    @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
+    @State private var query = ""                                       /* Search text                    */
 
-    @State private var openedCard: PlanningSearchResult?      /* Opened card                    */
+    @State private var openedCard: PlanningSearchResult?        /* Opened card                    */
 
-    private var matches: [PlanningSearchResult] /* Matching source entries */
+    private var matches: [PlanningSearchResult]         /* Matching source entries */
     {
-        let owners = /* Qualified record owners */
+        let owners =                                                                                    /* Qualified record owners */
             WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? [])
-        let all    = /* Matching all entry */
+        let all    =                                                                                    /* Matching all entry      */
         WorkspaceBrowseIndex.labels(in: owners, catalog: LabelLibraryStore.load()).first
         {
             $0.id == label.id
         }?
         .matches ?? []
-        let query = /* Lookup attributes or search text */
+        let query =                                                     /* Lookup attributes or search text */
             query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return all.filter
@@ -436,10 +416,9 @@ struct LibraryLabelMatchesView: View
             query.isEmpty || $0.card.word.localizedStandardContains(query)
             || $0.listTitle.localizedStandardContains(query) || $0.collectionTitle.localizedStandardContains(query)
         }
-
     }
 
-    var body: some View /* Library Label Matches layout */
+    var body: some View         /* Library Label Matches layout */
     {
         NavigationStack
         {
@@ -456,7 +435,6 @@ struct LibraryLabelMatchesView: View
                     Button
                     {
                         openedCard = result
-
                     }
                     label:
                     {
@@ -476,7 +454,6 @@ struct LibraryLabelMatchesView: View
                         } .padding(.vertical, 6)
                     } .buttonStyle(.plain)
                 }
-
             }
             .navigationTitle(label.name)
             .navigationBarTitleDisplayMode(.inline)
@@ -489,9 +466,7 @@ struct LibraryLabelMatchesView: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
             .fullScreenCover(item: $openedCard)
             {
@@ -524,11 +499,7 @@ struct LibraryLabelMatchesView: View
                             dismiss()
                         })
                 }
-
             }
-
         }
-
     }
-
 }

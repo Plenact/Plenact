@@ -25,37 +25,31 @@ indirect enum PortableJSONValue: Codable
     /// @return Initialized portable value
     init(from decoder: Decoder) throws
     {
-        let value = try decoder.singleValueContainer() /* Value being processed */
+        let value = try decoder.singleValueContainer()          /* Value being processed */
 
         if value.decodeNil()
         {
             self = .null
-
         }
         else if let boolean = try? value.decode(Bool.self)
         {
             self = .boolean(boolean)
-
         }
         else if let text = try? value.decode(String.self)
         {
             self = .string(text)
-
         }
         else if let object = try? value.decode([String: PortableJSONValue].self)
         {
             self = .object(object)
-
         }
         else if let array = try? value.decode([PortableJSONValue].self)
         {
             self = .array(array)
-
         }
         else
         {
             self = .number(try value.decode(Decimal.self))
-
         }
     }
 
@@ -65,7 +59,7 @@ indirect enum PortableJSONValue: Codable
     /// @return Void; throws on unsupported numeric representation
     func encode(to encoder: Encoder) throws
     {
-        var value = encoder.singleValueContainer() /* Value being processed */
+        var value = encoder.singleValueContainer()      /* Value being processed */
 
         switch self
         {
@@ -90,12 +84,12 @@ indirect enum PortableJSONValue: Codable
 ///     Exercise shared wire names independently of platform-specific app models
 struct PortableContentDocument: Codable
 {
-    let modelVersion:   String                      /* Model version            */
-    let schemaVersion:  Int                         /* Schema version           */
-    let recordType:     String                      /* Record type              */
-    let id:             String                      /* Record or view identity  */
-    let workspaceID:    String                      /* Workspace ID             */
-    let payload:        [String: PortableJSONValue] /* Canonical record payload */
+    let modelVersion:   String                          /* Model version            */
+    let schemaVersion:  Int                             /* Schema version           */
+    let recordType:     String                          /* Record type              */
+    let id:             String                          /* Record or view identity  */
+    let workspaceID:    String                          /* Workspace ID             */
+    let payload:        [String: PortableJSONValue]     /* Canonical record payload */
 
     enum CodingKeys: String, CodingKey
     {
@@ -111,17 +105,15 @@ struct PortableContentDocument: Codable
 /// Describes a shared fixture expectation without defining runtime sync behavior
 struct FixtureCase: Decodable
 {
-    let file:   String /* File being processed         */
-    let schema: String /* Contract schema under review */
-    let valid:  Bool   /* Accepted input value         */
-
+    let file:   String          /* File being processed         */
+    let schema: String          /* Contract schema under review */
+    let valid:  Bool            /* Accepted input value         */
 }
 
 /// Retains the shared fixture list consumed by prototype codecs
 struct FixtureManifest: Decodable
 {
-    let cases: [FixtureCase] /* Supported enum cases */
-
+    let cases: [FixtureCase]    /* Supported enum cases */
 }
 
 /// @fcn roundTripFixtures
@@ -131,18 +123,18 @@ struct FixtureManifest: Decodable
 /// @return Number of emitted fixture files
 func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
 {
-    let decoder = JSONDecoder() /* JSON decoding configuration */
-    let encoder = JSONEncoder() /* JSON encoding configuration */
+    let decoder = JSONDecoder()         /* JSON decoding configuration */
+    let encoder = JSONEncoder()         /* JSON encoding configuration */
 
     encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
 
-    let manifest = try decoder.decode( /* Package inventory and hashes */
+    let manifest = try decoder.decode(          /* Package inventory and hashes */
         FixtureManifest.self,
         from: Data(contentsOf: fixtures.appendingPathComponent("manifest.json")))
 
     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
 
-    let contentSchemas = Set([ /* Content schemas */
+    let contentSchemas = Set([          /* Content schemas */
         "card.schema.json",
         "list.schema.json",
         "collection.schema.json",
@@ -168,7 +160,7 @@ func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
                 "content-selection.schema.json",
                 "unavailable-reference.schema.json"
     ])
-    var count = 0 /* Number of entries */
+    var count = 0       /* Number of entries */
 
     for fixture in manifest.cases where fixture.valid
     {
@@ -177,24 +169,21 @@ func roundTripFixtures(fixtures: URL, output: URL) throws -> Int
             throw CocoaError(.fileReadInvalidFileName)
         }
 
-        let input = /* Source operation input */
+        let input =                                                             /* Source operation input */
             try Data(contentsOf: fixtures.appendingPathComponent(fixture.file))
-        let result: Data /* Result being assembled */
+        let result: Data                                                        /* Result being assembled */
 
         if contentSchemas.contains(fixture.schema)
         {
             result = try encoder.encode(decoder.decode(PortableContentDocument.self, from: input))
-
         }
         else
         {
             result = try encoder.encode(decoder.decode(PortableJSONValue.self, from: input))
-
         }
         try result.write(to: output.appendingPathComponent(fixture.file), options: .atomic)
 
         count += 1
-
     }
     return count
 }
@@ -207,7 +196,7 @@ do
         throw CocoaError(.fileReadInvalidFileName)
     }
 
-    let count = try roundTripFixtures( /* Number of entries */
+    let count = try roundTripFixtures(                                  /* Number of entries */
         fixtures: URL(fileURLWithPath: CommandLine.arguments[1]),
         output: URL(fileURLWithPath: CommandLine.arguments[2]))
 

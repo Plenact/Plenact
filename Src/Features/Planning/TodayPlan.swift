@@ -18,13 +18,13 @@ import SwiftUI
 ///
 struct DailyPlanPriority: Codable, Hashable, Identifiable
 {
-    let ownerID:         UUID   /* Record owner identifier     */
-    let cardID:          Int    /* Owner-local Card identifier */
-    let title:           String /* User-facing title           */
-    let location:        String /* Resolved place metadata     */
-    let sourceCreatedAt: Date?  /* Source created at           */
+    let ownerID:         UUID           /* Record owner identifier     */
+    let cardID:          Int            /* Owner-local Card identifier */
+    let title:           String         /* User-facing title           */
+    let location:        String         /* Resolved place metadata     */
+    let sourceCreatedAt: Date?          /* Source created at           */
 
-    var id:              String /* Record or view identity */
+    var id:              String         /* Record or view identity */
     {
             "\(ownerID):\(cardID)"
     }
@@ -48,7 +48,6 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable
         location =
         source.collectionTitle == source.listTitle
         ? source.listTitle : source.collectionTitle + " · " + source.listTitle
-
     }
 
 
@@ -69,9 +68,7 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable
         {
             $0.collectionID == ownerID && $0.card.id == cardID && $0.card.createdAt == sourceCreatedAt
         }
-
     }
-
 }
 
 
@@ -84,18 +81,18 @@ struct DailyPlanPriority: Codable, Hashable, Identifiable
 ///
 struct DailyPlan: Codable, Equatable, Identifiable
 {
-    let id:         String                            /* Record or view identity     */
-    let timeZoneID: String                            /* Time zone ID                */
-    var intention                               = ""  /* Saved daily intention       */
-    var constraints                             = ""  /* Available time or capacity  */
-    var concerns                                = ""  /* Saved planning concerns     */
-    var priorities:        [DailyPlanPriority]  = []  /* Ordered planning priorities */
-    var updatedAt:         Date?                = nil /* Updated at                  */
-    var checkIn:           DailyCheckIn?        = nil /* Check in                    */
-    var checkIns:          [DailyCheckInEntry]? = nil /* Check ins                   */
-    var eveningReview:     DailyEveningReview?  = nil /* Evening review              */
-    var visionStep:        Int?                 = nil /* Vision step                 */
-    var visionCompletedAt: Date?                = nil /* Vision completed at         */
+    let id:         String                                      /* Record or view identity     */
+    let timeZoneID: String                                      /* Time zone ID                */
+    var intention                               = ""            /* Saved daily intention       */
+    var constraints                             = ""            /* Available time or capacity  */
+    var concerns                                = ""            /* Saved planning concerns     */
+    var priorities:        [DailyPlanPriority]  = []            /* Ordered planning priorities */
+    var updatedAt:         Date?                = nil           /* Updated at                  */
+    var checkIn:           DailyCheckIn?        = nil           /* Check in                    */
+    var checkIns:          [DailyCheckInEntry]? = nil           /* Check ins                   */
+    var eveningReview:     DailyEveningReview?  = nil           /* Evening review              */
+    var visionStep:        Int?                 = nil           /* Vision step                 */
+    var visionCompletedAt: Date?                = nil           /* Vision completed at         */
 
 
     ///
@@ -113,9 +110,7 @@ struct DailyPlan: Codable, Equatable, Identifiable
     {
         id = PlanningDate.key(date, calendar: calendar)
         timeZoneID = calendar.timeZone.identifier
-
     }
-
 }
 
 
@@ -129,7 +124,7 @@ struct DailyPlan: Codable, Equatable, Identifiable
 @MainActor
 enum DailyPlanStore
 {
-    static let key = "Plenact.DailyPlans.v1" /* Persistence lookup key */
+    static let key = "Plenact.DailyPlans.v1"    /* Persistence lookup key */
 
 
     ///
@@ -141,9 +136,8 @@ enum DailyPlanStore
     ///
     struct Document: Codable
     {
-        var version                    = 1   /* Serialized format version    */
-        var plans: [String: DailyPlan] = [:] /* Saved daily planning records */
-
+        var version                    = 1      /* Serialized format version    */
+        var plans: [String: DailyPlan] = [:]    /* Saved daily planning records */
     }
 
 
@@ -157,7 +151,7 @@ enum DailyPlanStore
     enum Failure: LocalizedError
     {
         case unsupported, corrupt, conflict, write
-        var errorDescription: String? /* Readable failure explanation */
+        var errorDescription: String?                   /* Readable failure explanation */
         {
             switch self
             {
@@ -170,9 +164,7 @@ enum DailyPlanStore
             case .write:
                             "The plan could not be saved. Your changes are still open; please try again."
             }
-
         }
-
     }
 
 
@@ -200,12 +192,11 @@ enum DailyPlanStore
             throw Failure.corrupt
         }
 
-        let document: Document /* Source document snapshot */
+        let document: Document          /* Source document snapshot */
 
         do
         {
             document = try JSONDecoder().decode(Document.self, from: data)
-
         }
         catch
         {
@@ -224,18 +215,17 @@ enum DailyPlanStore
             Set(plan.priorities.map(\.id)).count == plan.priorities.count,
             Set((plan.checkIns ?? []).map(\.id)).count == (plan.checkIns ?? []).count,
             (plan.visionStep.map(
-                    {
-                        (0 ... 2).contains($0)
-                    }) ?? true),
+                {
+                    (0 ... 2).contains($0)
+                }) ?? true),
             (plan.eveningReview.map(
-                    {
-                        (0 ... 2).contains($0.step) && Set($0.decisions.map(\.id)).count == $0.decisions.count
-                    }) ?? true)
+                {
+                    (0 ... 2).contains($0.step) && Set($0.decisions.map(\.id)).count == $0.decisions.count
+                }) ?? true)
             else
             {
                 throw Failure.corrupt
             }
-
         }
 
         return document
@@ -270,7 +260,7 @@ enum DailyPlanStore
             return document
         }
 
-        var result = document /* Accumulated output value */
+        var result = document           /* Accumulated output value */
 
         for key in result.plans.keys
         {
@@ -292,7 +282,6 @@ enum DailyPlanStore
                         weekKey: nil, collectionID: owner.id, collectionTitle: owner.title,
                         listID: list.id, listTitle: list.title, card: card))
             }
-
         }
 
         return result
@@ -319,7 +308,7 @@ enum DailyPlanStore
     static func save(_ plan: DailyPlan, replacing expected: DailyPlan?, to defaults: UserDefaults = .standard) throws
     -> DailyPlan
     {
-        var document = try load(from: defaults) /* Source document snapshot */
+        var document = try load(from: defaults)         /* Source document snapshot */
 
         guard document.plans[plan.id] == expected else
         {
@@ -333,13 +322,13 @@ enum DailyPlanStore
             throw Failure.corrupt
         }
 
-        var saved = plan /* Saved state under review */
+        var saved = plan        /* Saved state under review */
 
         saved.updatedAt = .now
         document.plans[saved.id] = saved
 
-        let data     = try JSONEncoder().encode(document) /* Encoded record bytes          */
-        let previous = defaults.object(forKey: key)       /* Previous value for comparison */
+        let data     = try JSONEncoder().encode(document)       /* Encoded record bytes          */
+        let previous = defaults.object(forKey: key)             /* Previous value for comparison */
 
         defaults.set(data, forKey: key)
         guard defaults.synchronize(), defaults.data(forKey: key) == data else
@@ -358,7 +347,6 @@ enum DailyPlanStore
 
         return saved
     }
-
 }
 
 
@@ -371,27 +359,27 @@ enum DailyPlanStore
 ///
 struct TodayPlanView: View
 {
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
-    @State private var date:     Date                         /* Date used by this operation    */
-    private let defaults:        UserDefaults                 /* Preference storage domain      */
-    @State private var draft:    DailyPlan                    /* Local editing draft            */
-    @State private var loaded              = false                         /* Initial load completed         */
-    @State private var showsPicker         = false            /* Picker visibility              */
-    @State private var showsNewPriority    = false            /* New Priority visibility        */
-    @State private var showsVision         = false            /* Vision visibility              */
-    @State private var showsReview         = false            /* Review visibility              */
-    @State private var showsCheckIn        = false            /* Check In visibility            */
-    @State private var showsDailyReview    = false            /* Daily Review visibility        */
-    @State private var showsWeeklyReview   = false            /* Weekly Review visibility       */
-    @State private var showsPeriodicReview = false            /* Periodic Review visibility     */
-    @State private var confirmsDiscard     = false            /* Confirms discard               */
-    private let opensEveningReview: Bool                      /* Opens evening review           */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
+    @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
+    @State private var date:     Date                                   /* Date used by this operation    */
+    private let defaults:        UserDefaults                           /* Preference storage domain      */
+    @State private var draft:    DailyPlan                              /* Local editing draft            */
+    @State private var loaded              = false                      /* Initial load completed         */
+    @State private var showsPicker         = false                      /* Picker visibility              */
+    @State private var showsNewPriority    = false                      /* New Priority visibility        */
+    @State private var showsVision         = false                      /* Vision visibility              */
+    @State private var showsReview         = false                      /* Review visibility              */
+    @State private var showsCheckIn        = false                      /* Check In visibility            */
+    @State private var showsDailyReview    = false                      /* Daily Review visibility        */
+    @State private var showsWeeklyReview   = false                      /* Weekly Review visibility       */
+    @State private var showsPeriodicReview = false                      /* Periodic Review visibility     */
+    @State private var confirmsDiscard     = false                      /* Confirms discard               */
+    private let opensEveningReview: Bool                                /* Opens evening review           */
 
-    @State private var baseline: DailyPlan?                   /* Original state for comparison  */
-    @State private var loadError: String?                     /* Load error                     */
-    @State private var saveError: String?                     /* Save error                     */
-    @State private var openedItem:  PlanningSearchResult?     /* Opened item                    */
+    @State private var baseline: DailyPlan?                     /* Original state for comparison */
+    @State private var loadError: String?                       /* Load error                    */
+    @State private var saveError: String?                       /* Save error                    */
+    @State private var openedItem:  PlanningSearchResult?       /* Opened item                   */
 
 
     ///
@@ -416,15 +404,14 @@ struct TodayPlanView: View
         _date = State(initialValue: date)
         self.defaults = defaults
         _draft = State(initialValue: DailyPlan(date: date, calendar: calendar))
-
     }
 
-    private var sources: [PlanningSearchResult] /* Source records or files */
+    private var sources: [PlanningSearchResult]         /* Source records or files */
     {
         access?.searchableItems ?? []
     }
 
-    private var hasChanges: Bool /* Changes availability */
+    private var hasChanges: Bool        /* Changes availability */
     {
         guard loaded, loadError == nil else
         {
@@ -434,9 +421,9 @@ struct TodayPlanView: View
         return draft != (baseline ?? DailyPlan(date: date, calendar: planCalendar))
     }
 
-    private var planCalendar: Calendar /* Plan calendar */
+    private var planCalendar: Calendar          /* Plan calendar */
     {
-        var value = Calendar.current /* Calendar for date calculations */
+        var value = Calendar.current    /* Calendar for date calculations */
 
         value.timeZone = TimeZone(identifier: draft.timeZoneID) ?? .current
 
@@ -456,22 +443,19 @@ struct TodayPlanView: View
     {
         do
         {
-            let saved = /* Saved state under review */
+            let saved =                                                 /* Saved state under review */
                 try DailyPlanStore.load(from: defaults).plans[draft.id]
 
             baseline = saved
             draft = saved ?? draft
             loadError = nil
             loaded = true
-
         }
         catch
         {
             loadError = error.localizedDescription;
             loaded = true
-
         }
-
     }
 
 
@@ -495,9 +479,7 @@ struct TodayPlanView: View
         catch
         {
             saveError = error.localizedDescription
-
         }
-
     }
 
 
@@ -514,13 +496,11 @@ struct TodayPlanView: View
         if hasChanges
         {
             confirmsDiscard = true
-
         }
         else
         {
             dismiss()
         }
-
     }
 
 
@@ -536,7 +516,7 @@ struct TodayPlanView: View
     {
         do
         {
-            let saved = /* Saved state under review */
+            let saved =                                                                 /* Saved state under review */
                 try DailyPlanStore.save(draft, replacing: baseline, to: defaults)
 
             baseline = saved
@@ -548,7 +528,6 @@ struct TodayPlanView: View
         {
             return false
         }
-
     }
 
 
@@ -564,12 +543,11 @@ struct TodayPlanView: View
     ///
     private func priorityRow(_ priority: DailyPlanPriority) -> some View
     {
-        let source = priority.resolve(in: sources) /* Source value for this operation */
+        let source = priority.resolve(in: sources)      /* Source value for this operation */
 
         return Button
         {
             openedItem = source
-
         }
         label:
         {
@@ -611,11 +589,10 @@ struct TodayPlanView: View
                     else
                     {
                         Text(
-                                                                        "Unavailable: archived, removed, or moved to another Board. Remove this link and choose the item again if needed."
+                            "Unavailable: archived, removed, or moved to another Board. Remove this link and choose the item again if needed."
                         )
                         .font(.caption).foregroundStyle(.secondary)
                     }
-
                 }
 
                 Spacer(minLength: 0)
@@ -623,7 +600,6 @@ struct TodayPlanView: View
                 {
                     Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(.secondary)
                 }
-
             } .padding(.vertical, 6).frame(minHeight: 44)
         }
         .buttonStyle(.plain)
@@ -633,7 +609,7 @@ struct TodayPlanView: View
             ? "The saved priority remains in your plan" : "Opens the original item; Back returns to this plan")
     }
 
-    private var planForm: some View /* Plan form */
+    private var planForm: some View     /* Plan form */
     {
         Form
         {
@@ -653,7 +629,6 @@ struct TodayPlanView: View
                 Button
                 {
                     showsVision = true
-
                 }
                 label:
                 {
@@ -668,7 +643,6 @@ struct TodayPlanView: View
                 Button
                 {
                     showsCheckIn = true
-
                 }
                 label:
                 {
@@ -678,7 +652,6 @@ struct TodayPlanView: View
                 Button
                 {
                     showsReview = true
-
                 }
                 label:
                 {
@@ -694,7 +667,7 @@ struct TodayPlanView: View
             footer:
             {
                 Text(
-                                                "Plan your morning, adjust during the day, and reflect in the evening. Save within each flow to keep your progress."
+                    "Plan your morning, adjust during the day, and reflect in the evening. Save within each flow to keep your progress."
                 )
             }
 
@@ -703,7 +676,6 @@ struct TodayPlanView: View
                 Button
                 {
                     showsDailyReview = true
-
                 }
                 label:
                 {
@@ -713,7 +685,6 @@ struct TodayPlanView: View
                 Button
                 {
                     showsWeeklyReview = true
-
                 }
                 label:
                 {
@@ -722,7 +693,6 @@ struct TodayPlanView: View
                 Button
                 {
                     showsPeriodicReview = true
-
                 }
                 label:
                 {
@@ -755,7 +725,6 @@ struct TodayPlanView: View
                 Button
                 {
                     showsPicker = true
-
                 }
                 label:
                 {
@@ -764,7 +733,6 @@ struct TodayPlanView: View
                 Button
                 {
                     showsNewPriority = true
-
                 }
                 label:
                 {
@@ -778,7 +746,7 @@ struct TodayPlanView: View
             footer:
             {
                 Text(
-                                                "Priorities link to existing items. Choosing, reordering, or removing a priority does not move or delete the original. Swipe to remove a link; use Edit to reorder."
+                    "Priorities link to existing items. Choosing, reordering, or removing a priority does not move or delete the original. Swipe to remove a link; use Edit to reorder."
                 )
             }
 
@@ -815,12 +783,10 @@ struct TodayPlanView: View
                 )
                 .font(.footnote).foregroundStyle(.secondary)
             }
-
         }
-
     }
 
-    var body: some View /* Today Plan layout */
+    var body: some View         /* Today Plan layout */
     {
         NavigationStack
         {
@@ -839,7 +805,6 @@ struct TodayPlanView: View
                 {
                     planForm.disabled(!loaded)
                 }
-
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Today's Plan")
@@ -858,9 +823,7 @@ struct TodayPlanView: View
                         EditButton();
                         Button("Save", action: save).disabled(!loaded || (!hasChanges && baseline != nil))
                     }
-
                 }
-
             }
             .task
             {
@@ -870,11 +833,8 @@ struct TodayPlanView: View
                     if opensEveningReview && loadError == nil
                     {
                         showsReview = true
-
                     }
-
                 }
-
             }
             .sheet(isPresented: $showsPeriodicReview)
             {
@@ -906,7 +866,6 @@ struct TodayPlanView: View
 
                         baseline = saved;
                         draft = saved
-
                     })
             }
             .sheet(isPresented: $showsPicker)
@@ -919,7 +878,7 @@ struct TodayPlanView: View
                 {
                     source in
 
-                    let priority = DailyPlanPriority(source) /* Selected planning priority */
+                    let priority = DailyPlanPriority(source)    /* Selected planning priority */
 
                     if !draft.priorities.contains(where:
                         {
@@ -928,9 +887,7 @@ struct TodayPlanView: View
                     {
                         draft.priorities.append(priority)
                     }
-
                 }
-
             }
             .fullScreenCover(item: $openedItem)
             {
@@ -945,7 +902,6 @@ struct TodayPlanView: View
                         onLeaveForHome:
                         {
                             openedItem = nil
-
                         })
                 }
                 else if let owner = access?.library.first(where:
@@ -958,7 +914,6 @@ struct TodayPlanView: View
                         onLeaveForHome:
                         {
                             openedItem = nil
-
                         })
                 }
                 else
@@ -969,14 +924,10 @@ struct TodayPlanView: View
                         Button("Back to plan")
                         {
                             openedItem = nil
-
                         } .padding()
                     }
-
                 }
-
             }
-
         }
         .interactiveDismissDisabled(hasChanges)
         .confirmationDialog("Discard changes to this plan?", isPresented: $confirmsDiscard, titleVisibility: .visible)
@@ -989,7 +940,6 @@ struct TodayPlanView: View
             Button("Keep editing", role: .cancel)
             {
             }
-
         }
         .alert("Plan not saved", isPresented: Binding(get:
                 {
@@ -999,17 +949,13 @@ struct TodayPlanView: View
                     if !$0
                     {
                         saveError = nil
-
                     }
-
                 }))
         {
             Button("OK")
             {
                 saveError = nil
-
             }
-
         }
         message:
         {
@@ -1019,7 +965,6 @@ struct TodayPlanView: View
         .presentationDetents([.fraction(0.7), .large])
         .presentationDragIndicator(.visible)
     }
-
 }
 
 
@@ -1032,22 +977,21 @@ struct TodayPlanView: View
 ///
 struct DailyPriorityPicker: View
 {
-    let sources:             [PlanningSearchResult] /* Source records or files        */
-    @Binding var priorities: [DailyPlanPriority]    /* Ordered planning priorities    */
-    @Environment(\.dismiss) private var dismiss     /* Close the current presentation */
-    @State private var query = ""                   /* Search text                    */
+    let sources:             [PlanningSearchResult]     /* Source records or files        */
+    @Binding var priorities: [DailyPlanPriority]        /* Ordered planning priorities    */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
+    @State private var query = ""                       /* Search text                    */
 
-    private var matches: [PlanningSearchResult] /* Matching source entries */
+    private var matches: [PlanningSearchResult]         /* Matching source entries */
     {
         sources.filter
         {
             query.isEmpty || $0.card.word.localizedStandardContains(query)
             || $0.collectionTitle.localizedStandardContains(query) || $0.listTitle.localizedStandardContains(query)
         }
-
     }
 
-    var body: some View /* Daily Priority Picker layout */
+    var body: some View         /* Daily Priority Picker layout */
     {
         NavigationStack
         {
@@ -1069,8 +1013,8 @@ struct DailyPriorityPicker: View
                 {
                     source in
 
-                    let priority = DailyPlanPriority(source) /* Selected planning priority */
-                    let selected = priorities.contains       /* Current selection          */
+                    let priority = DailyPlanPriority(source)    /* Selected planning priority */
+                    let selected = priorities.contains          /* Current selection          */
                     {
                         $0.id == priority.id
                     }
@@ -1083,13 +1027,11 @@ struct DailyPriorityPicker: View
                             {
                                 $0.id == priority.id
                             }
-
                         }
                         else
                         {
                             priorities.append(priority)
                         }
-
                     }
                     label:
                     {
@@ -1109,7 +1051,6 @@ struct DailyPriorityPicker: View
                         } .frame(minHeight: 44)
                     } .accessibilityAddTraits(selected ? [.isSelected] : [])
                 }
-
             }
             .navigationTitle("Choose priorities")
             .navigationBarTitleDisplayMode(.inline)
@@ -1122,15 +1063,10 @@ struct DailyPriorityPicker: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -1164,14 +1100,14 @@ enum DailyPriorityCreation
         destination: WorkspaceListReference, access: PlanningCalendarAccess, attachments: [KanbanAttachment] = []
     ) -> PlanningSearchResult?
     {
-        let title = title.trimmingCharacters(in: .whitespacesAndNewlines) /* User-facing title */
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)       /* User-facing title */
 
         guard !title.isEmpty else
         {
             return nil
         }
 
-        let week = access.document.weeks.first /* Dated Week under consideration */
+        let week = access.document.weeks.first          /* Dated Week under consideration */
         {
             $0.id == destination.ownerID
         }
@@ -1191,9 +1127,9 @@ enum DailyPriorityCreation
             return nil
         }
 
-        let id   = /* Record or view identity */
+        let id   =                                                      /* Record or view identity  */
             (owner.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
-        var card = KanbanCard( /* Card under consideration */
+        var card = KanbanCard(                                          /* Card under consideration */
             id: id, word: title, listTitle: owner.lists[index].title,
             checklists: [], comments: [], members: [], labelIDs: [], attachments: attachments,
             coverAttachmentID: attachments.first(where:
@@ -1205,18 +1141,16 @@ enum DailyPriorityCreation
         NewCardAppearanceDefaults.apply(to: &card)
         owner.lists[index].cards.append(card)
 
-        let saved: Bool /* Saved state under review */
+        let saved: Bool         /* Saved state under review */
 
         if var week
         {
             week.collection = owner;
             saved = access.saveWeek(week)
-
         }
         else
         {
             saved = access.saveLibrary(owner)
-
         }
 
         guard saved else
@@ -1229,7 +1163,6 @@ enum DailyPriorityCreation
             collectionTitle: week?.rangeTitle ?? owner.title, listID: destination.listID,
             listTitle: card.listTitle, card: card)
     }
-
 }
 
 
@@ -1242,22 +1175,22 @@ enum DailyPriorityCreation
 ///
 struct NewDailyPriorityView: View
 {
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    let onCreate: (PlanningSearchResult) -> Void              /* Create callback                */
-    @StateObject private var attachmentDraft          =       /* Attachment draft               */
+    @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
+    let onCreate: (PlanningSearchResult) -> Void                        /* Create callback                */
+    @StateObject private var attachmentDraft          =                 /* Attachment draft               */
         CreationAttachmentDraft()
-    @State private var keyboardContextID              = UUID() /* Keyboard context ID           */
-    @State private var title                          = ""     /* User-facing title             */
-    @State private var bodyText                       = ""     /* Body text                     */
-    @State private var presentation: ItemPresentation = .card  /* Current presentation style    */
-    @State private var initialized                    = false                     /* Initialized state flag        */
-    @State private var confirmsDiscard                = false                 /* Confirms discard              */
+    @State private var keyboardContextID              = UUID()          /* Keyboard context ID            */
+    @State private var title                          = ""              /* User-facing title              */
+    @State private var bodyText                       = ""              /* Body text                      */
+    @State private var presentation: ItemPresentation = .card           /* Current presentation style     */
+    @State private var initialized                    = false           /* Initialized state flag         */
+    @State private var confirmsDiscard                = false           /* Confirms discard               */
 
-    @State private var destination:  WorkspaceListReference?   /* Destination for the operation */
-    @State private var error: String?                          /* Reported operation failure    */
+    @State private var destination:  WorkspaceListReference?    /* Destination for the operation */
+    @State private var error: String?                           /* Reported operation failure    */
 
-    private var destinations: [WorkspaceListDestination] /* Available operation destinations */
+    private var destinations: [WorkspaceListDestination]        /* Available operation destinations */
     {
         WorkspaceBrowseIndex.lists(
             in: WorkspaceBrowseIndex.owners(document: access?.document, library: access?.library ?? []))
@@ -1303,7 +1236,6 @@ struct NewDailyPriorityView: View
 
                 return
             }
-
         }
         catch
         {
@@ -1339,10 +1271,9 @@ struct NewDailyPriorityView: View
 
             break
         }
-
     }
 
-    var body: some View /* New Daily Priority layout */
+    var body: some View         /* New Daily Priority layout */
     {
         NavigationStack
         {
@@ -1381,23 +1312,20 @@ struct NewDailyPriorityView: View
                             )
                             .tag(Optional(target.reference))
                         }
-
                     } .pickerStyle(.navigationLink)
                     if destinations.isEmpty
                     {
                         Text("Create a List in Plans first, then return here.").foregroundStyle(.secondary)
                     }
-
                 }
 
                 Section
                 {
                     Text(
-                                                            "Add saves the original item in this List and selects it in your plan. Tap Save on Today's Plan to keep the priority link. Canceling this composer creates nothing."
+                        "Add saves the original item in this List and selects it in your plan. Tap Save on Today's Plan to keep the priority link. Canceling this composer creates nothing."
                     )
                     .font(.footnote).foregroundStyle(.secondary)
                 }
-
             }
             .navigationTitle("Add priority")
             .navigationBarTitleDisplayMode(.inline)
@@ -1414,11 +1342,8 @@ struct NewDailyPriorityView: View
                         else
                         {
                             confirmsDiscard = true
-
                         }
-
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -1430,7 +1355,6 @@ struct NewDailyPriorityView: View
                         title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || destination == nil
                         || access == nil || attachmentDraft.isImporting)
                 }
-
             }
             .onAppear(perform: initializeDestination)
         }
@@ -1443,7 +1367,6 @@ struct NewDailyPriorityView: View
                     exit:
                     {
                         confirmsDiscard = true
-
                     }, attachment: attachmentDraft.openSources, showsUpperBorder: true))
         }
         .onDisappear
@@ -1461,7 +1384,6 @@ struct NewDailyPriorityView: View
             Button("Keep editing", role: .cancel)
             {
             }
-
         }
         .alert("Priority not added", isPresented: Binding(get:
                 {
@@ -1471,23 +1393,17 @@ struct NewDailyPriorityView: View
                     if !$0
                     {
                         error = nil
-
                     }
-
                 }))
         {
             Button("OK")
             {
                 error = nil
-
             }
-
         }
         message:
         {
             Text(error ?? "")
         }
-
     }
-
 }

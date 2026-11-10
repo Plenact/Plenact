@@ -19,8 +19,8 @@ import Foundation
 ///
 enum CardAssigneeKind: String, Codable, Sendable
 {
-    case registeredUser  /* Stable server user reference */
-    case manual          /* User-entered display name    */
+    case registeredUser         /* Stable server user reference */
+    case manual                 /* User-entered display name    */
 }
 
 
@@ -32,10 +32,10 @@ enum CardAssigneeKind: String, Codable, Sendable
 ///
 struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral, Sendable
 {
-    let id:          UUID             /* Stable assignment row ID  */
-    let kind:        CardAssigneeKind /* Registered or manual      */
-    let userID:      String?          /* Stable registered user ID */
-    var displayName: String           /* Name shown on the card    */
+    let id:          UUID                       /* Stable assignment row ID  */
+    let kind:        CardAssigneeKind           /* Registered or manual      */
+    let userID:      String?                    /* Stable registered user ID */
+    var displayName: String                     /* Name shown on the card    */
 
 
     ///
@@ -56,7 +56,6 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
         self.kind = kind
         self.userID = userID
         self.displayName = displayName
-
     }
 
 
@@ -103,9 +102,7 @@ struct CardAssignee: Identifiable, Hashable, Codable, ExpressibleByStringLiteral
     init(stringLiteral value: String)
     {
         self = .manual(value)
-
     }
-
 }
 
 
@@ -120,16 +117,15 @@ enum ItemPresentation: String, Codable, CaseIterable, Identifiable, Sendable
     case card
     case note
 
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
-    }  /* Stable item-kind identity         */
+    }                   /* Stable item-kind identity         */
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         self == .note ? "Note" : "Card"
-    }  /* User-facing name of the item kind */
-
+    }                                   /* User-facing name of the item kind */
 }
 
 
@@ -144,17 +140,17 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
 {
     case card, note, divider, picture, title, text
 
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         rawValue.capitalized
     }
 
-    var symbol: String /* Selected symbol name */
+    var symbol: String          /* Selected symbol name */
     {
         switch self
         {
@@ -171,9 +167,7 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
         case .text:
                     "text.alignleft"
         }
-
     }
-
 }
 
 
@@ -187,12 +181,12 @@ enum ItemDisplayFormat: String, Codable, CaseIterable, Identifiable, Sendable
 enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 {
     case date, time, dateAndTime
-    var id: String /* Record or view identity */
+    var id: String                      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -205,15 +199,14 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
         case .dateAndTime:
                     "Date & time"
         }
-
     }
 
-    var includesDate: Bool /* Includes date */
+    var includesDate: Bool      /* Includes date */
     {
         self != .time
     }
 
-    var includesTime: Bool /* Includes time */
+    var includesTime: Bool      /* Includes time */
     {
         self != .date
     }
@@ -247,11 +240,11 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
     ///
     func label(for value: Date) -> String
     {
-        let date = DateFormatter() /* Date used by this operation */
+        let date = DateFormatter()      /* Date used by this operation */
 
         date.dateStyle = .medium
 
-        let time = DateFormatter() /* Local schedule time */
+        let time = DateFormatter()      /* Local schedule time */
 
         time.locale = Locale(identifier: "en_US_POSIX")
         time.dateFormat = "h:mm a"
@@ -265,9 +258,7 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
         case .dateAndTime:
             return date.string(from: value) + " • " + time.string(from: value)
         }
-
     }
-
 }
 
 
@@ -280,10 +271,10 @@ enum CardDateKind: String, CaseIterable, Codable, Sendable, Identifiable
 ///
 struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
 {
-    var id = UUID()        /* Record UUID         */
-    let emoji:    String   /* Chosen emoji symbol */
-    let authorID: UUID     /* Author ID           */
-    var createdAt = Date() /* Created at          */
+    var id = UUID()             /* Record UUID         */
+    let emoji:    String        /* Chosen emoji symbol */
+    let authorID: UUID          /* Author ID           */
+    var createdAt = Date()      /* Created at          */
 
 
     ///
@@ -298,7 +289,7 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
     ///
     static func validatedEmoji(_ input: String) -> String?
     {
-        let value = /* Value being processed */
+        let value =                                                     /* Value being processed */
             input.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard value.count == 1,
@@ -347,12 +338,10 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
             {
                 !($0.authorID == authorID && $0.emoji == emoji)
             }
-
         }
 
         return reactions + [Self(emoji: emoji, authorID: authorID)]
     }
-
 }
 
 
@@ -365,7 +354,7 @@ struct ItemEmojiReaction: Identifiable, Hashable, Codable, Sendable
 ///
 enum LocalReactionIdentity
 {
-    static let key = "Plenact.LocalReactionAuthor.v1" /* Lookup or persistence key */
+    static let key = "Plenact.LocalReactionAuthor.v1"           /* Lookup or persistence key */
 
 
     ///
@@ -400,12 +389,11 @@ enum LocalReactionIdentity
             return existing
         }
 
-        let id = UUID(); /* Record UUID */
+        let id = UUID();        /* Record UUID */
 
         defaults.set(id.uuidString, forKey: key);
         return id
     }
-
 }
 
 
@@ -420,10 +408,10 @@ enum LocalReactionIdentity
 ///
 struct KanbanComment: Identifiable, Hashable, Codable, Sendable
 {
-    let id:        UUID   /* Unique identifier for the comment                 */
-    let author:    String /* Author of the comment                             */
-    let body:      String /* Body text of the comment                          */
-    let createdAt: Date   /* Timestamp indicating when the comment was created */
+    let id:        UUID         /* Unique identifier for the comment                 */
+    let author:    String       /* Author of the comment                             */
+    let body:      String       /* Body text of the comment                          */
+    let createdAt: Date         /* Timestamp indicating when the comment was created */
 
 
     ///
@@ -446,9 +434,7 @@ struct KanbanComment: Identifiable, Hashable, Codable, Sendable
         self.author = author
         self.body = body
         self.createdAt = createdAt
-
     }
-
 }
 
 
@@ -472,19 +458,19 @@ enum NoteTextSharing
     ///
     static func text(for note: KanbanCard) -> String
     {
-        var sections = [note.word] /* Share-text sections beginning with the Note title */
+        var sections = [note.word]      /* Share-text sections beginning with the Note title */
 
         if let body = note.descriptionOverride, !body.isEmpty
-        {  /* Nonempty Note body included in shared text */
+        {                                                       /* Nonempty Note body included in shared text */
             sections.append(PlanRichText.plain(body))
         }
 
-        let links = (note.attachments ?? []).compactMap /* Resolved content references */
+        let links = (note.attachments ?? []).compactMap         /* Resolved content references */
         {
-        attachment -> String? in /* Web links appended to the shared Note text */
+        attachment -> String? in                                        /* Web links appended to the shared Note text */
             guard attachment.kind == .link, let url = attachment.url
             else
-            {  /* Address of a shareable link attachment     */
+            {                   /* Address of a shareable link attachment     */
                 return nil
             }
 
@@ -498,7 +484,6 @@ enum NoteTextSharing
 
         return sections.joined(separator: "\n\n")
     }
-
 }
 
 
@@ -512,12 +497,12 @@ enum NoteTextSharing
 enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
 {
     case quickActions, media, description, details, checklists, activity
-    var id: String /* Record or view identity */
+    var id: String                                                              /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -534,9 +519,7 @@ enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
         case .activity:
                     "Activity"
         }
-
     }
-
 }
 
 
@@ -549,20 +532,18 @@ enum CardSection: String, CaseIterable, Codable, Identifiable, Sendable
 ///
 struct CardSectionLayout: Hashable, Codable, Sendable
 {
-    var order:    [CardSection]    = CardSection.allCases /* Display ordering policy  */
-    var hidden:   Set<CardSection> = []                   /* Content visibility state */
+    var order:    [CardSection]    = CardSection.allCases       /* Display ordering policy  */
+    var hidden:   Set<CardSection> = []                         /* Content visibility state */
 
-    var sections: [CardSection] /* Ordered section groups */
+    var sections: [CardSection]         /* Ordered section groups */
     {
-        var seen: Set<CardSection> = [] /* Identities already encountered */
+        var seen: Set<CardSection> = []         /* Identities already encountered */
 
         return (order + CardSection.allCases).filter
         {
             seen.insert($0).inserted && !hidden.contains($0)
         }
-
     }
-
 }
 
 
@@ -575,13 +556,12 @@ struct CardSectionLayout: Hashable, Codable, Sendable
 ///
 struct CardScheduleBadge: Equatable
 {
-    let title:       String /* User-facing title     */
-    let value:       String /* Value being processed */
-    let systemImage: String /* System image          */
+    let title:       String     /* User-facing title     */
+    let value:       String     /* Value being processed */
+    let systemImage: String     /* System image          */
 
-    var label:       String /* Resolved display label */
+    var label:       String     /* Resolved display label */
     {
         title.isEmpty ? value : title + " · " + value
     }
-
 }

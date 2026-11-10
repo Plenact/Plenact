@@ -12,9 +12,8 @@ import SwiftUI
 ///     Prevent old editors from saving into the reconstructed workspace during activation
 struct PortableWorkspaceImportAccess
 {
-    let install: (ReviewedPortablePackage) -> Void /* Install callback       */
-    let undo:    () -> Void                        /* Restore the prior edit */
-
+    let install: (ReviewedPortablePackage) -> Void      /* Install callback       */
+    let undo:    () -> Void                             /* Restore the prior edit */
 }
 
 
@@ -23,8 +22,7 @@ struct PortableWorkspaceImportAccess
 ///     Keep views from installing native stores directly
 private struct PortableWorkspaceImportKey: EnvironmentKey
 {
-    static let defaultValue: PortableWorkspaceImportAccess? = nil /* Fallback environment value */
-
+    static let defaultValue: PortableWorkspaceImportAccess? = nil       /* Fallback environment value */
 }
 
 
@@ -33,7 +31,7 @@ extension EnvironmentValues
     /// @fcn EnvironmentValues.portableWorkspaceImport
     /// @brief Access the root's explicit Simulator import boundary
     /// @return Optional import and undo actions
-    var portableWorkspaceImport: PortableWorkspaceImportAccess? /* Portable workspace import */
+    var portableWorkspaceImport: PortableWorkspaceImportAccess?         /* Portable workspace import */
     {
         get
         {
@@ -42,7 +40,6 @@ extension EnvironmentValues
         set
         {
             self[PortableWorkspaceImportKey.self] = newValue
-
         }
     }
 }
@@ -61,14 +58,13 @@ extension AppRootView
             pendingPortableImport = nil
             undoingPortableImport = false
             isSwitchingWorkspace = false
-
         }
         do
         {
             #if targetEnvironment(simulator)
             KanbanBoardPersistence.waitForPendingSaves()
 
-            let store = try FullMonthExampleStore.live() /* Persistence boundary */
+            let store = try FullMonthExampleStore.live()        /* Persistence boundary */
 
             if undoingPortableImport
             {
@@ -76,17 +72,16 @@ extension AppRootView
                 try reloadWorkspaceFromStorage()
 
                 workspaceNotice = "Your workspace from before the editable portable import is restored."
-
             }
             else if let package = pendingPortableImport, let domain = Bundle.main.bundleIdentifier
             {
-                let candidate    = /* Candidate under validation */
+                let candidate    =                                                      /* Candidate under validation   */
                     try PortableWorkspaceCandidate.prepare(package)
-                let aliases      = /* Local-to-portable identities */
+                let aliases      =                                                      /* Local-to-portable identities */
                     ["GMT": "Etc/UTC", "UTC": "Etc/UTC", "Etc/GMT": "Etc/UTC"]
-                let deviceZone   = /* Device zone */
+                let deviceZone   =                                                      /* Device zone                  */
                     aliases[TimeZone.current.identifier] ?? TimeZone.current.identifier
-                let originalZone = /* Original zone */
+                let originalZone =                                                      /* Original zone                */
                     aliases[candidate.timeZoneID] ?? candidate.timeZoneID
 
                 guard originalZone == deviceZone else
@@ -94,7 +89,7 @@ extension AppRootView
                     throw PortableEditableContent.Failure.dateContextRequired
                 }
 
-                let staging = /* Isolated staging workspace */
+                let staging =           /* Isolated staging workspace */
                     FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 
                 defer
@@ -110,7 +105,6 @@ extension AppRootView
                 }
 
                 workspaceNotice = "Portable data loaded into your editable Simulator workspace. The previous workspace is retained for undo. Cloud synchronization is off."
-
             }
             else
             {
@@ -123,7 +117,6 @@ extension AppRootView
             if (try? FullMonthExampleStore.live().needsRecovery) == true
             {
                 workspaceRecoveryError = error.localizedDescription
-
             }
             else
             {
@@ -131,7 +124,6 @@ extension AppRootView
             }
 
             workspaceNotice = "The editable portable switch did not finish. The original package is unchanged, and recovery files are retained when needed. " + error.localizedDescription
-
         }
     }
 }

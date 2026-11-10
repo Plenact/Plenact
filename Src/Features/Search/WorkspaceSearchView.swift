@@ -21,25 +21,25 @@ import SwiftUI
 ///
 struct TodaySearchView: View
 {
-    let lists:           [KanbanList]       /* Current locally stored Board snapshot    */
-    let onOpenBoardList: (Int) -> Void      /* Navigate to a result's containing list   */
-    let onOpenBoardCard: (Int, Int) -> Void /* Route to a Week card by list/card IDs    */
-    let onArchiveCard:   (Int) -> Void      /* Canonical Week archive                   */
-    let onDeleteCard:    (Int) -> Bool      /* Confirmed canonical Week deletion result */
-    let onArchiveList:   (Int) -> Void      /* Canonical Week list archive              */
-    let onDeleteList:    (Int) -> Bool      /* Confirmed canonical list deletion result */
+    let lists:           [KanbanList]           /* Current locally stored Board snapshot    */
+    let onOpenBoardList: (Int) -> Void          /* Navigate to a result's containing list   */
+    let onOpenBoardCard: (Int, Int) -> Void     /* Route to a Week card by list/card IDs    */
+    let onArchiveCard:   (Int) -> Void          /* Canonical Week archive                   */
+    let onDeleteCard:    (Int) -> Bool          /* Confirmed canonical Week deletion result */
+    let onArchiveList:   (Int) -> Void          /* Canonical Week list archive              */
+    let onDeleteList:    (Int) -> Bool          /* Confirmed canonical list deletion result */
 
-    var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? = /* Result provider callback */
+    var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? =    /* Result provider callback */
         nil
-    var onSelectResult: ((TodaySearchResult) -> Void)?                                     = /* Select result callback */
+    var onSelectResult: ((TodaySearchResult) -> Void)?                                     =    /* Select result callback   */
         nil
 
-    @Environment(\.dismiss) private var dismiss                   /* Close the search sheet             */
-    @FocusState private var searchFieldFocused: Bool              /* Search field focus state           */
-    @State private var query                   = ""                       /* User-entered search text           */
-    @State private var scope: TodaySearchScope = .all                     /* Selected local-search scope        */
-    @State private var recentSearches          = RecentSearchStore.load() /* Device-local recent terms          */
-    @State private var labelLibrary            = LabelLibraryStore.load() /* Definitions used for label matches */
+    @Environment(\.dismiss) private var dismiss                                 /* Close the search sheet             */
+    @FocusState private var searchFieldFocused: Bool                            /* Search field focus state           */
+    @State private var query                   = ""                             /* User-entered search text           */
+    @State private var scope: TodaySearchScope = .all                           /* Selected local-search scope        */
+    @State private var recentSearches          = RecentSearchStore.load()       /* Device-local recent terms          */
+    @State private var labelLibrary            = LabelLibraryStore.load()       /* Definitions used for label matches */
 
 
     ///
@@ -50,8 +50,8 @@ struct TodaySearchView: View
     /// @return     ([TodaySearchResult]) current display-order matches
     /// @post       Search history and Board state are unchanged
     ///
-    private var results: [TodaySearchResult] /* Collected operation results */
-    {  /* Matches for the current query and scope */
+    private var results: [TodaySearchResult]            /* Collected operation results             */
+    {                                                   /* Matches for the current query and scope */
         resultProvider?(query, scope, labelLibrary)
         ?? TodaySearchIndex.results(query: query, scope: scope, lists: lists, library: labelLibrary)
     }
@@ -70,7 +70,6 @@ struct TodaySearchView: View
     private func rememberSearch()
     {
         recentSearches = RecentSearchStore.remember(query)
-
     }
 
 
@@ -83,8 +82,8 @@ struct TodaySearchView: View
     /// @return     (some View) plain recent-search list
     /// @post       Interactions affect search state only, not Board content
     ///
-    private var recentSearchList: some View /* Recent search list */
-    {  /* Previously entered queries available for reuse */
+    private var recentSearchList: some View     /* Recent search list                             */
+    {                                           /* Previously entered queries available for reuse */
         List
         {
             Section
@@ -99,7 +98,6 @@ struct TodaySearchView: View
                         rememberSearch()
 
                         searchFieldFocused = false
-
                     }
                     label:
                     {
@@ -111,7 +109,6 @@ struct TodaySearchView: View
 
                     .buttonStyle(.plain)
                 }
-
             }
             header:
             {
@@ -124,14 +121,11 @@ struct TodaySearchView: View
                         RecentSearchStore.clear()
 
                         recentSearches = []
-
                     }
 
                     .accessibilityLabel("Clear recent searches")
                 }
-
             }
-
         }
 
         .listStyle(.plain)
@@ -148,8 +142,8 @@ struct TodaySearchView: View
     /// @post       Submission, result selection, and disappearance remember nonblank queries;
     ///             search alone does not modify Board content
     ///
-    var body: some View /* Today Search layout */
-    {  /* Board search controls and matching destinations */
+    var body: some View         /* Today Search layout                             */
+    {                           /* Board search controls and matching destinations */
         NavigationStack
         {
             VStack(spacing: 0)
@@ -172,7 +166,6 @@ struct TodaySearchView: View
                         rememberSearch()
 
                         searchFieldFocused = false
-
                     }
 
 
@@ -182,7 +175,6 @@ struct TodaySearchView: View
                         {
                             query = ""
                             searchFieldFocused = true
-
                         }
                         label:
                         {
@@ -193,7 +185,6 @@ struct TodaySearchView: View
                         .buttonStyle(.plain)
                         .accessibilityLabel("Clear search")
                     }
-
                 }
 
                 .padding(.horizontal, 14)
@@ -219,7 +210,6 @@ struct TodaySearchView: View
                         scope in
                         Text(scope.rawValue).tag(scope)
                     }
-
                 }
 
                 .pickerStyle(.segmented)
@@ -236,7 +226,6 @@ struct TodaySearchView: View
                     {
                         recentSearchList
                     }
-
                 }
                 else if results.isEmpty
                 {
@@ -256,7 +245,7 @@ struct TodaySearchView: View
                                 onSelectResult(result)
                             }
                             else if let cardID = result.cardID
-                            {  /* Matching card identity for direct navigation */
+                            {                                           /* Matching card identity for direct navigation */
                                 onOpenBoardCard(result.listID, cardID)
                             }
                             else
@@ -269,7 +258,6 @@ struct TodaySearchView: View
                             {
                                 dismiss()
                             }
-
                         }
                         label:
                         {
@@ -305,19 +293,18 @@ struct TodaySearchView: View
                                 onArchive:
                                 {
                                     if let id = result.cardID
-                                    {  /* Card identity targeted by the search action */
+                                    {                           /* Card identity targeted by the search action */
                                         onArchiveCard(id)
                                     }
                                     else
                                     {
                                         onArchiveList(result.listID)
                                     }
-
                                 },
                                 onDelete:
                                 {
                                     if let id = result.cardID
-                                    {  /* Card identity targeted by the search action */
+                                    {                           /* Card identity targeted by the search action */
                                         return onDeleteCard(id)
                                     }
 
@@ -329,7 +316,6 @@ struct TodaySearchView: View
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
                 }
-
             }
 
             .background
@@ -347,11 +333,8 @@ struct TodaySearchView: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
 
         .presentationDetents([.large])
@@ -359,7 +342,6 @@ struct TodaySearchView: View
         {
             rememberSearch()
         }
-
     }
 
 
@@ -393,7 +375,6 @@ struct TodaySearchView: View
         .padding(28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
 }
 
 
@@ -406,11 +387,11 @@ struct TodaySearchView: View
 ///
 struct SharedSearchLifecycleActions: ViewModifier
 {
-    let enabled:   Bool       /* Feature availability flag  */
-    let title:     String     /* User-facing title          */
-    let kind:      String     /* Content kind discriminator */
-    let onArchive: () -> Void /* Archive the selected item  */
-    let onDelete:  () -> Bool /* Delete the selected item   */
+    let enabled:   Bool                 /* Feature availability flag  */
+    let title:     String               /* User-facing title          */
+    let kind:      String               /* Content kind discriminator */
+    let onArchive: () -> Void           /* Archive the selected item  */
+    let onDelete:  () -> Bool           /* Delete the selected item   */
 
 
     ///
@@ -433,9 +414,7 @@ struct SharedSearchLifecycleActions: ViewModifier
         {
             content
         }
-
     }
-
 }
 
 
@@ -448,13 +427,13 @@ struct SharedSearchLifecycleActions: ViewModifier
 ///
 struct PlanningSharedSearchPresentation: ViewModifier
 {
-    @Binding var isPresented: Bool         /* Presentation visibility */
-    var onLeaveForHome:       () -> Void = /* Leave for home callback */
+    @Binding var isPresented: Bool              /* Presentation visibility */
+    var onLeaveForHome:       () -> Void =      /* Leave for home callback */
     {
     }
 
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations      */
-    @State private var route: PlanningSearchRoute?            /* Requested navigation destination */
+    @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations      */
+    @State private var route: PlanningSearchRoute?                      /* Requested navigation destination */
 
 
     ///
@@ -511,7 +490,6 @@ struct PlanningSharedSearchPresentation: ViewModifier
                     result in
 
                     route = PlanningSearchRoute(result: result)
-
                 }
             )
             // Keep Search alive beneath its result, preserving query, scope, and scroll
@@ -551,11 +529,7 @@ struct PlanningSharedSearchPresentation: ViewModifier
                             onLeaveForHome()
                         })
                 }
-
             }
-
         }
-
     }
-
 }

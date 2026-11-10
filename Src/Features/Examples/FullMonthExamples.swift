@@ -22,27 +22,27 @@ import SwiftUI
 ///
 struct FullMonthExampleStore: Sendable
 {
-    let root:             URL    /* Workspace or view root         */
-    let documents:        URL    /* Store document snapshots       */
-    let support:          URL    /* Supported operation capability */
-    let domainName:       String /* Domain name                    */
+    let root:             URL           /* Workspace or view root         */
+    let documents:        URL           /* Store document snapshots       */
+    let support:          URL           /* Supported operation capability */
+    let domainName:       String        /* Domain name                    */
 
-    private var defaults: UserDefaults /* Preference storage domain */
+    private var defaults: UserDefaults          /* Preference storage domain */
     {
         domainName == Bundle.main.bundleIdentifier ? .standard : UserDefaults(suiteName: domainName)!
     }
 
-    private var userData: URL /* User data */
+    private var userData: URL           /* User data */
     {
         root.appendingPathComponent("UserData", isDirectory: true)
     }
 
-    private var transition: URL /* Pending view transition */
+    private var transition: URL         /* Pending view transition */
     {
         root.appendingPathComponent("Transition", isDirectory: true)
     }
 
-    private var fm: FileManager /* Filesystem operations */
+    private var fm: FileManager         /* Filesystem operations */
     {
         .default
     }
@@ -57,10 +57,9 @@ struct FullMonthExampleStore: Sendable
     ///
     private struct Manifest: Codable
     {
-        var version   = 1            /* Serialized format version */
-        var createdAt = Date()       /* Created at                */
-        let hashes: [String: String] /* Expected content digests  */
-
+        var version   = 1               /* Serialized format version */
+        var createdAt = Date()          /* Created at                */
+        let hashes: [String: String]    /* Expected content digests  */
     }
 
 
@@ -75,8 +74,8 @@ struct FullMonthExampleStore: Sendable
     ///
     static func live() throws -> Self
     {
-        let fm      = FileManager.default /* Filesystem operations     */
-        let library =                     /* Retained library contents */
+        let fm      = FileManager.default       /* Filesystem operations     */
+        let library =                           /* Retained library contents */
             try fm.url(for: .libraryDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
 
         return Self(
@@ -87,12 +86,12 @@ struct FullMonthExampleStore: Sendable
             domainName: Bundle.main.bundleIdentifier!)
     }
 
-    var needsRecovery: Bool /* Needs recovery */
+    var needsRecovery: Bool     /* Needs recovery */
     {
         fm.fileExists(atPath: transition.path) && committedOperation() == nil
     }
 
-    var hasUserData: Bool /* User Data availability */
+    var hasUserData: Bool       /* User Data availability */
     {
         fm.fileExists(atPath: userData.path) && committedOperation() != "restore"
     }
@@ -125,14 +124,14 @@ struct FullMonthExampleStore: Sendable
     private func digest(_ url: URL) throws -> String
     {
         // Stream large attachments rather than loading an entire video into memory
-        let handle = try FileHandle(forReadingFrom: url) /* Open file or task handle */
+        let handle = try FileHandle(forReadingFrom: url)        /* Open file or task handle */
 
         defer
         {
             try? handle.close()
         }
 
-        var hash = SHA256() /* Content integrity digest */
+        var hash = SHA256()     /* Content integrity digest */
 
         while let data = try handle.read(upToCount: 1_048_576), !data.isEmpty
         {
@@ -161,8 +160,8 @@ struct FullMonthExampleStore: Sendable
     ///
     private func hashes(in directory: URL) throws -> [String: String]
     {
-        var result: [String: String] = [:] /* Accumulated output value */
-        var enumerationError: Error?       /* Enumeration error        */
+        var result: [String: String] = [:]      /* Accumulated output value */
+        var enumerationError: Error?            /* Enumeration error        */
 
         guard
         let entries = fm.enumerator(
@@ -182,7 +181,7 @@ struct FullMonthExampleStore: Sendable
 
         for case let url as URL in entries
         {
-            let values = /* Values being processed */
+            let values =                                                                        /* Values being processed */
                 try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
 
             guard values.isSymbolicLink != true else
@@ -192,17 +191,14 @@ struct FullMonthExampleStore: Sendable
 
             if values.isRegularFile == true
             {
-                let key = /* Persistence lookup key */
+                let key =                                                       /* Persistence lookup key */
                     String(url.path.dropFirst(directory.path.count + 1))
 
                 if key != "Manifest.json"
                 {
                     result[key] = try digest(url)
-
                 }
-
             }
-
         }
 
         if let enumerationError
@@ -228,7 +224,7 @@ struct FullMonthExampleStore: Sendable
     ///
     private func verify(_ directory: URL) throws
     {
-        let manifest = try JSONDecoder().decode( /* Package inventory and hashes */
+        let manifest = try JSONDecoder().decode(        /* Package inventory and hashes */
             Manifest.self, from: Data(contentsOf: directory.appendingPathComponent("Manifest.json")))
 
         guard manifest.version == 1, try hashes(in: directory) == manifest.hashes else
@@ -237,7 +233,6 @@ struct FullMonthExampleStore: Sendable
         }
 
         _ = try savedDomain(in: directory)
-
     }
 
 
@@ -255,7 +250,7 @@ struct FullMonthExampleStore: Sendable
     ///
     private func savedDomain(in directory: URL) throws -> [String: Any]
     {
-        let data = /* Loaded original file bytes */
+        let data =                                                                      /* Loaded original file bytes */
             try Data(contentsOf: directory.appendingPathComponent("Defaults.plist"))
 
         guard let domain = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else
@@ -283,7 +278,7 @@ struct FullMonthExampleStore: Sendable
     {
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
 
-        let staging = /* Isolated staging workspace */
+        let staging =                                                           /* Isolated staging workspace */
             root.appendingPathComponent(UUID().uuidString, isDirectory: true)
 
         defer
@@ -297,15 +292,15 @@ struct FullMonthExampleStore: Sendable
             throw CocoaError(.fileWriteUnknown)
         }
 
-        let domain = /* Lookup or storage namespace */
+        let domain =                                                    /* Lookup or storage namespace */
             defaults.persistentDomain(forName: domainName) ?? [:]
-        let data   = /* Encoded or loaded bytes */
+        let data   =                                                    /* Encoded or loaded bytes     */
             try PropertyListSerialization.data(fromPropertyList: domain, format: .binary, options: 0)
 
         try data.write(to: staging.appendingPathComponent("Defaults.plist"), options: .atomic)
         for (name, source) in [("Documents", documents), ("ApplicationSupport", support)]
         {
-            let target = /* Target under consideration */
+            let target =                                                /* Target under consideration */
                 staging.appendingPathComponent(name, isDirectory: true)
 
             if fm.fileExists(atPath: source.path)
@@ -316,17 +311,16 @@ struct FullMonthExampleStore: Sendable
             {
                 try fm.createDirectory(at: target, withIntermediateDirectories: true)
             }
-
         }
 
-        let manifest = Manifest(hashes: try hashes(in: staging)) /* Package inventory and hashes */
+        let manifest = Manifest(hashes: try hashes(in: staging))        /* Package inventory and hashes */
 
         try JSONEncoder().encode(manifest).write(to: staging.appendingPathComponent("Manifest.json"), options: .atomic)
         try verify(staging)
         try fm.moveItem(at: staging, to: destination)
 
-        var local  = destination         /* Local workspace representation */
-        var values = URLResourceValues() /* Values being processed         */
+        var local  = destination                /* Local workspace representation */
+        var values = URLResourceValues()        /* Values being processed         */
 
         values.isExcludedFromBackup = true
 
@@ -355,7 +349,6 @@ struct FullMonthExampleStore: Sendable
         {
             throw CocoaError(.fileWriteUnknown)
         }
-
     }
 
 
@@ -375,7 +368,7 @@ struct FullMonthExampleStore: Sendable
         // Each immutable source survives interrupted installation and can be retried at launch
         for (name, target) in [("Documents", documents), ("ApplicationSupport", support)]
         {
-            let staged = /* Prepared isolated content */
+            let staged =                                                                        /* Prepared isolated content */
                 root.appendingPathComponent("install-" + UUID().uuidString, isDirectory: true)
 
             defer
@@ -391,7 +384,6 @@ struct FullMonthExampleStore: Sendable
 
             try fm.moveItem(at: staged, to: target)
         }
-
     }
 
 
@@ -412,7 +404,7 @@ struct FullMonthExampleStore: Sendable
 
         if committedOperation() == "native_restore_undo"
         {
-            let previous = /* Previous value for comparison */
+            let previous =                                              /* Previous value for comparison */
                 root.appendingPathComponent("BeforeNativeRestore")
 
             if fm.fileExists(atPath: previous.path)
@@ -422,7 +414,7 @@ struct FullMonthExampleStore: Sendable
         }
         if committedOperation() == "portable_import_undo"
         {
-            let previous = /* Previous value for comparison */
+            let previous =                                              /* Previous value for comparison */
                 root.appendingPathComponent("BeforePortableImport")
 
             if fm.fileExists(atPath: previous.path)
@@ -486,7 +478,7 @@ struct FullMonthExampleStore: Sendable
 
         try verify(userData)
 
-        let domain = /* Lookup or storage namespace */
+        let domain =    /* Lookup or storage namespace */
             try example.defaultsDomain(preserving: defaults.persistentDomain(forName: domainName) ?? [:])
 
         try capture(to: transition)
@@ -508,7 +500,7 @@ struct FullMonthExampleStore: Sendable
     /// @fcn FullMonthExampleStore.hasPortableImportBackup
     /// @brief Identify retained recovery data from a confirmed editable portable import
     /// @return Whether the pre-import workspace can be restored
-    var hasPortableImportBackup: Bool /* Portable Import Backup availability */
+    var hasPortableImportBackup: Bool           /* Portable Import Backup availability */
     {
         fm.fileExists(atPath: root.appendingPathComponent("BeforePortableImport").path)
     }
@@ -527,7 +519,7 @@ struct FullMonthExampleStore: Sendable
             throw CocoaError(.fileWriteFileExists)
         }
 
-        let previous = /* Previous value for comparison */
+        let previous =                                          /* Previous value for comparison */
             root.appendingPathComponent("BeforePortableImport")
 
         try capture(to: previous)
@@ -539,7 +531,7 @@ struct FullMonthExampleStore: Sendable
         }
         catch
         {
-            let failure = error /* Reported operation failure */
+            let failure = error         /* Reported operation failure */
 
             try recoverInterruptedSwitch()
             try? fm.removeItem(at: previous)
@@ -557,7 +549,7 @@ struct FullMonthExampleStore: Sendable
     {
         try recoverInterruptedSwitch()
 
-        let previous = /* Previous value for comparison */
+        let previous =                                          /* Previous value for comparison */
             root.appendingPathComponent("BeforePortableImport")
 
         guard fm.fileExists(atPath: previous.path) else
@@ -566,7 +558,7 @@ struct FullMonthExampleStore: Sendable
         }
         try verify(previous)
 
-        let history = /* Retained edit history */
+        let history =                                                                   /* Retained edit history */
             root.appendingPathComponent("PortableImportHistory", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
 
@@ -593,7 +585,7 @@ struct FullMonthExampleStore: Sendable
     /// @fcn FullMonthExampleStore.hasNativeRestoreBackup
     /// @brief Identify retained pre-import recovery evidence
     /// @return True when a prior Simulator restore has an undo snapshot
-    var hasNativeRestoreBackup: Bool /* Native Restore Backup availability */
+    var hasNativeRestoreBackup: Bool    /* Native Restore Backup availability */
     {
         fm.fileExists(atPath: root.appendingPathComponent("BeforeNativeRestore").path)
     }
@@ -635,7 +627,7 @@ struct FullMonthExampleStore: Sendable
     {
         try recoverInterruptedSwitch()
 
-        let previous = /* Previous value for comparison */
+        let previous =                                          /* Previous value for comparison */
             root.appendingPathComponent("BeforeNativeRestore")
 
         try verify(previous)
@@ -689,7 +681,6 @@ struct FullMonthExampleStore: Sendable
 
         try? finishCommitted()
     }
-
 }
 
 
@@ -702,8 +693,8 @@ struct FullMonthExampleStore: Sendable
 ///
 struct FullMonthExample: Sendable
 {
-    let document:    PlanningCalendarDocument /* Working calendar document     */
-    let collections: [PersonalCollection]     /* Retained personal collections */
+    let document:    PlanningCalendarDocument           /* Working calendar document     */
+    let collections: [PersonalCollection]               /* Retained personal collections */
 
 
     ///
@@ -719,44 +710,44 @@ struct FullMonthExample: Sendable
     ///
     static func make(now: Date = .now, calendar: Calendar = .current) -> Self
     {
-        let today    = calendar.startOfDay(for: now) /* Current local day */
-        let month    = calendar.dateInterval(of: .month, for: today)! /* Calendar month component */
-        let days     = /* Dates in the selected range */
+        let today    = calendar.startOfDay(for: now)                            /* Current local day           */
+        let month    = calendar.dateInterval(of: .month, for: today)!           /* Calendar month component    */
+        let days     =                                                          /* Dates in the selected range */
             calendar.range(of: .day, in: .month, for: today)!
-        var document = PlanningCalendarDocument( /* Working calendar document */
+        var document = PlanningCalendarDocument(                                /* Working calendar document   */
             currentWeekKey: PlanningDate.weekKey(today, calendar: calendar),
             firstWeekday: calendar.firstWeekday, weeks: [])
-        var nextID = 0 /* Next ID */
+        var nextID = 0                                                          /* Next ID                     */
 
         for offset in 0 ..< days.count
         {
-            let date   = /* Date used by this operation */
+            let date   =                                                                                /* Date used by this operation    */
                 calendar.date(byAdding: .day, value: offset, to: month.start)!
-            var week   = /* Dated Week under consideration */
+            var week   =                                                                                /* Dated Week under consideration */
                 document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: calendar)
-            let listID = /* Owner-local List identifier */
+            let listID =                                                                                /* Owner-local List identifier    */
                 week.dayListIDs[PlanningDate.key(date, calendar: calendar)]!
-            let index  = week.collection.lists.firstIndex /* Element position */
+            let index  = week.collection.lists.firstIndex                                               /* Element position               */
             {
                 $0.id == listID
             }!
-            let past    = date < today                              /* Past operation value */
-            let isToday = calendar.isDate(date, inSameDayAs: today) /* Today state          */
-            let count   =                                           /* Number of entries    */
+            let past    = date < today                                                          /* Past operation value   */
+            let isToday = calendar.isDate(date, inSameDayAs: today)                             /* Today state            */
+            let count   =                                                                       /* Number of entries      */
                 past ? 3 + offset % 3 : (isToday ? 4 : (offset % 4 == 0 ? 1 : 0))
-            let titles  = /* Ordered display titles */
+            let titles  =                                                                       /* Ordered display titles */
                 SampleData.cardTitlesByDay[(calendar.component(.weekday, from: date) + 5) % 7]
 
             week.collection.lists[index].cards = (0 ..< count).map
             {
                 item in
 
-                let timed = item == 1 || (!past && !isToday) /* Timed operation value */
-                let start =                                  /* Range start           */
+                let timed = item == 1 || (!past && !isToday)                                            /* Timed operation value    */
+                let start =                                                                             /* Range start              */
                     calendar.date(bySettingHour: 9 + item * 2, minute: 0, second: 0, of: date)!
-                let end   = calendar.date(byAdding: .minute, value: 45, to: start)! /* Range end */
-                let note  = item == 3 /* Note content record */
-                let card  = KanbanCard( /* Card under consideration */
+                let end   = calendar.date(byAdding: .minute, value: 45, to: start)!                     /* Range end                */
+                let note  = item == 3                                                                   /* Note content record      */
+                let card  = KanbanCard(                                                                 /* Card under consideration */
                     id: nextID, word: note ? "A moment from today" : titles[item % titles.count],
                     listTitle: week.collection.lists[index].title,
                     isTitleChecked: (past && item != 2) || (isToday && item == 0),
@@ -792,7 +783,7 @@ struct FullMonthExample: Sendable
         }
 
         // Example Library content is independent of every dated week
-        let collections = /* Retained personal collections */
+        let collections =                                                       /* Retained personal collections */
             [PersonalListExample.onTheTable, .inTheQueue, .scheduled].map
         {
             $0.makeCollection(existingTitles: [])
@@ -801,7 +792,7 @@ struct FullMonthExample: Sendable
         return Self(document: document, collections: collections)
     }
 
-    var previewLists: [KanbanList] /* Preview lists */
+    var previewLists: [KanbanList]      /* Preview lists */
     {
         document.weeks.enumerated().flatMap
         {
@@ -814,16 +805,16 @@ struct FullMonthExample: Sendable
                     return nil
                 }
 
-                let key = week.dayListIDs.first /* Lookup or persistence key */
+                let key = week.dayListIDs.first         /* Lookup or persistence key */
                 {
                     $0.value == list.id
                 }?.key
-                let date = key.flatMap /* Date used by this operation */
+                let date = key.flatMap          /* Date used by this operation */
                 {
                     PlanningDate.date($0, calendar: document.calendar)
                 }
 
-                let title = /* User-facing title */
+                let title =     /* User-facing title */
                 date.map
                 {
                     PlanningDate.listTitle(list.title, on: $0, calendar: document.calendar)
@@ -832,9 +823,7 @@ struct FullMonthExample: Sendable
 
                 return KanbanList(id: weekIndex * 100 + listIndex, title: title, cards: list.cards)
             }
-
         }
-
     }
 
 
@@ -862,19 +851,19 @@ struct FullMonthExample: Sendable
         }
 
         // Keep non-Plenact platform preferences; all app-owned data/settings remain in the backup
-        var result = original.filter /* Accumulated output value */
+        var result = original.filter    /* Accumulated output value */
         {
             !$0.key.hasPrefix("Plenact.")
         }
 
-        let encoder = JSONEncoder() /* JSON encoding configuration */
+        let encoder = JSONEncoder()     /* JSON encoding configuration */
 
         result[PlanningCalendarStore.key] = try encoder.encode(document)
         result["Plenact.Board.v1"] = try encoder.encode(current.collection.lists)
         result["Plenact.PersonalCollections.v1"] = try encoder.encode(collections)
         result["Plenact.SavedCardIDs.v1"] = Array(current.collection.savedCardIDs).sorted()
 
-        var importance = /* Owner-qualified importance state */
+        var importance =                                                                                /* Owner-qualified importance state */
             LibraryImportanceSelection.demoData(in: document.weeks.map(\.collection) + collections)
 
         for week in document.weeks
@@ -888,16 +877,13 @@ struct FullMonthExample: Sendable
                 {
                     importance = LibraryImportanceSelection.setting(
                         cardID: card.id, collectionID: week.id, marked: true, data: importance)
-
                 }
-
             }
-
         }
 
         result[LibraryImportanceSelection.key] = importance
 
-        let savedPreferences = /* Saved preferences */
+        let savedPreferences =                                  /* Saved preferences */
         (original[PlanPreferencesStore.key] as? Data).flatMap
         {
             try? JSONDecoder().decode(LocalProfilePreferences.self, from: $0)
@@ -910,7 +896,7 @@ struct FullMonthExample: Sendable
 
         if let existing = savedPreferences
         {
-            var preferences = LocalProfilePreferences() /* Planning and display choices */
+            var preferences = LocalProfilePreferences()         /* Planning and display choices */
 
             preferences.enablesLowerCornerBack = existing.enablesLowerCornerBack
             preferences.importanceStarStyle = existing.importanceStarStyle
@@ -924,7 +910,6 @@ struct FullMonthExample: Sendable
             preferences.preferredMapsApp = existing.preferredMapsApp
             preferences.todayFocusItemCount = existing.todayFocusItemCount
             result[PlanPreferencesStore.key] = try encoder.encode(preferences)
-
         }
 
         result[TodayListPins.key] = TodayListPins.encode(
@@ -935,5 +920,4 @@ struct FullMonthExample: Sendable
 
         return result
     }
-
 }

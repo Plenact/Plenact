@@ -18,55 +18,55 @@ import UniformTypeIdentifiers
 ///
 struct TodayListDetailView: View
 {
-    @State private var keyboardDetailPath: [KanbanCard] = [] /* Keyboard detail path */
-    @State private var confirmsCheckmarkReset           = false /* Confirms checkmark reset */
+    @State private var keyboardDetailPath: [KanbanCard] = []            /* Keyboard detail path     */
+    @State private var confirmsCheckmarkReset           = false         /* Confirms checkmark reset */
 
-    @State private var checkmarkReset:     ListCheckmarkReset? /* Checkmark reset */
-    @Environment(\.cardMovementSource) private var dayMovementSource /* Day movement source */
-    @Environment(\.planningCalendarAccess) private var planningCalendarAccess /* Planning calendar access */
-    @Environment(\.planningHomeExit) private var planningHomeExit /* Planning home exit */
-    @State private var showsDaySearch                 = false /* Day Search visibility */
-    @State private var guidanceToggleRequest          = 0 /* Guidance toggle request */
-    @State private var showsDaySelector               = false /* Day Selector visibility */
-    var onSelectDay:                ((Date) -> Void)? = nil /* Select day callback */
+    @State private var checkmarkReset:     ListCheckmarkReset?                          /* Checkmark reset          */
+    @Environment(\.cardMovementSource) private var dayMovementSource                    /* Day movement source      */
+    @Environment(\.planningCalendarAccess) private var planningCalendarAccess           /* Planning calendar access */
+    @Environment(\.planningHomeExit) private var planningHomeExit                       /* Planning home exit       */
+    @State private var showsDaySearch                 = false                           /* Day Search visibility    */
+    @State private var guidanceToggleRequest          = 0                               /* Guidance toggle request  */
+    @State private var showsDaySelector               = false                           /* Day Selector visibility  */
+    var onSelectDay:                ((Date) -> Void)? = nil                             /* Select day callback      */
 
-    var onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil /* Switch to the selected date’s Week */
+    var onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil     /* Switch to the selected date’s Week */
 
-    @State private var focusedViewportMemory: BoardViewportMemory? /* Focused viewport memory */
-    @State private var guidanceFooterVisible: Bool? /* Guidance footer visible */
-    @State private var selectedDay: PlanningDaySelection? /* Selected day */
+    @State private var focusedViewportMemory: BoardViewportMemory?      /* Focused viewport memory */
+    @State private var guidanceFooterVisible: Bool?                     /* Guidance footer visible */
+    @State private var selectedDay: PlanningDaySelection?               /* Selected day            */
 
 
-    @Binding var lists: [KanbanList] /* Shared local Board snapshot */
+    @Binding var lists: [KanbanList]    /* Shared local Board snapshot */
     /// Archived lists and cards retained to reserve identities during creation
-    let reservedLists:         [KanbanList]  /* Retained lists whose card identities remain unavailable for reuse */
-    @Binding var labelLibrary: LabelLibrary  /* Shared reusable label library                                     */
-    @Binding var savedCardIDs: Set<Int>      /* Device-local saved cards                                          */
+    let reservedLists:         [KanbanList]     /* Retained lists whose card identities remain unavailable for reuse */
+    @Binding var labelLibrary: LabelLibrary     /* Shared reusable label library                                     */
+    @Binding var savedCardIDs: Set<Int>         /* Device-local saved cards                                          */
 
-    let listID:            Int           /* Focused list identity                    */
-    let currentUserName:   String        /* Current activity author                  */
-    let onClose:           () -> Void    /* Return to Today                          */
-    let onOpenWeek:        () -> Void    /* Open this list in the Week workspace     */
-    let onPermanentDelete: (Int) -> Bool /* Parent's save-first Week deletion result */
+    let listID:            Int                  /* Focused list identity                    */
+    let currentUserName:   String               /* Current activity author                  */
+    let onClose:           () -> Void           /* Return to Today                          */
+    let onOpenWeek:        () -> Void           /* Open this list in the Week workspace     */
+    let onPermanentDelete: (Int) -> Bool        /* Parent's save-first Week deletion result */
 
-    @Environment(\.layoutDirection) private var headerLayoutDirection /* Header layout direction */
-    @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData = /* Week appearance data */
+    @Environment(\.layoutDirection) private var headerLayoutDirection                   /* Header layout direction             */
+    @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData =        /* Week appearance data                */
         Data()
-    var boardAppearance:        BoardAppearance?                               = /* Board appearance */
+    var boardAppearance:        BoardAppearance?                               =        /* Board appearance                    */
         nil
-    var returnDestinationTitle: String                                         = /* Return destination title */
+    var returnDestinationTitle: String                                         =        /* Return destination title            */
         "Today"
-    var boardViewActionTitle:   String                                         = /* Board view action title */
+    var boardViewActionTitle:   String                                         =        /* Board view action title             */
         "Switch to Week View"
-    var focusesFirstUncheckedTask                                              = /* Focuses first unchecked task */
+    var focusesFirstUncheckedTask                                              =        /* Focuses first unchecked task        */
         false
-    var representedDate: Date?                                                 = /* Represented date */
+    var representedDate: Date?                                                 =        /* Represented date                    */
         nil
-    @State private var didApplyInitialTaskFocus                                = /* Apply Initial Task Focus completion */
+    @State private var didApplyInitialTaskFocus                                =        /* Apply Initial Task Focus completion */
         false
 
 
-    private var effectiveBoardAppearance: BoardAppearance /* Resolved Board appearance */
+    private var effectiveBoardAppearance: BoardAppearance       /* Resolved Board appearance */
     {
         if let boardAppearance
         {
@@ -75,7 +75,7 @@ struct TodayListDetailView: View
 
         if let dayMovementSource
         {
-            let owner = /* Owning collection or Week */
+            let owner =                                         /* Owning collection or Week */
             planningCalendarAccess?.document.weeks.first
             {
                 $0.id == dayMovementSource
@@ -91,21 +91,21 @@ struct TodayListDetailView: View
         return (try? BoardAppearance.decodeWeek(weekAppearanceData)) ?? BoardAppearance()
     }
 
-    @State private var isEditingList                   = false /* Editing List state */
-    @State private var isEditingAppearance             = false /* Editing Appearance state */
-    @State private var showsNewCard                    = false /* New Card visibility */
-    @State private var inlineCaptureDraft              = InlineListCaptureDraft() /* Inline capture draft */
-    @State private var editMode:     EditMode          = .inactive /* Whether Today rows expose native reorder controls */
-    @State private var cardDragToken                   = UUID().uuidString /* Card drag token */
-    @State private var cardFrames:       [Int: CGRect] = [:] /* Card frames */
-    @State private var cardViewport:     CGRect        = .zero /* Card viewport */
+    @State private var isEditingList                   = false                          /* Editing List state                                */
+    @State private var isEditingAppearance             = false                          /* Editing Appearance state                          */
+    @State private var showsNewCard                    = false                          /* New Card visibility                               */
+    @State private var inlineCaptureDraft              = InlineListCaptureDraft()       /* Inline capture draft                              */
+    @State private var editMode:     EditMode          = .inactive                      /* Whether Today rows expose native reorder controls */
+    @State private var cardDragToken                   = UUID().uuidString              /* Card drag token                                   */
+    @State private var cardFrames:       [Int: CGRect] = [:]                            /* Card frames                                       */
+    @State private var cardViewport:     CGRect        = .zero                          /* Card viewport                                     */
 
-    @State private var deletingCard: KanbanCard? /* Deleting card */
-    @State private var draggedCardID:    Int? /* Dragged card ID */
-    @State private var cardDragLocation: CGPoint? /* Card drag location */
-    @Environment(\.scenePhase) private var scenePhase /* Scene phase */
+    @State private var deletingCard: KanbanCard?                /* Deleting card      */
+    @State private var draggedCardID:    Int?                   /* Dragged card ID    */
+    @State private var cardDragLocation: CGPoint?               /* Card drag location */
+    @Environment(\.scenePhase) private var scenePhase           /* Scene phase        */
 
-    private var cardDropTarget: BoardCardDropTarget? /* Card drop target */
+    private var cardDropTarget: BoardCardDropTarget?    /* Card drop target */
     {
         guard let cardID = draggedCardID, let point = cardDragLocation, let focusedList else
         {
@@ -119,14 +119,13 @@ struct TodayListDetailView: View
     }
 
 
-    private var cardDropSurface: some View /* Card drop surface */
+    private var cardDropSurface: some View      /* Card drop surface */
     {
         BoardCardDropSurface(
             token: cardDragToken, isEnabled: editMode != .active,
             onChanged:
             {
                 cardDragLocation = $0
-
             },
             onDrop:
             {
@@ -158,7 +157,6 @@ struct TodayListDetailView: View
                 .frame(height: 4)
                 .padding(.horizontal, 8)
             }
-
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -176,7 +174,6 @@ struct TodayListDetailView: View
     {
         draggedCardID = nil
         cardDragLocation = nil
-
     }
 
 
@@ -208,7 +205,6 @@ struct TodayListDetailView: View
 
                         draggedCardID = cardID
                         cardDragLocation = point
-
                     },
                     onChanged:
                     {
@@ -216,9 +212,7 @@ struct TodayListDetailView: View
                         if draggedCardID == cardID
                         {
                             cardDragLocation = point
-
                         }
-
                     },
                     onEnded:
                     {
@@ -226,14 +220,11 @@ struct TodayListDetailView: View
                         {
                             clearCardDrag()
                         }
-
                     },
                     onDirectDrop: finishCardDrag
                 )
             }
-
         }
-
     }
 
 
@@ -276,10 +267,9 @@ struct TodayListDetailView: View
         catch
         {
             DatabaseActivity.shared.report(
-                                    "Could not move this card: \(error.localizedDescription) Its content has been retained.")
+                "Could not move this card: \(error.localizedDescription) Its content has been retained.")
             return false
         }
-
     }
 
 
@@ -291,13 +281,12 @@ struct TodayListDetailView: View
     /// @return     (KanbanList?) current list value, or nil after removal/archive
     /// @post       Selection and shared Board data remain unchanged
     ///
-    private var focusedList: KanbanList? /* Focused list */
-    {  /* Current list resolved for the focused Board surface */
+    private var focusedList: KanbanList?        /* Focused list                                        */
+    {                                           /* Current list resolved for the focused Board surface */
         lists.first
         {
             $0.id == listID
         }
-
     }
 
 
@@ -358,7 +347,6 @@ struct TodayListDetailView: View
                 }, onDelete:
                 {
                     _ = deleteCard(card.id)
-
                 }, onUpdateCard: updateCard)
         }
         else
@@ -388,13 +376,11 @@ struct TodayListDetailView: View
             {
                 toggleCard(card.id)
             }
-
         }
-
     }
 
 
-    private var personalListBackground: CollectionBackground? /* Personal list background */
+    private var personalListBackground: CollectionBackground?           /* Personal list background */
     {
         guard representedDate == nil,
         CollectionBackground.isAllowed(
@@ -410,15 +396,15 @@ struct TodayListDetailView: View
     }
 
 
-    private var headerColor: Color /* Header color */
+    private var headerColor: Color      /* Header color */
     {
-        let chosen   = /* Explicit user selection */
+        let chosen   =                                                                  /* Explicit user selection            */
             effectiveBoardAppearance.resolved(focusedList?.appearance).background
-        let fallback = /* Value used when no override exists */
+        let fallback =                                                                  /* Value used when no override exists */
             representedDate == nil ? DefaultListTutorial.defaultBanner(for: focusedList?.title ?? "") : nil
 
         return (chosen ?? fallback)?.darkHeaderColor
-        ?? Color(red: 109.0 / 255, green: 139.0 / 255, blue: 152.0 / 255)  // Muted blue (#6D8B98)
+        ?? Color(red: 109.0 / 255, green: 139.0 / 255, blue: 152.0 / 255)       // Muted blue (#6D8B98)
     }
 
 
@@ -439,7 +425,6 @@ struct TodayListDetailView: View
             onPresentationChange:
             {
                 guidanceFooterVisible = $0
-
             }
         )
     }
@@ -466,7 +451,6 @@ struct TodayListDetailView: View
             onOpenComposer:
             {
                 showsNewCard = true
-
             }
         )
 
@@ -493,7 +477,7 @@ struct TodayListDetailView: View
     /// @post       Card edits mutate the shared binding for caller-owned persistence; label changes
     ///             save locally. Toolbar actions delegate Today/Week routing to supplied callbacks
     ///
-    var body: some View /* Today List Detail layout */
+    var body: some View         /* Today List Detail layout */
     {
         Group
         {
@@ -510,7 +494,6 @@ struct TodayListDetailView: View
             {
                 dayContent
             }
-
         }
         .sheet(isPresented: $showsDaySelector)
         {
@@ -524,7 +507,6 @@ struct TodayListDetailView: View
             }
             .environment(\.calendar, planningCalendarAccess?.document.calendar ?? .current)
         }
-
     }
 
 
@@ -554,7 +536,6 @@ struct TodayListDetailView: View
         }
 
         selectedDay = selection
-
     }
 
 
@@ -571,7 +552,7 @@ struct TodayListDetailView: View
     ///
     private func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation
     {
-        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists) /* Adjacent items or Lists */
+        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)          /* Adjacent items or Lists */
 
         return CardKeyboardNavigation(
             previous: neighbors.previous == nil
@@ -581,9 +562,7 @@ struct TodayListDetailView: View
                 if let target = CardKeyboardNeighbors.resolve(card, in: lists).previous
                 {
                     keyboardDetailPath = [target]
-
                 }
-
             },
             next: neighbors.next == nil
             ? nil
@@ -592,15 +571,13 @@ struct TodayListDetailView: View
                 if let target = CardKeyboardNeighbors.resolve(card, in: lists).next
                 {
                     keyboardDetailPath = [target]
-
                 }
-
             })
     }
 
 
-    private var dayContent: some View /* Day content */
-    {  /* Focused-list Board surface and card-detail navigation */
+    private var dayContent: some View                   /* Day content                                           */
+    {                                                   /* Focused-list Board surface and card-detail navigation */
         NavigationStack(path: $keyboardDetailPath)
         {
             ZStack
@@ -645,11 +622,11 @@ struct TodayListDetailView: View
 
 
                 if let focusedList
-                {  /* Selected list available for rendering */
+                {                       /* Selected list available for rendering */
                     ScrollViewReader
                     {
                         scrollProxy in
-                        let cards = List /* Scrollable rows beneath the guidance */
+                        let cards = List        /* Scrollable rows beneath the guidance */
                         {
                             if let day = representedDate
                             {
@@ -685,7 +662,6 @@ struct TodayListDetailView: View
 
                                             lists[index].cards = DaySections.moved(
                                                 lists[index].cards, sectionID: card.id, offset: offset)
-
                                         }
                                     )
                                     .buttonStyle(.plain)
@@ -719,7 +695,6 @@ struct TodayListDetailView: View
                                         {
                                             cardDragSource(for: card.id)
                                         }
-
                                     }
                                     .opacity(draggedCardID == card.id ? 0.45 : 1)
                                     .listRowInsets(
@@ -737,7 +712,6 @@ struct TodayListDetailView: View
                                                 key: BoardCardFramePreferenceKey.self,
                                                 value: [card.id: geometry.frame(in: .global)])
                                         }
-
                                     }
                                     .background
                                     {
@@ -747,7 +721,6 @@ struct TodayListDetailView: View
                                     {
                                         insertionMarker(before: card.id)
                                     }
-
                                 }
                                 else
                                 {
@@ -774,7 +747,6 @@ struct TodayListDetailView: View
                                                 key: BoardCardFramePreferenceKey.self,
                                                 value: [card.id: geometry.frame(in: .global)])
                                         }
-
                                     }
                                     .background
                                     {
@@ -796,10 +768,8 @@ struct TodayListDetailView: View
                                             onRequest:
                                             {
                                                 deletingCard = card
-
                                             }))
                                 }
-
                             }
 
                             .onMove
@@ -846,23 +816,21 @@ struct TodayListDetailView: View
                         {
                             if focusedViewportMemory == nil
                             {
-                                let currentWeekID = /* Current week ID */
+                                let currentWeekID =                                     /* Current week ID */
                                     planningCalendarAccess?.document.weeks.first
                                 {
                                     $0.startKey == planningCalendarAccess?.document.currentWeekKey
                                 }?.id
-                                let owner    = /* Normalized owner identifier */
+                                let owner    =                          /* Normalized owner identifier */
                                     (dayMovementSource ?? currentWeekID)?.uuidString ?? "week.current"
-                                let location = representedDate.map /* Resolved place metadata */
+                                let location = representedDate.map      /* Resolved place metadata     */
                                 {
                                     PlanningDate.key($0)
                                 }
                                 ?? String(listID)
 
                                 focusedViewportMemory = BoardViewportMemory(owner: owner + ".focused." + location)
-
                             }
-
                         }
                         .onDisappear
                         {
@@ -878,21 +846,18 @@ struct TodayListDetailView: View
                                     key: BoardListFramePreferenceKey.self,
                                     value: [listID: geometry.frame(in: .global)])
                             }
-
                         }
                         .onPreferenceChange(BoardListFramePreferenceKey.self)
                         {
                             frames in
 
                             cardViewport = frames[listID] ?? .zero
-
                         }
                         .onPreferenceChange(BoardCardFramePreferenceKey.self)
                         {
                             frames in
 
                             cardFrames = frames
-
                         }
                         .onDisappear
                         {
@@ -905,7 +870,6 @@ struct TodayListDetailView: View
                             {
                                 clearCardDrag()
                             }
-
                         }
                         .onChange(of: editMode)
                         {
@@ -957,7 +921,6 @@ struct TodayListDetailView: View
                             scrollProxy.scrollTo(target, anchor: .top)
 
                             didApplyInitialTaskFocus = true
-
                         }
 
                         VStack(spacing: 0)
@@ -969,13 +932,11 @@ struct TodayListDetailView: View
                             cards
                         }
                     }
-
                 }
                 else
                 {
                     ContentUnavailableView("List unavailable", systemImage: "list.bullet")
                 }
-
             }
 
             .onChange(of: focusedList.map
@@ -987,9 +948,7 @@ struct TodayListDetailView: View
                 if let focusedList, checkmarkReset?.canRestore(focusedList) == false
                 {
                     checkmarkReset = nil
-
                 }
-
             }
             .onChange(of: listID)
             {
@@ -997,30 +956,26 @@ struct TodayListDetailView: View
 
                 checkmarkReset = nil;
                 deletingCard = nil
-
             }
             .onDisappear
             {
                 checkmarkReset = nil;
                 deletingCard = nil
-
             }
             .confirmationDialog(
-                                    "Delete \(deletingCard?.word ?? "item")?",
-                                    isPresented: Binding(
-                                        get:
-                                        {
-                                            deletingCard != nil
-                                        }, set:
-                                        {
-                                            if !$0
-                                            {
-                                                deletingCard = nil
-
-                                            }
-
-                                        }
-                                    ), titleVisibility: .visible
+                "Delete \(deletingCard?.word ?? "item")?",
+                isPresented: Binding(
+                    get:
+                    {
+                        deletingCard != nil
+                    }, set:
+                    {
+                        if !$0
+                        {
+                            deletingCard = nil
+                        }
+                    }
+                ), titleVisibility: .visible
             )
             {
                 Button("Delete \(deletingCard?.presentation.title ?? "item")", role: .destructive)
@@ -1036,15 +991,12 @@ struct TodayListDetailView: View
                     }
 
                     deletingCard = nil
-
                 }
 
                 Button("Cancel", role: .cancel)
                 {
                     deletingCard = nil
-
                 }
-
             }
             message:
             {
@@ -1108,7 +1060,6 @@ struct TodayListDetailView: View
                                 Button
                                 {
                                     showsDaySelector = true
-
                                 }
                                 label:
                                 {
@@ -1131,7 +1082,6 @@ struct TodayListDetailView: View
                                       ? .subheadline.italic() : .subheadline)
                                 .foregroundStyle(.white.opacity(0.75))
                             }
-
                         }
 
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1147,7 +1097,6 @@ struct TodayListDetailView: View
                             }
 
                             guidanceToggleRequest += 1
-
                         }
                         .accessibilityAction(named: "Show or hide List guide")
                         {
@@ -1159,13 +1108,11 @@ struct TodayListDetailView: View
                             }
 
                             guidanceToggleRequest += 1
-
                         }
                         .layoutValue(key: WorkspaceHeaderTitleKey.self, value: true)
                         Button
                         {
                             showsDaySearch = true
-
                         }
                         label:
                         {
@@ -1192,7 +1139,6 @@ struct TodayListDetailView: View
                             {
                                 onOpenWeek()
                             }
-
                         }
                         label:
                         {
@@ -1202,33 +1148,32 @@ struct TodayListDetailView: View
                         Menu
                         {
                             Picker(
-                                                                                    "View as",
-                                                                                    selection: Binding(
-                                                                                        get:
-                                                                                        {
-                                                                                            focusedList?.singleListViewMode ?? .cards
-                                                                                        },
-                                                                                        set:
-                                                                                        {
-                                                                                            mode in
-                                                                                            guard let index = lists.firstIndex(where:
-                                                                                                {
-                                                                                                    $0.id == listID
-                                                                                                }) else
-                                                                                            {
-                                                                                                return
-                                                                                            }
+                                "View as",
+                                selection: Binding(
+                                    get:
+                                    {
+                                        focusedList?.singleListViewMode ?? .cards
+                                    },
+                                    set:
+                                    {
+                                        mode in
+                                        guard let index = lists.firstIndex(where:
+                                            {
+                                                $0.id == listID
+                                            }) else
+                                        {
+                                            return
+                                        }
 
-                                                                                            lists[index].setSingleListViewMode(mode)
-                                                                                        }
-                                                                                    )
+                                        lists[index].setSingleListViewMode(mode)
+                                    }
+                                )
                             )
                             {
                                 ForEach(SingleListViewMode.allCases)
                                 {
                                     Text($0.title).tag($0)
                                 }
-
                             }
 
                             if let focusedList
@@ -1241,13 +1186,11 @@ struct TodayListDetailView: View
                             Button("Appearance", systemImage: "paintpalette")
                             {
                                 isEditingAppearance = true
-
                             }
 
                             Button("Edit list", systemImage: "pencil")
                             {
                                 isEditingList = true
-
                             }
 
                             Button(
@@ -1259,9 +1202,7 @@ struct TodayListDetailView: View
                                 withAnimation(.easeInOut(duration: 0.2))
                                 {
                                     editMode = editMode == .active ? .inactive : .active
-
                                 }
-
                             }
 
 
@@ -1296,7 +1237,6 @@ struct TodayListDetailView: View
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
                 }
-
             }
 
             .navigationDestination(for: KanbanCard.self)
@@ -1332,15 +1272,14 @@ struct TodayListDetailView: View
             }
 
             .environment(\.studioCardSurface,
-                         focusedList?.appearance?.studioCardSurface ?? effectiveBoardAppearance.studioCardSurface)
+                focusedList?.appearance?.studioCardSurface ?? effectiveBoardAppearance.studioCardSurface)
             .environment(\.inheritedSubtitleItalic,
-                         effectiveBoardAppearance.resolvedSubtitleItalic(list: focusedList?.appearance))
+                effectiveBoardAppearance.resolvedSubtitleItalic(list: focusedList?.appearance))
             .onChange(of: labelLibrary)
             {
                 _, updatedLibrary in
                 LabelLibraryStore.save(updatedLibrary)
             }
-
         }
 
         .modifier(LowerCornerBackShortcut(action: onClose))
@@ -1382,7 +1321,6 @@ struct TodayListDetailView: View
                 )
                 .databaseActivityOverlay()
             }
-
         }
         .sheet(isPresented: $isEditingList)
         {
@@ -1396,7 +1334,6 @@ struct TodayListDetailView: View
                 }
                 .databaseActivityOverlay()
             }
-
         }
         .sheet(isPresented: $isEditingAppearance)
         {
@@ -1411,9 +1348,7 @@ struct TodayListDetailView: View
                     appearance in
                     setListAppearance(listID, appearance: appearance, in: &lists)
                 }
-
             }
-
         }
         .databaseActivityOverlay()
     }
@@ -1436,7 +1371,7 @@ struct TodayListDetailView: View
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the focused list containing the requested card */
+            {                                   /* Position of the focused list containing the requested card */
                 $0.id == listID
             }),
         let cardIndex = lists[listIndex].cards.firstIndex(where:
@@ -1446,7 +1381,7 @@ struct TodayListDetailView: View
         else
         {
             return
-        }  /* Position of the requested card within the focused list */
+        }               /* Position of the requested card within the focused list */
 
         guard !lists[listIndex].cards[cardIndex].isEditingLocked else
         {
@@ -1473,7 +1408,7 @@ struct TodayListDetailView: View
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the focused list to reorder */
+            {                                   /* Position of the focused list to reorder */
                 $0.id == listID
             })
         else
@@ -1482,9 +1417,9 @@ struct TodayListDetailView: View
         }
 
 
-        var cards = lists[listIndex].cards /* Mutable focused-list card order */
+        var cards = lists[listIndex].cards      /* Mutable focused-list card order */
 
-        let reordered = /* Items in the requested order */
+        let reordered =                                                         /* Items in the requested order */
             DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
 
         guard reordered != cards else
@@ -1499,9 +1434,7 @@ struct TodayListDetailView: View
         withAnimation(.easeInOut(duration: 0.2))
         {
             lists[listIndex].cards = cards
-
         }
-
     }
 
 
@@ -1521,7 +1454,7 @@ struct TodayListDetailView: View
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the focused list receiving the requested change */
+            {                                   /* Position of the focused list receiving the requested change */
                 $0.cards.contains(where:
                     {
                         $0.id == cardID
@@ -1552,7 +1485,7 @@ struct TodayListDetailView: View
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the focused list owning the edited card */
+            {                                   /* Position of the focused list owning the edited card */
                 $0.cards.contains(where:
                     {
                         $0.id == updatedCard.id
@@ -1565,7 +1498,7 @@ struct TodayListDetailView: View
         else
         {
             return
-        }  /* Existing position of the submitted card snapshot */
+        }               /* Existing position of the submitted card snapshot */
 
         guard lists[listIndex].cards[cardIndex].acceptsContentUpdate(updatedCard) else
         {
@@ -1573,7 +1506,6 @@ struct TodayListDetailView: View
         }
 
         lists[listIndex].cards[cardIndex] = updatedCard
-
     }
 
 
@@ -1612,14 +1544,14 @@ struct TodayListDetailView: View
     {
         guard
         let sourceListIndex = lists.firstIndex(where:
-            {  /* Source list position for explicit card movement */
+            {                                           /* Source list position for explicit card movement */
                 $0.id == listID
             }),
         let destinationListIndex = lists.firstIndex(where:
             {
                 $0.id == destinationListID
             }
-        ), /* Destination list position for explicit card movement */
+        ),                                              /* Destination list position for explicit card movement */
         sourceListIndex != destinationListIndex,
         let cardIndex = lists[sourceListIndex].cards.firstIndex(where:
             {
@@ -1628,11 +1560,11 @@ struct TodayListDetailView: View
         else
         {
             return
-        }  /* Source card position before removal */
+        }               /* Source card position before removal */
 
 
-        var movedCard = lists[sourceListIndex].cards.remove( /* Moved card */
-            at: cardIndex) /* Record relocated with its destination list name */
+        var movedCard = lists[sourceListIndex].cards.remove(    /* Moved card */
+            at: cardIndex)                                      /* Record relocated with its destination list name */
 
         movedCard.listTitle = lists[destinationListIndex].title
 
@@ -1666,7 +1598,7 @@ struct TodayListDetailView: View
             return false
         }
 
-        let nextCardID = ((lists + reservedLists).flatMap /* Next card ID */
+        let nextCardID = ((lists + reservedLists).flatMap       /* Next card ID */
             {
                 $0.allCards.map(\.id)
             } .max() ?? -1) + 1
@@ -1680,7 +1612,7 @@ struct TodayListDetailView: View
             return false
         }
 
-        var updated = lists[listIndex] /* Edited value to publish */
+        var updated = lists[listIndex]          /* Edited value to publish */
 
         updated.cards.append(contentsOf: created)
         if let first = created.first
@@ -1696,7 +1628,7 @@ struct TodayListDetailView: View
                     return week.id == dayMovementSource
                 }
 
-                let key = /* Lookup or persistence key */
+                let key =               /* Lookup or persistence key */
                 representedDate.flatMap
                 {
                     access.document.week(for: $0)?.startKey
@@ -1715,7 +1647,6 @@ struct TodayListDetailView: View
             {
                 return false
             }
-
         }
         else if var owner = access.library.first(where:
             {
@@ -1732,7 +1663,6 @@ struct TodayListDetailView: View
             {
                 return false
             }
-
         }
         else
         {
@@ -1748,5 +1678,4 @@ struct TodayListDetailView: View
 
         return true
     }
-
 }

@@ -26,9 +26,9 @@ import UIKit
 ///
 struct DrawingCaptureDraft: Identifiable
 {
-    let id:      UUID      /* Record UUID                   */
-    let drawing: PKDrawing /* Drawing content and originals */
-    let preview: UIImage   /* Prepared content preview      */
+    let id:      UUID           /* Record UUID                   */
+    let drawing: PKDrawing      /* Drawing content and originals */
+    let preview: UIImage        /* Prepared content preview      */
 
 
     ///
@@ -48,9 +48,7 @@ struct DrawingCaptureDraft: Identifiable
         self.drawing = drawing
         // Cache a bounded preview so typing in the composer never rerenders every drawing
         preview = DrawingImageExport.image(drawing, transparent: false, maximumDimension: 960)
-
     }
-
 }
 
 
@@ -92,14 +90,14 @@ enum DrawingImageExport
     ///
     static func image(_ drawing: PKDrawing, transparent: Bool, maximumDimension: CGFloat = 4096) -> UIImage
     {
-        let bounds = drawing.bounds /* Available layout bounds    */
-        let rect   =                /* Measured drawing rectangle */
+        let bounds = drawing.bounds     /* Available layout bounds    */
+        let rect   =                    /* Measured drawing rectangle */
         bounds.isNull || bounds.isEmpty
         ? CGRect(x: 0, y: 0, width: 600, height: 800) : bounds.insetBy(dx: -24, dy: -24)
-        let scale  = /* Current layout scale */
+        let scale  =                                                                            /* Current layout scale          */
             min(2, maximumDimension / max(rect.width, rect.height))
-        let ink    = drawing.image(from: rect, scale: scale) /* Drawing stroke content        */
-        let format = UIGraphicsImageRendererFormat()         /* Selected format or identifier */
+        let ink    = drawing.image(from: rect, scale: scale)                                    /* Drawing stroke content        */
+        let format = UIGraphicsImageRendererFormat()                                            /* Selected format or identifier */
 
         format.scale = scale
         format.opaque = !transparent
@@ -115,7 +113,6 @@ enum DrawingImageExport
 
             ink.draw(in: CGRect(origin: .zero, size: rect.size))
         }
-
     }
 
 
@@ -140,7 +137,7 @@ enum DrawingImageExport
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let image = /* Image used by this operation */
+        let image =                                                     /* Image used by this operation */
             image(drawing, transparent: format == .png && transparent)
 
         guard let data = format == .png ? image.pngData() : image.jpegData(compressionQuality: 0.95) else
@@ -150,7 +147,6 @@ enum DrawingImageExport
 
         return data
     }
-
 }
 
 
@@ -186,9 +182,9 @@ enum DrawingAttachmentStore
             throw CocoaError(.fileReadCorruptFile)
         }
 
-        let png     = /* Encoded preview image */
+        let png     =                                                                   /* Encoded preview image    */
             try DrawingImageExport.data(draft.drawing, format: .png)
-        let preview = /* Prepared content preview */
+        let preview =                                                                   /* Prepared content preview */
             try CardAttachmentStore.saveMedia(png, kind: .photo, fileExtension: "png")
 
         guard let previewURL = CardAttachmentStore.fileURL(for: preview) else
@@ -196,7 +192,7 @@ enum DrawingAttachmentStore
             throw CocoaError(.fileWriteUnknown)
         }
 
-        let strokesURL = /* Strokes URL */
+        let strokesURL =                                                                /* Strokes URL */
             previewURL.deletingPathExtension().appendingPathExtension("drawing")
 
         do
@@ -209,7 +205,7 @@ enum DrawingAttachmentStore
             throw error
         }
 
-        var attachment = KanbanAttachment( /* Owned attachment content */
+        var attachment = KanbanAttachment(                              /* Owned attachment content */
             id: previous?.id ?? preview.id, fileName: preview.fileName,
             mediaKind: .photo, addedAt: previous?.addedAt ?? preview.addedAt, caption: previous?.caption)
 
@@ -239,12 +235,11 @@ enum DrawingAttachmentStore
             throw CocoaError(.fileReadNoSuchFile)
         }
 
-        let data = /* Loaded original file bytes */
+        let data =      /* Loaded original file bytes */
             try Data(contentsOf: previewURL.deletingLastPathComponent().appendingPathComponent(name))
 
         return DrawingCaptureDraft(id: attachment.id, drawing: try PKDrawing(data: data))
     }
-
 }
 
 
@@ -258,10 +253,10 @@ enum DrawingAttachmentStore
 @MainActor
 final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 {
-    let canvas = DrawingCanvasView() /* Editable drawing surface */
-    @Published var hasMarks: Bool    /* Marks availability       */
-    @Published var canUndo = false   /* Undo availability        */
-    @Published var canRedo = false   /* Redo availability        */
+    let canvas = DrawingCanvasView()    /* Editable drawing surface */
+    @Published var hasMarks: Bool       /* Marks availability       */
+    @Published var canUndo = false      /* Undo availability        */
+    @Published var canRedo = false      /* Redo availability        */
 
 
     ///
@@ -288,7 +283,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
         canvas.tool = PKInkingTool(.pen, color: .black, width: 3)
         canvas.contentSize = CGSize(width: 1200, height: 1600)
         canvas.maximumZoomScale = 3
-
     }
 
 
@@ -311,7 +305,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
             [weak self] in
             self?.refreshUndo()
         }
-
     }
 
 
@@ -326,7 +319,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     {
         canUndo = canvas.undoManager?.canUndo ?? false;
         canRedo = canvas.undoManager?.canRedo ?? false
-
     }
 
 
@@ -368,7 +360,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     func clear()
     {
-        let previous = canvas.drawing /* Previous value for comparison */
+        let previous = canvas.drawing           /* Previous value for comparison */
 
         canvas.undoManager?.registerUndo(withTarget: self)
         {
@@ -394,7 +386,7 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
     ///
     private func restore(_ drawing: PKDrawing)
     {
-        let previous = canvas.drawing /* Previous value for comparison */
+        let previous = canvas.drawing           /* Previous value for comparison */
 
         canvas.undoManager?.registerUndo(withTarget: self)
         {
@@ -406,7 +398,6 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 
         refreshUndo()
     }
-
 }
 
 
@@ -420,8 +411,8 @@ final class DrawingCanvasState: NSObject, ObservableObject, PKCanvasViewDelegate
 @MainActor
 final class DrawingCanvasView: PKCanvasView
 {
-    private let picker   = PKToolPicker() /* Native selection control */
-    private var lastSize = CGSize.zero    /* Last size                */
+    private let picker   = PKToolPicker()       /* Native selection control */
+    private var lastSize = CGSize.zero          /* Last size                */
 
 
     ///
@@ -442,14 +433,12 @@ final class DrawingCanvasView: PKCanvasView
                 [weak self] in
                 self?.showTools()
             }
-
         }
         else
         {
             picker.setVisible(false, forFirstResponder: self)
             picker.removeObserver(self)
         }
-
     }
 
 
@@ -490,14 +479,12 @@ final class DrawingCanvasView: PKCanvasView
 
         lastSize = bounds.size
 
-        let fit = /* Size fitted to the available space */
+        let fit =                                               /* Size fitted to the available space */
             min(bounds.width / 1200, bounds.height / 1600)
 
         minimumZoomScale = fit
         zoomScale = fit
-
     }
-
 }
 
 
@@ -510,7 +497,7 @@ final class DrawingCanvasView: PKCanvasView
 ///
 struct DrawingCanvas: UIViewRepresentable
 {
-    let state: DrawingCanvasState /* Current operation state */
+    let state: DrawingCanvasState       /* Current operation state */
 
 
     ///
@@ -543,7 +530,6 @@ struct DrawingCanvas: UIViewRepresentable
     func updateUIView(_ view: DrawingCanvasView, context: Context)
     {
     }
-
 }
 
 
@@ -555,9 +541,8 @@ struct DrawingCanvas: UIViewRepresentable
 ///
 struct DrawingExportFile: Identifiable
 {
-    let id = UUID() /* Record UUID       */
-    let url: URL    /* Resource location */
-
+    let id = UUID()     /* Record UUID       */
+    let url: URL        /* Resource location */
 }
 
 
@@ -570,7 +555,7 @@ struct DrawingExportFile: Identifiable
 ///
 struct DrawingShareSheet: UIViewControllerRepresentable
 {
-    let url: URL /* Resource location */
+    let url: URL        /* Resource location */
 
 
     ///
@@ -602,7 +587,6 @@ struct DrawingShareSheet: UIViewControllerRepresentable
     func updateUIViewController(_ controller: UIActivityViewController, context: Context)
     {
     }
-
 }
 
 
@@ -615,15 +599,15 @@ struct DrawingShareSheet: UIViewControllerRepresentable
 ///
 struct DrawingCaptureEditor: View
 {
-    let initial:                    DrawingCaptureDraft /* Initial operation state */
-    let onSave:                     (DrawingCaptureDraft) -> Bool /* Persist the edited value */
-    @StateObject private var state: DrawingCanvasState /* Current operation state */
-    @State private var showsClear   = false /* Clear visibility */
-    @State private var showsDiscard = false /* Discard visibility */
-    @State private var errorMessage:    String? /* User-facing failure message */
-    @State private var exportFile:      DrawingExportFile? /* Export file */
-    @State private var exportDirectory: URL? /* Export directory */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    let initial:                    DrawingCaptureDraft                 /* Initial operation state        */
+    let onSave:                     (DrawingCaptureDraft) -> Bool       /* Persist the edited value       */
+    @StateObject private var state: DrawingCanvasState                  /* Current operation state        */
+    @State private var showsClear   = false                             /* Clear visibility               */
+    @State private var showsDiscard = false                             /* Discard visibility             */
+    @State private var errorMessage:    String?                         /* User-facing failure message    */
+    @State private var exportFile:      DrawingExportFile?              /* Export file                    */
+    @State private var exportDirectory: URL?                            /* Export directory               */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
 
 
     ///
@@ -642,10 +626,9 @@ struct DrawingCaptureEditor: View
         self.initial = initial;
         self.onSave = onSave
         _state = StateObject(wrappedValue: DrawingCanvasState(drawing: initial.drawing))
-
     }
 
-    private var changed: Bool /* Value with requested edits */
+    private var changed: Bool           /* Value with requested edits */
     {
         state.canvas.drawing.dataRepresentation() != initial.drawing.dataRepresentation()
     }
@@ -666,35 +649,32 @@ struct DrawingCaptureEditor: View
     {
         do
         {
-            let data = /* Encoded or loaded bytes */
+            let data =          /* Encoded or loaded bytes */
                 try DrawingImageExport.data(state.canvas.drawing, format: format, transparent: transparent)
 
             cleanExport()
 
-            let directory = /* Working directory location */
+            let directory =                                                     /* Working directory location */
                 FileManager.default.temporaryDirectory.appendingPathComponent(
-                                    "Plenact-Drawing-" + UUID().uuidString, isDirectory: true)
+                    "Plenact-Drawing-" + UUID().uuidString, isDirectory: true)
 
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
             exportDirectory = directory
 
-            let url = /* Resolved file location */
+            let url =                                                                           /* Resolved file location */
                 directory.appendingPathComponent("Drawing." + (format == .png ? "png" : "jpg"))
 
             try data.write(to: url, options: .atomic)
 
             exportFile = DrawingExportFile(url: url)
-
         }
         catch
         {
             cleanExport();
 
             errorMessage = "The image couldn't be exported. Your drawing is still here; please try again."
-
         }
-
     }
 
 
@@ -714,10 +694,9 @@ struct DrawingCaptureEditor: View
         }
 
         exportDirectory = nil
-
     }
 
-    var body: some View /* Drawing Capture Editor layout */
+    var body: some View         /* Drawing Capture Editor layout */
     {
         NavigationStack
         {
@@ -734,15 +713,12 @@ struct DrawingCaptureEditor: View
                         if changed
                         {
                             showsDiscard = true
-
                         }
                         else
                         {
                             dismiss()
                         }
-
                     }
-
                 }
 
                 ToolbarItemGroup(placement: .primaryAction)
@@ -766,7 +742,6 @@ struct DrawingCaptureEditor: View
                         Button("Clear drawing", systemImage: "trash", role: .destructive)
                         {
                             showsClear = true
-
                         }
                         .disabled(!state.hasMarks)
                     }
@@ -790,7 +765,6 @@ struct DrawingCaptureEditor: View
                         {
                             export(.jpeg)
                         }
-
                     }
                     label:
                     {
@@ -798,7 +772,7 @@ struct DrawingCaptureEditor: View
                     } .accessibilityLabel("Export drawing").disabled(!state.hasMarks)
                     Button("Done")
                     {
-                        let draft = /* Local editing draft */
+                        let draft =                                                             /* Local editing draft */
                             DrawingCaptureDraft(id: initial.id, drawing: state.canvas.drawing)
 
                         if onSave(draft)
@@ -809,14 +783,10 @@ struct DrawingCaptureEditor: View
                         {
                             errorMessage =
                                                                                             "The drawing couldn't be saved. Your changes are still here; please try again."
-
                         }
-
                     } .disabled(!state.hasMarks)
                 }
-
             }
-
         }
         .interactiveDismissDisabled(changed)
         .confirmationDialog("Clear this drawing?", isPresented: $showsClear, titleVisibility: .visible)
@@ -829,7 +799,6 @@ struct DrawingCaptureEditor: View
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         .confirmationDialog("Discard drawing changes?", isPresented: $showsDiscard, titleVisibility: .visible)
         {
@@ -841,7 +810,6 @@ struct DrawingCaptureEditor: View
             Button("Keep drawing", role: .cancel)
             {
             }
-
         }
         .alert("Drawing", isPresented: Binding(get:
                 {
@@ -851,17 +819,13 @@ struct DrawingCaptureEditor: View
                     if !$0
                     {
                         errorMessage = nil
-
                     }
-
                 }))
         {
             Button("OK", role: .cancel)
             {
                 errorMessage = nil
-
             }
-
         }
         message:
         {
@@ -889,9 +853,7 @@ struct DrawingCaptureEditor: View
             {
                 cleanExport()
             }
-
         }
         .presentationDetents([.large])
     }
-
 }

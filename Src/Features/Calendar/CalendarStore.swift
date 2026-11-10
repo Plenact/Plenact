@@ -18,7 +18,7 @@ import SwiftUI
 ///
 enum PlanningCalendarStore
 {
-    static let key = "Plenact.CalendarWeeks.v1" /* Persistence lookup key */
+    static let key = "Plenact.CalendarWeeks.v1"         /* Persistence lookup key */
 
 
     ///
@@ -40,7 +40,7 @@ enum PlanningCalendarStore
             return nil
         }
 
-        let result = /* Calendar for date calculations */
+        let result =                                                            /* Calendar for date calculations */
             try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
 
         guard result.version == 1, (1 ... 7).contains(result.firstWeekday),
@@ -78,5 +78,4 @@ enum PlanningCalendarStore
 
         defaults.set(try JSONEncoder().encode(document), forKey: key)
     }
-
 }

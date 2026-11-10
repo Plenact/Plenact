@@ -13,11 +13,10 @@ import Foundation
 ///     Preserve source provenance independently from titles, list positions and account display names
 struct MigrationSourceIdentity: Codable, Hashable
 {
-    let recordType:    String  /* Canonical target record type                       */
-    let owner:         String  /* Stable source-owner namespace, never display text  */
-    let legacyID:      String  /* Original identifier represented without coercion   */
-    let discriminator: String? /* Source creation discriminator where actually known */
-
+    let recordType:    String           /* Canonical target record type                       */
+    let owner:         String           /* Stable source-owner namespace, never display text  */
+    let legacyID:      String           /* Original identifier represented without coercion   */
+    let discriminator: String?          /* Source creation discriminator where actually known */
 }
 
 
@@ -26,9 +25,8 @@ struct MigrationSourceIdentity: Codable, Hashable
 ///     Retain the same mapping across retries, restarts and explicit export copies
 struct MigrationIdentityEntry: Codable, Equatable
 {
-    let source: MigrationSourceIdentity /* Exact source provenance  */
-    let target: UUID                    /* Stable portable identity */
-
+    let source: MigrationSourceIdentity         /* Exact source provenance  */
+    let target: UUID                            /* Stable portable identity */
 }
 
 
@@ -37,12 +35,12 @@ struct MigrationIdentityEntry: Codable, Equatable
 ///     Allocate stable identities before conversion without pretending a local profile is an account
 struct MigrationIdentityJournal: Codable
 {
-    private(set) var formatVersion:        Int                      /* Local journal format, independent of Model 1.0 */
-    let targetModelVersion:   String                   /* Explicit portable definition target             */
-    let sourceInstallationID: UUID                     /* Durable source-installation namespace            */
-    let previewWorkspaceID:   UUID                     /* Local preview only; not server-owned workspace  */
-    private(set) var entries: [MigrationIdentityEntry] /* Retained mappings; removed source entries remain */
-    private var targets: [MigrationSourceIdentity: UUID] = [:] /* Rebuilt local lookup; never serialized */
+    private(set) var formatVersion:        Int                          /* Local journal format, independent of Model 1.0   */
+    let targetModelVersion:   String                                    /* Explicit portable definition target              */
+    let sourceInstallationID: UUID                                      /* Durable source-installation namespace            */
+    let previewWorkspaceID:   UUID                                      /* Local preview only; not server-owned workspace   */
+    private(set) var entries: [MigrationIdentityEntry]                  /* Retained mappings; removed source entries remain */
+    private var targets: [MigrationSourceIdentity: UUID] = [:]          /* Rebuilt local lookup; never serialized           */
 
 
     /// Exact on-disk journal fields; the lookup cache is derived only
@@ -73,7 +71,6 @@ struct MigrationIdentityJournal: Codable
         sourceInstallationID = UUID()
         previewWorkspaceID = UUID()
         entries = []
-
     }
 
 
@@ -89,12 +86,10 @@ struct MigrationIdentityJournal: Codable
         if source.recordType.hasPrefix("nested_")
         {
             formatVersion = max(formatVersion, 2)
-
         }
         if ["workspace_appearance", "artwork_library"].contains(source.recordType)
         {
             formatVersion = max(formatVersion, 3)
-
         }
         if targets.count != entries.count
         {
@@ -104,14 +99,13 @@ struct MigrationIdentityJournal: Codable
             }
 
             targets = Dictionary(uniqueKeysWithValues: entries.map { ($0.source, $0.target) })
-
         }
         if let existing = targets[source]
         {
             return existing
         }
 
-        let target = UUID() /* Target under consideration */
+        let target = UUID()     /* Target under consideration */
 
         entries.append(MigrationIdentityEntry(source: source, target: target))
 
@@ -128,7 +122,7 @@ struct MigrationIdentityJournal: Codable
     /// @throws Invalid source errors
     private static func validate(_ source: MigrationSourceIdentity) throws
     {
-        let types: Set<String> = /* Supported record types */
+        let types: Set<String> =                                                /* Supported record types */
             ["account", "workspace", "collection", "list", "card", "label",
             "label_category", "calendar_week", "calendar_index", "daily_plan", "weekly_review",
             "periodic_review", "planning_template", "template_library", "review_rhythm", "asset",
@@ -152,7 +146,7 @@ struct MigrationIdentityJournal: Codable
     /// @throws Encoding failures
     func encoded() throws -> Data
     {
-        let encoder = JSONEncoder() /* JSON encoding configuration */
+        let encoder = JSONEncoder()     /* JSON encoding configuration */
 
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
 
@@ -192,7 +186,7 @@ struct MigrationIdentityJournal: Codable
             }
         }
 
-        let journal = /* Migration identity journal */
+        let journal =                                                           /* Migration identity journal */
             try JSONDecoder().decode(MigrationIdentityJournal.self, from: data)
 
         guard Set(journal.entries.map(\.source)).count == journal.entries.count,
@@ -203,7 +197,7 @@ struct MigrationIdentityJournal: Codable
             throw Failure.corrupt
         }
 
-        let uuidPattern = /* UUID pattern */
+        let uuidPattern =                                                               /* UUID pattern */
             "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
 
         for identifier in [journal.sourceInstallationID, journal.previewWorkspaceID] + journal.entries.map(\.target)
@@ -243,13 +237,13 @@ enum MigrationIdentityStore
     /// @throws Unsafe path or filesystem errors
     static func read(at url: URL) throws -> Data?
     {
-        var current = url /* Current operation snapshot */
+        var current = url       /* Current operation snapshot */
 
         while current.path != "/"
         {
             if FileManager.default.fileExists(atPath: current.path)
             {
-                let attributes = /* Attributed-text settings */
+                let attributes =                                                        /* Attributed-text settings */
                     try FileManager.default.attributesOfItem(atPath: current.path)
 
                 guard attributes[.type] as? FileAttributeType != .typeSymbolicLink else
@@ -268,7 +262,7 @@ enum MigrationIdentityStore
             return nil
         }
 
-        let attributes = /* Attributed-text settings */
+        let attributes =                                                /* Attributed-text settings */
             try FileManager.default.attributesOfItem(atPath: url.path)
 
         guard attributes[.type] as? FileAttributeType == .typeRegular,
@@ -296,15 +290,15 @@ enum MigrationIdentityStore
             throw MigrationIdentityJournal.Failure.conflictingWrite
         }
 
-        let data = try journal.encoded() /* Encoded or loaded bytes */
+        let data = try journal.encoded()        /* Encoded or loaded bytes */
 
         _ = try MigrationIdentityJournal.decode(data)
 
         if let expected
         {
-            let original = /* Baseline before changes */
+            let original =                                                                              /* Baseline before changes     */
                 try MigrationIdentityJournal.decode(expected)
-            let retained = /* State retained for recovery */
+            let retained =                                                                              /* State retained for recovery */
                 Dictionary(uniqueKeysWithValues: journal.entries.map { ($0.source, $0.target) })
 
             guard original.formatVersion <= journal.formatVersion,

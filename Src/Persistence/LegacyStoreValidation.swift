@@ -14,27 +14,27 @@ import Foundation
 @MainActor
 enum LegacyStoreValidation
 {
-    static let jsonKeys: Set<String> = [ /* JSON keys */
+    static let jsonKeys: Set<String> = [                                                        /* JSON keys */
         "Plenact.Board.v1", "Plenact.CalendarWeeks.v1", "Plenact.PersonalCollections.v1",
         "Plenact.LabelLibrary.v1", "Plenact.LocalProfile.v1", "Plenact.PlanPreferences.v1",
         "Plenact.PlanningTemplates.v1", "Plenact.DailyPlans.v1", "Plenact.WeeklyReviews.v1",
         "Plenact.PeriodicReviews.v1", "Plenact.ReviewRhythm.v1", "Plenact.Studio.Settings.v1",
         "Plenact.Studio.Artwork.v1", "Plenact.LibraryImportant.v1", "Plenact.WeekAppearance.v1",
         "Plenact.TodayListShortcuts.v1", "Plenact.LibraryRecents.v1", "Plenact.ActivityRecents.v1"
-    ] /* Reviewed JSON-encoded source stores */
+    ]                                                                                                   /* Reviewed JSON-encoded source stores */
 
-    static let nativeKeys: Set<String> = [ /* Native keys */
+    static let nativeKeys: Set<String> = [                                                              /* Native keys */
         "Plenact.SavedCardIDs.v1", "Plenact.RecentSearches.v1", "Plenact.LocalReactionAuthor.v1",
         "Plenact.BoardPresentation.v1", "Plenact.CardCovers.enabled", "Plenact.ActivityShowsCovers",
         "Plenact.ActivityRecentSquareCards", "Plenact.LibraryShowsCollectionPreviews",
         "Plenact.LibraryScrollsCollectionPreviews", "Plenact.LastViewedList.v1",
         "Plenact.Welcome.lastDeparture.v1", "Plenact.ReviewRhythmDismissals.v1"
-    ] /* Reviewed property-list values */
+    ]                                                                           /* Reviewed property-list values */
 
-    static let recoveryKeys: Set<String> = [ /* Recovery keys */
+    static let recoveryKeys: Set<String> = [                                    /* Recovery keys */
         "Plenact.DailyReviewTransaction.v1", "Plenact.ExampleLoadUndo.v1",
         "Plenact.ExampleCardLocations.Applied.v1", "Plenact.ExampleCardLocations.Backup.v1"
-    ] /* Retained recovery evidence, never executed by export */
+    ]                                                                                           /* Retained recovery evidence, never executed by export */
 
 
     /// @fcn LegacyStoreValidation.includes
@@ -59,7 +59,6 @@ enum LegacyStoreValidation
     private static func decode<T: Decodable>(_ type: T.Type, _ data: Data) throws
     {
         _ = try JSONDecoder().decode(type, from: data)
-
     }
 
 
@@ -72,7 +71,7 @@ enum LegacyStoreValidation
     /// @return Review diagnostics for missing or unsafe referenced originals
     static func mediaIssues(_ value: Any, store: String, files: Set<String>) -> [String]
     {
-        var issues: [String] = [] /* Validation findings */
+        var issues: [String] = []       /* Validation findings */
 
         if let object = value as? [String: Any]
         {
@@ -88,7 +87,7 @@ enum LegacyStoreValidation
                     }
                     else
                     {
-                        let candidates: [String] /* Eligible operation targets */
+                        let candidates: [String]        /* Eligible operation targets */
 
                         switch key
                         {
@@ -104,7 +103,6 @@ enum LegacyStoreValidation
 
                             candidates = ["Library/Application Support/PlenactStudioArtwork/" + filename,
                                 "Library/Application Support/PlenactCollectionBackgrounds/" + filename]
-
                         }
                         if !candidates.contains(where: files.contains)
                         {
@@ -141,7 +139,7 @@ enum LegacyStoreValidation
 
         guard jsonKeys.contains(key) else
         {
-            let booleans: Set<String> = /* Boolean field names */
+            let booleans: Set<String> =                                         /* Boolean field names */
                 ["Plenact.CardCovers.enabled", "Plenact.ActivityShowsCovers",
                 "Plenact.ActivityRecentSquareCards", "Plenact.LibraryShowsCollectionPreviews",
                 "Plenact.LibraryScrollsCollectionPreviews", "Plenact.ExampleCardLocations.Applied.v1"]
@@ -163,7 +161,7 @@ enum LegacyStoreValidation
 
         do
         {
-            let json = try JSONSerialization.jsonObject(with: data) /* JSON representation */
+            let json = try JSONSerialization.jsonObject(with: data)     /* JSON representation */
 
             if let object = json as? [String: Any], let version = object["version"] as? NSNumber,
                (CFGetTypeID(version) == CFBooleanGetTypeID() || version.doubleValue != 1)

@@ -13,8 +13,8 @@ import Foundation
 @MainActor
 struct MigrationPlanningValues
 {
-    let context: MigrationContentValues /* Operation context */
-    let priorityResolver: (([String: Any]) throws -> [String: Any])? /* Priority resolver callback */
+    let context: MigrationContentValues                                 /* Operation context          */
+    let priorityResolver: (([String: Any]) throws -> [String: Any])?    /* Priority resolver callback */
 
 
     /// @fcn MigrationPlanningValues.init
@@ -26,7 +26,6 @@ struct MigrationPlanningValues
     {
         self.context = context
         self.priorityResolver = priorityResolver
-
     }
 
 
@@ -60,11 +59,10 @@ struct MigrationPlanningValues
     {
         _ = try MigrationCalendarTemplates.date(date)
 
-        let zoneContext = /* Zone context */
+        let zoneContext =                                                                               /* Zone context */
             MigrationContentValues(journal: context.journal, timeZoneID: zone, mediaDigests: [:])
 
         _ = try MigrationContentDates.convert(1_600_000_000, kind: "date", context: zoneContext, path: "planning-zone")
-
     }
 
 
@@ -100,13 +98,13 @@ struct MigrationPlanningValues
             return try priorityResolver(raw)
         }
 
-        let owner         = /* Owning collection or Week */
+        let owner         =                                                             /* Owning collection or Week  */
             try MigrationContentValues.lowerUUID(raw["ownerID"])
-        let collection    = /* Personal collection record */
+        let collection    =                                                             /* Personal collection record */
             try context.id("collection", owner: "source_collections", legacy: owner)
-        let discriminator = /* Encoded content kind */
+        let discriminator =                                                             /* Encoded content kind       */
             (raw["sourceCreatedAt"] as? NSNumber).map { String($0.doubleValue) }
-        let card          = /* Card under consideration */
+        let card          =                                                             /* Card under consideration   */
             try context.id("card", owner: owner, legacy: String(raw["cardID"] as! Int), discriminator: discriminator)
 
         return ["source_collection_id": try context.reference("collection", collection),
@@ -122,12 +120,12 @@ struct MigrationPlanningValues
     /// @throws Duplicate or malformed source identities
     func priorities(_ value: Any) throws -> [[String: Any]]
     {
-        let raw               = value as! [[String: Any]] /* Unprocessed source value       */
-        var seen: Set<String> = []                        /* Identities already encountered */
+        let raw               = value as! [[String: Any]]       /* Unprocessed source value       */
+        var seen: Set<String> = []                              /* Identities already encountered */
 
         return try raw.map { item in
 
-            let key = /* Lookup or persistence key */
+            let key =           /* Lookup or persistence key */
                 (try MigrationContentValues.lowerUUID(item["ownerID"])) + ":" + String(item["cardID"] as! Int)
 
             guard seen.insert(key).inserted else
@@ -160,7 +158,7 @@ struct MigrationPlanningValues
     /// @throws Duplicate IDs, invalid progress counts or empty mood values
     func entries(_ raw: [[String: Any]], path: String) throws -> [[String: Any]]
     {
-        var seen: Set<String> = [] /* Identities already encountered */
+        var seen: Set<String> = []      /* Identities already encountered */
 
         return try raw.map { item in
             guard let id = item["id"] as? String, !id.isEmpty, seen.insert(id).inserted else
@@ -168,7 +166,7 @@ struct MigrationPlanningValues
                 throw MigrationContentValues.Failure.invalid("planning_checkin_identity")
             }
 
-            var output: [String: Any] = ["id": id, /* Operation output */
+            var output: [String: Any] = ["id": id,                                              /* Operation output */
                 "saved_at_utc": try timestamp(item["savedAt"], path: path + "/check-in/" + id),
                 "changed": item["changed"]!, "focus": try (item["focus"] as? [String: Any]).map(priority) as Any? ?? NSNull(),
                 "intention": item["intention"]!, "constraints": item["constraints"]!, "concerns": item["concerns"]!,
@@ -184,12 +182,10 @@ struct MigrationPlanningValues
                     }
 
                     output[target] = number
-
                 }
                 else
                 {
                     output[target] = NSNull()
-
                 }
             }
             if let complete = item["completedTasks"] as? Int, let total = item["totalTasks"] as? Int, complete > total
@@ -216,31 +212,30 @@ struct MigrationPlanningValues
     /// @throws Duplicate identities or invalid date actions
     func decisions(_ value: Any, path: String) throws -> [[String: Any]]
     {
-        var seen: Set<String> = [] /* Identities already encountered */
+        var seen: Set<String> = []      /* Identities already encountered */
 
         return try (value as! [[String: Any]]).map { raw in
 
-            let id = try MigrationContentValues.lowerUUID(raw["id"]) /* Record UUID */
+            let id = try MigrationContentValues.lowerUUID(raw["id"])    /* Record UUID */
 
             guard seen.insert(id).inserted else
             {
                 throw MigrationContentValues.Failure.invalid("planning_decision_identity")
             }
 
-            let source                = /* Source value for this operation */
+            let source                =                                 /* Source value for this operation */
                 raw["action"] as! [String: Any]
-            let key                   = source.keys.first! /* Lookup or persistence key */
-            var action: [String: Any] =                    /* Requested user operation  */
+            let key                   = source.keys.first!              /* Lookup or persistence key       */
+            var action: [String: Any] =                                 /* Requested user operation        */
                 ["kind": key == "keepTomorrow" ? "keep_tomorrow" : key]
 
             if key == "date"
             {
-                let date = /* Date used by this operation */
+                let date =                                              /* Date used by this operation */
                     (source[key] as! [String: Any])["_0"] as! String
 
                 _ = try MigrationCalendarTemplates.date(date)
                 action["date"] = date
-
             }
             return ["id": id, "source": try priority(raw["source"] as! [String: Any]),
                 "result": try priority(raw["result"] as! [String: Any]), "action": action,
@@ -285,11 +280,11 @@ struct MigrationPlanningValues
     /// @throws Duplicate IDs, empty titles or unsupported statuses
     func objectives(_ value: Any) throws -> [[String: Any]]
     {
-        var seen: Set<String> = [] /* Identities already encountered */
+        var seen: Set<String> = []      /* Identities already encountered */
 
         return try (value as! [[String: Any]]).map { raw in
 
-            let id = try MigrationContentValues.lowerUUID(raw["id"]) /* Record UUID */
+            let id = try MigrationContentValues.lowerUUID(raw["id"])    /* Record UUID */
 
             guard seen.insert(id).inserted, let title = raw["title"] as? String,
                   !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,

@@ -13,12 +13,11 @@ import Foundation
 ///     Distinguish verified portable-file review from source recovery and workspace installation
 struct ReviewedPortablePackage
 {
-    let recordCount: Int  /* Record count                                     */
-    let cardCount:   Int  /* Card count                                       */
-    let listCount:   Int  /* List count                                       */
-    let mediaCount:  Int  /* Media count                                      */
-    let snapshot:    Data /* Frozen portable members; no native source backup */
-
+    let recordCount: Int        /* Record count                                     */
+    let cardCount:   Int        /* Card count                                       */
+    let listCount:   Int        /* List count                                       */
+    let mediaCount:  Int        /* Media count                                      */
+    let snapshot:    Data       /* Frozen portable members; no native source backup */
 }
 
 
@@ -38,7 +37,7 @@ enum PortablePackageReview
         /// @fcn Failure.errorDescription
         /// @brief Explain review failure without private source values
         /// @return Bounded review guidance
-        var errorDescription: String? /* Readable failure explanation */
+        var errorDescription: String?           /* Readable failure explanation */
         {
             switch self
             {
@@ -105,12 +104,12 @@ enum PortablePackageReview
     /// @throws Bounded read, unsupported format, corruption or reference errors
     static func review(at url: URL) throws -> ReviewedPortablePackage
     {
-        let nested    = /* Owned nested content */
+        let nested    =                                                                 /* Owned nested content         */
             url.appendingPathComponent("PortableTestPackage", isDirectory: true)
-        let selected  = /* Current selection */
+        let selected  =                                                                 /* Current selection            */
             FileManager.default.fileExists(atPath: nested.path) ? nested : url
-        var remaining = LegacyWorkspaceExport.maximumBytes /* Entries still to process     */
-        let files     =                                    /* Files used by this operation */
+        var remaining = LegacyWorkspaceExport.maximumBytes                              /* Entries still to process     */
+        let files     =                                                                 /* Files used by this operation */
             try LocalBackupRestore.readTree(selected, remaining: &remaining)
 
         return try review(files: files)
@@ -130,7 +129,7 @@ enum PortablePackageReview
             throw Failure.invalid
         }
 
-        let manifest = try object("Manifest.json", files: files) /* Package inventory and hashes */
+        let manifest = try object("Manifest.json", files: files)        /* Package inventory and hashes */
 
         guard Set(manifest.keys) == ["format", "format_version", "user_data_model_version", "ownership_verified",
                 "cloud_upload_allowed", "originals", "files"],
@@ -143,7 +142,7 @@ enum PortablePackageReview
             throw Failure.invalid
         }
 
-        var actual = Set(["Assembly.json"]) /* Observed operation result */
+        var actual = Set(["Assembly.json"])     /* Observed operation result */
 
         for (name, file) in originals.fileWrappers ?? [:]
         {
@@ -155,7 +154,7 @@ enum PortablePackageReview
             actual.insert("Originals/" + name)
         }
 
-        var declared = Set<String>() /* Declared package metadata */
+        var declared = Set<String>()    /* Declared package metadata */
 
         for entry in inventory
         {
@@ -165,7 +164,7 @@ enum PortablePackageReview
                 throw Failure.integrity
             }
 
-            let bytes = /* Serialized or original bytes */
+            let bytes =                                         /* Serialized or original bytes */
                 try MigrationBackupReader.file(path, in: files)
 
             guard integer(entry["byte_length"], equals: bytes.count),
@@ -179,7 +178,7 @@ enum PortablePackageReview
             throw Failure.integrity
         }
 
-        let assembly = try object("Assembly.json", files: files) /* Assembled portable records */
+        let assembly = try object("Assembly.json", files: files)        /* Assembled portable records */
 
         guard assembly["format"] as? String == "plenact.synthetic-assembly-test",
               integer(assembly["format_version"], equals: 1), isFalse(assembly["ownership_verified"]),
@@ -198,16 +197,16 @@ enum PortablePackageReview
             throw Failure.relationships
         }
 
-        let contentGroups  = /* Content groups */
+        let contentGroups  =                                                                            /* Content groups          */
             ["collections": "collection", "lists": "list", "cards": "card"]
-        let planningGroups = /* Planning groups */
+        let planningGroups =                                                                            /* Planning groups         */
             ["calendar_indexes": "calendar_index", "weeks": "calendar_week", "daily_plans": "daily_plan",
             "weekly_reviews": "weekly_review", "periodic_reviews": "periodic_review", "templates": "planning_template",
             "template_libraries": "template_library", "review_rhythms": "review_rhythm", "assets": "asset"]
-        let baseGroups = /* Base groups */
+        let baseGroups =                                                                                /* Base groups             */
             ["profiles": "user_profile", "label_categories": "label_category", "labels": "label",
             "artwork": "studio_artwork", "content_selections": "content_selection", "unavailable_references": "unavailable_reference"]
-        var records: [[String: Any]] = [] /* Records being processed */
+        var records: [[String: Any]] = []                                                               /* Records being processed */
 
         for (object, groups) in [(content, contentGroups), (planning, planningGroups), (base, baseGroups)]
         {
@@ -219,7 +218,6 @@ enum PortablePackageReview
                 }
 
                 records += group
-
             }
         }
         for key in ["account", "workspace", "user_preferences", "studio_settings", "today_shortcuts", "display_preferences"]
@@ -249,7 +247,7 @@ enum PortablePackageReview
             }
         }
 
-        var identities = Set<String>() /* Qualified record identities */
+        var identities = Set<String>()          /* Qualified record identities */
 
         for record in records
         {
@@ -266,10 +264,10 @@ enum PortablePackageReview
             }
         }
 
-        let assets     = planning["assets"] as! [[String: Any]] /* Verified asset records */
-        var seenAssets = Set<String>()                          /* Seen assets            */
-        var seenPaths  = Set<String>()                          /* Seen paths             */
-        var usedBlobs  = Set<String>()                          /* Used blobs             */
+        let assets     = planning["assets"] as! [[String: Any]]         /* Verified asset records */
+        var seenAssets = Set<String>()                                  /* Seen assets            */
+        var seenPaths  = Set<String>()                                  /* Seen paths             */
+        var usedBlobs  = Set<String>()                                  /* Used blobs             */
 
         for mapping in mappings
         {
@@ -285,9 +283,9 @@ enum PortablePackageReview
                 throw Failure.relationships
             }
 
-            let bytes = /* Serialized or original bytes */
+            let bytes =                                         /* Serialized or original bytes */
                 try MigrationBackupReader.file(blob, in: files)
-            let hash  = MigrationBackupReader.digest(bytes) /* Content integrity digest */
+            let hash  = MigrationBackupReader.digest(bytes)     /* Content integrity digest     */
 
             guard blob == "Originals/" + hash + ".bin", payload["sha256"] as? String == hash,
                   payload["byte_length"] as? String == String(bytes.count) else
@@ -301,7 +299,7 @@ enum PortablePackageReview
             throw Failure.integrity
         }
 
-        let deleted = try PortableLocalDeletions.ids(in: export) /* Content after deletion */
+        let deleted = try PortableLocalDeletions.ids(in: export)        /* Content after deletion */
 
         try references(records: records)
         guard let snapshot = files.serializedRepresentation else
@@ -320,7 +318,7 @@ enum PortablePackageReview
     /// @throws Invalid core references
     private static func references(records: [[String: Any]]) throws
     {
-        let byID = /* By ID */
+        let byID =                                                                      /* By ID */
             Dictionary(uniqueKeysWithValues: records.map { ($0["id"] as! String, $0) })
 
         if records.contains(where: { $0["record_type"] as? String == "studio_artwork" }) &&
@@ -330,8 +328,8 @@ enum PortablePackageReview
         }
         for record in records
         {
-            let kind    = record["record_type"] as? String    /* Content kind discriminator */
-            let payload = record["payload"] as! [String: Any] /* Canonical record payload   */
+            let kind    = record["record_type"] as? String              /* Content kind discriminator */
+            let payload = record["payload"] as! [String: Any]           /* Canonical record payload   */
 
             for (field, expected) in [("list_ids", "list"), ("card_ids", "card")]
             {
@@ -353,7 +351,7 @@ enum PortablePackageReview
             }
             if kind == "artwork_library"
             {
-                let expected = /* Expected operation result */
+                let expected =          /* Expected operation result */
                     Set(records.filter { $0["record_type"] as? String == "studio_artwork" }.compactMap { $0["id"] as? String })
 
                 guard let ids = payload["artwork_ids"] as? [String], Set(ids) == expected, Set(ids).count == ids.count else

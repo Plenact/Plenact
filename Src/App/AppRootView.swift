@@ -20,93 +20,93 @@ import SwiftUI
 ///
 struct AppRootView: View
 {
-    @AppStorage(PlanPreferencesStore.key) var planPreferencesData = /* Plan preferences data */
+    @AppStorage(PlanPreferencesStore.key) var planPreferencesData =     /* Plan preferences data */
         Data()
-    @StateObject var welcomeCue                                   = /* Welcome cue */
+    @StateObject var welcomeCue                                   =     /* Welcome cue           */
         TodayWelcomeCue()
-    @Environment(\.accessibilityReduceMotion) var reduceLaunchMotion /* Reduce launch motion */
+    @Environment(\.accessibilityReduceMotion) var reduceLaunchMotion    /* Reduce launch motion  */
 
-    @State var isSwitchingWorkspace = false /* Switching Workspace state */
-    @State var isRestoringWorkspace = false /* Restoring Workspace state */
-    @State var pendingPortableImport: ReviewedPortablePackage? /* Pending portable import */
-    @State var undoingPortableImport = false /* Undoing portable import */
-    @State var pendingNativeRestore: ReviewedLocalBackup? /* Pending native restore */
-    @State var undoingNativeRestore = false /* Undoing native restore */
-    @State var workspaceRecoveryError: String? /* Workspace recovery error */
-    @State var workspaceGeneration     = UUID() /* Workspace view identity */
-    @State var confirmsExampleMonth    = false /* Confirms example month */
-    @State var confirmsRestoreUserData = false /* Confirms restore user data */
-    @State var workspaceNotice: String? /* Workspace notice */
-    @State var manualWeekNotice: String? /* Week completion confirmation */
-    @State var lists:           [KanbanList] = []                                     /* Complete in-memory Week snapshot  */
-    @State var collections                   = TodayListPins.loadInitialCollections() /* Device-local personal collections */
-    @State var calendarDocument:        PlanningCalendarDocument? /* Calendar document */
-    @State var displayedPlanningWeek:   DatedPlanningWeek? /* Displayed planning week */
-    @State var displayedPlanningListID: Int? /* Displayed planning list ID */
-    @ObservedObject var reviewNotifications                            = /* Review notifications */
+    @State var isSwitchingWorkspace = false                                                     /* Switching Workspace state                    */
+    @State var isRestoringWorkspace = false                                                     /* Restoring Workspace state                    */
+    @State var pendingPortableImport: ReviewedPortablePackage?                                  /* Pending portable import                      */
+    @State var undoingPortableImport = false                                                    /* Undoing portable import                      */
+    @State var pendingNativeRestore: ReviewedLocalBackup?                                       /* Pending native restore                       */
+    @State var undoingNativeRestore = false                                                     /* Undoing native restore                       */
+    @State var workspaceRecoveryError: String?                                                  /* Workspace recovery error                     */
+    @State var workspaceGeneration     = UUID()                                                 /* Workspace view identity                      */
+    @State var confirmsExampleMonth    = false                                                  /* Confirms example month                       */
+    @State var confirmsRestoreUserData = false                                                  /* Confirms restore user data                   */
+    @State var workspaceNotice: String?                                                         /* Workspace notice                             */
+    @State var manualWeekNotice: String?                                                        /* Week completion confirmation                 */
+    @State var lists:           [KanbanList] = []                                               /* Complete in-memory Week snapshot             */
+    @State var collections                   = TodayListPins.loadInitialCollections()           /* Device-local personal collections            */
+    @State var calendarDocument:        PlanningCalendarDocument?                               /* Calendar document                            */
+    @State var displayedPlanningWeek:   DatedPlanningWeek?                                      /* Displayed planning week                      */
+    @State var displayedPlanningListID: Int?                                                    /* Displayed planning list ID                   */
+    @ObservedObject var reviewNotifications                            =                        /* Review notifications                         */
         ReviewRhythmNotifications.shared
-    @AppStorage(ReviewRhythmStore.key) var reviewRhythmPreferencesData = /* Review rhythm preferences data */
+    @AppStorage(ReviewRhythmStore.key) var reviewRhythmPreferencesData =                        /* Review rhythm preferences data               */
         Data()
-    @Environment(\.scenePhase) var scenePhase                    /* Scene phase          */
-    @State var launchShadowFading                        = false /* Launch shadow fading */
-    @State var launchProgress                            =       /* Launch progress      */
+    @Environment(\.scenePhase) var scenePhase                                                   /* Scene phase                                  */
+    @State var launchShadowFading                        = false                                /* Launch shadow fading                         */
+    @State var launchProgress                            =                                      /* Launch progress                              */
         PlenactLaunchProgress()
-    @State var hasLoadedBoard                            = false                    /* Whether the initial Week snapshot has loaded */
-    @State var profile                                   = LocalProfileStore.load() /* Optional local identity and settings         */
-    @State private var templateLibraryRequest            = 0                        /* Transient Library routing request */
-    @State var selectedDestination:       AppDestination = .today                   /* Currently selected primary destination       */
-    @State var bottomNavigationSafeInset: CGFloat        = 34 /* Bottom navigation safe inset */
+    @State var hasLoadedBoard                            = false                                /* Whether the initial Week snapshot has loaded */
+    @State var profile                                   = LocalProfileStore.load()             /* Optional local identity and settings         */
+    @State private var templateLibraryRequest            = 0                                    /* Transient Library routing request            */
+    @State var selectedDestination:       AppDestination = .today                               /* Currently selected primary destination       */
+    @State var bottomNavigationSafeInset: CGFloat        = 34                                   /* Bottom navigation safe inset                 */
 
-    var bottomToolbarLayout:              BottomToolbarLayout /* Bottom toolbar layout */
+    var bottomToolbarLayout:              BottomToolbarLayout           /* Bottom toolbar layout */
     {
         .configuration(isTablet: UIDevice.current.userInterfaceIdiom == .pad, compact: verticalSizeClass == .compact)
     }
 
-    var bottomNavigationHeight: CGFloat /* Bottom navigation height */
+    var bottomNavigationHeight: CGFloat         /* Bottom navigation height */
     {
         bottomToolbarLayout.reservedHeight(bottomInset: bottomNavigationSafeInset)
     }
 
-    @State var visibleNoteIDs: Set<UUID> = [] /* Visible note i ds */
+    @State var visibleNoteIDs: Set<UUID> = []           /* Visible note i ds */
 
-    var isNotePresented:       Bool /* Note editor visibility */
+    var isNotePresented:       Bool     /* Note editor visibility */
     {
         !visibleNoteIDs.isEmpty
     }
 
-    @State var dailyWeekVisible                  = false /* Daily week visible            */
-    @State var dailyOverview                     =       /* Daily opening countdown state */
+    @State var dailyWeekVisible                  = false                        /* Daily week visible                                  */
+    @State var dailyOverview                     =                              /* Daily opening countdown state                       */
         DailyWeekOverview()
-    @State var dailyOverviewFade                 = /* Daily opening fade controller */
+    @State var dailyOverviewFade                 =                              /* Daily opening fade controller                       */
         DailyOverviewFade()
-    @State var appReturnSession                  = AppReturnSession() /* App return session */
-    @State var appReturnWindow                   = AppReturnWindow() /* App return window */
-    @State var appReturnProtectionIDs: Set<UUID> = [] /* App return protection i ds */
-    @State var weekReturnTargetListID: Int? /* Week return target list ID */
-    @State var weekReturnResetRequest     = 0 /* Week return reset request */
-    @State var libraryReturnResetRequest  = 0 /* Library return reset request */
-    @State var activityReturnResetRequest = 0 /* Activity return reset request */
-    @State var weekRootRequest            = 0                           /* Explicit Week toolbar taps return to the Board root */
-    @State var savedCardIDs               = SavedCardPersistence.load() /* Device-local saved cards                            */
-    @State var savedPersonalCardTarget: /* Saved personal card target */
-    PersonalSavedCardTarget? /* Personal bookmark requested from Saved              */
-    @State var newLibraryListRequest                      = 0 /* New library list request */
-    @State var quickCreateRequest                         = 0     /* Center-bar quick-create request          */
-    @State var showsCenterNewCardSheet                    = false /* Destination picker for New outside Today */
-    @State var centerNewPresentation:    ItemPresentation = .card /* Center new presentation */
-    @State var centerNewListID:          Int? /* Center new list ID */
-    @State var toolbarCollectionRequest: PersonalCollectionKind? /* Toolbar collection request */
-    @State var showsToolbarTodayPlan = false /* Toolbar Today Plan visibility */
-    @State var showsToolbarCalendar  = false /* Toolbar Calendar visibility */
-    @State var showsToolbarSearch    = false /* Toolbar Search visibility */
-    @State var showsToolbarRevisit   = false /* Toolbar Revisit visibility */
-    @State var activityRevisitDestination: ToolbarRevisitDestination? /* Activity revisit destination */
+    @State var appReturnSession                  = AppReturnSession()           /* App return session                                  */
+    @State var appReturnWindow                   = AppReturnWindow()            /* App return window                                   */
+    @State var appReturnProtectionIDs: Set<UUID> = []                           /* App return protection i ds                          */
+    @State var weekReturnTargetListID: Int?                                     /* Week return target list ID                          */
+    @State var weekReturnResetRequest     = 0                                   /* Week return reset request                           */
+    @State var libraryReturnResetRequest  = 0                                   /* Library return reset request                        */
+    @State var activityReturnResetRequest = 0                                   /* Activity return reset request                       */
+    @State var weekRootRequest            = 0                                   /* Explicit Week toolbar taps return to the Board root */
+    @State var savedCardIDs               = SavedCardPersistence.load()         /* Device-local saved cards                            */
+    @State var savedPersonalCardTarget:                                         /* Saved personal card target                          */
+    PersonalSavedCardTarget?                                                    /* Personal bookmark requested from Saved              */
+    @State var newLibraryListRequest                      = 0                   /* New library list request                            */
+    @State var quickCreateRequest                         = 0                   /* Center-bar quick-create request                     */
+    @State var showsCenterNewCardSheet                    = false               /* Destination picker for New outside Today            */
+    @State var centerNewPresentation:    ItemPresentation = .card               /* Center new presentation                             */
+    @State var centerNewListID:          Int?                                   /* Center new list ID                                  */
+    @State var toolbarCollectionRequest: PersonalCollectionKind?                /* Toolbar collection request                          */
+    @State var showsToolbarTodayPlan = false                                    /* Toolbar Today Plan visibility                       */
+    @State var showsToolbarCalendar  = false                                    /* Toolbar Calendar visibility                         */
+    @State var showsToolbarSearch    = false                                    /* Toolbar Search visibility                           */
+    @State var showsToolbarRevisit   = false                                    /* Toolbar Revisit visibility                          */
+    @State var activityRevisitDestination: ToolbarRevisitDestination?           /* Activity revisit destination                        */
 
-    @State var boardTargetListID:         Int?           /* List requested by a Today-to-Board navigation     */
-    @State var boardTargetCardID:         Int?           /* Card requested by a Today-to-Board navigation     */
-    @State var activePersonalListNewNote: (() -> Void)?  /* Callback to create a new note in active pers list */
+    @State var boardTargetListID:         Int?                  /* List requested by a Today-to-Board navigation     */
+    @State var boardTargetCardID:         Int?                  /* Card requested by a Today-to-Board navigation     */
+    @State var activePersonalListNewNote: (() -> Void)?         /* Callback to create a new note in active pers list */
 
-    @Environment(\.verticalSizeClass) var verticalSizeClass /* Layout size class used to compact the landscape bar */
+    @Environment(\.verticalSizeClass) var verticalSizeClass     /* Layout size class used to compact the landscape bar */
 
 
     ///
@@ -118,8 +118,8 @@ struct AppRootView: View
     /// @return     (some View) loading surface or configured app navigation
     /// @post       The task assigns the loaded snapshot and marks initial loading complete
     ///
-    var body: some View /* Primary app navigation */
-    {  /* Primary Today and Board navigation shell */
+    var body: some View         /* Primary app navigation                   */
+    {                           /* Primary Today and Board navigation shell */
         Group
         {
             if let workspaceRecoveryError
@@ -153,7 +153,6 @@ struct AppRootView: View
                         await performMonthExampleSwitch(restoring: isRestoringWorkspace)
                     }
                 }
-
             }
             else if hasLoadedBoard
             {
@@ -169,7 +168,6 @@ struct AppRootView: View
                 PlenactLoadingView(fadesShadow: launchShadowFading, progress: launchProgress)
                 .transition(.opacity)
             }
-
         }
 
         .background(AppReturnWindowProbe(reference: appReturnWindow))
@@ -187,19 +185,19 @@ struct AppRootView: View
             dailyOverviewFade.cancel()
         }
         .environment(\.appReturnProtection,
-        {
-            id, protected in
+            {
+                id, protected in
 
-            if protected
-            {
-                appReturnProtectionIDs.insert(id)
-                dailyOverview.cancel()
-            }
-            else
-            {
-                appReturnProtectionIDs.remove(id)
-            }
-        })
+                if protected
+                {
+                    appReturnProtectionIDs.insert(id)
+                    dailyOverview.cancel()
+                }
+                else
+                {
+                    appReturnProtectionIDs.remove(id)
+                }
+            })
         .animation(reduceLaunchMotion ? nil : .easeInOut(duration: 0.45), value: hasLoadedBoard)
         .environmentObject(welcomeCue)
         .environment(\.localBackupRestore, LocalBackupRestoreAccess(restore: { backup in
@@ -207,24 +205,20 @@ struct AppRootView: View
             pendingNativeRestore = backup
             undoingNativeRestore = false
             isSwitchingWorkspace = true
-
         }, undo: {
             pendingNativeRestore = nil
             undoingNativeRestore = true
             isSwitchingWorkspace = true
-
         }))
         .environment(\.portableWorkspaceImport, PortableWorkspaceImportAccess(install: { package in
 
             pendingPortableImport = package
             undoingPortableImport = false
             isSwitchingWorkspace = true
-
         }, undo: {
             pendingPortableImport = nil
             undoingPortableImport = true
             isSwitchingWorkspace = true
-
         }))
         .databaseActivityOverlay()
         .confirmationDialog("Load an example month?", isPresented: $confirmsExampleMonth, titleVisibility: .visible)
@@ -237,16 +231,15 @@ struct AppRootView: View
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                    "Your current Plenact data and local files will first be copied to an offline backup. The example month will replace your active plans. To return, choose Library + → Examples → Restore User Data. An existing original backup will be kept."
+                "Your current Plenact data and local files will first be copied to an offline backup. The example month will replace your active plans. To return, choose Library + → Examples → Restore User Data. An existing original backup will be kept."
             )
         }
         .confirmationDialog(
-                        "Restore your saved data?", isPresented: $confirmsRestoreUserData, titleVisibility: .visible
+            "Restore your saved data?", isPresented: $confirmsRestoreUserData, titleVisibility: .visible
         )
         {
             Button("Restore User Data")
@@ -257,36 +250,31 @@ struct AppRootView: View
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                    "Restores the complete offline copy saved before the example month. Changes made in the example workspace will be replaced."
+                "Restores the complete offline copy saved before the example month. Changes made in the example workspace will be replaced."
             )
         }
         .alert(
-                        "Plenact workspace",
-                        isPresented: Binding(get:
-                            {
-                                workspaceNotice != nil
-                            }, set:
-                            {
-                                if !$0
-                                {
-                                    workspaceNotice = nil
-
-                                }
-
-                            })
+            "Plenact workspace",
+            isPresented: Binding(get:
+                {
+                    workspaceNotice != nil
+                }, set:
+                {
+                    if !$0
+                    {
+                        workspaceNotice = nil
+                    }
+                })
         )
         {
             Button("OK")
             {
                 workspaceNotice = nil
-
             }
-
         }
         message:
         {
@@ -300,14 +288,12 @@ struct AppRootView: View
                 if !$0
                 {
                     manualWeekNotice = nil
-
                 }
             }))
         {
             Button("OK", role: .cancel)
             {
                 manualWeekNotice = nil
-
             }
         }
         message:
@@ -325,7 +311,6 @@ struct AppRootView: View
                 {
                     try? await ReviewRhythmNotifications.shared.synchronize()
                 }
-
             }
             else
             {
@@ -334,14 +319,13 @@ struct AppRootView: View
                 welcomeCue.leftForeground()
                 if phase == .background, hasLoadedBoard
                 {
-                    if let defaults = UserDefaults(suiteName: AppDailyOpening.domain) /* Local navigation store */
+                    if let defaults = UserDefaults(suiteName: AppDailyOpening.domain)           /* Local navigation store */
                     {
                         AppDailyOpening.recordDeparture(at: .now, defaults: defaults)
                     }
                     appReturnSession.leftForBackground(at: .now, protected: hasProtectedAppReturnContext)
                 }
             }
-
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification))
         {
@@ -355,7 +339,6 @@ struct AppRootView: View
             {
                 try? await ReviewRhythmNotifications.shared.synchronize()
             }
-
         }
         .onReceive(reviewNotifications.$pending)
         {
@@ -363,9 +346,7 @@ struct AppRootView: View
             if route != nil
             {
                 selectedDestination = .today
-
             }
-
         }
         .task
         {
@@ -386,22 +367,22 @@ struct AppRootView: View
             }
 
 
-            let launchDeadline = /* Launch deadline */
+            let launchDeadline =                                        /* Launch deadline */
                 ContinuousClock.now.advanced(by: .milliseconds(900))
 
             launchProgress = PlenactLaunchProgress()
             launchShadowFading = false
 
-            let legacy = /* Earlier-format input */
+            let legacy =                                                /* Earlier-format input */
                 await KanbanBoardPersistence.loadListsInBackground()
 
             launchProgress.stage = .plans
 
             await Task.yield()
 
-            var seedsFreshDemoImportance = false            /* Seeds fresh demo importance */
-            var preparedDocument: PlanningCalendarDocument? /* Prepared document           */
-            var preparedWeek: DatedPlanningWeek?            /* Prepared week               */
+            var seedsFreshDemoImportance = false                /* Seeds fresh demo importance */
+            var preparedDocument: PlanningCalendarDocument?     /* Prepared document           */
+            var preparedWeek: DatedPlanningWeek?                /* Prepared week               */
 
             do
             {
@@ -409,11 +390,11 @@ struct AppRootView: View
                 {
                     try document.repairLegacyMondayFirstLayout()
 
-                    let previous = document.weeks.first /* Previous value for comparison */
+                    let previous = document.weeks.first         /* Previous value for comparison */
                     {
                         $0.startKey == document.currentWeekKey
                     }!
-                    let newWeek = /* New week */
+                    let newWeek =                       /* New week */
                     document.week(for: .now) == nil
                     ? try PlanningRoutineStore.newWeek(for: .now, calendar: document.calendar) : nil
 
@@ -421,22 +402,20 @@ struct AppRootView: View
                         to: .now, currentLists: previous.collection.lists, saved: previous.collection.savedCardIDs,
                         newWeek: newWeek)
                     preparedDocument = document
-
                 }
                 else
                 {
                     if let data = UserDefaults.standard.data(forKey: "Plenact.Board.v1")
                     {
                         _ = try JSONDecoder().decode([KanbanList].self, from: data)
-
                     }
 
-                    var calendar = Calendar.current /* Date calculation calendar */
+                    var calendar = Calendar.current     /* Date calculation calendar */
 
                     calendar.firstWeekday = 2
                     seedsFreshDemoImportance = UserDefaults.standard.data(forKey: "Plenact.Board.v1") == nil
 
-                    let current = /* Current operation snapshot */
+                    let current =                                                       /* Current operation snapshot */
                     UserDefaults.standard.data(forKey: "Plenact.Board.v1") == nil
                     ? try PlanningRoutineStore.newWeek(for: .now, calendar: calendar)
                     : DatedPlanningWeek.make(for: .now, lists: legacy, saved: savedCardIDs, calendar: calendar)
@@ -444,16 +423,14 @@ struct AppRootView: View
                     preparedWeek = current
                     preparedDocument = PlanningCalendarDocument(
                         currentWeekKey: current.startKey, firstWeekday: 2, weeks: [current])
-
                 }
-
             }
             catch
             {
                 lists = legacy
 
                 DatabaseActivity.shared.report(
-                                                "Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained."
+                    "Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained."
                 )
             }
 
@@ -476,7 +453,7 @@ struct AppRootView: View
 
                     if seedsFreshDemoImportance
                     {
-                        let defaults = UserDefaults.standard /* Preference storage domain */
+                        let defaults = UserDefaults.standard    /* Preference storage domain */
 
                         defaults.set(
                             LibraryImportanceSelection.demoData(
@@ -484,17 +461,15 @@ struct AppRootView: View
                                 preserving: defaults.data(forKey: LibraryImportanceSelection.key) ?? Data()),
                             forKey: LibraryImportanceSelection.key)
                     }
-
                 }
                 catch
                 {
                     lists = legacy
 
                     DatabaseActivity.shared.report(
-                                                            "Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained."
+                        "Could not open your calendar weeks: \(error.localizedDescription) Your saved data has been retained."
                     )
                 }
-
             }
 
             SavedCardPersistence.save(savedCardIDs)
@@ -543,7 +518,6 @@ struct AppRootView: View
             applyExampleCardLocations()
             openFirstDailyWeek()
         }
-
     }
 
 
@@ -558,8 +532,8 @@ struct AppRootView: View
     /// @pre        Initial Week loading has completed
     /// @post       User edits flow through shared bindings; collection-save errors reach the activity banner
     ///
-    var navigationContent: some View /* Navigation content */
-    {  /* Active tab with shared navigation chrome */
+    var navigationContent: some View                    /* Navigation content                       */
+    {                                                   /* Active tab with shared navigation chrome */
         TabView(selection: $selectedDestination)
         {
             AppNavigationSurface
@@ -643,7 +617,6 @@ struct AppRootView: View
                             onLeaveForHome:
                             {
                                 self.displayedPlanningWeek = nil
-
                             }, isWeekTab: true,
                             initialBoardListID: displayedPlanningListID
                         )
@@ -680,7 +653,6 @@ struct AppRootView: View
                         )
                         .id(calendarDocument?.currentWeekKey ?? "week.current")
                     }
-
                 }
             }
             .environment(\.appReturnResetRequest, weekReturnResetRequest)
@@ -741,7 +713,6 @@ struct AppRootView: View
 
                         savedPersonalCardTarget = target
                         selectedDestination = .lists
-
                     },
                     onRestoreBoard: restoreBoard,
                     onDeleteBoard: deletePersonalBoard,
@@ -778,21 +749,17 @@ struct AppRootView: View
                     {
                         bottomNavigationBar
                     }
-
                 }
                 .onAppear
                 {
                     bottomNavigationSafeInset = geometry.safeAreaInsets.bottom
-
                 }
                 .onChange(of: geometry.safeAreaInsets.bottom)
                 {
                     _, inset in
 
                     bottomNavigationSafeInset = inset
-
                 }
-
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
@@ -809,18 +776,16 @@ struct AppRootView: View
                 {
                     visibleNoteIDs.remove(id)
                 }
-
             }
         )
         .environment(\.workspaceBottomBarHeight, isNotePresented ? 0 : bottomNavigationHeight)
         .environment(\.cardMovementAccess, cardMovementAccess)
         .environment(\.planningCalendarAccess, planningCalendarAccess)
         .environment(\.openTemplateLibrary,
-        {
-            templateLibraryRequest += 1
-            selectedDestination = .lists
-
-        })
+            {
+                templateLibraryRequest += 1
+                selectedDestination = .lists
+            })
         .environment(\.calendar, calendarDocument?.calendar ?? .current)
         .modifier(
             OwnerImportanceControls(
@@ -851,9 +816,9 @@ struct AppRootView: View
             }
 
 
-            let candidates = /* Eligible operation targets */
+            let candidates =                                            /* Eligible operation targets */
                 CardAttachmentStore.fileNames(in: old).subtracting(
-                CardAttachmentStore.fileNames(in: updated)) /* Media removed by the collection update */
+                    CardAttachmentStore.fileNames(in: updated))         /* Media removed by the collection update */
 
             persistCurrentPlanningWeek()
             KanbanBoardPersistence.enqueueSave(lists, onSuccess:
@@ -876,7 +841,6 @@ struct AppRootView: View
             {
                 DatabaseActivity.shared.report("Could not save your boards: \(error.localizedDescription)")
             }
-
         }
 
         .modifier(PlanningSharedSearchPresentation(isPresented: $showsToolbarSearch))
@@ -889,7 +853,6 @@ struct AppRootView: View
             PlanningCalendarView(onLeaveForHome:
                 {
                     showsToolbarCalendar = false
-
                 })
         }
         .sheet(isPresented: $showsCenterNewCardSheet)
@@ -921,11 +884,10 @@ struct AppRootView: View
 
             .databaseActivityOverlay()
         }
-
     }
 
 
-    var planningCalendarAccess: PlanningCalendarAccess? /* Planning calendar access */
+    var planningCalendarAccess: PlanningCalendarAccess?         /* Planning calendar access */
     {
         guard let document = calendarDocument else
         {
@@ -942,11 +904,9 @@ struct AppRootView: View
                 weekRootRequest += 1
                 boardTargetListID = nil;
                 boardTargetCardID = nil
-
             }, openToday:
             {
                 selectedDestination = .today
-
             },
             openLibraryCard:
             {
@@ -954,7 +914,6 @@ struct AppRootView: View
 
                 savedPersonalCardTarget = target;
                 selectedDestination = .lists
-
             },
             saveLibrary:
             {
@@ -967,7 +926,7 @@ struct AppRootView: View
                     return false
                 }
 
-                var snapshot = collections; /* Working state snapshot */
+                var snapshot = collections;     /* Working state snapshot */
 
                 snapshot[index] = collection
 
@@ -982,11 +941,10 @@ struct AppRootView: View
                 catch
                 {
                     DatabaseActivity.shared.report(
-                                                            "Could not save this Plans collection: \(error.localizedDescription)");
+                        "Could not save this Plans collection: \(error.localizedDescription)");
 
                     return false
                 }
-
             }, applyWeeklyReview: applyWeeklyReview, applyDailyReview: applyDailyReview,
             moveForDailyPlan: movePriorityForVision, setFirstWeekday: setPlanningFirstWeekday,
             openWeek:
@@ -1003,7 +961,6 @@ struct AppRootView: View
                 boardTargetListID = nil;
                 boardTargetCardID = nil
                 selectedDestination = .board
-
             }, moveList: movePlanningList,
             openWeekOnDay:
             {
@@ -1013,7 +970,7 @@ struct AppRootView: View
                     return
                 }
 
-                let listID = /* Owner-local List identifier */
+                let listID =                                                                    /* Owner-local List identifier */
                     week.dayListIDs[PlanningDate.key(date, calendar: document.calendar)]
 
                 weekRootRequest += 1
@@ -1022,7 +979,6 @@ struct AppRootView: View
                 boardTargetCardID = nil
                 boardTargetListID = week.startKey == calendarDocument?.currentWeekKey ? listID : nil
                 selectedDestination = .board
-
             },
             saveExampleWeek:
             {
@@ -1032,13 +988,13 @@ struct AppRootView: View
     }
 
 
-    var cardMovementAccess: CardMovementAccess /* Card movement access */
+    var cardMovementAccess: CardMovementAccess          /* Card movement access */
     {
-        let currentID = calendarDocument?.weeks.first /* Current ID */
+        let currentID = calendarDocument?.weeks.first           /* Current ID */
         {
             $0.startKey == calendarDocument?.currentWeekKey
         }?.id
-        let weekDestinations = lists.filter /* Week destinations */
+        let weekDestinations = lists.filter     /* Week destinations */
         {
             !$0.isArchived
         } .map
@@ -1046,7 +1002,7 @@ struct AppRootView: View
             CardMoveDestination(collectionID: nil, listID: $0.id, title: $0.title, group: "Week")
         }
 
-        let calendarDestinations = /* Calendar destinations */
+        let calendarDestinations =                      /* Calendar destinations */
             (calendarDocument?.weeks ?? []).filter
         {
             $0.id != currentID
@@ -1062,10 +1018,9 @@ struct AppRootView: View
                     collectionID: week.id, listID: $0.id, title: "\(week.rangeTitle) / \($0.title)", group: "Calendar",
                     columnTitle: $0.title)
             }
-
         }
 
-        let libraryDestinations = collections.filter(\.isActive).flatMap /* Library destinations */
+        let libraryDestinations = collections.filter(\.isActive).flatMap        /* Library destinations */
         {
             collection in
             collection.lists.filter
@@ -1078,7 +1033,6 @@ struct AppRootView: View
                     title: collection.kind == .list ? collection.title : "\(collection.title) / \($0.title)",
                     group: "Plans", columnTitle: $0.title)
             }
-
         }
 
         return CardMovementAccess(
@@ -1096,9 +1050,9 @@ struct AppRootView: View
                     return nil
                 }
 
-                var week   = /* Dated Week under consideration */
+                var week   =                            /* Dated Week under consideration */
                     document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
-                let listID = week.prepareDay(date) /* Owner-local List identifier */
+                let listID = week.prepareDay(date)      /* Owner-local List identifier    */
 
                 guard let list = week.collection.lists.first(where:
                     {
@@ -1129,9 +1083,9 @@ struct AppRootView: View
                     return false
                 }
 
-                var week   = /* Dated Week under consideration */
+                var week   =                            /* Dated Week under consideration */
                     document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
-                let listID = week.prepareDay(date) /* Owner-local List identifier */
+                let listID = week.prepareDay(date)      /* Owner-local List identifier    */
 
                 document.upsert(week)
                 return movePlanningSection(
@@ -1144,8 +1098,8 @@ struct AppRootView: View
     }
 
 
-    var libraryTab: some View /* Library tab */
-    {  /* Personal collection directory and creation actions */
+    var libraryTab: some View           /* Library tab                                        */
+    {                                   /* Personal collection directory and creation actions */
         BoardListsView(
             retainedWeekLists: lists + (calendarDocument?.weeks.flatMap
                 {
@@ -1163,19 +1117,16 @@ struct AppRootView: View
             onLoadExampleMonth:
             {
                 confirmsExampleMonth = true
-
             },
             onRestoreUserData:
             {
                 confirmsRestoreUserData = true
-
             },
             hasUserDataBackup: (try? FullMonthExampleStore.live().hasUserData) ?? false,
             savedPersonalCardTarget: savedPersonalCardTarget,
             onClearSavedPersonalCardTarget:
             {
                 savedPersonalCardTarget = nil
-
             }
         )
         .environment(\.appReturnResetRequest, libraryReturnResetRequest)
@@ -1202,10 +1153,10 @@ struct AppRootView: View
     /// @return     (some View) paper-backed navigation controls
     /// @post       Button and gesture callbacks update navigation and creation-request state
     ///
-    var bottomNavigationBar: some View /* Bottom navigation bar */
-    {  /* Shared tab and quick-creation controls */
-        let layout    = bottomToolbarLayout     /* Resolved layout configuration      */
-        let isCompact = layout.horizontalLabels /* Landscape-height navigation layout */
+    var bottomNavigationBar: some View          /* Bottom navigation bar                  */
+    {                                           /* Shared tab and quick-creation controls */
+        let layout    = bottomToolbarLayout             /* Resolved layout configuration      */
+        let isCompact = layout.horizontalLabels         /* Landscape-height navigation layout */
 
         return ZStack(alignment: isCompact ? .center : .top)
         {
@@ -1228,8 +1179,8 @@ struct AppRootView: View
             .frame(maxWidth: .infinity)
             .offset(y: layout.tabsOffset)
 
-            let newLayout = /* New layout */
-            isCompact /* Adaptive arrangement of creation actions */
+            let newLayout =                                             /* New layout                               */
+            isCompact                                                   /* Adaptive arrangement of creation actions */
             ? AnyLayout(HStackLayout(spacing: layout.newLabelSpacing))
             : AnyLayout(VStackLayout(spacing: layout.newLabelSpacing))
 
@@ -1240,21 +1191,17 @@ struct AppRootView: View
                     if selectedDestination == .today
                     {
                         quickCreateRequest += 1
-
                     }
                     else if selectedDestination == .lists
                     {
                         newLibraryListRequest += 1
-
                     }
                     else
                     {
                         centerNewPresentation = .card
                         centerNewListID = nil
                         showsCenterNewCardSheet = true
-
                     }
-
                 }
                 label:
                 {
@@ -1291,7 +1238,6 @@ struct AppRootView: View
                     {
                         openToolbarCollection(.board)
                     }
-
                 }
                 .accessibilityLabel(selectedDestination == .lists ? "Create a new List" : "Create a new Card")
                 .accessibilityHint("Tap for contextual creation. Touch and hold for New Note, Card, List, or Board.")
@@ -1303,7 +1249,6 @@ struct AppRootView: View
                     .font(.system(layout.labelStyle))
                     .foregroundStyle(.white.opacity(0.92))
                 }
-
             }
 
             .offset(y: layout.newOffset)
@@ -1322,7 +1267,6 @@ struct AppRootView: View
 
         .shadow(color: Color.black.opacity(0.16), radius: 8, x: 0, y: -4)
     }
-
 }
 
 
@@ -1332,7 +1276,7 @@ struct AppRootView: View
 ///     the root builder. This limits simultaneous debug-build stack allocations on physical devices
 struct AppNavigationSurface<Content: View>: View
 {
-    private let content: () -> Content /* Content being processed */
+    private let content: () -> Content          /* Content being processed */
 
 
     /// @fcn AppNavigationSurface.init
@@ -1342,14 +1286,13 @@ struct AppNavigationSurface<Content: View>: View
     init(@ViewBuilder content: @escaping () -> Content)
     {
         self.content = content
-
     }
 
 
     /// @fcn AppNavigationSurface.body
     /// @brief Build the destination after SwiftUI crosses the parent view boundary
     /// @return Original content, preserving its bindings, environment and view identity
-    var body: some View /* App Navigation Surface layout */
+    var body: some View         /* App Navigation Surface layout */
     {
         content()
     }

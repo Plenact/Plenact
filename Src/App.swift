@@ -27,7 +27,7 @@ import SwiftUI
 @main
 struct Plenact: App
 {
-    @State private var recoveryError: String? /* Workspace recovery failure */
+    @State private var recoveryError: String?           /* Workspace recovery failure */
 
 
     ///
@@ -47,14 +47,11 @@ struct Plenact: App
             try FullMonthExampleStore.live().recoverInterruptedSwitch()
 
             _recoveryError = State(initialValue: nil)
-
         }
         catch
         {
             _recoveryError = State(initialValue: error.localizedDescription)
-
         }
-
     }
 
 
@@ -67,8 +64,8 @@ struct Plenact: App
     ///
     /// @post       Each window installs its own AppRootView navigation shell
     ///
-    var body: some Scene /* App scene hierarchy */
-    {  /* Root window scene */
+    var body: some Scene        /* App scene hierarchy */
+    {                           /* Root window scene   */
         WindowGroup
         {
             if let recoveryError
@@ -86,27 +83,20 @@ struct Plenact: App
                             try FullMonthExampleStore.live().recoverInterruptedSwitch();
 
                             self.recoveryError = nil
-
                         }
                         catch
                         {
                             self.recoveryError = error.localizedDescription
-
                         }
-
                     }
-
                 } .padding()
             }
             else
             {
                 AppRootView()
             }
-
         }
-
     }
-
 }
 
 
@@ -126,8 +116,8 @@ extension PersonalCollectionIcon
     /// @return     (String) icon display title
     /// @post       No collection state is changed
     ///
-    var title: String /* User-facing title */
-    {  /* User-facing name of the collection icon */
+    var title: String           /* User-facing title                       */
+    {                           /* User-facing name of the collection icon */
         switch self
         {
         case .notes:
@@ -147,7 +137,5 @@ extension PersonalCollectionIcon
         case .upcoming:
                     "Upcoming"
         }
-
     }
-
 }

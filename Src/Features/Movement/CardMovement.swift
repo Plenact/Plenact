@@ -17,9 +17,8 @@ import Foundation
 ///
 struct BoardCardDropTarget: Equatable
 {
-    let listID:       Int  /* Destination list identity for the drop             */
-    let beforeCardID: Int? /* Insertion anchor; nil appends after existing cards */
-
+    let listID:       Int       /* Destination list identity for the drop             */
+    let beforeCardID: Int?      /* Insertion anchor; nil appends after existing cards */
 }
 
 
@@ -57,17 +56,16 @@ enum BoardCardMovement
         in lists: inout [KanbanList]
     ) throws -> Bool
     {
-        let sources = lists.indices.filter /* Source records or files */
+        let sources = lists.indices.filter      /* Source records or files */
         {
             lists[$0].cards.contains
             {
                 $0.id == cardID
             }
+        }       /* Lists containing the requested card identity */
 
-        }  /* Lists containing the requested card identity */
 
-
-        guard sources.count == 1, let source = sources.first, /* Unique source list position */
+        guard sources.count == 1, let source = sources.first,           /* Unique source list position */
         lists[source].cards.filter(
             {
                 $0.id == cardID
@@ -81,14 +79,14 @@ enum BoardCardMovement
             {
                 $0.id == listID && !$0.isArchived
             }
-        ), /* Active destination list position */
+        ),                              /* Active destination list position */
         !lists[source].isArchived,
         let index = lists[source].cards.firstIndex(where:
             {
                 $0.id == cardID
             })
         else
-        {  /* Card position within the source list */
+        {                                                               /* Card position within the source list */
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
@@ -99,16 +97,16 @@ enum BoardCardMovement
         }
 
 
-        var updated = lists                                   /* Board snapshot changed only after movement validation */
-        var card    = updated[source].cards.remove(at: index) /* Record removed from its source for reinsertion        */
-        let insertion: Int                                  /* Destination offset after removing the source record   */
+        var updated = lists                                             /* Board snapshot changed only after movement validation */
+        var card    = updated[source].cards.remove(at: index)           /* Record removed from its source for reinsertion        */
+        let insertion: Int                                              /* Destination offset after removing the source record   */
 
         if let beforeCardID
-        {  /* Destination card serving as the insertion anchor */
+        {                       /* Destination card serving as the insertion anchor */
             guard
             let position = updated[destination].cards.firstIndex(
                 where:
-                {  /* Current position of the insertion anchor */
+                {                               /* Current position of the insertion anchor */
                     $0.id == beforeCardID
                 })
             else
@@ -118,12 +116,10 @@ enum BoardCardMovement
 
 
             insertion = position
-
         }
         else
         {
             insertion = updated[destination].cards.count
-
         }
 
 
@@ -178,24 +174,24 @@ enum BoardCardMovement
                 !$0.isArchived && listFrames[$0.id]?.contains(point) == true
             })
         else
-        {  /* Active list panel under the pointer */
+        {               /* Active list panel under the pointer */
             return nil
         }
 
 
-        let cards = list.cards.filter /* Card records under consideration */
+        let cards = list.cards.filter           /* Card records under consideration */
         {
             $0.id != cardID
-        }  /* Destination rows excluding the dragged card          */
+        }                       /* Destination rows excluding the dragged card          */
 
-        let measured = cards.enumerated().filter /* Measured layout result */
+        let measured = cards.enumerated().filter        /* Measured layout result */
         {
             cardFrames[$0.element.id] != nil
-        }  /* Rows with geometry available for insertion targeting */
+        }                                       /* Rows with geometry available for insertion targeting */
 
 
         if let next = measured.first(where:
-            {  /* First measured row below the pointer midpoint */
+            {                                                           /* First measured row below the pointer midpoint */
                 point.y < (cardFrames[$0.element.id]?.midY ?? 0)
             })
         {
@@ -204,7 +200,7 @@ enum BoardCardMovement
 
 
         if let last = measured.last, cards.indices.contains(last.offset + 1)
-        {  /* Final measured row preceding an unmeasured successor */
+        {                                                                                               /* Final measured row preceding an unmeasured successor */
             return BoardCardDropTarget(listID: list.id, beforeCardID: cards[last.offset + 1].id)
         }
 
@@ -217,7 +213,6 @@ enum BoardCardMovement
 
         return BoardCardDropTarget(listID: list.id, beforeCardID: nil)
     }
-
 }
 
 
@@ -248,7 +243,7 @@ enum BoardCardReordering
     {
         guard
         let sourceIndex = cards.firstIndex(where:
-            {  /* Current position of the card being moved */
+            {                                           /* Current position of the card being moved */
                 $0.id == cardID
             }), !cards.isEmpty
         else
@@ -257,8 +252,8 @@ enum BoardCardReordering
         }
 
 
-        let safeDestinationIndex = min( /* Safe destination index */
-            max(destinationIndex, 0), cards.count - 1) /* Valid insertion position within the existing records */
+        let safeDestinationIndex = min(                 /* Safe destination index */
+            max(destinationIndex, 0), cards.count - 1)          /* Valid insertion position within the existing records */
 
         guard sourceIndex != safeDestinationIndex else
         {
@@ -266,13 +261,12 @@ enum BoardCardReordering
         }
 
 
-        let movedCard = cards.remove(at: sourceIndex) /* Complete record temporarily removed for reinsertion */
+        let movedCard = cards.remove(at: sourceIndex)           /* Complete record temporarily removed for reinsertion */
 
         cards.insert(movedCard, at: safeDestinationIndex)
 
         return true
     }
-
 }
 
 
@@ -304,7 +298,6 @@ enum BoardListReordering
         case .last:
             return lists.last?.id
         }
-
     }
 
 
@@ -357,7 +350,7 @@ enum BoardListReordering
     {
         guard
         let source = lists.firstIndex(where:
-            {  /* Current position of the list being reordered */
+            {                                   /* Current position of the list being reordered */
                 $0.id == listID
             }),
         lists.indices.contains(destination), source != destination
@@ -367,7 +360,7 @@ enum BoardListReordering
         }
 
 
-        let list = lists.remove(at: source) /* List temporarily removed for boundary insertion */
+        let list = lists.remove(at: source)     /* List temporarily removed for boundary insertion */
 
         lists.insert(list, at: destination)
 
@@ -409,7 +402,7 @@ enum BoardListReordering
         }
 
 
-        let edgeWidth = min(64, viewportWidth * 0.18) /* Edge activation zone scaled to the visible width */
+        let edgeWidth = min(64, viewportWidth * 0.18)           /* Edge activation zone scaled to the visible width */
 
         if x < edgeWidth
         {
@@ -425,7 +418,6 @@ enum BoardListReordering
 
         return 0
     }
-
 }
 
 
@@ -461,9 +453,9 @@ enum PersonalCollectionNoteMovement
             {
                 $0.id == sourceID && $0.isActive
             }
-        ), /* Active collection currently owning the Note */
+        ),                                                      /* Active collection currently owning the Note */
         let destinationIndex = collections.firstIndex(where:
-            {  /* Active personal List receiving the Note     */
+            {                                                                   /* Active personal List receiving the Note     */
                 $0.id == destinationID && $0.kind == .list && $0.isActive
             })
         else
@@ -472,11 +464,11 @@ enum PersonalCollectionNoteMovement
         }
 
 
-        var source        = collections[sourceIndex]      /* Source collection snapshot receiving the removal   */
-        var destination   = collections[destinationIndex] /* Destination collection snapshot receiving the Note */
-        let sourceMatches = source.lists.indices.flatMap /* Source matches */
+        var source        = collections[sourceIndex]            /* Source collection snapshot receiving the removal   */
+        var destination   = collections[destinationIndex]       /* Destination collection snapshot receiving the Note */
+        let sourceMatches = source.lists.indices.flatMap        /* Source matches                                     */
         {
-        listIndex in /* Matching Note positions used to reject ambiguity   */
+        listIndex in                                            /* Matching Note positions used to reject ambiguity   */
             source.lists[listIndex].cards.indices.compactMap
             {
                 cardIndex in
@@ -484,12 +476,11 @@ enum PersonalCollectionNoteMovement
                 ? (listIndex, cardIndex)
                 : nil
             }
-
         }
 
 
         guard sourceMatches.count == 1,
-        let (sourceListIndex, cardIndex) = sourceMatches.first, /* Unique source column and record positions */
+        let (sourceListIndex, cardIndex) = sourceMatches.first,                 /* Unique source column and record positions */
         source.lists[sourceListIndex].cards[cardIndex].presentation == .note,
         !source.lists[sourceListIndex].cards[cardIndex].isSectionDivider,
         let destinationListIndex = destination.lists.firstIndex(where:
@@ -497,23 +488,23 @@ enum PersonalCollectionNoteMovement
                 !$0.isArchived
             })
         else
-        {  /* Active destination column accepting the Note */
+        {                                                               /* Active destination column accepting the Note */
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
 
-        var moved = source.lists[sourceListIndex].cards.remove( /* Item after transfer */
-            at: cardIndex) /* Note detached from its source before relocation            */
-        let destinationIDs = Set( /* Destination i ds */
-            destination.lists.flatMap(\.allCards).map(\.id)) /* Active and archived identities reserved in the destination */
+        var moved = source.lists[sourceListIndex].cards.remove(         /* Item after transfer */
+            at: cardIndex)                                      /* Note detached from its source before relocation            */
+        let destinationIDs = Set(                                       /* Destination i ds    */
+            destination.lists.flatMap(\.allCards).map(\.id))    /* Active and archived identities reserved in the destination */
 
-        var destinationCardID = moved.id /* Resulting Note identity adjusted only for a collision */
+        var destinationCardID = moved.id        /* Resulting Note identity adjusted only for a collision */
 
         if destinationIDs.contains(moved.id)
         {
-            let (nextID, overflow) = /* Next ID overflow */
+            let (nextID, overflow) =                                    /* Next ID overflow */
                 (destinationIDs.max() ?? -1).addingReportingOverflow(
-                1) /* Next unused identity and its overflow status */
+                    1)                                                  /* Next unused identity and its overflow status */
 
             guard !overflow else
             {
@@ -521,13 +512,12 @@ enum PersonalCollectionNoteMovement
             }
 
             destinationCardID = nextID
-
         }
 
 
         moved = moved.replacingLocation(id: destinationCardID, listTitle: destination.title)
 
-        let wasSaved = source.savedCardIDs.remove(noteID) != nil /* Bookmark membership transferred with the Note */
+        let wasSaved = source.savedCardIDs.remove(noteID) != nil        /* Bookmark membership transferred with the Note */
 
         if wasSaved
         {
@@ -542,7 +532,6 @@ enum PersonalCollectionNoteMovement
 
         return moved
     }
-
 }
 
 
@@ -579,7 +568,6 @@ enum BoardContentDeletion
             {
                 $0.id == id
             }
-
         }
 
 
@@ -600,11 +588,11 @@ enum BoardContentDeletion
     ///
     static func list(_ id: Int, in lists: inout [KanbanList], savedCardIDs: inout Set<Int>)
     {
-        let removedIDs = Set( /* Removed i ds */
+        let removedIDs = Set(           /* Removed i ds */
             lists.filter
             {
                 $0.id == id
-            } .flatMap(\.allCards).map(\.id)) /* Card bookmarks to prune with the deleted list */
+            } .flatMap(\.allCards).map(\.id))           /* Card bookmarks to prune with the deleted list */
 
         lists.removeAll
         {
@@ -613,7 +601,6 @@ enum BoardContentDeletion
 
         savedCardIDs.subtract(removedIDs)
     }
-
 }
 
 
@@ -626,17 +613,16 @@ enum BoardContentDeletion
 ///
 struct CardMoveDestination: Identifiable, Hashable
 {
-    let collectionID: UUID?         /* Collection ID               */
-    let listID:       Int           /* Owner-local List identifier */
-    let title:        String        /* User-facing title           */
-    let group:        String        /* Related operation entries   */
-    var columnTitle:  String? = nil /* Column title                */
+    let collectionID: UUID?             /* Collection ID               */
+    let listID:       Int               /* Owner-local List identifier */
+    let title:        String            /* User-facing title           */
+    let group:        String            /* Related operation entries   */
+    var columnTitle:  String? = nil     /* Column title                */
 
-    var id:           String /* Record or view identity */
+    var id:           String    /* Record or view identity */
     {
             "\(collectionID?.uuidString ?? "week"):\(listID)"
     }
-
 }
 
 
@@ -674,8 +660,8 @@ enum CrossBoardCardMovement
         saved: inout Set<Int>
     ) throws -> KanbanCard
     {
-        var sourceLists: [KanbanList] /* Source lists */
-        var sourceSaved: Set<Int>     /* Source saved */
+        var sourceLists: [KanbanList]           /* Source lists */
+        var sourceSaved: Set<Int>               /* Source saved */
 
         if let sourceID
         {
@@ -689,22 +675,19 @@ enum CrossBoardCardMovement
 
             sourceLists = source.lists;
             sourceSaved = source.savedCardIDs
-
         }
         else
         {
             sourceLists = week;
             sourceSaved = saved
-
         }
 
-        let matches = sourceLists.indices.filter /* Matching source entries */
+        let matches = sourceLists.indices.filter        /* Matching source entries */
         {
             !sourceLists[$0].isArchived && sourceLists[$0].cards.contains
             {
                 $0.id == card.id
             }
-
         }
 
         guard matches.count == 1, let sourceIndex = matches.first,
@@ -714,15 +697,14 @@ enum CrossBoardCardMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var targetLists: [KanbanList]                        /* Target lists */
-        var targetSaved: Set<Int>                            /* Target saved */
-        let sameBoard = sourceID == destination.collectionID /* Same board   */
+        var targetLists: [KanbanList]                           /* Target lists */
+        var targetSaved: Set<Int>                               /* Target saved */
+        let sameBoard = sourceID == destination.collectionID    /* Same board   */
 
         if sameBoard
         {
             targetLists = sourceLists;
             targetSaved = sourceSaved
-
         }
         else if let targetID = destination.collectionID
         {
@@ -736,13 +718,11 @@ enum CrossBoardCardMovement
 
             targetLists = target.lists;
             targetSaved = target.savedCardIDs
-
         }
         else
         {
             targetLists = week;
             targetSaved = saved
-
         }
 
         guard let targetIndex = targetLists.firstIndex(where:
@@ -753,13 +733,13 @@ enum CrossBoardCardMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var newID    = card.id /* New ID                     */
-        let reserved =         /* Reserved record identities */
+        var newID    = card.id                                  /* New ID                     */
+        let reserved =                                          /* Reserved record identities */
             Set(targetLists.flatMap(\.allCards).map(\.id))
 
         if !sameBoard && reserved.contains(newID)
         {
-            let (next, overflow) = /* Next overflow */
+            let (next, overflow) =                                      /* Next overflow */
                 (reserved.max() ?? -1).addingReportingOverflow(1)
 
             guard !overflow else
@@ -768,7 +748,6 @@ enum CrossBoardCardMovement
             }
 
             newID = next
-
         }
 
         sourceLists[sourceIndex].cards.removeAll
@@ -779,7 +758,6 @@ enum CrossBoardCardMovement
         if sameBoard
         {
             targetLists = sourceLists
-
         }
 
         let moved = card.replacingLocation(id: newID, listTitle: targetLists[targetIndex].title)
@@ -794,7 +772,6 @@ enum CrossBoardCardMovement
         {
             sourceLists = targetLists;
             sourceSaved = targetSaved
-
         }
 
         if let sourceID, let index = collections.firstIndex(where:
@@ -804,13 +781,11 @@ enum CrossBoardCardMovement
         {
             collections[index].lists = sourceLists;
             collections[index].savedCardIDs = sourceSaved
-
         }
         else
         {
             week = sourceLists;
             saved = sourceSaved
-
         }
 
         if !sameBoard
@@ -822,19 +797,14 @@ enum CrossBoardCardMovement
             {
                 collections[index].lists = targetLists;
                 collections[index].savedCardIDs = targetSaved
-
             }
             else
             {
                 week = targetLists;
                 saved = targetSaved
-
             }
-
         }
 
         return moved
-
     }
-
 }

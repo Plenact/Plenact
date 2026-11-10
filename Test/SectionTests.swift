@@ -51,33 +51,33 @@ extension PlenactBoardDocumentTests
             KanbanCard(id: id, word: title, listTitle: "Source", checklists: [])
         }
 
-        var source   = /* Source value for this operation */
+        var source   =                                                                          /* Source value for this operation */
             PersonalCollection(title: "Source", kind: .board, icon: .project, color: .blue)
-        var target   = /* Target under consideration */
+        var target   =                                                                          /* Target under consideration      */
             PersonalCollection(title: "Target", kind: .list, icon: .notes, color: .teal)
-        var observer = /* Native interaction observer */
+        var observer =                                                                          /* Native interaction observer     */
             PersonalCollection(title: "Links", kind: .board, icon: .project, color: .blue)
-        var heading  = card(1, "--- Morning") /* Section heading text */
+        var heading  = card(1, "--- Morning")                                                   /* Section heading text            */
 
         heading.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
 
-        var member = card(2, "Breakfast") /* Member comparison fixture */
+        var member = card(2, "Breakfast")       /* Member comparison fixture */
 
         member.attachments = [KanbanAttachment(url: URL(string: "https://example.com/breakfast"), mediaKind: .link)]
         member.isTitleChecked = true
 
-        var internalLink = /* Internal link */
+        var internalLink =                                                              /* Internal link */
             KanbanChecklistItem(title: "Inside", content: .linkedCard(cardID: 2))
 
         internalLink.retainedCardID = 2
 
-        let externalLink = /* External link */
+        let externalLink =                                                              /* External link */
             KanbanChecklistItem(title: "Outside", content: .linkedCard(cardID: 6))
 
         member.checklists = [KanbanChecklist(title: "Links", items: [internalLink, externalLink])]
 
-        var watcher = card(8, "Watch") /* Retained change observer */
-        var nested  =                  /* Owned nested content     */
+        var watcher = card(8, "Watch")                                                  /* Retained change observer */
+        var nested  =                                                                   /* Owned nested content     */
             KanbanChecklistItem(title: "Nested", content: .linkedCard(cardID: 2))
 
         nested.linkedCollectionID = source.id
@@ -94,7 +94,7 @@ extension PlenactBoardDocumentTests
                 ])
         ]
 
-        var hiddenDetail = KanbanChecklistItem(title: "Inactive detail") /* Hidden detail */
+        var hiddenDetail = KanbanChecklistItem(title: "Inactive detail")        /* Hidden detail */
 
         hiddenDetail.retainedDetail = KanbanChecklistActionDetail(
             description: "Hidden context", checklists: [KanbanChecklist(title: "Retained", items: [nested])])
@@ -115,9 +115,9 @@ extension PlenactBoardDocumentTests
         ]
         observer.lists = [KanbanList(id: 30, title: "Links", cards: [], archivedCards: [watcher])]
 
-        var owners   = [source, target, observer] /* Qualified record owners      */
-        let original = owners                     /* Baseline before changes      */
-        let receipt  = try SectionTransfer.move(  /* Saved-operation verification */
+        var owners   = [source, target, observer]       /* Qualified record owners      */
+        let original = owners                           /* Baseline before changes      */
+        let receipt  = try SectionTransfer.move(        /* Saved-operation verification */
             heading: heading,
             source: WorkspaceListReference(ownerID: source.id, listID: 10),
             destination: WorkspaceListReference(ownerID: target.id, listID: 20), owners: &owners)
@@ -125,7 +125,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(owners[0].lists[0].cards.map(\.id), [0, 5, 6])
         XCTAssertEqual(owners[1].lists[0].cards.map(\.word), ["Existing", "--- Morning", "Breakfast", "---", "Walk"])
 
-        let relocated = /* Content after changing owner */
+        let relocated =                                         /* Content after changing owner */
             try XCTUnwrap(owners[1].lists[0].cards.first
             {
                 $0.word == "Breakfast"
@@ -149,12 +149,12 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(detail.checklists[0].items[0].content, .linkedCard(cardID: relocated.id))
         XCTAssertEqual(detail.checklists[0].items[0].linkedCollectionID, target.id)
 
-        let retained = /* State retained for recovery */
+        let retained =                                                                                  /* State retained for recovery */
             try XCTUnwrap(owners[2].lists[0].archivedCards[0].checklists[1].items[0].retainedDetail)
 
         XCTAssertEqual(retained.checklists[0].items[0].content, .linkedCard(cardID: relocated.id))
 
-        var plan = DailyPlan(date: .now, calendar: .current) /* Daily planning record */
+        var plan = DailyPlan(date: .now, calendar: .current)    /* Daily planning record */
 
         plan.priorities = [
             DailyPlanPriority(
@@ -163,25 +163,25 @@ extension PlenactBoardDocumentTests
                     listID: 10, listTitle: "Source", card: member))
         ]
 
-        var plans = DailyPlanStore.Document(); /* Saved daily planning records */
+        var plans = DailyPlanStore.Document();          /* Saved daily planning records */
 
         plans.plans[plan.id] = plan
 
-        let updatedPlans = DailyPlanStore.relocatingSection(receipt, in: plans) /* Updated plans */
+        let updatedPlans = DailyPlanStore.relocatingSection(receipt, in: plans)         /* Updated plans */
 
         XCTAssertEqual(updatedPlans.plans[plan.id]?.priorities.first?.ownerID, target.id)
         XCTAssertEqual(updatedPlans.plans[plan.id]?.priorities.first?.cardID, relocated.id)
         XCTAssertEqual(updatedPlans.plans[plan.id]?.priorities.first?.sourceCreatedAt, member.createdAt)
         XCTAssertEqual(try receipt.undo(in: owners), original)
 
-        var edited = owners /* Snapshot after requested edits */
+        var edited = owners     /* Snapshot after requested edits */
 
         edited[1].lists[0].cards[0].word = "Edited after moving"
 
         XCTAssertThrowsError(try receipt.undo(in: edited))
         XCTAssertEqual(edited[1].lists[0].cards[0].word, "Edited after moving")
 
-        var unrelated = /* Unrelated comparison fixture */
+        var unrelated =                                                                         /* Unrelated comparison fixture */
             PersonalCollection(title: "Unrelated", kind: .board, icon: .project, color: .blue)
 
         unrelated.lists = []
@@ -201,19 +201,19 @@ extension PlenactBoardDocumentTests
     ///
     func testSectionTransferShiftsDatesAcrossDSTAndRejectsInvalidMovesAtomically() throws
     {
-        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
+        var calendar = Calendar(identifier: .gregorian)         /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
 
-        let fromDay = /* From day */
+        let fromDay =                                                                           /* From day                  */
             try XCTUnwrap(PlanningDate.date("2026-10-31", calendar: calendar))
-        let toDay   = /* To day */
+        let toDay   =                                                                           /* To day                    */
             try XCTUnwrap(PlanningDate.date("2026-11-02", calendar: calendar))
-        var owner   = /* Owning collection or Week */
+        var owner   =                                                                           /* Owning collection or Week */
             PersonalCollection(title: "Week", kind: .board, icon: .project, color: .blue)
-        let heading = /* Section heading text */
+        let heading =                                                                           /* Section heading text      */
             KanbanCard(id: 1, word: "--- Build", listTitle: "Saturday", checklists: [])
-        var dated   = /* Calendar-backed owner */
+        var dated   =                                                                           /* Calendar-backed owner     */
             KanbanCard(id: 2, word: "Work", listTitle: "Saturday", checklists: [])
 
         dated.startDate = calendar.date(bySettingHour: 9, minute: 15, second: 0, of: fromDay)
@@ -221,7 +221,7 @@ extension PlenactBoardDocumentTests
         dated.dueDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: fromDay))
         dated.dueDateKind = .date
 
-        var timed = /* Timed comparison fixture */
+        var timed =                                                     /* Timed comparison fixture */
             dated.replacingLocation(id: 3, listTitle: "Saturday");
 
         timed.startDateKind = .time;
@@ -232,19 +232,19 @@ extension PlenactBoardDocumentTests
             KanbanList(id: 11, title: "Monday", cards: [])
         ]
 
-        var owners   = [owner] /* Qualified record owners         */
-        let source   =         /* Source value for this operation */
+        var owners   = [owner]                                                          /* Qualified record owners         */
+        let source   =                                                                  /* Source value for this operation */
             WorkspaceListReference(ownerID: owner.id, listID: 10)
-        let target   = /* Target under consideration */
+        let target   =                                                                  /* Target under consideration      */
             WorkspaceListReference(ownerID: owner.id, listID: 11)
-        let original = owners                    /* Baseline before changes      */
-        let receipt  = try SectionTransfer.move( /* Saved-operation verification */
+        let original = owners                                                           /* Baseline before changes         */
+        let receipt  = try SectionTransfer.move(                                        /* Saved-operation verification    */
             heading: heading, source: source, destination: target, owners: &owners,
             sourceDay: fromDay, destinationDay: toDay, shiftDates: true, calendar: calendar)
 
         XCTAssertTrue(owners[0].lists[0].cards.isEmpty)
 
-        let result = owners[0].lists[1].cards /* Result being assembled */
+        let result = owners[0].lists[1].cards           /* Result being assembled */
 
         XCTAssertEqual(result.map(\.id), [1, 2, 3])
         XCTAssertEqual(calendar.component(.hour, from: try XCTUnwrap(result[1].startDate)), 9)
@@ -261,7 +261,7 @@ extension PlenactBoardDocumentTests
             try SectionTransfer.move(heading: heading, source: source, destination: source, owners: &owners))
         XCTAssertEqual(owners, original)
 
-        let missing = /* Unavailable reference or input */
+        let missing =                                           /* Unavailable reference or input */
             WorkspaceListReference(ownerID: UUID(), listID: 11)
 
         XCTAssertThrowsError(
@@ -291,13 +291,13 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testSectionMoveChooserAndUndoNoticeRenderWithoutMovingAndOnlyNoticeReceivesTouches() async throws
     {
-        let scene = /* Owning window scene */
+        let scene =                                                             /* Owning window scene    */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
-        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
+        let previous = scene.windows.first(where: \.isKeyWindow)                /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)                             /* Synthetic scene window */
 
         defer
         {
@@ -309,10 +309,10 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let heading  = /* Section heading text */
+        let heading  =                                                                  /* Section heading text             */
             KanbanCard(id: 1, word: "--- Morning", listTitle: "Monday", checklists: [])
-        var moves    = 0                   /* Moves comparison fixture         */
-        let movement = CardMovementAccess( /* Owner-qualified transfer context */
+        var moves    = 0                                                                /* Moves comparison fixture         */
+        let movement = CardMovementAccess(                                              /* Owner-qualified transfer context */
             destinations: [CardMoveDestination(collectionID: UUID(), listID: 2, title: "On the Table", group: "Plans")],
             moveSection:
             {
@@ -330,7 +330,7 @@ extension PlenactBoardDocumentTests
 
                 return true
             })
-        let host = UIHostingController( /* Synthetic SwiftUI host */
+        let host = UIHostingController(         /* Synthetic SwiftUI host */
             rootView: SectionMoveSheet(heading: heading).environment(\.cardMovementAccess, movement))
 
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
@@ -340,20 +340,20 @@ extension PlenactBoardDocumentTests
         try await Task.sleep(for: .milliseconds(200))
         XCTAssertEqual(moves, 0)
 
-        let image = /* Image used by this operation */
+        let image =                                                     /* Image used by this operation */
             UIGraphicsImageRenderer(bounds: host.view.bounds).image
         {
             _ in
             host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
         }
 
-        let url = /* Temporary fixture file URL */
+        let url =       /* Temporary fixture file URL */
             FileManager.default.temporaryDirectory.appendingPathComponent("plenact-section-move-chooser.png")
 
         try XCTUnwrap(image.pngData()).write(to: url);
         print("SECTION_MOVE_RENDER=" + url.path)
 
-        var undoCalls = 0 /* Undo calls */
+        var undoCalls = 0       /* Undo calls */
 
         TransferConfirmationPresenter.shared.showUndo(TransferConfirmation(title: "Morning", destination: "Thursday"))
         {
@@ -364,7 +364,7 @@ extension PlenactBoardDocumentTests
 
         try await Task.sleep(for: .milliseconds(200))
 
-        let notice = try XCTUnwrap(window.subviews.first /* Status or confirmation surface */
+        let notice = try XCTUnwrap(window.subviews.first        /* Status or confirmation surface */
             {
                 $0.accessibilityIdentifier == "section.move.undo.overlay"
             })
@@ -374,11 +374,11 @@ extension PlenactBoardDocumentTests
             {
                 !$0.isHidden && $0.windowLevel > .alert
             },
-                            "Persistent Undo must not create another window")
+            "Persistent Undo must not create another window")
         XCTAssertTrue(window.isKeyWindow)
         XCTAssertNil(notice.hitTest(CGPoint(x: 10, y: 10), with: nil))
 
-        let hits = /* Filtered hits entries */
+        let hits =                                                                      /* Filtered hits entries */
             stride(from: CGFloat(0), through: notice.bounds.height, by: 10).filter
         {
             notice.hitTest(CGPoint(x: notice.bounds.midX, y: $0), with: nil) != nil
@@ -417,11 +417,11 @@ extension PlenactBoardDocumentTests
             KanbanCard(id: id, word: title, listTitle: "Monday", checklists: [])
         }
 
-        var heading = card(1, "--- Morning") /* Section heading text */
+        var heading = card(1, "--- Morning")    /* Section heading text */
 
         heading.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
 
-        let cards = [ /* Card records under consideration */
+        let cards = [                                                                   /* Card records under consideration */
             card(0, "Ungrouped"), heading, card(2, "Breakfast"), card(3, "---"),
             card(4, "Walk"), card(5, "--- Evening"), card(6, "Dinner")
         ]
@@ -430,32 +430,32 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(DaySections.owner(of: 4, in: cards)?.id, 1)
         XCTAssertNil(DaySections.owner(of: 0, in: cards))
 
-        let decoded = /* Decoded input value */
+        let decoded =                                                                           /* Decoded input value */
             try JSONDecoder().decode([KanbanCard].self, from: JSONEncoder().encode(cards))
 
         XCTAssertEqual(decoded, cards)
         XCTAssertTrue(decoded[1].appearance?.sectionCollapsed == true)
 
-        var expanded = cards /* Expanded comparison fixture */
+        var expanded = cards    /* Expanded comparison fixture */
 
         DaySections.reveal(4, in: &expanded)
         XCTAssertEqual(DaySections.visible(expanded).map(\.id), cards.map(\.id))
         XCTAssertEqual(expanded[1].appearance?.accent, .orange)
         XCTAssertEqual(cards[1].appearance?.sectionCollapsed, true)
 
-        let legacy = /* Earlier-format input */
+        let legacy =                                                                    /* Earlier-format input */
             try JSONDecoder().decode(ItemAppearance.self, from: Data("{}".utf8))
 
         XCTAssertNil(legacy.sectionCollapsed)
         XCTAssertTrue(legacy.isEmpty)
         XCTAssertFalse(ItemAppearance(sectionCollapsed: true).isEmpty)
 
-        var preferences = /* Planning and display choices */
+        var preferences =                                               /* Planning and display choices */
             LocalProfilePreferences(todayFocusGroupsBySection: true)
 
         preferences.todayFocusHidesCompleted = false
 
-        let entries = preferences.todayFocusEntries(in: cards) /* Entries being processed */
+        let entries = preferences.todayFocusEntries(in: cards)          /* Entries being processed */
 
         XCTAssertEqual(entries.first(where:
                 {
@@ -495,15 +495,15 @@ extension PlenactBoardDocumentTests
             KanbanCard(id: id, word: title, listTitle: "Monday", checklists: [])
         }
 
-        var morning = card(1, "--- Morning") /* Morning comparison fixture */
+        var morning = card(1, "--- Morning")    /* Morning comparison fixture */
 
         morning.appearance = ItemAppearance(accent: .orange, sectionCollapsed: true)
 
-        let cards = [ /* Card records under consideration */
+        let cards = [                                                                   /* Card records under consideration */
             card(0, "Before sections"), morning, card(2, "Breakfast"), card(3, "---"),
             card(4, "Walk"), card(5, "--- Midday"), card(6, "Work"), card(7, "--- Night"), card(8, "Rest")
         ]
-        let moved = DaySections.moved(cards, sectionID: 1, offset: 1) /* Item after transfer */
+        let moved = DaySections.moved(cards, sectionID: 1, offset: 1)           /* Item after transfer */
 
         XCTAssertEqual(moved.map(\.id), [0, 5, 6, 1, 2, 3, 4, 7, 8])
         XCTAssertEqual(DaySections.moved(moved, sectionID: 1, offset: -1), cards)
@@ -520,7 +520,6 @@ extension PlenactBoardDocumentTests
                     $0.id == item.id
                 }, item)
         }
-
     }
 
 
@@ -537,8 +536,8 @@ extension PlenactBoardDocumentTests
     ///
     func testSectionExampleUpgradePreservesExistingRoutinesAndStoredBytes() throws
     {
-        let suite    = "DaySectionExamples." + UUID().uuidString /* Isolated preference domain  */
-        let defaults =                                           /* Preference store under test */
+        let suite    = "DaySectionExamples." + UUID().uuidString        /* Isolated preference domain  */
+        let defaults =                                                  /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
 
         defer
@@ -546,7 +545,7 @@ extension PlenactBoardDocumentTests
             defaults.removePersistentDomain(forName: suite)
         }
 
-        var library = PlanningRoutineLibrary.seeded /* Retained library contents */
+        var library = PlanningRoutineLibrary.seeded     /* Retained library contents */
 
         library.templates.removeAll
         {
@@ -555,18 +554,17 @@ extension PlenactBoardDocumentTests
             {
                 $0.id == template.id
             }
-
         }
 
         library.bundledRoutineRevision = 2
         library.templates[0].name = "My own week"
 
-        let original = library.templates                 /* Baseline before changes */
-        let bytes    = try JSONEncoder().encode(library) /* Encoded record bytes    */
+        let original = library.templates                        /* Baseline before changes */
+        let bytes    = try JSONEncoder().encode(library)        /* Encoded record bytes    */
 
         defaults.set(bytes, forKey: PlanningRoutineStore.key)
 
-        let upgraded = /* Value in the current format */
+        let upgraded =                                          /* Value in the current format */
             try PlanningRoutineStore.load(from: defaults)
 
         XCTAssertEqual(Array(upgraded.templates.prefix(original.count)), original)
@@ -579,7 +577,7 @@ extension PlenactBoardDocumentTests
         {
             XCTAssertEqual(example.kind, .day)
 
-            let cards = /* Card records under consideration */
+            let cards =                                                 /* Card records under consideration */
                 try XCTUnwrap(example.collection.lists.first).cards
 
             XCTAssertEqual(cards.filter
@@ -598,15 +596,15 @@ extension PlenactBoardDocumentTests
                     !$0.isTitleChecked
                 })
 
-            let day     = /* Day under consideration */
+            let day     =                                                                               /* Day under consideration       */
                 try XCTUnwrap(PlanningDate.date("2026-11-09", calendar: example.calendar))
-            let blank   = /* Empty initial value */
+            let blank   =                                                                               /* Empty initial value           */
                 DatedPlanningWeek.make(for: day, calendar: example.calendar)
-            let applied = try PlanningTemplateApplication.apply( /* Result after applying changes */
+            let applied = try PlanningTemplateApplication.apply(                                        /* Result after applying changes */
                 example, to: blank, date: day, calendar: example.calendar, mode: .add)
-            let listID = /* Owner-local List identifier */
+            let listID =                                                                                /* Owner-local List identifier   */
                 try XCTUnwrap(applied.dayListIDs[PlanningDate.key(day, calendar: example.calendar)])
-            let result = try XCTUnwrap(applied.collection.lists.first /* Result being assembled */
+            let result = try XCTUnwrap(applied.collection.lists.first                                   /* Result being assembled        */
                 {
                     $0.id == listID
                 }).cards
@@ -615,7 +613,6 @@ extension PlenactBoardDocumentTests
             XCTAssertEqual(result.map(\.appearance), cards.map(\.appearance))
             XCTAssertEqual(Set(result.map(\.id)).count, result.count)
         }
-
     }
 
 
@@ -631,13 +628,13 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testDaySectionRowsRenderWithLargeTextAndWithoutEditingOnAppearance() async throws
     {
-        let scene = /* Owning window scene */
+        let scene =                                                             /* Owning window scene    */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
-        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
+        let previous = scene.windows.first(where: \.isKeyWindow)                /* Prior key window       */
+        let window   = UIWindow(windowScene: scene)                             /* Synthetic scene window */
 
         defer
         {
@@ -647,13 +644,13 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
-        let cards  = /* Card records under consideration */
+        let cards  =            /* Card records under consideration */
             try XCTUnwrap(PlanningRoutineLibrary.sectionExamples.first?.collection.lists.first).cards
-        var writes = 0 /* Observed persistence writes */
+        var writes = 0          /* Observed persistence writes      */
 
         for scheme in [ColorScheme.light, .dark]
         {
-            let host = UIHostingController( /* Synthetic SwiftUI host */
+            let host = UIHostingController(     /* Synthetic SwiftUI host */
                 rootView: NavigationStack
                 {
                     List
@@ -669,23 +666,19 @@ extension PlenactBoardDocumentTests
                                         _ in
 
                                         writes += 1
-
                                     },
                                     onMove:
                                     {
                                         _ in
 
                                         writes += 1
-
                                     })
                             }
                             else
                             {
                                 Text(card.word).padding(12).modifier(DaySectionRail(cardID: card.id, cards: cards))
                             }
-
                         }
-
                     } .navigationTitle("A day in chapters")
                 } .environment(\.colorScheme, scheme).environment(\.dynamicTypeSize, .accessibility1))
 
@@ -695,16 +688,16 @@ extension PlenactBoardDocumentTests
             window.makeKeyAndVisible()
             try await Task.sleep(for: .milliseconds(200))
 
-            let image = /* Image used by this operation */
+            let image =                                                 /* Image used by this operation */
                 UIGraphicsImageRenderer(bounds: host.view.bounds).image
             {
                 _ in
                 host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
             }
 
-            let url = /* Temporary fixture file URL */
+            let url =                                                           /* Temporary fixture file URL */
                 FileManager.default.temporaryDirectory.appendingPathComponent(
-                                    "plenact-day-sections-\(scheme).png")
+                    "plenact-day-sections-\(scheme).png")
 
             try XCTUnwrap(image.pngData()).write(to: url)
             print("DAY_SECTION_RENDER=" + url.path)
@@ -727,15 +720,15 @@ extension PlenactBoardDocumentTests
     ///
     func testRandomCardCreationColorsAreIndependentAndExcludeNotesAndDividers() throws
     {
-        let list = KanbanList(id: 1, title: "Ideas", cards: []) /* Synthetic list fixture */
+        let list = KanbanList(id: 1, title: "Ideas", cards: [])         /* Synthetic list fixture */
 
         for headers in [false, true]
         {
             for backgrounds in [false, true]
             {
-                let preferences = LocalProfilePreferences( /* Planning and display choices */
+                let preferences = LocalProfilePreferences(                                              /* Planning and display choices */
                     randomizesNewCardHeaders: headers, randomizesNewCardBackgrounds: backgrounds)
-                let card = list.makeItem( /* Synthetic card fixture */
+                let card = list.makeItem(                                                               /* Synthetic card fixture       */
                     id: 1, title: "New Card", presentationOverride: .card, creationPreferences: preferences)
 
                 XCTAssertEqual(card.appearance?.background != nil, headers)
@@ -750,7 +743,7 @@ extension PlenactBoardDocumentTests
                     XCTAssertTrue(NewCardAppearanceDefaults.backgroundPalette.contains(background))
                 }
 
-                var reopened = /* Instance reloaded from storage */
+                var reopened =                                                                  /* Instance reloaded from storage */
                     try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
 
                 XCTAssertEqual(reopened, card)
@@ -761,12 +754,11 @@ extension PlenactBoardDocumentTests
                     .appearance)
                 XCTAssertNil(list.makeItem(id: 3, title: "--- Section", creationPreferences: preferences).appearance)
             }
-
         }
 
-        let enabled = /* Feature availability flag */
+        let enabled =           /* Feature availability flag */
             LocalProfilePreferences(randomizesNewCardHeaders: true, randomizesNewCardBackgrounds: true)
-        let batch   = /* Grouped input operations */
+        let batch   =           /* Grouped input operations  */
             list.makeItems(startingAt: 10, titles: "First\nSecond\nThird", creationPreferences: enabled)
 
         XCTAssertEqual(batch.count, 3)
@@ -775,7 +767,7 @@ extension PlenactBoardDocumentTests
                 $0.appearance?.background != nil && $0.appearance?.cardBackground != nil
             })
 
-        var owner = /* Owning collection or Week */
+        var owner =                                                     /* Owning collection or Week */
             PersonalCollection(title: "Personal Notes", kind: .list)
 
         try owner.addNote(title: "Choose Card", body: "Writing", presentation: .card, creationPreferences: enabled)
@@ -783,11 +775,11 @@ extension PlenactBoardDocumentTests
         XCTAssertNotNil(owner.lists[0].cards[0].appearance?.cardBackground)
         XCTAssertNil(owner.lists[0].cards[1].appearance)
 
-        var custom = batch[0] /* User-defined configuration */
+        var custom = batch[0]           /* User-defined configuration */
 
         custom.appearance = ItemAppearance(icon: .notes, background: .purple, cardBackground: .green)
 
-        let original = custom /* Baseline before changes */
+        let original = custom           /* Baseline before changes */
 
         NewCardAppearanceDefaults.apply(to: &custom, preferences: enabled)
         XCTAssertEqual(custom, original)
@@ -821,7 +813,7 @@ extension PlenactBoardDocumentTests
         ///
         func item(_ id: Int, _ title: String, _ time: Double? = nil, done: Bool = false) -> KanbanCard
         {
-            var card = /* Synthetic card fixture */
+            var card =          /* Synthetic card fixture */
                 KanbanCard(id: id, word: title, listTitle: "Monday", isTitleChecked: done, checklists: [])
 
             card.startDate = time.map
@@ -834,23 +826,23 @@ extension PlenactBoardDocumentTests
             return card
         }
 
-        let firstHeading = KanbanCard( /* First heading */
+        let firstHeading = KanbanCard(                                                                  /* First heading                    */
             id: 90, word: "--- Looking forward to", listTitle: "Monday", isDivider: true, checklists: [])
-        let secondHeading = KanbanCard( /* Second heading */
+        let secondHeading = KanbanCard(                                                                 /* Second heading                   */
             id: 91, word: "--- Must happen", listTitle: "Monday", isDivider: true, checklists: [])
-        let repeatedHeading = KanbanCard( /* Repeated heading */
+        let repeatedHeading = KanbanCard(                                                               /* Repeated heading                 */
             id: 92, word: "--- Must happen", listTitle: "Monday", isDivider: true, checklists: [])
-        let cards = [ /* Card records under consideration */
+        let cards = [                                                                                   /* Card records under consideration */
             item(1, "Before sections"), firstHeading, item(2, "Later", 200),
             item(3, "Earlier", 100), item(4, "Same time", 100), item(5, "Done", 50, done: true),
             secondHeading, item(6, "Undated"), item(7, "Another time", 25), repeatedHeading,
             item(8, "Repeated section", 1)
         ]
-        let original    = cards                    /* Baseline before changes      */
-        var preferences = LocalProfilePreferences( /* Planning and display choices */
+        let original    = cards                                         /* Baseline before changes      */
+        var preferences = LocalProfilePreferences(                      /* Planning and display choices */
             todayFocusItemCount: 0,
             todayFocusOrder: .chronological, todayFocusGroupsBySection: true, keepsDayListsInTimeOrder: false)
-        var entries = preferences.todayFocusEntries(in: cards) /* Entries being processed */
+        var entries = preferences.todayFocusEntries(in: cards)          /* Entries being processed      */
 
         XCTAssertEqual(entries.map(\.id), [1, 3, 4, 2, 7, 6, 8])
         XCTAssertEqual(entries[1].heading, "Looking forward to")
@@ -957,7 +949,7 @@ extension PlenactBoardDocumentTests
     ///
     func testGalleryGroupsPreserveItemOrderAndDividerIdentity()
     {
-        var list = KanbanList(id: 3, title: "Plans", cards: []) /* Synthetic list fixture */
+        var list = KanbanList(id: 3, title: "Plans", cards: [])         /* Synthetic list fixture */
 
         list.cards = [
             list.makeItem(id: 1, title: "First"), list.makeItem(id: 2, title: "--- Ideas"),
@@ -967,8 +959,8 @@ extension PlenactBoardDocumentTests
         ]
         list.cards[3].displayFormat = .picture
 
-        let original = list                               /* Baseline before changes   */
-        let groups   = BoardGalleryGroup.groups(in: list) /* Groups comparison fixture */
+        let original = list                                     /* Baseline before changes   */
+        let groups   = BoardGalleryGroup.groups(in: list)       /* Groups comparison fixture */
 
         XCTAssertEqual(groups.flatMap(\.cards).map(\.id), [1, 3, 4, 6])
         XCTAssertEqual(groups.compactMap(\.divider).map(\.id), [2, 5])
@@ -999,8 +991,8 @@ extension PlenactBoardDocumentTests
     ///
     func testNamedDividersPreserveIdentityAndLegacySeparators() throws
     {
-        let list  = KanbanList(id: 3, title: "Plans", cards: []) /* Synthetic list fixture   */
-        var named = list.makeItem(id: 42, title: "--- Ideas")    /* Named comparison fixture */
+        let list  = KanbanList(id: 3, title: "Plans", cards: [])        /* Synthetic list fixture   */
+        var named = list.makeItem(id: 42, title: "--- Ideas")           /* Named comparison fixture */
 
         XCTAssertTrue(named.isSectionDivider)
         XCTAssertEqual(named.word, "Ideas")
@@ -1011,7 +1003,7 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(named.isSectionDivider)
         XCTAssertEqual(named.sectionHeading, "This week")
 
-        let restored = /* Recovered state under review */
+        let restored =                                                                          /* Recovered state under review */
             try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(named))
 
         XCTAssertEqual(restored.id, 42)
@@ -1026,7 +1018,7 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(list.makeItem(id: 44, title: "——— Later").isSectionDivider)
         XCTAssertFalse(list.makeItem(id: 45, title: "- A regular item").isSectionDivider)
 
-        var converted = list.makeItem(id: 46, title: "Later") /* Converted portable value */
+        var converted = list.makeItem(id: 46, title: "Later")           /* Converted portable value */
 
         converted.displayFormat = .divider
 
@@ -1050,21 +1042,21 @@ extension PlenactBoardDocumentTests
     ///
     func testDisplayFormatsOverrideLegacyDividersWithoutChangingRetainedContent() throws
     {
-        let legacy = /* Earlier-format input */
+        let legacy =                                                                    /* Earlier-format input */
             KanbanCard(id: 71, word: "---", listTitle: "Ideas", isDivider: true)
 
         XCTAssertEqual(legacy.displayFormat, .divider)
 
-        let legacyJSON = try XCTUnwrap( /* Legacy JSON */
+        let legacyJSON = try XCTUnwrap(                                                         /* Legacy JSON */
             JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
 
         XCTAssertNil(legacyJSON["listDisplayFormat"])
         XCTAssertEqual(
             try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(legacy)).displayFormat, .divider)
 
-        let photo    = /* Photo selection or source */
+        let photo    =                                                                          /* Photo selection or source */
             KanbanAttachment(fileName: "display-example.jpg", caption: "Retained caption")
-        var original = legacy /* Baseline before changes */
+        var original = legacy                                                                   /* Baseline before changes   */
 
         original.attachments = [photo]
         original.coverAttachmentID = photo.id
@@ -1079,11 +1071,11 @@ extension PlenactBoardDocumentTests
 
         for format in ItemDisplayFormat.allCases
         {
-            var changed = original /* Value with requested edits */
+            var changed = original      /* Value with requested edits */
 
             changed.displayFormat = format
 
-            let decoded = /* Decoded input value */
+            let decoded =                                                                       /* Decoded input value */
                 try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(changed))
 
             XCTAssertEqual(decoded, changed)
@@ -1091,14 +1083,14 @@ extension PlenactBoardDocumentTests
             XCTAssertEqual(decoded.isSectionDivider, format == .divider)
             XCTAssertEqual(decoded.coverAttachment?.id, format == .divider ? nil : photo.id)
 
-            var restored = decoded /* Recovered state under review */
+            var restored = decoded      /* Recovered state under review */
 
             restored.listDisplayFormat = original.listDisplayFormat
             restored.presentation = original.presentation
 
             XCTAssertEqual(restored, original, "Changing display must retain every content field")
 
-            let relocated = /* Content after changing owner */
+            let relocated =                                             /* Content after changing owner */
                 decoded.replacingLocation(id: 72, listTitle: "Next")
 
             XCTAssertEqual(relocated.displayFormat, format)
@@ -1106,19 +1098,19 @@ extension PlenactBoardDocumentTests
             XCTAssertEqual(relocated.checklists, original.checklists)
         }
 
-        let explicitNote = /* Explicit note */
+        let explicitNote =                                                                      /* Explicit note */
             KanbanCard(id: 75, word: "---", listTitle: "Ideas", listDisplayFormat: .note)
 
         XCTAssertEqual(explicitNote.presentation, .note)
         XCTAssertFalse(explicitNote.isSectionDivider)
 
-        let explicitCard = KanbanCard( /* Explicit card */
+        let explicitCard = KanbanCard(                                                                  /* Explicit card */
             id: 76, word: "---", listTitle: "Ideas", presentation: .note, listDisplayFormat: .card)
 
         XCTAssertEqual(explicitCard.presentation, .card)
         XCTAssertFalse(explicitCard.isSectionDivider)
 
-        let invalid = /* Input expected to be rejected */
+        let invalid =           /* Input expected to be rejected */
             Data(#"{"id":1,"word":"Example","listTitle":"Ideas","listDisplayFormat":"unsupported"}"#.utf8)
 
         XCTAssertThrowsError(try JSONDecoder().decode(KanbanCard.self, from: invalid))
@@ -1135,13 +1127,13 @@ extension PlenactBoardDocumentTests
     ///
     func testKeyboardNeighborsStayWithinActiveListAndSkipDividers()
     {
-        let a       = /* A Card example */
+        let a       =                                                                                   /* A Card example             */
             KanbanCard(id: 1, word: "A", listTitle: "Today", checklists: [])
-        let divider = /* Structural section divider */
+        let divider =                                                                                   /* Structural section divider */
             KanbanCard(id: 2, word: "Section", listTitle: "Today", isDivider: true, checklists: [])
-        let b       = /* B Card example */
+        let b       =                                                                                   /* B Card example             */
             KanbanCard(id: 3, word: "B", listTitle: "Today", checklists: [], presentation: .note)
-        let lists   = [ /* Ordered List records */
+        let lists   = [                                                                                 /* Ordered List records       */
             KanbanList(id: 1, title: "Today", cards: [a, divider, b]), KanbanList(id: 2, title: "Other", cards: [])
         ]
 
@@ -1150,7 +1142,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(CardKeyboardNeighbors.resolve(b, in: lists).previous, a)
         XCTAssertNil(CardKeyboardNeighbors.resolve(b, in: lists).next)
 
-        var archived = lists; /* Archived records or state */
+        var archived = lists;           /* Archived records or state */
 
         archived[0].isArchived = true
 
@@ -1170,15 +1162,15 @@ extension PlenactBoardDocumentTests
     ///
     func testCardSectionLayoutPersistsWithoutRemovingHiddenContent() throws
     {
-        var layout = CardSectionLayout() /* Resolved layout configuration */
+        var layout = CardSectionLayout()        /* Resolved layout configuration */
 
         layout.order = [.activity, .description, .quickActions, .media, .checklists, .details]
         layout.hidden = [.description, .checklists]
 
-        let original = KanbanCard( /* Baseline before changes */
+        let original = KanbanCard(                                                              /* Baseline before changes */
             id: 9, word: "Custom", listTitle: "Saturday", descriptionOverride: "Keep this description",
             sectionLayout: layout)
-        let decoded = /* Decoded input value */
+        let decoded =                                                                           /* Decoded input value     */
             try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(original))
 
         XCTAssertEqual(decoded.sectionLayout, layout)
@@ -1186,24 +1178,24 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(decoded.descriptionOverride, "Keep this description")
         XCTAssertEqual(decoded.checklists, original.checklists)
 
-        var restored = decoded /* Recovered state under review */
+        var restored = decoded          /* Recovered state under review */
 
         restored.sectionLayout = nil
 
         XCTAssertEqual((restored.sectionLayout ?? CardSectionLayout()).sections, CardSection.allCases)
         XCTAssertEqual(restored.checklists, original.checklists)
 
-        var legacy = /* Earlier-format input */
+        var legacy =    /* Earlier-format input */
             try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any])
 
         legacy.removeValue(forKey: "sectionLayout")
 
-        let oldCard = /* Old card */
+        let oldCard =           /* Old card */
             try JSONDecoder().decode(KanbanCard.self, from: JSONSerialization.data(withJSONObject: legacy))
 
         XCTAssertNil(oldCard.sectionLayout)
 
-        let repaired = /* Repaired comparison fixture */
+        let repaired =                                                                  /* Repaired comparison fixture */
             CardSectionLayout(order: [.activity, .activity], hidden: [.details])
 
         XCTAssertEqual(repaired.sections, [.activity, .quickActions, .media, .description, .checklists])
@@ -1220,13 +1212,13 @@ extension PlenactBoardDocumentTests
     ///
     func testListNoteDefaultAppliesOnlyToNewNondividerItems()
     {
-        let existing = KanbanCard( /* Previously retained value */
-            id: 1, word: "Existing", listTitle: "Ideas") /* Existing Card retained while applying List defaults */
-        var list = KanbanList( /* Synthetic list fixture */
-            id: 1, title: "Ideas", cards: [existing])     /* List state under verification */
-        let card = list.makeItem(id: 2, title: "Action")  /* Card value under verification */
+        let existing = KanbanCard(                              /* Previously retained value     */
+            id: 1, word: "Existing", listTitle: "Ideas")        /* Existing Card retained while applying List defaults */
+        var list = KanbanList(                                  /* Synthetic list fixture        */
+            id: 1, title: "Ideas", cards: [existing])           /* List state under verification */
+        let card = list.makeItem(id: 2, title: "Action")        /* Card value under verification */
 
-        let legacyCard = KanbanCard(id: 2, word: "Action", listTitle: "Ideas") /* Legacy-format Card fixture */
+        let legacyCard = KanbanCard(id: 2, word: "Action", listTitle: "Ideas")          /* Legacy-format Card fixture */
 
         XCTAssertEqual(card.presentation, .card)
         XCTAssertEqual(card.word, legacyCard.word)
@@ -1240,8 +1232,8 @@ extension PlenactBoardDocumentTests
 
         list.newItemPresentation = .note
 
-        let note    = list.makeItem(id: 3, title: "Thought") /* Newly created Note value */
-        let divider = list.makeItem(id: 4, title: "---")     /* Section-divider fixture  */
+        let note    = list.makeItem(id: 3, title: "Thought")    /* Newly created Note value */
+        let divider = list.makeItem(id: 4, title: "---")        /* Section-divider fixture  */
 
         XCTAssertEqual(list.cards, [existing])
         XCTAssertEqual(note.presentation, .note)
@@ -1268,13 +1260,13 @@ extension PlenactBoardDocumentTests
     ///
     func testCardReorderingMovesDividersAndPreservesCompleteRecords()
     {
-        let first = KanbanCard( /* First comparison value */
-            id: 1, word: "First", listTitle: "Synthetic", descriptionOverride: "Keep this") /* First retained card fixture  */
-        let divider = KanbanCard( /* Structural section divider */
-            id: 2, word: "", listTitle: "Synthetic", isDivider: true) /* Movable divider fixture      */
-        let last = KanbanCard( /* Last Card example */
-            id: 3, word: "Last", listTitle: "Synthetic", isTitleChecked: true)  /* Last retained card fixture   */
-        var cards = [first, divider, last]                                      /* Ordered focused-list records */
+        let first = KanbanCard(                                                                 /* First comparison value       */
+            id: 1, word: "First", listTitle: "Synthetic", descriptionOverride: "Keep this")     /* First retained card fixture  */
+        let divider = KanbanCard(                                                               /* Structural section divider   */
+            id: 2, word: "", listTitle: "Synthetic", isDivider: true)           /* Movable divider fixture      */
+        let last = KanbanCard(                                                                  /* Last Card example            */
+            id: 3, word: "Last", listTitle: "Synthetic", isTitleChecked: true)          /* Last retained card fixture   */
+        var cards = [first, divider, last]                                                      /* Ordered focused-list records */
 
         XCTAssertTrue(BoardCardReordering.move(divider.id, to: 2, in: &cards))
         XCTAssertEqual(cards, [first, last, divider])
@@ -1293,11 +1285,11 @@ extension PlenactBoardDocumentTests
     ///
     func testDividerMovementPreservesRecordsWithinAndBetweenLists() throws
     {
-        let divider = /* Structural section divider */
+        let divider =                                                                           /* Structural section divider */
             KanbanCard(id: 2, word: "---", listTitle: "A", isDivider: true, checklists: [])
-        let card    = /* Synthetic card fixture */
+        let card    =                                                                           /* Synthetic card fixture     */
             KanbanCard(id: 1, word: "Synthetic", listTitle: "A", checklists: [])
-        var lists   = [ /* Ordered List records */
+        var lists   = [                                                                         /* Ordered List records       */
             KanbanList(id: 10, title: "A", cards: [divider, card]),
             KanbanList(id: 20, title: "B", cards: [])
         ]
@@ -1306,13 +1298,13 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(lists[0].cards, [card, divider])
         XCTAssertFalse(try BoardCardMovement.move(divider.id, to: 10, in: &lists))
 
-        let beforeInvalidMove = lists /* Before invalid move */
+        let beforeInvalidMove = lists           /* Before invalid move */
 
         XCTAssertThrowsError(try BoardCardMovement.move(divider.id, to: 20, before: 999, in: &lists))
         XCTAssertEqual(lists, beforeInvalidMove)
         XCTAssertTrue(try BoardCardMovement.move(divider.id, to: 20, in: &lists))
 
-        var relocated = divider /* Content after changing owner */
+        var relocated = divider         /* Content after changing owner */
 
         relocated.listTitle = "B"
 
@@ -1333,16 +1325,16 @@ extension PlenactBoardDocumentTests
     ///
     func testArchivingAndRestoringPreservesFullCardAndDivider() throws
     {
-        var completed = SampleData.lists[0].cards[0] /* Completed checklist-item fixture */
+        var completed = SampleData.lists[0].cards[0]    /* Completed checklist-item fixture */
 
         completed.isTitleChecked = true
         completed.attachments = [KanbanAttachment(fileName: "synthetic-archive.jpg", mediaKind: .photo)]
 
-        let active  = KanbanCard(id: 500, word: "Active", listTitle: "Monday") /* Active Card before archival   */
-        let divider = KanbanCard( /* Structural section divider */
-            id: 501, word: "Divider", listTitle: "Monday", isDivider: true, isTitleChecked: true) /* Section-divider fixture       */
-        var list = KanbanList( /* Synthetic list fixture */
-            id: 1, title: "Monday", cards: [completed, divider, active]) /* List state under verification */
+        let active  = KanbanCard(id: 500, word: "Active", listTitle: "Monday")                          /* Active Card before archival */
+        let divider = KanbanCard(                                                                       /* Structural section divider  */
+            id: 501, word: "Divider", listTitle: "Monday", isDivider: true, isTitleChecked: true)       /* Section-divider fixture       */
+        var list = KanbanList(                                                                          /* Synthetic list fixture      */
+            id: 1, title: "Monday", cards: [completed, divider, active])        /* List state under verification */
 
         list.archiveCompletedCards()
 
@@ -1382,18 +1374,17 @@ extension PlenactBoardDocumentTests
     ///
     func testBoardSearchIncludesEmptyListsAndCardSearchExcludesDividers()
     {
-        let divider = KanbanCard( /* Structural section divider */
-            id: 1, word: "Divider", listTitle: "Monday", isDivider: true)  /* Section-divider fixture        */
-        let lists = [                                                      /* Board lists under verification */
+        let divider = KanbanCard(                                               /* Structural section divider     */
+            id: 1, word: "Divider", listTitle: "Monday", isDivider: true)       /* Section-divider fixture        */
+        let lists = [                                                           /* Board lists under verification */
             KanbanList(id: 0, title: "Monday", cards: [divider]),
             KanbanList(id: 2, title: "Empty list", cards: [])
         ]
-        let results = TodaySearchIndex.results( /* Collected operation results */
-            query: "Empty", scope: .boards, lists: lists, library: .starter) /* Decoded API results */
+        let results = TodaySearchIndex.results(                                 /* Collected operation results */
+            query: "Empty", scope: .boards, lists: lists, library: .starter)    /* Decoded API results */
 
         XCTAssertEqual(results.map(\.listID), [2])
         XCTAssertNil(results.first?.cardID)
         XCTAssertTrue(TodaySearchIndex.results(query: "Divider", scope: .all, lists: lists, library: .starter).isEmpty)
     }
-
 }

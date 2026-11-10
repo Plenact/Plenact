@@ -14,7 +14,7 @@ import Foundation
 @MainActor
 enum MigrationSettingsPreview
 {
-    static let fields: [String: String] = [ /* Record fields under review */
+    static let fields: [String: String] = [                                                     /* Record fields under review */
         "defaultListID": "default_list_id", "usesReducedContent": "uses_reduced_content",
         "scrollsOverflowingTitles": "scrolls_overflowing_titles", "importanceStarStyle": "importance_star_style",
         "enablesLowerCornerBack": "enables_lower_corner_back", "usesLargeControls": "uses_large_controls",
@@ -33,13 +33,12 @@ enum MigrationSettingsPreview
     ///     Link profile avatar originals without disguising a local draft as a canonical user record
     struct Result
     {
-        let document:       [String: Any]   /* Source document snapshot */
-        let records:        [[String: Any]] /* Records being processed  */
-        let assetRecords:   [[String: Any]] /* Asset records            */
-        let preparedCount:  Int             /* Prepared count           */
-        let shortcutCount:  Int             /* Shortcut count           */
-        let issueCount:     Int             /* Issue count              */
-
+        let document:       [String: Any]       /* Source document snapshot */
+        let records:        [[String: Any]]     /* Records being processed  */
+        let assetRecords:   [[String: Any]]     /* Asset records            */
+        let preparedCount:  Int                 /* Prepared count           */
+        let shortcutCount:  Int                 /* Shortcut count           */
+        let issueCount:     Int                 /* Issue count              */
     }
 
 
@@ -95,10 +94,10 @@ enum MigrationSettingsPreview
     private static func list(owner: String, id: Int, journal: MigrationIdentityJournal,
         records: [[String: Any]]) -> (String, String)?
     {
-        let collection = journal.entries.first { /* Personal collection record */
+        let collection = journal.entries.first {        /* Personal collection record */
             $0.source.recordType == "collection" && $0.source.owner == "source_collections" && $0.source.legacyID == owner
         }?.target.uuidString.lowercased()
-        let list = journal.entries.first { /* List under consideration */
+        let list = journal.entries.first {      /* List under consideration */
             $0.source.recordType == "list" && $0.source.owner == owner && $0.source.legacyID == String(id)
         }?.target.uuidString.lowercased()
 
@@ -130,11 +129,11 @@ enum MigrationSettingsPreview
     static func prepare(values: [String: Any], records: [[String: Any]], mediaDigests: [String: String],
         journal: inout MigrationIdentityJournal) throws -> Result
     {
-        let context = /* Operation context */
+        let context =                                   /* Operation context    */
             MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: mediaDigests)
-        var profile: LocalProfile?                  /* Local profile record */
-        var rawProfile: [String: Any]         = [:] /* Raw profile          */
-        var profilePreferences: [String: Any] = [:] /* Profile preferences  */
+        var profile: LocalProfile?                      /* Local profile record */
+        var rawProfile: [String: Any]         = [:]     /* Raw profile          */
+        var profilePreferences: [String: Any] = [:]     /* Profile preferences  */
 
         if let value = values["Plenact.LocalProfile.v1"]
         {
@@ -158,92 +157,84 @@ enum MigrationSettingsPreview
             }
 
             profile = try JSONDecoder().decode(LocalProfile.self, from: value as! Data)
-
         }
 
-        let rawPreferences: [String: Any] /* Raw preferences        */
-        let origin: String                /* Source origin metadata */
+        let rawPreferences: [String: Any]       /* Raw preferences        */
+        let origin: String                      /* Source origin metadata */
 
         if let value = values["Plenact.PlanPreferences.v1"]
         {
             rawPreferences = try object(value, allowed: Set(fields.keys))
             origin = "saved_planning_preferences"
-
         }
         else if profile != nil
         {
             rawPreferences = profilePreferences
             origin = "saved_profile_preferences"
-
         }
         else
         {
             rawPreferences = [:]
             origin = "application_defaults"
-
         }
 
-        let effective             = /* Value after resolving defaults */
+        let effective             =                             /* Value after resolving defaults   */
             try preferences(rawPreferences)
-        let encoded               = /* Serialized representation */
+        let encoded               =                             /* Serialized representation        */
             try MigrationContentValues.object(effective)
-        var mapped: [String: Any] = [:] /* Value after identity translation */
+        var mapped: [String: Any] = [:]                         /* Value after identity translation */
 
         for (source, target) in fields
         {
             mapped[target] = encoded[source] ?? NSNull()
-
         }
 
         mapped["today_focus_order"] = effective.todayFocusOrder == .dayList ? "day_list" : "chronological"
 
-        var issues: [String]       = []       /* Validation findings */
-        var unresolvedDefault: Any = NSNull() /* Unresolved default  */
+        var issues: [String]       = []                 /* Validation findings */
+        var unresolvedDefault: Any = NSNull()           /* Unresolved default  */
 
         mapped["default_list_id"] = NSNull()
 
         if let sourceList = effective.defaultListID
         {
-            var owner: String? /* Owning collection or Week */
+            var owner: String?          /* Owning collection or Week */
 
             if let data = values["Plenact.CalendarWeeks.v1"] as? Data
             {
-                let calendar = /* Date calculation calendar */
+                let calendar =                                                          /* Date calculation calendar */
                     try JSONDecoder().decode(PlanningCalendarDocument.self, from: data)
 
                 owner = calendar.weeks.first(where: { $0.startKey == calendar.currentWeekKey })?.collection.id.uuidString.lowercased()
-
             }
             if let owner, let target = list(owner: owner, id: sourceList, journal: context.journal, records: records)
             {
                 mapped["default_list_id"] = target.1
-
             }
             else
             {
                 issues.append("default_list_owner_requires_review")
 
                 unresolvedDefault = sourceList
-
             }
         }
 
-        let preferencesID                   = /* Preferences ID */
+        let preferencesID                   =                           /* Preferences ID    */
             try context.id("user_preferences", owner: "workspace_metadata", legacy: "effective_user_preferences")
-        let preferencesDraft: [String: Any] = /* Preferences draft */
+        let preferencesDraft: [String: Any] =                           /* Preferences draft */
             ["id": preferencesID, "payload": ["preferences": mapped]]
-        var profileDraft: Any               = NSNull() /* Profile draft */
-        var assetRecords: [[String: Any]]   = []       /* Asset records */
+        var profileDraft: Any               = NSNull()                  /* Profile draft     */
+        var assetRecords: [[String: Any]]   = []                        /* Asset records     */
 
         if let profile
         {
-            let raw                    = /* Unprocessed source value */
+            let raw                    =                                                                /* Unprocessed source value */
                 try MigrationContentValues.object(profile)
-            let id                     = /* Portable record identity */
+            let id                     =                                                                /* Portable record identity */
                 try context.id("user_profile", owner: "local_profile", legacy: profile.id.uuidString.lowercased())
-            let avatar                 = /* Profile avatar choice */
+            let avatar                 =                                                                /* Profile avatar choice    */
                 try context.asset(profile.avatarPhotoFileName, area: "Documents/ProfileAvatars")
-            let payload: [String: Any] = /* Canonical record payload */
+            let payload: [String: Any] =                                                                /* Canonical record payload */
                 ["source_profile_id": profile.id.uuidString.lowercased(),
                 "source_created_at_utc": try context.utc(raw["createdAt"]!, path: id + "/profile-created"),
                 "display_name": profile.displayName, "email": profile.email, "context": profile.context,
@@ -257,8 +248,8 @@ enum MigrationSettingsPreview
             assetRecords.append(["record_type": "user_profile_preview", "id": id, "payload": payload])
         }
 
-        var converted: [[String: Any]] = [] /* Converted portable value */
-        var shortcutCount              = 0  /* Shortcut count           */
+        var converted: [[String: Any]] = []     /* Converted portable value */
+        var shortcutCount              = 0      /* Shortcut count           */
 
         if let value = values["Plenact.TodayListShortcuts.v1"]
         {
@@ -269,7 +260,7 @@ enum MigrationSettingsPreview
                 throw MigrationContentValues.Failure.invalid("settings_shortcut_fields")
             }
 
-            let pins = /* Ordered pinned shortcuts */
+            let pins =                                                                  /* Ordered pinned shortcuts */
                 try JSONDecoder().decode([WorkspaceListReference].self, from: data)
 
             guard Set(pins).count == pins.count else
@@ -277,7 +268,7 @@ enum MigrationSettingsPreview
                 throw MigrationContentValues.Failure.invalid("settings_duplicate_shortcuts")
             }
 
-            var items: [[String: Any]] = [] /* Items being processed */
+            var items: [[String: Any]] = []     /* Items being processed */
 
             for pin in pins
             {
@@ -289,24 +280,23 @@ enum MigrationSettingsPreview
                 items.append(["collection_id": target.0, "list_id": target.1])
             }
 
-            let id = /* Portable record identity */
+            let id =    /* Portable record identity */
                 try context.id("today_shortcuts", owner: "workspace_metadata", legacy: "Plenact.TodayListShortcuts.v1")
 
             converted.append(context.document("today_shortcuts", id: id, payload: ["items": items]))
 
             shortcutCount = items.count
-
         }
 
         converted += context.unavailable.keys.sorted().map { context.unavailable[$0]! }
 
-        let defaultedPreferences = /* Defaulted preferences */
+        let defaultedPreferences =                                                      /* Defaulted preferences */
             fields.keys.filter { rawPreferences[$0] == nil || rawPreferences[$0] is NSNull }.sorted()
-        let defaultedProfile     = /* Defaulted profile */
+        let defaultedProfile     =                                                      /* Defaulted profile     */
             profile == nil ? [] : ["avatarIcon", "avatarForegroundColor"].filter {
             rawProfile[$0] == nil || rawProfile[$0] is NSNull
         }
-        let document: [String: Any] = /* Source document snapshot */
+        let document: [String: Any] =                                           /* Source document snapshot */
             ["format": "plenact.ios-settings-preview", "format_version": 1,
             "target_user_data_model_version": "1.0", "account_binding_pending": true,
             "profile": profileDraft, "preferences": preferencesDraft, "preferences_origin": origin,

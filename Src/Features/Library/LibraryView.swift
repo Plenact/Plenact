@@ -20,87 +20,87 @@ import SwiftUI
 ///
 struct BoardListsView: View
 {
-    @State private var openedHelpArticle: PlenactHelpArticle?            /* Opened help article  */
-    @Environment(\.planningCalendarAccess) private var planningAccess    /* Planning access      */
-    @State private var browseLabelLibrary = LabelLibraryStore.load()     /* Browse label library */
+    @State private var openedHelpArticle: PlenactHelpArticle?                   /* Opened help article  */
+    @Environment(\.planningCalendarAccess) private var planningAccess           /* Planning access      */
+    @State private var browseLabelLibrary = LabelLibraryStore.load()            /* Browse label library */
 
-    @State private var browsedLabel: KanbanLabel?                        /* Browsed label        */
-    @Environment(\.workspaceBottomBarHeight) private var bottomBarHeight /* Bottom bar height    */
+    @State private var browsedLabel: KanbanLabel?                               /* Browsed label     */
+    @Environment(\.workspaceBottomBarHeight) private var bottomBarHeight        /* Bottom bar height */
 
-    @Environment(\.appReturnResetRequest) private var appReturnResetRequest /* App return reset request */
-    @State private var libraryEditMode: EditMode = .inactive /* Library edit mode */
+    @Environment(\.appReturnResetRequest) private var appReturnResetRequest     /* App return reset request */
+    @State private var libraryEditMode: EditMode = .inactive                    /* Library edit mode        */
 
-    @State private var collectionDeletions: [LibraryCollectionDeletion] = [] /* Pending deletion Undo */
+    @State private var collectionDeletions: [LibraryCollectionDeletion] = []    /* Pending deletion Undo */
 
-    @State private var showsSharedSearch = false /* Shared Search visibility */
+    @State private var showsSharedSearch = false        /* Shared Search visibility */
 
-    let retainedWeekLists: [KanbanList] /* Week references protect shared attachments */
+    let retainedWeekLists: [KanbanList]         /* Week references protect shared attachments */
 
-    @Binding var collections: [PersonalCollection] /* Shared device-local collections             */
-    var newListRequest                                              = 0 /* New list request */
-    var templateLibraryRequest                                      = /* Template library request */
+    @Binding var collections: [PersonalCollection]                              /* Shared device-local collections                 */
+    var newListRequest                                              = 0         /* New list request                                */
+    var templateLibraryRequest                                      =           /* Template library request                        */
         0
-    var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? = /* Toolbar collection request */
+    var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? =           /* Toolbar collection request                      */
         nil
-    let registerListNewNote:      ((() -> Void)?) -> Void  /* Registers the directory's scoped Note action    */
-    let onOpenSaved:              () -> Void               /* Select the existing canonical Saved destination */
-    var onLoadExampleWeek:        (() -> Bool)?                  = /* Load example week callback */
+    let registerListNewNote:      ((() -> Void)?) -> Void                       /* Registers the directory's scoped Note action    */
+    let onOpenSaved:              () -> Void                                    /* Select the existing canonical Saved destination */
+    var onLoadExampleWeek:        (() -> Bool)?                  =              /* Load example week callback                      */
         nil
-    var onUndoExampleWeek:        (() -> Bool)?                  = /* Undo example week callback */
+    var onUndoExampleWeek:        (() -> Bool)?                  =              /* Undo example week callback                      */
         nil
-    var onLoadExampleMonth:       (() -> Void)?                  = /* Load example month callback */
+    var onLoadExampleMonth:       (() -> Void)?                  =              /* Load example month callback                     */
         nil
-    var onRestoreUserData:        (() -> Void)?                  = /* Restore user data callback */
+    var onRestoreUserData:        (() -> Void)?                  =              /* Restore user data callback                      */
         nil
-    var hasUserDataBackup                                        = /* User Data Backup availability */
+    var hasUserDataBackup                                        =              /* User Data Backup availability                   */
         false
-    var savedPersonalCardTarget:        PersonalSavedCardTarget? = nil /* Saved bookmark waiting for Library navigation  */
-    var onClearSavedPersonalCardTarget: () -> Void               = /* Clear saved personal card target */
+    var savedPersonalCardTarget:        PersonalSavedCardTarget? = nil          /* Saved bookmark waiting for Library navigation   */
+    var onClearSavedPersonalCardTarget: () -> Void               =              /* Clear saved personal card target                */
     {
-    }  /* Acknowledge a handled or invalid Saved request */
+    }           /* Acknowledge a handled or invalid Saved request */
 
-    @FocusState private var isLibrarySearchFocused: Bool /* Library Search Focused state */
+    @FocusState private var isLibrarySearchFocused: Bool        /* Library Search Focused state */
 
-    @State private var archivingCollection:         PersonalCollection? /* Collection awaiting archive confirmation       */
-    @State private var showsRecentShelf                                                           = /* Recent Shelf visibility */
+    @State private var archivingCollection:         PersonalCollection?                                         /* Collection awaiting archive confirmation            */
+    @State private var showsRecentShelf                                                           =             /* Recent Shelf visibility                             */
         false
-    @State private var isPlateShelfCollapsed = false /* Coming Soon disclosure state */
-    @State private var plateOverflowNudge = false /* Chevron animation trigger */
-    @AppStorage("com.plenact.tips.comingSoonOverflowSeen") private var hasSeenPlateOverflow = false /* Device tutorial state */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduce Motion preference */
-    @AppStorage("Plenact.LibraryImportant.v1") private var importantData                          = /* Important data */
+    @State private var isPlateShelfCollapsed = false                                                            /* Coming Soon disclosure state                        */
+    @State private var plateOverflowNudge = false                                                               /* Chevron animation trigger                           */
+    @AppStorage("com.plenact.tips.comingSoonOverflowSeen") private var hasSeenPlateOverflow = false             /* Device tutorial state                               */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion                                          /* Reduce Motion preference                            */
+    @AppStorage("Plenact.LibraryImportant.v1") private var importantData                          =             /* Important data                                      */
         Data()
-    @State private var recentItems                                                                = /* Recent items */
+    @State private var recentItems                                                                =             /* Recent items                                        */
         LibraryRecentStore.load()
-    @AppStorage(LibraryRecentStore.key) private var libraryRecentData                             = /* Library recent data */
+    @AppStorage(LibraryRecentStore.key) private var libraryRecentData                             =             /* Library recent data                                 */
         Data()
-    @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews     = /* Collection Previews visibility */
+    @AppStorage("Plenact.LibraryShowsCollectionPreviews") private var showsCollectionPreviews     =             /* Collection Previews visibility                      */
         false
-    @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews = /* Scrolls collection previews */
+    @AppStorage("Plenact.LibraryScrollsCollectionPreviews") private var scrollsCollectionPreviews =             /* Scrolls collection previews                         */
         false
-    @State private var showsCollectionFilter                                                      = /* Collection Filter visibility */
+    @State private var showsCollectionFilter                                                      =             /* Collection Filter visibility                        */
         false
-    @State var browseFilter:                                      LibraryBrowseFilter             = .all /* Initial scope may be supplied by Library navigation */
-    @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat                         = /* Plate tile height */
+    @State var browseFilter:                                      LibraryBrowseFilter             = .all        /* Initial scope may be supplied by Library navigation */
+    @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat                         =             /* Plate tile height                                   */
         110
-    private let collectionRowInset: CGFloat = 16 /* Row inset inside the grouped List */
-    @State var searchText                                                                         = ""   /* Directory search query                     */
-    @State private var importanceExampleDrafts: Set<UUID>                                         = /* Importance example drafts */
+    private let collectionRowInset: CGFloat = 16                                                                /* Row inset inside the grouped List                   */
+    @State var searchText                                                                         = ""          /* Directory search query                              */
+    @State private var importanceExampleDrafts: Set<UUID>                                         =             /* Importance example drafts                           */
         []
-    @State private var editingCollection:       PersonalCollection?  /* Collection draft being edited              */
-    @State private var openedCollection:        PersonalCollection?  /* Collection board presented full-screen     */
-    @State private var boardTargetListID:       Int?                 /* Exact collection list requested from Saved */
-    @State private var boardTargetCardID:       Int?                 /* Exact collection card requested from Saved */
-    @State private var deletingCollection:      PersonalCollection?  /* Collection awaiting delete confirmation    */
-    @State private var createdNoteDestination:  PersonalCollection? /* Created note destination */
-    @State private var newNoteDraftDestination: /* New note draft destination */
-    PersonalCollection?                                 /* Personal List selected for the presented Note draft */
-    @State private var mostRecentlyOpenedListID: UUID?  /* Last opened List used as the next Note destination  */
-    @State private var libraryQuickTemplate:     QuickCaptureTemplate? /* Library quick template */
-    @State private var weekExampleAction:        String? /* Week example action */
-    @State private var libraryStarterError:      String? /* Library starter error */
-    @State private var examplePreview:           LibraryExamplePreview? /* Example preview */
-    @State private var daySectionExampleToApply: PlanningRoutineTemplate? /* Day section example to apply */
+    @State private var editingCollection:       PersonalCollection?                                             /* Collection draft being edited                       */
+    @State private var openedCollection:        PersonalCollection?                                             /* Collection board presented full-screen              */
+    @State private var boardTargetListID:       Int?                                                            /* Exact collection list requested from Saved          */
+    @State private var boardTargetCardID:       Int?                                                            /* Exact collection card requested from Saved          */
+    @State private var deletingCollection:      PersonalCollection?                                             /* Collection awaiting delete confirmation             */
+    @State private var createdNoteDestination:  PersonalCollection?                                             /* Created note destination                            */
+    @State private var newNoteDraftDestination:                                                                 /* New note draft destination                          */
+    PersonalCollection?                                                                                         /* Personal List selected for the presented Note draft */
+    @State private var mostRecentlyOpenedListID: UUID?                                                          /* Last opened List used as the next Note destination  */
+    @State private var libraryQuickTemplate:     QuickCaptureTemplate?                                          /* Library quick template                              */
+    @State private var weekExampleAction:        String?                                                        /* Week example action                                 */
+    @State private var libraryStarterError:      String?                                                        /* Library starter error                               */
+    @State private var examplePreview:           LibraryExamplePreview?                                         /* Example preview                                     */
+    @State private var daySectionExampleToApply: PlanningRoutineTemplate?                                       /* Day section example to apply                        */
 
 
     /// @fcn BoardListsView.deleteLibraryCollection
@@ -110,8 +110,8 @@ struct BoardListsView: View
     /// @throws Persistence errors or a missing owner
     private func deleteLibraryCollection(_ id: UUID) throws
     {
-        let deletion = try LibraryCollectionDeletion(id: id, in: collections) /* Owner recovery snapshot */
-        let updated = collections.filter { $0.id != id } /* Directory after confirmed removal */
+        let deletion = try LibraryCollectionDeletion(id: id, in: collections)           /* Owner recovery snapshot           */
+        let updated = collections.filter { $0.id != id }                                /* Directory after confirmed removal */
 
         try PersonalCollectionStore.saveChecked(updated)
         collections = updated
@@ -128,7 +128,7 @@ struct BoardListsView: View
     {
         do
         {
-            let restored = try deletion.restoring(in: collections) /* Merged current directory */
+            let restored = try deletion.restoring(in: collections)      /* Merged current directory */
 
             try PersonalCollectionStore.saveChecked(restored)
             collections = restored
@@ -145,7 +145,7 @@ struct BoardListsView: View
     /// @brief Present the most recent deletion above the bottom navigation
     /// @return Accessible, four-second Undo prompt
     @ViewBuilder
-    private var collectionDeletionNotice: some View /* Transient Library deletion notice */
+    private var collectionDeletionNotice: some View     /* Transient Library deletion notice */
     {
         if let deletion = collectionDeletions.last
         {
@@ -183,11 +183,11 @@ struct BoardListsView: View
     /// @post       Archived collections remain stored but are not returned
     ///
     @ViewBuilder
-    private var libraryLabelRows: some View /* Library label rows */
+    private var libraryLabelRows: some View     /* Library label rows */
     {
-        let owners = /* Qualified record owners */
+        let owners =                                                                                    /* Qualified record owners      */
             WorkspaceBrowseIndex.owners(document: planningAccess?.document, library: collections)
-        let usages = /* Retained reference locations */
+        let usages =                                                                                    /* Retained reference locations */
             WorkspaceBrowseIndex.labels(in: owners, catalog: browseLabelLibrary).filter
         {
             searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -210,7 +210,6 @@ struct BoardListsView: View
             Button
             {
                 browsedLabel = usage.label
-
             }
             label:
             {
@@ -231,23 +230,21 @@ struct BoardListsView: View
             .listRowBackground(Color(.secondarySystemGroupedBackground))
             .accessibilityLabel(usage.label.name + ", \(usage.matches.count) active items")
         }
-
     }
 
 
-    private var filteredCollections: [PersonalCollection] /* Filtered collections */
-    {  /* Active directory entries matching the search */
-        let owners = Set(librarySearchResults.compactMap(\.ownerID)) /* Qualified record owners */
+    private var filteredCollections: [PersonalCollection]               /* Filtered collections                         */
+    {                                                                   /* Active directory entries matching the search */
+        let owners = Set(librarySearchResults.compactMap(\.ownerID))    /* Qualified record owners */
 
         return collections.filter
         {
             browseFilter.includes($0) && ($0.matches(searchText) || owners.contains($0.id))
         }
-
     }
 
 
-    private var librarySearchResults: [TodaySearchResult] /* Library search results */
+    private var librarySearchResults: [TodaySearchResult]       /* Library search results */
     {
         LibrarySearchIndex.results(
             query: searchText, collections: collections.filter
@@ -282,7 +279,6 @@ struct BoardListsView: View
         boardTargetListID = result.listID
         boardTargetCardID = result.cardID
         openedCollection = collection
-
     }
 
 
@@ -297,7 +293,7 @@ struct BoardListsView: View
     ///
     private func librarySearchRow(_ result: TodaySearchResult) -> some View
     {
-        let card = collections.first /* Card under consideration */
+        let card = collections.first    /* Card under consideration */
         {
             $0.id == result.ownerID
         }?.lists.first
@@ -348,8 +344,8 @@ struct BoardListsView: View
     ///
     private func collectionEntry(_ collection: PersonalCollection) -> some View
     {
-        let collectionSubtitle = /* Collection subtitle */
-        collection.kind == .board /* Kind-specific directory row summary */
+        let collectionSubtitle =                                                /* Collection subtitle                 */
+        collection.kind == .board                                               /* Kind-specific directory row summary */
         ? "Board · \(collection.lists.filter { !$0.isArchived } .count) lists"
         : "List"
 
@@ -360,11 +356,9 @@ struct BoardListsView: View
                 if collection.kind == .list
                 {
                     mostRecentlyOpenedListID = collection.id
-
                 }
 
                 openedCollection = collection
-
             }
             label:
             {
@@ -384,7 +378,6 @@ struct BoardListsView: View
                 Button("Edit", systemImage: "pencil")
                 {
                     editingCollection = collection
-
                 }
 
                 if !collection.isPrimaryList
@@ -392,16 +385,13 @@ struct BoardListsView: View
                     Button("Archive", systemImage: "archivebox")
                     {
                         archivingCollection = collection
-
                     }
 
                     Button("Delete \(collection.kind.rawValue)", systemImage: "trash", role: .destructive)
                     {
                         deletingCollection = collection
-
                     }
                 }
-
             }
             label:
             {
@@ -432,7 +422,6 @@ struct BoardListsView: View
             Button("Edit Collection")
             {
                 editingCollection = collection
-
             }
 
             if !collection.isPrimaryList
@@ -440,16 +429,13 @@ struct BoardListsView: View
                 Button("Archive Collection")
                 {
                     archivingCollection = collection
-
                 }
 
                 Button("Delete \(collection.kind.rawValue)")
                 {
                     deletingCollection = collection
-
                 }
             }
-
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false)
         {
@@ -458,29 +444,25 @@ struct BoardListsView: View
                 Button("Delete", role: .destructive)
                 {
                     deletingCollection = collection
-
                 }
 
                 Button("Archive")
                 {
                     archivingCollection = collection
-
                 }
             }
 
             Button("Edit")
             {
                 editingCollection = collection
-
             }
             .tint(.blue)
         }
-
     }
 
 
-    private var directoryNoteDestination: PersonalCollection? /* Directory note destination */
-    {  /* Active List resolved for directory-level Note creation */
+    private var directoryNoteDestination: PersonalCollection?           /* Directory note destination                             */
+    {                                                                   /* Active List resolved for directory-level Note creation */
         Self.resolveNoteDestination(
             mostRecentlyOpenedListID: mostRecentlyOpenedListID,
             collections: collections,
@@ -506,9 +488,9 @@ struct BoardListsView: View
         visibleCollections: [PersonalCollection]
     ) -> PersonalCollection?
     {
-        if let mostRecentlyOpenedListID, /* Remembered personal List identity                 */
+        if let mostRecentlyOpenedListID,                /* Remembered personal List identity                 */
         let recentList = collections.first(where:
-            {  /* Remembered List still available for Note creation */
+            {                                                                           /* Remembered List still available for Note creation */
                 $0.id == mostRecentlyOpenedListID && $0.kind == .list && $0.isActive
             })
         {
@@ -534,7 +516,7 @@ struct BoardListsView: View
     private func openDirectoryNewNote()
     {
         guard let destination = directoryNoteDestination else
-        {  /* Available personal List for the new draft */
+        {                                                       /* Available personal List for the new draft */
             DatabaseActivity.shared.report("Create a personal List before adding a Note from Plans.")
 
             return
@@ -542,7 +524,6 @@ struct BoardListsView: View
 
 
         newNoteDraftDestination = destination
-
     }
 
 
@@ -560,7 +541,6 @@ struct BoardListsView: View
         {
             openDirectoryNewNote()
         }
-
     }
 
 
@@ -579,7 +559,6 @@ struct BoardListsView: View
         importanceExampleDrafts.insert(collection.id)
 
         editingCollection = collection
-
     }
 
 
@@ -598,12 +577,11 @@ struct BoardListsView: View
     private func saveCollection(_ collection: PersonalCollection)
     {
         if let index = collections.firstIndex(where:
-            {  /* Position of the collection submitted by its form */
+            {                                           /* Position of the collection submitted by its form */
                 $0.id == collection.id
             })
         {
             collections[index] = collection
-
         }
         else
         {
@@ -612,11 +590,8 @@ struct BoardListsView: View
             {
                 importantData = LibraryImportanceSelection.demoData(
                     in: [collection], preserving: importantData, includesAllExamples: true)
-
             }
-
         }
-
     }
 
 
@@ -640,7 +615,7 @@ struct BoardListsView: View
     {
         guard
         let collectionIndex = collections.firstIndex(where:
-            {  /* Active personal List receiving the new Note */
+            {                                                                   /* Active personal List receiving the new Note */
                 $0.id == collectionID && $0.kind == .list && $0.isActive
             })
         else
@@ -649,7 +624,7 @@ struct BoardListsView: View
         }
 
 
-        var updated = collections[collectionIndex] /* Destination collection receiving the new Note */
+        var updated = collections[collectionIndex]      /* Destination collection receiving the new Note */
 
         try updated.addNote(
             title: capture.title, body: capture.body, createdAt: createdAt,
@@ -657,7 +632,7 @@ struct BoardListsView: View
             actions: capture.actions, schedule: capture.schedule,
             calendar: planningAccess?.document.calendar ?? .current, origin: capture.origin)
 
-        var snapshot = collections /* Collection snapshot saved before publishing the new Note */
+        var snapshot = collections      /* Collection snapshot saved before publishing the new Note */
 
         snapshot[collectionIndex] = updated
 
@@ -674,16 +649,12 @@ struct BoardListsView: View
             if newNoteDraftDestination != nil
             {
                 createdNoteDestination = updated
-
             }
             else if openedCollection?.id != updated.id
             {
                 openedCollection = updated
-
             }
-
         }
-
     }
 
 
@@ -703,9 +674,9 @@ struct BoardListsView: View
     ///
     private func moveNote(_ noteID: Int, from sourceID: UUID, to destinationID: UUID) throws -> KanbanCard
     {
-        var snapshot = collections /* Collection snapshot carrying both sides of the Note move */
-        let moved    =             /* Item after transfer                                      */
-        try PersonalCollectionNoteMovement.move( /* Note returned with its destination-local identity        */
+        var snapshot = collections                                              /* Collection snapshot carrying both sides of the Note move */
+        let moved    =                                                          /* Item after transfer                                      */
+        try PersonalCollectionNoteMovement.move(                                /* Note returned with its destination-local identity        */
             noteID: noteID, from: sourceID, to: destinationID, in: &snapshot
         )
 
@@ -750,13 +721,13 @@ struct BoardListsView: View
                 $0.id == updated.id
             })
         else
-        {  /* Existing collection to replace after checked persistence */
+        {       /* Existing collection to replace after checked persistence */
             DatabaseActivity.shared.report("\(failureMessage) The collection is no longer available.")
             return false
         }
 
 
-        var snapshot = collections /* Collection snapshot saved before publishing moved-Note changes */
+        var snapshot = collections      /* Collection snapshot saved before publishing moved-Note changes */
 
         snapshot[index] = updated
 
@@ -773,7 +744,6 @@ struct BoardListsView: View
             DatabaseActivity.shared.report("\(failureMessage) \(error.localizedDescription)")
             return false
         }
-
     }
 
 
@@ -797,17 +767,17 @@ struct BoardListsView: View
                 $0.id == collectionID && $0.isActive
             })
         else
-        {  /* Active collection owning the moved Note */
+        {       /* Active collection owning the moved Note */
             DatabaseActivity.shared.report("Could not save the Note edit. Its destination List is unavailable.")
             return false
         }
 
 
-        var updated = collections[index] /* Owning collection receiving the edited Note */
+        var updated = collections[index]        /* Owning collection receiving the edited Note */
 
         guard
         let listIndex = updated.lists.firstIndex(where:
-            {  /* Active column containing the moved Note */
+            {                                                   /* Active column containing the moved Note */
                 !$0.isArchived && $0.cards.contains(where:
                     {
                         $0.id == note.id && !$0.isSectionDivider
@@ -815,7 +785,7 @@ struct BoardListsView: View
             }),
         let cardIndex = updated.lists[listIndex].cards.firstIndex(
             where:
-            {  /* Position of the moved Note to replace */
+            {                                                   /* Position of the moved Note to replace */
                 $0.id == note.id && !$0.isSectionDivider
             })
         else
@@ -856,17 +826,17 @@ struct BoardListsView: View
                 $0.id == collectionID && $0.isActive
             })
         else
-        {  /* Active collection owning the Note to archive */
+        {       /* Active collection owning the Note to archive */
             DatabaseActivity.shared.report("Could not archive the Note. Its destination List is unavailable.")
             return false
         }
 
 
-        var updated = collections[index] /* Owning collection receiving the Note archive */
+        var updated = collections[index]        /* Owning collection receiving the Note archive */
 
         guard
         let listIndex = updated.lists.firstIndex(where:
-            {  /* Active column containing the Note to archive */
+            {                                                   /* Active column containing the Note to archive */
                 !$0.isArchived && $0.cards.contains(where:
                     {
                         $0.id == note.id && !$0.isSectionDivider
@@ -904,17 +874,17 @@ struct BoardListsView: View
                 $0.id == collectionID && $0.isActive
             })
         else
-        {  /* Active collection owning the Note to delete */
+        {       /* Active collection owning the Note to delete */
             DatabaseActivity.shared.report("Could not delete the Note. Its destination List is unavailable.")
             return false
         }
 
 
-        var updated = collections[index] /* Owning collection receiving the Note deletion */
+        var updated = collections[index]        /* Owning collection receiving the Note deletion */
 
         guard
         let listIndex = updated.lists.firstIndex(where:
-            {  /* Active column containing the Note to delete */
+            {                                                   /* Active column containing the Note to delete */
                 !$0.isArchived && $0.cards.contains(where:
                     {
                         $0.id == note.id && !$0.isSectionDivider
@@ -939,13 +909,13 @@ struct BoardListsView: View
         }
 
 
-        let retainedLists = /* Retained lists */
-        collections.flatMap(\.lists) /* Retained lists considered before deleting Note media */
+        let retainedLists =             /* Retained lists                                       */
+        collections.flatMap(\.lists)    /* Retained lists considered before deleting Note media */
         + retainedWeekLists
         + collectionDeletions.flatMap { $0.collection.lists }
         + (ExampleLoadUndoStore.load()?.lists ?? [])
-        let retainedFileNames = Set( /* Retained file names */
-            retainedLists.flatMap(\.allCards) /* Attachment filenames still referenced by retained records */
+        let retainedFileNames = Set(                    /* Retained file names */
+            retainedLists.flatMap(\.allCards)           /* Attachment filenames still referenced by retained records */
             .flatMap
             {
                 $0.attachments ?? []
@@ -977,7 +947,7 @@ struct BoardListsView: View
             {
                 $0.id == collectionID && $0.isActive
             }
-        ), /* Active collection owning the Note bookmark */
+        ),                                              /* Active collection owning the Note bookmark */
         collections[index].lists.contains(where:
             {
                 !$0.isArchived && $0.cards.contains(where:
@@ -992,7 +962,7 @@ struct BoardListsView: View
         }
 
 
-        var updated = collections[index] /* Owning collection receiving the bookmark change */
+        var updated = collections[index]        /* Owning collection receiving the bookmark change */
 
         if isSaved
         {
@@ -1018,22 +988,22 @@ struct BoardListsView: View
     ///
     private func presentedCollectionBoard(_ collection: PersonalCollection) -> some View
     {
-        let otherCollectionLists = /* Other collection lists */
-        collections /* Lists outside the presented collection protecting shared media */
+        let otherCollectionLists =      /* Other collection lists                                         */
+        collections                     /* Lists outside the presented collection protecting shared media */
         .filter
         {
             $0.id != collection.id
         }
         .flatMap(\.lists)
-        let retainedLists = /* Retained lists */
-        retainedWeekLists /* External and undo snapshots protecting referenced attachments */
+        let retainedLists =     /* Retained lists                                                */
+        retainedWeekLists       /* External and undo snapshots protecting referenced attachments */
         + otherCollectionLists
         + collectionDeletions.flatMap { $0.collection.lists }
         + (ExampleLoadUndoStore.load()?.lists ?? [])
-        let activePersonalLists = collections.filter /* Active personal lists */
+        let activePersonalLists = collections.filter    /* Active personal lists */
         {
             $0.kind == .list && $0.isActive
-        }  /* Available Note destinations across the directory */
+        }                                       /* Available Note destinations across the directory */
 
 
         return PersonalCollectionBoardView(
@@ -1045,12 +1015,10 @@ struct BoardListsView: View
             onArchive:
             {
                 collections = try PersonalCollectionStore.archiveCollection(id: collection.id, in: collections)
-
             },
             onDelete:
             {
                 try deleteLibraryCollection(collection.id)
-
             },
             onCommitDeletion:
             {
@@ -1060,18 +1028,17 @@ struct BoardListsView: View
                         $0.id == updated.id
                     })
                 else
-                {  /* Position of the collection with confirmed removals */
+                {                                                               /* Position of the collection with confirmed removals */
                     throw CocoaError(.validationMissingMandatoryProperty)
                 }
 
-                var snapshot = collections /* Directory snapshot saved before publishing removals */
+                var snapshot = collections      /* Directory snapshot saved before publishing removals */
 
                 snapshot[index] = updated
 
                 try PersonalCollectionStore.saveChecked(snapshot)
 
                 collections = snapshot
-
             },
             onCreateNote:
             {
@@ -1119,7 +1086,6 @@ struct BoardListsView: View
 
                     importantData = LibraryImportanceSelection.setting(
                         cardID: cardID, collectionID: collection.id, marked: marked, data: importantData)
-
                 },
                 level:
                 {
@@ -1131,7 +1097,6 @@ struct BoardListsView: View
 
                     importantData = LibraryImportanceSelection.adjusting(
                         cardID: cardID, collectionID: collection.id, direction: direction, data: importantData)
-
                 })
         )
         .environment(
@@ -1141,7 +1106,6 @@ struct BoardListsView: View
 
                 recentItems = LibraryRecentStore.remember(
                     LibraryRecentItem(collectionID: collection.id, cardID: cardID))
-
             })
     }
 
@@ -1173,7 +1137,7 @@ struct BoardListsView: View
                 updated in
                 guard
                 let index = collections.firstIndex(where:
-                    {  /* Current position of the bound collection */
+                    {                                           /* Current position of the bound collection */
                         $0.id == updated.id
                     })
                 else
@@ -1182,7 +1146,6 @@ struct BoardListsView: View
                 }
 
                 collections[index] = updated
-
             }
         )
     }
@@ -1224,24 +1187,24 @@ struct BoardListsView: View
     /// @return     (some View) accessible toolbar creation menu
     /// @post       Choosing an entry sets editingCollection without changing stored collections
     ///
-    private var importantItems: [LibraryRecentItem] /* Important items */
+    private var importantItems: [LibraryRecentItem]     /* Important items */
     {
         (try? JSONDecoder().decode([LibraryRecentItem].self, from: importantData)) ?? []
     }
 
-    private var plateItems: [LibraryPlateItem] /* Plate items */
+    private var plateItems: [LibraryPlateItem]          /* Plate items */
     {
         LibraryPlateSelection.items(in: collections, important: importantItems)
     }
 
-    private var showsPlateShelf: Bool /* Plate Shelf visibility */
+    private var showsPlateShelf: Bool           /* Plate Shelf visibility */
     {
         browseFilter.browsesCollections && searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         && libraryEditMode != .active
     }
 
 
-    private var plateSection: some View /* Plate section */
+    private var plateSection: some View         /* Plate section */
     {
         VStack(alignment: .leading, spacing: 10)
         {
@@ -1267,7 +1230,7 @@ struct BoardListsView: View
 
     private func plateDueTodayCount(at date: Date) -> Int
     {
-        let calendar = Calendar.autoupdatingCurrent /* Local day boundary */
+        let calendar = Calendar.autoupdatingCurrent     /* Local day boundary */
         let items = LibraryPlateSelection.items(
             in: collections, important: importantItems, now: date, calendar: calendar, limit: nil)
         return items.lazy.filter { calendar.isDate($0.date, inSameDayAs: date) }.count
@@ -1321,7 +1284,7 @@ struct BoardListsView: View
 
 
     @ViewBuilder
-    private var plateShelfContent: some View /* Coming Soon cards or empty state */
+    private var plateShelfContent: some View    /* Coming Soon cards or empty state */
     {
         if plateItems.isEmpty
         {
@@ -1347,7 +1310,6 @@ struct BoardListsView: View
                             boardTargetListID = item.list.id
                             boardTargetCardID = item.card.id
                             openedCollection = item.collection
-
                         }
                         label:
                         {
@@ -1357,7 +1319,6 @@ struct BoardListsView: View
                         .buttonStyle(.plain)
                         .accessibilityHint("Opens this item directly")
                     }
-
                 }
                 .padding(.vertical, 4)
                 .onGeometryChange(for: Bool.self)
@@ -1406,7 +1367,7 @@ struct BoardListsView: View
     }
 
 
-    private var availableRecents: [(LibraryRecentItem, PersonalCollection, KanbanList, KanbanCard)] /* Available recents */
+    private var availableRecents: [(LibraryRecentItem, PersonalCollection, KanbanList, KanbanCard)]     /* Available recents */
     {
         recentItems.compactMap
         {
@@ -1422,7 +1383,6 @@ struct BoardListsView: View
                     {
                         $0.id == item.cardID && !$0.isSectionDivider
                     }
-
                 }),
             let card = list.cards.first(where:
                 {
@@ -1435,11 +1395,10 @@ struct BoardListsView: View
 
             return (item, collection, list, card)
         }
-
     }
 
 
-    private var recentShelf: some View /* Recent shelf */
+    private var recentShelf: some View          /* Recent shelf */
     {
         ScrollView(.horizontal, showsIndicators: false)
         {
@@ -1453,7 +1412,6 @@ struct BoardListsView: View
                         boardTargetListID = list.id
                         boardTargetCardID = card.id
                         openedCollection = collection
-
                     }
                     label:
                     {
@@ -1476,25 +1434,21 @@ struct BoardListsView: View
                             RoundedRectangle(cornerRadius: 16).strokeBorder(
                                 collection.libraryIdentityColor.opacity(0.4), lineWidth: 1)
                         }
-
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Opens this item directly")
                 }
-
             }
             .padding(.vertical, 4)
         }
-
     }
 
 
-    private var collectionFilterMenu: some View /* Collection filter menu */
+    private var collectionFilterMenu: some View         /* Collection filter menu */
     {
         Button
         {
             showsCollectionFilter = true
-
         }
         label:
         {
@@ -1513,7 +1467,6 @@ struct BoardListsView: View
 
                 browseFilter = filter
                 libraryEditMode = .inactive
-
             }
             .presentationCompactAdaptation(.popover)
             .presentationBackground(.clear)
@@ -1527,7 +1480,7 @@ struct BoardListsView: View
     }
 
 
-    private var libraryHeader: some View /* Library header */
+    private var libraryHeader: some View        /* Library header */
     {
         VStack(spacing: 12)
         {
@@ -1543,7 +1496,6 @@ struct BoardListsView: View
                 Button
                 {
                     showsSharedSearch = true
-
                 }
                 label:
                 {
@@ -1561,9 +1513,7 @@ struct BoardListsView: View
                         withAnimation
                         {
                             libraryEditMode = libraryEditMode == .active ? .inactive : .active
-
                         }
-
                     }
                     .disabled(
                         browseFilter != .all || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -1602,7 +1552,6 @@ struct BoardListsView: View
                     Button
                     {
                         searchText = ""
-
                     }
                     label:
                     {
@@ -1610,7 +1559,6 @@ struct BoardListsView: View
                     }
                     .accessibilityLabel("Clear Plans search")
                 }
-
             }
             .padding(.horizontal, 14)
             .frame(minHeight: 48)
@@ -1637,9 +1585,7 @@ struct BoardListsView: View
                             withAnimation
                             {
                                 showsRecentShelf = false
-
                             }
-
                         }
                         label:
                         {
@@ -1657,11 +1603,9 @@ struct BoardListsView: View
                     {
                         recentShelf
                     }
-
                 }
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
-
         }
         .onChange(of: isLibrarySearchFocused)
         {
@@ -1671,11 +1615,8 @@ struct BoardListsView: View
                 withAnimation
                 {
                     showsRecentShelf = true
-
                 }
-
             }
-
         }
         .padding(.horizontal, 20)
         .padding(.top, 4)
@@ -1684,24 +1625,21 @@ struct BoardListsView: View
         {
             TodayPaperBackground()
         }
-
     }
 
 
-    private var createMenu: some View /* Create menu */
+    private var createMenu: some View           /* Create menu */
     {
         Menu
         {
             Button("+ New List")
             {
                 editingCollection = PersonalCollection(title: "", kind: .list)
-
             }
 
             Button("+ New Board")
             {
                 editingCollection = PersonalCollection(title: "", kind: .board, icon: .project)
-
             }
 
             Divider()
@@ -1718,7 +1656,7 @@ struct BoardListsView: View
     }
 
 
-    private var starterListsMenu: some View /* Starter lists menu */
+    private var starterListsMenu: some View     /* Starter lists menu */
     {
         Menu("Starter Lists", systemImage: "list.bullet")
         {
@@ -1731,17 +1669,13 @@ struct BoardListsView: View
                 Button(title)
                 {
                     editingCollection = DefaultListTutorial.makeStarter(title: title)
-
                 }
-
             }
-
         }
-
     }
 
 
-    private var starterBoardsMenu: some View /* Starter boards menu */
+    private var starterBoardsMenu: some View    /* Starter boards menu */
     {
         Menu("Starter Boards", systemImage: "rectangle.3.group")
         {
@@ -1753,17 +1687,13 @@ struct BoardListsView: View
                     editingCollection = PersonalCollection(
                         title: title, kind: .board,
                         icon: title == "Girlfriend Important Details" ? .heart : .notes)
-
                 }
-
             }
-
         }
-
     }
 
 
-    private var examplesMenu: some View /* Examples menu */
+    private var examplesMenu: some View         /* Examples menu */
     {
         Menu("Examples", systemImage: "sparkles")
         {
@@ -1771,7 +1701,6 @@ struct BoardListsView: View
             {
                 browseFilter = .examples;
                 searchText = ""
-
             }
 
             daySectionExamplesMenu
@@ -1785,9 +1714,7 @@ struct BoardListsView: View
                     {
                         prepareImportanceExample(example.makeCollection(existingTitles: collections.map(\.title)))
                     }
-
                 }
-
             }
 
             weekExamplesMenu
@@ -1799,15 +1726,12 @@ struct BoardListsView: View
                 {
                     onRestoreUserData()
                 }
-
             }
-
         }
-
     }
 
 
-    private var daySectionExamplesMenu: some View /* Day section examples menu */
+    private var daySectionExamplesMenu: some View       /* Day section examples menu */
     {
         Menu("Day section examples", systemImage: "rectangle.3.group")
         {
@@ -1824,15 +1748,10 @@ struct BoardListsView: View
                     Button("Use on a day…", systemImage: "calendar.badge.plus")
                     {
                         daySectionExampleToApply = template
-
                     }
-
                 }
-
             }
-
         }
-
     }
 
 
@@ -1853,11 +1772,10 @@ struct BoardListsView: View
             summary:
                                 "A day organized into colored sections. Collapse, reorder, or move whole sections after applying. Previewing does not change your plans.",
             lists: template.collection.lists)
-
     }
 
 
-    private var fullMonthExamplesMenu: some View /* Full month examples menu */
+    private var fullMonthExamplesMenu: some View        /* Full month examples menu */
     {
         Menu("Full-month examples", systemImage: "calendar")
         {
@@ -1865,7 +1783,7 @@ struct BoardListsView: View
             {
                 Button("Preview month")
                 {
-                    let example = /* Seeded example content */
+                    let example =       /* Seeded example content */
                         FullMonthExample.make(calendar: planningAccess?.document.calendar ?? .current)
 
                     examplePreview = LibraryExamplePreview(
@@ -1873,7 +1791,6 @@ struct BoardListsView: View
                         summary:
                                                                     "Fictional plans for this month: fuller days through today, with a few upcoming plans. Previewing does not change your data.",
                         lists: example.previewLists)
-
                 }
 
                 if let onLoadExampleMonth
@@ -1882,17 +1799,13 @@ struct BoardListsView: View
                     {
                         onLoadExampleMonth()
                     }
-
                 }
-
             }
-
         }
-
     }
 
 
-    private var weekExamplesMenu: some View /* Week examples menu */
+    private var weekExamplesMenu: some View     /* Week examples menu */
     {
         Menu("Week View examples", systemImage: "calendar")
         {
@@ -1901,7 +1814,6 @@ struct BoardListsView: View
                 examplePreview = LibraryExamplePreview(
                     title: "Work Week Board", summary: "A separate seven-list Week View example.",
                     lists: SampleData.lists)
-
             }
 
             Button("Use Week View", systemImage: "plus")
@@ -1927,23 +1839,16 @@ struct BoardListsView: View
                                 examplePreview = LibraryExamplePreview(
                                     title: card.word, summary: list.title,
                                     lists: [KanbanList(id: list.id, title: list.title, cards: [card])])
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
 
 
-    private var listExamplesMenu: some View /* List examples menu */
+    private var listExamplesMenu: some View     /* List examples menu */
     {
         Menu("List examples", systemImage: "list.bullet")
         {
@@ -1952,9 +1857,7 @@ struct BoardListsView: View
                 example in
                 listExampleMenu(example)
             }
-
         }
-
     }
 
 
@@ -1969,7 +1872,7 @@ struct BoardListsView: View
     ///
     private func listExampleMenu(_ example: PersonalListExample) -> some View
     {
-        let draft = example.makeCollection(existingTitles: []) /* Local editing draft */
+        let draft = example.makeCollection(existingTitles: [])          /* Local editing draft */
 
         return Menu(example.rawValue)
         {
@@ -1977,7 +1880,6 @@ struct BoardListsView: View
             {
                 examplePreview = LibraryExamplePreview(
                     title: example.rawValue, summary: example.summary, lists: draft.lists)
-
             }
 
             Menu("Example cards")
@@ -1990,29 +1892,24 @@ struct BoardListsView: View
                         examplePreview = LibraryExamplePreview(
                             title: card.word, summary: example.summary,
                             lists: [KanbanList(id: 0, title: example.rawValue, cards: [card])])
-
                     }
-
                 }
-
             }
 
             Button("Use \(example.rawValue)", systemImage: "plus")
             {
                 prepareImportanceExample(example.makeCollection(existingTitles: collections.map(\.title)))
             }
-
         }
-
     }
 
 
     @ViewBuilder
-    private var libraryTemplateRows: some View /* Library template rows */
+    private var libraryTemplateRows: some View          /* Library template rows */
     {
         PlanningTemplateLibraryRows(query: searchText)
 
-        let listTemplates = MixedListTemplate.allCases.filter /* List templates */
+        let listTemplates = MixedListTemplate.allCases.filter           /* List templates */
         {
             LibraryStarterSearch.matches(
                 searchText, texts: [$0.rawValue, $0.summary, "List template"] + $0.items.flatMap
@@ -2041,20 +1938,16 @@ struct BoardListsView: View
                         {
                             prepareImportanceExample(template.makeCollection(existingTitles: collections.map(\.title)))
                         }
-
                     }
                     label:
                     {
                         Label(template.rawValue, systemImage: "list.bullet.rectangle")
                     }
-
                 }
-
             }
-
         }
 
-        let quickTemplates = QuickCaptureTemplate.allCases.filter /* Quick templates */
+        let quickTemplates = QuickCaptureTemplate.allCases.filter       /* Quick templates */
         {
             LibraryStarterSearch.matches(
                 searchText, texts: [$0.title, $0.summary, $0.body, $0.presentation.title] + $0.actions)
@@ -2084,17 +1977,13 @@ struct BoardListsView: View
                         Button("Use " + template.title, systemImage: "plus")
                         {
                             libraryQuickTemplate = template
-
                         }
-
                     }
                     label:
                     {
                         Label(template.title, systemImage: template.presentation == .note ? "note.text" : "rectangle")
                     }
-
                 }
-
             }
             header:
             {
@@ -2104,16 +1993,14 @@ struct BoardListsView: View
             {
                 Text("Opens an editable draft with a Week list destination. Nothing is added until you tap Add.")
             }
-
         }
-
     }
 
 
     @ViewBuilder
-    private var libraryExampleRows: some View /* Library example rows */
+    private var libraryExampleRows: some View           /* Library example rows */
     {
-        let listExamples = PersonalListExample.allCases.filter /* List examples */
+        let listExamples = PersonalListExample.allCases.filter          /* List examples */
         {
             LibraryStarterSearch.matches(
                 searchText, texts: [$0.rawValue, $0.summary, "List example"] + $0.cards.flatMap
@@ -2122,29 +2009,29 @@ struct BoardListsView: View
                 })
         }
 
-        let boardExamples = PersonalBoardExample.allCases.filter /* Board examples */
+        let boardExamples = PersonalBoardExample.allCases.filter        /* Board examples */
         {
             LibraryStarterSearch.matches(
                 searchText, texts: [$0.rawValue, $0.summary, "Board example"] + $0.listSummaries.map(\.title))
         }
 
-        let weekMatches = LibraryStarterSearch.matches( /* Week matches */
+        let weekMatches = LibraryStarterSearch.matches(                                                 /* Week matches     */
             searchText,
             texts: ["Example Week Work Week Board calendar seven days"]
             + SampleData.lists.flatMap
             {
                 [$0.title] + $0.cards.map(\.word)
             })
-        let monthMatches = LibraryStarterSearch.matches( /* Month matches */
+        let monthMatches = LibraryStarterSearch.matches(                                                /* Month matches    */
             searchText, texts: ["A month in motion Full-month example calendar fictional plans"])
-        let sectionExamples = /* Section examples */
+        let sectionExamples =                                                                           /* Section examples */
             LibraryDaySectionExamples.matches(query: searchText)
 
         if listExamples.isEmpty && boardExamples.isEmpty && sectionExamples.isEmpty && !weekMatches && !monthMatches
         {
             ContentUnavailableView(
-                                    "No matching examples", systemImage: "sparkles",
-                                    description: Text("Try a different name, topic, or example type."))
+                "No matching examples", systemImage: "sparkles",
+                description: Text("Try a different name, topic, or example type."))
         }
 
         LibraryDaySectionExamples(
@@ -2152,7 +2039,6 @@ struct BoardListsView: View
             onApply:
             {
                 daySectionExampleToApply = $0
-
             })
         if !listExamples.isEmpty
         {
@@ -2172,34 +2058,28 @@ struct BoardListsView: View
                                 Text(example.cards[index].0).font(.headline)
                                 Text(example.cards[index].1).font(.subheadline).foregroundStyle(.secondary)
                             }
-
                         }
 
                         Button("Preview " + example.rawValue, systemImage: "eye")
                         {
-                            let draft = /* Local editing draft */
+                            let draft =                                                                 /* Local editing draft */
                                 example.makeCollection(existingTitles: collections.map(\.title))
 
                             examplePreview = LibraryExamplePreview(
                                 title: example.rawValue, summary: example.summary, lists: draft.lists)
-
                         }
 
                         Button("Use " + example.rawValue, systemImage: "plus")
                         {
                             prepareImportanceExample(example.makeCollection(existingTitles: collections.map(\.title)))
                         }
-
                     }
                     label:
                     {
                         Label(example.rawValue, systemImage: "list.bullet")
                     }
-
                 }
-
             }
-
         }
 
         if !boardExamples.isEmpty
@@ -2220,29 +2100,24 @@ struct BoardListsView: View
 
                         Button("Preview " + example.rawValue, systemImage: "eye")
                         {
-                            let draft = /* Local editing draft */
+                            let draft =                                                                 /* Local editing draft */
                                 example.makeCollection(existingTitles: collections.map(\.title))
 
                             examplePreview = LibraryExamplePreview(
                                 title: example.rawValue, summary: example.summary, lists: draft.lists)
-
                         }
 
                         Button("Use " + example.rawValue, systemImage: "plus")
                         {
                             prepareImportanceExample(example.makeCollection(existingTitles: collections.map(\.title)))
                         }
-
                     }
                     label:
                     {
                         Label(example.rawValue, systemImage: "rectangle.3.group")
                     }
-
                 }
-
             }
-
         }
 
         if weekMatches
@@ -2256,7 +2131,6 @@ struct BoardListsView: View
                         summary:
                                                                     "Seven dated-day lists from Plenact's original Work Week example. Previewing changes nothing.",
                         lists: SampleData.lists)
-
                 }
 
                 Button("Use as a new Board", systemImage: "plus")
@@ -2270,9 +2144,7 @@ struct BoardListsView: View
                     Button("Load into current Week", systemImage: "calendar")
                     {
                         weekExampleAction = "load"
-
                     }
-
                 }
 
                 if ExampleLoadUndoStore.load() != nil, onUndoExampleWeek != nil
@@ -2280,11 +2152,8 @@ struct BoardListsView: View
                     Button("Undo Last Load", systemImage: "arrow.uturn.backward")
                     {
                         weekExampleAction = "undo"
-
                     }
-
                 }
-
             }
             header:
             {
@@ -2293,10 +2162,9 @@ struct BoardListsView: View
             footer:
             {
                 Text(
-                                                "Use as a new Board creates a draft. Loading into the current Week requires confirmation and retains the previous Week for undo."
+                    "Use as a new Board creates a draft. Loading into the current Week requires confirmation and retains the previous Week for undo."
                 )
             }
-
         }
 
         if monthMatches
@@ -2305,14 +2173,13 @@ struct BoardListsView: View
             {
                 Button("Preview A month in motion", systemImage: "eye")
                 {
-                    let example = /* Seeded example content */
+                    let example =       /* Seeded example content */
                         FullMonthExample.make(calendar: planningAccess?.document.calendar ?? .current)
 
                     examplePreview = LibraryExamplePreview(
                         title: "A month in motion",
                         summary: "Fictional plans across this month. Previewing does not change your data.",
                         lists: example.previewLists)
-
                 }
 
                 if let onLoadExampleMonth
@@ -2324,7 +2191,6 @@ struct BoardListsView: View
                 {
                     Button("Restore User Data", systemImage: "arrow.uturn.backward", action: onRestoreUserData)
                 }
-
             }
             header:
             {
@@ -2333,16 +2199,14 @@ struct BoardListsView: View
             footer:
             {
                 Text(
-                                                "Using the example month asks for confirmation and backs up your workspace first. Use Restore User Data to return."
+                    "Using the example month asks for confirmation and backs up your workspace first. Use Restore User Data to return."
                 )
             }
-
         }
-
     }
 
 
-    private var templatesMenu: some View /* Templates menu */
+    private var templatesMenu: some View        /* Templates menu */
     {
         Menu("Templates", systemImage: "square.stack.3d.up")
         {
@@ -2350,7 +2214,6 @@ struct BoardListsView: View
             {
                 browseFilter = .templates;
                 searchText = ""
-
             }
 
             Divider()
@@ -2361,11 +2224,8 @@ struct BoardListsView: View
                 {
                     prepareImportanceExample(template.makeCollection(existingTitles: collections.map(\.title)))
                 }
-
             }
-
         }
-
     }
 
 
@@ -2379,8 +2239,8 @@ struct BoardListsView: View
     /// @post       Directory edits update the shared collections binding; archival uses save-first
     ///             persistence and does not alter Week. Archived collections remain outside active rows
     ///
-    var body: some View /* Library navigation and contents */
-    {  /* Personal collection directory and management sheets */
+    var body: some View         /* Library navigation and contents                     */
+    {                           /* Personal collection directory and management sheets */
         NavigationStack
         {
             List
@@ -2390,9 +2250,7 @@ struct BoardListsView: View
                     LibraryHelpRows(query: searchText)
                     {
                         openedHelpArticle = $0
-
                     }
-
                 }
                 else if browseFilter == .labels
                 {
@@ -2427,8 +2285,8 @@ struct BoardListsView: View
                             }
 
 
-                            var active = collections.filter( /* Active operation state */
-                                \.isActive) /* Active directory entries reordered by the user */
+                            var active = collections.filter(    /* Active operation state */
+                                \.isActive)                     /* Active directory entries reordered by the user */
 
                             active.move(fromOffsets: source, toOffset: destination)
 
@@ -2436,7 +2294,6 @@ struct BoardListsView: View
                             {
                                 !$0.isActive
                             }
-
                         }
 
 
@@ -2473,18 +2330,13 @@ struct BoardListsView: View
                                         {
                                             collectionCreationButtons
                                         }
-
                                     }
-
                                 }
-
                             }
 
                             .padding(.vertical, 12)
                         }
-
                     }
-
                 }
 
                 if !librarySearchResults.isEmpty
@@ -2496,15 +2348,12 @@ struct BoardListsView: View
                             result in
                             librarySearchRow(result)
                         }
-
                     }
                     header:
                     {
                         Text("Cards and notes · \(librarySearchResults.count) matches")
                     }
-
                 }
-
             }
 
             .id(appReturnResetRequest)
@@ -2517,7 +2366,7 @@ struct BoardListsView: View
                 old, updated in
                 for collection in updated where collection.isActive
                 {
-                    let previousIDs = Set( /* Previous i ds */
+                    let previousIDs = Set(      /* Previous i ds */
                         old.first(where:
                             {
                                 $0.id == collection.id
@@ -2531,11 +2380,8 @@ struct BoardListsView: View
                     {
                         recentItems = LibraryRecentStore.remember(
                             LibraryRecentItem(collectionID: collection.id, cardID: card.id))
-
                     }
-
                 }
-
             }
             .scrollContentBackground(.hidden)
             .toolbar(.hidden, for: .navigationBar)
@@ -2551,11 +2397,8 @@ struct BoardListsView: View
                         {
                             TodayPaperBackground().overlay { StudioWorkspaceBackground(destination: .plans) }.clipped()
                         }
-
                     }
-
                 }
-
             }
             .safeAreaInset(edge: .bottom, spacing: 0)
             {
@@ -2603,7 +2446,6 @@ struct BoardListsView: View
             .onAppear
             {
                 browseLabelLibrary = LabelLibraryStore.load()
-
             }
             .onChange(of: browseFilter)
             {
@@ -2614,9 +2456,7 @@ struct BoardListsView: View
                 if filter == .labels
                 {
                     browseLabelLibrary = LabelLibraryStore.load()
-
                 }
-
             }
             .sheet(item: $examplePreview)
             {
@@ -2657,34 +2497,28 @@ struct BoardListsView: View
                         if !$0
                         {
                             weekExampleAction = nil
-
                         }
-
                     }),
                 titleVisibility: .visible
             )
             {
                 Button(weekExampleAction == "undo" ? "Undo Last Load" : "Load Example Week", role: .destructive)
                 {
-                    let success = /* Operation success flag */
+                    let success =                                                                       /* Operation success flag */
                         weekExampleAction == "undo" ? onUndoExampleWeek?() : onLoadExampleWeek?()
 
                     if success != true
                     {
                         libraryStarterError = "The Week could not be updated. Your saved data has been retained."
-
                     }
 
                     weekExampleAction = nil
-
                 }
 
                 Button("Cancel", role: .cancel)
                 {
                     weekExampleAction = nil
-
                 }
-
             }
             message:
             {
@@ -2695,27 +2529,23 @@ struct BoardListsView: View
                 )
             }
             .alert(
-                                    "Library",
-                                    isPresented: Binding(get:
-                                        {
-                                            libraryStarterError != nil
-                                        }, set:
-                                        {
-                                            if !$0
-                                            {
-                                                libraryStarterError = nil
-
-                                            }
-
-                                        })
+                "Library",
+                isPresented: Binding(get:
+                    {
+                        libraryStarterError != nil
+                    }, set:
+                    {
+                        if !$0
+                        {
+                            libraryStarterError = nil
+                        }
+                    })
             )
             {
                 Button("OK", role: .cancel)
                 {
                     libraryStarterError = nil
-
                 }
-
             }
             message:
             {
@@ -2732,7 +2562,6 @@ struct BoardListsView: View
 
                     createdNoteDestination = nil
                     openedCollection = destination
-
                 }
             )
             {
@@ -2763,121 +2592,105 @@ struct BoardListsView: View
                     {
                         presentedCollectionBoard(collection)
                     }
-
                 }
                 .environment(\.workspaceBottomBarHeight, 0)
             }
 
             .alert(
-                                    "Delete \(deletingCollection?.kind.rawValue ?? "item")?",
-                                    isPresented: Binding(
-                                        get:
-                                        {
-                                            deletingCollection != nil
-                                        },
-                                        set:
-                                        {
-                                            if !$0
-                                            {
-                                                deletingCollection = nil
-
-                                            }
-
-                                        }
-                                    )
+                "Delete \(deletingCollection?.kind.rawValue ?? "item")?",
+                isPresented: Binding(
+                    get:
+                    {
+                        deletingCollection != nil
+                    },
+                    set:
+                    {
+                        if !$0
+                        {
+                            deletingCollection = nil
+                        }
+                    }
+                )
             )
             {
                 Button("Delete", role: .destructive)
                 {
                     if let deletingCollection
-                    {  /* Collection awaiting permanent deletion */
+                    {                           /* Collection awaiting permanent deletion */
                         do
                         {
                             try deleteLibraryCollection(deletingCollection.id)
-
                         }
                         catch
                         {
                             DatabaseActivity.shared.report(
-                                                                                    "Could not delete the collection: \(error.localizedDescription) It has been retained.")
+                                "Could not delete the collection: \(error.localizedDescription) It has been retained.")
                         }
-
                     }
 
 
                     deletingCollection = nil
-
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
                     deletingCollection = nil
-
                 }
-
             }
             message:
             {
                 Text(
-                                                "Deletes this collection, all active and archived lists/cards, and its bookmarks. Undo is available for four seconds afterward. Your Week board is not affected."
+                    "Deletes this collection, all active and archived lists/cards, and its bookmarks. Undo is available for four seconds afterward. Your Week board is not affected."
                 )
             }
 
             .confirmationDialog(
-                                    "Archive \(archivingCollection?.title ?? "collection")?",
-                                    isPresented: Binding(
-                                        get:
-                                        {
-                                            archivingCollection != nil
-                                        }, set:
-                                        {
-                                            if !$0
-                                            {
-                                                archivingCollection = nil
-
-                                            }
-
-                                        }
-                                    ), titleVisibility: .visible
+                "Archive \(archivingCollection?.title ?? "collection")?",
+                isPresented: Binding(
+                    get:
+                    {
+                        archivingCollection != nil
+                    }, set:
+                    {
+                        if !$0
+                        {
+                            archivingCollection = nil
+                        }
+                    }
+                ), titleVisibility: .visible
             )
             {
                 Button("Archive")
                 {
                     if let archivingCollection
-                    {  /* Collection awaiting archive confirmation */
+                    {                           /* Collection awaiting archive confirmation */
                         do
                         {
                             collections = try PersonalCollectionStore.archiveCollection(
                                 id: archivingCollection.id, in: collections)
-
                         }
                         catch
                         {
                             DatabaseActivity.shared.report(
-                                                                                    "Could not archive the collection: \(error.localizedDescription)")
+                                "Could not archive the collection: \(error.localizedDescription)")
                         }
-
                     }
 
 
                     archivingCollection = nil
-
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
                     archivingCollection = nil
-
                 }
-
             }
             message:
             {
                 Text("Keeps all content on this device. Restore it from Saved.")
             }
-
         }
         .onChange(of: appReturnResetRequest)
         {
@@ -2888,7 +2701,6 @@ struct BoardListsView: View
             showsSharedSearch = false
             isLibrarySearchFocused = false
             libraryEditMode = .inactive
-
         }
         .onChange(of: templateLibraryRequest, initial: true)
         {
@@ -2902,14 +2714,12 @@ struct BoardListsView: View
             browseFilter = .templates
             searchText = ""
             libraryEditMode = .inactive
-
         }
         .onChange(of: newListRequest)
         {
             _, _ in
 
             editingCollection = PersonalCollection(title: "", kind: .list)
-
         }
         .onChange(of: toolbarCollectionRequest?.wrappedValue, initial: true)
         {
@@ -2921,14 +2731,12 @@ struct BoardListsView: View
 
             editingCollection = PersonalCollection(title: "", kind: kind, icon: kind == .board ? .project : .notes)
             toolbarCollectionRequest?.wrappedValue = nil
-
         }
         .onChange(of: libraryRecentData)
         {
             _, _ in
 
             recentItems = LibraryRecentStore.load()
-
         }
         .onAppear
         {
@@ -2939,7 +2747,6 @@ struct BoardListsView: View
             {
                 openSavedPersonalCard(savedPersonalCardTarget)
             }
-
         }
         .onChange(of: savedPersonalCardTarget)
         {
@@ -2952,7 +2759,6 @@ struct BoardListsView: View
 
             openSavedPersonalCard(target)
         }
-
     }
 
 
@@ -3005,14 +2811,13 @@ struct BoardListsView: View
     /// @return     (some View) two independently accessible creation buttons
     /// @post       Actions present an unsaved form or chooser; collections remain unchanged
     ///
-    private var collectionCreationButtons: some View /* Collection creation buttons */
-    {  /* List and Board creation shortcuts */
+    private var collectionCreationButtons: some View    /* Collection creation buttons       */
+    {                                                   /* List and Board creation shortcuts */
         Group
         {
             Button("Create a list", systemImage: "plus")
             {
                 editingCollection = PersonalCollection(title: "", kind: .list)
-
             }
 
 
@@ -3020,12 +2825,9 @@ struct BoardListsView: View
             {
                 browseFilter = .examples
                 searchText = ""
-
             }
-
         }
 
         .buttonStyle(.bordered)
     }
-
 }

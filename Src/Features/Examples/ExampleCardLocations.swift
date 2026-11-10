@@ -17,15 +17,15 @@ import Foundation
 ///
 enum ExampleCardLocations
 {
-    static let gym                    = /* Workout Card fixture */
+    static let gym                    =                                                 /* Workout Card fixture */
         "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902"
-    static let work                   = /* Work display text */
+    static let work                   =                                                 /* Work display text    */
         "Mercury Marine Plant 33, 505 Marion Road, Oshkosh, WI 54901"
-    static let migrationKey           = /* Migration key */
+    static let migrationKey           =                                                 /* Migration key        */
         "Plenact.ExampleCardLocations.Applied.v1"
-    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v1" /* Backup key */
-    private static let boardKey       = "Plenact.Board.v1" /* Board key */
-    private static let collectionsKey = "Plenact.PersonalCollections.v1" /* Collections key */
+    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v1"        /* Backup key           */
+    private static let boardKey       = "Plenact.Board.v1"                              /* Board key            */
+    private static let collectionsKey = "Plenact.PersonalCollections.v1"                /* Collections key      */
 
     ///
     /// Retains the complete workspace values published after a successful location update
@@ -35,10 +35,9 @@ enum ExampleCardLocations
     ///
     struct Snapshot
     {
-        let lists:       [KanbanList]             /* Ordered List records          */
-        let calendar:    PlanningCalendarDocument /* Date calculation calendar     */
-        let collections: [PersonalCollection]     /* Retained personal collections */
-
+        let lists:       [KanbanList]                   /* Ordered List records          */
+        let calendar:    PlanningCalendarDocument       /* Date calculation calendar     */
+        let collections: [PersonalCollection]           /* Retained personal collections */
     }
 
 
@@ -62,7 +61,6 @@ enum ExampleCardLocations
         default:
             return nil
         }
-
     }
 
 
@@ -85,7 +83,7 @@ enum ExampleCardLocations
                 return list
             }
 
-            let cards = list.cards.map /* Card records under consideration */
+            let cards = list.cards.map          /* Card records under consideration */
             {
             card in
                 guard card.presentation == .card, !card.isSectionDivider, !card.isEditingLocked,
@@ -95,7 +93,7 @@ enum ExampleCardLocations
                     return card
                 }
 
-                var updated = card /* Edited value to publish */
+                var updated = card      /* Edited value to publish */
 
                 updated.location = location
 
@@ -107,13 +105,12 @@ enum ExampleCardLocations
                 return list
             }
 
-            var updated = list /* Edited value to publish */
+            var updated = list          /* Edited value to publish */
 
             updated.cards = cards
 
             return updated
         }
-
     }
 
 
@@ -135,13 +132,12 @@ enum ExampleCardLocations
                 return collection
             }
 
-            var updated = collection /* Edited value to publish */
+            var updated = collection    /* Edited value to publish */
 
             updated.lists = updating(collection.lists)
 
             return updated
         }
-
     }
 
 
@@ -169,54 +165,49 @@ enum ExampleCardLocations
             return nil
         }
 
-        let updatedLists       = updating(lists)       /* Updated lists       */
-        let updatedCollections = updating(collections) /* Updated collections */
-        var updatedCalendar    = calendar              /* Updated calendar    */
+        let updatedLists       = updating(lists)                /* Updated lists       */
+        let updatedCollections = updating(collections)          /* Updated collections */
+        var updatedCalendar    = calendar                       /* Updated calendar    */
 
         for index in updatedCalendar.weeks.indices
         {
-            let week = updatedCalendar.weeks[index] /* Dated Week under consideration */
+            let week = updatedCalendar.weeks[index]     /* Dated Week under consideration */
 
             if week.startKey == updatedCalendar.currentWeekKey
             {
                 updatedCalendar.weeks[index].collection.lists = updatedLists
-
             }
 
             else if week.collection.isActive
             {
                 updatedCalendar.weeks[index].collection.lists = updating(week.collection.lists)
-
             }
-
         }
 
-        var library = try PlanningRoutineStore.load(from: defaults) /* Retained library contents */
+        var library = try PlanningRoutineStore.load(from: defaults)     /* Retained library contents */
 
         for index in library.templates.indices where library.templates[index].collection.isActive
         {
             library.templates[index].collection.lists = updating(library.templates[index].collection.lists)
-
         }
 
         try PlanningRoutineStore.validate(library)
 
-        let encoder      = JSONEncoder() /* JSON encoding configuration */
-        let replacements = [             /* Replacements lookup entries */
+        let encoder      = JSONEncoder()                /* JSON encoding configuration */
+        let replacements = [                            /* Replacements lookup entries */
             boardKey: try encoder.encode(updatedLists),
             PlanningCalendarStore.key: try encoder.encode(updatedCalendar),
             collectionsKey: try encoder.encode(updatedCollections),
             PlanningRoutineStore.key: try encoder.encode(library)
         ]
-        var previous: [String: Data] = [:] /* Previous value for comparison */
+        var previous: [String: Data] = [:]      /* Previous value for comparison */
 
         for key in replacements.keys
         {
             previous[key] = defaults.data(forKey: key)
-
         }
 
-        let backup = try encoder.encode(previous) /* Recoverable native snapshot */
+        let backup = try encoder.encode(previous)       /* Recoverable native snapshot */
 
         defaults.set(backup, forKey: backupKey)
         guard defaults.synchronize(), defaults.data(forKey: backupKey) == backup else
@@ -244,7 +235,6 @@ enum ExampleCardLocations
             {
                 throw CocoaError(.fileWriteUnknown)
             }
-
         }
 
         catch
@@ -260,7 +250,6 @@ enum ExampleCardLocations
                 {
                     defaults.removeObject(forKey: key)
                 }
-
             }
 
             defaults.removeObject(forKey: migrationKey)
@@ -270,6 +259,5 @@ enum ExampleCardLocations
 
         return Snapshot(lists: updatedLists, calendar: updatedCalendar, collections: updatedCollections)
     }
-
 }
 

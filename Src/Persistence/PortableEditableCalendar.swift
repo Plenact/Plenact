@@ -35,7 +35,7 @@ extension PortableEditableContent
     /// @throws Invalid date
     func civil(_ text: String) throws -> Date
     {
-        let formatter = DateFormatter() /* Date or value formatter */
+        let formatter = DateFormatter()         /* Date or value formatter */
 
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -59,7 +59,7 @@ extension PortableEditableContent
     /// @throws Missing metadata, conflicting ownership or invalid date/reference values
     func calendarDocument(selections: [[String: Any]], accountID: String) throws -> PlanningCalendarDocument?
     {
-        let indexes = /* Positions of matching entries */
+        let indexes =                                                           /* Positions of matching entries */
             records.filter { $0["record_type"] as? String == "calendar_index" }
 
         guard indexes.count <= 1 else
@@ -86,18 +86,18 @@ extension PortableEditableContent
             throw Failure.invalid
         }
 
-        var weeks: [DatedPlanningWeek]     = []            /* Retained dated Weeks      */
-        var metadataOwners: [String: UUID] = [:]           /* Metadata owners           */
-        var usedCollections                = Set<String>() /* Used collections          */
-        var usedDays                       = Set<String>() /* Used days                 */
-        var calendar                       =               /* Date calculation calendar */
+        var weeks: [DatedPlanningWeek]     = []                 /* Retained dated Weeks      */
+        var metadataOwners: [String: UUID] = [:]                /* Metadata owners           */
+        var usedCollections                = Set<String>()      /* Used collections          */
+        var usedDays                       = Set<String>()      /* Used days                 */
+        var calendar                       =                    /* Date calculation calendar */
             Calendar(identifier: .gregorian)
 
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         for id in weekIDs
         {
-            let week = try record(id, kind: "calendar_week") /* Dated Week under consideration */
+            let week = try record(id, kind: "calendar_week")    /* Dated Week under consideration */
 
             guard let value = week["payload"] as? [String: Any] else
             {
@@ -116,15 +116,15 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-            let first = try civil(start) /* First comparison value */
+            let first = try civil(start)        /* First comparison value */
 
             guard calendar.component(.weekday, from: first) == firstWeekday else
             {
                 throw Failure.invalid
             }
 
-            var dates: [String: String] = [:] /* Dates used by this operation */
-            var days: [String: Int]     = [:] /* Dates in the selected range  */
+            var dates: [String: String] = [:]           /* Dates used by this operation */
+            var days: [String: Int]     = [:]           /* Dates in the selected range  */
 
             for mapping in try array(value["day_lists"])
             {
@@ -135,7 +135,7 @@ extension PortableEditableContent
                     throw Failure.invalid
                 }
 
-                let distance = /* Distance between layout positions */
+                let distance =                                                                  /* Distance between layout positions */
                     calendar.dateComponents([.day], from: first, to: try civil(day)).day ?? -1
 
                 guard (0..<7).contains(distance) else
@@ -145,12 +145,11 @@ extension PortableEditableContent
 
                 dates[target] = day
                 days[day] = number
-
             }
 
-            let collection = /* Personal collection record */
+            let collection =                                                                    /* Personal collection record */
                 try collection(record(owner, kind: "collection"), selections: selections,
-                accountID: accountID, timeZoneID: zone, listDates: dates)
+                    accountID: accountID, timeZoneID: zone, listDates: dates)
 
             guard Set(days.values).isSubset(of: Set(collection.lists.filter { !$0.isArchived }.map(\.id))) else
             {
@@ -159,14 +158,13 @@ extension PortableEditableContent
             weeks.append(DatedPlanningWeek(startKey: start, collection: collection, dayListIDs: days, explicitlySaved: saved))
 
             metadataOwners[id] = collection.id
-
         }
         guard weeks.contains(where: { $0.startKey == current }) else
             {
                 throw Failure.invalid
             }
 
-        var links: [UUID: UUID] = [:] /* Resolved content references */
+        var links: [UUID: UUID] = [:]           /* Resolved content references */
 
         for mapping in try array(body["checklist_link_weeks"])
         {
@@ -178,7 +176,7 @@ extension PortableEditableContent
             }
 
             // Canonical nested UUIDs are retained directly in the reconstructed checklists
-            let matches = /* Matching source entries */
+            let matches =                                                                       /* Matching source entries */
                 weeks.flatMap { $0.collection.lists }.flatMap { $0.cards + $0.archivedCards }
                 .reduce(0) { $0 + checklistOccurrences(itemID, in: $1.checklists) }
 
@@ -188,10 +186,9 @@ extension PortableEditableContent
             }
 
             links[itemID] = owner
-
         }
 
-        var output = /* Operation output */
+        var output =    /* Operation output */
             PlanningCalendarDocument(currentWeekKey: current, firstWeekday: firstWeekday, weeks: weeks)
 
         output.checklistLinkWeeks = links
@@ -207,7 +204,7 @@ extension PortableEditableContent
     /// @return Number of distinct occurrences
     private func checklistOccurrences(_ id: UUID, in lists: [KanbanChecklist]) -> Int
     {
-        var count = 0 /* Number of entries */
+        var count = 0           /* Number of entries */
 
         for list in lists
         {
@@ -216,17 +213,14 @@ extension PortableEditableContent
                 if item.id == id
                 {
                     count += 1
-
                 }
                 if case .actionDetail(let detail) = item.content
                 {
                     count += checklistOccurrences(id, in: detail.checklists)
-
                 }
                 else if let detail = item.retainedDetail
                 {
                     count += checklistOccurrences(id, in: detail.checklists)
-
                 }
             }
         }
@@ -241,7 +235,7 @@ extension PortableEditableContent
     /// @throws Invalid order, ownership, default routine or focus references
     func templateLibrary(accountID: String) throws -> PlanningRoutineLibrary?
     {
-        let libraries = /* Filtered libraries entries */
+        let libraries =                                                                 /* Filtered libraries entries */
             records.filter { $0["record_type"] as? String == "template_library" }
 
         guard libraries.count <= 1 else
@@ -267,18 +261,18 @@ extension PortableEditableContent
             throw Failure.invalid
         }
 
-        var templates: [PlanningRoutineTemplate] = [] /* Reusable planning templates */
+        var templates: [PlanningRoutineTemplate] = []           /* Reusable planning templates */
 
         for id in ids
         {
-            let document = try record(id, kind: "planning_template") /* Source document snapshot */
+            let document = try record(id, kind: "planning_template")    /* Source document snapshot */
 
             guard let payload = document["payload"] as? [String: Any] else
             {
                 throw Failure.invalid
             }
 
-            var raw = /* Unprocessed source value */
+            var raw =           /* Unprocessed source value */
                 try mapped(payload, fields: ["name": "name", "kind": "kind", "anchor_date": "anchorKey",
                 "time_zone": "timeZoneID", "first_weekday": "firstWeekday", "collection_id": "collection",
                 "weekdays": "weekdays", "example_focus": "exampleFocus"])
@@ -291,14 +285,14 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-            let first    = try civil(anchor)                /* First comparison value    */
-            var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
+            let first    = try civil(anchor)                    /* First comparison value    */
+            var calendar = Calendar(identifier: .gregorian)     /* Date calculation calendar */
 
             calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
-            var weekdays: [String: Int] = [:]           /* Ordered weekday values       */
-            var dates: [String: String] = [:]           /* Dates used by this operation */
-            var usedLists               = Set<String>() /* Used lists                   */
+            var weekdays: [String: Int] = [:]                   /* Ordered weekday values       */
+            var dates: [String: String] = [:]                   /* Dates used by this operation */
+            var usedLists               = Set<String>()         /* Used lists                   */
 
             for mapping in try array(payload["weekdays"])
             {
@@ -311,27 +305,26 @@ extension PortableEditableContent
 
                 weekdays[String(day)] = number
 
-                let offset    = /* Current position offset */
+                let offset    =                                                 /* Current position offset     */
                     (day - calendar.component(.weekday, from: first) + 7) % 7
-                let date      = /* Date used by this operation */
+                let date      =                                                 /* Date used by this operation */
                     calendar.date(byAdding: .day, value: offset, to: first)!
-                let formatter = DateFormatter() /* Date or value formatter */
+                let formatter = DateFormatter()                                 /* Date or value formatter     */
 
                 formatter.dateFormat = "yyyy-MM-dd"
                 formatter.calendar = calendar
                 formatter.locale = Locale(identifier: "en_US_POSIX")
                 formatter.timeZone = calendar.timeZone
                 dates[listID] = formatter.string(from: date)
-
             }
             guard !weekdays.isEmpty, kind != "day" || weekdays.count == 1 else
             {
                 throw Failure.invalid
             }
 
-            let nativeOwner = /* Native owner */
+            let nativeOwner =                                                           /* Native owner */
                 try collection(record(owner, kind: "collection"), selections: [],
-                accountID: accountID, timeZoneID: zone, listDates: dates)
+                    accountID: accountID, timeZoneID: zone, listDates: dates)
 
             guard Set(weekdays.values).isSubset(of: Set(nativeOwner.lists.map(\.id))) else
             {
@@ -345,9 +338,9 @@ extension PortableEditableContent
 
             if let focus = payload["example_focus"] as? [String: Any]
             {
-                let owned       = /* Content belonging to this owner */
+                let owned       =                                                               /* Content belonging to this owner */
                     Set(nativeOwner.lists.flatMap { $0.cards + $0.archivedCards }.map(\.id))
-                var mappedFocus = /* Mapped focus */
+                var mappedFocus =                                                               /* Mapped focus                    */
                     try mapped(focus, fields: ["important": "important", "bookmarked": "bookmarked", "all_day": "allDay"])
 
                 for key in mappedFocus.keys
@@ -357,7 +350,7 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-                    let numbers = try targets.map { target -> Int in /* Local numeric identifiers */
+                    let numbers = try targets.map { target -> Int in                            /* Local numeric identifiers */
                         guard let number = numericIDs[target], owned.contains(number) else
             {
                 throw Failure.invalid
@@ -366,11 +359,9 @@ extension PortableEditableContent
                     }
 
                     mappedFocus[key] = numbers
-
                 }
 
                 raw["exampleFocus"] = mappedFocus
-
             }
             templates.append(try JSONDecoder().decode(PlanningRoutineTemplate.self, from: JSONSerialization.data(withJSONObject: raw)))
         }
@@ -382,7 +373,7 @@ extension PortableEditableContent
             }
         }
 
-        let raw: [String: Any] = ["version": 1, /* Unprocessed source value */
+        let raw: [String: Any] = ["version": 1,                                                         /* Unprocessed source value */
             "templates": try JSONSerialization.jsonObject(with: JSONEncoder().encode(templates)),
             "defaultWeekID": value["default_week_id"] ?? NSNull(), "bundledRoutineRevision": value["bundled_routine_revision"] ?? NSNull()]
 

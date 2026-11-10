@@ -37,8 +37,8 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testSectionMoveJournalRestoresImportanceAndSupportsLegacyRecovery() throws
     {
-        let suite    = "SectionMoveJournal." + UUID().uuidString /* Isolated preference domain  */
-        let defaults =                                           /* Preference store under test */
+        let suite    = "SectionMoveJournal." + UUID().uuidString        /* Isolated preference domain  */
+        let defaults =                                                  /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: suite))
 
         defer
@@ -46,7 +46,7 @@ extension PlenactBoardDocumentTests
             defaults.removePersistentDomain(forName: suite)
         }
 
-        let before = Data("before".utf8) /* State before the operation */
+        let before = Data("before".utf8)        /* State before the operation */
 
         defaults.set(before, forKey: LibraryImportanceSelection.key)
         defaults.set(Data("board".utf8), forKey: "Plenact.Board.v1")
@@ -62,7 +62,7 @@ extension PlenactBoardDocumentTests
         XCTAssertNil(defaults.object(forKey: DailyReviewTransaction.key))
 
         // Old journals did not capture importance; recovering them must not remove it
-        let legacy = try PropertyListSerialization.data( /* Earlier-format input */
+        let legacy = try PropertyListSerialization.data(        /* Earlier-format input */
             fromPropertyList: ["version": 1, "previous": ["Plenact.Board.v1": Data("old".utf8)]], format: .binary,
             options: 0)
 
@@ -86,35 +86,34 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testWeeklyReviewCalendarBoundariesPersistenceAndRecovery() throws
     {
-        let name     = "PlenactTests.Weekly." + UUID().uuidString /* Display or lookup name      */
-        let defaults = UserDefaults(suiteName: name)!             /* Preference store under test */
+        let name     = "PlenactTests.Weekly." + UUID().uuidString       /* Display or lookup name      */
+        let defaults = UserDefaults(suiteName: name)!                   /* Preference store under test */
 
         defer
         {
             defaults.removePersistentDomain(forName: name)
         }
 
-        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
+        var calendar = Calendar(identifier: .gregorian)         /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!;
         calendar.firstWeekday = 2
 
-        let date   = /* Date used by this operation */
+        let date   =                                                                    /* Date used by this operation   */
             calendar.date(from: DateComponents(year: 2026, month: 10, day: 18))!
-        var review = /* Review record being inspected */
+        var review =                                                                    /* Review record being inspected */
             WeeklyReviewRecord(date: date, calendar: calendar)
 
         XCTAssertEqual(review.startKey, "2026-10-12")
 
-        var days = DailyPlanStore.Document() /* Dates in the selected range */
+        var days = DailyPlanStore.Document()    /* Dates in the selected range */
 
         for key in ["2026-10-11", "2026-10-12", "2026-10-18", "2026-10-19"]
         {
-            let day = /* Day under consideration */
+            let day =                                                                                   /* Day under consideration */
                 DailyPlan(date: PlanningDate.date(key, calendar: calendar)!, calendar: calendar)
 
             days.plans[key] = day
-
         }
 
         XCTAssertEqual(review.dailyPlans(in: days).map(\.id), ["2026-10-12", "2026-10-18"])
@@ -122,9 +121,9 @@ extension PlenactBoardDocumentTests
         review.highlights = "Made room for important work";
         review.step = 2
 
-        let saved = /* Saved state under review */
+        let saved =                                                             /* Saved state under review     */
             try WeeklyReviewStore.save(review, replacing: nil, to: defaults)
-        var other = /* Independent comparison value */
+        var other =                                                             /* Independent comparison value */
             WeeklyReviewRecord(date: calendar.date(byAdding: .day, value: 7, to: date)!, calendar: calendar)
 
         other.direction = "A calmer week"
@@ -134,7 +133,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(try WeeklyReviewStore.load(from: defaults).records[saved.id], saved)
         XCTAssertThrowsError(try WeeklyReviewStore.save(review, replacing: nil, to: defaults))
 
-        let before = defaults.data(forKey: WeeklyReviewStore.key) /* State before the operation */
+        let before = defaults.data(forKey: WeeklyReviewStore.key)       /* State before the operation */
 
         _ = try DailyReviewTransaction.begin(in: defaults)
 
@@ -161,8 +160,8 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testEveningReviewTransactionRecoversInterruptedAndFailedWrites() throws
     {
-        let name     = "PlenactTests.Review." + UUID().uuidString /* Display or lookup name      */
-        let defaults = UserDefaults(suiteName: name)!             /* Preference store under test */
+        let name     = "PlenactTests.Review." + UUID().uuidString       /* Display or lookup name      */
+        let defaults = UserDefaults(suiteName: name)!                   /* Preference store under test */
 
         defer
         {
@@ -219,7 +218,7 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(defaults.string(forKey: DailyPlanStore.key), "committed")
         XCTAssertNil(defaults.object(forKey: DailyReviewTransaction.key))
 
-        let corrupt = Data("invalid journal".utf8) /* Malformed input fixture */
+        let corrupt = Data("invalid journal".utf8)      /* Malformed input fixture */
 
         defaults.set(corrupt, forKey: DailyReviewTransaction.key)
         XCTAssertThrowsError(try DailyReviewTransaction.recover(in: defaults))
@@ -240,10 +239,10 @@ extension PlenactBoardDocumentTests
     ///
     func testFullMonthBackupRejectsCorruptionAndRecoversInterruptedSwitch() throws
     {
-        let folder   = /* Working folder location */
+        let folder   =                                                                          /* Working folder location     */
             FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let name     = "PlenactTests.Month." + UUID().uuidString /* Display or lookup name      */
-        let defaults = UserDefaults(suiteName: name)!            /* Preference store under test */
+        let name     = "PlenactTests.Month." + UUID().uuidString                                /* Display or lookup name      */
+        let defaults = UserDefaults(suiteName: name)!                                           /* Preference store under test */
 
         defer
         {
@@ -251,20 +250,20 @@ extension PlenactBoardDocumentTests
             try? FileManager.default.removeItem(at: folder)
         }
 
-        let store = FullMonthExampleStore( /* Persistence boundary */
+        let store = FullMonthExampleStore(      /* Persistence boundary */
             root: folder.appendingPathComponent("Backup"), documents: folder.appendingPathComponent("Documents"),
             support: folder.appendingPathComponent("Support"), domainName: name)
 
         try FileManager.default.createDirectory(at: store.documents, withIntermediateDirectories: true)
 
-        let file = store.documents.appendingPathComponent("original.bin") /* File being processed */
+        let file = store.documents.appendingPathComponent("original.bin")       /* File being processed */
 
         try Data([1]).write(to: file)
         defaults.set("user data", forKey: "Plenact.Protected")
         try store.loadExample(FullMonthExample.make())
 
-        let snapshot    = store.root.appendingPathComponent("UserData") /* Working state snapshot */
-        let transaction = /* Transaction comparison fixture */
+        let snapshot    = store.root.appendingPathComponent("UserData")         /* Working state snapshot         */
+        let transaction =                                                       /* Transaction comparison fixture */
             store.root.appendingPathComponent("Transition")
 
         try FileManager.default.copyItem(at: snapshot, to: transaction)
@@ -276,7 +275,7 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(store.hasUserData)
         try Data([99]).write(to: snapshot.appendingPathComponent("Documents/original.bin"))
 
-        let previous = /* Previous value for comparison */
+        let previous =                                          /* Previous value for comparison */
             defaults.persistentDomain(forName: name) ?? [:]
 
         XCTAssertThrowsError(try store.restoreUserData())
@@ -285,15 +284,14 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(store.hasUserData)
 
         // An unavailable backup location must prevent replacement as well
-        let blocked = folder.appendingPathComponent("blocked") /* Blocked comparison fixture */
+        let blocked = folder.appendingPathComponent("blocked")          /* Blocked comparison fixture */
 
         try Data([0]).write(to: blocked)
 
-        let failed = FullMonthExampleStore( /* Rejected operation result */
+        let failed = FullMonthExampleStore(                                                             /* Rejected operation result */
             root: blocked, documents: store.documents, support: store.support, domainName: name)
 
         XCTAssertThrowsError(try failed.loadExample(FullMonthExample.make()))
         XCTAssertTrue(NSDictionary(dictionary: defaults.persistentDomain(forName: name) ?? [:]).isEqual(to: previous))
     }
-
 }

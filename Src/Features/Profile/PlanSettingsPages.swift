@@ -14,15 +14,15 @@ enum PlanSettingsPage: String, CaseIterable, Identifiable
 {
     case appearance, focus, planning, review, navigation, display, maps, data, focusFilters
 
-    static let menuPages: [Self] = /* Menu pages */
+    static let menuPages: [Self] =                                                      /* Menu pages */
         [.appearance, .focus, .planning, .review, .navigation, .display, .maps, .data]
 
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -38,7 +38,7 @@ enum PlanSettingsPage: String, CaseIterable, Identifiable
         }
     }
 
-    var symbol: String /* Selected symbol name */
+    var symbol: String          /* Selected symbol name */
     {
         switch self
         {
@@ -60,9 +60,9 @@ enum PlanSettingsPage: String, CaseIterable, Identifiable
 ///     Preserve the reminder editor's existing independent Save and Cancel controls
 struct PlanSettingsMenuRow: View
 {
-    let page: PlanSettingsPage /* Current settings destination */
+    let page: PlanSettingsPage          /* Current settings destination */
 
-    var body: some View /* Plan Settings Menu layout */
+    var body: some View         /* Plan Settings Menu layout */
     {
         HStack
         {
@@ -89,17 +89,17 @@ struct PlanSettingsMenuRow: View
 ///     Back retains the parent draft; Save publishes it once and closes the settings flow
 struct PlanSettingsModulePage: View
 {
-    let page: PlanSettingsPage                        /* Current settings destination */
-    @Binding var preferences: LocalProfilePreferences /* Planning and display choices */
-    @Binding var firstWeekday: Int                    /* Calendar week boundary       */
-    let lists: [KanbanList]                           /* Ordered List records         */
-    let onSave: () -> Void                            /* Persist the edited value     */
-    let onStudio: () -> Void                          /* Studio callback              */
-    let onTemplates: () -> Void                       /* Templates callback           */
-    let onShortcuts: () -> Void                       /* Shortcuts callback           */
-    @State private var showsDefaultCardLayout = false /* Layout editor visibility */
+    let page: PlanSettingsPage                                  /* Current settings destination */
+    @Binding var preferences: LocalProfilePreferences           /* Planning and display choices */
+    @Binding var firstWeekday: Int                              /* Calendar week boundary       */
+    let lists: [KanbanList]                                     /* Ordered List records         */
+    let onSave: () -> Void                                      /* Persist the edited value     */
+    let onStudio: () -> Void                                    /* Studio callback              */
+    let onTemplates: () -> Void                                 /* Templates callback           */
+    let onShortcuts: () -> Void                                 /* Shortcuts callback           */
+    @State private var showsDefaultCardLayout = false           /* Layout editor visibility     */
 
-    var body: some View /* Focused preference controls */
+    var body: some View         /* Focused preference controls */
     {
         Form
         {
@@ -133,7 +133,7 @@ struct PlanSettingsModulePage: View
     /// @brief Bind each existing preference to its focused destination
     /// @return Controls editing only the parent-owned draft, or opening an independent editor
     @ViewBuilder
-    private var content: some View /* Content being processed */
+    private var content: some View      /* Content being processed */
     {
         switch page
         {
@@ -290,7 +290,7 @@ struct PlanSettingsModulePage: View
     /// @fcn PlanSettingsModulePage.focusLayout
     /// @brief Keep layout and ordering controls separate from inclusion filters
     /// @return Existing count, ordering and grouping preferences with focused guidance
-    private var focusLayout: some View /* Focus layout */
+    private var focusLayout: some View          /* Focus layout */
     {
         Section
         {
@@ -309,7 +309,6 @@ struct PlanSettingsModulePage: View
                 }, set:
                 {
                     preferences.todayFocusOrder = $0
-
                 }))
             {
                 ForEach(TodayFocusOrder.allCases, id: \.self)

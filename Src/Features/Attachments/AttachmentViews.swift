@@ -41,10 +41,10 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
     ///
     /// @return     (String) attachment-source identifier
     ///
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
-    }  /* Stable picker identity */
+    }                   /* Stable picker identity */
 
 
     ///
@@ -54,8 +54,8 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
     ///
     /// @return     (String) display text defined for the source
     ///
-    var title: String /* User-facing title */
-    {  /* User-facing attachment-source label */
+    var title: String           /* User-facing title                   */
+    {                           /* User-facing attachment-source label */
         switch self
         {
         case .trello:
@@ -81,7 +81,6 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
         case .clipboard:
                     "Clipboard"
         }
-
     }
 
 
@@ -92,8 +91,8 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
     ///
     /// @return     (String) SF Symbol identifier for the source
     ///
-    var symbolName: String /* Symbol name */
-    {  /* SF Symbol for the picker row */
+    var symbolName: String      /* Symbol name                  */
+    {                           /* SF Symbol for the picker row */
         switch self
         {
         case .trello:
@@ -119,9 +118,7 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
         case .clipboard:
                     "doc.on.clipboard"
         }
-
     }
-
 }
 
 
@@ -133,14 +130,14 @@ enum CardAttachmentSource: String, CaseIterable, Identifiable
 ///
 struct CardAttachmentSourceSheet: View
 {
-    @Binding var photoSelection: [PhotosPickerItem] /* Current Photos-picker selection */
+    @Binding var photoSelection: [PhotosPickerItem]     /* Current Photos-picker selection */
 
-    let onAddLink:        () -> Void           /* Callback opening manual link entry                    */
-    let onPasteClipboard: () -> Void           /* Callback importing clipboard images or a link         */
-    let onComingSoon:     (String) -> Void     /* Callback reporting unsupported source                 */
-    var onAddDrawing:     (() -> Void)? = nil  /* Opens the editable canvas when supported by the owner */
+    let onAddLink:        () -> Void                    /* Callback opening manual link entry                    */
+    let onPasteClipboard: () -> Void                    /* Callback importing clipboard images or a link         */
+    let onComingSoon:     (String) -> Void              /* Callback reporting unsupported source                 */
+    var onAddDrawing:     (() -> Void)? = nil           /* Opens the editable canvas when supported by the owner */
 
-    @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
+    @Environment(\.dismiss) private var dismiss         /* Sheet dismissal action */
 
 
     ///
@@ -180,7 +177,6 @@ struct CardAttachmentSourceSheet: View
         default:
             onComingSoon(source.title)
         }
-
     }
 
 
@@ -194,8 +190,8 @@ struct CardAttachmentSourceSheet: View
     /// @pre        The selection binding and action callbacks are configured
     /// @post       Selecting a source dispatches its supported action
     ///
-    var body: some View /* Card Attachment Source layout */
-    {  /* Attachment-source picker */
+    var body: some View         /* Card Attachment Source layout */
+    {                           /* Attachment-source picker      */
         NavigationStack
         {
             List
@@ -213,7 +209,6 @@ struct CardAttachmentSourceSheet: View
                             Label(source.title, systemImage: source.symbolName)
                             .foregroundStyle(.primary)
                         }
-
                     }
                     else
                     {
@@ -226,11 +221,8 @@ struct CardAttachmentSourceSheet: View
                             Label(source.title, systemImage: source.symbolName)
                             .foregroundStyle(.primary)
                         }
-
                     }
-
                 }
-
             }
 
             .navigationTitle("Add attachment from")
@@ -243,17 +235,13 @@ struct CardAttachmentSourceSheet: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
 
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
-
 }
 
 
@@ -265,10 +253,10 @@ struct CardAttachmentSourceSheet: View
 ///
 struct CardLinkAttachmentSheet: View
 {
-    let onSave: (URL) -> Void /* Callback receiving the validated URL */
+    let onSave: (URL) -> Void           /* Callback receiving the validated URL */
 
-    @Environment(\.dismiss) private var dismiss /* Sheet dismissal action */
-    @State private var urlDraft = ""            /* User-entered URL text  */
+    @Environment(\.dismiss) private var dismiss         /* Sheet dismissal action */
+    @State private var urlDraft = ""                    /* User-entered URL text  */
 
     ///
     /// @fcn        CardLinkAttachmentSheet.validatedURL
@@ -277,8 +265,8 @@ struct CardLinkAttachmentSheet: View
     ///
     /// @return     (URL?) valid HTTP or HTTPS URL, or nil for invalid draft text
     ///
-    private var validatedURL: URL? /* Validated URL */
-    {  /* Parsed URL when the draft is valid */
+    private var validatedURL: URL?                      /* Validated URL                      */
+    {                                                   /* Parsed URL when the draft is valid */
         CardAttachmentStore.webURL(from: urlDraft)
     }
 
@@ -293,8 +281,8 @@ struct CardLinkAttachmentSheet: View
     /// @pre        The save callback and dismissal environment are available
     /// @post       A valid submitted URL is passed to the save callback
     ///
-    var body: some View /* Card Link Attachment layout */
-    {  /* Manual web-link form */
+    var body: some View         /* Card Link Attachment layout */
+    {                           /* Manual web-link form        */
         NavigationStack
         {
             Form
@@ -307,7 +295,6 @@ struct CardLinkAttachmentSheet: View
                     .autocorrectionDisabled()
                     .onSubmit(saveLink)
                 }
-
             }
 
             .navigationTitle("Add link")
@@ -320,7 +307,6 @@ struct CardLinkAttachmentSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
 
@@ -333,9 +319,7 @@ struct CardLinkAttachmentSheet: View
 
                     .disabled(validatedURL == nil)
                 }
-
             }
-
         }
 
         .presentationDetents([.medium])
@@ -356,16 +340,15 @@ struct CardLinkAttachmentSheet: View
     private func saveLink()
     {
         guard let validatedURL else
-        {  /* Validated attachment URL */
+        {                               /* Validated attachment URL */
             return
-        }  /* Require a valid web address */
+        }               /* Require a valid web address */
 
 
         onSave(validatedURL)
 
         dismiss()
     }
-
 }
 
 
@@ -378,22 +361,22 @@ struct CardLinkAttachmentSheet: View
 ///
 struct CardPhotoGallery: View
 {
-    let photos:                  [KanbanAttachment] /* Photo selections or gallery entries */
-    @Binding var photoSelection: [PhotosPickerItem] /* Photo selection */
-    let onOpen:                  (KanbanAttachment) -> Void /* Open the selected destination */
-    let onCaption:               (UUID, String) -> Bool /* Caption callback */
-    let onReorder:               ([UUID]) -> Bool /* Reorder callback */
-    let onRemove:                (KanbanAttachment) -> Void /* Remove callback */
-    let onSetCover:              (UUID) -> Void /* Set cover callback */
+    let photos:                  [KanbanAttachment]             /* Photo selections or gallery entries */
+    @Binding var photoSelection: [PhotosPickerItem]             /* Photo selection                     */
+    let onOpen:                  (KanbanAttachment) -> Void     /* Open the selected destination       */
+    let onCaption:               (UUID, String) -> Bool         /* Caption callback                    */
+    let onReorder:               ([UUID]) -> Bool               /* Reorder callback                    */
+    let onRemove:                (KanbanAttachment) -> Void     /* Remove callback                     */
+    let onSetCover:              (UUID) -> Void                 /* Set cover callback                  */
 
-    @ScaledMetric(relativeTo: .body) private var photoWidth  = 220 /* Photo width            */
-    @ScaledMetric(relativeTo: .body) private var photoHeight = 180 /* Photo height           */
-    @State private var showsArrangement = false                    /* Arrangement visibility */
+    @ScaledMetric(relativeTo: .body) private var photoWidth  = 220      /* Photo width            */
+    @ScaledMetric(relativeTo: .body) private var photoHeight = 180      /* Photo height           */
+    @State private var showsArrangement = false                         /* Arrangement visibility */
 
-    @State private var captionPhoto: KanbanAttachment?             /* Caption photo          */
-    @State private var removalPhoto: KanbanAttachment?             /* Removal photo          */
+    @State private var captionPhoto: KanbanAttachment?          /* Caption photo */
+    @State private var removalPhoto: KanbanAttachment?          /* Removal photo */
 
-    var body: some View /* Card Photo Gallery layout */
+    var body: some View         /* Card Photo Gallery layout */
     {
         VStack(alignment: .leading, spacing: 12)
         {
@@ -411,7 +394,6 @@ struct CardPhotoGallery: View
                     Text("Gallery").font(.headline)
                     galleryControls
                 }
-
             }
 
             ScrollView(.horizontal)
@@ -423,9 +405,7 @@ struct CardPhotoGallery: View
                         index, photo in
                         photoTile(photo, index: index)
                     }
-
                 }
-
             }
             .accessibilityIdentifier("photoGallery.row")
         }
@@ -445,22 +425,20 @@ struct CardPhotoGallery: View
             .databaseActivityOverlay()
         }
         .confirmationDialog(
-                        "Remove this photo?",
-                        isPresented: Binding(
-                            get:
-                            {
-                                removalPhoto != nil
-                            },
-                            set:
-                            {
-                                if !$0
-                                {
-                                    removalPhoto = nil
-
-                                }
-
-                            }
-                        ), titleVisibility: .visible
+            "Remove this photo?",
+            isPresented: Binding(
+                get:
+                {
+                    removalPhoto != nil
+                },
+                set:
+                {
+                    if !$0
+                    {
+                        removalPhoto = nil
+                    }
+                }
+            ), titleVisibility: .visible
         )
         {
             if let photo = removalPhoto
@@ -470,34 +448,28 @@ struct CardPhotoGallery: View
                     onRemove(photo)
 
                     removalPhoto = nil
-
                 }
-
             }
 
             Button("Cancel", role: .cancel)
             {
                 removalPhoto = nil
-
             }
-
         }
         message:
         {
             Text("Removes the photo and its caption from this item. Photos retained elsewhere are kept.")
         }
-
     }
 
 
-    private var galleryControls: some View /* Gallery controls */
+    private var galleryControls: some View      /* Gallery controls */
     {
         HStack(spacing: 12)
         {
             Button("Arrange", systemImage: "arrow.left.arrow.right")
             {
                 showsArrangement = true
-
             }
             .disabled(photos.count < 2)
             .accessibilityLabel("Arrange gallery photos")
@@ -552,9 +524,7 @@ struct CardPhotoGallery: View
                                 colors: [.black.opacity(0.7), .black.opacity(0.95)],
                                 startPoint: .top, endPoint: .bottom)
                         }
-
                     }
-
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .contentShape(RoundedRectangle(cornerRadius: 8))
@@ -563,7 +533,7 @@ struct CardPhotoGallery: View
             .accessibilityLabel("Photo \(index + 1)")
             .accessibilityValue(photo.caption ?? "No caption")
             .accessibilityHint(
-                                    "Opens the full photo. Touch and hold to set it as the cover, or drag it to another gallery position."
+                "Opens the full photo. Touch and hold to set it as the cover, or drag it to another gallery position."
             )
             .accessibilityIdentifier("photoGallery.photo.\(photo.id)")
             .accessibilityAction(named: Text("Set as Cover"))
@@ -576,7 +546,6 @@ struct CardPhotoGallery: View
                 {
                     onSetCover(photo.id)
                 }
-
             }
             .draggable("plenact.gallery.\(photo.id.uuidString)")
             .dropDestination(for: String.self)
@@ -596,7 +565,7 @@ struct CardPhotoGallery: View
                     return false
                 }
 
-                var ids = photos.map(\.id) /* Record identifiers */
+                var ids = photos.map(\.id)      /* Record identifiers */
 
                 ids.remove(at: source)
                 ids.insert(id, at: index)
@@ -614,7 +583,6 @@ struct CardPhotoGallery: View
                     Button(photo.caption == nil ? "Add caption" : "Edit caption", systemImage: "text.bubble")
                     {
                         captionPhoto = photo
-
                     }
 
                     Button("Move earlier", systemImage: "arrow.left")
@@ -635,9 +603,7 @@ struct CardPhotoGallery: View
                     Button("Remove photo", systemImage: "trash", role: .destructive)
                     {
                         removalPhoto = photo
-
                     }
-
                 }
                 label:
                 {
@@ -648,7 +614,6 @@ struct CardPhotoGallery: View
                 .accessibilityLabel("Options for photo \(index + 1)")
                 .accessibilityIdentifier("photoGallery.options.\(photo.id)")
             }
-
         }
         .frame(width: photoWidth)
     }
@@ -667,14 +632,12 @@ struct CardPhotoGallery: View
     ///
     private func movePhoto(_ index: Int, by offset: Int)
     {
-        var ids = photos.map(\.id) /* Record identifiers */
+        var ids = photos.map(\.id)      /* Record identifiers */
 
         ids.swapAt(index, index + offset)
 
         _ = onReorder(ids)
-
     }
-
 }
 
 
@@ -687,10 +650,10 @@ struct CardPhotoGallery: View
 ///
 struct CardPhotoCaptionSheet: View
 {
-    let photo:                  KanbanAttachment /* Photo selection or source      */
-    let onSave:                 (String) -> Bool /* Persist the edited value       */
-    @State private var caption: String           /* Supporting media caption       */
-    @Environment(\.dismiss) private var dismiss  /* Close the current presentation */
+    let photo:                  KanbanAttachment        /* Photo selection or source      */
+    let onSave:                 (String) -> Bool        /* Persist the edited value       */
+    @State private var caption: String                  /* Supporting media caption       */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
 
 
     ///
@@ -709,11 +672,10 @@ struct CardPhotoCaptionSheet: View
         self.photo = photo
         self.onSave = onSave
         _caption = State(initialValue: photo.caption ?? "")
-
     }
 
 
-    var body: some View /* Card Photo Caption layout */
+    var body: some View         /* Card Photo Caption layout */
     {
         NavigationStack
         {
@@ -734,7 +696,6 @@ struct CardPhotoCaptionSheet: View
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
-
             }
             .navigationTitle("Photo caption")
             .navigationBarTitleDisplayMode(.inline)
@@ -746,7 +707,6 @@ struct CardPhotoCaptionSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -757,17 +717,12 @@ struct CardPhotoCaptionSheet: View
                         {
                             dismiss()
                         }
-
                     }
                     .accessibilityIdentifier("photoGallery.saveCaption")
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -780,11 +735,11 @@ struct CardPhotoCaptionSheet: View
 ///
 struct CardPhotoArrangementSheet: View
 {
-    let photos:    [KanbanAttachment]           /* Photo selections or gallery entries */
-    let onReorder: ([UUID]) -> Bool             /* Reorder callback                    */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation      */
+    let photos:    [KanbanAttachment]                   /* Photo selections or gallery entries */
+    let onReorder: ([UUID]) -> Bool                     /* Reorder callback                    */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation      */
 
-    var body: some View /* Card Photo Arrangement layout */
+    var body: some View         /* Card Photo Arrangement layout */
     {
         NavigationStack
         {
@@ -801,28 +756,24 @@ struct CardPhotoArrangementSheet: View
                             .frame(width: 80)
                             Text(photo.caption ?? "Photo \(index + 1)")
                         }
-
                     }
                     .onMove
                     {
                         source, destination in
 
-                        var ids = photos.map(\.id) /* Record identifiers */
+                        var ids = photos.map(\.id)      /* Record identifiers */
 
                         ids.move(fromOffsets: source, toOffset: destination)
 
                         _ = onReorder(ids)
-
                     }
-
                 }
                 footer:
                 {
                     Text(
-                                                            "Drag the handles to arrange photos. The cover stays separate. Changes are saved as you move photos."
+                        "Drag the handles to arrange photos. The cover stays separate. Changes are saved as you move photos."
                     )
                 }
-
             }
             .environment(\.editMode, .constant(.active))
             .navigationTitle("Arrange photos")
@@ -835,15 +786,10 @@ struct CardPhotoArrangementSheet: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -855,7 +801,7 @@ struct CardPhotoArrangementSheet: View
 ///
 struct CardAttachmentThumbnail: View
 {
-    let attachment: KanbanAttachment /* Attachment represented by the thumbnail */
+    let attachment: KanbanAttachment    /* Attachment represented by the thumbnail */
 
     ///
     /// @fcn        CardAttachmentThumbnail.body
@@ -868,15 +814,15 @@ struct CardAttachmentThumbnail: View
     /// @pre        attachment contains metadata for a local image file
     /// @post       Rendering does not modify the attachment or stored image data
     ///
-    var body: some View /* Card Attachment Thumbnail layout */
-    {  /* Local image, remote link, or media fallback */
+    var body: some View         /* Card Attachment Thumbnail layout            */
+    {                           /* Local image, remote link, or media fallback */
         GeometryReader
         {
             geometry in
             Group
             {
                 if let url = attachment.url
-                {  /* Remote link URL */
+                {                               /* Remote link URL */
                     VStack(spacing: 6)
                     {
                         Image(systemName: "link")
@@ -908,10 +854,10 @@ struct CardAttachmentThumbnail: View
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.secondarySystemGroupedBackground))
                 }
-                else if let imageURL = CardAttachmentStore.imageURL(for: attachment), /* Local photo file URL */
+                else if let imageURL = CardAttachmentStore.imageURL(for: attachment),           /* Local photo file URL */
 
                 let image = UIImage(contentsOfFile: imageURL.path)
-                {  /* Decoded local image */
+                {                                                       /* Decoded local image */
                     Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -924,7 +870,6 @@ struct CardAttachmentThumbnail: View
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.secondarySystemGroupedBackground))
                 }
-
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
@@ -933,7 +878,6 @@ struct CardAttachmentThumbnail: View
         .aspectRatio(1, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
-
 }
 
 
@@ -947,8 +891,8 @@ struct CardAttachmentThumbnail: View
 @MainActor
 final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDelegate
 {
-    @Published private(set) var isPlaying = false /* Playing state             */
-    private var player: AVAudioPlayer?            /* Audio playback controller */
+    @Published private(set) var isPlaying = false       /* Playing state             */
+    private var player: AVAudioPlayer?                  /* Audio playback controller */
 
 
     ///
@@ -971,28 +915,25 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
 
         do
         {
-            let session = AVAudioSession.sharedInstance() /* Current operation session */
+            let session = AVAudioSession.sharedInstance()       /* Current operation session */
 
             try session.setCategory(.playback, mode: .spokenAudio)
             try session.setActive(true)
 
-            let player = try AVAudioPlayer(contentsOf: url) /* Audio playback controller */
+            let player = try AVAudioPlayer(contentsOf: url)     /* Audio playback controller */
 
             player.delegate = self;
             self.player = player
             isPlaying = player.play()
-
         }
         catch
         {
             isPlaying = false;
             errorMessage = "This recording couldn't be played. The file may be unavailable."
-
         }
-
     }
 
-    @Published var errorMessage: String? /* User-facing failure message */
+    @Published var errorMessage: String?        /* User-facing failure message */
 
 
     ///
@@ -1038,9 +979,7 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
             @MainActor [weak self] in
             self?.stop()
         }
-
     }
-
 }
 
 
@@ -1053,11 +992,11 @@ final class CaptureAudioPlayback: NSObject, ObservableObject, AVAudioPlayerDeleg
 ///
 struct AudioAttachmentPlayer: View
 {
-    let url: URL                                               /* Resource location            */
-    @StateObject private var playback = CaptureAudioPlayback() /* Current audio playback state */
-    @Environment(\.scenePhase) private var scenePhase          /* Scene phase                  */
+    let url: URL                                                        /* Resource location            */
+    @StateObject private var playback = CaptureAudioPlayback()          /* Current audio playback state */
+    @Environment(\.scenePhase) private var scenePhase                   /* Scene phase                  */
 
-    var body: some View /* Audio Attachment Player layout */
+    var body: some View         /* Audio Attachment Player layout */
     {
         VStack(spacing: 16)
         {
@@ -1074,7 +1013,6 @@ struct AudioAttachmentPlayer: View
             {
                 Text(error).foregroundStyle(.secondary)
             }
-
         }
         .onDisappear
         {
@@ -1087,16 +1025,13 @@ struct AudioAttachmentPlayer: View
             {
                 playback.stop()
             }
-
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("Plenact.StopAudioPreview")))
         {
             _ in
             playback.stop()
         }
-
     }
-
 }
 
 
@@ -1109,20 +1044,20 @@ struct AudioAttachmentPlayer: View
 ///
 struct CardAttachmentPreview: View
 {
-    let attachment: KanbanAttachment /* The media attachment to preview */
+    let attachment: KanbanAttachment    /* The media attachment to preview */
 
-    var onSaveDrawing:                   ((KanbanAttachment) -> Bool)? = /* Save drawing callback */
+    var onSaveDrawing:                   ((KanbanAttachment) -> Bool)? =        /* Save drawing callback     */
         nil
-    @State private var showsDrawingEditor = false          /* Drawing Editor visibility */
+    @State private var showsDrawingEditor = false                               /* Drawing Editor visibility */
 
-    @State private var editedAttachment: KanbanAttachment? /* Edited attachment         */
+    @State private var editedAttachment: KanbanAttachment?      /* Edited attachment         */
 
-    private var currentAttachment: KanbanAttachment /* Current attachment */
+    private var currentAttachment: KanbanAttachment     /* Current attachment */
     {
         editedAttachment ?? attachment
     }
 
-    @Environment(\.dismiss) private var dismiss /* Preview dismissal action */
+    @Environment(\.dismiss) private var dismiss         /* Preview dismissal action */
 
     ///
     /// @fcn        CardAttachmentPreview.body
@@ -1135,8 +1070,8 @@ struct CardAttachmentPreview: View
     /// @pre        attachment identifies a photo previously imported for a card
     /// @post       The preview is shown without modifying the image or its metadata
     ///
-    var body: some View /* Card Attachment Preview layout */
-    {  /* Video or image preview with unavailable fallback */
+    var body: some View         /* Card Attachment Preview layout                   */
+    {                           /* Video or image preview with unavailable fallback */
         NavigationStack
         {
             Group
@@ -1148,7 +1083,7 @@ struct CardAttachmentPreview: View
                 else if attachment.kind == .video,
 
                 let videoURL = CardAttachmentStore.fileURL(for: currentAttachment)
-                {  /* Local video file URL */
+                {                                                                       /* Local video file URL */
                     VideoPlayer(player: AVPlayer(url: videoURL))
                 }
                 else
@@ -1176,13 +1111,9 @@ struct CardAttachmentPreview: View
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal)
                             }
-
                         }
-
                     }
-
                 }
-
             }
 
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1198,11 +1129,8 @@ struct CardAttachmentPreview: View
                         Button("Edit drawing", systemImage: "pencil.tip")
                         {
                             showsDrawingEditor = true
-
                         }
-
                     }
-
                 }
 
                 ToolbarItem(placement: .topBarTrailing)
@@ -1211,11 +1139,8 @@ struct CardAttachmentPreview: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
 
         .sheet(isPresented: $showsDrawingEditor)
@@ -1232,7 +1157,7 @@ struct CardAttachmentPreview: View
 
                     do
                     {
-                        let replacement = /* Replacement content or state */
+                        let replacement =                                                               /* Replacement content or state */
                             try DrawingAttachmentStore.save(drawing, replacing: currentAttachment)
 
                         guard onSaveDrawing(replacement) else
@@ -1250,20 +1175,16 @@ struct CardAttachmentPreview: View
                     {
                         return false
                     }
-
                 }
-
             }
             else
             {
                 ContentUnavailableView(
-                                                "Drawing unavailable", systemImage: "pencil.tip",
-                                                description: Text(
-                                                                                    "The image preview is still available, but its editable strokes could not be read."))
+                    "Drawing unavailable", systemImage: "pencil.tip",
+                    description: Text(
+                        "The image preview is still available, but its editable strokes could not be read."))
             }
-
         }
         .presentationDetents([.large])
     }
-
 }

@@ -22,21 +22,21 @@ import SwiftUI
 ///
 struct PlenactDemoAccountSection: View
 {
-    @State private var remoteSession        = PlenactSessionStore.load() /* Restored authenticated session      */
-    @State private var username             = ""                         /* Login handle draft                  */
-    @State private var password             = ""                         /* Short-lived login password          */
-    @State private var newMemberUsername    = ""                         /* Invited member handle draft         */
-    @State private var newMemberDisplayName = ""                         /* Invited member display-name draft   */
-    @State private var newMemberPassword    = ""                         /* Short-lived invited-member password */
+    @State private var remoteSession        = PlenactSessionStore.load()        /* Restored authenticated session      */
+    @State private var username             = ""                                /* Login handle draft                  */
+    @State private var password             = ""                                /* Short-lived login password          */
+    @State private var newMemberUsername    = ""                                /* Invited member handle draft         */
+    @State private var newMemberDisplayName = ""                                /* Invited member display-name draft   */
+    @State private var newMemberPassword    = ""                                /* Short-lived invited-member password */
 
-    @State private var manualAssigneeDrafts: [Int: String]       = [:]      /* Per-card manual assignment text */
-    @State private var directory:            [PlenactRemoteUser] = []       /* Authenticated user directory    */
-    @State private var remoteSnapshot:       PlenactBoardSnapshotResponse?  /* Last fetched server snapshot    */
-    @State private var remoteDraft:          PlenactBoardDocument?          /* Editable remote-only Board copy */
+    @State private var manualAssigneeDrafts: [Int: String]       = [:]          /* Per-card manual assignment text */
+    @State private var directory:            [PlenactRemoteUser] = []           /* Authenticated user directory    */
+    @State private var remoteSnapshot:       PlenactBoardSnapshotResponse?      /* Last fetched server snapshot    */
+    @State private var remoteDraft:          PlenactBoardDocument?              /* Editable remote-only Board copy */
 
-    @State private var activeOperationCount = 0 /* Number of in-flight demo service operations */
+    @State private var activeOperationCount = 0         /* Number of in-flight demo service operations */
 
-    @State private var currentRevision: Int64?  /* Last fetched server revision                */
+    @State private var currentRevision: Int64?          /* Last fetched server revision                */
 
     ///
     /// @fcn        PlenactDemoAccountSection.isWorking
@@ -45,15 +45,15 @@ struct PlenactDemoAccountSection: View
     ///
     /// @return     (Bool) true while at least one operation is active
     ///
-    private var isWorking: Bool /* Working state */
+    private var isWorking: Bool         /* Working state */
     {
         activeOperationCount > 0
-    }  /* Whether a demo operation is active    */
+    }                                   /* Whether a demo operation is active    */
 
-    @State private var needsConflictReload = false /* Stale-draft reload requirement        */
-    @State private var alertMessage        = ""    /* Current alert text                    */
-    @State private var showsAlert          = false /* Shared-demo alert presentation state  */
-    @State private var confirmsSeed        = false /* Initial SampleData confirmation state */
+    @State private var needsConflictReload = false      /* Stale-draft reload requirement        */
+    @State private var alertMessage        = ""         /* Current alert text                    */
+    @State private var showsAlert          = false      /* Shared-demo alert presentation state  */
+    @State private var confirmsSeed        = false      /* Initial SampleData confirmation state */
 
     ///
     /// @fcn        PlenactDemoAccountSection.canInitializeSampleBoard
@@ -62,8 +62,8 @@ struct PlenactDemoAccountSection: View
     ///
     /// @return     (Bool) true when the SampleData seed action is available
     ///
-    private var canInitializeSampleBoard: Bool /* Initialize Sample Board availability */
-    {  /* Editor permission and unseeded revision */
+    private var canInitializeSampleBoard: Bool                                          /* Initialize Sample Board availability    */
+    {                                                                                   /* Editor permission and unseeded revision */
         remoteSession?.user.accountRole == "board_editor" && currentRevision == 0
     }
 
@@ -75,8 +75,8 @@ struct PlenactDemoAccountSection: View
     ///
     /// @return     (Bool) true when a draft differs from the last fetched snapshot
     ///
-    private var hasUnsavedRemoteEdits: Bool /* Unsaved Remote Edits availability */
-    {  /* Draft differs from the fetched snapshot */
+    private var hasUnsavedRemoteEdits: Bool                             /* Unsaved Remote Edits availability       */
+    {                                                                   /* Draft differs from the fetched snapshot */
         remoteDraft != nil && remoteDraft != remoteSnapshot?.document
     }
 
@@ -91,16 +91,16 @@ struct PlenactDemoAccountSection: View
     /// @pre        The view state is initialized from the stored session, when available
     /// @post       Shared-demo mutations occur only through explicit authenticated actions
     ///
-    var body: some View /* Plenact Demo Account layout */
-    {  /* Account form, directory, and shared Board controls */
+    var body: some View         /* Plenact Demo Account layout                        */
+    {                           /* Account form, directory, and shared Board controls */
         Section("Shared demo")
         {
             if let remoteSession
-            {  /* Authenticated server identity */
+            {                                                                           /* Authenticated server identity */
                 LabeledContent("Signed in", value: remoteSession.user.displayName)
                 LabeledContent("Account", value: "@\(remoteSession.user.username)")
                 LabeledContent(
-                                                "Access", value: remoteSession.user.accountRole == "board_editor" ? "Board editor" : "Member")
+                    "Access", value: remoteSession.user.accountRole == "board_editor" ? "Board editor" : "Member")
 
                 Button("Refresh shared directory and Board")
                 {
@@ -108,25 +108,23 @@ struct PlenactDemoAccountSection: View
                     {
                         await refreshRemoteState()
                     }
-
                 }
 
                 .disabled(isWorking)
                 .disabled(isWorking || hasUnsavedRemoteEdits)
 
                 if let currentRevision, currentRevision > 0
-                {  /* Initialized shared Board revision */
+                {                                                                               /* Initialized shared Board revision */
                     LabeledContent("Shared Board", value: "Revision \(currentRevision)")
 
                     if let remoteSnapshot
-                    {  /* Most recently fetched Board snapshot */
+                    {                                           /* Most recently fetched Board snapshot */
                         ForEach(remoteSnapshot.document.lists)
                         {
                             list in
 
                             sharedListContent(list, session: remoteSession, revision: remoteSnapshot.revision)
                         }
-
                     }
 
 
@@ -138,18 +136,16 @@ struct PlenactDemoAccountSection: View
                             {
                                 await saveSharedBoard()
                             }
-
                         }
 
                         .disabled(isWorking || remoteDraft?.validationMessage != nil)
 
                         if let validationMessage = remoteDraft?.validationMessage
-                        {  /* Draft validation result */
+                        {                                                               /* Draft validation result */
                             Text(validationMessage)
                             .font(.footnote)
                             .foregroundStyle(.red)
                         }
-
                     }
 
 
@@ -164,12 +160,10 @@ struct PlenactDemoAccountSection: View
 
                                 await refreshRemoteState()
                             }
-
                         }
 
                         .disabled(isWorking)
                     }
-
                 }
                 else if currentRevision == 0
                 {
@@ -182,7 +176,6 @@ struct PlenactDemoAccountSection: View
                     Button("Initialize with SampleData", systemImage: "arrow.up.to.line")
                     {
                         confirmsSeed = true
-
                     }
 
                     .disabled(isWorking)
@@ -197,7 +190,6 @@ struct PlenactDemoAccountSection: View
 
                         LabeledContent(user.displayName, value: "@\(user.username)")
                     }
-
                 }
 
 
@@ -220,14 +212,12 @@ struct PlenactDemoAccountSection: View
                             {
                                 await createMember()
                             }
-
                         }
 
                         .disabled(
                             isWorking || newMemberUsername.isEmpty || newMemberDisplayName.isEmpty
                             || newMemberPassword.count < 12 || newMemberPassword.utf8.count > 72)
                     }
-
                 }
 
 
@@ -237,7 +227,6 @@ struct PlenactDemoAccountSection: View
                     {
                         await signOut(remoteSession)
                     }
-
                 }
 
                 .disabled(isWorking || hasUnsavedRemoteEdits)
@@ -258,7 +247,6 @@ struct PlenactDemoAccountSection: View
                     {
                         await signIn()
                     }
-
                 }
                 label:
                 {
@@ -270,14 +258,12 @@ struct PlenactDemoAccountSection: View
                     {
                         Text("Sign in to shared demo")
                     }
-
                 }
 
                 .disabled(
                     isWorking || username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.isEmpty
                     || password.utf8.count > 72)
             }
-
         }
         .task
         {
@@ -285,13 +271,12 @@ struct PlenactDemoAccountSection: View
             {
                 await refreshRemoteState()
             }
-
         }
 
         .confirmationDialog(
-                        "Initialize the shared Board?",
-                        isPresented: $confirmsSeed,
-                        titleVisibility: .visible
+            "Initialize the shared Board?",
+            isPresented: $confirmsSeed,
+            titleVisibility: .visible
         )
         {
             Button("Publish SampleData", role: .destructive)
@@ -300,19 +285,17 @@ struct PlenactDemoAccountSection: View
                 {
                     await initializeSampleBoard()
                 }
-
             }
 
 
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                    "Only the app's synthetic weekday SampleData will be uploaded. Your local Board, profile, and attachments will not be changed."
+                "Only the app's synthetic weekday SampleData will be uploaded. Your local Board, profile, and attachments will not be changed."
             )
         }
 
@@ -321,13 +304,11 @@ struct PlenactDemoAccountSection: View
             Button("OK", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(alertMessage)
         }
-
     }
 
 
@@ -349,13 +330,12 @@ struct PlenactDemoAccountSection: View
         defer
         {
             activeOperationCount -= 1
-
         }
 
 
         do
         {
-            let client = try PlenactAPIClient() /* Configured HTTPS API client */
+            let client = try PlenactAPIClient()         /* Configured HTTPS API client */
 
             remoteSession = try await client.login(username: username, password: password)
             password = ""
@@ -368,7 +348,6 @@ struct PlenactDemoAccountSection: View
 
             present(error)
         }
-
     }
 
 
@@ -386,7 +365,7 @@ struct PlenactDemoAccountSection: View
     private func refreshRemoteState() async
     {
         guard let remoteSession else
-        {  /* Authenticated shared-demo session */
+        {                               /* Authenticated shared-demo session */
             return
         }
 
@@ -396,29 +375,26 @@ struct PlenactDemoAccountSection: View
         defer
         {
             activeOperationCount -= 1
-
         }
 
 
         do
         {
-            let client = try PlenactAPIClient() /* Configured HTTPS API client */
+            let client = try PlenactAPIClient()         /* Configured HTTPS API client */
 
             directory = try await client.directory(token: remoteSession.accessToken)
 
-            let snapshot = try await client.board(token: remoteSession.accessToken) /* Latest shared Board */
+            let snapshot = try await client.board(token: remoteSession.accessToken)     /* Latest shared Board */
 
             remoteSnapshot = snapshot
             remoteDraft = snapshot.document
             currentRevision = snapshot.revision
-
         }
         catch PlenactAPIError.boardNotSeeded
         {
             remoteSnapshot = nil
             remoteDraft = nil
             currentRevision = 0
-
         }
         catch PlenactAPIError.unauthorized
         {
@@ -436,7 +412,6 @@ struct PlenactDemoAccountSection: View
         {
             present(error)
         }
-
     }
 
 
@@ -454,10 +429,10 @@ struct PlenactDemoAccountSection: View
     @MainActor
     private func initializeSampleBoard() async
     {
-        guard let remoteSession, /* Authenticated editor session   */
+        guard let remoteSession,        /* Authenticated editor session   */
         canInitializeSampleBoard
         else
-        {  /* Eligible unseeded editor state */
+        {               /* Eligible unseeded editor state */
             return
         }
 
@@ -467,14 +442,13 @@ struct PlenactDemoAccountSection: View
         defer
         {
             activeOperationCount -= 1
-
         }
 
 
         do
         {
-            let client   = try PlenactAPIClient()              /* Configured HTTPS API client */
-            let response = try await client.publishSampleData( /* Initial SampleData response */
+            let client   = try PlenactAPIClient()                       /* Configured HTTPS API client */
+            let response = try await client.publishSampleData(          /* Initial SampleData response */
                 token: remoteSession.accessToken,
                 user: remoteSession.user,
                 expectedRevision: 0
@@ -492,7 +466,6 @@ struct PlenactDemoAccountSection: View
 
             present(error)
         }
-
     }
 
 
@@ -516,12 +489,11 @@ struct PlenactDemoAccountSection: View
         defer
         {
             activeOperationCount -= 1
-
         }
 
 
         if let client = try? PlenactAPIClient()
-        {  /* Revoke the session when the endpoint is configured */
+        {                                       /* Revoke the session when the endpoint is configured */
             await client.logout(session)
         }
         else
@@ -535,7 +507,6 @@ struct PlenactDemoAccountSection: View
         remoteSnapshot = nil
         remoteDraft = nil
         currentRevision = nil
-
     }
 
 
@@ -567,9 +538,7 @@ struct PlenactDemoAccountSection: View
 
                 sharedCardContent(card, session: session, revision: revision)
             }
-
         }
-
     }
 
 
@@ -592,20 +561,20 @@ struct PlenactDemoAccountSection: View
     @ViewBuilder
     private func sharedCardContent(_ card: KanbanCard, session: PlenactRemoteSession, revision: Int64) -> some View
     {
-        let isAssigned = card.members.contains /* Assigned state */
-        {  /* Whether the current account is assigned */
+        let isAssigned = card.members.contains          /* Assigned state                          */
+        {                                               /* Whether the current account is assigned */
             $0.kind == .registeredUser && $0.userID?.lowercased() == session.user.userID.lowercased()
         }
 
 
-        let isEditor = session.user.accountRole == "board_editor" /* Canonical edit permission */
+        let isEditor = session.user.accountRole == "board_editor"       /* Canonical edit permission */
 
         HStack(alignment: .center)
         {
             VStack(alignment: .leading, spacing: 2)
             {
                 if isEditor, let cardBinding = cardBinding(cardID: card.id)
-                {  /* Editable remote-card binding */
+                {                                                               /* Editable remote-card binding */
                     TextField("Card title", text: cardBinding.word).textInputAutocapitalization(.sentences)
                     Toggle("Complete", isOn: cardBinding.isTitleChecked)
                     .font(.caption)
@@ -616,7 +585,7 @@ struct PlenactDemoAccountSection: View
                 }
 
 
-                let names = card.members.map(\.displayName).joined(separator: ", ") /* Visible card assignees */
+                let names = card.members.map(\.displayName).joined(separator: ", ")     /* Visible card assignees */
 
                 if !names.isEmpty
                 {
@@ -629,18 +598,17 @@ struct PlenactDemoAccountSection: View
                 if isEditor
                 {
                     TextField(
-                                                            "Manual person",
-                                                            text: Binding(
-                                                                get:
-                                                                {
-                                                                    manualAssigneeDrafts[card.id, default: ""]
-                                                                },
-                                                                set:
-                                                                {
-                                                                    manualAssigneeDrafts[card.id] = $0
-
-                                                                }
-                                                            )
+                        "Manual person",
+                        text: Binding(
+                            get:
+                            {
+                                manualAssigneeDrafts[card.id, default: ""]
+                            },
+                            set:
+                            {
+                                manualAssigneeDrafts[card.id] = $0
+                            }
+                        )
                     ).textInputAutocapitalization(.sentences)
                     HStack
                     {
@@ -675,9 +643,7 @@ struct PlenactDemoAccountSection: View
                             manualAssigneeDrafts[card.id, default: ""].trimmingCharacters(in: .whitespacesAndNewlines)
                             .isEmpty)
                     }
-
                 }
-
             }
 
 
@@ -691,8 +657,8 @@ struct PlenactDemoAccountSection: View
                     {
                         user in
 
-                        let assigned = card.members.contains /* Assigned operation value */
-                        {  /* Whether this directory user is assigned */
+                        let assigned = card.members.contains    /* Assigned operation value                */
+                        {                                       /* Whether this directory user is assigned */
                             $0.kind == .registeredUser && $0.userID?.lowercased() == user.userID.lowercased()
                         }
 
@@ -707,11 +673,8 @@ struct PlenactDemoAccountSection: View
                                     targetUserID: user.userID
                                 )
                             }
-
                         }
-
                     }
-
                 }
                 label:
                 {
@@ -729,15 +692,12 @@ struct PlenactDemoAccountSection: View
                     {
                         await changeOwnAssignment(cardID: card.id, action: isAssigned ? "unassign" : "assign")
                     }
-
                 }
 
                 .buttonStyle(.borderless)
                 .disabled(isWorking || revision != currentRevision || hasUnsavedRemoteEdits)
             }
-
         }
-
     }
 
 
@@ -758,10 +718,10 @@ struct PlenactDemoAccountSection: View
     @MainActor
     private func changeOwnAssignment(cardID: Int, action: String, targetUserID: String? = nil) async
     {
-        guard let remoteSession, /* Authenticated shared-demo session */
+        guard let remoteSession,        /* Authenticated shared-demo session */
         let currentRevision
         else
-        {  /* Fetched Board revision            */
+        {               /* Fetched Board revision            */
             return
         }
 
@@ -771,13 +731,12 @@ struct PlenactDemoAccountSection: View
         defer
         {
             activeOperationCount -= 1
-
         }
 
 
         do
         {
-            let client = try PlenactAPIClient() /* Configured HTTPS API client */
+            let client = try PlenactAPIClient()         /* Configured HTTPS API client */
 
             _ = try await client.changeAssignment(
                 token: remoteSession.accessToken,
@@ -790,14 +749,12 @@ struct PlenactDemoAccountSection: View
             await refreshRemoteState()
 
             needsConflictReload = false
-
         }
         catch
         {
             await refreshRemoteState()
             present(error)
         }
-
     }
 
 
@@ -816,7 +773,7 @@ struct PlenactDemoAccountSection: View
     ///
     private func cardBinding(cardID: Int) -> Binding<KanbanCard>?
     {
-        guard let document = remoteDraft, /* Current remote-only draft       */
+        guard let document = remoteDraft,                       /* Current remote-only draft       */
         let listIndex = document.lists.firstIndex(where:
             {
                 $0.cards.contains(where:
@@ -824,17 +781,17 @@ struct PlenactDemoAccountSection: View
                         $0.id == cardID
                     })
             }
-        ), /* List containing the target card */
+        ),                                                                      /* List containing the target card */
         let cardIndex = document.lists[listIndex].cards.firstIndex(where:
             {
                 $0.id == cardID
             })
         else
-        {  /* Card's current list index       */
+        {               /* Card's current list index       */
             return nil
         }
 
-        let originalCard = document.lists[listIndex].cards[cardIndex] /* Fallback card value for the binding */
+        let originalCard = document.lists[listIndex].cards[cardIndex]           /* Fallback card value for the binding */
 
         return Binding(
             get:
@@ -845,13 +802,12 @@ struct PlenactDemoAccountSection: View
             {
                 updatedCard in
                 guard var updatedDocument = remoteDraft else
-                {  /* Mutable copy of the remote draft */
+                {                                               /* Mutable copy of the remote draft */
                     return
                 }
 
                 updatedDocument.lists[listIndex].cards[cardIndex] = updatedCard
                 remoteDraft = updatedDocument
-
             }
         )
     }
@@ -871,14 +827,14 @@ struct PlenactDemoAccountSection: View
     ///
     private func addManualAssignee(cardID: Int)
     {
-        let displayName = /* Display name */
+        let displayName =                                                       /* Display name */
             manualAssigneeDrafts[cardID, default: ""].trimmingCharacters(
-            in: .whitespacesAndNewlines) /* Normalized manual name */
+                in: .whitespacesAndNewlines)                                    /* Normalized manual name */
 
         guard !displayName.isEmpty,
         let binding = cardBinding(cardID: cardID)
         else
-        {  /* Matching remote draft card */
+        {               /* Matching remote draft card */
             return
         }
 
@@ -886,7 +842,6 @@ struct PlenactDemoAccountSection: View
         binding.wrappedValue.members.append(.manual(displayName))
 
         manualAssigneeDrafts[cardID] = ""
-
     }
 
 
@@ -906,7 +861,7 @@ struct PlenactDemoAccountSection: View
     private func removeManualAssignee(cardID: Int, assigneeID: UUID)
     {
         guard let binding = cardBinding(cardID: cardID) else
-        {  /* Matching remote draft card */
+        {                                                       /* Matching remote draft card */
             return
         }
 
@@ -914,7 +869,6 @@ struct PlenactDemoAccountSection: View
         {
             $0.kind == .manual && $0.id == assigneeID
         }
-
     }
 
 
@@ -931,25 +885,24 @@ struct PlenactDemoAccountSection: View
     @MainActor
     private func saveSharedBoard() async
     {
-        guard let remoteSession, let remoteSnapshot, let remoteDraft, /* Current editor session and snapshot */
+        guard let remoteSession, let remoteSnapshot, let remoteDraft,           /* Current editor session and snapshot */
         remoteDraft.validationMessage == nil
         else
         {
             return
-        }  /* Only save a valid document          */
+        }               /* Only save a valid document          */
 
         activeOperationCount += 1
 
         defer
         {
             activeOperationCount -= 1
-
         }
 
 
         do
         {
-            let client = try PlenactAPIClient() /* Configured HTTPS API client */
+            let client = try PlenactAPIClient()         /* Configured HTTPS API client */
 
             _ = try await client.saveBoard(
                 token: remoteSession.accessToken,
@@ -960,7 +913,6 @@ struct PlenactDemoAccountSection: View
             await refreshRemoteState()
 
             needsConflictReload = false
-
         }
         catch PlenactAPIError.revisionConflict
         {
@@ -972,7 +924,6 @@ struct PlenactDemoAccountSection: View
         {
             present(error)
         }
-
     }
 
 
@@ -989,12 +940,12 @@ struct PlenactDemoAccountSection: View
     @MainActor
     private func createMember() async
     {
-        guard let remoteSession, /* Authenticated shared-demo session */
+        guard let remoteSession,                                /* Authenticated shared-demo session */
         remoteSession.user.accountRole == "board_editor"
         else
         {
             return
-        }  /* Require Board-editor access */
+        }               /* Require Board-editor access */
 
 
         activeOperationCount += 1
@@ -1002,13 +953,12 @@ struct PlenactDemoAccountSection: View
         defer
         {
             activeOperationCount -= 1
-
         }
 
 
         do
         {
-            let client = try PlenactAPIClient() /* Configured HTTPS API client */
+            let client = try PlenactAPIClient()         /* Configured HTTPS API client */
 
             _ = try await client.createMember(
                 token: remoteSession.accessToken,
@@ -1029,7 +979,6 @@ struct PlenactDemoAccountSection: View
 
             present(error)
         }
-
     }
 
 
@@ -1068,7 +1017,5 @@ struct PlenactDemoAccountSection: View
     {
         alertMessage = message
         showsAlert = true
-
     }
-
 }

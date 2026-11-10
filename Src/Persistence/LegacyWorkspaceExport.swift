@@ -13,11 +13,10 @@ import Foundation
 ///     Preserve current source bytes before any future conversion or cloud write
 struct LegacyWorkspaceBackup
 {
-    let files:       FileWrapper /* Frozen directory ready for the Files exporter */
-    let storeCount:  Int         /* Number of captured present preference values  */
-    let mediaCount:  Int         /* Number of original media files                */
-    let reviewCodes: [String]    /* Bounded issue descriptions without raw values */
-
+    let files:       FileWrapper        /* Frozen directory ready for the Files exporter */
+    let storeCount:  Int                /* Number of captured present preference values  */
+    let mediaCount:  Int                /* Number of original media files                */
+    let reviewCodes: [String]           /* Bounded issue descriptions without raw values */
 }
 
 
@@ -27,13 +26,13 @@ struct LegacyWorkspaceBackup
 @MainActor
 enum LegacyWorkspaceExport
 {
-    static let mediaRoots = [ /* Media roots */
+    static let mediaRoots = [                                           /* Media roots */
         "Documents/CardAttachments", "Documents/ProfileAvatars",
         "Library/Application Support/PlenactStudioArtwork",
         "Library/Application Support/PlenactCollectionBackgrounds"
-    ] /* Every currently owned original-media area */
+    ]                                                                   /* Every currently owned original-media area */
 
-    static let maximumBytes = 256 * 1024 * 1024 /* Explicit in-memory export ceiling; never truncate */
+    static let maximumBytes = 256 * 1024 * 1024         /* Explicit in-memory export ceiling; never truncate */
 
 
     /// Explicit capture failures leave source stores and files untouched
@@ -46,7 +45,7 @@ enum LegacyWorkspaceExport
         /// @fcn Failure.errorDescription
         /// @brief Present an actionable local backup error
         /// @return A description containing no source values or private paths
-        var errorDescription: String? /* Readable failure explanation */
+        var errorDescription: String?           /* Readable failure explanation */
         {
             switch self
             {
@@ -77,20 +76,20 @@ enum LegacyWorkspaceExport
     /// @throws Unsafe paths, unreadable files or the explicit size ceiling
     private static func inventory(root: URL) throws -> [String: Data]
     {
-        let manager                = FileManager.default /* File access stays within the supplied source container */
-        var result: [String: Data] = [:]                 /* Complete media inventory, including unreferenced originals */
-        var size                   = 0                   /* Running memory bound */
+        let manager                = FileManager.default        /* File access stays within the supplied source container     */
+        var result: [String: Data] = [:]                        /* Complete media inventory, including unreferenced originals */
+        var size                   = 0                          /* Running memory bound                                       */
 
         for area in mediaRoots
         {
-            var directory = root /* Working directory location */
+            var directory = root        /* Working directory location */
 
             for component in area.split(separator: "/")
             {
                 directory.appendPathComponent(String(component))
                 if manager.fileExists(atPath: directory.path)
                 {
-                    let attributes = /* Attributed-text settings */
+                    let attributes =                                            /* Attributed-text settings */
                         try manager.attributesOfItem(atPath: directory.path)
 
                     guard attributes[.type] as? FileAttributeType == .typeDirectory else
@@ -108,11 +107,11 @@ enum LegacyWorkspaceExport
                 continue
             }
 
-            let entries = try regularFiles(in: directory) /* Entries being processed */
+            let entries = try regularFiles(in: directory)       /* Entries being processed */
 
             for file in entries
             {
-                let attributes = /* Attributed-text settings */
+                let attributes =                                        /* Attributed-text settings */
                     try manager.attributesOfItem(atPath: file.path)
 
                 if attributes[.type] as? FileAttributeType == .typeDirectory
@@ -124,7 +123,7 @@ enum LegacyWorkspaceExport
                     throw Failure.unsafeFile
                 }
 
-                let length = /* Measured content length */
+                let length =                                                            /* Measured content length */
                     (attributes[.size] as? NSNumber)?.intValue ?? maximumBytes + 1
 
                 guard length <= maximumBytes - size else
@@ -132,7 +131,7 @@ enum LegacyWorkspaceExport
                     throw Failure.tooLarge
                 }
 
-                let bytes = try Data(contentsOf: file) /* Loaded original file bytes */
+                let bytes = try Data(contentsOf: file)          /* Loaded original file bytes */
 
                 size += bytes.count
 
@@ -141,11 +140,10 @@ enum LegacyWorkspaceExport
                     throw Failure.tooLarge
                 }
 
-                let relative = /* Path relative to the package */
+                let relative =                                          /* Path relative to the package */
                     String(file.path.dropFirst(root.path.count + 1))
 
                 result[relative] = bytes
-
             }
         }
         return result
@@ -159,11 +157,11 @@ enum LegacyWorkspaceExport
     /// @throws Unreadable directories, symlinks and special files
     private static func regularFiles(in directory: URL) throws -> [URL]
     {
-        var files: [URL] = [] /* Files used by this operation */
+        var files: [URL] = []           /* Files used by this operation */
 
         for child in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
         {
-            let attributes = /* Attributed-text settings */
+            let attributes =                                                    /* Attributed-text settings */
                 try FileManager.default.attributesOfItem(atPath: child.path)
 
             switch attributes[.type] as? FileAttributeType
@@ -188,30 +186,28 @@ enum LegacyWorkspaceExport
     /// @return Void; adds the leaf without writing the source container
     private static func insert(_ data: Data, path: String, directory: FileWrapper)
     {
-        let parts  = path.split(separator: "/").map(String.init) /* Parsed value components */
-        var parent = directory                                   /* Owning view or model    */
+        let parts  = path.split(separator: "/").map(String.init)        /* Parsed value components */
+        var parent = directory                                          /* Owning view or model    */
 
         for part in parts.dropLast()
         {
             if let existing = parent.fileWrappers?[part]
             {
                 parent = existing
-
             }
             else
             {
-                let child = FileWrapper(directoryWithFileWrappers: [:]) /* Nested view or record */
+                let child = FileWrapper(directoryWithFileWrappers: [:])         /* Nested view or record */
 
                 child.preferredFilename = part
 
                 parent.addFileWrapper(child)
 
                 parent = child
-
             }
         }
 
-        let file = FileWrapper(regularFileWithContents: data) /* File being processed */
+        let file = FileWrapper(regularFileWithContents: data)           /* File being processed */
 
         file.preferredFilename = parts.last
 
@@ -233,17 +229,17 @@ enum LegacyWorkspaceExport
     {
         KanbanBoardPersistence.waitForPendingSaves()
 
-        let migrationURL = root.resolvingSymlinksInPath() /* Migration URL */
+        let migrationURL = root.resolvingSymlinksInPath()               /* Migration URL                */
             .appendingPathComponent("Library/Application Support/PlenactMigration/source-identities-v1.json")
-        let migrationJournal = /* Migration journal */
+        let migrationJournal =                                          /* Migration journal            */
             try MigrationIdentityStore.read(at: migrationURL)
-        let portableRuntime  = /* Portable runtime */
+        let portableRuntime  =                                          /* Portable runtime             */
             try PortableRuntimeEvidence.capture(root: root)
-        let original         = /* Baseline before changes */
+        let original         =                                          /* Baseline before changes      */
             defaults.persistentDomain(forName: domain) ?? [:]
-        let values           = /* Values being processed */
+        let values           =                                          /* Values being processed       */
             original.filter { LegacyStoreValidation.includes($0.key) }
-        let preferences      = /* Planning and display choices */
+        let preferences      =                                          /* Planning and display choices */
             try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
 
         guard preferences.count + (migrationJournal?.count ?? 0) <= maximumBytes else
@@ -251,7 +247,7 @@ enum LegacyWorkspaceExport
             throw Failure.tooLarge
         }
 
-        var issues: [String] = [] /* Validation findings */
+        var issues: [String] = []       /* Validation findings */
 
         for key in original.keys.sorted()
         {
@@ -269,7 +265,7 @@ enum LegacyWorkspaceExport
             }
         }
 
-        let media = try inventory(root: root) /* Original media references */
+        let media = try inventory(root: root)           /* Original media references */
 
         for (key, value) in values
         {
@@ -295,7 +291,7 @@ enum LegacyWorkspaceExport
             throw Failure.changedSource
         }
 
-        let wrapper = FileWrapper(directoryWithFileWrappers: [:]) /* File or view wrapper */
+        let wrapper = FileWrapper(directoryWithFileWrappers: [:])       /* File or view wrapper */
 
         insert(preferences, path: "Preferences.plist", directory: wrapper)
         if let migrationJournal
@@ -311,7 +307,7 @@ enum LegacyWorkspaceExport
             insert(bytes, path: "PortableRuntime/" + name, directory: wrapper)
         }
 
-        var manifest: [String: Any] = [ /* Package inventory and hashes */
+        var manifest: [String: Any] = [         /* Package inventory and hashes */
             "format": "plenact.ios-frozen-backup", "format_version": portableRuntime.isEmpty ? 1 : 2,
             "target_user_data_model_version": "1.0", "portable_conversion_complete": false,
             "created_at_utc": ISO8601DateFormatter().string(from: Date()),
@@ -328,7 +324,6 @@ enum LegacyWorkspaceExport
             manifest["portable_runtime_files"] = portableRuntime.keys.sorted().map { name in
                 ["name": name, "sha256": digest(portableRuntime[name]!), "byte_length": portableRuntime[name]!.count] as [String: Any]
             }
-
         }
         insert(try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys]),
             path: "NativePreflight.json", directory: wrapper)

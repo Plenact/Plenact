@@ -18,21 +18,21 @@ import SwiftUI
 ///
 struct PlanningCalendarView: View
 {
-    var onLeaveForHome: () -> Void = /* Leave for home callback */
+    var onLeaveForHome: () -> Void =    /* Leave for home callback */
     {
     }
 
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @ScaledMetric(relativeTo: .subheadline) private var todayDateFontSize: CGFloat = /* Today date font size */
+    @Environment(\.planningCalendarAccess) private var access                           /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss                                         /* Close the current presentation */
+    @ScaledMetric(relativeTo: .subheadline) private var todayDateFontSize: CGFloat =    /* Today date font size           */
         17
-    @State private var month                                                       = /* Calendar month component */
+    @State private var month                                                       =    /* Calendar month component       */
         Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
-    @State private var selectedDate                                                = /* Selected date */
+    @State private var selectedDate                                                =    /* Selected date                  */
         Calendar.current.startOfDay(for: .now)
-    @State private var showsSearch = false       /* Search visibility                */
+    @State private var showsSearch = false                                              /* Search visibility              */
 
-    @State private var route: PlanningWeekRoute? /* Requested navigation destination */
+    @State private var route: PlanningWeekRoute?        /* Requested navigation destination */
 
 
     ///
@@ -53,17 +53,16 @@ struct PlanningCalendarView: View
         self.onLeaveForHome = onLeaveForHome
         _month = State(initialValue: Calendar.current.dateInterval(of: .month, for: initialDate)?.start ?? initialDate)
         _selectedDate = State(initialValue: Calendar.current.startOfDay(for: initialDate))
-
     }
 
-    private var displayCalendar: Calendar /* Display calendar */
+    private var displayCalendar: Calendar       /* Display calendar */
     {
         access?.document.calendar ?? .current
     }
 
-    private var rows: [[Date]] /* Rows used by this layout */
+    private var rows: [[Date]]          /* Rows used by this layout */
     {
-        let calendar = displayCalendar /* Date calculation calendar */
+        let calendar = displayCalendar          /* Date calculation calendar */
 
         guard let first = calendar.dateInterval(of: .month, for: month)?.start,
         let start = calendar.dateInterval(of: .weekOfYear, for: first)?.start,
@@ -73,9 +72,9 @@ struct PlanningCalendarView: View
             return []
         }
 
-        let leading  = /* Leading layout position */
+        let leading  =                                                          /* Leading layout position */
             calendar.dateComponents([.day], from: start, to: first).day ?? 0
-        let rowCount = (leading + count + 6) / 7 /* Row count */
+        let rowCount = (leading + count + 6) / 7                                /* Row count               */
 
         return (0 ..< rowCount).map
         {
@@ -84,21 +83,18 @@ struct PlanningCalendarView: View
             {
                 calendar.date(byAdding: .day, value: row * 7 + $0, to: start)
             }
-
         }
-
     }
 
-    private var symbols: [String] /* Available SF Symbols */
+    private var symbols: [String]       /* Available SF Symbols */
     {
-        let calendar = displayCalendar                            /* Date calculation calendar */
-        let values   = calendar.veryShortStandaloneWeekdaySymbols /* Values being processed    */
+        let calendar = displayCalendar                                  /* Date calculation calendar */
+        let values   = calendar.veryShortStandaloneWeekdaySymbols       /* Values being processed    */
 
         return (0 ..< 7).map
         {
             values[(calendar.firstWeekday - 1 + $0) % 7]
         }
-
     }
 
 
@@ -158,7 +154,6 @@ struct PlanningCalendarView: View
             })
         {
             route = PlanningWeekRoute(week: savedWeek, dayID: result.listID, cardID: result.card.id)
-
         }
         else
         {
@@ -168,10 +163,9 @@ struct PlanningCalendarView: View
             dismiss()
             onLeaveForHome()
         }
-
     }
 
-    var body: some View /* Planning Calendar layout */
+    var body: some View         /* Planning Calendar layout */
     {
         NavigationStack
         {
@@ -179,7 +173,7 @@ struct PlanningCalendarView: View
             {
                 VStack(alignment: .leading, spacing: 20)
                 {
-                    monthGrid.dynamicTypeSize(.large)  // Seven columns stay legible; full dates are announced by VoiceOver
+                    monthGrid.dynamicTypeSize(.large)           // Seven columns stay legible; full dates are announced by VoiceOver
                     daySummary
                 }
                 .padding(16)
@@ -222,12 +216,10 @@ struct PlanningCalendarView: View
                         onLeaveForHome()
                     })
             }
-
         }
-
     }
 
-    private var calendarHeader: some View /* Calendar header */
+    private var calendarHeader: some View       /* Calendar header */
     {
         HStack(spacing: 0)
         {
@@ -254,7 +246,6 @@ struct PlanningCalendarView: View
             Button
             {
                 showsSearch = true
-
             }
             label:
             {
@@ -299,11 +290,10 @@ struct PlanningCalendarView: View
             )
             .ignoresSafeArea(edges: .top)
         }
-
     }
 
 
-    private var monthGrid: some View /* Month grid */
+    private var monthGrid: some View    /* Month grid */
     {
         VStack(spacing: 10)
         {
@@ -340,20 +330,19 @@ struct PlanningCalendarView: View
                     _, symbol in
                     Text(symbol).font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity)
                 }
-
             }
 
             ForEach(rows.indices, id: \.self)
             {
                 index in
 
-                let dates   = rows[index]     /* Dates used by this operation */
-                let rowWeek = dates.first.map /* Row week                     */
+                let dates   = rows[index]               /* Dates used by this operation */
+                let rowWeek = dates.first.map           /* Row week                     */
                 {
                     week(on: $0)
                 }
 
-                let isCurrent = /* Current state */
+                let isCurrent =                                                 /* Current state */
                     rowWeek?.startKey == access?.document.currentWeekKey
 
                 HStack(spacing: 2)
@@ -363,7 +352,6 @@ struct PlanningCalendarView: View
                         Button
                         {
                             route = PlanningWeekRoute(week: rowWeek)
-
                         }
                         label:
                         {
@@ -386,7 +374,7 @@ struct PlanningCalendarView: View
                             .frame(width: 44, height: 44)
                         }
                         .accessibilityLabel(
-                                                                        "Open \(isCurrent ? "this week" : rowWeek.rangeTitle)\(rowWeek.hasContent ? ", saved content" : ", empty week")"
+                            "Open \(isCurrent ? "this week" : rowWeek.rangeTitle)\(rowWeek.hasContent ? ", saved content" : ", empty week")"
                         )
                     }
 
@@ -395,7 +383,6 @@ struct PlanningCalendarView: View
                         date in
                         dayButton(date)
                     }
-
                 }
                 .background(
                     isCurrent ? Color.accentColor.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 10))
@@ -407,7 +394,6 @@ struct PlanningCalendarView: View
                 Text("Items planned or scheduled · highlighted row is this week")
                 .font(.caption2).foregroundStyle(.secondary)
             }
-
         }
         .padding(12)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
@@ -426,14 +412,13 @@ struct PlanningCalendarView: View
     ///
     private func dayButton(_ date: Date) -> some View
     {
-        let selected = /* Current selection */
+        let selected =                                                  /* Current selection */
             Calendar.current.isDate(date, inSameDayAs: selectedDate)
-        let count    = items(on: date).count /* Number of entries */
+        let count    = items(on: date).count                            /* Number of entries */
 
         return Button
         {
             selectedDate = date
-
         }
         label:
         {
@@ -457,7 +442,7 @@ struct PlanningCalendarView: View
         .accessibilityLabel("\(date.formatted(date: .complete, time: .omitted)), \(count) items")
     }
 
-    private var daySummary: some View /* Day summary */
+    private var daySummary: some View           /* Day summary */
     {
         VStack(alignment: .leading, spacing: 14)
         {
@@ -467,11 +452,10 @@ struct PlanningCalendarView: View
                 Spacer()
                 Button
                 {
-                    var target = week(on: selectedDate)          /* Target under consideration  */
-                    let listID = target.prepareDay(selectedDate) /* Owner-local List identifier */
+                    var target = week(on: selectedDate)                 /* Target under consideration  */
+                    let listID = target.prepareDay(selectedDate)        /* Owner-local List identifier */
 
                     route = PlanningWeekRoute(week: target, dayID: listID)
-
                 }
                 label:
                 {
@@ -480,7 +464,7 @@ struct PlanningCalendarView: View
                 .accessibilityLabel("Open this day's list")
             }
 
-            let selectedItems = items(on: selectedDate) /* Selected items */
+            let selectedItems = items(on: selectedDate)         /* Selected items */
 
             if selectedItems.isEmpty
             {
@@ -503,9 +487,7 @@ struct PlanningCalendarView: View
                 {
                     Divider()
                 }
-
             }
-
         }
         .padding(16)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
@@ -527,11 +509,8 @@ struct PlanningCalendarView: View
         if let next = Calendar.current.date(byAdding: .month, value: amount, to: month)
         {
             month = next
-
         }
-
     }
-
 }
 
 
@@ -544,9 +523,9 @@ struct PlanningCalendarView: View
 ///
 struct PlanningCalendarResultRow: View
 {
-    let result: PlanningSearchResult /* Result being assembled */
+    let result: PlanningSearchResult    /* Result being assembled */
 
-    var body:   some View /* Planning Calendar Result layout */
+    var body:   some View       /* Planning Calendar Result layout */
     {
         HStack(alignment: .top, spacing: 12)
         {
@@ -567,7 +546,6 @@ struct PlanningCalendarResultRow: View
         .frame(minHeight: 44)
         .contentShape(Rectangle())
     }
-
 }
 
 
@@ -579,15 +557,15 @@ struct PlanningCalendarResultRow: View
 ///
 struct PlanningWeekSelector: View
 {
-    let document:                          PlanningCalendarDocument /* Working calendar document */
-    let sources:                           [PlanningSearchResult] /* Source records or files */
-    let onSelect:                          (DatedPlanningWeek, Date) -> Void /* Handle the selected value */
-    @State private var referenceDate:      Date /* Reference date */
-    @State private var selectedDate:       Date /* Selected date */
-    @State private var highlightedWeekKey: String /* Highlighted week key */
-    @State private var isSelecting = false /* Selecting state */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    let document:                          PlanningCalendarDocument             /* Working calendar document      */
+    let sources:                           [PlanningSearchResult]               /* Source records or files        */
+    let onSelect:                          (DatedPlanningWeek, Date) -> Void    /* Handle the selected value      */
+    @State private var referenceDate:      Date                                 /* Reference date                 */
+    @State private var selectedDate:       Date                                 /* Selected date                  */
+    @State private var highlightedWeekKey: String                               /* Highlighted week key           */
+    @State private var isSelecting = false                                      /* Selecting state                */
+    @Environment(\.dismiss) private var dismiss                                 /* Close the current presentation */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference      */
 
 
     ///
@@ -616,7 +594,6 @@ struct PlanningWeekSelector: View
         _referenceDate = State(initialValue: initialDate)
         _selectedDate = State(initialValue: initialDate)
         _highlightedWeekKey = State(initialValue: selectedWeekKey)
-
     }
 
 
@@ -633,7 +610,7 @@ struct PlanningWeekSelector: View
     ///
     static func choices(document: PlanningCalendarDocument, referenceDate: Date) -> [DatedPlanningWeek]
     {
-        var choices = /* Available user selections */
+        var choices =                                           /* Available user selections */
             Dictionary(uniqueKeysWithValues: document.weeks.map
             {
                 ($0.startKey, $0)
@@ -646,22 +623,19 @@ struct PlanningWeekSelector: View
                 continue
             }
 
-            let key = /* Local Week boundary key */
+            let key =                                                   /* Local Week boundary key */
                 PlanningDate.weekKey(date, calendar: document.calendar)
 
             if choices[key] == nil
             {
                 choices[key] = DatedPlanningWeek.make(for: date, calendar: document.calendar)
-
             }
-
         }
 
         return choices.values.sorted
         {
             $0.startKey < $1.startKey
         }
-
     }
 
 
@@ -689,30 +663,27 @@ struct PlanningWeekSelector: View
         {
             calendar.date(byAdding: .day, value: $0, to: gridStart)
         }
-
     }
 
-    private var rows: [[Date]] /* Rows used by this layout */
+    private var rows: [[Date]]          /* Rows used by this layout */
     {
-        let days = /* Dates in the selected range */
+        let days =                                                      /* Dates in the selected range */
             Self.monthDays(referenceDate, calendar: document.calendar)
 
         return stride(from: 0, to: days.count, by: 7).map
         {
             Array(days[$0 ..< min($0 + 7, days.count)])
         }
-
     }
 
-    private var weekdaySymbols: [String] /* Weekday symbols */
+    private var weekdaySymbols: [String]        /* Weekday symbols */
     {
-        let symbols = document.calendar.veryShortStandaloneWeekdaySymbols /* Available SF Symbols */
+        let symbols = document.calendar.veryShortStandaloneWeekdaySymbols       /* Available SF Symbols */
 
         return (0 ..< 7).map
         {
             symbols[($0 + document.calendar.firstWeekday - 1) % 7]
         }
-
     }
 
 
@@ -731,9 +702,7 @@ struct PlanningWeekSelector: View
         let next = document.calendar.date(byAdding: .month, value: amount, to: first)
         {
             referenceDate = next
-
         }
-
     }
 
 
@@ -756,17 +725,16 @@ struct PlanningWeekSelector: View
 
         isSelecting = true
 
-        let key = /* Local Week boundary key */
+        let key =                                                       /* Local Week boundary key */
             PlanningDate.weekKey(date, calendar: document.calendar)
 
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12))
         {
             highlightedWeekKey = key
             selectedDate = date
-
         }
 
-        let week = /* Dated Week under consideration */
+        let week =      /* Dated Week under consideration */
             document.week(for: date) ?? DatedPlanningWeek.make(for: date, calendar: document.calendar)
 
         Task
@@ -784,10 +752,9 @@ struct PlanningWeekSelector: View
             onSelect(week, date)
             dismiss()
         }
-
     }
 
-    var body: some View /* Planning Week Selector layout */
+    var body: some View         /* Planning Week Selector layout */
     {
         NavigationStack
         {
@@ -827,7 +794,6 @@ struct PlanningWeekSelector: View
                             Text(symbol.uppercased()).font(.caption2).foregroundStyle(.secondary).frame(
                                 maxWidth: .infinity)
                         }
-
                     }
 
                     VStack(spacing: 4)
@@ -836,8 +802,8 @@ struct PlanningWeekSelector: View
                         {
                             row in
 
-                            let dates       = rows[row] /* Dates used by this operation */
-                            let highlighted =           /* Current-day highlight state  */
+                            let dates       = rows[row]         /* Dates used by this operation */
+                            let highlighted =                   /* Current-day highlight state  */
                             dates.first.map
                             {
                                 PlanningDate.weekKey($0, calendar: document.calendar) == highlightedWeekKey
@@ -850,14 +816,14 @@ struct PlanningWeekSelector: View
                                 {
                                     date in
 
-                                    let selected = /* Current selection */
+                                    let selected =                                                      /* Current selection */
                                         document.calendar.isDate(date, inSameDayAs: selectedDate)
-                                    let inMonth  = document.calendar.isDate( /* In month */
+                                    let inMonth  = document.calendar.isDate(                            /* In month          */
                                         date, equalTo: referenceDate, toGranularity: .month)
-                                    let count = /* Number of entries */
+                                    let count =                                                         /* Number of entries */
                                         PlanningCalendarContent.items(
-                                        on: date, document: document, sources: sources
-                                    ).count
+                                            on: date, document: document, sources: sources
+                                        ).count
 
                                     Button
                                     {
@@ -884,18 +850,16 @@ struct PlanningWeekSelector: View
                                     }
                                     .buttonStyle(.plain)
                                     .accessibilityLabel(
-                                                                                                            "\(date.formatted(.dateTime.weekday(.wide).month(.wide).day().year())), \(count) items"
+                                        "\(date.formatted(.dateTime.weekday(.wide).month(.wide).day().year())), \(count) items"
                                     )
                                     .accessibilityHint("Show the week containing this day")
                                     .accessibilityAddTraits(selected ? .isSelected : [])
                                 }
-
                             }
                             .background(
                                 highlighted ? Color.blue.opacity(0.12) : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 10))
                         }
-
                     }
 
                     HStack(spacing: 5)
@@ -924,16 +888,12 @@ struct PlanningWeekSelector: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
         .presentationBackground(Color(.systemBackground))
         .presentationDetents([.height(520), .large])
     }
-
 }
 
 
@@ -946,9 +906,9 @@ struct PlanningWeekSelector: View
 ///
 struct PlanningDaySelector: View
 {
-    @State private var date: Date               /* Date used by this operation    */
-    let onSelect:            (Date) -> Void     /* Handle the selected value      */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    @State private var date: Date                       /* Date used by this operation    */
+    let onSelect:            (Date) -> Void             /* Handle the selected value      */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
 
 
     ///
@@ -965,10 +925,9 @@ struct PlanningDaySelector: View
     {
         _date = State(initialValue: initialDate)
         self.onSelect = onSelect
-
     }
 
-    var body: some View /* Planning Day Selector layout */
+    var body: some View         /* Planning Day Selector layout */
     {
         NavigationStack
         {
@@ -985,7 +944,6 @@ struct PlanningDaySelector: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -995,13 +953,9 @@ struct PlanningDaySelector: View
                         dismiss();
                         onSelect(date)
                     }
-
                 }
-
             }
-
         }
         .presentationDetents([.medium, .large])
     }
-
 }

@@ -20,8 +20,8 @@ import UniformTypeIdentifiers
 /// screen confirms the action and performs its existing checked deletion
 struct ListItemSwipeDelete: ViewModifier
 {
-    let enabled:   Bool       /* Feature availability flag */
-    let onRequest: () -> Void /* Request callback          */
+    let enabled:   Bool                 /* Feature availability flag */
+    let onRequest: () -> Void           /* Request callback          */
 
 
     ///
@@ -47,11 +47,8 @@ struct ListItemSwipeDelete: ViewModifier
                 .tint(.red)
                 .accessibilityIdentifier("list.item.swipeDelete")
             }
-
         }
-
     }
-
 }
 
 
@@ -64,12 +61,12 @@ struct ListItemSwipeDelete: ViewModifier
 ///
 struct ContentLifecycleActions: ViewModifier
 {
-    let title:     String                        /* Canonical content name used for confirmation              */
-    let kind:      String                        /* Card or List                                              */
-    let onArchive: (() -> Void)?                 /* Optional retention action; dividers support deletion only */
-    let onDelete:  () -> Bool                    /* Owner reports saved removal of the confirmed record       */
-    @State private var confirmsDelete = false    /* Permanent removal confirmation                            */
-    @Environment(\.dismiss) private var dismiss  /* Close snapshot projections after mutation                 */
+    let title:     String                               /* Canonical content name used for confirmation              */
+    let kind:      String                               /* Card or List                                              */
+    let onArchive: (() -> Void)?                        /* Optional retention action; dividers support deletion only */
+    let onDelete:  () -> Bool                           /* Owner reports saved removal of the confirmed record       */
+    @State private var confirmsDelete = false           /* Permanent removal confirmation                            */
+    @Environment(\.dismiss) private var dismiss         /* Close snapshot projections after mutation                 */
 
 
     ///
@@ -87,42 +84,36 @@ struct ContentLifecycleActions: ViewModifier
         .contextMenu
         {
             if let onArchive
-            {  /* Archive action offered by the menu's owner */
+            {                                                           /* Archive action offered by the menu's owner */
                 Button("Archive \(kind)", systemImage: "archivebox")
                 {
                     onArchive();
                     dismiss()
                 }
-
             }
 
 
             Button("Delete \(kind)", systemImage: "trash", role: .destructive)
             {
                 confirmsDelete = true
-
             }
-
         }
         .accessibilityActions
         {
             if let onArchive
-            {  /* Archive action invoked after confirmation */
+            {                                   /* Archive action invoked after confirmation */
                 Button("Archive \(kind)")
                 {
                     onArchive();
                     dismiss()
                 }
-
             }
 
 
             Button("Delete \(kind)")
             {
                 confirmsDelete = true
-
             }
-
         }
 
         .confirmationDialog("Delete \(title)?", isPresented: $confirmsDelete, titleVisibility: .visible)
@@ -133,21 +124,17 @@ struct ContentLifecycleActions: ViewModifier
                 {
                     dismiss()
                 }
-
             }
 
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                        "Permanently deletes this \(kind.lowercased()) and its contents and bookmarks. This cannot be undone. Other retained copies are unchanged."
+                "Permanently deletes this \(kind.lowercased()) and its contents and bookmarks. This cannot be undone. Other retained copies are unchanged."
             )
         }
-
     }
-
 }

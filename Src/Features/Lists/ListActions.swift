@@ -31,48 +31,48 @@ import UniformTypeIdentifiers
 ///
 struct KanbanListActionsSheet: View
 {
-    @State private var confirmsCheckmarkReset = false /* Confirms checkmark reset */
-    @Binding var checkmarkReset: ListCheckmarkReset? /* Checkmark reset */
-    let onUpdateCard:            (KanbanCard) -> Void /* Update card callback */
-    let list:                    KanbanList  /* The Kanban list this sheet is associated with */
-    let canMoveEarlier:          Bool        /* Indicates if the list can be moved earlier    */
-    let canMoveLater:            Bool        /* Indicates if the list can be moved later      */
-    @Binding var isWatching:     Bool        /* Indicates if the user is watching the list    */
-    let onAddCard:               () -> Void  /* Action to perform when adding a card          */
-    let onCopyList:              () -> Void  /* Action to perform when copying the list       */
-    var onMoveToBoard:           (() -> Void)? = nil /* Move to board callback */
-    let onMoveList:              (Int) -> Void   /* Action to perform when moving the list by a given offset                   */
-    let onSortList:              (Bool) -> Void  /* Action to perform when sorting the list; true for A to Z, false for Z to A */
-    @Binding var cardEditMode: /* Card edit mode */
-    EditMode                            /* Manual card ordering in the owning List          */
-    let onArchiveCompleted: () -> Void  /* Action to perform when archiving completed cards */
+    @State private var confirmsCheckmarkReset = false           /* Confirms checkmark reset                                                   */
+    @Binding var checkmarkReset: ListCheckmarkReset?            /* Checkmark reset                                                            */
+    let onUpdateCard:            (KanbanCard) -> Void           /* Update card callback                                                       */
+    let list:                    KanbanList                     /* The Kanban list this sheet is associated with                              */
+    let canMoveEarlier:          Bool                           /* Indicates if the list can be moved earlier                                 */
+    let canMoveLater:            Bool                           /* Indicates if the list can be moved later                                   */
+    @Binding var isWatching:     Bool                           /* Indicates if the user is watching the list                                 */
+    let onAddCard:               () -> Void                     /* Action to perform when adding a card                                       */
+    let onCopyList:              () -> Void                     /* Action to perform when copying the list                                    */
+    var onMoveToBoard:           (() -> Void)? = nil            /* Move to board callback                                                     */
+    let onMoveList:              (Int) -> Void                  /* Action to perform when moving the list by a given offset                   */
+    let onSortList:              (Bool) -> Void                 /* Action to perform when sorting the list; true for A to Z, false for Z to A */
+    @Binding var cardEditMode:                                  /* Card edit mode                                                             */
+    EditMode                                                    /* Manual card ordering in the owning List                                    */
+    let onArchiveCompleted: () -> Void                          /* Action to perform when archiving completed cards                           */
     /// Archived cards available to restore to the active list
-    @Binding var archivedCards: [KanbanCard] /* Shared retained records in this list's archive */
+    @Binding var archivedCards: [KanbanCard]    /* Shared retained records in this list's archive */
     /// Restores an archived card by stable card identity
-    let onRestoreArchivedCard:     (Int) -> Void  /* Restores a retained record by identity           */
-    let onDeleteArchivedCard:      (Int) -> Void  /* Permanently remove a confirmed archived card     */
-    var canRemoveList: Bool = true /* Allows whole-list archive and deletion */
-    let onArchiveList:             () -> Void     /* Action to perform when archiving the entire list */
-    let onDeleteList:              () -> Void     /* Permanently remove this list after confirmation  */
-    var onEditList:                ((String, String, ItemPresentation) -> Bool)? = /* Edit list callback */
+    let onRestoreArchivedCard:     (Int) -> Void                                        /* Restores a retained record by identity           */
+    let onDeleteArchivedCard:      (Int) -> Void                                        /* Permanently remove a confirmed archived card     */
+    var canRemoveList: Bool = true                                                      /* Allows whole-list archive and deletion           */
+    let onArchiveList:             () -> Void                                           /* Action to perform when archiving the entire list */
+    let onDeleteList:              () -> Void                                           /* Permanently remove this list after confirmation  */
+    var onEditList:                ((String, String, ItemPresentation) -> Bool)? =      /* Edit list callback                               */
         nil
-    var onAppearance:              ((ItemAppearance?) -> Bool)?                  = /* Publish appearance choices */
+    var onAppearance:              ((ItemAppearance?) -> Bool)?                  =      /* Publish appearance choices                       */
         nil
-    var inheritedAddItemTextColor: Color                                         = /* Inherited add item text color */
+    var inheritedAddItemTextColor: Color                                         =      /* Inherited add item text color                    */
         .primary
-    var onOpenDayView:             (() -> Void)?                                 = /* Open day view callback */
+    var onOpenDayView:             (() -> Void)?                                 =      /* Open day view callback                           */
         nil
-    @State private var isEditingAppearance                                       = /* Editing Appearance state */
+    @State private var isEditingAppearance                                       =      /* Editing Appearance state                         */
         false
-    @State private var isEditingList                                             = /* Editing List state */
+    @State private var isEditingList                                             =      /* Editing List state                               */
         false
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Dynamic type size */
-    @State private var sheetHeight: PresentationDetent = .height(624) /* Sheet height */
-    @Environment(\.dismiss) private var dismiss    /* Dismiss action for list operations             */
-    @State private var showsArchivedCards = false  /* Archive browser opened from the compact footer */
-    @State private var confirmingArchive  = false  /* Archive confirmation presentation state        */
-    @State private var confirmingDelete   = false  /* Permanent list deletion confirmation           */
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize                 /* Dynamic type size                              */
+    @State private var sheetHeight: PresentationDetent = .height(624)           /* Sheet height                                   */
+    @Environment(\.dismiss) private var dismiss                                 /* Dismiss action for list operations             */
+    @State private var showsArchivedCards = false                               /* Archive browser opened from the compact footer */
+    @State private var confirmingArchive  = false                               /* Archive confirmation presentation state        */
+    @State private var confirmingDelete   = false                               /* Permanent list deletion confirmation           */
 
 
     ///
@@ -86,8 +86,8 @@ struct KanbanListActionsSheet: View
     ///             calling dismiss here; copy/move/sort/archive actions dismiss after invoking callbacks
     /// @note       Appearance is persisted on Save; Watch remains a temporary view preference
     ///
-    var body: some View /* Kanban List Actions layout */
-    {  /* List operation menu */
+    var body: some View         /* Kanban List Actions layout */
+    {                           /* List operation menu        */
         NavigationStack
         {
             List
@@ -115,9 +115,7 @@ struct KanbanListActionsSheet: View
                         Button("Edit list", systemImage: "pencil")
                         {
                             isEditingList = true
-
                         }
-
                     }
 
 
@@ -126,9 +124,7 @@ struct KanbanListActionsSheet: View
                         Button("Appearance", systemImage: "paintpalette")
                         {
                             isEditingAppearance = true
-
                         }
-
                     }
 
                     Button
@@ -139,7 +135,6 @@ struct KanbanListActionsSheet: View
                     {
                         Label(isWatching ? "Unwatch" : "Watch", systemImage: isWatching ? "eye.slash" : "eye")
                     }
-
                 }
 
 
@@ -153,7 +148,6 @@ struct KanbanListActionsSheet: View
                         withAnimation(.easeInOut(duration: 0.2))
                         {
                             cardEditMode = cardEditMode == .active ? .inactive : .active
-
                         }
 
                         dismiss()
@@ -180,7 +174,6 @@ struct KanbanListActionsSheet: View
                             onSortList(false)
                             dismiss()
                         }
-
                     }
                     label:
                     {
@@ -210,7 +203,6 @@ struct KanbanListActionsSheet: View
                         {
                             Label("Move list to another board", systemImage: "arrow.right.square")
                         }
-
                     }
 
 
@@ -237,7 +229,6 @@ struct KanbanListActionsSheet: View
                         Label("Move list", systemImage: "arrow.left.arrow.right")
                         .foregroundStyle(.primary)
                     }
-
                 }
 
 
@@ -248,7 +239,6 @@ struct KanbanListActionsSheet: View
                         Button
                         {
                             showsArchivedCards = true
-
                         }
                         label:
                         {
@@ -274,7 +264,6 @@ struct KanbanListActionsSheet: View
                             Button
                             {
                                 confirmingArchive = true
-
                             }
                             label:
                             {
@@ -286,7 +275,6 @@ struct KanbanListActionsSheet: View
                             Button(role: .destructive)
                             {
                                 confirmingDelete = true
-
                             }
                             label:
                             {
@@ -302,7 +290,6 @@ struct KanbanListActionsSheet: View
                     .padding(.vertical, 4)
                     .listRowBackground(Color.clear)
                 }
-
             }
 
             .listStyle(.insetGrouped)
@@ -318,9 +305,7 @@ struct KanbanListActionsSheet: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
 
             .navigationDestination(isPresented: $showsArchivedCards)
@@ -345,7 +330,6 @@ struct KanbanListActionsSheet: View
                     onArchiveList()
                     dismiss()
                 }
-
             }
             .confirmationDialog("Delete \(list.title)?", isPresented: $confirmingDelete, titleVisibility: .visible)
             {
@@ -358,22 +342,19 @@ struct KanbanListActionsSheet: View
                 Button("Cancel", role: .cancel)
                 {
                 }
-
             }
             message:
             {
                 Text(
-                                                "Permanently deletes this list, all active and archived cards, and their bookmarks. This cannot be undone."
+                    "Permanently deletes this list, all active and archived cards, and their bookmarks. This cannot be undone."
                 )
             }
-
         }
 
         .presentationDetents([.height(624), .large], selection: $sheetHeight)
         .onAppear
         {
             sheetHeight = dynamicTypeSize.isAccessibilitySize ? .large : .height(624)
-
         }
         .onChange(of: dynamicTypeSize)
         {
@@ -381,9 +362,7 @@ struct KanbanListActionsSheet: View
             if size.isAccessibilitySize
             {
                 sheetHeight = .large
-
             }
-
         }
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
@@ -394,7 +373,6 @@ struct KanbanListActionsSheet: View
                 ListInfoEditorSheet(list: list, onSave: onEditList)
                 .databaseActivityOverlay()
             }
-
         }
         .sheet(isPresented: $isEditingAppearance)
         {
@@ -404,9 +382,7 @@ struct KanbanListActionsSheet: View
                     title: list.title, appearance: list.appearance, showsListBackground: true,
                     inheritedAddItemTextColor: inheritedAddItemTextColor, onSave: onAppearance)
             }
-
         }
-
     }
 
 
@@ -435,7 +411,6 @@ struct KanbanListActionsSheet: View
         .frame(maxWidth: .infinity, minHeight: 60, alignment: .top)
         .contentShape(Rectangle())
     }
-
 }
 
 
@@ -448,11 +423,11 @@ struct KanbanListActionsSheet: View
 ///
 struct CopyListDestinationSheet: View
 {
-    let source:    KanbanList                   /* Source value for this operation */
-    let access:    PlanningCalendarAccess?      /* Checked calendar operations     */
-    let currentID: UUID?                        /* Current ID                      */
-    let copyHere:  () -> Bool                   /* Copy here callback              */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation  */
+    let source:    KanbanList                           /* Source value for this operation */
+    let access:    PlanningCalendarAccess?              /* Checked calendar operations     */
+    let currentID: UUID?                                /* Current ID                      */
+    let copyHere:  () -> Bool                           /* Copy here callback              */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation  */
 
 
     ///
@@ -467,13 +442,12 @@ struct CopyListDestinationSheet: View
     ///
     private func destinationWeeks(_ access: PlanningCalendarAccess) -> [DatedPlanningWeek]
     {
-        let sourceID: UUID? = currentID ?? access.document.week(for: .now)?.id /* Source ID */
+        let sourceID: UUID? = currentID ?? access.document.week(for: .now)?.id          /* Source ID */
 
         return access.document.weeks.filter
         {
             $0.collection.isActive && $0.id != sourceID
         }
-
     }
 
 
@@ -490,8 +464,8 @@ struct CopyListDestinationSheet: View
     ///
     private func copy(to week: DatedPlanningWeek, using access: PlanningCalendarAccess)
     {
-        var updated = week /* Edited value to publish  */
-        let copy    =      /* Independent working copy */
+        var updated = week                                                              /* Edited value to publish  */
+        let copy    =                                                                   /* Independent working copy */
             ListCopying.copy(source, into: updated.collection.lists, crossBoard: true)
 
         updated.collection.lists.append(copy)
@@ -501,10 +475,9 @@ struct CopyListDestinationSheet: View
             TransferConfirmationPresenter.shared.show(
                 TransferConfirmation(title: source.title, destination: week.rangeTitle, action: .copied))
         }
-
     }
 
-    var body: some View /* Copy List Destination layout */
+    var body: some View         /* Copy List Destination layout */
     {
         NavigationStack
         {
@@ -518,9 +491,7 @@ struct CopyListDestinationSheet: View
                         {
                             dismiss()
                         }
-
                     }
-
                 }
 
                 if let access
@@ -534,9 +505,7 @@ struct CopyListDestinationSheet: View
                             {
                                 copy(to: week, using: access)
                             }
-
                         }
-
                     }
 
                     Section("Plans boards")
@@ -549,7 +518,7 @@ struct CopyListDestinationSheet: View
                         board in
                             Button(board.title)
                             {
-                                var updated = board /* Edited value to publish */
+                                var updated = board     /* Edited value to publish */
 
                                 updated.lists.append(ListCopying.copy(source, into: updated.lists, crossBoard: true))
                                 if access.saveLibrary(updated)
@@ -559,23 +528,18 @@ struct CopyListDestinationSheet: View
                                         TransferConfirmation(
                                             title: source.title, destination: board.title, action: .copied))
                                 }
-
                             }
-
                         }
-
                     }
 
                     Section
                     {
                         Text(
-                                                                        "Copies cards, archived cards, and list settings. Links to cards outside this list become plain checklist text on another board."
+                            "Copies cards, archived cards, and list settings. Links to cards outside this list become plain checklist text on another board."
                         )
                         .font(.footnote).foregroundStyle(.secondary)
                     }
-
                 }
-
             }
             .navigationTitle("Copy List To")
             .navigationBarTitleDisplayMode(.inline)
@@ -587,15 +551,10 @@ struct CopyListDestinationSheet: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -608,12 +567,12 @@ struct CopyListDestinationSheet: View
 ///
 struct MoveListDestinationSheet: View
 {
-    let source:    KanbanList                   /* Source value for this operation */
-    let access:    PlanningCalendarAccess?      /* Checked calendar operations     */
-    let currentID: UUID?                        /* Current ID                      */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation  */
+    let source:    KanbanList                           /* Source value for this operation */
+    let access:    PlanningCalendarAccess?              /* Checked calendar operations     */
+    let currentID: UUID?                                /* Current ID                      */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation  */
 
-    private var sourceID: UUID? /* Source ID */
+    private var sourceID: UUID?         /* Source ID */
     {
         currentID ?? access?.document.weeks.first
         {
@@ -642,7 +601,7 @@ struct MoveListDestinationSheet: View
         dismiss()
     }
 
-    var body: some View /* Move List Destination layout */
+    var body: some View         /* Move List Destination layout */
     {
         NavigationStack
         {
@@ -660,7 +619,6 @@ struct MoveListDestinationSheet: View
                         {
                             Label("Standalone List in Plans", systemImage: "list.bullet.rectangle")
                         }
-
                     }
 
                     Section("Week boards")
@@ -678,9 +636,7 @@ struct MoveListDestinationSheet: View
                             {
                                 move(to: week.id)
                             }
-
                         }
-
                     }
 
                     Section("Plans boards")
@@ -695,21 +651,17 @@ struct MoveListDestinationSheet: View
                             {
                                 move(to: board.id)
                             }
-
                         }
-
                     }
 
                     Section
                     {
                         Text(
-                                                                        "Moves the list and all its contents. A dated list leaves an empty day in its original week."
+                            "Moves the list and all its contents. A dated list leaves an empty day in its original week."
                         )
                         .font(.footnote).foregroundStyle(.secondary)
                     }
-
                 }
-
             }
             .navigationTitle("Move List To")
             .navigationBarTitleDisplayMode(.inline)
@@ -721,15 +673,10 @@ struct MoveListDestinationSheet: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -742,12 +689,12 @@ struct MoveListDestinationSheet: View
 ///
 struct ListCheckmarkResetControl: View
 {
-    let list:                   KanbanList           /* List under consideration  */
-    @Binding var session:       ListCheckmarkReset?  /* Current operation session */
-    @Binding var confirmsClear: Bool                 /* Confirms clear            */
-    let onUpdateCard:           (KanbanCard) -> Void /* Update card callback      */
+    let list:                   KanbanList              /* List under consideration  */
+    @Binding var session:       ListCheckmarkReset?     /* Current operation session */
+    @Binding var confirmsClear: Bool                    /* Confirms clear            */
+    let onUpdateCard:           (KanbanCard) -> Void    /* Update card callback      */
 
-    var body: some View /* List Checkmark Reset Control layout */
+    var body: some View         /* List Checkmark Reset Control layout */
     {
         Button(
             session?.canRestore(list) == true ? "Restore previous checkmarks" : "Clear all checkmarks…",
@@ -763,9 +710,7 @@ struct ListCheckmarkResetControl: View
             else
             {
                 confirmsClear = true
-
             }
-
         }
         .disabled(session?.canRestore(list) != true && !ListCheckmarkReset.values(in: list).values.contains(true))
     }
@@ -790,9 +735,7 @@ struct ListCheckmarkResetControl: View
         {
             onUpdateCard(card)
         }
-
     }
-
 }
 
 
@@ -805,11 +748,11 @@ struct ListCheckmarkResetControl: View
 ///
 struct ListCheckmarkResetConfirmation: ViewModifier
 {
-    let list:                   KanbanList?          /* List under consideration  */
-    @Binding var session:       ListCheckmarkReset?  /* Current operation session */
-    @Binding var confirmsClear: Bool                 /* Confirms clear            */
-    let onUpdateCard:           (KanbanCard) -> Void /* Update card callback      */
-    var onClear:               () -> Void = {}      /* Finish the owning menu after clearing */
+    let list:                   KanbanList?             /* List under consideration              */
+    @Binding var session:       ListCheckmarkReset?     /* Current operation session             */
+    @Binding var confirmsClear: Bool                    /* Confirms clear                        */
+    let onUpdateCard:           (KanbanCard) -> Void    /* Update card callback                  */
+    var onClear:               () -> Void = {}          /* Finish the owning menu after clearing */
 
 
     ///
@@ -825,8 +768,8 @@ struct ListCheckmarkResetConfirmation: ViewModifier
     func body(content: Content) -> some View
     {
         content.confirmationDialog(
-                        "Clear all checkmarks in \(list?.title ?? "this list")?", isPresented: $confirmsClear,
-                        titleVisibility: .visible
+            "Clear all checkmarks in \(list?.title ?? "this list")?", isPresented: $confirmsClear,
+            titleVisibility: .visible
         )
         {
             Button("Clear all checkmarks", role: .destructive)
@@ -836,7 +779,7 @@ struct ListCheckmarkResetConfirmation: ViewModifier
                     return
                 }
 
-                let (snapshot, cards) = ListCheckmarkReset.reset(list) /* Snapshot cards */
+                let (snapshot, cards) = ListCheckmarkReset.reset(list)          /* Snapshot cards */
 
                 session = snapshot
 
@@ -849,21 +792,17 @@ struct ListCheckmarkResetConfirmation: ViewModifier
                 }
 
                 onClear()
-
             }
 
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                    "This unchecks cards and nested checklist items. You can restore these checkmarks until you change a checkmark or leave this list."
+                "This unchecks cards and nested checklist items. You can restore these checkmarks until you change a checkmark or leave this list."
             )
         }
-
     }
-
 }

@@ -31,7 +31,7 @@ extension PlenactBoardDocumentTests
     ///
     func testTodayInitialTaskFocusSkipsCompletedAndNonTaskFormatsWithoutReordering()
     {
-        let cards = [ /* Card records under consideration */
+        let cards = [                                                                   /* Card records under consideration */
             KanbanCard(id: 1, word: "Done", listTitle: "Plans", isTitleChecked: true),
             KanbanCard(id: 2, word: "Note", listTitle: "Plans", presentation: .note),
             KanbanCard(id: 3, word: "---", listTitle: "Plans"),
@@ -39,7 +39,7 @@ extension PlenactBoardDocumentTests
             KanbanCard(id: 5, word: "Next task", listTitle: "Plans"),
             KanbanCard(id: 6, word: "Later task", listTitle: "Plans")
         ]
-        var list = KanbanList(id: 0, title: "Plans", cards: cards) /* Synthetic list fixture */
+        var list = KanbanList(id: 0, title: "Plans", cards: cards)      /* Synthetic list fixture */
 
         XCTAssertEqual(list.firstUncheckedTaskID, 5)
         XCTAssertEqual(list.cards, cards)
@@ -76,18 +76,18 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testNewBoardListEditorSelectsTitleAndNextFocusesSubtitle() async throws
     {
-        var list = KanbanList(id: 7, title: "New List 2", cards: []) /* Synthetic list fixture */
+        var list = KanbanList(id: 7, title: "New List 2", cards: [])    /* Synthetic list fixture */
 
         list.subtitleOverride = "Initial subtitle"
 
-        let original = list /* Baseline before changes */
-        let scene    =      /* Owning window scene     */
+        let original = list                                                     /* Baseline before changes */
+        let scene    =                                                          /* Owning window scene     */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
             {
                 $0 as? UIWindowScene
             } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow) /* Prior key window       */
-        let window   = UIWindow(windowScene: scene)              /* Synthetic scene window */
+        let previous = scene.windows.first(where: \.isKeyWindow)                /* Prior key window        */
+        let window   = UIWindow(windowScene: scene)                             /* Synthetic scene window  */
 
         defer
         {
@@ -115,8 +115,8 @@ extension PlenactBoardDocumentTests
             [view] + view.subviews.flatMap(descendants)
         }
 
-        var saveCalls = 0                    /* Save calls             */
-        let host      = UIHostingController( /* Synthetic SwiftUI host */
+        var saveCalls = 0                                                               /* Save calls             */
+        let host      = UIHostingController(                                            /* Synthetic SwiftUI host */
             rootView: ListInfoEditorSheet(list: list, focusesTitleOnAppear: true)
             {
                 _, _, _ in
@@ -133,7 +133,7 @@ extension PlenactBoardDocumentTests
         host.view.layoutIfNeeded()
         try await Task.sleep(for: .milliseconds(350))
 
-        let titleField = try XCTUnwrap( /* Title field */
+        let titleField = try XCTUnwrap(         /* Title field */
             descendants(host.view).compactMap
             {
                 $0 as? UITextField
@@ -145,7 +145,7 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(titleField.isFirstResponder)
         XCTAssertEqual(titleField.returnKeyType, .next)
 
-        let selection = try XCTUnwrap(titleField.selectedTextRange) /* Current selection state */
+        let selection = try XCTUnwrap(titleField.selectedTextRange)     /* Current selection state */
 
         XCTAssertEqual(titleField.text(in: selection), list.title)
         titleField.insertText("Roadmap")
@@ -156,7 +156,7 @@ extension PlenactBoardDocumentTests
 
         try await Task.sleep(for: .milliseconds(150))
 
-        let subtitle = try XCTUnwrap( /* Supporting item text */
+        let subtitle = try XCTUnwrap(           /* Supporting item text */
             descendants(host.view).first
             {
                 view in
@@ -183,16 +183,15 @@ extension PlenactBoardDocumentTests
     {
         for viewport: CGFloat in [320, 360, 393, 414, 424]
         {
-            let width     = /* Measured layout width */
+            let width     =                             /* Measured layout width */
                 BoardPresentation.standard.columnWidth(viewportWidth: viewport, accessibilitySize: false)
-            let sideInset = (viewport - width) / 2 /* Side inset */
+            let sideInset = (viewport - width) / 2      /* Side inset            */
 
             XCTAssertEqual(
                 sideInset - 17, 15, accuracy: 0.001,
-                                        "Each side must show 15 points of its neighbor after the 17-point gap")
+                "Each side must show 15 points of its neighbor after the 17-point gap")
             XCTAssertEqual(width + 2 * sideInset, viewport, accuracy: 0.001)
         }
-
     }
 
 
@@ -208,15 +207,15 @@ extension PlenactBoardDocumentTests
     ///
     func testTodayFocusHasNoFallbackForUnavailableOrAmbiguousDay() throws
     {
-        var calendar = Calendar(identifier: .gregorian) /* Fixed calendar for date assertions */
+        var calendar = Calendar(identifier: .gregorian)         /* Fixed calendar for date assertions */
 
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
 
-        let date = try XCTUnwrap( /* Date used by this operation */
-            calendar.date(from: DateComponents(year: 2026, month: 10, day: 6)))  /* Date value for boundary checks        */
-        let monday   = KanbanList(id: 1, title: "Monday", cards: [])             /* Monday List fixture for weekday focus */
-        let tuesday  = KanbanList(id: 2, title: "Tuesday", cards: [])            /* Tuesday planning fixture              */
-        var archived = tuesday                                                   /* Archived value for restoration checks */
+        let date = try XCTUnwrap(                                               /* Date used by this operation           */
+            calendar.date(from: DateComponents(year: 2026, month: 10, day: 6)))         /* Date value for boundary checks        */
+        let monday   = KanbanList(id: 1, title: "Monday", cards: [])            /* Monday List fixture for weekday focus */
+        let tuesday  = KanbanList(id: 2, title: "Tuesday", cards: [])           /* Tuesday planning fixture              */
+        var archived = tuesday                                                  /* Archived value for restoration checks */
 
         archived.isArchived = true
 
@@ -233,5 +232,4 @@ extension PlenactBoardDocumentTests
             TodayListSelection.currentDayList(
                 in: [monday, KanbanList(id: 2, title: " tUeSdAy ", cards: [])], date: date, calendar: calendar)?.id, 2)
     }
-
 }

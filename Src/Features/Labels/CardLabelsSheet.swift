@@ -23,17 +23,17 @@ import SwiftUI
 ///
 struct CardLabelsSheet: View
 {
-    let onSave: (LabelLibrary, [String]) -> Void /* Callback returning the edited catalog and assignments */
+    let onSave: (LabelLibrary, [String]) -> Void        /* Callback returning the edited catalog and assignments */
 
-    @Environment(\.dismiss) private var dismiss                  /* Dismiss action for sheet */
-    @State private var library:          LabelLibrary            /* Draft label library      */
-    @State private var selectedLabelIDs: [String]                /* Currently selected IDs   */
-    @State private var labelNameDraft                  = ""      /* Draft name for new label */
-    @State private var categorySelection               = ""      /* Currently selected cat   */
-    @State private var newCategoryDraft                = ""      /* Draft name for new cat   */
-    @State private var selectedColor: KanbanLabelColor = .yellow /* Currently selected color */
+    @Environment(\.dismiss) private var dismiss                         /* Dismiss action for sheet */
+    @State private var library:          LabelLibrary                   /* Draft label library      */
+    @State private var selectedLabelIDs: [String]                       /* Currently selected IDs   */
+    @State private var labelNameDraft                  = ""             /* Draft name for new label */
+    @State private var categorySelection               = ""             /* Currently selected cat   */
+    @State private var newCategoryDraft                = ""             /* Draft name for new cat   */
+    @State private var selectedColor: KanbanLabelColor = .yellow        /* Currently selected color */
 
-    private let newCategoryID = "__new_category__" /* Picker sentinel for creating a category */
+    private let newCategoryID = "__new_category__"      /* Picker sentinel for creating a category */
 
     ///
     /// @fcn        CardLabelsSheet.trimmedLabelName
@@ -42,8 +42,8 @@ struct CardLabelsSheet: View
     ///
     /// @return     (String) normalized label-name draft
     ///
-    private var trimmedLabelName: String /* Trimmed label name */
-    {  /* Normalized new-label name */
+    private var trimmedLabelName: String                                /* Trimmed label name        */
+    {                                                                   /* Normalized new-label name */
         labelNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -55,8 +55,8 @@ struct CardLabelsSheet: View
     ///
     /// @return     (String) normalized category-name draft
     ///
-    private var trimmedCategoryName: String /* Trimmed category name */
-    {  /* Normalized new-category name */
+    private var trimmedCategoryName: String                                     /* Trimmed category name        */
+    {                                                                           /* Normalized new-category name */
         newCategoryDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -69,8 +69,8 @@ struct CardLabelsSheet: View
     ///
     /// @return     (Bool) true when the current form can create a label
     ///
-    private var canCreateLabel: Bool /* Create Label availability */
-    {  /* Form validity for label creation */
+    private var canCreateLabel: Bool            /* Create Label availability        */
+    {                                           /* Form validity for label creation */
         guard !trimmedLabelName.isEmpty else
         {
             return false
@@ -111,7 +111,6 @@ struct CardLabelsSheet: View
         _library = State(initialValue: library)
         _selectedLabelIDs = State(initialValue: selectedLabelIDs)
         _categorySelection = State(initialValue: library.categories.first?.id ?? "__new_category__")
-
     }
 
 
@@ -135,13 +134,11 @@ struct CardLabelsSheet: View
             {
                 $0 == labelID
             }
-
         }
         else
         {
             selectedLabelIDs.append(labelID)
         }
-
     }
 
 
@@ -165,19 +162,18 @@ struct CardLabelsSheet: View
         }
 
 
-        let categoryID: String /* Category assigned to the new label */
+        let categoryID: String          /* Category assigned to the new label */
 
         if categorySelection == newCategoryID
         {
-            let normalizedName = trimmedCategoryName.lowercased() /* Case-insensitive category lookup key */
+            let normalizedName = trimmedCategoryName.lowercased()       /* Case-insensitive category lookup key */
 
             if let existingCategory = library.categories.first(where:
                 {
                     $0.name.lowercased() == normalizedName
                 })
-            {  /* Reuse the category matching the normalized name */
+            {                                           /* Reuse the category matching the normalized name */
                 categoryID = existingCategory.id
-
             }
             else
             {
@@ -185,16 +181,14 @@ struct CardLabelsSheet: View
 
                 library.categories.append(KanbanLabelCategory(id: categoryID, name: trimmedCategoryName))
             }
-
         }
         else
         {
             categoryID = categorySelection
-
         }
 
 
-        let label = KanbanLabel( /* New reusable label definition */
+        let label = KanbanLabel(        /* New reusable label definition */
             id: UUID().uuidString,
             name: trimmedLabelName,
             categoryID: categoryID,
@@ -206,7 +200,6 @@ struct CardLabelsSheet: View
 
         labelNameDraft = ""
         newCategoryDraft = ""
-
     }
 
 
@@ -221,8 +214,8 @@ struct CardLabelsSheet: View
     /// @pre        The catalog and selected label IDs have been initialized
     /// @post       Save returns the edited catalog and assignments; Cancel discards them
     ///
-    var body: some View /* Card Labels layout */
-    {  /* Categorized label browser and editor */
+    var body: some View         /* Card Labels layout                   */
+    {                           /* Categorized label browser and editor */
         NavigationStack
         {
             List
@@ -233,10 +226,10 @@ struct CardLabelsSheet: View
 
                     Section(category.name)
                     {
-                        let categoryLabels = library.labels.filter /* Category labels */
+                        let categoryLabels = library.labels.filter      /* Category labels */
                         {
                             $0.categoryID == category.id
-                        }  /* Labels in this category */
+                        }                                       /* Labels in this category */
 
 
                         if categoryLabels.isEmpty
@@ -272,7 +265,6 @@ struct CardLabelsSheet: View
                                             Image(systemName: "checkmark")
                                             .foregroundStyle(.tint)
                                         }
-
                                     }
 
                                     .contentShape(Rectangle())
@@ -280,11 +272,8 @@ struct CardLabelsSheet: View
 
                                 .buttonStyle(.plain)
                             }
-
                         }
-
                     }
-
                 }
 
 
@@ -330,7 +319,6 @@ struct CardLabelsSheet: View
 
                             .tag(color)
                         }
-
                     }
 
                     .pickerStyle(.menu)
@@ -342,7 +330,6 @@ struct CardLabelsSheet: View
 
                     .disabled(!canCreateLabel)
                 }
-
             }
 
             .navigationTitle("Card labels")
@@ -355,7 +342,6 @@ struct CardLabelsSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
 
@@ -366,15 +352,11 @@ struct CardLabelsSheet: View
                         onSave(library, selectedLabelIDs)
                         dismiss()
                     }
-
                 }
-
             }
-
         }
 
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
-
 }

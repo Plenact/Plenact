@@ -13,9 +13,9 @@ import Foundation
 @MainActor
 enum MigrationPlanningPreview
 {
-    static let stores                        = /* Native persistence stores */
+    static let stores                        =          /* Native persistence stores  */
         ["Plenact.DailyPlans.v1", "Plenact.WeeklyReviews.v1", "Plenact.PeriodicReviews.v1", "Plenact.ReviewRhythm.v1"]
-    static let fields: [String: Set<String>] = [ /* Record fields under review */
+    static let fields: [String: Set<String>] = [        /* Record fields under review */
         "daily": ["id", "timeZoneID", "intention", "constraints", "concerns", "priorities", "updatedAt", "checkIn", "checkIns", "eveningReview", "visionStep", "visionCompletedAt"],
         "weekly": ["id", "startKey", "timeZoneID", "firstWeekday", "step", "highlights", "learned", "direction", "constraints", "risks", "priorities", "decisions", "updatedAt", "completedAt"],
         "periodic": ["id", "title", "startKey", "endKey", "timeZoneID", "step", "highlights", "learned", "direction", "risks", "startingObjectives", "objectives", "priorities", "updatedAt", "completedAt"],
@@ -34,12 +34,11 @@ enum MigrationPlanningPreview
     ///     Count converted source domains independently from complete workspace acceptance
     struct Result
     {
-        let records:        [[String: Any]] /* Records being processed  */
-        let document:       [String: Any]   /* Source document snapshot */
-        let convertedStores: [String]       /* Converted stores         */
-        let recordCount:    Int             /* Record count             */
-        let unresolvedCount: Int            /* Unresolved count         */
-
+        let records:        [[String: Any]]     /* Records being processed  */
+        let document:       [String: Any]       /* Source document snapshot */
+        let convertedStores: [String]           /* Converted stores         */
+        let recordCount:    Int                 /* Record count             */
+        let unresolvedCount: Int                /* Unresolved count         */
     }
 
 
@@ -64,7 +63,7 @@ enum MigrationPlanningPreview
             throw MigrationContentValues.Failure.invalid("planning_source_fields:" + type)
         }
 
-        let children = /* Nested view or record values */
+        let children =          /* Nested view or record values */
             ["priorities": "priority", "focus": "priority", "source": "priority", "result": "priority",
             "checkIn": "checkIn", "checkIns": "checkIns", "eveningReview": "eveningReview", "mood": "mood",
             "decisions": "decision", "achievements": "priority", "startingObjectives": "objective", "objectives": "objective"]
@@ -137,7 +136,7 @@ enum MigrationPlanningPreview
     static func prepare(values: [String: Any], records: [[String: Any]], journal: inout MigrationIdentityJournal,
         priorityResolver: (([String: Any]) throws -> [String: Any])? = nil) throws -> Result
     {
-        let context = /* Operation context */
+        let context =                                                                           /* Operation context */
             MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: [:])
 
         context.known = Set(records.compactMap { $0["id"] as? String })
@@ -150,20 +149,20 @@ enum MigrationPlanningPreview
             }
         }
 
-        let mapper                  = /* Source identity resolver */
+        let mapper                  =                                                           /* Source identity resolver */
             MigrationPlanningValues(context: context, priorityResolver: priorityResolver)
-        var output: [[String: Any]] = [] /* Operation output         */
-        var converted: [String]     = [] /* Converted portable value */
+        var output: [[String: Any]] = []                                                        /* Operation output         */
+        var converted: [String]     = []                                                        /* Converted portable value */
 
         if let value = values[stores[0]]
         {
-            let document = /* Daily-plan store snapshot */
+            let document =                                              /* Daily-plan store snapshot    */
                 try load(value, as: DailyPlanStore.Document.self, family: "daily", container: "plans")
-            let plans    = document["plans"] as! [String: Any] /* Saved daily planning records */
+            let plans    = document["plans"] as! [String: Any]          /* Saved daily planning records */
 
             for key in plans.keys.sorted()
             {
-                let source = plans[key] as! [String: Any] /* Source value for this operation */
+                let source = plans[key] as! [String: Any]       /* Source value for this operation */
 
                 guard source["id"] as? String == key else
                 {
@@ -171,9 +170,9 @@ enum MigrationPlanningPreview
                 }
                 try mapper.dateAndZone(key, zone: source["timeZoneID"] as! String)
 
-                let id                     = /* Portable record identity */
+                let id                     =                            /* Portable record identity */
                     try context.id("daily_plan", owner: stores[0], legacy: key, discriminator: source["timeZoneID"] as? String)
-                var payload: [String: Any] = /* Canonical record payload */
+                var payload: [String: Any] =                            /* Canonical record payload */
                     ["date": key, "time_zone": source["timeZoneID"]!,
                     "intention": source["intention"]!, "constraints": source["constraints"]!, "concerns": source["concerns"]!,
                     "priorities": try mapper.priorities(source["priorities"]!),
@@ -191,20 +190,20 @@ enum MigrationPlanningPreview
         }
         if let value = values[stores[1]]
         {
-            let document = /* Source document snapshot */
+            let document =                                              /* Source document snapshot */
                 try load(value, as: WeeklyReviewStore.Document.self, family: "weekly", container: "records")
-            let entries  = document["records"] as! [String: Any] /* Entries being processed */
+            let entries  = document["records"] as! [String: Any]        /* Entries being processed  */
 
             for key in entries.keys.sorted()
             {
-                let source  = entries[key] as! [String: Any]  /* Source value for this operation */
-                let date    = source["startKey"] as! String   /* Date used by this operation     */
-                let zone    = source["timeZoneID"] as! String /* Date conversion time zone       */
-                let weekday = source["firstWeekday"] as! Int  /* Calendar weekday number         */
+                let source  = entries[key] as! [String: Any]            /* Source value for this operation */
+                let date    = source["startKey"] as! String             /* Date used by this operation     */
+                let zone    = source["timeZoneID"] as! String           /* Date conversion time zone       */
+                let weekday = source["firstWeekday"] as! Int            /* Calendar weekday number         */
 
                 try mapper.dateAndZone(date, zone: zone)
 
-                var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
+                var calendar = Calendar(identifier: .gregorian)         /* Date calculation calendar */
 
                 calendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
@@ -214,9 +213,9 @@ enum MigrationPlanningPreview
                     throw MigrationContentValues.Failure.invalid("planning_weekly_key_or_start")
                 }
 
-                let id      = /* Portable record identity */
+                let id      =                                                           /* Portable record identity */
                     try context.id("weekly_review", owner: stores[1], legacy: key)
-                var payload = try mapper.review(source, path: id) /* Canonical record payload */
+                var payload = try mapper.review(source, path: id)                       /* Canonical record payload */
 
                 payload["source_review_key"] = key
                 payload["start_date"] = date
@@ -231,14 +230,14 @@ enum MigrationPlanningPreview
         }
         if let value = values[stores[2]]
         {
-            let document = /* Source document snapshot */
+            let document =                                              /* Source document snapshot */
                 try load(value, as: PeriodicReviewStore.Document.self, family: "periodic", container: "records")
-            let entries  = document["records"] as! [String: Any] /* Entries being processed */
+            let entries  = document["records"] as! [String: Any]        /* Entries being processed  */
 
             for key in entries.keys.sorted()
             {
-                let source   = entries[key] as! [String: Any] /* Source value for this operation */
-                let original =                                /* Baseline before changes         */
+                let source   = entries[key] as! [String: Any]           /* Source value for this operation */
+                let original =                                          /* Baseline before changes         */
                     try MigrationContentValues.lowerUUID(source["id"])
 
                 guard let uuid = UUID(uuidString: key), uuid.uuidString == key, original == key.lowercased(),
@@ -251,9 +250,9 @@ enum MigrationPlanningPreview
 
                 _ = try MigrationCalendarTemplates.date(end)
 
-                let id      = /* Portable record identity */
+                let id      =                                                                   /* Portable record identity */
                     try context.id("periodic_review", owner: stores[2], legacy: original)
-                var payload = try mapper.review(source, path: id) /* Canonical record payload */
+                var payload = try mapper.review(source, path: id)                               /* Canonical record payload */
 
                 payload["title"] = title
                 payload["start_date"] = start
@@ -268,7 +267,7 @@ enum MigrationPlanningPreview
         }
         if let value = values[stores[3]]
         {
-            let source = /* Source value for this operation */
+            let source =                                                                                /* Source value for this operation */
                 try load(value, as: ReviewRhythmPreferences.self, family: "rhythm", container: nil)
 
             guard let daily = source["dailyMinutes"] as? Int, let weekly = source["weeklyMinutes"] as? Int,
@@ -278,7 +277,7 @@ enum MigrationPlanningPreview
                 throw MigrationContentValues.Failure.invalid("planning_rhythm_range")
             }
 
-            let id = /* Portable record identity */
+            let id =                                                                            /* Portable record identity */
                 try context.id("review_rhythm", owner: "workspace_metadata", legacy: stores[3])
 
             output.append(context.document("review_rhythm", id: id, payload: [
@@ -288,11 +287,11 @@ enum MigrationPlanningPreview
             converted.append(stores[3])
         }
 
-        let count = output.count /* Number of entries */
+        let count = output.count        /* Number of entries */
 
         output += context.unavailable.keys.sorted().map { context.unavailable[$0]! }
 
-        let document: [String: Any] = /* Source document snapshot */
+        let document: [String: Any] =                                           /* Source document snapshot */
             ["format": "plenact.ios-planning-preview", "format_version": 1,
             "target_user_data_model_version": "1.0", "converted_source_stores": converted,
             "source_store_versions": Dictionary(uniqueKeysWithValues: converted.filter { $0 != stores[3] }.map { ($0, 1) }),

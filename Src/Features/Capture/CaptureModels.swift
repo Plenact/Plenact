@@ -21,11 +21,11 @@ import SwiftUI
 ///
 struct QuickCaptureTemplatesView: View
 {
-    let onSelect: (QuickCaptureTemplate) -> Void /* Handle the selected value      */
-    @Environment(\.dismiss) private var dismiss  /* Close the current presentation */
-    @State private var filter: ItemPresentation? /* Active inclusion filter        */
+    let onSelect: (QuickCaptureTemplate) -> Void        /* Handle the selected value      */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
+    @State private var filter: ItemPresentation?        /* Active inclusion filter        */
 
-    var body: some View /* Quick Capture Templates layout */
+    var body: some View         /* Quick Capture Templates layout */
     {
         NavigationStack
         {
@@ -90,11 +90,8 @@ struct QuickCaptureTemplatesView: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
         .presentationDetents([.large])
     }
@@ -132,7 +129,6 @@ struct QuickCaptureTemplatesView: View
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
-
             }
             .foregroundStyle(.primary)
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -143,7 +139,6 @@ struct QuickCaptureTemplatesView: View
         .buttonStyle(.plain)
         .accessibilityHint("Opens an editable draft. Does not add an item yet.")
     }
-
 }
 
 
@@ -156,9 +151,9 @@ struct QuickCaptureTemplatesView: View
 ///
 struct ContentCreationKindPicker: View
 {
-    @Binding var presentation: ItemPresentation /* Current presentation style */
+    @Binding var presentation: ItemPresentation         /* Current presentation style */
 
-    var body:                  some View /* Content Creation Kind Picker layout */
+    var body:                  some View        /* Content Creation Kind Picker layout */
     {
         Picker("Create as", selection: $presentation)
         {
@@ -166,7 +161,6 @@ struct ContentCreationKindPicker: View
             Label("Note", systemImage: "note.text").tag(ItemPresentation.note)
         } .pickerStyle(.segmented).accessibilityLabel("Create as Card or Note")
     }
-
 }
 
 
@@ -180,12 +174,12 @@ struct ContentCreationKindPicker: View
 enum TodayCaptureAction: String, CaseIterable, Identifiable
 {
     case note, checklist, photo, voice, drawing
-    var id: Self /* Record or view identity */
+    var id: Self                                /* Record or view identity */
     {
         self
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -204,10 +198,9 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
         case .drawing:
                     "Drawing"
         }
-
     }
 
-    var symbol: String /* Selected symbol name */
+    var symbol: String          /* Selected symbol name */
     {
         switch self
         {
@@ -226,14 +219,12 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
         case .drawing:
                     "pencil.tip.crop.circle.badge.plus"
         }
-
     }
 
-    var presentation: ItemPresentation /* Current presentation style */
+    var presentation: ItemPresentation          /* Current presentation style */
     {
         self == .note ? .note : .card
     }
-
 }
 
 
@@ -246,9 +237,9 @@ enum TodayCaptureAction: String, CaseIterable, Identifiable
 ///
 struct TodayCaptureActions: View
 {
-    let onSelect: (TodayCaptureAction) -> Void /* Handle the selected value */
+    let onSelect: (TodayCaptureAction) -> Void          /* Handle the selected value */
 
-    var body:     some View /* Today Capture Actions layout */
+    var body:     some View     /* Today Capture Actions layout */
     {
         HStack(spacing: 8)
         {
@@ -269,11 +260,8 @@ struct TodayCaptureActions: View
                 .buttonStyle(.plain).foregroundStyle(.secondary)
                 .accessibilityLabel("Capture " + action.title.lowercased())
             }
-
         }
-
     }
-
 }
 
 
@@ -285,9 +273,9 @@ struct TodayCaptureActions: View
 ///
 struct QuickCaptureSchedule: Equatable
 {
-    var start: Date?         /* Range start    */
-    var stop:  Date?         /* Range endpoint */
-    var includesTime = false /* Includes time  */
+    var start: Date?            /* Range start    */
+    var stop:  Date?            /* Range endpoint */
+    var includesTime = false    /* Includes time  */
 
 
     ///
@@ -323,7 +311,7 @@ struct QuickCaptureSchedule: Equatable
     ///
     func apply(to card: inout KanbanCard, calendar: Calendar = .current)
     {
-        let kind: CardDateKind = /* Content kind discriminator */
+        let kind: CardDateKind =                /* Content kind discriminator */
             includesTime ? .dateAndTime : .date
 
         card.startDate = start.map
@@ -338,9 +326,7 @@ struct QuickCaptureSchedule: Equatable
 
         card.startDateKind = kind;
         card.dueDateKind = kind
-
     }
-
 }
 
 
@@ -353,16 +339,15 @@ struct QuickCaptureSchedule: Equatable
 ///
 struct QuickCaptureSubmission
 {
-    let listID:       Int                   /* Owner-local List identifier */
-    let title:        String                /* User-facing title           */
-    let body:         String                /* Note or description text    */
-    let subtitle:     String                /* Supporting item text        */
-    let presentation: ItemPresentation      /* Current presentation style  */
-    let actions:      [String]?             /* Available item operations   */
-    let attachments:  [KanbanAttachment]    /* Owned attachment records    */
-    let schedule:     QuickCaptureSchedule? /* Item date and time settings */
-    var origin: CardHistoryOrigin = .createdHere /* Source of the captured item */
-
+    let listID:       Int                               /* Owner-local List identifier */
+    let title:        String                            /* User-facing title           */
+    let body:         String                            /* Note or description text    */
+    let subtitle:     String                            /* Supporting item text        */
+    let presentation: ItemPresentation                  /* Current presentation style  */
+    let actions:      [String]?                         /* Available item operations   */
+    let attachments:  [KanbanAttachment]                /* Owned attachment records    */
+    let schedule:     QuickCaptureSchedule?             /* Item date and time settings */
+    var origin: CardHistoryOrigin = .createdHere        /* Source of the captured item */
 }
 
 
@@ -375,17 +360,17 @@ struct QuickCaptureSubmission
 enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
 {
     case audio = "Audio", text = "Text", both = "Both"
-    var id: Self /* Record or view identity */
+    var id: Self                                        /* Record or view identity */
     {
         self
     }
 
-    var savesAudio: Bool /* Saves audio */
+    var savesAudio: Bool        /* Saves audio */
     {
         self != .text
     }
 
-    var savesText: Bool /* Saves text */
+    var savesText: Bool         /* Saves text */
     {
         self != .audio
     }
@@ -404,7 +389,7 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
     ///
     func body(existing: String, transcript: String) -> String
     {
-        let text = /* Text being processed */
+        let text =                                                      /* Text being processed */
             transcript.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard savesText, !text.isEmpty else
@@ -412,13 +397,12 @@ enum VoiceCaptureSaveOption: String, CaseIterable, Identifiable
             return existing
         }
 
-        let result = /* Result being assembled */
+        let result =                                                                            /* Result being assembled */
             NSMutableAttributedString(attributedString: PlanRichText.attributed(existing))
 
         result.append(NSAttributedString(string: (result.length == 0 ? "" : "\n\n") + text))
         return PlanRichText.encode(result)
     }
-
 }
 
 
@@ -434,13 +418,13 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
     case usefulStep, smallPlan, errands, idea, reference, reflection
     case blankCard, blankNote
 
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
     }
 
 
-    var presentation: ItemPresentation /* Current presentation style */
+    var presentation: ItemPresentation          /* Current presentation style */
     {
         switch self
         {
@@ -449,11 +433,10 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
         default:
             .card
         }
-
     }
 
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -474,11 +457,10 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
         case .blankNote:
                     "Blank Note"
         }
-
     }
 
 
-    var summary: String /* Aggregate operation results */
+    var summary: String         /* Aggregate operation results */
     {
         switch self
         {
@@ -497,11 +479,10 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
         case .blankCard, .blankNote:
                     "Start with space for your own words."
         }
-
     }
 
 
-    var body: String /* Note or description text */
+    var body: String    /* Note or description text */
     {
         switch self
         {
@@ -520,11 +501,10 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
         case .blankCard, .blankNote:
                     ""
         }
-
     }
 
 
-    var actions: [String] /* Available item operations */
+    var actions: [String]       /* Available item operations */
     {
         switch self
         {
@@ -537,7 +517,6 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
         default:
             []
         }
-
     }
 
 
@@ -561,7 +540,6 @@ enum QuickCaptureTemplate: String, CaseIterable, Identifiable
 
         return self == .blankCard || self == .blankNote ? "" : title
     }
-
 }
 
 
@@ -593,7 +571,5 @@ enum MultilineEntry
         {
             !$0.isEmpty
         }
-
     }
-
 }

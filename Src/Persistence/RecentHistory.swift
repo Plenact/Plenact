@@ -19,7 +19,7 @@ import SwiftUI
 ///
 enum RecentSearchStore
 {
-    private static let key = "Plenact.RecentSearches.v1" /* Versioned local search-history key */
+    private static let key = "Plenact.RecentSearches.v1"        /* Versioned local search-history key */
 
 
     ///
@@ -56,8 +56,8 @@ enum RecentSearchStore
     @discardableResult
     static func remember(_ query: String, in defaults: UserDefaults = .standard) -> [String]
     {
-        let term     = query.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized query to remember            */
-        var searches = load(from: defaults)                                  /* Recent queries updated in recency order */
+        let term     = query.trimmingCharacters(in: .whitespacesAndNewlines)    /* Normalized query to remember            */
+        var searches = load(from: defaults)                                     /* Recent queries updated in recency order */
 
         guard !term.isEmpty else
         {
@@ -94,7 +94,6 @@ enum RecentSearchStore
     {
         defaults.removeObject(forKey: key)
     }
-
 }
 
 
@@ -107,14 +106,13 @@ enum RecentSearchStore
 ///
 struct LibraryRecentItem: Codable, Equatable, Identifiable
 {
-    let collectionID: UUID /* Collection ID               */
-    let cardID:       Int  /* Owner-local Card identifier */
+    let collectionID: UUID      /* Collection ID               */
+    let cardID:       Int       /* Owner-local Card identifier */
 
-    var id:           String /* Record or view identity */
+    var id:           String    /* Record or view identity */
     {
             "\(collectionID.uuidString).\(cardID)"
     }
-
 }
 
 
@@ -127,7 +125,7 @@ struct LibraryRecentItem: Codable, Equatable, Identifiable
 ///
 enum LibraryRecentStore
 {
-    static let key = "Plenact.LibraryRecents.v1" /* Persistence lookup key */
+    static let key = "Plenact.LibraryRecents.v1"        /* Persistence lookup key */
 
 
     ///
@@ -166,7 +164,7 @@ enum LibraryRecentStore
     {
         ActivityRecentStore.remember(item, defaults: defaults)
 
-        let items = Array(([item] + load(from: defaults).filter /* Items being processed */
+        let items = Array(([item] + load(from: defaults).filter         /* Items being processed */
                 {
                     $0 != item
                 }).prefix(8))
@@ -178,7 +176,6 @@ enum LibraryRecentStore
 
         return items
     }
-
 }
 
 
@@ -191,7 +188,7 @@ enum LibraryRecentStore
 ///
 enum ActivityRecentStore
 {
-    static let key = "Plenact.ActivityRecents.v1" /* Persistence lookup key */
+    static let key = "Plenact.ActivityRecents.v1"       /* Persistence lookup key */
 
 
     ///
@@ -229,7 +226,7 @@ enum ActivityRecentStore
     ///
     static func remember(_ item: LibraryRecentItem, defaults: UserDefaults = .standard)
     {
-        let items = Array(([item] + load(from: defaults).filter /* Items being processed */
+        let items = Array(([item] + load(from: defaults).filter         /* Items being processed */
                 {
                     $0 != item
                 }).prefix(20))
@@ -238,7 +235,6 @@ enum ActivityRecentStore
         {
             defaults.set(data, forKey: key)
         }
-
     }
 
 
@@ -256,5 +252,4 @@ enum ActivityRecentStore
         defaults.set(Data("[]".utf8), forKey: key)
         defaults.set(Data("[]".utf8), forKey: LibraryRecentStore.key)
     }
-
 }

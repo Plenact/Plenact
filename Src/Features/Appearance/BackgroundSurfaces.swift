@@ -23,7 +23,7 @@ import UIKit
 ///
 extension KanbanListTint
 {
-    var color: Color /* Resolved color value */
+    var color: Color    /* Resolved color value */
     {
         switch self
         {
@@ -38,9 +38,7 @@ extension KanbanListTint
         case .red:
             Color.red.opacity(0.12)
         }
-
     }
-
 }
 
 
@@ -52,7 +50,7 @@ extension KanbanListTint
 ///
 extension ItemAccent
 {
-    var color: Color /* Resolved color value */
+    var color: Color    /* Resolved color value */
     {
         switch self
         {
@@ -73,11 +71,10 @@ extension ItemAccent
         case .green:
             .green
         }
-
     }
 
 
-    var darkHeaderColor: Color /* Dark header color */
+    var darkHeaderColor: Color          /* Dark header color */
     {
         switch self
         {
@@ -98,7 +95,6 @@ extension ItemAccent
         case .green:
             Color(red: 0.12, green: 0.28, blue: 0.14)
         }
-
     }
 
 
@@ -118,22 +114,22 @@ extension ItemAccent
             {
                 traits in
 
-                let tint               = /* Resolved display tint */
+                let tint               =                                        /* Resolved display tint       */
                     UIColor(self.color).resolvedColor(with: traits)
-                let base               = /* Base value before overrides */
+                let base               =                                        /* Base value before overrides */
                     UIColor.systemBackground.resolvedColor(with: traits)
-                var red: CGFloat       = 0 /* Resolved red channel     */
-                var green: CGFloat     = 0 /* Resolved green channel   */
-                var blue: CGFloat      = 0 /* Resolved blue channel    */
-                var alpha: CGFloat     = 0 /* Resolved opacity channel */
-                var baseRed: CGFloat   = 0 /* Base red                 */
-                var baseGreen: CGFloat = 0 /* Base green               */
-                var baseBlue: CGFloat  = 0 /* Base blue                */
+                var red: CGFloat       = 0                                      /* Resolved red channel        */
+                var green: CGFloat     = 0                                      /* Resolved green channel      */
+                var blue: CGFloat      = 0                                      /* Resolved blue channel       */
+                var alpha: CGFloat     = 0                                      /* Resolved opacity channel    */
+                var baseRed: CGFloat   = 0                                      /* Base red                    */
+                var baseGreen: CGFloat = 0                                      /* Base green                  */
+                var baseBlue: CGFloat  = 0                                      /* Base blue                   */
 
                 tint.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
                 base.getRed(&baseRed, green: &baseGreen, blue: &baseBlue, alpha: &alpha)
 
-                let amount: CGFloat = increasedContrast ? 0.10 : 0.16 /* Amount operation value */
+                let amount: CGFloat = increasedContrast ? 0.10 : 0.16           /* Amount operation value */
 
                 return UIColor(
                     red: baseRed * (1 - amount) + red * amount,
@@ -143,7 +139,6 @@ extension ItemAccent
                 )
             })
     }
-
 }
 
 
@@ -156,9 +151,9 @@ extension ItemAccent
 ///
 struct ItemAppearanceMark: View
 {
-    let appearance: ItemAppearance? /* Resolved appearance choices */
+    let appearance: ItemAppearance?     /* Resolved appearance choices */
 
-    var body: some View /* Item Appearance Mark layout */
+    var body: some View         /* Item Appearance Mark layout */
     {
         if let icon = appearance?.icon
         {
@@ -166,9 +161,7 @@ struct ItemAppearanceMark: View
             .foregroundStyle(appearance?.iconColor?.color ?? Color.secondary)
             .accessibilityHidden(true)
         }
-
     }
-
 }
 
 
@@ -181,8 +174,8 @@ struct ItemAppearanceMark: View
 ///
 struct ItemBannerBackground: ViewModifier
 {
-    let appearance: ItemAppearance?                          /* Resolved appearance choices   */
-    @Environment(\.colorSchemeContrast) private var contrast /* Accessibility contrast choice */
+    let appearance: ItemAppearance?                             /* Resolved appearance choices   */
+    @Environment(\.colorSchemeContrast) private var contrast    /* Accessibility contrast choice */
 
 
     ///
@@ -207,9 +200,7 @@ struct ItemBannerBackground: ViewModifier
         {
             content
         }
-
     }
-
 }
 
 
@@ -235,7 +226,6 @@ extension View
     {
         modifier(ItemBannerBackground(appearance: appearance))
     }
-
 }
 
 
@@ -247,12 +237,12 @@ extension View
 ///
 struct ItemPicturePreview: View
 {
-    let attachment: KanbanAttachment? /* Owned attachment content */
-    var title:      String? = nil     /* User-facing title        */
+    let attachment: KanbanAttachment?           /* Owned attachment content */
+    var title:      String? = nil               /* User-facing title        */
 
-    private var accessibleDescription: String /* Accessible description */
+    private var accessibleDescription: String           /* Accessible description */
     {
-        let text = [title, attachment?.caption] /* Text being processed */
+        let text = [title, attachment?.caption]         /* Text being processed */
         .compactMap
         {
             $0?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -266,11 +256,11 @@ struct ItemPicturePreview: View
         return text.isEmpty ? "Picture" : text
     }
 
-    @State private var unavailable = false /* Unresolved reference state   */
+    @State private var unavailable = false      /* Unresolved reference state   */
 
-    @State private var image: UIImage?     /* Image used by this operation */
+    @State private var image: UIImage?          /* Image used by this operation */
 
-    var body: some View /* Item Picture Preview layout */
+    var body: some View         /* Item Picture Preview layout */
     {
         Group
         {
@@ -291,7 +281,6 @@ struct ItemPicturePreview: View
                 .frame(maxWidth: .infinity, minHeight: 120)
                 .background(Color.secondary.opacity(0.08))
             }
-
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
@@ -308,13 +297,12 @@ struct ItemPicturePreview: View
                 return
             }
 
-            let result = await Task.detached(priority: .utility) /* Result being assembled */
+            let result = await Task.detached(priority: .utility)        /* Result being assembled */
             {
                 Result
                 {
                     try CardAttachmentStore.coverThumbnail(for: attachment)
                 }
-
             } .value
 
             guard !Task.isCancelled else
@@ -331,13 +319,9 @@ struct ItemPicturePreview: View
             case .failure:
 
                 unavailable = true
-
             }
-
         }
-
     }
-
 }
 
 
@@ -350,10 +334,10 @@ struct ItemPicturePreview: View
 ///
 struct ItemDisplayFormatMenu: View
 {
-    let card:     KanbanCard           /* Card under consideration */
-    let onUpdate: (KanbanCard) -> Void /* Publish item edits       */
+    let card:     KanbanCard                    /* Card under consideration */
+    let onUpdate: (KanbanCard) -> Void          /* Publish item edits       */
 
-    var body: some View /* Item Display Format Menu layout */
+    var body: some View         /* Item Display Format Menu layout */
     {
         Menu
         {
@@ -362,7 +346,7 @@ struct ItemDisplayFormatMenu: View
                 format in
                 Button
                 {
-                    var updated = card /* Edited value to publish */
+                    var updated = card          /* Edited value to publish */
 
                     updated.displayFormat = format
 
@@ -372,17 +356,13 @@ struct ItemDisplayFormatMenu: View
                 {
                     Label(format.title, systemImage: card.displayFormat == format ? "checkmark" : format.symbol)
                 }
-
             }
-
         }
         label:
         {
             Label("Display as", systemImage: "rectangle.on.rectangle")
         }
-
     }
-
 }
 
 
@@ -394,9 +374,9 @@ struct ItemDisplayFormatMenu: View
 ///
 struct CardDisplayProfilePicker: View
 {
-    @Binding var selection: BoardCardDetail? /* Current selection state */
+    @Binding var selection: BoardCardDetail?    /* Current selection state */
 
-    var body:               some View /* Card Display Profile Picker layout */
+    var body:               some View           /* Card Display Profile Picker layout */
     {
         Picker("Card display", selection: $selection)
         {
@@ -407,7 +387,6 @@ struct CardDisplayProfilePicker: View
         .pickerStyle(.segmented)
         .accessibilityIdentifier("appearance.cardDisplay")
     }
-
 }
 
 
@@ -420,10 +399,10 @@ struct CardDisplayProfilePicker: View
 ///
 extension ListPreviewTextColor
 {
-    var color: Color /* Resolved color value */
+    var color: Color    /* Resolved color value */
     {
-        let light: (CGFloat, CGFloat, CGFloat) /* Light-appearance color */
-        let dark: (CGFloat, CGFloat, CGFloat)  /* Dark-appearance color  */
+        let light: (CGFloat, CGFloat, CGFloat)          /* Light-appearance color */
+        let dark: (CGFloat, CGFloat, CGFloat)           /* Dark-appearance color  */
 
         switch self
         {
@@ -461,7 +440,6 @@ extension ListPreviewTextColor
 
             light = (0.47, 0.34, 0.13);
             dark = (0.92, 0.78, 0.49)
-
         }
 
         return Color(
@@ -469,12 +447,11 @@ extension ListPreviewTextColor
             {
                 traits in
 
-                let rgb = traits.userInterfaceStyle == .dark ? dark : light /* Encoded RGB color */
+                let rgb = traits.userInterfaceStyle == .dark ? dark : light     /* Encoded RGB color */
 
                 return UIColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
             })
     }
-
 }
 
 
@@ -490,7 +467,7 @@ extension ListPreviewTextColor
 ///
 enum CollectionBackgroundPhotoStore
 {
-    private static let cache = NSCache<NSString, UIImage>() /* Reusable lookup results */
+    private static let cache = NSCache<NSString, UIImage>()     /* Reusable lookup results */
 
 
     ///
@@ -504,9 +481,9 @@ enum CollectionBackgroundPhotoStore
     ///
     static func directory() throws -> URL
     {
-        let root = try FileManager.default.url( /* Workspace or view root */
+        let root = try FileManager.default.url(                                                 /* Workspace or view root */
             for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        let url = /* Resolved file location */
+        let url =                                                                               /* Resolved file location */
             root.appendingPathComponent("PlenactCollectionBackgrounds", isDirectory: true)
 
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
@@ -559,7 +536,7 @@ enum CollectionBackgroundPhotoStore
     ///
     static func save(_ data: Data) throws -> String
     {
-        let name = UUID().uuidString + ".jpg" /* Display or lookup name */
+        let name = UUID().uuidString + ".jpg"           /* Display or lookup name */
 
         try data.write(to: directory().appendingPathComponent(name), options: .atomic)
         return name
@@ -623,7 +600,6 @@ enum CollectionBackgroundPhotoStore
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
         cache.removeObject(forKey: name as NSString)
     }
-
 }
 
 
@@ -636,10 +612,10 @@ enum CollectionBackgroundPhotoStore
 ///
 struct CollectionBackgroundSurface: View
 {
-    var background:     CollectionBackground? = nil /* Resolved background appearance */
-    var draftPhoto:     Data?                 = nil /* Draft photo                    */
+    var background:     CollectionBackground? = nil     /* Resolved background appearance */
+    var draftPhoto:     Data?                 = nil     /* Draft photo                    */
 
-    private var colors: [Color] /* Colors used by this appearance */
+    private var colors: [Color]         /* Colors used by this appearance */
     {
         switch background?.preset
         {
@@ -658,10 +634,9 @@ struct CollectionBackgroundSurface: View
         default:
             [Color(red: 0.10, green: 0.18, blue: 0.25), Color(red: 0.22, green: 0.34, blue: 0.38)]
         }
-
     }
 
-    private var photo: UIImage? /* Photo selection or source */
+    private var photo: UIImage?         /* Photo selection or source */
     {
         switch background?.preset
         {
@@ -688,7 +663,7 @@ struct CollectionBackgroundSurface: View
         return CollectionBackgroundPhotoStore.image(named: background?.photoFileName)
     }
 
-    var body: some View /* Collection Background Surface layout */
+    var body: some View         /* Collection Background Surface layout */
     {
         GeometryReader
         {
@@ -709,24 +684,23 @@ struct CollectionBackgroundSurface: View
                     {
                         context, size in
 
-                        var grain = Path() /* Grain operation value */
+                        var grain = Path()      /* Grain operation value */
 
                         for row in stride(from: 0, through: Int(size.height), by: 7)
                         {
                             for column in stride(from: 0, through: Int(size.width), by: 7)
                             {
-                                let shift = (row * 17 + column * 13) % 5 /* Shift operation value */
+                                let shift = (row * 17 + column * 13) % 5        /* Shift operation value */
 
                                 grain.addEllipse(
                                     in: CGRect(x: CGFloat(column + shift), y: CGFloat(row), width: 0.8, height: 0.8))
                             }
-
                         }
 
                         context.fill(grain, with: .color(.white.opacity(0.12)))
                         if preset == .linen || preset == .sandstone
                         {
-                            var weave = Path() /* Weave operation value */
+                            var weave = Path()          /* Weave operation value */
 
                             for x in stride(from: 0, through: Int(size.width), by: 4)
                             {
@@ -737,17 +711,13 @@ struct CollectionBackgroundSurface: View
 
                             context.stroke(weave, with: .color(.white.opacity(0.045)), lineWidth: 0.5)
                         }
-
                     }
                     .allowsHitTesting(false)
                 }
-
             }
-
         }
         .accessibilityHidden(true)
     }
-
 }
 
 
@@ -760,8 +730,7 @@ struct CollectionBackgroundSurface: View
 ///
 private struct SubtitleItalicKey: EnvironmentKey
 {
-    static let defaultValue = false /* Fallback environment value */
-
+    static let defaultValue = false     /* Fallback environment value */
 }
 
 
@@ -773,7 +742,7 @@ private struct SubtitleItalicKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-    var inheritedSubtitleItalic: Bool /* Inherited subtitle styling */
+    var inheritedSubtitleItalic: Bool           /* Inherited subtitle styling */
     {
         get
         {
@@ -782,7 +751,6 @@ extension EnvironmentValues
         set
         {
             self[SubtitleItalicKey.self] = newValue
-
         }
     }
 }

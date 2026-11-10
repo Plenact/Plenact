@@ -36,10 +36,10 @@ enum CoverCategory: String, CaseIterable, Identifiable
     /// @brief      Identify a category filter
     /// @return     (String) stable category label
     ///
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
-    }  /* Stable category identity */
+    }                   /* Stable category identity */
 
 
     ///
@@ -48,7 +48,7 @@ enum CoverCategory: String, CaseIterable, Identifiable
     /// @details    Categories describe artwork only, not card ownership or semantics
     /// @return     ([ExampleCoverImage]) explicit curated category membership
     ///
-    var images: [ExampleCoverImage] /* Decoded image values */
+    var images: [ExampleCoverImage]     /* Decoded image values */
     {
         switch self
         {
@@ -142,9 +142,7 @@ enum CoverCategory: String, CaseIterable, Identifiable
                 .journalingPrompt, .freshPerspective, .patientProgress, .softSunlight, .clearMind, .thankfulEvening
             ]
         }
-
     }
-
 }
 
 
@@ -530,12 +528,12 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     /// @brief      Provide a readable artwork label without embedded image text
     /// @return     (String) human-readable name
     ///
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         rawValue.replacingOccurrences(of: "-", with: " ").capitalized
-    }  /* Readable artwork name */
+    }                                                                   /* Readable artwork name */
 
-    private static let tagCatalog: [String: [String]] = /* Tag catalog */
+    private static let tagCatalog: [String: [String]] =         /* Tag catalog */
     {
         guard
         let url = Bundle.main.url(
@@ -550,7 +548,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
         return tags
     }()
 
-    var tags: [String] /* Search or category tags */
+    var tags: [String]          /* Search or category tags */
     {
         Self.tagCatalog[rawValue] ?? rawValue.components(separatedBy: "-")
     }
@@ -573,7 +571,6 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
         {
             $0.matches(query)
         }
-
     }
 
 
@@ -589,18 +586,18 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     ///
     func matches(_ query: String) -> Bool
     {
-        let normalized = /* Comparison-normalized value */
+        let normalized =                                                                        /* Comparison-normalized value */
             query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-        let terms      = /* Normalized search terms */
+        let terms      =                                                                        /* Normalized search terms     */
             normalized.components(separatedBy: CharacterSet.alphanumerics.inverted).filter
         {
             !$0.isEmpty
         }
 
-        let searchable = /* Indexed searchable text */
+        let searchable =                                                                        /* Indexed searchable text */
             ([title] + tags).joined(separator: " ").folding(
-            options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-        let words = /* Display text values */
+                options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        let words =                                                                             /* Display text values     */
             searchable.components(separatedBy: CharacterSet.alphanumerics.inverted).filter
         {
             !$0.isEmpty
@@ -613,9 +610,7 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
             {
                 $0.hasPrefix(term)
             }
-
         }
-
     }
 
 
@@ -625,11 +620,10 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
     /// @details    Only known resource names can be resolved; no remote downloads occur
     /// @return     (URL?) bundled PNG location
     ///
-    var url: URL? /* Resource location */
-    {  /* Bundled artwork resource URL */
+    var url: URL?       /* Resource location            */
+    {                   /* Bundled artwork resource URL */
         Bundle.main.url(forResource: rawValue, withExtension: "png", subdirectory: "CardCoverImages")
     }
-
 }
 
 
@@ -641,12 +635,12 @@ enum ExampleCoverImage: String, Codable, CaseIterable, Sendable
 ///
 struct CardCoverLibrary: View
 {
-    let selectedImage: ExampleCoverImage?           /* Current library cover, if any                    */
-    let onSelect:      (ExampleCoverImage) -> Bool  /* Owner validates and publishes an explicit choice */
-    @State private var query = "" /* Search text */
-    @State private var category: CoverCategory?           /* nil shows All Covers                       */
-    @Environment(\.dynamicTypeSize) private var textSize  /* Use a single column for accessibility text */
-    @Environment(\.dismiss) private var dismiss           /* Cancel or close a successful selection     */
+    let selectedImage: ExampleCoverImage?                       /* Current library cover, if any                    */
+    let onSelect:      (ExampleCoverImage) -> Bool              /* Owner validates and publishes an explicit choice */
+    @State private var query = ""                               /* Search text                                      */
+    @State private var category: CoverCategory?                 /* nil shows All Covers                             */
+    @Environment(\.dynamicTypeSize) private var textSize        /* Use a single column for accessibility text       */
+    @Environment(\.dismiss) private var dismiss                 /* Cancel or close a successful selection           */
 
     ///
     /// @fcn        CardCoverLibrary.body
@@ -654,7 +648,7 @@ struct CardCoverLibrary: View
     /// @details    No selection or attachment is created until a person taps an illustration
     /// @return     (some View) adaptive offline library
     ///
-    private var albumPicker: some View /* Album picker */
+    private var albumPicker: some View          /* Album picker */
     {
         Picker("Cover album", selection: $category)
         {
@@ -664,7 +658,6 @@ struct CardCoverLibrary: View
                 category in
                 Text(category.rawValue).tag(Optional(category))
             }
-
         }
 
         .pickerStyle(.menu)
@@ -673,7 +666,7 @@ struct CardCoverLibrary: View
         .accessibilityIdentifier("coverLibrary.album")
     }
 
-    private var searchField: some View /* Search field */
+    private var searchField: some View          /* Search field */
     {
         HStack(spacing: 6)
         {
@@ -686,7 +679,6 @@ struct CardCoverLibrary: View
                 Button
                 {
                     query = ""
-
                 }
                 label:
                 {
@@ -694,7 +686,6 @@ struct CardCoverLibrary: View
                 }
                 .accessibilityLabel("Clear cover search")
             }
-
         }
         .padding(10)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
@@ -702,14 +693,14 @@ struct CardCoverLibrary: View
     }
 
 
-    private var filteredImages: [ExampleCoverImage] /* Filtered images */
+    private var filteredImages: [ExampleCoverImage]     /* Filtered images */
     {
         ExampleCoverImage.search(query, in: category)
     }
 
 
-    var body: some View /* Card Cover Library layout */
-    {  /* Offline cover library interface */
+    var body: some View         /* Card Cover Library layout       */
+    {                           /* Offline cover library interface */
         NavigationStack
         {
             ScrollView
@@ -729,7 +720,6 @@ struct CardCoverLibrary: View
                             albumPicker;
                             searchField
                         }
-
                     }
 
                     Text("\(filteredImages.count) covers").font(.caption).foregroundStyle(.secondary)
@@ -756,7 +746,6 @@ struct CardCoverLibrary: View
                                 {
                                     dismiss()
                                 }
-
                             }
                             label:
                             {
@@ -783,9 +772,7 @@ struct CardCoverLibrary: View
                             .accessibilityLabel(image.title + (selectedImage == image ? ", current cover" : ""))
                             .accessibilityHint("Use this illustration as the card cover.")
                         }
-
                     }
-
                 }
 
                 .padding()
@@ -801,15 +788,10 @@ struct CardCoverLibrary: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -821,11 +803,11 @@ struct CardCoverLibrary: View
 ///
 struct CardCoverPreview: View
 {
-    let attachment: KanbanAttachment  /* Explicitly selected photo                                    */
-    var height:     CGFloat = 128     /* Fixed preview height, independent of source image dimensions */
-    var unavailableTitle    = "Cover unavailable" /* Unavailable title */
-    @State private var image: UIImage?      /* Downsampled image for this presentation */
-    @State private var unavailable = false  /* Explicit missing/invalid-image feedback */
+    let attachment: KanbanAttachment                    /* Explicitly selected photo                                    */
+    var height:     CGFloat = 128                       /* Fixed preview height, independent of source image dimensions */
+    var unavailableTitle    = "Cover unavailable"       /* Unavailable title                                            */
+    @State private var image: UIImage?                  /* Downsampled image for this presentation                      */
+    @State private var unavailable = false              /* Explicit missing/invalid-image feedback                      */
 
     ///
     /// @fcn        CardCoverPreview.body
@@ -833,15 +815,15 @@ struct CardCoverPreview: View
     /// @details    Task identity/cancellation prevents a previous image from replacing a changed cover
     /// @return     (some View) decorative cropped image or visible unavailable notice
     ///
-    var body: some View /* Card Cover Preview layout */
-    {  /* Loaded cover preview or fallback */
+    var body: some View         /* Card Cover Preview layout        */
+    {                           /* Loaded cover preview or fallback */
         GeometryReader
         {
             geometry in
             Group
             {
                 if let image
-                {  /* Successfully decoded cover thumbnail */
+                {                                                       /* Successfully decoded cover thumbnail */
                     Image(uiImage: image).resizable().scaledToFill()
                 }
                 else if unavailable
@@ -854,7 +836,6 @@ struct CardCoverPreview: View
                 {
                     Color.secondary.opacity(0.08)
                 }
-
             }
 
             .frame(width: geometry.size.width, height: height)
@@ -869,13 +850,12 @@ struct CardCoverPreview: View
             image = nil
             unavailable = false
 
-            let result = await Task.detached(priority: .utility) /* Result being assembled */
-            {  /* Background thumbnail decode result */
+            let result = await Task.detached(priority: .utility)        /* Result being assembled             */
+            {                                                           /* Background thumbnail decode result */
                 Result
                 {
                     try CardAttachmentStore.coverThumbnail(for: attachment)
                 }
-
             } .value
 
             guard !Task.isCancelled else
@@ -888,18 +868,14 @@ struct CardCoverPreview: View
             {
             case .success(let thumbnail):
 
-                image = thumbnail /* Decoded cover thumbnail */
+                image = thumbnail       /* Decoded cover thumbnail */
 
             case .failure:
 
                 unavailable = true
-
             }
-
         }
-
     }
-
 }
 
 
@@ -911,10 +887,10 @@ struct CardCoverPreview: View
 ///
 struct CardCoverPicker: View
 {
-    let photos:     [KanbanAttachment]          /* Current attached photo choices       */
-    let selectedID: UUID?                       /* Current cover, if explicitly enabled */
-    let onSelect:   (UUID) -> Void              /* Owner validates and saves selection  */
-    @Environment(\.dismiss) private var dismiss /* Cancel or return after choosing      */
+    let photos:     [KanbanAttachment]                  /* Current attached photo choices       */
+    let selectedID: UUID?                               /* Current cover, if explicitly enabled */
+    let onSelect:   (UUID) -> Void                      /* Owner validates and saves selection  */
+    @Environment(\.dismiss) private var dismiss         /* Cancel or return after choosing      */
 
     ///
     /// @fcn        CardCoverPicker.body
@@ -922,8 +898,8 @@ struct CardCoverPicker: View
     /// @details    Cancel does not mutate a card; choosing a row reuses its existing attachment
     /// @return     (some View) navigable cover-photo chooser
     ///
-    var body: some View /* Card Cover Picker layout */
-    {  /* Attached-photo cover choices */
+    var body: some View         /* Card Cover Picker layout     */
+    {                           /* Attached-photo cover choices */
         NavigationStack
         {
             List
@@ -942,17 +918,15 @@ struct CardCoverPicker: View
                         {
                             CardCoverPreview(attachment: photo)
                             Label(
-                                                                                    "Photo \(index + 1)",
-                                                                                    systemImage: selectedID == photo.id ? "checkmark.circle.fill" : "photo")
+                                "Photo \(index + 1)",
+                                systemImage: selectedID == photo.id ? "checkmark.circle.fill" : "photo")
                         }
-
                     }
 
                     .buttonStyle(.plain)
                     .accessibilityLabel("Photo \(index + 1)\(selectedID == photo.id ? ", current cover" : "")")
                     .accessibilityHint("Use this attached photo as the card cover.")
                 }
-
             }
 
             .navigationTitle("Choose Card Cover")
@@ -965,13 +939,8 @@ struct CardCoverPicker: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }

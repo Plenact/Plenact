@@ -12,7 +12,7 @@ import Foundation
 ///     Preserve authored overrides rather than exporting a flattened resolved style
 extension MigrationContentValues
 {
-    static let appearanceFields: [String: [String: String]] = [ /* Appearance fields */
+    static let appearanceFields: [String: [String: String]] = [         /* Appearance fields */
         "item_appearance": ["accent": "accent", "icon": "icon", "background": "background", "listBackground": "list_background", "cardBackground": "card_background", "cardTitleColor": "card_title_color", "cardTextColor": "card_text_color", "addItemTextColor": "add_item_text_color", "sectionCollapsed": "section_collapsed", "hideEmptySubtitle": "hide_empty_subtitle", "studioSurface": "studio_surface", "studioCardSurface": "studio_card_surface", "subtitleItalic": "subtitle_italic", "cardDetail": "card_detail", "listViewMode": "list_view_mode", "iconColor": "icon_color", "showsIconInHeader": "shows_icon_in_header", "listBackgroundOpacity": "list_background_opacity"],
         "board_appearance": ["bannerBackground": "banner_background", "listBackground": "list_background", "cardBackground": "card_background", "cardDetail": "card_detail", "collectionBackground": "collection_background", "cardTitleColor": "card_title_color", "cardTextColor": "card_text_color", "addItemTextColor": "add_item_text_color", "studioSurface": "studio_surface", "studioCardSurface": "studio_card_surface", "subtitleItalic": "subtitle_italic"],
         "surface": ["material": "material", "color": "color", "secondaryColor": "secondary_color", "strength": "strength", "readability": "readability", "verticalPosition": "vertical_position", "zoom": "zoom", "showsInPreviews": "shows_in_previews", "photoFileName": "photo_asset_id", "remotePhoto": "remote_photo"],
@@ -36,9 +36,9 @@ extension MigrationContentValues
         }
         if kind == "color", let token = value as? String
         {
-            let data  = /* Encoded record bytes */
+            let data  =                                                                         /* Encoded record bytes */
                 try JSONSerialization.data(withJSONObject: token, options: .fragmentsAllowed)
-            let color = /* Resolved color value */
+            let color =                                                                         /* Resolved color value */
                 try JSONDecoder().decode(ProfileColor.self, from: data)
 
             return ["red": color.red, "green": color.green, "blue": color.blue, "legacy_token": token]
@@ -48,11 +48,11 @@ extension MigrationContentValues
             throw Failure.invalid("appearance")
         }
 
-        var output: [String: Any] = [:] /* Operation output */
+        var output: [String: Any] = [:]         /* Operation output */
 
         for (key, wire) in mapping
         {
-            var item: Any = source[key] ?? NSNull() /* Item under consideration */
+            var item: Any = source[key] ?? NSNull()     /* Item under consideration */
 
             switch key
             {
@@ -85,13 +85,11 @@ extension MigrationContentValues
                 if let token = item as? String
                 {
                     item = ["forestPath": "forest_path", "sunlitWall": "sunlit_wall"][token] ?? token
-
                 }
             case "listViewMode":
                 if item as? String == "noteList"
                 {
                     item = "note_list"
-
                 }
             default: break
             }
@@ -106,12 +104,10 @@ extension MigrationContentValues
             }
 
             output[wire] = item
-
         }
         if kind == "remote_photo"
         {
             output["provider"] = "unsplash"
-
         }
         return output
     }

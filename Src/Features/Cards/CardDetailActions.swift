@@ -45,14 +45,11 @@ extension CardDetailView
                 {
                     focusedField = nil
                     richTextFocusedField = field
-
                 }
                 else if richTextFocusedField == field
                 {
                     richTextFocusedField = nil
-
                 }
-
             })
     }
 
@@ -69,7 +66,6 @@ extension CardDetailView
         richTextFocusedField = nil
         focusedField = nil
         editingHeaderField = nil
-
     }
 
 
@@ -86,9 +82,9 @@ extension CardDetailView
     ///
     func memberIconColor(for memberName: String) -> Color
     {
-        let normalizedName = /* Normalized name */
+        let normalizedName =                                            /* Normalized name */
             memberName.trimmingCharacters(in: .whitespacesAndNewlines)
-        .lowercased() /* Member-color lookup key */
+        .lowercased()                                                   /* Member-color lookup key */
 
         return memberColors[normalizedName] ?? .accentColor
     }
@@ -111,8 +107,8 @@ extension CardDetailView
             return
         }
 
-        var updated = card.replacingLocation( /* Edited value to publish */
-            id: recordID, listTitle: currentListTitle) /* Edited record retaining its current location identity */
+        var updated = card.replacingLocation(           /* Edited value to publish */
+            id: recordID, listTitle: currentListTitle)          /* Edited record retaining its current location identity */
 
         updated.attachments = attachments
 
@@ -129,9 +125,8 @@ extension CardDetailView
         catch
         {
             DatabaseActivity.shared.report(
-                                    "Could not set this cover: \(error.localizedDescription) Choose an attached photo.")
+                "Could not set this cover: \(error.localizedDescription) Choose an attached photo.")
         }
-
     }
 
 
@@ -152,7 +147,7 @@ extension CardDetailView
         }
 
 
-        var updated = card /* Card snapshot receiving the cover change */
+        var updated = card      /* Card snapshot receiving the cover change */
 
         updated.attachments = attachments
 
@@ -175,7 +170,6 @@ extension CardDetailView
 
             return false
         }
-
     }
 
 
@@ -192,19 +186,17 @@ extension CardDetailView
     func attachmentContent(for attachment: KanbanAttachment) -> some View
     {
         if let url = attachment.url
-        {  /* Remote link target */
+        {                               /* Remote link target */
             Link(destination: url)
             {
                 CardAttachmentThumbnail(attachment: attachment)
             }
-
         }
         else
         {
             Button
             {
                 activeSheet = .attachmentPreview(attachment)
-
             }
             label:
             {
@@ -213,7 +205,6 @@ extension CardDetailView
 
             .buttonStyle(.plain)
         }
-
     }
 
 
@@ -237,7 +228,6 @@ extension CardDetailView
                 {
                     setCover(coverAttachmentID == attachment.id ? nil : attachment.id)
                 }
-
             }
 
 
@@ -245,7 +235,6 @@ extension CardDetailView
             {
                 removeAttachment(attachment)
             }
-
         }
 
         .accessibilityLabel(attachment.url == nil ? "View attached media" : "Open attached link")
@@ -257,7 +246,6 @@ extension CardDetailView
                 {
                     setCover(coverAttachmentID == attachment.id ? nil : attachment.id)
                 }
-
             }
 
 
@@ -265,9 +253,7 @@ extension CardDetailView
             {
                 removeAttachment(attachment)
             }
-
         }
-
     }
 
 
@@ -283,12 +269,12 @@ extension CardDetailView
     ///
     func attachmentGallery(_ visibleAttachments: [KanbanAttachment]) -> some View
     {
-        let photos = visibleAttachments.filter /* Photo selections or gallery entries */
+        let photos = visibleAttachments.filter          /* Photo selections or gallery entries */
         {
             $0.kind == .photo
         }
 
-        let otherMedia = visibleAttachments.filter /* Other media */
+        let otherMedia = visibleAttachments.filter      /* Other media */
         {
             $0.kind != .photo
         }
@@ -303,7 +289,6 @@ extension CardDetailView
                     onOpen:
                     {
                         activeSheet = .attachmentPreview($0)
-
                     },
                     onCaption: updatePhotoCaption,
                     onReorder: reorderGalleryPhotos,
@@ -328,15 +313,10 @@ extension CardDetailView
                             attachment in
                             attachmentGalleryItem(attachment)
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
 
 
@@ -353,7 +333,7 @@ extension CardDetailView
     ///
     func updatePhotoCaption(_ id: UUID, _ caption: String) -> Bool
     {
-        var updated = workingCardSnapshot /* Edited value to publish */
+        var updated = workingCardSnapshot       /* Edited value to publish */
 
         do
         {
@@ -372,7 +352,6 @@ extension CardDetailView
             DatabaseActivity.shared.report("Could not save this photo caption: \(error.localizedDescription)")
             return false
         }
-
     }
 
 
@@ -388,7 +367,7 @@ extension CardDetailView
     ///
     func reorderGalleryPhotos(_ ids: [UUID]) -> Bool
     {
-        var updated = workingCardSnapshot /* Edited value to publish */
+        var updated = workingCardSnapshot       /* Edited value to publish */
 
         do
         {
@@ -407,7 +386,6 @@ extension CardDetailView
             DatabaseActivity.shared.report("Could not arrange these photos: \(error.localizedDescription)")
             return false
         }
-
     }
 
 
@@ -425,7 +403,6 @@ extension CardDetailView
         Button
         {
             activeSheet = .attachmentPreview(cover)
-
         }
         label:
         {
@@ -466,20 +443,20 @@ extension CardDetailView
 
 
         if let coverRequestID, coverImportID != coverRequestID
-        {  /* Cover request checked against the latest import */
+        {                                                       /* Cover request checked against the latest import */
             return
         }
 
 
-        var importFailed = false /* Whether any selected media failed to import */
+        var importFailed = false        /* Whether any selected media failed to import */
 
         for photoItem in photoItems
-        {  /* Selected Photos-library item */
+        {                               /* Selected Photos-library item */
             do
             {
                 guard let mediaData = try await photoItem.loadTransferable(type: Data.self)
                 else
-                {  /* Transferred media bytes */
+                {                       /* Transferred media bytes */
                     importFailed = true
 
                     continue
@@ -493,46 +470,42 @@ extension CardDetailView
 
 
                 if let coverRequestID, coverImportID != coverRequestID
-                {  /* Cover request checked before importing media */
+                {                                                       /* Cover request checked before importing media */
                     return
                 }
 
 
-                let contentType = photoItem.supportedContentTypes.first /* Preferred selected-media type        */
-                let isVideo     = photoItem.supportedContentTypes.contains /* Video state */
-                {  /* Whether the selection is video media */
+                let contentType = photoItem.supportedContentTypes.first         /* Preferred selected-media type        */
+                let isVideo     = photoItem.supportedContentTypes.contains      /* Video state                          */
+                {                                                               /* Whether the selection is video media */
                     $0.conforms(to: .movie) || $0.conforms(to: .video)
                 }
 
 
-                let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo /* Stored media category            */
-                let fileExtension                   = /* File extension */
+                let mediaKind: KanbanAttachmentKind = isVideo ? .video : .photo         /* Stored media category */
+                let fileExtension                   =                                   /* File extension        */
                 contentType?.preferredFilenameExtension
-                ?? (isVideo ? "mov" : "jpg") /* File type used for local storage */
+                ?? (isVideo ? "mov" : "jpg")            /* File type used for local storage */
 
-                let attachment = try CardAttachmentStore.saveMedia( /* Owned attachment content */
-                    mediaData, kind: mediaKind, fileExtension: fileExtension) /* Persisted media record ready to attach */
+                let attachment = try CardAttachmentStore.saveMedia(             /* Owned attachment content */
+                    mediaData, kind: mediaKind, fileExtension: fileExtension)           /* Persisted media record ready to attach */
 
                 attachments.append(attachment)
 
                 if coverRequestID != nil && mediaKind == .photo
                 {
                     coverAttachmentID = attachment.id
-
                 }
-
             }
             catch
             {
                 importFailed = true
-
             }
-
         }
 
 
         if let coverRequestID, coverImportID != coverRequestID
-        {  /* Cover request checked before publishing saved media */
+        {                                                       /* Cover request checked before publishing saved media */
             return
         }
 
@@ -541,13 +514,11 @@ extension CardDetailView
         {
             coverImportID = nil
             selectedCoverPhoto = nil
-
         }
         else
         {
             selectedPhotoItems = []
             activeSheet = nil
-
         }
 
 
@@ -557,9 +528,7 @@ extension CardDetailView
         {
             attachmentNoticeMessage = "One or more selected photos or videos could not be added. Please try again."
             showingAttachmentNotice = true
-
         }
-
     }
 
 
@@ -582,7 +551,7 @@ extension CardDetailView
             return false
         }
 
-        let previous = attachments /* Previous value for comparison */
+        let previous = attachments      /* Previous value for comparison */
 
         do
         {
@@ -599,7 +568,6 @@ extension CardDetailView
 
                 return true
             }
-
         }
         catch
         {
@@ -607,7 +575,6 @@ extension CardDetailView
 
             return false
         }
-
     }
 
 
@@ -652,14 +619,14 @@ extension CardDetailView
             return
         }
 
-        let pasteboard = UIPasteboard.general /* System clipboard contents */
+        let pasteboard = UIPasteboard.general           /* System clipboard contents */
 
         activeSheet = nil
 
         if let images = pasteboard.images, !images.isEmpty
         {
-            let previous                     = attachments /* Previous value for comparison */
-            var imported: [KanbanAttachment] = []          /* Imported isolated content     */
+            let previous                     = attachments      /* Previous value for comparison */
+            var imported: [KanbanAttachment] = []               /* Imported isolated content     */
 
             do
             {
@@ -678,7 +645,6 @@ extension CardDetailView
                 {
                     throw CocoaError(.fileWriteUnknown)
                 }
-
             }
             catch
             {
@@ -689,14 +655,13 @@ extension CardDetailView
 
                 attachmentNoticeMessage = "Could not add the clipboard image. Please try again."
                 showingAttachmentNotice = true
-
             }
 
             return
         }
 
 
-        let clipboardText = /* Clipboard text */
+        let clipboardText =                                             /* Clipboard text */
             pasteboard.url?.absoluteString ?? pasteboard.string ?? ""
 
         guard let url = CardAttachmentStore.webURL(from: clipboardText) else
@@ -727,7 +692,6 @@ extension CardDetailView
         attachmentNoticeMessage = "\(source) attachments are coming soon."
         showingAttachmentNotice = true
         activeSheet = nil
-
     }
 
 
@@ -748,9 +712,9 @@ extension CardDetailView
     ///
     func removeAttachment(_ attachment: KanbanAttachment)
     {
-        let removesCover = /* Removes cover */
-        coverAttachmentID == attachment.id  /* Whether removing this attachment also clears the cover */
-        var updated = card                  /* Card snapshot excluding the removed attachment         */
+        let removesCover =                      /* Removes cover                                          */
+        coverAttachmentID == attachment.id      /* Whether removing this attachment also clears the cover */
+        var updated = card                      /* Card snapshot excluding the removed attachment         */
 
         updated.attachments = attachments
         updated.coverAttachmentID = coverAttachmentID
@@ -764,7 +728,6 @@ extension CardDetailView
         {
             coverImportID = nil
             selectedCoverPhoto = nil
-
         }
 
 
@@ -806,17 +769,17 @@ extension CardDetailView
     ///
     @discardableResult
     func syncCardState(
-        title: String? = nil,                    /* Updated card title               */
-        subtitle: String? = nil,                 /* Updated card subtitle            */
-        members: [CardAssignee]? = nil,          /* Updated card assignees           */
-        labelIDs: [String]? = nil,               /* Updated card label IDs           */
-        attachments: [KanbanAttachment]? = nil,  /* Updated card attachments         */
-        titleChecked: Bool? = nil,               /* Updated card title checked state */
-        startDate: Date? = nil,                  /* Updated card start date          */
-        dueDate: Date? = nil,                    /* Updated card due date            */
-        clearStartDate: Bool = false,            /* Whether to clear the start date  */
-        clearDueDate: Bool = false,              /* Whether to clear the due date    */
-        editingLocked: Bool? = nil               /* Explicit lock or unlock request  */
+        title: String? = nil,                           /* Updated card title               */
+        subtitle: String? = nil,                        /* Updated card subtitle            */
+        members: [CardAssignee]? = nil,                 /* Updated card assignees           */
+        labelIDs: [String]? = nil,                      /* Updated card label IDs           */
+        attachments: [KanbanAttachment]? = nil,         /* Updated card attachments         */
+        titleChecked: Bool? = nil,                      /* Updated card title checked state */
+        startDate: Date? = nil,                         /* Updated card start date          */
+        dueDate: Date? = nil,                           /* Updated card due date            */
+        clearStartDate: Bool = false,                   /* Whether to clear the start date  */
+        clearDueDate: Bool = false,                     /* Whether to clear the due date    */
+        editingLocked: Bool? = nil                      /* Explicit lock or unlock request  */
     ) -> Bool
     {
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked || editingLocked == false else
@@ -825,49 +788,42 @@ extension CardDetailView
         }
 
 
-        var updatedCard = workingCardSnapshot /* Complete working record receiving submitted field changes */
+        var updatedCard = workingCardSnapshot           /* Complete working record receiving submitted field changes */
 
         if let editingLocked
         {
             updatedCard.isEditingLocked = editingLocked
-
         }
 
 
         if let title
-        {  /* Submitted replacement title */
+        {                               /* Submitted replacement title */
             updatedCard.word = title
-
         }
 
         if let subtitle
-        {  /* Submitted replacement subtitle */
+        {                                               /* Submitted replacement subtitle */
             updatedCard.subtitleOverride = subtitle
-
         }
 
         if let members
-        {  /* Submitted replacement assignees */
+        {                                       /* Submitted replacement assignees */
             updatedCard.members = members
-
         }
 
         if let labelIDs
-        {  /* Submitted replacement label assignments */
+        {                                       /* Submitted replacement label assignments */
             updatedCard.labelIDs = labelIDs
-
         }
 
         if let attachments
-        {  /* Submitted replacement attachment collection */
+        {                                               /* Submitted replacement attachment collection */
             updatedCard.attachments = attachments
-
         }
 
         if let titleChecked
-        {  /* Submitted title completion state */
+        {                                               /* Submitted title completion state */
             updatedCard.isTitleChecked = titleChecked
-
         }
 
         updatedCard.startDate = clearStartDate ? nil : (startDate ?? self.startDate)
@@ -891,14 +847,13 @@ extension CardDetailView
                 return false
             }
         }
-        else if let currentPersonalCollectionID, /* Current collection used to route relocated Note edits */
+        else if let currentPersonalCollectionID,                /* Current collection used to route relocated Note edits */
         currentPersonalCollectionID != personalCollectionID
         {
             guard onUpdateMovedNote?(currentPersonalCollectionID, updatedCard) == true else
             {
                 return false
             }
-
         }
         else
         {
@@ -972,16 +927,14 @@ extension CardDetailView
 
         if locked
         {
-            var snapshot = workingCardSnapshot /* Working state snapshot */
+            var snapshot = workingCardSnapshot          /* Working state snapshot */
 
             snapshot.isEditingLocked = true
             lockedSnapshot = snapshot
-
         }
         else
         {
             lockedSnapshot = nil
-
         }
 
         isEditingLocked = locked
@@ -989,7 +942,6 @@ extension CardDetailView
         selectedPhotoItems = []
         selectedCoverPhoto = nil
         coverImportID = nil
-
     }
 
 
@@ -1012,14 +964,14 @@ extension CardDetailView
             return
         }
 
-        let author = LocalReactionIdentity.forUserAction() /* Discussion author */
+        let author = LocalReactionIdentity.forUserAction()      /* Discussion author */
 
         guard let updated = ItemEmojiReaction.toggling(emoji, authorID: author, in: reactions ?? []) else
         {
             return
         }
 
-        let previous = reactions /* Previous value for comparison */
+        let previous = reactions        /* Previous value for comparison */
 
         reactions = updated.isEmpty ? nil : updated
         reactionAuthorID = author
@@ -1027,9 +979,7 @@ extension CardDetailView
         if !syncCardState()
         {
             reactions = previous
-
         }
-
     }
 
 
@@ -1050,14 +1000,14 @@ extension CardDetailView
     func deleteCard()
     {
         guard let onDelete, !hasDeletedCard else
-        {  /* Original-owner deletion callback available for this record */
+        {                                               /* Original-owner deletion callback available for this record */
             return
         }
 
 
         hasDeletedCard = true
 
-        let deleted: Bool                    /* Whether the owning collection accepted permanent deletion */
+        let deleted: Bool       /* Whether the owning collection accepted permanent deletion */
 
         if relocatedCard != nil
         {
@@ -1067,16 +1017,14 @@ extension CardDetailView
                 BoardContentDeletion.card(recordID, in: &owner.lists, savedCardIDs: &owner.savedCardIDs)
             }
         }
-        else if let currentPersonalCollectionID,  /* Current owner used to route relocated Note deletion       */
+        else if let currentPersonalCollectionID,                /* Current owner used to route relocated Note deletion       */
         currentPersonalCollectionID != personalCollectionID
         {
             deleted = onDeleteMovedNote?(currentPersonalCollectionID, workingCardSnapshot) == true
-
         }
         else
         {
             deleted = onDelete()
-
         }
 
 
@@ -1105,7 +1053,7 @@ extension CardDetailView
     ///
     func toggleCardTitle()
     {
-        let nextChecked = !titleChecked /* Inverted title completion state */
+        let nextChecked = !titleChecked         /* Inverted title completion state */
 
         titleChecked = nextChecked
 
@@ -1124,7 +1072,7 @@ extension CardDetailView
     ///
     func toggleSavedCard()
     {
-        let isSaved = isCurrentRecordSaved /* Bookmark state before toggling */
+        let isSaved = isCurrentRecordSaved      /* Bookmark state before toggling */
 
         if relocatedCard != nil
         {
@@ -1143,7 +1091,7 @@ extension CardDetailView
             }
             movedNoteIsSaved = !isSaved
         }
-        else if let currentPersonalCollectionID, /* Current owner used to route relocated Note bookmarking */
+        else if let currentPersonalCollectionID,                /* Current owner used to route relocated Note bookmarking */
         currentPersonalCollectionID != personalCollectionID
         {
             guard onToggleMovedNoteBookmark?(currentPersonalCollectionID, recordID, !isSaved) == true else
@@ -1152,23 +1100,19 @@ extension CardDetailView
             }
 
             movedNoteIsSaved = !isSaved
-
         }
         else if isSaved
         {
             savedCardIDs.remove(recordID)
 
             movedNoteIsSaved = nil
-
         }
         else
         {
             savedCardIDs.insert(recordID)
 
             movedNoteIsSaved = nil
-
         }
-
     }
 
 
@@ -1187,7 +1131,7 @@ extension CardDetailView
     ///
     func postComment()
     {
-        let text = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized comment draft */
+        let text = commentDraft.trimmingCharacters(in: .whitespacesAndNewlines)         /* Normalized comment draft */
 
         guard !PlanRichText.plain(text).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else
         {
@@ -1266,9 +1210,7 @@ extension CardDetailView
         if saveDate(nil, kind: .date, for: field)
         {
             activeSheet = nil
-
         }
-
     }
 
 
@@ -1288,10 +1230,10 @@ extension CardDetailView
     ///
     func saveDate(_ value: Date?, kind: CardDateKind, for field: DateField) -> Bool
     {
-        let previousStart = startDate, previousDue = dueDate /* Schedule before editing   */
-        let previousStartKind =                              /* Prior schedule date kinds */
+        let previousStart = startDate, previousDue = dueDate    /* Schedule before editing     */
+        let previousStartKind =                                 /* Prior schedule date kinds   */
             startDateKind, previousDueKind = dueDateKind
-        let normalized = value.map /* Comparison-normalized value */
+        let normalized = value.map                              /* Comparison-normalized value */
         {
             kind.normalized($0)
         }
@@ -1307,7 +1249,6 @@ extension CardDetailView
 
             dueDate = normalized;
             dueDateKind = value == nil ? .date : kind
-
         }
 
         guard
@@ -1353,9 +1294,7 @@ extension CardDetailView
                     onMoveToList?(list.id)
                     dismiss()
                 }
-
             }
-
         }
         label:
         {
@@ -1380,11 +1319,11 @@ extension CardDetailView
     ///
     func moveNote(to collectionID: UUID)
     {
-        guard let onMoveNoteToPersonalList,          /* Callback handling checked movement between personal Lists */
-        let sourceID = currentPersonalCollectionID,  /* Collection currently owning the Note                      */
+        guard let onMoveNoteToPersonalList,                                                     /* Callback handling checked movement between personal Lists */
+        let sourceID = currentPersonalCollectionID,                                             /* Collection currently owning the Note                      */
         let moved = onMoveNoteToPersonalList(workingCardSnapshot, sourceID, collectionID)
         else
-        {  /* Persisted Note with its destination-local identity        */
+        {               /* Persisted Note with its destination-local identity        */
             return
         }
 
@@ -1393,7 +1332,6 @@ extension CardDetailView
         recordID = moved.id
         currentListTitle = moved.listTitle
         self.currentPersonalCollectionID = collectionID
-
     }
 
 
@@ -1502,7 +1440,6 @@ extension CardDetailView
                 collection in
                 personalListDestinationButton(collection)
             }
-
         }
         label:
         {
@@ -1527,25 +1464,25 @@ extension CardDetailView
     @ViewBuilder
     func dateRow(for field: DateField) -> some View
     {
-        let currentDate = field == .start ? startDate : dueDate /* Date currently stored for the selected field */
-        let timeOnly    = workingCardSnapshot.usesTimeOnlySchedule(on: relocatedCard.map(\.day) ?? listedOnDate) /* Time only */
-        let iconName    = /* Icon name */
+        let currentDate = field == .start ? startDate : dueDate                                                         /* Date currently stored for the selected field */
+        let timeOnly    = workingCardSnapshot.usesTimeOnlySchedule(on: relocatedCard.map(\.day) ?? listedOnDate)        /* Time only                                    */
+        let iconName    =                                                                                               /* Icon name                                    */
         timeOnly
         ? (field == .start ? "clock" : "checkmark.circle")
         : (field == .start ? "calendar" : "calendar.badge.clock")
-        let title     = /* User-facing title */
+        let title     =                                                         /* User-facing title          */
             timeOnly ? (field == .start ? "Start" : "Finish") : field.title
-        let kind      = /* Content kind discriminator */
+        let kind      =                                                         /* Content kind discriminator */
             field == .start ? startDateKind : dueDateKind
-        let dateLabel = currentDate.map /* Date label */
+        let dateLabel = currentDate.map                                         /* Date label                 */
         {
             (timeOnly ? CardDateKind.time : kind).label(for: $0)
         }
         ?? "Add date"
-        let fieldName = field.title.lowercased() /* Accessibility label value */
+        let fieldName = field.title.lowercased()        /* Accessibility label value */
 
-        let row = HStack(alignment: .center) /* Rendered or stored item row */
-        {  /* Shared date-row presentation */
+        let row = HStack(alignment: .center)    /* Rendered or stored item row  */
+        {                                       /* Shared date-row presentation */
             Image(systemName: iconName)
             .foregroundStyle(.secondary)
 
@@ -1557,7 +1494,6 @@ extension CardDetailView
             Button
             {
                 activeSheet = .date(field)
-
             }
             label:
             {
@@ -1581,13 +1517,11 @@ extension CardDetailView
             {
                 row
             }
-
         }
         else
         {
             row
         }
-
     }
 
 
@@ -1605,7 +1539,7 @@ extension CardDetailView
     ///
     func addChecklist(using scrollProxy: ScrollViewProxy)
     {
-        let checklist = KanbanChecklist(title: "Checklist", items: [""]) /* New checklist with an initial item */
+        let checklist = KanbanChecklist(title: "Checklist", items: [""])        /* New checklist with an initial item */
 
         checklists.append(checklist)
 
@@ -1619,9 +1553,7 @@ extension CardDetailView
             {
                 scrollProxy.scrollTo(checklist.id, anchor: .center)
             }
-
         }
-
     }
 
 
@@ -1666,7 +1598,7 @@ extension CardDetailView
     {
         guard
         let checklistIndex = checklists.firstIndex(where:
-            {  /* Position of the checklist to rename */
+            {                                                   /* Position of the checklist to rename */
                 $0.id == checklistID
             })
         else
@@ -1675,7 +1607,7 @@ extension CardDetailView
         }
 
 
-        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized checklist title */
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)        /* Normalized checklist title */
 
         guard !trimmedTitle.isEmpty else
         {
@@ -1683,7 +1615,7 @@ extension CardDetailView
         }
 
 
-        let checklist = checklists[checklistIndex] /* Current checklist snapshot */
+        let checklist = checklists[checklistIndex]      /* Current checklist snapshot */
 
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
@@ -1714,7 +1646,7 @@ extension CardDetailView
         guard
         let checklistIndex = checklists.firstIndex(
             where:
-            {  /* Checklist whose action completion states are toggled together */
+            {                           /* Checklist whose action completion states are toggled together */
                 $0.id == checklistID
             })
         else
@@ -1723,12 +1655,12 @@ extension CardDetailView
         }
 
 
-        let checklist            = checklists[checklistIndex] /* Current checklist snapshot */
-        let allItemsAreCompleted =                            /* All items are completed    */
+        let checklist            = checklists[checklistIndex]           /* Current checklist snapshot */
+        let allItemsAreCompleted =                                      /* All items are completed    */
         !checklist.items.isEmpty
-        && checklist.completedItemIndices.count == checklist.items.count /* Whether all items are complete  */
-        let completedIndices = /* Completed indices */
-        allItemsAreCompleted ? Set<Int>() : Set(checklist.items.indices) /* Completion indices after toggle */
+        && checklist.completedItemIndices.count == checklist.items.count        /* Whether all items are complete  */
+        let completedIndices =                                                  /* Completed indices               */
+        allItemsAreCompleted ? Set<Int>() : Set(checklist.items.indices)        /* Completion indices after toggle */
 
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
@@ -1760,9 +1692,9 @@ extension CardDetailView
         // Ensure the checklist exists and there is more than one checklist to move
         guard
         let sourceIndex = checklists.firstIndex(where:
-            {  /* Checklist position before reordering */
+            {                                           /* Checklist position before reordering */
                 $0.id == checklistID
-            }), /* Current checklist position */
+            }),                         /* Current checklist position */
         checklists.count > 1
         else
         {
@@ -1770,7 +1702,7 @@ extension CardDetailView
         }
 
 
-        let destinationIndex: Int /* Position resolved from the requested direction */
+        let destinationIndex: Int       /* Position resolved from the requested direction */
 
         switch direction
         {
@@ -1789,7 +1721,6 @@ extension CardDetailView
         case .bottom:
 
             destinationIndex = checklists.count - 1
-
         }
 
 
@@ -1799,7 +1730,7 @@ extension CardDetailView
         }
 
 
-        let movedChecklist = checklists.remove(at: sourceIndex) /* Checklist temporarily removed for reinsertion */
+        let movedChecklist = checklists.remove(at: sourceIndex)         /* Checklist temporarily removed for reinsertion */
 
         checklists.insert(movedChecklist, at: destinationIndex)
 
@@ -1825,23 +1756,23 @@ extension CardDetailView
         // Find the index of the checklist to which the new item will be added
         guard
         let checklistIndex = checklists.firstIndex(where:
-            {  /* Checklist receiving the new action */
+            {                                                   /* Checklist receiving the new action */
                 $0.id == checklistID
             })
         else
-        {  /* Target checklist position */
+        {               /* Target checklist position */
             return
         }
 
 
-        let titles = MultilineEntry.titles(text) /* Ordered display titles */
+        let titles = MultilineEntry.titles(text)        /* Ordered display titles */
 
         guard !titles.isEmpty else
         {
             return
         }
 
-        let checklist = checklists[checklistIndex] /* Checklist group and items */
+        let checklist = checklists[checklistIndex]      /* Checklist group and items */
 
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id, title: checklist.title,
@@ -1875,17 +1806,17 @@ extension CardDetailView
         // Find the index of the checklist being updated
         guard
         let checklistIndex = checklists.firstIndex(where:
-            {  /* Checklist containing the action to toggle */
+            {                                                   /* Checklist containing the action to toggle */
                 $0.id == checklistID
             })
         else
-        {  /* Checklist being toggled */
+        {               /* Checklist being toggled */
             return
         }
 
 
-        let checklist            = checklists[checklistIndex]      /* Checklist being updated               */
-        var completedItemIndices = checklist.completedItemIndices  /* Mutable set of completed item indices */
+        let checklist            = checklists[checklistIndex]           /* Checklist being updated               */
+        var completedItemIndices = checklist.completedItemIndices       /* Mutable set of completed item indices */
 
         // Toggle the completion state of the specified item within the checklist
         if completedItemIndices.contains(itemIndex)
@@ -1930,17 +1861,17 @@ extension CardDetailView
         // Find the index of the checklist being updated
         guard
         let checklistIndex = checklists.firstIndex(where:
-            {  /* Checklist containing the action to replace */
+            {                                                   /* Checklist containing the action to replace */
                 $0.id == checklistID
             })
         else
-        {  /* Checklist being edited */
+        {               /* Checklist being edited */
             return
         }
 
 
         // Retrieve the checklist being updated
-        let checklist = checklists[checklistIndex] /* Checklist being edited */
+        let checklist = checklists[checklistIndex]      /* Checklist being edited */
 
         // Ensure the item index is within the bounds of the checklist's items array
         guard checklist.items.indices.contains(itemIndex) else
@@ -1949,9 +1880,9 @@ extension CardDetailView
         }
 
 
-        var items = checklist.items /* Mutable checklist actions */
+        var items = checklist.items     /* Mutable checklist actions */
 
-        items[itemIndex].title = text /* Update the text while preserving stable item identity       */
+        items[itemIndex].title = text           /* Update the text while preserving stable item identity       */
 
         // Update the checklist with the modified items array
         checklists[checklistIndex] = KanbanChecklist(
@@ -1983,17 +1914,17 @@ extension CardDetailView
         // Find the index of the checklist being updated
         guard
         let checklistIndex = checklists.firstIndex(where:
-            {  /* Checklist containing the action to delete */
+            {                                                   /* Checklist containing the action to delete */
                 $0.id == checklistID
             })
         else
-        {  /* Checklist being edited */
+        {               /* Checklist being edited */
             return
         }
 
 
         // Retrieve the checklist being updated
-        let checklist = checklists[checklistIndex] /* Checklist before item removal */
+        let checklist = checklists[checklistIndex]      /* Checklist before item removal */
 
         // Ensure the item index is within the bounds of the checklist's items array
         guard checklist.items.indices.contains(itemIndex) else
@@ -2002,16 +1933,16 @@ extension CardDetailView
         }
 
 
-        var items = checklist.items /* Mutable checklist actions */
+        var items = checklist.items     /* Mutable checklist actions */
 
-        items.remove(at: itemIndex) /* Remove the specified item from the checklist    */
+        items.remove(at: itemIndex)     /* Remove the specified item from the checklist    */
 
         // Recalculate the set of completed item indices after the deletion
-        let completedItemIndices: Set<Int> = Set( /* Completion indices adjusted for removal */
+        let completedItemIndices: Set<Int> = Set(       /* Completion indices adjusted for removal */
 
             checklist.completedItemIndices.compactMap
             {
-            (index: Int) -> Int? in /* Previous completion position */
+            (index: Int) -> Int? in     /* Previous completion position */
 
                 // Skip the index if it matches the deleted item index
                 guard index != itemIndex else
@@ -2056,7 +1987,7 @@ extension CardDetailView
         guard
         let checklistIndex = checklists.firstIndex(
             where:
-            {  /* Position of the checklist containing the requested action */
+            {                           /* Position of the checklist containing the requested action */
                 $0.id == checklistID
             })
         else
@@ -2065,11 +1996,11 @@ extension CardDetailView
         }
 
 
-        let checklist = checklists[checklistIndex] /* Owning checklist */
+        let checklist = checklists[checklistIndex]      /* Owning checklist */
 
         guard
         let itemIndex = checklist.items.firstIndex(where:
-            {  /* Position of the requested checklist action */
+            {                                                   /* Position of the requested checklist action */
                 $0.id == itemID
             })
         else
@@ -2078,7 +2009,7 @@ extension CardDetailView
         }
 
 
-        var items = checklist.items /* Mutable checklist actions */
+        var items = checklist.items     /* Mutable checklist actions */
 
         items[itemIndex].content = .actionDetail(detail)
 
@@ -2109,11 +2040,11 @@ extension CardDetailView
     @ViewBuilder
     func checklistBlock(for checklist: KanbanChecklist) -> some View
     {
-        let checklistIndex = /* Checklist index */
+        let checklistIndex =            /* Checklist index */
         checklists.firstIndex(where:
             {
                 $0.id == checklist.id
-            }) ?? 0 /* Current checklist position */
+            }) ?? 0                     /* Current checklist position */
 
         ChecklistBlock(
             checklist: checklist,
@@ -2147,7 +2078,6 @@ extension CardDetailView
                 itemID in
 
                 activeSheet = .actionDetail(checklist.id, itemID)
-
             },
             onRename:
             {
@@ -2169,7 +2099,6 @@ extension CardDetailView
             onFirstItemFocused:
             {
                 checklistToFocus = nil
-
             },
             onChangeType:
             {
@@ -2187,9 +2116,9 @@ extension CardDetailView
                     return false
                 }
 
-                let previous = checklists              /* Previous value for comparison */
-                var items    = checklists[index].items /* Items being processed         */
-                var updated  = item                    /* Edited value to publish       */
+                let previous = checklists                       /* Previous value for comparison */
+                var items    = checklists[index].items          /* Items being processed         */
+                var updated  = item                             /* Edited value to publish       */
 
                 if case .linkedCard = updated.content, updated.linkedCollectionID == nil
                 {
@@ -2199,7 +2128,6 @@ extension CardDetailView
                         {
                             $0.startKey == checklistTypePlanningAccess?.document.currentWeekKey
                         })?.id
-
                 }
 
                 items[position] = updated
@@ -2233,11 +2161,11 @@ extension CardDetailView
     ///
     func saveDisplayAppearance(_ updated: ItemAppearance?, format: ItemDisplayFormat) -> Bool
     {
-        let previousAppearance   = appearance       /* Previous appearance   */
-        let previousFormat       = displayFormat    /* Previous format       */
-        let previousPresentation = presentation     /* Previous presentation */
-        let previousDescription  = descriptionText  /* Previous description  */
-        let previousDetails      = showsNoteDetails /* Previous details      */
+        let previousAppearance   = appearance           /* Previous appearance   */
+        let previousFormat       = displayFormat        /* Previous format       */
+        let previousPresentation = presentation         /* Previous presentation */
+        let previousDescription  = descriptionText      /* Previous description  */
+        let previousDetails      = showsNoteDetails     /* Previous details      */
 
         dismissEditing()
 
@@ -2250,7 +2178,6 @@ extension CardDetailView
         {
             descriptionText = presentation == .note
                 ? (lastSavedHistoryCard.descriptionOverride ?? "") : lastSavedHistoryCard.funParagraph
-
         }
 
         guard syncCardState() else
@@ -2294,9 +2221,7 @@ extension CardDetailView
                 {
                     Button("Done", action: onDone)
                 }
-
             }
-
         }
         .presentationDetents([.medium, .large])
         .databaseActivityOverlay()
@@ -2324,7 +2249,6 @@ extension CardDetailView
                     dismissEditing()
 
                     activeSheet = .reactions
-
                 }
 
                 Button(workingCardSnapshot.coverAttachment == nil ? "Add cover" : "Change cover", systemImage: "photo")
@@ -2332,9 +2256,7 @@ extension CardDetailView
                     dismissEditing()
 
                     activeSheet = .cover
-
                 }
-
             }
 
 
@@ -2352,7 +2274,6 @@ extension CardDetailView
             Button
             {
                 activeSheet = .date(.start)
-
             }
             label:
             {
@@ -2362,7 +2283,6 @@ extension CardDetailView
             Button
             {
                 activeSheet = .date(.due)
-
             }
             label:
             {
@@ -2373,13 +2293,11 @@ extension CardDetailView
             {
                 showsNoteDetails = true
                 richTextFocusedField = .comment
-
             }
             label:
             {
                 Label("Add comment", systemImage: "text.bubble")
             }
-
         }
         label:
         {
@@ -2391,5 +2309,4 @@ extension CardDetailView
         .accessibilityLabel("Add to \(displayFormat.title.lowercased())")
         .accessibilityIdentifier("note.addMenu")
     }
-
 }

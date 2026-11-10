@@ -19,10 +19,10 @@ import UniformTypeIdentifiers
 ///
 struct NoteCreationDateLabel: View
 {
-    let createdAt: Date /* Original Note creation time shown in the metadata row */
+    let createdAt: Date         /* Original Note creation time shown in the metadata row */
 
-    var body: some View /* Note Creation Date Label layout */
-    {  /* Formatted Note creation metadata */
+    var body: some View                 /* Note Creation Date Label layout  */
+    {                                   /* Formatted Note creation metadata */
         ViewThatFits(in: .horizontal)
         {
             Text(createdAt, format: .dateTime.month(.abbreviated).day().year().hour().minute())
@@ -40,7 +40,6 @@ struct NoteCreationDateLabel: View
         .accessibilityLabel("Created")
         .accessibilityValue(createdAt.formatted(date: .complete, time: .shortened))
     }
-
 }
 
 
@@ -70,7 +69,6 @@ struct NoteToolbarButtonStyle: ButtonStyle
         .foregroundStyle(Color.accentColor)
         .opacity(configuration.isPressed ? 0.5 : 1)
     }
-
 }
 
 
@@ -87,13 +85,13 @@ struct NoteToolbarButtonStyle: ButtonStyle
 ///
 struct DetailSection<Content: View>: View
 {
-    @State private var isCollapsed = false /* Collapsed state                                    */
-    let collapsible:    Bool               /* Collapsible state flag                             */
-    let title:          String             /* The title of the detail section                    */
-    var trailing:       String?            /* The optional trailing symbol of the detail section */
-    var trailingAction: (() -> Void)?      /* The optional action for the trailing symbol        */
+    @State private var isCollapsed = false      /* Collapsed state                                    */
+    let collapsible:    Bool                    /* Collapsible state flag                             */
+    let title:          String                  /* The title of the detail section                    */
+    var trailing:       String?                 /* The optional trailing symbol of the detail section */
+    var trailingAction: (() -> Void)?           /* The optional action for the trailing symbol        */
 
-    @ViewBuilder let content: () -> Content /* Content rendered beneath the section heading */
+    @ViewBuilder let content: () -> Content     /* Content rendered beneath the section heading */
 
 
     ///
@@ -117,11 +115,10 @@ struct DetailSection<Content: View>: View
     )
     {
         self.collapsible = collapsible
-        self.title = title                    /* The title of the detail section                    */
-        self.trailing = trailing              /* The optional trailing symbol of the detail section */
-        self.trailingAction = trailingAction  /* The optional action for the trailing symbol        */
-        self.content = content                /* The content of the detail section                  */
-
+        self.title = title                      /* The title of the detail section                    */
+        self.trailing = trailing                /* The optional trailing symbol of the detail section */
+        self.trailingAction = trailingAction    /* The optional action for the trailing symbol        */
+        self.content = content                  /* The content of the detail section                  */
     }
 
 
@@ -134,8 +131,8 @@ struct DetailSection<Content: View>: View
     /// @post       Tapping an actionable trailing symbol invokes trailingAction;
     ///             a symbol without an action remains decorative
     ///
-    var body: some View /* Detail layout */
-    {  /* Detail subsection heading and content */
+    var body: some View         /* Detail layout                         */
+    {                           /* Detail subsection heading and content */
         // Build the detail section container with heading, optional trailing symbol/action, content, and divider
         VStack(alignment: .leading, spacing: isCollapsed ? 0 : 10)
         {
@@ -149,10 +146,10 @@ struct DetailSection<Content: View>: View
 
                 // Render the trailing symbol and optional action if provided
                 if let trailing
-                {  /* Optional trailing symbol */
+                {               /* Optional trailing symbol */
                     // Check if a trailing action is provided
                     if let trailingAction
-                    {  /* Optional symbol action */
+                    {                                   /* Optional symbol action */
                         Button(action: trailingAction)
                         {
                             Image(systemName: trailing)
@@ -168,14 +165,12 @@ struct DetailSection<Content: View>: View
                         Image(systemName: trailing)
                         .foregroundStyle(.secondary)
                     }
-
                 }
 
                 if collapsible
                 {
                     SectionCollapseButton(title: title, isCollapsed: $isCollapsed)
                 }
-
             }
 
 
@@ -197,9 +192,7 @@ struct DetailSection<Content: View>: View
         {
             Divider()
         }
-
     }
-
 }
 
 
@@ -214,10 +207,10 @@ struct DetailSection<Content: View>: View
 ///
 struct ActionTile: View
 {
-    let title:  String     /* The title of the action tile                  */
-    let icon:   String     /* The icon representing the action tile         */
-    let color:  Color      /* The color of the action tile                  */
-    let action: () -> Void /* The action to perform when the tile is tapped */
+    let title:  String          /* The title of the action tile                  */
+    let icon:   String          /* The icon representing the action tile         */
+    let color:  Color           /* The color of the action tile                  */
+    let action: () -> Void      /* The action to perform when the tile is tapped */
 
     ///
     /// @fcn        ActionTile.body
@@ -227,8 +220,8 @@ struct ActionTile: View
     /// @return     (some View) rendered action tile
     /// @post       Tapping delegates to action; rendering itself performs no mutation
     ///
-    var body: some View /* Action layout */
-    {  /* Compact labeled action button */
+    var body: some View         /* Action layout                 */
+    {                           /* Compact labeled action button */
         Button(action: action)
         {
             Label(title, systemImage: icon)
@@ -243,7 +236,6 @@ struct ActionTile: View
 
         .buttonStyle(.plain)
     }
-
 }
 
 
@@ -258,9 +250,9 @@ struct ActionTile: View
 ///
 struct DetailRow: View
 {
-    let icon:  String /* The icon representing the detail row     */
-    let title: String /* The title or label of the detail row     */
-    let value: String /* The value associated with the detail row */
+    let icon:  String           /* The icon representing the detail row     */
+    let title: String           /* The title or label of the detail row     */
+    let value: String           /* The value associated with the detail row */
 
     ///
     /// @fcn        DetailRow.body
@@ -270,8 +262,8 @@ struct DetailRow: View
     /// @return     (some View) rendered metadata row
     /// @post       The row has no mutation or navigation behavior
     ///
-    var body: some View /* Detail layout */
-    {  /* Icon, title, and trailing metadata value */
+    var body: some View         /* Detail layout                            */
+    {                           /* Icon, title, and trailing metadata value */
         HStack(spacing: 12)
         {
             Image(systemName: icon)
@@ -289,7 +281,6 @@ struct DetailRow: View
         .font(.subheadline)
         .padding(.vertical, 5)
     }
-
 }
 
 
@@ -302,10 +293,10 @@ struct DetailRow: View
 ///
 struct SectionCollapseButton: View
 {
-    let title:                String /* User-facing title */
-    @Binding var isCollapsed: Bool   /* Collapsed state   */
+    let title:                String    /* User-facing title */
+    @Binding var isCollapsed: Bool      /* Collapsed state   */
 
-    var body:                 some View /* Section Collapse Button layout */
+    var body:                 some View         /* Section Collapse Button layout */
     {
         Button
         {
@@ -322,5 +313,4 @@ struct SectionCollapseButton: View
         .buttonStyle(.plain)
         .accessibilityLabel(isCollapsed ? "Expand \(title)" : "Collapse \(title)")
     }
-
 }

@@ -18,9 +18,9 @@ import UniformTypeIdentifiers
 ///
 struct BoardGalleryGroup: Identifiable
 {
-    let id:      Int          /* Owner-local numeric ID           */
-    let divider: KanbanCard?  /* Structural section divider       */
-    var cards:   [KanbanCard] /* Card records under consideration */
+    let id:      Int                    /* Owner-local numeric ID           */
+    let divider: KanbanCard?            /* Structural section divider       */
+    var cards:   [KanbanCard]           /* Card records under consideration */
 
 
     ///
@@ -36,7 +36,7 @@ struct BoardGalleryGroup: Identifiable
     ///
     static func groups(in list: KanbanList) -> [BoardGalleryGroup]
     {
-        var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])] /* Groups lookup entries */
+        var groups = [BoardGalleryGroup(id: 0, divider: nil, cards: [])]        /* Groups lookup entries */
 
         for card in DaySections.visible(list.cards)
         {
@@ -48,12 +48,10 @@ struct BoardGalleryGroup: Identifiable
             {
                 groups[groups.count - 1].cards.append(card)
             }
-
         }
 
         return groups
     }
-
 }
 
 
@@ -66,31 +64,31 @@ struct BoardGalleryGroup: Identifiable
 ///
 struct BoardGalleryView: View
 {
-    @Environment(\.boardViewportMemory) private var viewportMemory /* Viewport memory */
+    @Environment(\.boardViewportMemory) private var viewportMemory      /* Viewport memory */
 
-    let lists:     [KanbanList]              /* Ordered List records          */
-    let listTitle: (KanbanList) -> String    /* List title callback           */
-    let onOpen:    (KanbanCard, Int) -> Void /* Open the selected destination */
-    var onUpdate:  (KanbanCard) -> Void =    /* Publish item edits            */
+    let lists:     [KanbanList]                 /* Ordered List records          */
+    let listTitle: (KanbanList) -> String       /* List title callback           */
+    let onOpen:    (KanbanCard, Int) -> Void    /* Open the selected destination */
+    var onUpdate:  (KanbanCard) -> Void =       /* Publish item edits            */
     {
         _ in
     }
 
-    var onMoveSection: (Int, Int, Int) -> Void = /* Move section callback */
+    var onMoveSection: (Int, Int, Int) -> Void =        /* Move section callback */
     {
         _, _, _ in
     }
 
-    var showsListHeadings = true                         /* List Headings visibility */
-    var boardAppearance   = BoardAppearance()            /* Board appearance         */
-    @Environment(\.dynamicTypeSize) private var typeSize /* Type size                */
+    var showsListHeadings = true                                /* List Headings visibility */
+    var boardAppearance   = BoardAppearance()                   /* Board appearance         */
+    @Environment(\.dynamicTypeSize) private var typeSize        /* Type size                */
 
-    private var columns: [GridItem] /* Visible Board List columns */
+    private var columns: [GridItem]     /* Visible Board List columns */
     {
         [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 260 : 156), spacing: 12, alignment: .top)]
     }
 
-    var body: some View /* Board Gallery layout */
+    var body: some View         /* Board Gallery layout */
     {
         ScrollView
         {
@@ -110,7 +108,6 @@ struct BoardGalleryView: View
                                 Text("\(list.cards.filter { !$0.isSectionDivider } .count) items").font(.caption)
                                 .foregroundStyle(.secondary)
                             }
-
                         }
 
                         ForEach(BoardGalleryGroup.groups(in: list))
@@ -152,16 +149,13 @@ struct BoardGalleryView: View
                                     .buttonStyle(.plain).accessibilityHint("Opens this item in " + listTitle(list))
                                     .id(card.id)
                                 }
-
                             }
-
                         }
 
                         if list.cards.isEmpty
                         {
                             Text("Room for your next idea").font(.subheadline).foregroundStyle(.secondary)
                         }
-
                     }
                     .padding(16)
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
@@ -171,14 +165,11 @@ struct BoardGalleryView: View
                 {
                     Text("Add a list to start your gallery.").foregroundStyle(.white.opacity(0.8))
                 }
-
             } .padding(16).padding(.bottom, 16)
             .background(BoardViewportScrollProbe(memory: viewportMemory, key: "gallery"))
             .modifier(RevealCreatedContent(lists: lists))
         }
-
     }
-
 }
 
 
@@ -191,16 +182,16 @@ struct BoardGalleryView: View
 ///
 struct BoardGalleryTile: View
 {
-    let card:       KanbanCard                          /* Card under consideration    */
-    var appearance: ItemAppearance? = nil               /* Resolved appearance choices */
-    var boardAppearance             = BoardAppearance() /* Board appearance            */
+    let card:       KanbanCard                                  /* Card under consideration    */
+    var appearance: ItemAppearance? = nil                       /* Resolved appearance choices */
+    var boardAppearance             = BoardAppearance()         /* Board appearance            */
 
-    private var excerpt: String /* Short content preview */
+    private var excerpt: String         /* Short content preview */
     {
         PlanRichText.plain(card.descriptionOverride ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    var body: some View /* Board Gallery layout */
+    var body: some View         /* Board Gallery layout */
     {
         VStack(alignment: .leading, spacing: 10)
         {
@@ -246,13 +237,11 @@ struct BoardGalleryTile: View
                 {
                     Image(systemName: "checklist").accessibilityLabel("Has checklist")
                 }
-
             } .font(.caption).foregroundStyle(.secondary)
             if card.showsDueDateInList && card.dueDate != nil
             {
                 Text(card.dueDateLabel).font(.caption).foregroundStyle(.secondary)
             }
-
         }
         .padding(12).frame(maxWidth: .infinity, minHeight: 140, alignment: .topLeading)
         .background
@@ -262,13 +251,10 @@ struct BoardGalleryTile: View
             {
                 RoundedRectangle(cornerRadius: 14).fill(tint.color)
             }
-
         }
         .overlay
         {
             RoundedRectangle(cornerRadius: 14).strokeBorder(Color.secondary.opacity(0.15))
         }
-
     }
-
 }

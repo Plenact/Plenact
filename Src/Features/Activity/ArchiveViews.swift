@@ -21,14 +21,14 @@ import UniformTypeIdentifiers
 ///
 struct ArchivedCollectionContentsView: View
 {
-    @Binding var collection: PersonalCollection    /* Canonical retained collection           */
-    let onDeleteBoard:       () -> Bool            /* Parent reports saved collection removal */
-    let onRestoreBoard:      () -> Void            /* Parent saves restoration                */
-    @Environment(\.dismiss) private var dismiss    /* Return to Saved                         */
-    @State private var confirmsDeleteBoard = false /* Entire collection removal confirmation  */
+    @Binding var collection: PersonalCollection         /* Canonical retained collection           */
+    let onDeleteBoard:       () -> Bool                 /* Parent reports saved collection removal */
+    let onRestoreBoard:      () -> Void                 /* Parent saves restoration                */
+    @Environment(\.dismiss) private var dismiss         /* Return to Saved                         */
+    @State private var confirmsDeleteBoard = false      /* Entire collection removal confirmation  */
 
-    @State private var deletingList: KanbanList?   /* Nested list awaiting removal            */
-    @State private var deletingCard: KanbanCard?   /* Retained card awaiting removal          */
+    @State private var deletingList: KanbanList?        /* Nested list awaiting removal   */
+    @State private var deletingCard: KanbanCard?        /* Retained card awaiting removal */
 
 
     ///
@@ -43,7 +43,7 @@ struct ArchivedCollectionContentsView: View
     @discardableResult
     private func deleteCard(_ id: Int) -> Bool
     {
-        var updated = collection /* Archived Board snapshot receiving the requested change */
+        var updated = collection        /* Archived Board snapshot receiving the requested change */
 
         BoardContentDeletion.card(id, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
 
@@ -55,9 +55,7 @@ struct ArchivedCollectionContentsView: View
             {
                 $0.id == id
             }
-
         }
-
     }
 
 
@@ -67,8 +65,8 @@ struct ArchivedCollectionContentsView: View
     /// @details    Deletion updates the owning collection's complete snapshot and local bookmarks
     /// @return     (some View) retained-content browser with restore and deletion controls
     ///
-    var body: some View /* Archived Collection Contents layout */
-    {  /* Archived Board lists and retained card management */
+    var body: some View         /* Archived Collection Contents layout               */
+    {                           /* Archived Board lists and retained card management */
         NavigationStack
         {
             List
@@ -87,24 +85,19 @@ struct ArchivedCollectionContentsView: View
                                 {
                                     deleteCard(card.id)
                                 }
-
                             }
                             .contextMenu
                             {
                                 Button("Delete Card", systemImage: "trash", role: .destructive)
                                 {
                                     deletingCard = card
-
                                 }
-
                             }
 
                             .accessibilityAction(named: "Delete Card")
                             {
                                 deletingCard = card
-
                             }
-
                         }
 
 
@@ -113,14 +106,10 @@ struct ArchivedCollectionContentsView: View
                             Button("Delete List", systemImage: "trash", role: .destructive)
                             {
                                 deletingList = list
-
                             }
                         }
-
                     }
-
                 }
-
             }
 
             .navigationTitle(collection.title)
@@ -132,7 +121,6 @@ struct ArchivedCollectionContentsView: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .primaryAction)
@@ -150,59 +138,49 @@ struct ArchivedCollectionContentsView: View
                             Button("Delete \(collection.kind.rawValue)", systemImage: "trash", role: .destructive)
                             {
                                 confirmsDeleteBoard = true
-
                             }
                         }
-
                     }
-
                 }
-
             }
 
             .confirmationDialog(
-                                    "Delete \(deletingList?.title ?? "list")?",
-                                    isPresented: Binding(
-                                        get:
-                                        {
-                                            deletingList != nil
-                                        }, set:
-                                        {
-                                            if !$0
-                                            {
-                                                deletingList = nil
-
-                                            }
-
-                                        }
-                                    ), titleVisibility: .visible
+                "Delete \(deletingList?.title ?? "list")?",
+                isPresented: Binding(
+                    get:
+                    {
+                        deletingList != nil
+                    }, set:
+                    {
+                        if !$0
+                        {
+                            deletingList = nil
+                        }
+                    }
+                ), titleVisibility: .visible
             )
             {
                 Button("Delete List", role: .destructive)
                 {
                     if !collection.isPrimaryList, let deletingList
-                    {  /* Archived list awaiting permanent deletion */
-                        var updated = collection /* Archived Board snapshot excluding the removed list */
+                    {                                                   /* Archived list awaiting permanent deletion */
+                        var updated = collection        /* Archived Board snapshot excluding the removed list */
 
                         BoardContentDeletion.list(
                             deletingList.id, in: &updated.lists, savedCardIDs: &updated.savedCardIDs)
 
                         collection = updated
-
                     }
 
 
                     deletingList = nil
-
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
                     deletingList = nil
-
                 }
-
             }
             message:
             {
@@ -210,7 +188,7 @@ struct ArchivedCollectionContentsView: View
             }
 
             .confirmationDialog(
-                                    "Delete \(collection.kind.rawValue)?", isPresented: $confirmsDeleteBoard, titleVisibility: .visible
+                "Delete \(collection.kind.rawValue)?", isPresented: $confirmsDeleteBoard, titleVisibility: .visible
             )
             {
                 Button("Delete \(collection.kind.rawValue)", role: .destructive)
@@ -219,13 +197,11 @@ struct ArchivedCollectionContentsView: View
                     {
                         dismiss()
                     }
-
                 }
 
                 Button("Cancel", role: .cancel)
                 {
                 }
-
             }
             message:
             {
@@ -233,52 +209,44 @@ struct ArchivedCollectionContentsView: View
             }
 
             .confirmationDialog(
-                                    "Delete \(deletingCard?.word ?? "card")?",
-                                    isPresented: Binding(
-                                        get:
-                                        {
-                                            deletingCard != nil
-                                        }, set:
-                                        {
-                                            if !$0
-                                            {
-                                                deletingCard = nil
-
-                                            }
-
-                                        }
-                                    ), titleVisibility: .visible
+                "Delete \(deletingCard?.word ?? "card")?",
+                isPresented: Binding(
+                    get:
+                    {
+                        deletingCard != nil
+                    }, set:
+                    {
+                        if !$0
+                        {
+                            deletingCard = nil
+                        }
+                    }
+                ), titleVisibility: .visible
             )
             {
                 Button("Delete Card", role: .destructive)
                 {
                     if let deletingCard
-                    {  /* Archived card awaiting permanent deletion */
+                    {                                   /* Archived card awaiting permanent deletion */
                         deleteCard(deletingCard.id)
                     }
 
 
                     deletingCard = nil
-
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
                     deletingCard = nil
-
                 }
-
             }
             message:
             {
                 Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
             }
-
         }
-
     }
-
 }
 
 
@@ -291,14 +259,14 @@ struct ArchivedCollectionContentsView: View
 struct ArchivedListsView: View
 {
     /// Archived lists available for restoration
-    @Binding var lists: [KanbanList] /* Shared archived-list partition */
+    @Binding var lists: [KanbanList]    /* Shared archived-list partition */
     /// Requests restoration of a list by identity
-    let onRestore:                   (Int) -> Void       /* Restores an archived list by identity        */
-    let onDelete:                    (Int) -> Void       /* Permanently remove a confirmed archived list */
-    let onDeleteCard:                (Int, Int) -> Void  /* Remove a card within the archived list       */
-    @State private var deletingList: KanbanList?         /* List awaiting permanent deletion             */
+    let onRestore:                   (Int) -> Void              /* Restores an archived list by identity        */
+    let onDelete:                    (Int) -> Void              /* Permanently remove a confirmed archived list */
+    let onDeleteCard:                (Int, Int) -> Void         /* Remove a card within the archived list       */
+    @State private var deletingList: KanbanList?                /* List awaiting permanent deletion             */
     /// Dismiss action for the archive browser
-    @Environment(\.dismiss) private var dismiss /* Archived-list browser dismissal action */
+    @Environment(\.dismiss) private var dismiss         /* Archived-list browser dismissal action */
 
 
     ///
@@ -310,8 +278,8 @@ struct ArchivedListsView: View
     /// @return     (some View) archived-list navigation sheet with Close action
     /// @post       Restore delegates the list identity to onRestore; Close dismisses without changes
     ///
-    var body: some View /* Archived Lists layout */
-    {  /* Archived-list browser with restore and deletion actions */
+    var body: some View         /* Archived Lists layout                                   */
+    {                           /* Archived-list browser with restore and deletion actions */
         NavigationStack
         {
             List
@@ -340,7 +308,7 @@ struct ArchivedListsView: View
 
                             .font(.headline)
                             Text(
-                                                                                    "\(list.cards.filter { !$0.isSectionDivider } .count) cards · \(list.archivedCards.count) archived cards"
+                                "\(list.cards.filter { !$0.isSectionDivider } .count) cards · \(list.archivedCards.count) archived cards"
                             )
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -357,72 +325,63 @@ struct ArchivedListsView: View
                         Button("Delete", systemImage: "trash", role: .destructive)
                         {
                             deletingList = list
-
                         }
                         .labelStyle(.iconOnly)
                         .accessibilityLabel("Delete \(list.title)")
                     }
-
                 }
-
             }
             .overlay
             {
                 if lists.isEmpty
                 {
                     ContentUnavailableView(
-                                                            "No Archived Lists", systemImage: "archivebox",
-                                                            description: Text("Lists archived from this board will appear here.")
+                        "No Archived Lists", systemImage: "archivebox",
+                        description: Text("Lists archived from this board will appear here.")
                     )
                     .allowsHitTesting(false)
                 }
-
             }
 
             .navigationTitle("Archived Lists")
             .navigationBarTitleDisplayMode(.inline)
             .confirmationDialog(
-                                    "Delete \(deletingList?.title ?? "list")?",
-                                    isPresented: Binding(
-                                        get:
-                                        {
-                                            deletingList != nil
-                                        }, set:
-                                        {
-                                            if !$0
-                                            {
-                                                deletingList = nil
-
-                                            }
-
-                                        }
-                                    ), titleVisibility: .visible
+                "Delete \(deletingList?.title ?? "list")?",
+                isPresented: Binding(
+                    get:
+                    {
+                        deletingList != nil
+                    }, set:
+                    {
+                        if !$0
+                        {
+                            deletingList = nil
+                        }
+                    }
+                ), titleVisibility: .visible
             )
             {
                 Button("Delete List", role: .destructive)
                 {
                     if let deletingList
-                    {  /* Archived list awaiting permanent deletion */
+                    {                                   /* Archived list awaiting permanent deletion */
                         onDelete(deletingList.id)
                     }
 
 
                     deletingList = nil
-
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
                     deletingList = nil
-
                 }
-
             }
             message:
             {
                 Text(
-                                                "This permanently deletes the list, all its active and archived cards, and their bookmarks. This cannot be undone."
+                    "This permanently deletes the list, all its active and archived cards, and their bookmarks. This cannot be undone."
                 )
             }
             .toolbar
@@ -433,15 +392,10 @@ struct ArchivedListsView: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -453,14 +407,14 @@ struct ArchivedListsView: View
 ///
 struct ArchivedListContentsView: View
 {
-    @Binding var lists:              [KanbanList]  /* Canonical retained lists         */
-    let listID:                      Int           /* Archived list identity           */
-    let onDeleteCard:                (Int) -> Void /* Owner removes confirmed cards    */
-    let onDeleteList:                () -> Void    /* Owner removes the confirmed list */
-    @State private var confirmsDeleteList = false  /* Complete retained list deletion  */
+    @Binding var lists:              [KanbanList]       /* Canonical retained lists         */
+    let listID:                      Int                /* Archived list identity           */
+    let onDeleteCard:                (Int) -> Void      /* Owner removes confirmed cards    */
+    let onDeleteList:                () -> Void         /* Owner removes the confirmed list */
+    @State private var confirmsDeleteList = false       /* Complete retained list deletion  */
 
-    @State private var deletingCard: KanbanCard?   /* Card awaiting permanent removal  */
-    @Environment(\.dismiss) private var dismiss    /* Close a deleted list             */
+    @State private var deletingCard: KanbanCard?        /* Card awaiting permanent removal */
+    @Environment(\.dismiss) private var dismiss         /* Close a deleted list            */
 
     ///
     /// @fcn        ArchivedListContentsView.list
@@ -468,14 +422,13 @@ struct ArchivedListContentsView: View
     /// @details    Failed saves keep the original rows visible rather than hiding snapshot records
     /// @return     (KanbanList?) current retained list
     ///
-    private var list: KanbanList? /* List under consideration */
+    private var list: KanbanList?       /* List under consideration */
     {
         lists.first
         {
             $0.id == listID
         }
-
-    }  /* Current archived list resolved by its stable identity */
+    }           /* Current archived list resolved by its stable identity */
 
 
     ///
@@ -484,8 +437,8 @@ struct ArchivedListContentsView: View
     /// @details    Leaves the list archived and does not create editable copies of its cards
     /// @return     (some View) retained-content list with confirmation
     ///
-    var body: some View /* Archived List Contents layout */
-    {  /* Retained cards within the selected archived list */
+    var body: some View                 /* Archived List Contents layout                    */
+    {                                   /* Retained cards within the selected archived list */
         List(list?.allCards ?? [])
         {
             card in
@@ -503,7 +456,6 @@ struct ArchivedListContentsView: View
                             }
                             ?? false)
                     }
-
                 }
 
                 .font(.headline)
@@ -511,11 +463,8 @@ struct ArchivedListContentsView: View
                 Button("Delete Card", systemImage: "trash", role: .destructive)
                 {
                     deletingCard = card
-
                 }
-
             }
-
         }
 
         .navigationTitle(list?.title ?? "List unavailable")
@@ -526,11 +475,8 @@ struct ArchivedListContentsView: View
                 Button("Delete List", systemImage: "trash", role: .destructive)
                 {
                     confirmsDeleteList = true
-
                 }
-
             }
-
         }
 
         .confirmationDialog("Delete this list?", isPresented: $confirmsDeleteList, titleVisibility: .visible)
@@ -543,14 +489,12 @@ struct ArchivedListContentsView: View
                 {
                     dismiss()
                 }
-
             }
 
 
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
@@ -558,50 +502,43 @@ struct ArchivedListContentsView: View
         }
 
         .confirmationDialog(
-                        "Delete \(deletingCard?.word ?? "card")?",
-                        isPresented: Binding(
-                            get:
-                            {
-                                deletingCard != nil
-                            }, set:
-                            {
-                                if !$0
-                                {
-                                    deletingCard = nil
-
-                                }
-
-                            }
-                        ), titleVisibility: .visible
+            "Delete \(deletingCard?.word ?? "card")?",
+            isPresented: Binding(
+                get:
+                {
+                    deletingCard != nil
+                }, set:
+                {
+                    if !$0
+                    {
+                        deletingCard = nil
+                    }
+                }
+            ), titleVisibility: .visible
         )
         {
             Button("Delete Card", role: .destructive)
             {
                 if let deletingCard
-                {  /* Retained card awaiting permanent deletion */
+                {                                       /* Retained card awaiting permanent deletion */
                     onDeleteCard(deletingCard.id)
                 }
 
 
                 deletingCard = nil
-
             }
 
 
             Button("Cancel", role: .cancel)
             {
                 deletingCard = nil
-
             }
-
         }
         message:
         {
             Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
         }
-
     }
-
 }
 
 
@@ -613,10 +550,10 @@ struct ArchivedListContentsView: View
 ///
 struct ArchivedCardInspectionView: View
 {
-    let card:     KanbanCard                    /* Retained card snapshot                      */
-    let onDelete: () -> Bool                    /* Owner reports successful save-first removal */
-    @State private var confirmsDelete = false   /* Permanent deletion confirmation             */
-    @Environment(\.dismiss) private var dismiss /* Return after deletion                       */
+    let card:     KanbanCard                            /* Retained card snapshot                      */
+    let onDelete: () -> Bool                            /* Owner reports successful save-first removal */
+    @State private var confirmsDelete = false           /* Permanent deletion confirmation             */
+    @Environment(\.dismiss) private var dismiss         /* Return after deletion                       */
 
     ///
     /// @fcn        ArchivedCardInspectionView.body
@@ -624,17 +561,16 @@ struct ArchivedCardInspectionView: View
     /// @details    This read-only view never writes stale card state on disappearance
     /// @return     (some View) archived card detail with a confirmed Delete Card action
     ///
-    var body: some View /* Archived Card Inspection layout */
-    {  /* Archived card preview with optional featured media */
+    var body: some View         /* Archived Card Inspection layout                    */
+    {                           /* Archived card preview with optional featured media */
         List
         {
             if let cover = card.coverAttachment
-            {  /* Valid featured attachment shown in the archive preview */
+            {                                   /* Valid featured attachment shown in the archive preview */
                 Section("Card Cover")
                 {
                     CardCoverPreview(attachment: cover)
                 }
-
             }
 
 
@@ -653,9 +589,7 @@ struct ArchivedCardInspectionView: View
                         item in
                         Label(item.title, systemImage: item.isCompleted ? "checkmark.circle.fill" : "circle")
                     }
-
                 }
-
             }
 
 
@@ -665,20 +599,17 @@ struct ArchivedCardInspectionView: View
                 {
                     attachment in
                     if let url = attachment.url
-                    {  /* Remote address used to display the archived cover */
+                    {                                           /* Remote address used to display the archived cover */
                         Link("Open link", destination: url)
                     }
                     else if let url = CardAttachmentStore.fileURL(for: attachment)
-                    {  /* Local media file used to display the archived cover */
+                    {                                                                   /* Local media file used to display the archived cover */
                         ShareLink(item: url)
                         {
                             Label(attachment.fileName ?? "Attachment", systemImage: "paperclip")
                         }
-
                     }
-
                 }
-
             }
 
 
@@ -692,18 +623,14 @@ struct ArchivedCardInspectionView: View
                         Text(comment.author).font(.headline)
                         Text(PlanRichText.display(comment.body))
                     }
-
                 }
-
             }
 
 
             Button("Delete Card", systemImage: "trash", role: .destructive)
             {
                 confirmsDelete = true
-
             }
-
         }
 
         .navigationTitle(card.word)
@@ -716,23 +643,19 @@ struct ArchivedCardInspectionView: View
                 {
                     dismiss()
                 }
-
             }
 
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                    "Permanently deletes this card, its details, and its bookmark. This cannot be undone. Other retained copies are unchanged."
+                "Permanently deletes this card, its details, and its bookmark. This cannot be undone. Other retained copies are unchanged."
             )
         }
-
     }
-
 }
 
 
@@ -745,13 +668,13 @@ struct ArchivedCardInspectionView: View
 struct ArchivedCardsView: View
 {
     /// Title of the list whose archived cards are being browsed
-    let listTitle: String /* Owning list name displayed in the archive browser */
+    let listTitle: String       /* Owning list name displayed in the archive browser */
     /// Archived card snapshot supplied by the owning list
-    @Binding var cards: [KanbanCard] /* Shared archived-card collection displayed by the browser */
+    @Binding var cards: [KanbanCard]    /* Shared archived-card collection displayed by the browser */
     /// Requests restoration of an archived card by identity
-    let onRestore:                   (Int) -> Void /* Returns an archived card to its active list */
-    let onDelete:                    (Int) -> Void /* Owner removes confirmed archived cards      */
-    @State private var deletingCard: KanbanCard?   /* Archived card awaiting deletion             */
+    let onRestore:                   (Int) -> Void      /* Returns an archived card to its active list */
+    let onDelete:                    (Int) -> Void      /* Owner removes confirmed archived cards      */
+    @State private var deletingCard: KanbanCard?        /* Archived card awaiting deletion             */
 
 
     ///
@@ -763,8 +686,8 @@ struct ArchivedCardsView: View
     /// @return     (some View) archived-card navigation list
     /// @post       Restore invokes onRestore with the card identity; record movement belongs to the parent
     ///
-    var body: some View /* Archived Cards layout */
-    {  /* Archived-card browser with restore and deletion controls */
+    var body: some View         /* Archived Cards layout                                    */
+    {                           /* Archived-card browser with restore and deletion controls */
         List
         {
             Section
@@ -786,9 +709,7 @@ struct ArchivedCardsView: View
                                     {
                                         $0.id == card.id
                                     }
-
                                 }
-
                             }
 
                             .font(.headline)
@@ -800,7 +721,6 @@ struct ArchivedCardsView: View
                                 .foregroundStyle(.secondary)
                                 .lineLimit(3)
                             }
-
                         }
 
 
@@ -815,14 +735,11 @@ struct ArchivedCardsView: View
                         Button("Delete", systemImage: "trash", role: .destructive)
                         {
                             deletingCard = card
-
                         }
                         .labelStyle(.iconOnly)
                         .accessibilityLabel("Delete \(card.word)")
                     }
-
                 }
-
             }
             header:
             {
@@ -834,69 +751,59 @@ struct ArchivedCardsView: View
                 {
                     Text("Restored cards return to the end of this list and keep their completion status.")
                 }
-
             }
-
         }
         .overlay
         {
             if cards.isEmpty
             {
                 ContentUnavailableView(
-                                                "No Archived Cards",
-                                                systemImage: "archivebox",
-                                                description: Text("Cards you archive from this list will appear here.")
+                    "No Archived Cards",
+                    systemImage: "archivebox",
+                    description: Text("Cards you archive from this list will appear here.")
                 )
                 .allowsHitTesting(false)
             }
-
         }
 
         .navigationTitle("Archived Cards")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog(
-                        "Delete \(deletingCard?.word ?? "card")?",
-                        isPresented: Binding(
-                            get:
-                            {
-                                deletingCard != nil
-                            }, set:
-                            {
-                                if !$0
-                                {
-                                    deletingCard = nil
-
-                                }
-
-                            }
-                        ), titleVisibility: .visible
+            "Delete \(deletingCard?.word ?? "card")?",
+            isPresented: Binding(
+                get:
+                {
+                    deletingCard != nil
+                }, set:
+                {
+                    if !$0
+                    {
+                        deletingCard = nil
+                    }
+                }
+            ), titleVisibility: .visible
         )
         {
             Button("Delete Card", role: .destructive)
             {
                 if let deletingCard
-                {  /* Archived record awaiting permanent deletion */
+                {                               /* Archived record awaiting permanent deletion */
                     onDelete(deletingCard.id)
                 }
 
 
                 deletingCard = nil
-
             }
 
 
             Button("Cancel", role: .cancel)
             {
                 deletingCard = nil
-
             }
-
         }
         message:
         {
             Text("Permanently deletes this card, its details, and its bookmark. This cannot be undone.")
         }
-
     }
-
 }

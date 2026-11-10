@@ -20,14 +20,14 @@ import SwiftUI
 /// Optional perspective below Today’s action area; all content derives from canonical lists
 struct TodayPerspectiveSection: View
 {
-    let completed:    [KanbanCard]                /* Completion state  */
-    let tomorrowList: KanbanList?                 /* Tomorrow list     */
-    let onReview:     (ReviewRhythmRoute) -> Void /* Review callback   */
-    let onSettings:   () -> Void                  /* Settings callback */
-    let onReflect:    () -> Void                  /* Reflect callback  */
-    let onPrepare:    () -> Void                  /* Prepare callback  */
+    let completed:    [KanbanCard]                      /* Completion state  */
+    let tomorrowList: KanbanList?                       /* Tomorrow list     */
+    let onReview:     (ReviewRhythmRoute) -> Void       /* Review callback   */
+    let onSettings:   () -> Void                        /* Settings callback */
+    let onReflect:    () -> Void                        /* Reflect callback  */
+    let onPrepare:    () -> Void                        /* Prepare callback  */
 
-    private var tomorrowItems: [KanbanCard] /* Tomorrow items */
+    private var tomorrowItems: [KanbanCard]     /* Tomorrow items */
     {
         tomorrowList?.cards.filter
         {
@@ -37,7 +37,7 @@ struct TodayPerspectiveSection: View
     }
 
 
-    var body: some View /* Today Perspective layout */
+    var body: some View         /* Today Perspective layout */
     {
         VStack(alignment: .leading, spacing: 18)
         {
@@ -67,7 +67,7 @@ struct TodayPerspectiveSection: View
                 {
                     heading("Worth noticing", symbol: "leaf")
                     Text(
-                                                            "\(completed.count) \(completed.count == 1 ? "item is" : "items are") complete on today’s list."
+                        "\(completed.count) \(completed.count == 1 ? "item is" : "items are") complete on today’s list."
                     )
                     .font(.subheadline).foregroundStyle(.secondary)
                     ForEach(completed.prefix(2))
@@ -101,7 +101,7 @@ struct TodayPerspectiveSection: View
                 else
                 {
                     Text(
-                                                            "\(tomorrowItems.count) \(tomorrowItems.count == 1 ? "item has" : "items have") a place on tomorrow’s Day list."
+                        "\(tomorrowItems.count) \(tomorrowItems.count == 1 ? "item has" : "items have") a place on tomorrow’s Day list."
                     )
                     .font(.subheadline).foregroundStyle(.secondary)
                     ForEach(tomorrowItems.prefix(2))
@@ -115,7 +115,6 @@ struct TodayPerspectiveSection: View
                         Text("And \(tomorrowItems.count - 2) more")
                         .font(.caption).foregroundStyle(.secondary)
                     }
-
                 }
 
                 Button("Consider tomorrow’s plan", action: onPrepare)
@@ -144,5 +143,4 @@ struct TodayPerspectiveSection: View
         Label(title, systemImage: symbol).font(.headline)
         .accessibilityAddTraits(.isHeader)
     }
-
 }

@@ -21,7 +21,7 @@ import SwiftUI
 extension PersonalCollection
 {
     /// Match the default On the Table identity to its banner without changing custom colors
-    var libraryIdentityColor: Color /* Library identity color */
+    var libraryIdentityColor: Color     /* Library identity color */
     {
         if kind == .list, title == "On the Table", color == .coral
         {
@@ -30,7 +30,6 @@ extension PersonalCollection
 
         return color.color
     }
-
 }
 
 
@@ -43,15 +42,15 @@ extension PersonalCollection
 ///
 struct LibraryCollectionRow: View
 {
-    let title:    String         /* User-owned collection or Week Board title       */
-    let subtitle: String         /* Collection kind and active-list context         */
-    let icon:     String         /* SF Symbol representing the organizing space     */
-    let color:    Color          /* Collection accent, not its only identifying cue */
-    let count:    Int            /* Active non-divider card count                   */
-    var preview:  String = ""    /* Prepared content preview                        */
-    var scrollsPreview   = false /* Scrolls preview                                 */
+    let title:    String                /* User-owned collection or Week Board title       */
+    let subtitle: String                /* Collection kind and active-list context         */
+    let icon:     String                /* SF Symbol representing the organizing space     */
+    let color:    Color                 /* Collection accent, not its only identifying cue */
+    let count:    Int                   /* Active non-divider card count                   */
+    var preview:  String = ""           /* Prepared content preview                        */
+    var scrollsPreview   = false        /* Scrolls preview                                 */
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Adapt text arrangement for accessibility sizes */
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize         /* Adapt text arrangement for accessibility sizes */
 
     ///
     /// @fcn        LibraryCollectionRow.body
@@ -61,8 +60,8 @@ struct LibraryCollectionRow: View
     /// @return     (some View) content-fitting directory row with combined accessibility text
     /// @post       Rendering does not modify the owning Board or collection
     ///
-    var body: some View /* Library Collection layout */
-    {  /* Adaptive collection directory row with a labeled card count */
+    var body: some View         /* Library Collection layout                                   */
+    {                           /* Adaptive collection directory row with a labeled card count */
         HStack(spacing: 12)
         {
             RoundedRectangle(cornerRadius: 2)
@@ -77,8 +76,8 @@ struct LibraryCollectionRow: View
             .background(color.opacity(0.22), in: RoundedRectangle(cornerRadius: 12))
             .accessibilityHidden(true)
 
-            let layout = /* Resolved layout configuration */
-            dynamicTypeSize.isAccessibilitySize /* Accessible arrangement of the collection name and count */
+            let layout =                                                /* Resolved layout configuration                           */
+            dynamicTypeSize.isAccessibilitySize                         /* Accessible arrangement of the collection name and count */
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
             : AnyLayout(HStackLayout(spacing: 12))
 
@@ -96,7 +95,6 @@ struct LibraryCollectionRow: View
                     {
                         GentleCollectionPreview(text: preview, scrolls: scrollsPreview)
                     }
-
                 }
 
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -114,7 +112,6 @@ struct LibraryCollectionRow: View
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
-
 }
 
 
@@ -127,16 +124,16 @@ struct LibraryCollectionRow: View
 ///
 struct CollectionFilterPopover: View
 {
-    let selection: LibraryBrowseFilter /* Current selection state */
-    let onSelect:  (LibraryBrowseFilter) -> Void /* Handle the selected value */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver /* Voice over */
-    @State private var opacity = 1.0 /* Surface opacity */
+    let selection: LibraryBrowseFilter                                          /* Current selection state        */
+    let onSelect:  (LibraryBrowseFilter) -> Void                                /* Handle the selected value      */
+    @Environment(\.dismiss) private var dismiss                                 /* Close the current presentation */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference      */
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver         /* Voice over                     */
+    @State private var opacity = 1.0                                            /* Surface opacity                */
 
-    @State private var pendingSelection: LibraryBrowseFilter? /* Pending selection */
+    @State private var pendingSelection: LibraryBrowseFilter?           /* Pending selection */
 
-    var body: some View /* Collection Filter layout */
+    var body: some View         /* Collection Filter layout */
     {
         VStack(spacing: 0)
         {
@@ -150,7 +147,6 @@ struct CollectionFilterPopover: View
                     onSelect(filter)
 
                     pendingSelection = filter
-
                 }
                 label:
                 {
@@ -172,7 +168,6 @@ struct CollectionFilterPopover: View
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(selection == filter ? [.isSelected] : [])
             }
-
         }
         .padding(.vertical, 8)
         .frame(width: 220)
@@ -191,7 +186,6 @@ struct CollectionFilterPopover: View
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16))
                 {
                     opacity = 0
-
                 }
 
                 if !reduceMotion
@@ -202,13 +196,10 @@ struct CollectionFilterPopover: View
                 dismiss()
             }
             catch
-            {  /* A newer selection or outside dismissal cancels this dismissal  */
+            {           /* A newer selection or outside dismissal cancels this dismissal  */
             }
-
         }
-
     }
-
 }
 
 
@@ -220,28 +211,28 @@ struct CollectionFilterPopover: View
 ///
 struct PersonalCollectionBoardView: View
 {
-    @Binding var collection:        PersonalCollection    /* Live collection shown by the shared Board view */
-    @Binding var boardTargetListID: Int?                  /* Collection-local list requested from Saved     */
-    @Binding var boardTargetCardID: Int?                  /* Collection-local card requested from Saved     */
-    let retainedLists:              [KanbanList]          /* Other lists retaining possible attachments     */
-    let availablePersonalLists:     [PersonalCollection]  /* Personal Lists offered as Note destinations    */
-    let onArchive:                  () throws -> Void     /* Persist archival of this collection            */
-    let onDelete:                   () throws -> Void     /* Persist permanent removal of this collection   */
-    let onCommitDeletion: /* Commit deletion callback */
-    (PersonalCollection) throws -> Void /* Save nested deletion against current shared state        */
-    let onCreateNote: /* Create note callback */
+    @Binding var collection:        PersonalCollection          /* Live collection shown by the shared Board view    */
+    @Binding var boardTargetListID: Int?                        /* Collection-local list requested from Saved        */
+    @Binding var boardTargetCardID: Int?                        /* Collection-local card requested from Saved        */
+    let retainedLists:              [KanbanList]                /* Other lists retaining possible attachments        */
+    let availablePersonalLists:     [PersonalCollection]        /* Personal Lists offered as Note destinations       */
+    let onArchive:                  () throws -> Void           /* Persist archival of this collection               */
+    let onDelete:                   () throws -> Void           /* Persist permanent removal of this collection      */
+    let onCommitDeletion:                                       /* Commit deletion callback                          */
+    (PersonalCollection) throws -> Void                         /* Save nested deletion against current shared state */
+    let onCreateNote:                                           /* Create note callback                              */
     (UUID, QuickCaptureSubmission, Date) throws ->
-    Void /* Checked creation callback for a destination List         */
-    let onMoveNote: /* Move note callback */
-    (KanbanCard, UUID, UUID) throws -> KanbanCard       /* Checked movement callback returning the relocated Note   */
-    let onUpdateMovedNote:  (UUID, KanbanCard) -> Bool  /* Persists edits in the Note's current collection          */
-    let onArchiveMovedNote: (UUID, KanbanCard) -> Bool  /* Archives the Note in its current collection              */
-    let onDeleteMovedNote:  (UUID, KanbanCard) -> Bool  /* Permanently removes the Note from its current collection */
-    let onToggleMovedNoteBookmark: /* Toggle moved note bookmark callback */
-    (UUID, Int, Bool) -> Bool                        /* Persists the Note's collection-local saved state     */
-    let registerNewNote: ((() -> Void)?) -> Void     /* Registers or clears the presented List's Note action */
-    @Environment(\.dismiss) private var dismiss      /* Close the collection board                           */
-    @State private var showsNewNoteComposer = false  /* Presentation state of the List-scoped Note draft     */
+    Void                                                        /* Checked creation callback for a destination List         */
+    let onMoveNote:                                             /* Move note callback                                       */
+    (KanbanCard, UUID, UUID) throws -> KanbanCard               /* Checked movement callback returning the relocated Note   */
+    let onUpdateMovedNote:  (UUID, KanbanCard) -> Bool          /* Persists edits in the Note's current collection          */
+    let onArchiveMovedNote: (UUID, KanbanCard) -> Bool          /* Archives the Note in its current collection              */
+    let onDeleteMovedNote:  (UUID, KanbanCard) -> Bool          /* Permanently removes the Note from its current collection */
+    let onToggleMovedNoteBookmark:                              /* Toggle moved note bookmark callback                      */
+    (UUID, Int, Bool) -> Bool                                   /* Persists the Note's collection-local saved state         */
+    let registerNewNote: ((() -> Void)?) -> Void                /* Registers or clears the presented List's Note action     */
+    @Environment(\.dismiss) private var dismiss                 /* Close the collection board                               */
+    @State private var showsNewNoteComposer = false             /* Presentation state of the List-scoped Note draft         */
 
     ///
     /// @fcn        PersonalCollectionBoardView.body
@@ -254,8 +245,8 @@ struct PersonalCollectionBoardView: View
     /// @post       Successful archive dismisses after onArchive returns; failure reports an error
     ///             and keeps the Board open
     ///
-    var body: some View /* Personal Collection Board layout */
-    {  /* Collection Board wired to canonical persistence callbacks */
+    var body: some View         /* Personal Collection Board layout                          */
+    {                           /* Collection Board wired to canonical persistence callbacks */
         ContentView(
             lists: $collection.lists.activeLists,
             archivedLists: $collection.lists.archivedLists,
@@ -281,9 +272,8 @@ struct PersonalCollectionBoardView: View
                 catch
                 {
                     DatabaseActivity.shared.report(
-                                                            "Could not archive the board: \(error.localizedDescription) The board has not been removed.")
+                        "Could not archive the board: \(error.localizedDescription) The board has not been removed.")
                 }
-
             },
             onDeleteBoard: collection.isPrimaryList ? nil :
             {
@@ -295,16 +285,15 @@ struct PersonalCollectionBoardView: View
                 catch
                 {
                     DatabaseActivity.shared.report(
-                                                            "Could not delete the collection: \(error.localizedDescription) It has been retained.")
+                        "Could not delete the collection: \(error.localizedDescription) It has been retained.")
                 }
-
             },
             deleteBoardTitle: "Delete \(collection.kind.rawValue)",
             onCommitDeletion:
             {
                 lists, bookmarks in
 
-                var updated = collection /* Collection snapshot receiving Board removals */
+                var updated = collection        /* Collection snapshot receiving Board removals */
 
                 updated.lists = lists
                 updated.savedCardIDs = bookmarks
@@ -317,9 +306,7 @@ struct PersonalCollectionBoardView: View
                 if collection.kind == .list, let list = updatedLists.first
                 {
                     collection.title = list.title
-
                 }
-
             },
             retainedAttachmentLists:
             {
@@ -337,11 +324,10 @@ struct PersonalCollectionBoardView: View
                 catch
                 {
                     DatabaseActivity.shared.report(
-                                                            "Could not move the Note: \(error.localizedDescription) Its content remains in the current List."
+                        "Could not move the Note: \(error.localizedDescription) Its content remains in the current List."
                     )
                     return nil
                 }
-
             },
             onUpdateMovedNote: onUpdateMovedNote,
             onArchiveMovedNote: onArchiveMovedNote,
@@ -357,11 +343,8 @@ struct PersonalCollectionBoardView: View
                 registerNewNote
                 {
                     showsNewNoteComposer = true
-
                 }
-
             }
-
         }
         .onDisappear
         {
@@ -376,9 +359,7 @@ struct PersonalCollectionBoardView: View
             )
             .databaseActivityOverlay()
         }
-
     }
-
 }
 
 
@@ -390,10 +371,10 @@ struct PersonalCollectionBoardView: View
 ///
 struct PersonalCollectionSettingsView: View
 {
-    let isNew:                Bool                          /* Whether this form creates a new collection */
-    let onSave:               (PersonalCollection) -> Void  /* Submit the complete collection draft       */
-    @State private var draft: PersonalCollection            /* Isolated editable collection copy          */
-    @Environment(\.dismiss) private var dismiss             /* Close the settings sheet                   */
+    let isNew:                Bool                              /* Whether this form creates a new collection */
+    let onSave:               (PersonalCollection) -> Void      /* Submit the complete collection draft       */
+    @State private var draft: PersonalCollection                /* Isolated editable collection copy          */
+    @Environment(\.dismiss) private var dismiss                 /* Close the settings sheet                   */
 
 
     ///
@@ -412,7 +393,6 @@ struct PersonalCollectionSettingsView: View
         _draft = State(initialValue: collection)
         self.isNew = isNew
         self.onSave = onSave
-
     }
 
 
@@ -424,10 +404,10 @@ struct PersonalCollectionSettingsView: View
     /// @return     (String) normalized collection title
     /// @post       The draft remains unchanged
     ///
-    private var trimmedTitle: String /* Trimmed title */
+    private var trimmedTitle: String    /* Trimmed title */
     {
         draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
-    }  /* Validated collection name without surrounding whitespace */
+    }                                                                   /* Validated collection name without surrounding whitespace */
 
 
     ///
@@ -458,8 +438,8 @@ struct PersonalCollectionSettingsView: View
     /// @return     (some View) navigation form with draft-bound settings and toolbar actions
     /// @post       Changes remain local until Save invokes the parent callback
     ///
-    var body: some View /* Personal Collection Settings layout */
-    {  /* Collection name, kind, icon, and color form */
+    var body: some View         /* Personal Collection Settings layout         */
+    {                           /* Collection name, kind, icon, and color form */
         NavigationStack
         {
             Form
@@ -468,18 +448,17 @@ struct PersonalCollectionSettingsView: View
                 {
                     TextField("Name", text: $draft.title).textInputAutocapitalization(.sentences)
                     TextField(
-                                                            "Description (optional)",
-                                                            text: Binding(
-                                                                get:
-                                                                {
-                                                                    draft.collectionDescription ?? ""
-                                                                },
-                                                                set:
-                                                                {
-                                                                    draft.collectionDescription = $0
-
-                                                                }
-                                                            ), axis: .vertical
+                        "Description (optional)",
+                        text: Binding(
+                            get:
+                            {
+                                draft.collectionDescription ?? ""
+                            },
+                            set:
+                            {
+                                draft.collectionDescription = $0
+                            }
+                        ), axis: .vertical
                     ).textInputAutocapitalization(.sentences)
                     .lineLimit(1 ... 3)
                     LabeledContent("Type", value: draft.kind.rawValue)
@@ -490,31 +469,29 @@ struct PersonalCollectionSettingsView: View
                             icon in
                             Label(icon.title, systemImage: icon.rawValue).tag(icon)
                         }
-
                     }
 
                     .pickerStyle(.menu)
                     if draft.kind == .list, let list = draft.lists.first, !list.hasFixedHeaderIcon
                     {
                         Toggle(
-                                                                        "Show icon in title bar",
-                                                                        isOn: Binding(
-                                                                            get:
-                                                                            {
-                                                                                draft.lists[0].showsIconInHeader
-                                                                            },
-                                                                            set:
-                                                                            {
-                                                                                value in
+                            "Show icon in title bar",
+                            isOn: Binding(
+                                get:
+                                {
+                                    draft.lists[0].showsIconInHeader
+                                },
+                                set:
+                                {
+                                    value in
 
-                                                                                var appearance = /* Resolved appearance choices */
-                                                                                    draft.lists[0].appearance ?? ItemAppearance()
+                                    var appearance =                                    /* Resolved appearance choices */
+                                        draft.lists[0].appearance ?? ItemAppearance()
 
-                                                                                appearance.showsIconInHeader = value
-                                                                                draft.lists[0].appearance = appearance
-
-                                                                            }
-                                                                        ))
+                                    appearance.showsIconInHeader = value
+                                    draft.lists[0].appearance = appearance
+                                }
+                            ))
                     }
 
                     Picker("Color", selection: $draft.color)
@@ -535,7 +512,6 @@ struct PersonalCollectionSettingsView: View
 
                             .tag(color)
                         }
-
                     }
 
                     .pickerStyle(.menu)
@@ -559,20 +535,18 @@ struct PersonalCollectionSettingsView: View
                                 {
                                     value in
 
-                                    var appearance = /* Resolved appearance choices */
+                                    var appearance =                                    /* Resolved appearance choices */
                                         draft.lists[0].appearance ?? ItemAppearance()
 
                                     appearance.listBackgroundOpacity = value
                                     draft.lists[0].appearance = appearance
-
                                 }
                             ))
                         Text(
-                                                                        "Only the surface behind the List's cards fades. Save applies this choice; Cancel keeps the current background."
+                            "Only the surface behind the List's cards fades. Save applies this choice; Cancel keeps the current background."
                         )
                         .font(.footnote).foregroundStyle(.secondary)
                     }
-
                 }
 
 
@@ -590,16 +564,14 @@ struct PersonalCollectionSettingsView: View
                                 {
                                     value in
 
-                                    var appearance = /* Resolved appearance choices */
+                                    var appearance =                                    /* Resolved appearance choices */
                                         draft.lists[0].appearance ?? ItemAppearance()
 
                                     appearance.iconColor = value
                                     draft.lists[0].appearance = appearance
-
                                 }
                             ), fixedColor: KanbanList.fixedIconColor(for: draft.lists[0].title))
                     }
-
                 }
 
 
@@ -608,30 +580,28 @@ struct PersonalCollectionSettingsView: View
                     Section("View as")
                     {
                         Picker(
-                                                                        "List layout",
-                                                                        selection: Binding(
-                                                                            get:
-                                                                            {
-                                                                                draft.lists[0].singleListViewMode
-                                                                            },
-                                                                            set:
-                                                                            {
-                                                                                draft.lists[0].setSingleListViewMode($0)
-                                                                            }
-                                                                        )
+                            "List layout",
+                            selection: Binding(
+                                get:
+                                {
+                                    draft.lists[0].singleListViewMode
+                                },
+                                set:
+                                {
+                                    draft.lists[0].setSingleListViewMode($0)
+                                }
+                            )
                         )
                         {
                             ForEach(SingleListViewMode.allCases)
                             {
                                 Text($0.title).tag($0)
                             }
-
                         }
 
                         Text("Changes only this List's presentation. Cards, Notes and their contents stay the same.")
                         .font(.footnote).foregroundStyle(.secondary)
                     }
-
                 }
 
 
@@ -647,9 +617,7 @@ struct PersonalCollectionSettingsView: View
                                 presentation in
                                 Text(presentation.title).tag(presentation)
                             }
-
                         }
-
                     }
 
 
@@ -670,18 +638,15 @@ struct PersonalCollectionSettingsView: View
                         {
                             card in
                             if let cover = card.coverAttachment
-                            {  /* Featured attachment displayed above the card preview */
+                            {                                                   /* Featured attachment displayed above the card preview */
                                 CardCoverPreview(attachment: cover, height: 96)
                             }
 
 
                             Text(card.word)
                         }
-
                     }
-
                 }
-
             }
 
             .navigationTitle(isNew ? "New \(draft.kind.rawValue)" : "Edit Collection")
@@ -694,19 +659,15 @@ struct PersonalCollectionSettingsView: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .topBarTrailing)
                 {
                     Button("Save", action: save).disabled(trimmedTitle.isEmpty)
                 }
-
             }
-
         }
 
         .presentationDetents([.medium, .large])
     }
-
 }

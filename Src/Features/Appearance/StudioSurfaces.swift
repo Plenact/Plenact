@@ -13,8 +13,7 @@ import UIKit
 ///     Lets per-item surfaces override List and Board defaults without rewriting descendants
 private struct StudioCardSurfaceKey: EnvironmentKey
 {
-    static let defaultValue: StudioSurface? = nil /* Fallback environment value */
-
+    static let defaultValue: StudioSurface? = nil       /* Fallback environment value */
 }
 
 
@@ -24,7 +23,7 @@ private struct StudioCardSurfaceKey: EnvironmentKey
 ///     Shares presentation metadata across navigation and sheet boundaries
 extension EnvironmentValues
 {
-    var studioCardSurface: StudioSurface? /* Studio card surface */
+    var studioCardSurface: StudioSurface?       /* Studio card surface */
     {
         get
         {
@@ -34,11 +33,8 @@ extension EnvironmentValues
         set
         {
             self[StudioCardSurfaceKey.self] = newValue
-
         }
-
     }
-
 }
 
 
@@ -48,7 +44,7 @@ extension EnvironmentValues
 ///     Reuses bounded image preparation and never deletes art because one item stops using it
 enum StudioArtworkStore
 {
-    private static let cache = NSCache<NSString, UIImage>() /* Reusable lookup results */
+    private static let cache = NSCache<NSString, UIImage>()     /* Reusable lookup results */
 
 
     /// @fcn StudioArtworkStore.directory()
@@ -58,10 +54,10 @@ enum StudioArtworkStore
     /// @throws Filesystem errors propagate to the importing editor
     static func directory() throws -> URL
     {
-        let root = /* Workspace or view root */
+        let root =                                                                              /* Workspace or view root */
             try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
-            appropriateFor: nil, create: true)
-        let url = /* Resolved file location */
+                appropriateFor: nil, create: true)
+        let url =                                                                               /* Resolved file location */
             root.appendingPathComponent("PlenactStudioArtwork", isDirectory: true)
 
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
@@ -78,9 +74,9 @@ enum StudioArtworkStore
     /// @throws Image preparation or filesystem errors propagate without updating appearance
     static func importImage(_ data: Data) throws -> String
     {
-        let prepared = /* Prepared operation input */
+        let prepared =                                                  /* Prepared operation input */
             try CollectionBackgroundPhotoStore.preparedPhoto(data)
-        let name     = UUID().uuidString + ".jpg" /* Display or lookup name */
+        let name     = UUID().uuidString + ".jpg"                       /* Display or lookup name   */
 
         try prepared.write(to: directory().appendingPathComponent(name), options: .atomic)
         return name
@@ -114,7 +110,6 @@ enum StudioArtworkStore
         cache.setObject(image, forKey: name as NSString)
         return image
     }
-
 }
 
 
@@ -125,8 +120,8 @@ enum StudioArtworkStore
 ///     Keeps the device-local Note rotation separate from saved appearance and shared content
 enum CardBackgroundPortfolio
 {
-    static let rotationKey = "Plenact.NoteBackground.Next.v1" /* Next device-local selection */
-    static let titles = /* Stable portfolio order; append new choices to preserve rotation */
+    static let rotationKey = "Plenact.NoteBackground.Next.v1"                                           /* Next device-local selection                                     */
+    static let titles =                                                                                 /* Stable portfolio order; append new choices to preserve rotation */
         ["Mountain dawn", "Ocean morning", "Forest light", "Desert curves", "Alpine reflection",
          "Spring blossoms", "Wildflower meadow", "Evening coast", "Autumn glow", "Lavender fields",
          "Rainy window", "Twilight clouds", "Winter slopes", "Sunlit shadows", "Bamboo calm"]
@@ -144,10 +139,10 @@ enum CardBackgroundPortfolio
             throw CocoaError(.fileReadInvalidFileName)
         }
 
-        let asset = assetName(at: index)                         /* Bundled image identity */
-        let name  = asset + ".jpg"                              /* Portable local filename */
-        let root  = try directory ?? StudioArtworkStore.directory() /* Owned artwork storage */
-        let url   = root.appendingPathComponent(name)            /* Immutable image path */
+        let asset = assetName(at: index)                                /* Bundled image identity  */
+        let name  = asset + ".jpg"                                      /* Portable local filename */
+        let root  = try directory ?? StudioArtworkStore.directory()     /* Owned artwork storage   */
+        let url   = root.appendingPathComponent(name)                   /* Immutable image path    */
 
         if !FileManager.default.fileExists(atPath: url.path)
         {
@@ -165,13 +160,12 @@ enum CardBackgroundPortfolio
     /// Advance only after a usable photo has been prepared; a saved Note keeps its chosen photo
     static func nextSurface(defaults: UserDefaults = .standard, directory: URL? = nil) throws -> StudioSurface
     {
-        let index   = max(0, defaults.integer(forKey: rotationKey)) % titles.count /* Next image */
-        let surface = try surface(at: index, directory: directory)               /* Owned photo */
+        let index   = max(0, defaults.integer(forKey: rotationKey)) % titles.count      /* Next image  */
+        let surface = try surface(at: index, directory: directory)                      /* Owned photo */
 
         defaults.set((index + 1) % titles.count, forKey: rotationKey)
         return surface
     }
-
 }
 
 
@@ -180,8 +174,8 @@ enum CardBackgroundPortfolio
 ///     Uses procedural textures instead of large repeated bitmaps and keeps content readable over artwork
 struct StudioSurfaceView: View
 {
-    let surface: StudioSurface                     /* Artwork surface definition       */
-    @Environment(\.colorScheme) private var scheme /* Current light or dark appearance */
+    let surface: StudioSurface                          /* Artwork surface definition       */
+    @Environment(\.colorScheme) private var scheme      /* Current light or dark appearance */
 
 
     /// @fcn StudioSurfaceView.color(_:)
@@ -214,7 +208,7 @@ struct StudioSurfaceView: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View /* Studio Surface layout */
+    var body: some View         /* Studio Surface layout */
     {
         GeometryReader
         {
@@ -237,12 +231,10 @@ struct StudioSurfaceView: View
                     .font(.caption2).padding(4).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
                     .padding(6)
                 }
-
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
         }
-
     }
 
 
@@ -255,8 +247,8 @@ struct StudioSurfaceView: View
     @ViewBuilder
     private func artwork(size: CGSize) -> some View
     {
-        let first  = Self.color(surface.color)          /* First comparison value  */
-        let second = Self.color(surface.secondaryColor) /* Second comparison value */
+        let first  = Self.color(surface.color)                  /* First comparison value  */
+        let second = Self.color(surface.secondaryColor)         /* Second comparison value */
 
         switch surface.material
         {
@@ -300,11 +292,11 @@ struct StudioSurfaceView: View
             {
             context, bounds in
 
-                let ink = second /* Drawing stroke content */
+                let ink = second        /* Drawing stroke content */
 
                 if surface.material == .canvas
                 {
-                    var mountain = Path() /* Mountain operation value */
+                    var mountain = Path()       /* Mountain operation value */
 
                     mountain.move(to: CGPoint(x: 0, y: bounds.height * 0.8))
                     mountain.addLine(to: CGPoint(x: bounds.width * 0.38, y: bounds.height * 0.28))
@@ -318,7 +310,7 @@ struct StudioSurfaceView: View
 
                 else
                 {
-                    let step: CGFloat = /* Current review step */
+                    let step: CGFloat =                         /* Current review step */
                         surface.material == .linen ? 4 : 24
 
                     for x in stride(from: CGFloat(0), through: bounds.width, by: step)
@@ -329,41 +321,33 @@ struct StudioSurfaceView: View
                             {
                                 context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 2, height: 2)), with: .color(ink))
                             }
-
                         }
 
                         if [.grid, .linen].contains(surface.material)
                         {
-                            var line = Path() /* Current text or drawing line */
+                            var line = Path()           /* Current text or drawing line */
 
                             line.move(to: CGPoint(x: x, y: 0));
                             line.addLine(to: CGPoint(x: x, y: bounds.height))
                             context.stroke(line, with: .color(ink.opacity(0.35)), lineWidth: 0.5)
                         }
-
                     }
 
                     if surface.material != .dots
                     {
                         for y in stride(from: CGFloat(0), through: bounds.height, by: step)
                         {
-                            var line = Path() /* Current text or drawing line */
+                            var line = Path()           /* Current text or drawing line */
 
                             line.move(to: CGPoint(x: 0, y: y));
                             line.addLine(to: CGPoint(x: bounds.width, y: y))
                             context.stroke(line, with: .color(ink.opacity(0.5)), lineWidth: 0.5)
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -373,10 +357,10 @@ struct StudioSurfaceView: View
 ///     Keeps preview visibility independent of the full detail background
 struct StudioItemBackground: View
 {
-    let appearance: ItemAppearance?                         /* Resolved appearance choices     */
-    let isNote:     Bool                                    /* Note state                      */
-    var preview = false                                     /* Prepared content preview        */
-    @Environment(\.studioCardSurface) private var inherited /* Appearance inherited from owner */
+    let appearance: ItemAppearance?                             /* Resolved appearance choices     */
+    let isNote:     Bool                                        /* Note state                      */
+    var preview = false                                         /* Prepared content preview        */
+    @Environment(\.studioCardSurface) private var inherited     /* Appearance inherited from owner */
 
     ///
     /// @fcn        StudioItemBackground.body
@@ -386,15 +370,13 @@ struct StudioItemBackground: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View /* Studio Item Background layout */
+    var body: some View         /* Studio Item Background layout */
     {
         if let surface = appearance?.studioSurface ?? inherited,
         !preview || surface.showsInPreviews
         {
             StudioSurfaceView(surface: surface)
         }
-
     }
-
 }
 

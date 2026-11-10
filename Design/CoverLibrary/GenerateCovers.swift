@@ -25,29 +25,28 @@ import UniformTypeIdentifiers
 ///
 struct Cover: Decodable
 {
-    let name:     String;   /* Display or lookup name  */
-    let category: String;   /* Category display text   */
-    let symbol:   String;   /* Selected symbol name    */
-    let tags:     [String]; /* Search or category tags */
-    let context:  String?   /* Operation context       */
-
+    let name:     String;       /* Display or lookup name  */
+    let category: String;       /* Category display text   */
+    let symbol:   String;       /* Selected symbol name    */
+    let tags:     [String];     /* Search or category tags */
+    let context:  String?       /* Operation context       */
 }
 
-let source               = /* Source value for this operation */
+let source               =                                                              /* Source value for this operation */
     URL(fileURLWithPath: CommandLine.arguments[1])
-let output               = /* Operation output */
+let output               =                                                              /* Operation output                */
     URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)
-let covers               = /* Available Card cover artwork */
+let covers               =                                                              /* Available Card cover artwork    */
     try JSONDecoder().decode([Cover].self, from: Data(contentsOf: source))
-let categories           = /* Supported content categories */
+let categories           =                                                              /* Supported content categories    */
     ["home", "nature", "work", "food", "travel", "creativity", "health", "rest"]
-let palettes: [[String]] = [ /* Available cover color palettes */
+let palettes: [[String]] = [                                                            /* Available cover color palettes  */
     ["F4E5D3", "CA7459", "4D7778"], ["E2F0E6", "45966D", "E5B454"],
     ["E0EAF3", "476A89", "75B0B1"], ["F8EBD6", "D98745", "649672"],
     ["DFEEF3", "428D9C", "C88663"], ["F0E3EF", "A26C99", "D39A61"],
     ["E1F0EE", "408F8D", "CE887B"], ["ECE8F4", "837EA6", "CDAE71"]
 ]
-let contextSymbols = /* Context symbols */
+let contextSymbols =                                                                                    /* Context symbols */
     ["house", "leaf", "book.closed", "fork.knife", "map", "paintpalette", "heart", "moon.stars"]
 
 
@@ -65,7 +64,7 @@ let contextSymbols = /* Context symbols */
 ///
 func color(_ hex: String, alpha: CGFloat = 1) -> NSColor
 {
-    let value = UInt32(hex, radix: 16)! /* Value being processed */
+    let value = UInt32(hex, radix: 16)!         /* Value being processed */
 
     return NSColor(red: CGFloat((value >> 16) & 255) / 255, green: CGFloat((value >> 8) & 255) / 255, blue: CGFloat(value & 255) / 255, alpha: alpha)
 }
@@ -91,7 +90,7 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
         colors[0].setFill()
         for side: CGFloat in [-1, 1]
         {
-            let wingX = rect.midX + (side < 0 ? -110 : 10) /* Wing x */
+            let wingX = rect.midX + (side < 0 ? -110 : 10)      /* Wing x */
 
             NSBezierPath(ovalIn: CGRect(x: wingX, y: rect.midY, width: 100, height: 100)).fill()
             NSBezierPath(ovalIn: CGRect(x: wingX + 10, y: rect.midY - 75, width: 80, height: 80)).fill()
@@ -106,7 +105,7 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
     {
         colors[0].setFill()
 
-        let bowl = NSBezierPath() /* Bowl drawing path */
+        let bowl = NSBezierPath()       /* Bowl drawing path */
 
         bowl.move(to: CGPoint(x: rect.minX + 20, y: rect.midY + 20))
         bowl.curve(to: CGPoint(x: rect.maxX - 20, y: rect.midY + 20), controlPoint1: CGPoint(x: rect.midX - 80, y: rect.minY), controlPoint2: CGPoint(x: rect.midX + 80, y: rect.minY))
@@ -132,7 +131,7 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
     {
         colors[0].setStroke()
 
-        let plant = NSBezierPath() /* Plant drawing path */
+        let plant = NSBezierPath()      /* Plant drawing path */
 
         plant.move(to: CGPoint(x: rect.midX, y: rect.minY + 30))
         plant.line(to: CGPoint(x: rect.midX, y: rect.maxY - 20))
@@ -158,7 +157,7 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
         colors[0].setFill()
         NSBezierPath(roundedRect: CGRect(x: rect.midX - 12, y: rect.minY + 90, width: 24, height: 125), xRadius: 8, yRadius: 8).fill()
 
-        let blade = NSBezierPath() /* Blade drawing path */
+        let blade = NSBezierPath()      /* Blade drawing path */
 
         blade.move(to: CGPoint(x: rect.midX - 55, y: rect.minY + 100))
         blade.line(to: CGPoint(x: rect.midX + 55, y: rect.minY + 100))
@@ -169,7 +168,7 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
         blade.fill()
         colors[1].setStroke()
 
-        let handle = /* Open file or task handle */
+        let handle =    /* Open file or task handle */
             NSBezierPath(roundedRect: CGRect(x: rect.midX - 32, y: rect.maxY - 55, width: 64, height: 48), xRadius: 12, yRadius: 12)
 
         handle.lineWidth = 14;
@@ -184,7 +183,7 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
         throw NSError(domain: "CoverGenerator", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unavailable symbol: \(name)"])
     }
 
-    let configuration = /* Resolved operation options */
+    let configuration =                                                         /* Resolved operation options */
         NSImage.SymbolConfiguration(pointSize: rect.height, weight: .regular)
     .applying(NSImage.SymbolConfiguration(paletteColors: colors))
 
@@ -193,11 +192,11 @@ func glyph(_ name: String, rect: CGRect, colors: [NSColor]) throws
 
 for (index, cover) in covers.enumerated()
 {
-    let category   = categories.firstIndex(of: cover.category)! /* Matching category entry        */
-    let palette    = palettes[category]                         /* Artwork color palette          */
-    let background = color(palette[0]);                         /* Resolved background appearance */
-    let primary    = color(palette[1]);                         /* Primary artwork accent         */
-    let accent     = color(palette[2])                          /* Selected accent color          */
+    let category   = categories.firstIndex(of: cover.category)!         /* Matching category entry        */
+    let palette    = palettes[category]                                 /* Artwork color palette          */
+    let background = color(palette[0]);                                 /* Resolved background appearance */
+    let primary    = color(palette[1]);                                 /* Primary artwork accent         */
+    let accent     = color(palette[2])                                  /* Selected accent color          */
 
     guard let context = CGContext(data: nil, width: 960, height: 480, bitsPerComponent: 8, bytesPerRow: 960 * 4,
         space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else
@@ -210,7 +209,7 @@ for (index, cover) in covers.enumerated()
     context.setFillColor(accent.withAlphaComponent(0.18).cgColor)
     context.fill(CGRect(x: 0, y: 0, width: 960, height: 78))
 
-    let centerX: CGFloat = [480, 440, 520] [index % 3] /* Center x */
+    let centerX: CGFloat = [480, 440, 520] [index % 3]          /* Center x */
 
     context.setFillColor(NSColor.white.withAlphaComponent(0.65).cgColor)
     context.fillEllipse(in: CGRect(x: centerX - 168, y: 92, width: 336, height: 336))
@@ -218,7 +217,7 @@ for (index, cover) in covers.enumerated()
     context.setFillColor(primary.withAlphaComponent(0.16).cgColor)
     for n in 0 ..< 3
     {
-        let x = CGFloat(105 + n * 64 + (index % 4) * 6) /* Horizontal layout coordinate */
+        let x = CGFloat(105 + n * 64 + (index % 4) * 6)         /* Horizontal layout coordinate */
 
         context.fillEllipse(in: CGRect(x: x, y: CGFloat(160 + n * 38), width: 22, height: 22))
     }
@@ -233,7 +232,7 @@ for (index, cover) in covers.enumerated()
     try glyph(cover.context ?? contextSymbols[category], rect: CGRect(x: 720, y: 128, width: 90, height: 90), colors: [accent, primary])
     NSGraphicsContext.restoreGraphicsState()
 
-    let target = /* Target under consideration */
+    let target =                                                                /* Target under consideration */
         output.appendingPathComponent(cover.name).appendingPathExtension("png")
 
     guard let image = context.makeImage(), let destination = CGImageDestinationCreateWithURL(target as CFURL, UTType.png.identifier as CFString, 1, nil) else
@@ -246,7 +245,6 @@ for (index, cover) in covers.enumerated()
     {
         fatalError("PNG write failed")
     }
-
 }
 
 print("Generated \(covers.count) expanded covers")

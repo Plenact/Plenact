@@ -21,8 +21,8 @@ extension MigrationContentValues
     /// @throws Invalid/duplicate nested identity errors
     func nested(_ kind: String, _ value: Any?, scope: String) throws -> String
     {
-        let source = try Self.lowerUUID(value)         /* Source value for this operation */
-        let key    = scope + ":" + kind + ":" + source /* Lookup or persistence key       */
+        let source = try Self.lowerUUID(value)                  /* Source value for this operation */
+        let key    = scope + ":" + kind + ":" + source          /* Lookup or persistence key       */
 
         guard usedNested.insert(key).inserted else
         {
@@ -75,17 +75,17 @@ extension MigrationContentValues
     {
         try values.map { list in
 
-            let identifier = /* Record identity value */
+            let identifier =                                                            /* Record identity value */
                 try nested("checklist", list["id"], scope: scope)
-            let items      = /* Items being processed */
+            let items      =                                                            /* Items being processed */
                 try (list["items"] as! [[String: Any]]).map { item -> [String: Any] in
 
-                let identifier            = /* Record identity value */
+                let identifier            =                                                             /* Record identity value */
                     try nested("checklist_item", item["id"], scope: scope)
-                var linkedOwner           = owner                          /* Linked owner      */
-                var linkedCollection: Any = NSNull()                       /* Linked collection */
-                let originalItem          = try Self.lowerUUID(item["id"]) /* Original item     */
-                let calendarOverride      =                                /* Calendar override */
+                var linkedOwner           = owner                                                       /* Linked owner          */
+                var linkedCollection: Any = NSNull()                                                    /* Linked collection     */
+                let originalItem          = try Self.lowerUUID(item["id"])                              /* Original item         */
+                let calendarOverride      =                                                             /* Calendar override     */
                     calendarOwnerScopes.contains(owner) ? checklistWeekOverrides[originalItem] : nil
 
                 if let original = calendarOverride ?? (item["linkedCollectionID"] as? String)?.lowercased()
@@ -93,29 +93,25 @@ extension MigrationContentValues
                     if originalCollectionIDs[owner] == original
                     {
                         linkedOwner = owner
-
                     }
                     else if let candidates = ownerScopesByCollection[original], candidates.count == 1
                     {
                         linkedOwner = candidates[0]
-
                     }
                     else
                     {
                         linkedOwner = "unresolved_from:" + owner + ":" + original
-
                     }
 
-                    let target = /* Target under consideration */
+                    let target =        /* Target under consideration */
                         try collectionTargets[linkedOwner] ?? id("collection", owner: "source_collections", legacy: linkedOwner)
 
                     linkedCollection = try reference("collection", target)
-
                 }
 
-                let source = item["content"] as! [String: Any] /* Source value for this operation */
-                let kind   = source["kind"] as! String         /* Content kind discriminator      */
-                var content: [String: Any]                     /* Content being processed         */
+                let source = item["content"] as! [String: Any]          /* Source value for this operation */
+                let kind   = source["kind"] as! String                  /* Content kind discriminator      */
+                var content: [String: Any]                              /* Content being processed         */
 
                 switch kind
                 {
@@ -138,7 +134,7 @@ extension MigrationContentValues
                 default: throw Failure.invalid("action_kind")
                 }
 
-                var retained: Any = NSNull() /* State retained for recovery */
+                var retained: Any = NSNull()    /* State retained for recovery */
 
                 if let saved = item["retainedDetail"] as? [String: Any]
                 {
@@ -150,12 +146,10 @@ extension MigrationContentValues
                         }
 
                         retained = content["detail"]!
-
                     }
                     else
                     {
                         retained = try detail(saved, owner: owner, scope: scope)
-
                     }
                 }
                 return ["id": identifier, "title": item["title"]!, "completed": item["isCompleted"]!,
@@ -201,7 +195,7 @@ extension MigrationContentValues
         }
         return try values.map { value -> [String: Any] in
 
-            let target = /* Target under consideration */
+            let target =                                                /* Target under consideration */
                 try nested("attachment", value["id"], scope: scope)
 
             attachmentTargets[scope + ":" + (try Self.lowerUUID(value["id"]))] = target
@@ -230,10 +224,10 @@ extension MigrationContentValues
         }
         return try values.map { value -> [String: Any] in
 
-            let changes = /* Requested content edits */
+            let changes =                                                               /* Requested content edits */
                 (value["changes"] as! [[String: Any]]).map { change -> [String: Any] in
 
-                var result: [String: Any] = /* Accumulated output value */
+                var result: [String: Any] =     /* Accumulated output value */
                     ["field": change["field"]!]
 
                 for (source, target) in [("previousValue", "previous_value"), ("newValue", "new_value")]
@@ -241,12 +235,10 @@ extension MigrationContentValues
                     if let data = change[source]
                     {
                         result[target] = ["encoding": "base64", "source_format": "swift_codable_json", "source_model_version": "local_legacy", "data": data]
-
                     }
                     else
                     {
                         result[target] = NSNull()
-
                     }
                 }
                 return result

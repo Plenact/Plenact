@@ -20,10 +20,9 @@ import SwiftUI
 ///
 struct PersonalSavedCardTarget: Equatable
 {
-    let collectionID: UUID /* Owning personal collection         */
-    let listID:       Int  /* Containing collection-local list   */
-    let cardID:       Int  /* Collection-local bookmarked record */
-
+    let collectionID: UUID      /* Owning personal collection         */
+    let listID:       Int       /* Containing collection-local list   */
+    let cardID:       Int       /* Collection-local bookmarked record */
 }
 
 
@@ -36,9 +35,9 @@ struct PersonalSavedCardTarget: Equatable
 ///
 struct SavedCardResult: Identifiable
 {
-    let card:      KanbanCard /* Saved card data           */
-    let listID:    Int        /* List opened when selected */
-    let listTitle: String     /* Containing list title     */
+    let card:      KanbanCard           /* Saved card data           */
+    let listID:    Int                  /* List opened when selected */
+    let listTitle: String               /* Containing list title     */
 
     ///
     /// @fcn        SavedCardResult.id
@@ -49,11 +48,10 @@ struct SavedCardResult: Identifiable
     /// @pre        Card IDs are unique within the displayed Week Board
     /// @post       Bookmark membership and card content remain unchanged
     ///
-    var id: Int /* Owner-local numeric ID */
+    var id: Int         /* Owner-local numeric ID */
     {
         card.id
-    }  /* Saved card's stable Board-local identity */
-
+    }           /* Saved card's stable Board-local identity */
 }
 
 
@@ -67,12 +65,12 @@ struct SavedCardResult: Identifiable
 enum ActivityFocus: String, CaseIterable, Identifiable
 {
     case saved = "Saved", dueSoon = "Due soon", labels = "By label"
-    var id: String /* Record or view identity */
+    var id: String                                                      /* Record or view identity */
     {
         rawValue
     }
 
-    var symbol: String /* Selected symbol name */
+    var symbol: String          /* Selected symbol name */
     {
         switch self
         {
@@ -85,9 +83,7 @@ enum ActivityFocus: String, CaseIterable, Identifiable
         case .labels:
                     "tag"
         }
-
     }
-
 }
 
 
@@ -155,7 +151,6 @@ enum ActivityFocusSelection
 
         return "Due · " + card.dueDateLabel
     }
-
 }
 
 
@@ -168,12 +163,12 @@ enum ActivityFocusSelection
 enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 {
     case recent, bookmarked, archived
-    var id: String /* Record or view identity */
+    var id: String                      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -186,10 +181,9 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
         case .archived:
                     "Archived content"
         }
-
     }
 
-    var symbol: String /* Selected symbol name */
+    var symbol: String          /* Selected symbol name */
     {
         switch self
         {
@@ -202,10 +196,9 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
         case .archived:
                     "archivebox"
         }
-
     }
 
-    var detail: String /* Owned action detail */
+    var detail: String          /* Owned action detail */
     {
         switch self
         {
@@ -216,9 +209,7 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
         case .archived:
                     "Find collections you put away."
         }
-
     }
-
 }
 
 
@@ -231,9 +222,9 @@ enum ToolbarRevisitDestination: String, CaseIterable, Identifiable
 ///
 struct ToolbarRevisitMenu: View
 {
-    let onChoose: (ToolbarRevisitDestination) -> Void /* Choose callback */
+    let onChoose: (ToolbarRevisitDestination) -> Void           /* Choose callback */
 
-    var body:     some View /* Toolbar Revisit Menu layout */
+    var body:     some View     /* Toolbar Revisit Menu layout */
     {
         VStack(alignment: .leading, spacing: 4)
         {
@@ -264,11 +255,9 @@ struct ToolbarRevisitMenu: View
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("toolbar.revisit." + choice.rawValue)
             }
-
         }
         .padding(16).frame(idealWidth: 290)
     }
-
 }
 
 
@@ -281,48 +270,48 @@ struct ToolbarRevisitMenu: View
 ///
 struct SavedCardsView: View
 {
-    let planningDocument:   PlanningCalendarDocument?             /* Planning document   */
-    var revisitDestination: Binding<ToolbarRevisitDestination?> = /* Revisit destination */
+    let planningDocument:   PlanningCalendarDocument?                   /* Planning document   */
+    var revisitDestination: Binding<ToolbarRevisitDestination?> =       /* Revisit destination */
         .constant(nil)
 
-    private var revisit:    ToolbarRevisitDestination? /* Requested Activity destination */
+    private var revisit:    ToolbarRevisitDestination?          /* Requested Activity destination */
     {
         revisitDestination.wrappedValue
     }
 
-    @AppStorage(ActivityRecentStore.key) private var recentData                        = /* Recent data */
+    @AppStorage(ActivityRecentStore.key) private var recentData                        =        /* Recent data              */
         Data()
-    @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers                 = /* Covers visibility */
+    @AppStorage("Plenact.ActivityShowsCovers") private var showsCovers                 =        /* Covers visibility        */
         true
-    @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards = /* Uses square recent cards */
+    @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards =        /* Uses square recent cards */
         false
-    @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion /* Reduce recent motion */
-    @State private var isRecentShelfCollapsed = false /* Recent disclosure state */
-    @Environment(\.appReturnResetRequest) private var appReturnResetRequest /* App return reset request */
-    @State private var query                           = "" /* Search text */
-    @State private var showsSearch                     = false /* Search visibility */
-    @State private var confirmsClear                   = false /* Confirms clear */
-    @State private var focus:            ActivityFocus = .saved /* Today Focus selection */
-    @State private var activityHeaderHeight: CGFloat   = 0 /* Activity header height */
+    @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion                    /* Reduce recent motion     */
+    @State private var isRecentShelfCollapsed = false                                           /* Recent disclosure state  */
+    @Environment(\.appReturnResetRequest) private var appReturnResetRequest                     /* App return reset request */
+    @State private var query                           = ""                                     /* Search text              */
+    @State private var showsSearch                     = false                                  /* Search visibility        */
+    @State private var confirmsClear                   = false                                  /* Confirms clear           */
+    @State private var focus:            ActivityFocus = .saved                                 /* Today Focus selection    */
+    @State private var activityHeaderHeight: CGFloat   = 0                                      /* Activity header height   */
 
-    @State private var historicalTarget: ActivityRecentResult? /* Historical target */
-    @State private var selectedLabelID:  String? /* Selected label ID */
-    @State private var focusLabelLibrary             = /* Focus label library */
+    @State private var historicalTarget: ActivityRecentResult?          /* Historical target   */
+    @State private var selectedLabelID:  String?                        /* Selected label ID   */
+    @State private var focusLabelLibrary             =                  /* Focus label library */
         LabelLibraryStore.load()
 
-    private var focusCalendar: Calendar /* Focus calendar */
+    private var focusCalendar: Calendar         /* Focus calendar */
     {
         planningDocument?.calendar ?? .current
     }
 
 
-    private var availableFocusItems: [ActivityRecentResult] /* Available focus items */
+    private var availableFocusItems: [ActivityRecentResult]     /* Available focus items */
     {
-        var items: [ActivityRecentResult] = [] /* Items being processed */
+        var items: [ActivityRecentResult] = []          /* Items being processed */
 
         for week in planningDocument?.weeks ?? []
         {
-            let current = /* Current operation snapshot */
+            let current =                                               /* Current operation snapshot */
                 week.startKey == planningDocument?.currentWeekKey
 
             for list in (current ? lists : week.collection.lists) where !list.isArchived
@@ -334,9 +323,7 @@ struct SavedCardsView: View
                             item: LibraryRecentItem(collectionID: week.id, cardID: card.id), card: card, list: list,
                             location: list.title + " · " + week.compactRangeTitle, week: week, isCurrent: current))
                 }
-
             }
-
         }
 
         for collection in collections where collection.isActive
@@ -353,17 +340,15 @@ struct SavedCardsView: View
                             ? collection.title : collection.title + " · " + list.title, week: nil, isCurrent: false)
                     )
                 }
-
             }
-
         }
 
         return items
     }
 
-    private var availableFocusLabels: [KanbanLabel] /* Available focus labels */
+    private var availableFocusLabels: [KanbanLabel]     /* Available focus labels */
     {
-        let assigned = Set(availableFocusItems.flatMap /* Mapped assigned values */
+        let assigned = Set(availableFocusItems.flatMap          /* Mapped assigned values */
             {
                 $0.card.labelIDs
             })
@@ -376,21 +361,19 @@ struct SavedCardsView: View
         {
             $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
-
     }
 
-    private var selectedFocusLabel: KanbanLabel? /* Selected focus label */
+    private var selectedFocusLabel: KanbanLabel?        /* Selected focus label */
     {
         availableFocusLabels.first
         {
             $0.id == selectedLabelID
         }
-
     }
 
-    private var focusedItems: [ActivityRecentResult] /* Focused items */
+    private var focusedItems: [ActivityRecentResult]    /* Focused items */
     {
-        let items = availableFocusItems.filter /* Items being processed */
+        let items = availableFocusItems.filter          /* Items being processed */
         {
             matches($0.card.word, $0.location)
         }
@@ -423,12 +406,10 @@ struct SavedCardsView: View
             {
                 $0.card.labelIDs.contains(selectedLabelID)
             }
-
         }
-
     }
 
-    private var focusHeading: some View /* Focus heading */
+    private var focusHeading: some View         /* Focus heading */
     {
         Menu
         {
@@ -439,9 +420,7 @@ struct SavedCardsView: View
                     option in
                     Label(option.rawValue, systemImage: option.symbol).tag(option)
                 }
-
             }
-
         }
         label:
         {
@@ -456,7 +435,7 @@ struct SavedCardsView: View
         .accessibilityLabel("Activity view: " + focus.rawValue)
     }
 
-    private var focusContent: some View /* Focus content */
+    private var focusContent: some View         /* Focus content */
     {
         VStack(alignment: .leading, spacing: 12)
         {
@@ -470,15 +449,12 @@ struct SavedCardsView: View
                         Button
                         {
                             selectedLabelID = label.id
-
                         }
                         label:
                         {
                             Label(label.name, systemImage: selectedLabelID == label.id ? "checkmark" : "tag")
                         }
-
                     }
-
                 }
                 label:
                 {
@@ -548,7 +524,6 @@ struct SavedCardsView: View
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
                 } .buttonStyle(.plain).accessibilityHint("Opens this item in " + result.location)
             }
-
         } .padding(16)
     }
 
@@ -562,18 +537,17 @@ struct SavedCardsView: View
     ///
     private struct ActivityRecentResult: Identifiable
     {
-        let item:      LibraryRecentItem  /* Item under consideration       */
-        let card:      KanbanCard         /* Card under consideration       */
-        let list:      KanbanList         /* List under consideration       */
-        let location:  String             /* Resolved place metadata        */
-        let week:      DatedPlanningWeek? /* Dated Week under consideration */
-        let isCurrent: Bool               /* Current state                  */
+        let item:      LibraryRecentItem        /* Item under consideration       */
+        let card:      KanbanCard               /* Card under consideration       */
+        let list:      KanbanList               /* List under consideration       */
+        let location:  String                   /* Resolved place metadata        */
+        let week:      DatedPlanningWeek?       /* Dated Week under consideration */
+        let isCurrent: Bool                     /* Current state                  */
 
-        var id:        String /* Record or view identity */
+        var id:        String           /* Record or view identity */
         {
             item.id
         }
-
     }
 
 
@@ -594,9 +568,9 @@ struct SavedCardsView: View
         || (title + " " + location).localizedStandardContains(query.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
-    private var recents: [ActivityRecentResult] /* Recently accessed items */
+    private var recents: [ActivityRecentResult]         /* Recently accessed items */
     {
-        let items = /* Items being processed */
+        let items =             /* Items being processed */
         recentData.isEmpty
         ? ActivityRecentStore.load()
         : ((try? JSONDecoder().decode([LibraryRecentItem].self, from: recentData)) ?? [])
@@ -635,9 +609,9 @@ struct SavedCardsView: View
                 return nil
             }
 
-            let current = /* Current operation snapshot */
+            let current =                                               /* Current operation snapshot      */
                 week.startKey == planningDocument?.currentWeekKey
-            let source  = /* Source value for this operation */
+            let source  =                                               /* Source value for this operation */
                 current ? lists : week.collection.lists
 
             guard
@@ -661,7 +635,6 @@ struct SavedCardsView: View
                 item: item, card: card, list: list, location: list.title + " · " + week.compactRangeTitle, week: week,
                 isCurrent: current)
         }
-
     }
 
 
@@ -677,12 +650,11 @@ struct SavedCardsView: View
     private func openRecent(_ result: ActivityRecentResult)
     {
         historicalTarget = result
-
     }
 
-    private var recentSection: some View /* Recent section */
+    private var recentSection: some View        /* Recent section */
     {
-        let isCollapsed = revisit == nil && isRecentShelfCollapsed /* Shelf disclosure on the main Activity view */
+        let isCollapsed = revisit == nil && isRecentShelfCollapsed      /* Shelf disclosure on the main Activity view */
 
         return VStack(alignment: .leading, spacing: 10)
         {
@@ -739,7 +711,7 @@ struct SavedCardsView: View
 
 
     @ViewBuilder
-    private var recentShelfContent: some View /* Recent cards or empty state */
+    private var recentShelfContent: some View           /* Recent cards or empty state */
     {
         if recents.isEmpty
         {
@@ -770,7 +742,7 @@ struct SavedCardsView: View
                                 {
                                     CardCoverPreview(attachment: cover, height: usesSquareRecentCards ? 40 : 64)
                                         .frame(height: usesSquareRecentCards ? 40 : 64).clipShape(
-                                        RoundedRectangle(cornerRadius: 8))
+                                            RoundedRectangle(cornerRadius: 8))
                                 }
 
                                 Text(result.card.word).font(.subheadline.weight(.semibold)).lineLimit(usesSquareRecentCards ? 2 : 3)
@@ -787,30 +759,27 @@ struct SavedCardsView: View
                             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                         } .buttonStyle(.plain).accessibilityHint("Reopen this item in " + result.location)
                     }
-
                 }
-
             }
             .frame(height: usesSquareRecentCards ? (showsCovers ? 156 : 144) : (showsCovers ? 210 : 144))
             .modifier(CardShelfEdgeFade())
-
         }
     }
 
 
-    let lists:                [KanbanList]          /* Current Board snapshot                            */
-    let savedCardIDs:         Set<Int>              /* Local bookmark set                                */
-    @Binding var collections: [PersonalCollection]  /* Collections whose archived boards can be restored */
-    let onOpenBoardCard:      (Int, Int) -> Void    /* Open the exact bookmarked item                    */
-    let onOpenPersonalCard: /* Open personal card callback */
-    (PersonalSavedCardTarget) -> Void                        /* Navigate to a bookmarked personal record             */
-    let onRestoreBoard:                 (UUID) -> Void       /* Restore a saved board by identity                    */
-    let onDeleteBoard:                  (UUID) -> Bool       /* Save permanent collection removal and report success */
-    let onArchiveCard:                  (Int) -> Void        /* Archive a Week bookmark's canonical card             */
-    let onDeleteCard:                   (Int) -> Bool        /* Report confirmed Week bookmark-card removal          */
-    @State private var deletingBoard:   PersonalCollection?  /* Saved collection awaiting removal                    */
-    @State private var deletingCard:    KanbanCard?          /* Week bookmark awaiting removal                       */
-    @State private var inspectingBoard: PersonalCollection?  /* Archived collection being browsed                    */
+    let lists:                [KanbanList]                      /* Current Board snapshot                               */
+    let savedCardIDs:         Set<Int>                          /* Local bookmark set                                   */
+    @Binding var collections: [PersonalCollection]              /* Collections whose archived boards can be restored    */
+    let onOpenBoardCard:      (Int, Int) -> Void                /* Open the exact bookmarked item                       */
+    let onOpenPersonalCard:                                     /* Open personal card callback                          */
+    (PersonalSavedCardTarget) -> Void                           /* Navigate to a bookmarked personal record             */
+    let onRestoreBoard:                 (UUID) -> Void          /* Restore a saved board by identity                    */
+    let onDeleteBoard:                  (UUID) -> Bool          /* Save permanent collection removal and report success */
+    let onArchiveCard:                  (Int) -> Void           /* Archive a Week bookmark's canonical card             */
+    let onDeleteCard:                   (Int) -> Bool           /* Report confirmed Week bookmark-card removal          */
+    @State private var deletingBoard:   PersonalCollection?     /* Saved collection awaiting removal                    */
+    @State private var deletingCard:    KanbanCard?             /* Week bookmark awaiting removal                       */
+    @State private var inspectingBoard: PersonalCollection?     /* Archived collection being browsed                    */
 
     ///
     /// @fcn        SavedCardsView.savedCards
@@ -822,8 +791,8 @@ struct SavedCardsView: View
     /// @pre        The caller supplies active Week lists
     /// @post       Stale bookmark IDs are not removed from the stored set
     ///
-    private var savedCards: [SavedCardResult] /* Saved cards */
-    {  /* Bookmarked cards paired with their containing lists */
+    private var savedCards: [SavedCardResult]           /* Saved cards                                         */
+    {                                                   /* Bookmarked cards paired with their containing lists */
         lists.flatMap
         {
             list in
@@ -838,9 +807,7 @@ struct SavedCardsView: View
 
                 return SavedCardResult(card: card, listID: list.id, listTitle: list.title)
             }
-
         }
-
     }
 
 
@@ -852,22 +819,20 @@ struct SavedCardsView: View
     ///
     /// @return     ([PersonalCollectionBookmarkedCard]) available personal bookmark rows
     ///
-    private var archivedCollections: [PersonalCollection] /* Archived collections */
+    private var archivedCollections: [PersonalCollection]       /* Archived collections */
     {
         collections.filter
         {
             $0.isArchived == true && matches($0.title, "")
         }
-
     }
 
-    private var personalSavedCards: [PersonalCollectionBookmarkedCard] /* Personal saved cards */
-    {  /* Active personal bookmarks for Saved */
+    private var personalSavedCards: [PersonalCollectionBookmarkedCard]          /* Personal saved cards                */
+    {                                                                           /* Active personal bookmarks for Saved */
         collections.filter(\.isActive).flatMap(\.bookmarkedCards).filter
         {
             matches($0.card.word, $0.collectionTitle + " " + $0.listTitle)
         }
-
     }
 
 
@@ -881,7 +846,7 @@ struct SavedCardsView: View
     ///
     /// @return     (some View) Activity heading, optional search, revisit controls, and Recent cards
     ///
-    private var activityHeader: some View /* Activity header */
+    private var activityHeader: some View       /* Activity header */
     {
         VStack(alignment: .leading, spacing: 16)
         {
@@ -897,9 +862,7 @@ struct SavedCardsView: View
                         if !showsSearch
                         {
                             query = ""
-
                         }
-
                     }
                     label:
                     {
@@ -912,9 +875,7 @@ struct SavedCardsView: View
                         Button("Clear recent history", systemImage: "trash", role: .destructive)
                         {
                             confirmsClear = true
-
                         }
-
                     }
                     label:
                     {
@@ -929,7 +890,6 @@ struct SavedCardsView: View
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 }
-
             }
 
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -950,11 +910,9 @@ struct SavedCardsView: View
                     Button("All Activity")
                     {
                         revisitDestination.wrappedValue = nil
-
                     }
                     .font(.subheadline).frame(minHeight: 44)
                 }
-
             }
 
             if revisit == nil || revisit == .recent
@@ -974,7 +932,7 @@ struct SavedCardsView: View
     ///
     /// @return     (some View) selected browser content without its own outer scrolling surface
     ///
-    private var activityBrowserContents: some View /* Activity browser contents */
+    private var activityBrowserContents: some View      /* Activity browser contents */
     {
         VStack(alignment: .leading, spacing: 16)
         {
@@ -1017,7 +975,6 @@ struct SavedCardsView: View
                                     {
                                         openRecent(item)
                                     }
-
                                 }
                                 label:
                                 {
@@ -1059,13 +1016,9 @@ struct SavedCardsView: View
                                     Button("Delete Card")
                                     {
                                         deletingCard = result.card
-
                                     }
-
                                 }
-
                             }
-
                         }
 
 
@@ -1087,7 +1040,6 @@ struct SavedCardsView: View
                                     {
                                         openRecent(item)
                                     }
-
                                 }
                                 label:
                                 {
@@ -1126,17 +1078,13 @@ struct SavedCardsView: View
                                 .accessibilityHint(
                                     "Opens this item in \(result.collectionTitle), \(result.listTitle).")
                             }
-
                         }
-
                     }
-
                 }
 
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-
             }
 
 
@@ -1160,7 +1108,6 @@ struct SavedCardsView: View
                                 Button(board.title)
                                 {
                                     inspectingBoard = board
-
                                 }
                                 .font(.headline)
                                 Text(
@@ -1183,13 +1130,11 @@ struct SavedCardsView: View
                                 Button("Delete", systemImage: "trash", role: .destructive)
                                 {
                                     deletingBoard = board
-
                                 }
                                 .labelStyle(.iconOnly)
                                 .accessibilityLabel("Delete \(board.title)")
                             }
                         }
-
                     }
 
 
@@ -1201,7 +1146,6 @@ struct SavedCardsView: View
                 }
 
                 .padding(16)
-
             }
 
             if revisit == .archived && archivedCollections.isEmpty
@@ -1229,8 +1173,8 @@ struct SavedCardsView: View
     /// @post       Restore delegates to the root save-first callback; bookmarked-card selection
     ///             opens the bookmarked item directly without removing the bookmark
     ///
-    var body: some View /* Activity and saved-item browser */
-    {  /* Saved-card directory and navigation destinations */
+    var body: some View         /* Activity and saved-item browser                  */
+    {                           /* Saved-card directory and navigation destinations */
         ZStack
         {
             TodayPaperBackground()
@@ -1240,12 +1184,12 @@ struct SavedCardsView: View
             {
                 geometry in
 
-                let hasBrowser                 = revisit != .recent      /* Browser availability */
-                let browserAllowance: CGFloat  = hasBrowser ? 128 : 0    /* Browser allowance    */
-                let selectorAllowance: CGFloat = revisit == nil ? 60 : 0 /* Selector allowance   */
+                let hasBrowser                 = revisit != .recent             /* Browser availability */
+                let browserAllowance: CGFloat  = hasBrowser ? 128 : 0           /* Browser allowance    */
+                let selectorAllowance: CGFloat = revisit == nil ? 60 : 0        /* Selector allowance   */
                 // Keep the browser above the toolbar when the tab extends beneath its safe-area inset
-                let bottomClearance = geometry.safeAreaInsets.bottom + 5 /* Bottom clearance */
-                let headerLimit     =                                    /* Header limit     */
+                let bottomClearance = geometry.safeAreaInsets.bottom + 5        /* Bottom clearance */
+                let headerLimit     =                                           /* Header limit     */
                     max(0, geometry.size.height - bottomClearance - 40 - browserAllowance - selectorAllowance - 16)
 
                 VStack(alignment: .leading, spacing: 16)
@@ -1262,7 +1206,6 @@ struct SavedCardsView: View
                             action:
                             {
                                 activityHeaderHeight = $0
-
                             }
                     }
                     .scrollIndicators(.hidden)
@@ -1311,12 +1254,10 @@ struct SavedCardsView: View
             showsSearch = false
             selectedLabelID = nil
             revisitDestination.wrappedValue = nil
-
         }
         .onAppear
         {
             focusLabelLibrary = LabelLibraryStore.load()
-
         }
         .onChange(of: revisit, initial: true)
         {
@@ -1326,9 +1267,7 @@ struct SavedCardsView: View
                 query = "";
                 showsSearch = false;
                 focus = .saved
-
             }
-
         }
         .onChange(of: focus)
         {
@@ -1336,9 +1275,7 @@ struct SavedCardsView: View
             if value == .labels && selectedFocusLabel == nil
             {
                 selectedLabelID = availableFocusLabels.first?.id
-
             }
-
         }
         .onChange(of: availableFocusLabels)
         {
@@ -1349,9 +1286,7 @@ struct SavedCardsView: View
                 })
             {
                 selectedLabelID = labels.first?.id
-
             }
-
         }
         .confirmationDialog("Clear recent history?", isPresented: $confirmsClear, titleVisibility: .visible)
         {
@@ -1359,7 +1294,6 @@ struct SavedCardsView: View
             {
                 ActivityRecentStore.clear()
             }
-
         }
         message:
         {
@@ -1375,7 +1309,6 @@ struct SavedCardsView: View
                     onLeaveForHome:
                     {
                         historicalTarget = nil
-
                     })
             }
             else if let collection = collections.first(where:
@@ -1388,96 +1321,82 @@ struct SavedCardsView: View
                     onLeaveForHome:
                     {
                         historicalTarget = nil
-
                     })
             }
-
         }
 
         .confirmationDialog(
-                        "Delete \(deletingBoard?.title ?? "collection")?",
-                        isPresented: Binding(
-                            get:
-                            {
-                                deletingBoard != nil
-                            }, set:
-                            {
-                                if !$0
-                                {
-                                    deletingBoard = nil
-
-                                }
-
-                            }
-                        ), titleVisibility: .visible
+            "Delete \(deletingBoard?.title ?? "collection")?",
+            isPresented: Binding(
+                get:
+                {
+                    deletingBoard != nil
+                }, set:
+                {
+                    if !$0
+                    {
+                        deletingBoard = nil
+                    }
+                }
+            ), titleVisibility: .visible
         )
         {
             Button("Delete \(deletingBoard?.kind.rawValue ?? "item")", role: .destructive)
             {
                 if let deletingBoard, !deletingBoard.isPrimaryList
-                {  /* Archived collection awaiting permanent deletion */
+                {                                                       /* Archived collection awaiting permanent deletion */
                     _ = onDeleteBoard(deletingBoard.id)
-
                 }
 
 
                 deletingBoard = nil
-
             }
 
 
             Button("Cancel", role: .cancel)
             {
                 deletingBoard = nil
-
             }
-
         }
         message:
         {
             Text(
-                                    "Permanently deletes this retained collection, active and archived lists/cards, and bookmarks. This cannot be undone."
+                "Permanently deletes this retained collection, active and archived lists/cards, and bookmarks. This cannot be undone."
             )
         }
 
         .confirmationDialog(
-                        "Delete \(deletingCard?.word ?? "card")?",
-                        isPresented: Binding(
-                            get:
-                            {
-                                deletingCard != nil
-                            }, set:
-                            {
-                                if !$0
-                                {
-                                    deletingCard = nil
-
-                                }
-
-                            }
-                        ), titleVisibility: .visible
+            "Delete \(deletingCard?.word ?? "card")?",
+            isPresented: Binding(
+                get:
+                {
+                    deletingCard != nil
+                }, set:
+                {
+                    if !$0
+                    {
+                        deletingCard = nil
+                    }
+                }
+            ), titleVisibility: .visible
         )
         {
             Button("Delete Card", role: .destructive)
             {
                 if let deletingCard
-                {  /* Saved Week card awaiting permanent deletion */
+                {                                       /* Saved Week card awaiting permanent deletion */
                     _ = onDeleteCard(deletingCard.id)
-
                 }
 
 
                 deletingCard = nil
-
             }
 
 
             Button("Cancel", role: .cancel)
             {
                 deletingCard = nil
-
             }
-
         }
         message:
         {
@@ -1503,7 +1422,7 @@ struct SavedCardsView: View
                         guard
                         let index = collections.firstIndex(
                             where:
-                            {  /* Position of the archived collection to mutate */
+                            {                           /* Position of the archived collection to mutate */
                                 $0.id == updated.id
                             })
                         else
@@ -1513,22 +1432,20 @@ struct SavedCardsView: View
 
                         do
                         {
-                            var snapshot = collections /* Directory snapshot saved before publishing archive changes */
+                            var snapshot = collections          /* Directory snapshot saved before publishing archive changes */
 
                             snapshot[index] = updated
 
                             try PersonalCollectionStore.saveChecked(snapshot)
 
                             collections = snapshot
-
                         }
                         catch
                         {
                             DatabaseActivity.shared.report(
-                                                                                    "Could not delete archived content: \(error.localizedDescription) It has been retained."
+                                "Could not delete archived content: \(error.localizedDescription) It has been retained."
                             )
                         }
-
                     }
                 ),
                 onDeleteBoard:
@@ -1542,7 +1459,5 @@ struct SavedCardsView: View
             )
             .databaseActivityOverlay()
         }
-
     }
-
 }

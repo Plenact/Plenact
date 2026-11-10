@@ -54,10 +54,10 @@ extension CardDetailView
                     dismissEditing()
                     showsNoteDetails.toggle()
 
-                    let target = /* Target under consideration */
+                    let target =        /* Target under consideration */
                     showsNoteDetails
                     ? "note.detailsStart"
-                    : "plenact.noteEditor" /* Scroll anchor selected by Note detail visibility */
+                    : "plenact.noteEditor"      /* Scroll anchor selected by Note detail visibility */
 
                     DispatchQueue.main.async
                     {
@@ -65,9 +65,7 @@ extension CardDetailView
                         {
                             scrollProxy.scrollTo(target, anchor: .top)
                         }
-
                     }
-
                 }
                 label:
                 {
@@ -83,7 +81,6 @@ extension CardDetailView
                     dismissEditing()
 
                     activeSheet = .noteAttachments
-
                 }
                 label:
                 {
@@ -103,7 +100,7 @@ extension CardDetailView
             }
             .accessibilityLabel("Share Note text")
             .accessibilityHint(
-                                    "Shares the title, body, and attached web links. Does not include photos, videos, or Details."
+                "Shares the title, body, and attached web links. Does not include photos, videos, or Details."
             )
             .accessibilityIdentifier("note.share")
 
@@ -113,7 +110,6 @@ extension CardDetailView
             {
                 addMenu(using: scrollProxy)
             }
-
         }
         .font(.title2)
         .buttonStyle(NoteToolbarButtonStyle())
@@ -155,16 +151,13 @@ extension CardDetailView
                         action:
                         {
                             activeSheet = .attachmentSources
-
                         }
                     )
                     ActionTile(title: "Members", icon: "person.2", color: .purple, action:
                         {
                             activeSheet = .members
-
                         })
                 }
-
             }
 
 
@@ -179,14 +172,13 @@ extension CardDetailView
 
             if presentation == .card
             {
-                let visibleAttachments = workingCardSnapshot /* Visible attachments */
-                .attachmentsExcludingCover /* Gallery records excluding the featured cover */
+                let visibleAttachments = workingCardSnapshot    /* Visible attachments                          */
+                .attachmentsExcludingCover                      /* Gallery records excluding the featured cover */
 
                 if !visibleAttachments.isEmpty
                 {
                     attachmentGallery(visibleAttachments)
                 }
-
             }
 
 
@@ -210,9 +202,7 @@ extension CardDetailView
                     {
                         syncCardState()
                     }
-
                 }
-
             }
 
 
@@ -228,7 +218,6 @@ extension CardDetailView
                 CardLocationRow(location: location, canEdit: !isEditingLocked)
                 {
                     activeSheet = .location
-
                 }
                 if location != nil || !isEditingLocked
                 {
@@ -252,7 +241,6 @@ extension CardDetailView
                 Button
                 {
                     activeSheet = .labels
-
                 }
                 label:
                 {
@@ -279,9 +267,7 @@ extension CardDetailView
 
                                 KanbanLabelChip(label: label)
                             }
-
                         }
-
                     }
 
                     .font(.subheadline)
@@ -297,7 +283,6 @@ extension CardDetailView
                 Button
                 {
                     activeSheet = .members
-
                 }
                 label:
                 {
@@ -320,7 +305,6 @@ extension CardDetailView
                                     Image(systemName: "person.crop.circle.fill")
                                     .foregroundStyle(memberIconColor(for: member.displayName))
                                 }
-
                             }
 
                             .frame(minWidth: 22, alignment: .leading)
@@ -368,7 +352,6 @@ extension CardDetailView
                     checklist in
                     checklistBlock(for: checklist)
                 }
-
             }
 
 
@@ -397,9 +380,7 @@ extension CardDetailView
                                 filter in
                                 Text(filter.title).tag(filter)
                             }
-
                         }
-
                     }
                     label:
                     {
@@ -426,9 +407,7 @@ extension CardDetailView
                             {
                                 deleteComment(with: comment.id)
                             }
-
                         }
-
                     }
 
 
@@ -447,13 +426,9 @@ extension CardDetailView
                             {
                                 dismissGeneratedActivity(activity)
                             }
-
                         }
-
                     }
-
                 }
-
             }
             .padding(16)
             .background(.background)
@@ -496,7 +471,5 @@ extension CardDetailView
             .allowsHitTesting(!isActivityCollapsed)
             .accessibilityHidden(isActivityCollapsed)
         }
-
     }
-
 }

@@ -24,11 +24,11 @@ final class MigrationSettingsTests: XCTestCase
     private func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
-        let domain   = /* Lookup or storage namespace */
+        let domain   =                                          /* Lookup or storage namespace */
             "Plenact.SettingsTests." + UUID().uuidString
-        let defaults = /* Preference store under test */
+        let defaults =                                          /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: domain))
-        let root     = /* Synthetic workspace root */
+        let root     =                                          /* Synthetic workspace root    */
             FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
 
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -38,33 +38,33 @@ final class MigrationSettingsTests: XCTestCase
             try? FileManager.default.removeItem(at: root)
         }
 
-        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
+        var calendar = Calendar(identifier: .gregorian)         /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 2
 
-        let week = /* Synthetic week fixture */
+        let week =                                                                              /* Synthetic week fixture      */
             DatedPlanningWeek.make(for: Date(timeIntervalSince1970: 1792843200),
-            lists: [KanbanList(id: 1, title: "Live", cards: [])], calendar: calendar)
-        var personal = /* Personal collection fixture */
+                lists: [KanbanList(id: 1, title: "Live", cards: [])], calendar: calendar)
+        var personal =                                                                          /* Personal collection fixture */
             PersonalCollection(title: "Personal", kind: .board)
 
         personal.lists = [KanbanList(id: 1, title: "Also one", cards: [])]
 
-        var saved = /* Saved state under review */
+        var saved =     /* Saved state under review */
             LocalProfilePreferences(defaultListID: 1, usesReducedContent: false, showsNavigationLabels: false,
-            todayFocusItemCount: 0, importanceStarStyle: .fanned, preferredMapsApp: .google)
+                todayFocusItemCount: 0, importanceStarStyle: .fanned, preferredMapsApp: .google)
 
         saved.randomizesNewCardBackgrounds = true
 
-        let profile = /* Synthetic profile fixture */
+        let profile =                                                                                   /* Synthetic profile fixture */
             LocalProfile(createdAt: Date(timeIntervalSince1970: 1792843200.123456),
-            displayName: "  Local Writer 🪴  ", email: "MixedCase@Example.test", context: "",
-            avatarColor: .teal, avatarForegroundColor: ProfileColor(red: 0.1, green: 0.2, blue: 0.3),
-            avatarPhotoFileName: "avatar.png", preferences: LocalProfilePreferences(usesReducedContent: true))
-        let document              = /* Working calendar document */
+                displayName: "  Local Writer 🪴  ", email: "MixedCase@Example.test", context: "",
+                avatarColor: .teal, avatarForegroundColor: ProfileColor(red: 0.1, green: 0.2, blue: 0.3),
+                avatarPhotoFileName: "avatar.png", preferences: LocalProfilePreferences(usesReducedContent: true))
+        let document              =                                                                     /* Working calendar document */
             PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week])
-        var values: [String: Any] = [ /* Values being processed */
+        var values: [String: Any] = [                                                                   /* Values being processed    */
             "Plenact.Board.v1": try JSONEncoder().encode(week.collection.lists),
             "Plenact.CalendarWeeks.v1": try JSONEncoder().encode(document),
             "Plenact.PersonalCollections.v1": try JSONEncoder().encode([personal]),
@@ -77,13 +77,13 @@ final class MigrationSettingsTests: XCTestCase
         try edit?(&values)
         defaults.setPersistentDomain(values, forName: domain)
 
-        let avatar = /* Profile avatar choice */
+        let avatar =                                                            /* Profile avatar choice */
             root.appendingPathComponent("Documents/ProfileAvatars/avatar.png")
 
         try FileManager.default.createDirectory(at: avatar.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data([137, 80, 78, 71, 13, 10, 26, 10, 0]).write(to: avatar)
 
-        let backup = /* Recoverable native snapshot */
+        let backup =                                                                            /* Recoverable native snapshot */
             try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
 
         try body(backup, root.appendingPathComponent("Journal/ids.json"))
@@ -110,7 +110,7 @@ final class MigrationSettingsTests: XCTestCase
     {
         try fixture { backup, url in
 
-            let preview = /* Converted migration preview */
+            let preview =       /* Converted migration preview */
                 try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             XCTAssertEqual(preview.settingsPreparedCount, 2)
@@ -118,14 +118,14 @@ final class MigrationSettingsTests: XCTestCase
             XCTAssertEqual(preview.settingsReviewCount, 0)
             XCTAssertEqual(preview.verifiedAssetCount, 1)
 
-            let result = try document(preview) /* Result being assembled */
+            let result = try document(preview)          /* Result being assembled */
 
             XCTAssertEqual(result["preferences_origin"] as? String, "saved_planning_preferences")
             XCTAssertEqual(result["profile_preferences_shadowed"] as? Bool, true)
 
-            let preferences = /* Planning and display choices */
+            let preferences =                                                   /* Planning and display choices */
                 try XCTUnwrap((result["preferences"] as? [String: Any])?["payload"] as? [String: Any])
-            let fields      = /* Record fields under review */
+            let fields      =                                                   /* Record fields under review   */
                 try XCTUnwrap(preferences["preferences"] as? [String: Any])
 
             XCTAssertEqual(fields["today_focus_item_count"] as? Int, 0)
@@ -136,7 +136,7 @@ final class MigrationSettingsTests: XCTestCase
             XCTAssertNotNil(fields["default_list_id"] as? String)
             XCTAssertNil(preferences["account_id"])
 
-            let profile = /* Synthetic profile fixture */
+            let profile =                                                                               /* Synthetic profile fixture */
                 try XCTUnwrap((result["profile"] as? [String: Any])?["payload"] as? [String: Any])
 
             XCTAssertEqual(profile["display_name"] as? String, "  Local Writer 🪴  ")
@@ -146,14 +146,14 @@ final class MigrationSettingsTests: XCTestCase
             XCTAssertEqual(try MigrationBackupReader.file("Preferences.plist", in: preview.files),
                 try MigrationBackupReader.file("Preferences.plist", in: backup.files))
 
-            let second = /* Second comparison value */
+            let second =        /* Second comparison value */
                 try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
             XCTAssertEqual(try JSONSerialization.data(withJSONObject: result, options: .sortedKeys),
                 try JSONSerialization.data(withJSONObject: document(second), options: .sortedKeys))
             for name in ["SettingsPreview.json", "AssetPreview.json", "IdentityJournal.json", "Report.json"]
             {
-                let attachment = /* Synthetic test evidence */
+                let attachment =        /* Synthetic test evidence */
                     XCTAttachment(data: try MigrationBackupReader.file("MigrationPreview/" + name, in: preview.files), uniformTypeIdentifier: "public.json")
 
                 attachment.name = "Settings-" + name
@@ -162,22 +162,21 @@ final class MigrationSettingsTests: XCTestCase
                 add(attachment)
             }
 
-            let preflight                   = /* Source backup verification report */
+            let preflight                   =                           /* Source backup verification report */
                 try XCTUnwrap(JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: backup.files)) as? [String: Any])
-            let media                       = /* Original media references */
+            let media                       =                           /* Original media references         */
                 try XCTUnwrap(preflight["media"] as? [[String: Any]])
-            var originals: [String: String] = [:] /* Retained original files */
+            var originals: [String: String] = [:]                       /* Retained original files           */
 
             for entry in media
             {
-                let path = /* Filesystem or navigation path */
+                let path =                                      /* Filesystem or navigation path */
                     try XCTUnwrap(entry["path"] as? String)
 
                 originals[path] = try MigrationBackupReader.file(path, in: backup.files).base64EncodedString()
-
             }
 
-            let originalsAttachment = /* Originals attachment */
+            let originalsAttachment =           /* Originals attachment */
                 XCTAttachment(data: try JSONSerialization.data(withJSONObject: originals, options: .sortedKeys), uniformTypeIdentifier: "public.json")
 
             originalsAttachment.name = "Settings-Originals.json"
@@ -185,16 +184,16 @@ final class MigrationSettingsTests: XCTestCase
 
             add(originalsAttachment)
 
-            let source       = /* Source value for this operation */
+            let source       =                                          /* Source value for this operation */
                 try MigrationBackupReader.values(in: backup)
-            let sourceValues = source.mapValues { value -> Any in /* Source values */
+            let sourceValues = source.mapValues { value -> Any in       /* Source values                   */
                 if let data = value as? Data
                 {
                     return (try? JSONSerialization.jsonObject(with: data)) ?? NSNull()
                 }
                 return value
             }
-            let sourceAttachment = /* Source attachment */
+            let sourceAttachment =      /* Source attachment */
                 XCTAttachment(data: try JSONSerialization.data(withJSONObject: sourceValues, options: .sortedKeys), uniformTypeIdentifier: "public.json")
 
             sourceAttachment.name = "Settings-SourceValues.json"
@@ -202,11 +201,11 @@ final class MigrationSettingsTests: XCTestCase
 
             add(sourceAttachment)
 
-            let records    = /* Records being processed */
+            let records    =    /* Records being processed */
                 try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
-            let output     = /* Decoded JSON object */
+            let output     =    /* Decoded JSON object     */
                 try records.sorted { $0.key < $1.key }.map { try JSONSerialization.jsonObject(with: XCTUnwrap($0.value.regularFileContents)) }
-            let attachment = /* Synthetic test evidence */
+            let attachment =    /* Synthetic test evidence */
                 XCTAttachment(data: try JSONSerialization.data(withJSONObject: output, options: .sortedKeys), uniformTypeIdentifier: "public.json")
 
             attachment.name = "Settings-Records.json"
@@ -233,9 +232,9 @@ final class MigrationSettingsTests: XCTestCase
                 }
             }) { backup, url in
 
-                let preview = /* Converted migration preview */
+                let preview =                           /* Converted migration preview */
                     try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-                let result  = try document(preview) /* Result being assembled */
+                let result  = try document(preview)     /* Result being assembled      */
 
                 XCTAssertEqual(result["preferences_origin"] as? String,
                     removeProfile ? "application_defaults" : "saved_profile_preferences")
@@ -259,13 +258,12 @@ final class MigrationSettingsTests: XCTestCase
 
             values["Plenact.PlanPreferences.v1"] = try JSONSerialization.data(withJSONObject: [
                 "usesReducedContent": false, "todayFocusItemCount": 0, "preferredMapsApp": NSNull()])
-
         }) { backup, url in
 
-            let preview  = /* Converted migration preview */
+            let preview  =                                                              /* Converted migration preview */
                 try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let result   = try document(preview) /* Result being assembled      */
-            let defaults =                       /* Preference store under test */
+            let result   = try document(preview)                                        /* Result being assembled      */
+            let defaults =                                                              /* Preference store under test */
                 try XCTUnwrap(result["defaulted_preference_fields"] as? [String])
 
             XCTAssertTrue(defaults.contains("preferredMapsApp"))
@@ -283,17 +281,16 @@ final class MigrationSettingsTests: XCTestCase
     {
         try fixture(edit: { values in
 
-            var raw = /* Unprocessed source value */
+            var raw =           /* Unprocessed source value */
                 try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.PlanPreferences.v1"] as? Data)) as? [String: Any])
 
             raw["defaultListID"] = -999
             values["Plenact.PlanPreferences.v1"] = try JSONSerialization.data(withJSONObject: raw)
-
         }) { backup, url in
 
-            let preview = /* Converted migration preview */
+            let preview =                               /* Converted migration preview */
                 try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let result  = try document(preview) /* Result being assembled */
+            let result  = try document(preview)         /* Result being assembled      */
 
             XCTAssertEqual(preview.settingsReviewCount, 1)
             XCTAssertEqual(result["unresolved_default_list_id"] as? Int, -999)
@@ -313,35 +310,31 @@ final class MigrationSettingsTests: XCTestCase
             try fixture(edit: { values in
                 if variant < 3
                 {
-                    var raw = /* Unprocessed source value */
+                    var raw =           /* Unprocessed source value */
                         try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.PlanPreferences.v1"] as? Data)) as? [String: Any])
 
                     raw[variant == 0 ? "unknown" : "todayFocusItemCount"] = variant == 1 ? 13 : (variant == 2 ? true : "future") as Any
                     values["Plenact.PlanPreferences.v1"] = try JSONSerialization.data(withJSONObject: raw)
-
                 }
                 else if variant < 5
                 {
-                    var raw = /* Unprocessed source value */
+                    var raw =           /* Unprocessed source value */
                         try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.LocalProfile.v1"] as? Data)) as? [String: Any])
 
                     if variant == 3
                     {
                         raw["avatarColor"] = ["red": 2, "green": 0, "blue": 0]
-
                     }
                     else
                     {
                         raw["avatarPhotoFileName"] = "../outside.png"
-
                     }
 
                     values["Plenact.LocalProfile.v1"] = try JSONSerialization.data(withJSONObject: raw)
-
                 }
                 else
                 {
-                    var pins = /* Ordered pinned shortcuts */
+                    var pins =          /* Ordered pinned shortcuts */
                         try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(values["Plenact.TodayListShortcuts.v1"] as? Data)) as? [[String: Any]])
 
                     if variant == 5
@@ -351,15 +344,13 @@ final class MigrationSettingsTests: XCTestCase
                     else
                     {
                         pins[0]["listID"] = -999
-
                     }
 
                     values["Plenact.TodayListShortcuts.v1"] = try JSONSerialization.data(withJSONObject: pins)
-
                 }
             }) { backup, url in
 
-                let preview = /* Converted migration preview */
+                let preview =           /* Converted migration preview */
                     try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
 
                 XCTAssertNil(preview.blockedContentReason)
@@ -381,47 +372,46 @@ final class MigrationSettingsTests: XCTestCase
     {
         try fixture { backup, url in
 
-            let preview  = /* Converted migration preview */
+            let preview  =                                              /* Converted migration preview */
                 try MigrationPreview.prepare(backup: backup, journalURL: url, timeZoneID: "America/Chicago")
-            let settings = try document(preview) /* Workspace settings snapshot */
-            let wrappers =                       /* Package file wrappers       */
+            let settings = try document(preview)                        /* Workspace settings snapshot */
+            let wrappers =                                              /* Package file wrappers       */
                 try XCTUnwrap(preview.files.fileWrappers?["MigrationPreview"]?.fileWrappers?["Records"]?.fileWrappers)
-            let records  = /* Records being processed */
+            let records  =                                              /* Records being processed     */
                 try wrappers.sorted { $0.key < $1.key }.map { item in
                 try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(item.value.regularFileContents)) as? [String: Any])
             }
-            let assetData    = /* Asset data */
+            let assetData    =                                                                  /* Asset data                   */
                 try MigrationBackupReader.file("MigrationPreview/AssetPreview.json", in: preview.files)
-            let assetPreview = /* Asset preview */
+            let assetPreview =                                                                  /* Asset preview                */
                 try XCTUnwrap(JSONSerialization.jsonObject(with: assetData) as? [String: Any])
-            let entries      = /* Entries being processed */
+            let entries      =                                                                  /* Entries being processed      */
                 try XCTUnwrap(assetPreview["entries"] as? [[String: Any]])
-            let files        = /* Files used by this operation */
+            let files        =                                                                  /* Files used by this operation */
                 Dictionary(uniqueKeysWithValues: try entries.map { entry in
                 (try XCTUnwrap(entry["asset_id"] as? String), try XCTUnwrap(entry["original_name"] as? String))
             })
-            let adapter                            = /* Store conversion adapter */
+            let adapter                            =                                    /* Store conversion adapter  */
                 try PortableEditableContent(records: records, assetFiles: files)
-            let workspace                          = /* Active workspace snapshot */
+            let workspace                          =                                    /* Active workspace snapshot */
                 try XCTUnwrap(records.first?["workspace_id"] as? String)
-            let account                            = /* Account display text */
+            let account                            =                                    /* Account display text      */
                 "f0000000-0000-4000-8000-000000000001"
-            var canonical: [String: [String: Any]] = [:] /* Canonical lookup entries */
+            var canonical: [String: [String: Any]] = [:]                                /* Canonical lookup entries  */
 
             for (field, kind) in [("preferences", "user_preferences"), ("profile", "user_profile")]
             {
-                let draft   = /* Local editing draft */
+                let draft   =                                           /* Local editing draft      */
                     try XCTUnwrap(settings[field] as? [String: Any])
-                var payload = /* Canonical record payload */
+                var payload =                                           /* Canonical record payload */
                     try XCTUnwrap(draft["payload"] as? [String: Any])
 
                 payload["account_id"] = account
                 canonical[field] = ["user_data_model_version": "1.0", "payload_schema_version": 1,
                     "record_type": kind, "id": draft["id"]!, "workspace_id": workspace, "payload": payload]
-
             }
 
-            let preferences = /* Planning and display choices */
+            let preferences =                                                                           /* Planning and display choices */
                 try XCTUnwrap(adapter.preferences(canonical["preferences"], accountID: account))
 
             XCTAssertEqual(preferences.todayFocusItemCount, 0)
@@ -430,16 +420,16 @@ final class MigrationSettingsTests: XCTestCase
             XCTAssertEqual(preferences.preferredMapsApp, .google)
             XCTAssertEqual(preferences.importanceStarStyle, .fanned)
 
-            let mapped = /* Value after identity translation */
+            let mapped =                                                /* Value after identity translation */
                 try XCTUnwrap((settings["preferences"] as? [String: Any])?["payload"] as? [String: Any])
-            let fields = /* Record fields under review */
+            let fields =                                                /* Record fields under review       */
                 try XCTUnwrap(mapped["preferences"] as? [String: Any])
-            let target = /* Target under consideration */
+            let target =                                                /* Target under consideration       */
                 try XCTUnwrap(fields["default_list_id"] as? String)
 
             XCTAssertEqual(preferences.defaultListID, adapter.numericIDs[target])
 
-            let profile = /* Synthetic profile fixture */
+            let profile =       /* Synthetic profile fixture */
                 try XCTUnwrap(adapter.profile(canonical["profile"], preferences: preferences, accountID: account))
 
             XCTAssertEqual(profile.displayName, "  Local Writer 🪴  ")
@@ -448,7 +438,7 @@ final class MigrationSettingsTests: XCTestCase
             XCTAssertEqual(profile.preferences, preferences)
             XCTAssertEqual(profile.id.uuidString.lowercased(), canonical["profile"]?["id"] as? String)
 
-            let shortcuts = /* Shortcuts comparison fixture */
+            let shortcuts =     /* Shortcuts comparison fixture */
                 try XCTUnwrap(adapter.shortcuts(records.first { $0["record_type"] as? String == "today_shortcuts" }))
 
             XCTAssertEqual(shortcuts.count, 2)
@@ -458,5 +448,4 @@ final class MigrationSettingsTests: XCTestCase
             XCTAssertThrowsError(try adapter.profile(canonical["profile"], preferences: nil, accountID: account))
         }
     }
-
 }

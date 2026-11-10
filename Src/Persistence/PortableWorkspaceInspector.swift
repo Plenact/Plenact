@@ -12,13 +12,13 @@ import SwiftUI
 ///     Make portable test installation visible independently of the original native backup
 struct PortableWorkspaceInspector: View
 {
-    let package: ReviewedPortablePackage /* Portable package contents */
+    let package: ReviewedPortablePackage        /* Portable package contents */
 
 
     /// @fcn PortableWorkspaceInspector.base
     /// @brief Decode the already verified installed snapshot for read-only presentation
     /// @return Canonical base workspace, or an empty value if presentation decoding unexpectedly fails
-    private var base: [String: Any] /* Base value before overrides */
+    private var base: [String: Any]     /* Base value before overrides */
     {
         guard let files = FileWrapper(serializedRepresentation: package.snapshot),
               let bytes = try? MigrationBackupReader.file("Assembly.json", in: files),
@@ -29,7 +29,7 @@ struct PortableWorkspaceInspector: View
             return [:]
         }
 
-        let deleted = /* Content after deletion */
+        let deleted =                                                   /* Content after deletion */
             Set(export["local_card_deletions"] as? [String] ?? [])
 
         if var planning = base["planning"] as? [String: Any], var content = planning["content"] as? [String: Any]
@@ -37,24 +37,21 @@ struct PortableWorkspaceInspector: View
             content["cards"] = (content["cards"] as? [[String: Any]] ?? []).filter { !deleted.contains($0["id"] as? String ?? "") }
             content["lists"] = (content["lists"] as? [[String: Any]] ?? []).map { record in
 
-                var record = record /* Record being processed */
+                var record = record     /* Record being processed */
 
                 if var payload = record["payload"] as? [String: Any]
                 {
                     for key in ["card_ids", "archived_card_ids"]
                     {
                         payload[key] = (payload[key] as? [String] ?? []).filter { !deleted.contains($0) }
-
                     }
 
                     record["payload"] = payload
-
                 }
                 return record
             }
             planning["content"] = content
             base["planning"] = planning
-
         }
         return base
     }
@@ -63,18 +60,18 @@ struct PortableWorkspaceInspector: View
     /// @fcn PortableWorkspaceInspector.body
     /// @brief Present retained content directly from the isolated installed snapshot
     /// @return Read-only List and Card navigation with summary metadata
-    var body: some View /* Portable Workspace Inspector layout */
+    var body: some View         /* Portable Workspace Inspector layout */
     {
-        let base       = base /* Base value before overrides */
-        let planning   = base["planning"] as? [String: Any] ?? [:] /* Planning store projection */
-        let content    = planning["content"] as? [String: Any] ?? [:] /* Content being processed */
-        let lists      = content["lists"] as? [[String: Any]] ?? [] /* Ordered List records */
-        let cards      = /* Card records under consideration */
+        let base       = base                                                   /* Base value before overrides      */
+        let planning   = base["planning"] as? [String: Any] ?? [:]              /* Planning store projection        */
+        let content    = planning["content"] as? [String: Any] ?? [:]           /* Content being processed          */
+        let lists      = content["lists"] as? [[String: Any]] ?? []             /* Ordered List records             */
+        let cards      =                                                        /* Card records under consideration */
             content["cards"] as? [[String: Any]] ?? []
-        let selections = /* Retained selection state */
+        let selections =                                                        /* Retained selection state         */
             base["content_selections"] as? [[String: Any]] ?? []
-        let artwork    = base["artwork"] as? [[String: Any]] ?? [] /* Reusable artwork definition */
-        let plans      = /* Saved daily planning records */
+        let artwork    = base["artwork"] as? [[String: Any]] ?? []              /* Reusable artwork definition      */
+        let plans      =                                                        /* Saved daily planning records     */
             planning["daily_plans"] as? [[String: Any]] ?? []
 
         Form
@@ -91,11 +88,11 @@ struct PortableWorkspaceInspector: View
                 ForEach(lists.indices, id: \.self)
                 { index in
 
-                    let list    = lists[index] /* List under consideration */
-                    let payload =              /* Canonical record payload */
+                    let list    = lists[index]                                  /* List under consideration */
+                    let payload =                                               /* Canonical record payload */
                         list["payload"] as? [String: Any] ?? [:]
-                    let ids     = payload["card_ids"] as? [String] ?? [] /* Record identifiers */
-                    let byID    =                                        /* By ID              */
+                    let ids     = payload["card_ids"] as? [String] ?? []        /* Record identifiers       */
+                    let byID    =                                               /* By ID                    */
                         Dictionary(uniqueKeysWithValues: cards.compactMap { card -> (String, [String: Any])? in
                         guard let id = card["id"] as? String else
                         {

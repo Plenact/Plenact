@@ -24,14 +24,13 @@ import XCTest
 @MainActor
 final class NoteNavigationProbe: ObservableObject
 {
-    @Published var path: [KanbanCard] = [] /* Filesystem or navigation path */
-    var visibleNotes:    Set<UUID>    = [] /* Visible notes                 */
+    @Published var path: [KanbanCard] = []      /* Filesystem or navigation path */
+    var visibleNotes:    Set<UUID>    = []      /* Visible notes                 */
 
-    var noteIsVisible:   Bool /* Note is visible */
+    var noteIsVisible:   Bool           /* Note is visible */
     {
         !visibleNotes.isEmpty
     }
-
 }
 
 
@@ -43,9 +42,9 @@ final class NoteNavigationProbe: ObservableObject
 ///
 struct NoteNavigationTestView: View
 {
-    @ObservedObject var probe: NoteNavigationProbe /* Probe comparison fixture */
+    @ObservedObject var probe: NoteNavigationProbe      /* Probe comparison fixture */
 
-    var body:                  some View /* Note Navigation Test layout */
+    var body:                  some View        /* Note Navigation Test layout */
     {
         NavigationStack(path: $probe.path)
         {
@@ -55,7 +54,6 @@ struct NoteNavigationTestView: View
                 card in
                 CardDetailView(card: card)
             }
-
         }
         .environment(
             \.workspaceNoteVisibility,
@@ -69,10 +67,8 @@ struct NoteNavigationTestView: View
                 {
                     probe.visibleNotes.remove(id)
                 }
-
             })
     }
-
 }
 
 
@@ -86,8 +82,7 @@ struct NoteNavigationTestView: View
 @MainActor
 final class DirectReturnTestProbe: ObservableObject
 {
-    @Published var presented = false /* Presented state flag */
-
+    @Published var presented = false    /* Presented state flag */
 }
 
 
@@ -100,12 +95,12 @@ final class DirectReturnTestProbe: ObservableObject
 ///
 struct DirectReturnTestView: View
 {
-    @ObservedObject var probe: DirectReturnTestProbe /* Probe comparison fixture    */
-    let owner:                 PersonalCollection    /* Owning collection or Week   */
-    let week:                  DatedPlanningWeek?    /* Synthetic week fixture      */
-    let listID:                Int                   /* Owner-local List identifier */
+    @ObservedObject var probe: DirectReturnTestProbe    /* Probe comparison fixture    */
+    let owner:                 PersonalCollection       /* Owning collection or Week   */
+    let week:                  DatedPlanningWeek?       /* Synthetic week fixture      */
+    let listID:                Int                      /* Owner-local List identifier */
 
-    var body:                  some View /* Direct Return Test layout */
+    var body:                  some View        /* Direct Return Test layout */
     {
         Text("Origin remains here")
         .fullScreenCover(isPresented: $probe.presented)
@@ -128,9 +123,6 @@ struct DirectReturnTestView: View
                         XCTFail("Back must not invoke explicit home navigation")
                     })
             }
-
         }
-
     }
-
 }

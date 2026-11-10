@@ -36,7 +36,7 @@ extension AppRootView
     {
         guard
         let index = collections.firstIndex(where:
-            {  /* Position of the archived Board to restore */
+            {                                           /* Position of the archived Board to restore */
                 $0.id == id && $0.isArchived == true
             })
         else
@@ -45,7 +45,7 @@ extension AppRootView
         }
 
 
-        var updated = collections /* Directory snapshot carrying the restored Board */
+        var updated = collections       /* Directory snapshot carrying the restored Board */
 
         updated[index].restore(existingTitles: ["Week Board"] + collections.filter
             {
@@ -56,13 +56,11 @@ extension AppRootView
             try PersonalCollectionStore.saveChecked(updated)
 
             collections = updated
-
         }
         catch
         {
             DatabaseActivity.shared.report("Could not restore the board: \(error.localizedDescription)")
         }
-
     }
 
 
@@ -88,7 +86,6 @@ extension AppRootView
         boardTargetCardID = cardID
         boardTargetListID = listID
         selectedDestination = .board
-
     }
 
 
@@ -138,7 +135,7 @@ extension AppRootView
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the card's containing Week list */
+            {                                   /* Position of the card's containing Week list */
                 $0.id == listID
             }),
         let cardIndex = lists[listIndex].cards.firstIndex(where:
@@ -146,7 +143,7 @@ extension AppRootView
                 $0.id == cardID
             })
         else
-        {  /* Position of the requested Week card */
+        {               /* Position of the requested Week card */
             return
         }
 
@@ -173,19 +170,18 @@ extension AppRootView
     ///
     func addWeekList()
     {
-        let nextListID     = (lists.map(\.id).max() ?? -1) + 1 /* Board-wide next list ID */
-        let existingTitles = Set(lists.map                     /* Existing titles         */
+        let nextListID     = (lists.map(\.id).max() ?? -1) + 1          /* Board-wide next list ID    */
+        let existingTitles = Set(lists.map                              /* Existing titles            */
             {
                 $0.title.lowercased()
-            })                  /* Existing normalized titles */
-        var title  = "New List" /* First candidate list title */
-        var suffix = 2          /* Duplicate-title suffix     */
+            })                          /* Existing normalized titles */
+        var title  = "New List"                                         /* First candidate list title */
+        var suffix = 2                                                  /* Duplicate-title suffix     */
 
         while existingTitles.contains(title.lowercased())
         {
             title = "New List \(suffix)"
             suffix += 1
-
         }
 
 
@@ -194,7 +190,6 @@ extension AppRootView
         displayedPlanningWeek = nil
         boardTargetListID = nextListID
         selectedDestination = .board
-
     }
 
 
@@ -231,7 +226,7 @@ extension AppRootView
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Destination list index */
+            {                                   /* Destination list index */
                 $0.id == listID
             })
         else
@@ -240,13 +235,13 @@ extension AppRootView
         }
 
 
-        let nextCardID = (lists.flatMap /* Next card ID */
+        let nextCardID = (lists.flatMap         /* Next card ID                  */
             {
                 $0.allCards.map(\.id)
-            } .max() ?? -1) + 1             /* Board-wide next card ID       */
-        var updatedList = lists[listIndex]  /* Mutable destination-list copy */
+            } .max() ?? -1) + 1                 /* Board-wide next card ID       */
+        var updatedList = lists[listIndex]      /* Mutable destination-list copy */
 
-        var created = updatedList.makeItems( /* Newly created value */
+        var created = updatedList.makeItems(    /* Newly created value */
             startingAt: nextCardID, titles: title, description: description.isEmpty ? nil : description,
             subtitle: subtitle, presentation: presentation, actions: actions, origin: origin
         )
@@ -269,7 +264,6 @@ extension AppRootView
                 {
                     $0.kind == .photo
                 })?.id
-
         }
 
         updatedList.cards.append(contentsOf: created)
@@ -278,7 +272,7 @@ extension AppRootView
             DaySections.reveal(first.id, in: &updatedList.cards)
         }
 
-        var updatedLists = lists /* Updated lists */
+        var updatedLists = lists        /* Updated lists */
 
         updatedLists[listIndex] = updatedList
 
@@ -305,19 +299,16 @@ extension AppRootView
                 }
 
                 calendarDocument = document
-
             }
             catch
             {
                 if UserDefaults.standard.object(forKey: DailyReviewTransaction.key) != nil
                 {
                     workspaceRecoveryError = "The capture could not be saved. Retry recovery before continuing."
-
                 }
 
                 return false
             }
-
         }
 
         lists = updatedLists
@@ -331,5 +322,4 @@ extension AppRootView
 
         return true
     }
-
 }

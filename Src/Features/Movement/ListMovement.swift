@@ -31,18 +31,18 @@ enum ListCopying
     ///
     static func copy(_ source: KanbanList, into destination: [KanbanList], crossBoard: Bool) -> KanbanList
     {
-        let listID      = (destination.map(\.id).max() ?? -1) + 1 /* Owner-local List identifier */
-        let firstCardID = (destination.flatMap                    /* First card ID               */
+        let listID      = (destination.map(\.id).max() ?? -1) + 1       /* Owner-local List identifier        */
+        let firstCardID = (destination.flatMap                          /* First card ID                      */
             {
                 $0.allCards.map(\.id)
             } .max() ?? -1) + 1
-        let ids = Dictionary( /* Record identifiers */
+        let ids = Dictionary(                                           /* Record identifiers                 */
             uniqueKeysWithValues: source.allCards.enumerated().map
             {
                 ($0.element.id, firstCardID + $0.offset)
             })
-        let title = source.title + " Copy" /* User-facing title */
-        let createdAt = Date.now /* Shared creation time for this copy */
+        let title = source.title + " Copy"                              /* User-facing title                  */
+        let createdAt = Date.now                                        /* Shared creation time for this copy */
 
 
         ///
@@ -57,7 +57,7 @@ enum ListCopying
         ///
         func copyCard(_ card: KanbanCard) -> KanbanCard
         {
-            var copy = /* Independent working copy */
+            var copy =                                                          /* Independent working copy */
                 card.replacingLocation(id: ids[card.id]!, listTitle: title,
                     creationDate: card.isSectionDivider ? nil : createdAt)
 
@@ -70,17 +70,16 @@ enum ListCopying
             {
                 checklist in
 
-                let items = checklist.items.map /* Items being processed */
+                let items = checklist.items.map         /* Items being processed */
                 {
                     item in
 
-                    var item = item /* Item under consideration */
+                    var item = item     /* Item under consideration */
 
                     if let id = item.retainedCardID, let copiedID = ids[id]
                     {
                         item.retainedCardID = copiedID
                         item.linkedCollectionID = nil
-
                     }
 
                     if case .linkedCard(let id) = item.content
@@ -88,14 +87,11 @@ enum ListCopying
                         if let copiedID = ids[id]
                         {
                             item.content = .linkedCard(cardID: copiedID)
-
                         }
                         else if crossBoard
                         {
                             item.content = .standard
-
                         }
-
                     }
 
                     return item
@@ -109,7 +105,7 @@ enum ListCopying
             return copy
         }
 
-        var result = KanbanList( /* Accumulated output value */
+        var result = KanbanList(                                                /* Accumulated output value */
             id: listID, title: title, cards: source.cards.map(copyCard),
             archivedCards: source.archivedCards.map(copyCard), newItemPresentation: source.newItemPresentation)
 
@@ -118,7 +114,6 @@ enum ListCopying
 
         return result
     }
-
 }
 
 
@@ -163,8 +158,8 @@ enum CrossBoardListMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var snapshot    = collections         /* Working state snapshot        */
-        var destination = PersonalCollection( /* Destination for the operation */
+        var snapshot    = collections                   /* Working state snapshot        */
+        var destination = PersonalCollection(           /* Destination for the operation */
             title: list.title, kind: .board,
             icon: list.newItemPresentation == .note ? .notes : .tasks, color: source.color)
 
@@ -172,10 +167,10 @@ enum CrossBoardListMovement
 
         snapshot.append(destination)
 
-        let moved       = /* Item after transfer */
+        let moved       =                                                                               /* Item after transfer        */
             try move(listID: listID, from: sourceID, to: destination.id, collections: &snapshot)
-        let targetIndex = snapshot.count - 1  /* Target index               */
-        var standalone  = PersonalCollection( /* Standalone operation value */
+        let targetIndex = snapshot.count - 1                                                            /* Target index               */
+        var standalone  = PersonalCollection(                                                           /* Standalone operation value */
             id: destination.id, title: moved.title, kind: .list,
             icon: destination.icon, color: destination.color)
 
@@ -229,26 +224,26 @@ enum CrossBoardListMovement
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var snapshot         = collections /* Working state snapshot          */
-        let source           =             /* Source value for this operation */
+        var snapshot         = collections                                              /* Working state snapshot          */
+        let source           =                                                          /* Source value for this operation */
             snapshot[sourceIndex].lists[listIndex]
-        let destinationLists = snapshot[destinationIndex].lists /* Destination lists */
-        let targetIDs        = Set(destinationLists.flatMap(\.allCards).map(\.id)) /* Target i ds */
-        let sourceIDs        = Set(source.allCards.map(\.id)) /* Source i ds */
+        let destinationLists = snapshot[destinationIndex].lists                         /* Destination lists               */
+        let targetIDs        = Set(destinationLists.flatMap(\.allCards).map(\.id))      /* Target i ds                     */
+        let sourceIDs        = Set(source.allCards.map(\.id))                           /* Source i ds                     */
 
         guard sourceIDs.count == source.allCards.count else
         {
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        var nextID              = max(targetIDs.max() ?? -1, sourceIDs.max() ?? -1) /* Next ID */
-        var mapping: [Int: Int] = [:] /* Source-to-target identity map */
+        var nextID              = max(targetIDs.max() ?? -1, sourceIDs.max() ?? -1)     /* Next ID                       */
+        var mapping: [Int: Int] = [:]                                                   /* Source-to-target identity map */
 
         for card in source.allCards
         {
             if targetIDs.contains(card.id)
             {
-                let (next, overflow) = nextID.addingReportingOverflow(1) /* Next overflow */
+                let (next, overflow) = nextID.addingReportingOverflow(1)        /* Next overflow */
 
                 guard !overflow else
                 {
@@ -257,24 +252,21 @@ enum CrossBoardListMovement
 
                 nextID = next;
                 mapping[card.id] = next
-
             }
             else
             {
                 mapping[card.id] = card.id
-
             }
-
         }
 
-        var moved = source /* Item after transfer */
+        var moved = source      /* Item after transfer */
 
         if destinationLists.contains(where:
             {
                 $0.id == source.id
             })
         {
-            let (next, overflow) = /* Next overflow */
+            let (next, overflow) =                                                      /* Next overflow */
                 (destinationLists.map(\.id).max() ?? -1).addingReportingOverflow(1)
 
             guard !overflow else
@@ -288,7 +280,6 @@ enum CrossBoardListMovement
             moved.subtitleOverride = source.subtitleOverride
             moved.appearance = source.appearance
             moved.isArchived = source.isArchived
-
         }
 
 
@@ -304,18 +295,18 @@ enum CrossBoardListMovement
         ///
         func relocate(_ card: KanbanCard) -> KanbanCard
         {
-            var result = /* Accumulated output value */
+            var result =                                                                /* Accumulated output value */
                 card.replacingLocation(id: mapping[card.id]!, listTitle: source.title)
 
             result.checklists = result.checklists.map
             {
                 checklist in
 
-                let items = checklist.items.map /* Items being processed */
+                let items = checklist.items.map         /* Items being processed */
                 {
                     item in
 
-                    var item = item /* Item under consideration */
+                    var item = item     /* Item under consideration */
 
                     // Implicit references originally belonged to the source board, including hidden links
                     if item.retainedCardID != nil
@@ -330,7 +321,6 @@ enum CrossBoardListMovement
                     }()
                     {
                         item.linkedCollectionID = item.linkedCollectionID ?? sourceID
-
                     }
 
                     return item
@@ -357,7 +347,7 @@ enum CrossBoardListMovement
         // Redirect references from every retained board to each moved card's new owner and identity
         for boardIndex in snapshot.indices
         {
-            let owner = snapshot[boardIndex].id /* Owning collection or Week */
+            let owner = snapshot[boardIndex].id         /* Owning collection or Week */
 
 
             ///
@@ -372,17 +362,17 @@ enum CrossBoardListMovement
             ///
             func redirect(_ card: KanbanCard) -> KanbanCard
             {
-                var card = card /* Card under consideration */
+                var card = card         /* Card under consideration */
 
                 card.checklists = card.checklists.map
                 {
                     checklist in
 
-                    let items = checklist.items.map /* Items being processed */
+                    let items = checklist.items.map     /* Items being processed */
                     {
                         item in
 
-                        var item = item /* Item under consideration */
+                        var item = item         /* Item under consideration */
 
                         guard (item.linkedCollectionID ?? owner) == sourceID else
                         {
@@ -393,14 +383,12 @@ enum CrossBoardListMovement
                         {
                             item.retainedCardID = next
                             item.linkedCollectionID = destinationID
-
                         }
 
                         if case .linkedCard(let id) = item.content, let next = mapping[id]
                         {
                             item.content = .linkedCard(cardID: next)
                             item.linkedCollectionID = destinationID
-
                         }
 
                         return item
@@ -419,14 +407,11 @@ enum CrossBoardListMovement
                 snapshot[boardIndex].lists[index].cards = snapshot[boardIndex].lists[index].cards.map(redirect)
                 snapshot[boardIndex].lists[index].archivedCards = snapshot[boardIndex].lists[index].archivedCards.map(
                     redirect)
-
             }
-
         }
 
         collections = snapshot
 
         return snapshot[destinationIndex].lists.last!
     }
-
 }

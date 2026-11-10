@@ -22,12 +22,12 @@ import Foundation
 ///
 struct PlenactBoardDocument: Codable, Equatable
 {
-    static let currentSchemaVersion = 1 /* Current supported Board document shape */
+    static let currentSchemaVersion = 1         /* Current supported Board document shape */
 
-    var schemaVersion: Int          /* Board JSON schema version */
-    var boardKey:      String       /* Stable shared Board key   */
-    var lists:         [KanbanList] /* Ordered lists and cards   */
-    var labelLibrary:  LabelLibrary /* Reusable label catalog    */
+    var schemaVersion: Int              /* Board JSON schema version */
+    var boardKey:      String           /* Stable shared Board key   */
+    var lists:         [KanbanList]     /* Ordered lists and cards   */
+    var labelLibrary:  LabelLibrary     /* Reusable label catalog    */
 
 
     ///
@@ -64,7 +64,6 @@ struct PlenactBoardDocument: Codable, Equatable
         self.boardKey = boardKey
         self.lists = lists
         self.labelLibrary = labelLibrary
-
     }
 
 
@@ -79,8 +78,8 @@ struct PlenactBoardDocument: Codable, Equatable
     /// @pre        lists, cards, and assignments contain the document's current snapshot data
     /// @post       The document remains unchanged
     ///
-    var validationMessage: String? /* Validation message */
-    {  /* Snapshot validation result */
+    var validationMessage: String?                              /* Validation message         */
+    {                                                           /* Snapshot validation result */
         guard schemaVersion == Self.currentSchemaVersion,
         boardKey == "shared-demo"
         else
@@ -89,8 +88,8 @@ struct PlenactBoardDocument: Codable, Equatable
         }
 
 
-        var listIDs: Set<Int> = [] /* Unique list identifiers */
-        var cardIDs: Set<Int> = [] /* Unique Board card IDs   */
+        var listIDs: Set<Int> = []      /* Unique list identifiers */
+        var cardIDs: Set<Int> = []      /* Unique Board card IDs   */
 
         for list in lists
         {
@@ -129,8 +128,8 @@ struct PlenactBoardDocument: Codable, Equatable
 
                 for assignee in card.members
                 {
-                    let displayName = assignee.displayName.trimmingCharacters( /* Display name */
-                        in: .whitespacesAndNewlines) /* Normalized assignee label */
+                    let displayName = assignee.displayName.trimmingCharacters(          /* Display name */
+                        in: .whitespacesAndNewlines)                            /* Normalized assignee label */
 
                     guard !displayName.isEmpty else
                     {
@@ -142,7 +141,7 @@ struct PlenactBoardDocument: Codable, Equatable
                     {
                     case .registeredUser:
 
-                        guard let userID = assignee.userID, /* Registered account reference */
+                        guard let userID = assignee.userID,     /* Registered account reference */
                         UUID(uuidString: userID) != nil
                         else
                         {
@@ -156,19 +155,14 @@ struct PlenactBoardDocument: Codable, Equatable
                         {
                             return "Manual card assignees cannot contain a registered user ID."
                         }
-
                     }
-
                 }
-
             }
-
         }
 
 
         return nil
     }
-
 }
 
 
@@ -183,11 +177,11 @@ struct PlenactBoardDocument: Codable, Equatable
 ///
 struct PlenactBoardSnapshotResponse: Decodable
 {
-    let revision:       Int64                /* Current immutable revision */
-    let document:       PlenactBoardDocument /* Complete Board content     */
-    let storedAtUTC:    String               /* Server storage timestamp   */
-    let storedByUserID: String               /* Verified storage actor     */
-    let storageOrigin:  String               /* Controlled write origin    */
+    let revision:       Int64                   /* Current immutable revision */
+    let document:       PlenactBoardDocument    /* Complete Board content     */
+    let storedAtUTC:    String                  /* Server storage timestamp   */
+    let storedByUserID: String                  /* Verified storage actor     */
+    let storageOrigin:  String                  /* Controlled write origin    */
 
 
     ///
@@ -204,5 +198,4 @@ struct PlenactBoardSnapshotResponse: Decodable
         case storedByUserID = "stored_by_user_id"
         case storageOrigin = "storage_origin"
     }
-
 }

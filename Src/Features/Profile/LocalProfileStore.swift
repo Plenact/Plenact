@@ -23,7 +23,7 @@ import Foundation
 ///
 enum LocalProfileStore
 {
-    static let storageKey = "Plenact.LocalProfile.v1" /* Versioned profile key */
+    static let storageKey = "Plenact.LocalProfile.v1"           /* Versioned profile key */
 
 
     ///
@@ -41,7 +41,7 @@ enum LocalProfileStore
     static func load(from defaults: UserDefaults = .standard) -> LocalProfile?
     {
         guard let data = defaults.data(forKey: storageKey) else
-        {  /* Saved profile bytes */
+        {                                                       /* Saved profile bytes */
             return nil
         }
 
@@ -66,7 +66,7 @@ enum LocalProfileStore
     static func save(_ profile: LocalProfile, to defaults: UserDefaults = .standard)
     {
         guard let data = try? JSONEncoder().encode(profile) else
-        {  /* Encoded profile snapshot */
+        {                                                               /* Encoded profile snapshot */
             return
         }
 
@@ -91,7 +91,6 @@ enum LocalProfileStore
     {
         defaults.removeObject(forKey: storageKey)
     }
-
 }
 
 
@@ -114,11 +113,11 @@ enum ProfileAvatarPhotoStore
     ///
     private static func directory() throws -> URL
     {
-        let documents = try FileManager.default.url( /* App Documents directory lookup */
+        let documents = try FileManager.default.url(                                            /* App Documents directory lookup */
             for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true
         )
-        let directory = documents.appendingPathComponent( /* Working directory location */
-                        "ProfileAvatars", isDirectory: true) /* Local avatar-photo subdirectory */
+        let directory = documents.appendingPathComponent(       /* Working directory location */
+            "ProfileAvatars", isDirectory: true)                /* Local avatar-photo subdirectory */
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
@@ -139,7 +138,7 @@ enum ProfileAvatarPhotoStore
     ///
     static func save(_ data: Data) throws -> String
     {
-        let fileName = "\(UUID().uuidString).jpg" /* Unique JPEG filename for the saved avatar */
+        let fileName = "\(UUID().uuidString).jpg"       /* Unique JPEG filename for the saved avatar */
 
         try data.write(to: directory().appendingPathComponent(fileName), options: .atomic)
 
@@ -162,16 +161,16 @@ enum ProfileAvatarPhotoStore
     ///
     static func load(_ fileName: String?) -> Data?
     {
-        guard let fileName, /* Stored avatar filename */
+        guard let fileName,                                             /* Stored avatar filename */
         fileName == URL(fileURLWithPath: fileName).lastPathComponent,
-        let directory = try? directory() /* Avatar-photo directory, when available */
+        let directory = try? directory()                                /* Avatar-photo directory, when available */
         else
         {
             return nil
         }
 
         return try? Data(
-            contentsOf: directory.appendingPathComponent(fileName)) /* Stored avatar bytes, when readable */
+            contentsOf: directory.appendingPathComponent(fileName))     /* Stored avatar bytes, when readable */
     }
 
 
@@ -189,9 +188,9 @@ enum ProfileAvatarPhotoStore
     ///
     static func remove(_ fileName: String?)
     {
-        guard let fileName, /* Stored avatar filename */
+        guard let fileName,                                             /* Stored avatar filename */
         fileName == URL(fileURLWithPath: fileName).lastPathComponent,
-        let directory = try? directory() /* Avatar-photo directory, when available */
+        let directory = try? directory()                                /* Avatar-photo directory, when available */
         else
         {
             return
@@ -199,7 +198,6 @@ enum ProfileAvatarPhotoStore
 
         try? FileManager.default.removeItem(at: directory.appendingPathComponent(fileName))
     }
-
 }
 
 
@@ -212,7 +210,7 @@ enum ProfileAvatarPhotoStore
 ///
 enum PlanPreferencesStore
 {
-    static let key = "Plenact.PlanPreferences.v1" /* Persistence lookup key */
+    static let key = "Plenact.PlanPreferences.v1"       /* Persistence lookup key */
 
 
     ///
@@ -282,14 +280,13 @@ enum PlanPreferencesStore
 
         defaults.set(data, forKey: key)
     }
-
 }
 
 
 /// Stores the layout copied into new Cards on this device
 enum NewCardLayoutStore
 {
-    private static let key = "Plenact.NewCardLayout.v1" /* Device preference key */
+    private static let key = "Plenact.NewCardLayout.v1"         /* Device preference key */
 
     static func load(from defaults: UserDefaults = .standard) -> CardSectionLayout?
     {

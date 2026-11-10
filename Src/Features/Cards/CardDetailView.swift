@@ -39,8 +39,7 @@ enum ChecklistMoveDirection
 ///
 struct ChecklistCandidatesKey: EnvironmentKey
 {
-    static let defaultValue: [KanbanCard] = [] /* Fallback environment value */
-
+    static let defaultValue: [KanbanCard] = []          /* Fallback environment value */
 }
 
 
@@ -53,7 +52,7 @@ struct ChecklistCandidatesKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-    var checklistLinkCandidates: [KanbanCard] /* Checklist link candidates */
+    var checklistLinkCandidates: [KanbanCard]           /* Checklist link candidates */
     {
         get
         {
@@ -63,11 +62,8 @@ extension EnvironmentValues
         set
         {
             self[ChecklistCandidatesKey.self] = newValue
-
         }
-
     }
-
 }
 
 
@@ -80,25 +76,25 @@ extension EnvironmentValues
 ///
 struct CardDetailView: View
 {
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic         /* Inherited subtitle styling */
 
 
-    @Environment(\.cardKeyboardNavigation) var keyboardNavigation /* Keyboard navigation */
-    @State var keyboardContextID = UUID() /* Keyboard context ID */
-    @Environment(\.workspaceNoteVisibility) var workspaceNoteVisibility /* Workspace note visibility */
-    @State var noteVisibilityID = UUID() /* Note visibility ID */
-    @Environment(\.planningCalendarAccess) var checklistTypePlanningAccess /* Checklist type planning access */
-    @Environment(\.checklistLinkCandidates) var checklistLinkCandidates /* Checklist link candidates */
-    @Environment(\.cardMovementSource) var checklistCollectionID /* Checklist collection ID */
-    @Environment(\.libraryItemOpened) var libraryItemOpened /* Library item opened */
-    @Environment(\.libraryImportance) var libraryImportance /* Library importance */
-    @State var isActivityCollapsed = false /* Activity Collapsed state */
-    @State var startDateKind:      CardDateKind /* Start date kind */
-    @State var dueDateKind:        CardDateKind /* Due date kind */
-    @State var showsDueDateInList: Bool /* Due Date In List visibility */
-    @State var sectionLayout:      CardSectionLayout /* Section layout */
-    @State var showsLayoutEditor = false /* Layout Editor visibility */
-    @Environment(\.workspaceBottomBarHeight) var workspaceBottomBarHeight /* Workspace bottom bar height */
+    @Environment(\.cardKeyboardNavigation) var keyboardNavigation               /* Keyboard navigation            */
+    @State var keyboardContextID = UUID()                                       /* Keyboard context ID            */
+    @Environment(\.workspaceNoteVisibility) var workspaceNoteVisibility         /* Workspace note visibility      */
+    @State var noteVisibilityID = UUID()                                        /* Note visibility ID             */
+    @Environment(\.planningCalendarAccess) var checklistTypePlanningAccess      /* Checklist type planning access */
+    @Environment(\.checklistLinkCandidates) var checklistLinkCandidates         /* Checklist link candidates      */
+    @Environment(\.cardMovementSource) var checklistCollectionID                /* Checklist collection ID        */
+    @Environment(\.libraryItemOpened) var libraryItemOpened                     /* Library item opened            */
+    @Environment(\.libraryImportance) var libraryImportance                     /* Library importance             */
+    @State var isActivityCollapsed = false                                      /* Activity Collapsed state       */
+    @State var startDateKind:      CardDateKind                                 /* Start date kind                */
+    @State var dueDateKind:        CardDateKind                                 /* Due date kind                  */
+    @State var showsDueDateInList: Bool                                         /* Due Date In List visibility    */
+    @State var sectionLayout:      CardSectionLayout                            /* Section layout                 */
+    @State var showsLayoutEditor = false                                        /* Layout Editor visibility       */
+    @Environment(\.workspaceBottomBarHeight) var workspaceBottomBarHeight       /* Workspace bottom bar height    */
 
     // ----------------------------------- MARK: - Date Field Enum ------------------------------ //
 
@@ -110,8 +106,8 @@ struct CardDetailView: View
     ///
     enum DateField: String, Identifiable, Equatable
     {
-        case start  /* Start date field for the card */
-        case due    /* Due date field for the card   */
+        case start      /* Start date field for the card */
+        case due        /* Due date field for the card   */
 
         ///
         /// @fcn        CardDetailView.DateField.id
@@ -121,10 +117,10 @@ struct CardDetailView: View
         /// @return     (String) start or due field identity
         /// @post       Date state remains unchanged
         ///
-        var id: String /* Record or view identity */
+        var id: String          /* Record or view identity */
         {
             rawValue
-        }  /* Stable date-field identity */
+        }               /* Stable date-field identity */
 
 
         ///
@@ -135,8 +131,8 @@ struct CardDetailView: View
         /// @return     (String) Start date or Due date label
         /// @post       No date or presentation state changes
         ///
-        var title: String /* User-facing title */
-        {  /* User-facing date-field label */
+        var title: String       /* User-facing title            */
+        {                       /* User-facing date-field label */
             switch self
             {
             case .start:
@@ -144,9 +140,7 @@ struct CardDetailView: View
             case .due:
                 return "Due date"
             }
-
         }
-
     }
 
 
@@ -163,20 +157,20 @@ struct CardDetailView: View
     ///
     enum ActiveSheet: Identifiable
     {
-        case date(DateField) /* Date picker sheet for editing a specific date field */
+        case date(DateField)    /* Date picker sheet for editing a specific date field */
         case location
         case editHistory
         case reactions
-        case members            /* Card member management sheet             */
-        case labels             /* Card label library and assignment picker */
-        case attachmentSources  /* Attachment source chooser                */
+        case members                    /* Card member management sheet             */
+        case labels                     /* Card label library and assignment picker */
+        case attachmentSources          /* Attachment source chooser                */
         case noteAttachments
         case appearance
         case cover
-        case addDrawing(DrawingCaptureDraft)      /* New drawing attached only after Done      */
-        case addLink                              /* Manual web-link entry sheet               */
-        case attachmentPreview(KanbanAttachment)  /* Preview of an attached photo              */
-        case actionDetail(UUID, UUID)             /* Checklist and item IDs for reduced detail */
+        case addDrawing(DrawingCaptureDraft)            /* New drawing attached only after Done      */
+        case addLink                                    /* Manual web-link entry sheet               */
+        case attachmentPreview(KanbanAttachment)        /* Preview of an attached photo              */
+        case actionDetail(UUID, UUID)                   /* Checklist and item IDs for reduced detail */
 
         ///
         /// @fcn        CardDetailView.ActiveSheet.id
@@ -187,12 +181,12 @@ struct CardDetailView: View
         /// @return     (String) stable sheet-destination identity
         /// @post       No sheet is presented or dismissed by this lookup
         ///
-        var id: String /* Record or view identity */
-        {  /* Stable identity for the active sheet                */
+        var id: String          /* Record or view identity              */
+        {                       /* Stable identity for the active sheet */
             switch self
             {
             case .date(let field):
-                            "date-\(field.id)" /* Selected date field */
+                            "date-\(field.id)"          /* Selected date field */
             case .location:
                             "location"
             case .editHistory:
@@ -216,13 +210,11 @@ struct CardDetailView: View
             case .addDrawing(let draft):
                             "add-drawing-\(draft.id.uuidString)"
             case .attachmentPreview(let attachment):
-                                    "attachment-\(attachment.id.uuidString)"  /* Previewed attachment            */
-            case .actionDetail(let checklistID, let itemID):                  /* Owning checklist and action IDs */
+                                    "attachment-\(attachment.id.uuidString)"    /* Previewed attachment            */
+            case .actionDetail(let checklistID, let itemID):                                            /* Owning checklist and action IDs */
                                     "action-detail-\(checklistID.uuidString)-\(itemID.uuidString)"
             }
-
         }
-
     }
 
 
@@ -234,9 +226,9 @@ struct CardDetailView: View
     ///
     enum GeneratedActivity: String, CaseIterable, Identifiable
     {
-        case addedCard       /* Card was added to the board           */
-        case createdCard     /* Card was created on the board         */
-        case initialComment  /* Initial comment was added to the card */
+        case addedCard          /* Card was added to the board           */
+        case createdCard        /* Card was created on the board         */
+        case initialComment     /* Initial comment was added to the card */
 
         ///
         /// @fcn        CardDetailView.GeneratedActivity.id
@@ -246,10 +238,10 @@ struct CardDetailView: View
         /// @return     (String) generated-entry identity
         /// @post       No activity dismissal is recorded
         ///
-        var id: String /* Record or view identity */
+        var id: String          /* Record or view identity */
         {
             rawValue
-        }  /* Stable generated-activity identity */
+        }               /* Stable generated-activity identity */
 
 
         ///
@@ -277,9 +269,7 @@ struct CardDetailView: View
             case .initialComment:
                 return "\(actorName): \"This is going to be surprisingly useful.\""
             }
-
         }
-
     }
 
 
@@ -292,9 +282,9 @@ struct CardDetailView: View
     ///
     enum ActivityFilter: String, CaseIterable, Identifiable
     {
-        case all           /* All activity entries for the card       */
-        case comments      /* User-added comments for the card        */
-        case cardActivity  /* Generated activity entries for the card */
+        case all                /* All activity entries for the card       */
+        case comments           /* User-added comments for the card        */
+        case cardActivity       /* Generated activity entries for the card */
 
         ///
         /// @fcn        CardDetailView.ActivityFilter.id
@@ -304,10 +294,10 @@ struct CardDetailView: View
         /// @return     (String) stable filter identity
         /// @post       The selected filter remains unchanged
         ///
-        var id: String /* Record or view identity */
+        var id: String          /* Record or view identity */
         {
             rawValue
-        }  /* Stable activity-filter identity */
+        }               /* Stable activity-filter identity */
 
 
         ///
@@ -318,8 +308,8 @@ struct CardDetailView: View
         /// @return     (String) filter display title
         /// @post       No activity records are filtered or modified by this lookup
         ///
-        var title: String /* User-facing title */
-        {  /* User-facing activity-filter label */
+        var title: String       /* User-facing title                 */
+        {                       /* User-facing activity-filter label */
             switch self
             {
             case .all:
@@ -329,9 +319,7 @@ struct CardDetailView: View
             case .cardActivity:
                             "Card Activity"
             }
-
         }
-
     }
 
 
@@ -342,91 +330,91 @@ struct CardDetailView: View
     ///
     enum EditableField: Hashable
     {
-        case title        /* The title field is being edited       */
-        case subtitle     /* The subtitle field is being edited    */
-        case description  /* The description field is being edited */
-        case comment      /* The comment field is being edited     */
+        case title              /* The title field is being edited       */
+        case subtitle           /* The subtitle field is being edited    */
+        case description        /* The description field is being edited */
+        case comment            /* The comment field is being edited     */
     }
 
 
-    @State var lastSavedHistoryCard: KanbanCard  /* Accepted local snapshot for history and save grouping */
-    let card:                  KanbanCard /* The kanban card being displayed in detail                    */
-    let listedOnDate:          Date? /* Listed on date */
-    @Binding var labelLibrary: LabelLibrary             /* Shared label catalog available to every card             */
-    let availableLists:        [KanbanList]             /* Other lists that can receive this card                   */
-    let memberColors:          [String: Color]          /* Shared icon colors keyed by normalized member name       */
-    let currentUserName:       String                   /* Current actor name shown in card activity                */
-    @Binding var savedCardIDs: Set<Int>                 /* Local identities saved for quick access                  */
-    let onTitleToggle:         ((KanbanCard) -> Void)?  /* Callback invoked when the card title checkbox is toggled */
-    let onMoveToList:          ((Int) -> Void)?         /* Callback invoked to move the card to a selected list     */
-    let personalCollectionID:  UUID?                    /* Original personal collection owning this detail session  */
-    @Environment(\.studioCardSurface) private var inheritedStudioSurface /* List or Board artwork */
-    @Environment(\.cardMovementAccess) var cardMovementAccess /* Card movement access */
-    let availablePersonalLists: [PersonalCollection] /* Personal Lists offered as Note movement destinations     */
-    let onMoveNoteToPersonalList: /* Move note to personal list callback */
-    ((KanbanCard, UUID, UUID) -> KanbanCard?)?            /* Moves the Note and returns its destination-local record */
-    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?  /* Persists edits after the Note changes collections       */
-    let onArchiveMovedNote: /* Archive moved note callback */
-    ((UUID, KanbanCard) -> Bool)?                         /* Archives the Note in its current collection              */
-    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?  /* Permanently removes the Note from its current collection */
-    let onToggleMovedNoteBookmark: /* Toggle moved note bookmark callback */
-    ((UUID, Int, Bool) -> Bool)? /* Persists the relocated Note's saved state                */
+    @State var lastSavedHistoryCard: KanbanCard                                 /* Accepted local snapshot for history and save grouping    */
+    let card:                  KanbanCard                                       /* The kanban card being displayed in detail                */
+    let listedOnDate:          Date?                                            /* Listed on date                                           */
+    @Binding var labelLibrary: LabelLibrary                                     /* Shared label catalog available to every card             */
+    let availableLists:        [KanbanList]                                     /* Other lists that can receive this card                   */
+    let memberColors:          [String: Color]                                  /* Shared icon colors keyed by normalized member name       */
+    let currentUserName:       String                                           /* Current actor name shown in card activity                */
+    @Binding var savedCardIDs: Set<Int>                                         /* Local identities saved for quick access                  */
+    let onTitleToggle:         ((KanbanCard) -> Void)?                          /* Callback invoked when the card title checkbox is toggled */
+    let onMoveToList:          ((Int) -> Void)?                                 /* Callback invoked to move the card to a selected list     */
+    let personalCollectionID:  UUID?                                            /* Original personal collection owning this detail session  */
+    @Environment(\.studioCardSurface) private var inheritedStudioSurface        /* List or Board artwork                                    */
+    @Environment(\.cardMovementAccess) var cardMovementAccess                   /* Card movement access                                     */
+    let availablePersonalLists: [PersonalCollection]                            /* Personal Lists offered as Note movement destinations     */
+    let onMoveNoteToPersonalList:                                               /* Move note to personal list callback                      */
+    ((KanbanCard, UUID, UUID) -> KanbanCard?)?                                  /* Moves the Note and returns its destination-local record  */
+    let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?                        /* Persists edits after the Note changes collections        */
+    let onArchiveMovedNote:                                                     /* Archive moved note callback                              */
+    ((UUID, KanbanCard) -> Bool)?                                               /* Archives the Note in its current collection              */
+    let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?                        /* Permanently removes the Note from its current collection */
+    let onToggleMovedNoteBookmark:                                              /* Toggle moved note bookmark callback                      */
+    ((UUID, Int, Bool) -> Bool)?                                                /* Persists the relocated Note's saved state                */
     /// Optional callback that archives the latest synchronized card snapshot
-    let onArchive: (() -> Void)? /* Archives the record through its original owner */
+    let onArchive: (() -> Void)?        /* Archives the record through its original owner */
     /// Optional callback permanently deleting this card and its caller-owned content
-    let onDelete: (() -> Bool)? /* Save-first removal; false keeps the editor and drafts open */
+    let onDelete: (() -> Bool)?         /* Save-first removal; false keeps the editor and drafts open */
 
-    @Environment(\.dismiss) var dismiss /* Dismiss action for the card detail view                      */
-    @State var richTextFocusedField: EditableField?  // UIKit editors retain focus independently of SwiftUI text fields
-    @State var editingHeaderField:   EditableField? /* Editing header field */
-    @FocusState var focusedField:    EditableField? /* current focused editable field within the card detail view   */
+    @Environment(\.dismiss) var dismiss                 /* Dismiss action for the card detail view                    */
+    @State var richTextFocusedField: EditableField?     // UIKit editors retain focus independently of SwiftUI text fields
+    @State var editingHeaderField:   EditableField?     /* Editing header field                                       */
+    @FocusState var focusedField:    EditableField?     /* current focused editable field within the card detail view */
 
-    @State var checklists:               [KanbanChecklist]  /* The checklist groups associated with the selected card   */
-    @State var checklistToFocus:         UUID?              /* Newly added checklist whose first item should be focused */
-    @State var titleChecked:             Bool               /* Whether the card title itself is checked                 */
-    @State var showsReactionsInPreviews: Bool? /* Reactions In Previews visibility */
-    @State var reactions:                [ItemEmojiReaction]? /* Stored item reactions */
-    @State var reactionAuthorID = LocalReactionIdentity.current() /* Reaction author ID */
-    @State var titleText:  String /* Editable card title displayed in the detail header           */
-    @State var appearance: ItemAppearance? /* Resolved appearance choices */
-    @State var showsAppearanceCover = false /* Appearance Cover visibility */
-    @State var subtitleText:       String              /* Editable card subtitle displayed in the detail header */
-    @State var startDate:          Date?               /* Optional start date for the selected card             */
-    @State var location:           String?             /* Editable optional place name or address */
-    @State var dueDate:            Date?               /* Optional due date for the selected card               */
-    @State var descriptionText:    String              /* Editable description shown on this card               */
-    @State var activeSheet:        ActiveSheet?        /* The date picker or member editor currently presented  */
-    @State var comments:           [KanbanComment]     /* Comments saved to this card's activity                */
-    @State var members:            [CardAssignee]      /* Registered and manual card assignments                */
-    @State var selectedLabelIDs:   [String]            /* Stable IDs of labels assigned to this card            */
-    @State var attachments:        [KanbanAttachment]  /* Photo attachments currently assigned to the card      */
-    @State var isEditingLocked:    Bool /* Editing Locked state */
-    @State var lockedSnapshot:     KanbanCard? /* Locked snapshot */
-    @State var coverAttachmentID:  UUID?              /* Explicit cover selection; nil means disabled   */
-    @State var selectedCoverPhoto: PhotosPickerItem?  /* One photo explicitly selected for a cover      */
-    @State var coverImportID:      UUID?              /* Superseded requests cannot enable an old cover */
-    @State var showsCoverPicker                       = false /* Visual chooser for already attached photos     */
-    @State var showsCoverLibrary                      = false /* Offline category-based illustration chooser    */
-    @State var selectedPhotoItems: [PhotosPickerItem] = /* Selected photo items */
-    []                                                      /* Photos selected from the system photo library                */
-    @State var commentDraft = ""                            /* Text currently entered in the comment composer               */
-    @State var dismissedActivityIDs: Set<String>            /* IDs of activity entries that have been dismissed by the user */
-    @State var activityFilter:       ActivityFilter = .all  /* The currently selected activity filter for the card          */
-    @State var showingAttachmentNotice              = false /* Whether an attachment notice is presented                    */
-    @State var attachmentNoticeMessage              = ""    /* Explanation shown for failed or unavailable sources          */
-    @State var showingDeleteConfirmation            = false /* Whether permanent card deletion awaits confirmation          */
-    @AppStorage(LibraryImportanceSelection.key) var movedImportanceData = Data() /* Destination importance values */
-    @State var relocatedCard: CardMoveResult? /* Saved destination for this open editor */
-    @State var hasMovedCard                         = false /* Stops editor callbacks from writing back to the old owner    */
-    @State var hasDeletedCard                       = false /* Prevents stale snapshots after confirmed deletion            */
-    @State var displayFormat: ItemDisplayFormat /* Display format */
-    @State var presentation:  ItemPresentation      /* Current Card or Note rendering mode                      */
-    @State var showsNoteDetails     = false         /* Visibility of supplementary Note fields                  */
-    @State var hasEditedDescription = false         /* Whether the body draft should replace the stored value   */
-    @State var recordID:                    Int     /* Current identity after any collection-local reassignment */
-    @State var currentListTitle:            String  /* Owning list name updated after Note movement             */
-    @State var currentPersonalCollectionID: UUID?   /* Current personal collection after Note movement          */
-    @State var movedNoteIsSaved:            Bool?   /* Saved-state override for a relocated Note                */
+    @State var checklists:               [KanbanChecklist]                              /* The checklist groups associated with the selected card       */
+    @State var checklistToFocus:         UUID?                                          /* Newly added checklist whose first item should be focused     */
+    @State var titleChecked:             Bool                                           /* Whether the card title itself is checked                     */
+    @State var showsReactionsInPreviews: Bool?                                          /* Reactions In Previews visibility                             */
+    @State var reactions:                [ItemEmojiReaction]?                           /* Stored item reactions                                        */
+    @State var reactionAuthorID = LocalReactionIdentity.current()                       /* Reaction author ID                                           */
+    @State var titleText:  String                                                       /* Editable card title displayed in the detail header           */
+    @State var appearance: ItemAppearance?                                              /* Resolved appearance choices                                  */
+    @State var showsAppearanceCover = false                                             /* Appearance Cover visibility                                  */
+    @State var subtitleText:       String                                               /* Editable card subtitle displayed in the detail header        */
+    @State var startDate:          Date?                                                /* Optional start date for the selected card                    */
+    @State var location:           String?                                              /* Editable optional place name or address                      */
+    @State var dueDate:            Date?                                                /* Optional due date for the selected card                      */
+    @State var descriptionText:    String                                               /* Editable description shown on this card                      */
+    @State var activeSheet:        ActiveSheet?                                         /* The date picker or member editor currently presented         */
+    @State var comments:           [KanbanComment]                                      /* Comments saved to this card's activity                       */
+    @State var members:            [CardAssignee]                                       /* Registered and manual card assignments                       */
+    @State var selectedLabelIDs:   [String]                                             /* Stable IDs of labels assigned to this card                   */
+    @State var attachments:        [KanbanAttachment]                                   /* Photo attachments currently assigned to the card             */
+    @State var isEditingLocked:    Bool                                                 /* Editing Locked state                                         */
+    @State var lockedSnapshot:     KanbanCard?                                          /* Locked snapshot                                              */
+    @State var coverAttachmentID:  UUID?                                                /* Explicit cover selection; nil means disabled                 */
+    @State var selectedCoverPhoto: PhotosPickerItem?                                    /* One photo explicitly selected for a cover                    */
+    @State var coverImportID:      UUID?                                                /* Superseded requests cannot enable an old cover               */
+    @State var showsCoverPicker                       = false                           /* Visual chooser for already attached photos                   */
+    @State var showsCoverLibrary                      = false                           /* Offline category-based illustration chooser                  */
+    @State var selectedPhotoItems: [PhotosPickerItem] =                                 /* Selected photo items                                         */
+    []                                                                                  /* Photos selected from the system photo library                */
+    @State var commentDraft = ""                                                        /* Text currently entered in the comment composer               */
+    @State var dismissedActivityIDs: Set<String>                                        /* IDs of activity entries that have been dismissed by the user */
+    @State var activityFilter:       ActivityFilter = .all                              /* The currently selected activity filter for the card          */
+    @State var showingAttachmentNotice              = false                             /* Whether an attachment notice is presented                    */
+    @State var attachmentNoticeMessage              = ""                                /* Explanation shown for failed or unavailable sources          */
+    @State var showingDeleteConfirmation            = false                             /* Whether permanent card deletion awaits confirmation          */
+    @AppStorage(LibraryImportanceSelection.key) var movedImportanceData = Data()        /* Destination importance values                                */
+    @State var relocatedCard: CardMoveResult?                                           /* Saved destination for this open editor                       */
+    @State var hasMovedCard                         = false                             /* Stops editor callbacks from writing back to the old owner    */
+    @State var hasDeletedCard                       = false                             /* Prevents stale snapshots after confirmed deletion            */
+    @State var displayFormat: ItemDisplayFormat                                         /* Display format                                               */
+    @State var presentation:  ItemPresentation                                          /* Current Card or Note rendering mode                          */
+    @State var showsNoteDetails     = false                                             /* Visibility of supplementary Note fields                      */
+    @State var hasEditedDescription = false                                             /* Whether the body draft should replace the stored value       */
+    @State var recordID:                    Int                                         /* Current identity after any collection-local reassignment     */
+    @State var currentListTitle:            String                                      /* Owning list name updated after Note movement                 */
+    @State var currentPersonalCollectionID: UUID?                                       /* Current personal collection after Note movement              */
+    @State var movedNoteIsSaved:            Bool?                                       /* Saved-state override for a relocated Note                    */
 
 
     ///
@@ -439,7 +427,7 @@ struct CardDetailView: View
     /// @pre        Cards across availableLists have unique IDs; duplicate keys are not accepted
     /// @post       No Board or card state is modified
     ///
-    var linkedCardsByID: [Int: KanbanCard] /* Linked cards by ID */
+    var linkedCardsByID: [Int: KanbanCard]      /* Linked cards by ID */
     {
         Dictionary(
             (availableLists.flatMap(\.cards) + checklistLinkCandidates).map
@@ -490,12 +478,12 @@ struct CardDetailView: View
     init(
         card: KanbanCard,
         labelLibrary: Binding<LabelLibrary> = .constant(.starter),
-        availableLists: [KanbanList] = [],    /* Other lists available as move destinations */
-        memberColors: [String: Color] = [:],  /* Shared member icon colors                  */
+        availableLists: [KanbanList] = [],                              /* Other lists available as move destinations */
+        memberColors: [String: Color] = [:],                            /* Shared member icon colors                  */
         currentUserName: String = "Justin Reina",
         savedCardIDs: Binding<Set<Int>> = .constant([]),
-        onTitleToggle: ((KanbanCard) -> Void)? = nil,  /* Callback invoked when the card title checkbox is toggled */
-        onMoveToList: ((Int) -> Void)? = nil,          /* Callback invoked when the card is moved                  */
+        onTitleToggle: ((KanbanCard) -> Void)? = nil,           /* Callback invoked when the card title checkbox is toggled */
+        onMoveToList: ((Int) -> Void)? = nil,                   /* Callback invoked when the card is moved                  */
         personalCollectionID: UUID? = nil,
         availablePersonalLists: [PersonalCollection] = [],
         onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
@@ -508,15 +496,15 @@ struct CardDetailView: View
         listedOnDate: Date? = nil
     )
     {
-        self.card = card /* The kanban card being displayed in detail                            */
+        self.card = card                        /* The kanban card being displayed in detail                            */
         self.listedOnDate = listedOnDate
-        self._labelLibrary = labelLibrary       /* Shared catalog used by all card label assignments        */
-        self.availableLists = availableLists    /* Other lists available as move destinations               */
-        self.memberColors = memberColors        /* Shared member icon colors                                */
-        self.currentUserName = currentUserName  /* Current actor name shown in card activity                */
-        self._savedCardIDs = savedCardIDs       /* Local saved-card identities                              */
-        self.onTitleToggle = onTitleToggle      /* Callback invoked when the card title checkbox is toggled */
-        self.onMoveToList = onMoveToList        /* Callback invoked when the card is moved                  */
+        self._labelLibrary = labelLibrary                       /* Shared catalog used by all card label assignments        */
+        self.availableLists = availableLists                    /* Other lists available as move destinations               */
+        self.memberColors = memberColors                        /* Shared member icon colors                                */
+        self.currentUserName = currentUserName                  /* Current actor name shown in card activity                */
+        self._savedCardIDs = savedCardIDs                       /* Local saved-card identities                              */
+        self.onTitleToggle = onTitleToggle                      /* Callback invoked when the card title checkbox is toggled */
+        self.onMoveToList = onMoveToList                        /* Callback invoked when the card is moved                  */
         self.personalCollectionID = personalCollectionID
         self.availablePersonalLists = availablePersonalLists
         self.onMoveNoteToPersonalList = onMoveNoteToPersonalList
@@ -528,17 +516,17 @@ struct CardDetailView: View
         self.onDelete = onDelete
 
         _titleChecked = State(
-            initialValue: card.isTitleChecked) /* Initialize the title checked state based on the card's current value */
+            initialValue: card.isTitleChecked)                  /* Initialize the title checked state based on the card's current value */
         _lastSavedHistoryCard = State(initialValue: card)
         _showsReactionsInPreviews = State(initialValue: card.showsReactionsInPreviews)
         _reactions = State(initialValue: card.reactions)
         _titleText = State(
-            initialValue: card.isSectionDivider ? (card.sectionHeading ?? "") : card.word) /* Initialize the editable title from the card                          */
+            initialValue: card.isSectionDivider ? (card.sectionHeading ?? "") : card.word)      /* Initialize the editable title from the card                          */
         _appearance = State(initialValue: card.appearance)
-        _subtitleText = State(initialValue: card.subtitle)  /* Initialize the editable subtitle from the card */
-        _startDate = State(initialValue: card.startDate)    /* Initialize the start date from the card state  */
+        _subtitleText = State(initialValue: card.subtitle)      /* Initialize the editable subtitle from the card */
+        _startDate = State(initialValue: card.startDate)        /* Initialize the start date from the card state  */
         _location = State(initialValue: card.location)
-        _dueDate = State(initialValue: card.dueDate)        /* Initialize the due date from the card state    */
+        _dueDate = State(initialValue: card.dueDate)                                    /* Initialize the due date from the card state    */
         _sectionLayout = State(initialValue: card.sectionLayout ?? CardSectionLayout())
         _showsDueDateInList = State(initialValue: card.showsDueDateInList)
         _startDateKind = State(initialValue: card.startDateKind)
@@ -550,20 +538,19 @@ struct CardDetailView: View
         _recordID = State(initialValue: card.id)
         _currentListTitle = State(initialValue: card.listTitle)
         _currentPersonalCollectionID = State(initialValue: personalCollectionID)
-        _comments = State(initialValue: card.comments)          /* Initialize comments from the selected card         */
-        _members = State(initialValue: card.members)            /* Initialize assigned members from the selected card */
-        _selectedLabelIDs = State(initialValue: card.labelIDs)  /* Initialize selected labels from the card           */
+        _comments = State(initialValue: card.comments)                                  /* Initialize comments from the selected card         */
+        _members = State(initialValue: card.members)                                    /* Initialize assigned members from the selected card */
+        _selectedLabelIDs = State(initialValue: card.labelIDs)                          /* Initialize selected labels from the card           */
         _attachments = State(
-            initialValue: card.attachments ?? []) /* Initialize photo attachments from the card         */
+            initialValue: card.attachments ?? [])                                       /* Initialize photo attachments from the card         */
         _lockedSnapshot = State(initialValue: card.isEditingLocked ? card : nil)
         _isEditingLocked = State(initialValue: card.isEditingLocked)
         _coverAttachmentID = State(initialValue: card.coverAttachmentID)
         _dismissedActivityIDs = State(
-            initialValue: card.dismissedActivityIDs) /* Initialize dismissed activity IDs from the card state                */
+            initialValue: card.dismissedActivityIDs)    /* Initialize dismissed activity IDs from the card state                */
 
         _checklists = State(
-            initialValue: card.checklists) /* Initialize checklist state from the card's stored values             */
-
+            initialValue: card.checklists)      /* Initialize checklist state from the card's stored values             */
     }
 
 
@@ -574,20 +561,19 @@ struct CardDetailView: View
     ///             Removing a cover preserves all attachments and never auto-selects another image
     /// @return     (some View) cover settings shown only on explicit request
     ///
-    var coverControls: some View /* Cover controls */
-    {  /* Featured-media selection and removal controls */
+    var coverControls: some View                /* Cover controls                                */
+    {                                           /* Featured-media selection and removal controls */
         DetailSection(title: "Card Cover")
         {
             Button("Browse Cover Library", systemImage: "photo.on.rectangle.angled")
             {
                 showsCoverLibrary = true
-
             }
 
             .frame(minHeight: 44)
 
             if let cover = attachments.first(where:
-                {  /* Attachment currently selected as the cover */
+                {                                                       /* Attachment currently selected as the cover */
                     $0.id == coverAttachmentID && $0.kind == .photo
                 })
             {
@@ -598,7 +584,6 @@ struct CardDetailView: View
             Button(coverAttachmentID == nil ? "Choose Attached Photo" : "Change Cover", systemImage: "photo")
             {
                 showsCoverPicker = true
-
             }
 
             .disabled(!attachments.contains
@@ -627,7 +612,7 @@ struct CardDetailView: View
 
 
             Text(
-                                    "Covers are optional. Removing a cover keeps its photo attached. Choose an attached photo here or use Set as Cover on a photo's menu."
+                "Covers are optional. Removing a cover keeps its photo attached. Choose an attached photo here or use Set as Cover on a photo's menu."
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -658,7 +643,6 @@ struct CardDetailView: View
                 onSelect: useLibraryCover
             )
         }
-
     }
 
 
@@ -668,8 +652,8 @@ struct CardDetailView: View
     /// @details    Keeps the gallery's view-builder expression separate from the full card editor
     /// @return     (some View) horizontal photo gallery and remaining media
     ///
-    var attachmentGallery: some View /* Attachment gallery */
-    {  /* Attached media displayed with editing actions */
+    var attachmentGallery: some View                                            /* Attachment gallery                            */
+    {                                                                           /* Attached media displayed with editing actions */
         attachmentGallery(workingCardSnapshot.attachmentsExcludingCover)
     }
 
@@ -682,8 +666,8 @@ struct CardDetailView: View
     /// @return     ([KanbanLabel]) resolved label definitions
     /// @post       Missing definitions do not remove IDs from the card's selection
     ///
-    var selectedLabels: [KanbanLabel] /* Selected labels */
-    {  /* Resolved selected label definitions */
+    var selectedLabels: [KanbanLabel]           /* Selected labels                     */
+    {                                           /* Resolved selected label definitions */
         selectedLabelIDs.compactMap
         {
             labelID in
@@ -692,11 +676,10 @@ struct CardDetailView: View
                     $0.id == labelID
                 })
         }
-
     }
 
 
-    var reactionStrip: some View /* Reaction strip */
+    var reactionStrip: some View        /* Reaction strip */
     {
         ItemReactionStrip(
             reactions: reactions ?? [], authorID: reactionAuthorID,
@@ -706,7 +689,6 @@ struct CardDetailView: View
                 dismissEditing();
 
                 activeSheet = .reactions
-
             })
     }
 
@@ -717,8 +699,8 @@ struct CardDetailView: View
     /// @details    Keeps nil body/attachment values until edited and preserves future model fields
     /// @return     (KanbanCard) complete current record without submitting or saving it
     ///
-    var workingCardSnapshot: KanbanCard /* Working card snapshot */
-    {  /* Original record overlaid with all current editor fields */
+    var workingCardSnapshot: KanbanCard         /* Working card snapshot                                   */
+    {                                           /* Original record overlaid with all current editor fields */
         if isEditingLocked, let lockedSnapshot
         {
             return lockedSnapshot
@@ -755,21 +737,19 @@ struct CardDetailView: View
         if displayFormat == .card || displayFormat == .note
         {
             updated.presentation = presentation
-
         }
 
         if displayFormat == .divider || displayFormat != card.displayFormat || card.listDisplayFormat != nil
         {
             updated.displayFormat = displayFormat
-
         }
 
         return updated
     }
 
 
-    var noteLocationLabel: some View /* Note location label */
-    {  /* Current personal List displayed in the Note header */
+    var noteLocationLabel: some View                    /* Note location label                                */
+    {                                                   /* Current personal List displayed in the Note header */
         SlideableHeaderText(text: currentListTitle)
         .font(.caption)
         .foregroundStyle(.secondary)
@@ -777,15 +757,15 @@ struct CardDetailView: View
     }
 
 
-    var isCurrentRecordSaved: Bool /* Current Record Saved state */
-    {  /* Bookmark state resolved for the record's current owner */
+    var isCurrentRecordSaved: Bool                              /* Current Record Saved state                             */
+    {                                                           /* Bookmark state resolved for the record's current owner */
         movedNoteIsSaved ?? savedCardIDs.contains(recordID)
     }
 
 
     @ViewBuilder
-    var locationControl: some View /* Location control */
-    {  /* List-location picker adapted to Card or Note movement */
+    var locationControl: some View              /* Location control                                      */
+    {                                           /* List-location picker adapted to Card or Note movement */
         if cardMovementAccess.move != nil
         {
             CardDestinationMenu(
@@ -814,7 +794,6 @@ struct CardDetailView: View
             }
             .accessibilityLabel("Move \(displayFormat.title.lowercased()) from \(currentListTitle)")
         }
-
     }
 
 
@@ -824,8 +803,8 @@ struct CardDetailView: View
     /// @details    Interface changes do not mark the body as edited
     /// @return     (Binding<String>) body editor binding
     ///
-    var descriptionEditingBinding: Binding<String> /* Description editing binding */
-    {  /* Body draft binding that records explicit edits */
+    var descriptionEditingBinding: Binding<String>      /* Description editing binding                    */
+    {                                                   /* Body draft binding that records explicit edits */
         Binding(
             get:
             {
@@ -835,7 +814,6 @@ struct CardDetailView: View
             {
                 hasEditedDescription = true
                 descriptionText = $0
-
             }
         )
     }
@@ -847,8 +825,8 @@ struct CardDetailView: View
     /// @details    Keeps title/body editing immediate and exposes retained metadata through Details
     /// @return     (some View) accessible Note editor without a task-completion checkbox
     ///
-    var noteEditor: some View /* Note editor */
-    {  /* Inline Note title and body editor */
+    var noteEditor: some View                           /* Note editor                       */
+    {                                                   /* Inline Note title and body editor */
         VStack(alignment: .leading, spacing: 18)
         {
             VStack(alignment: .leading, spacing: 18)
@@ -888,11 +866,10 @@ struct CardDetailView: View
 
 
                 if let createdAt = card.createdAt
-                {  /* Original Note creation timestamp displayed below its body */
+                {                                               /* Original Note creation timestamp displayed below its body */
                     NoteCreationDateLabel(createdAt: createdAt)
                     .accessibilityIdentifier("note.creationDate")
                 }
-
             }
             .padding(.horizontal, appearance?.background == nil ? 0 : 20)
             .padding(.vertical, appearance?.background == nil ? 0 : 12)
@@ -926,7 +903,6 @@ struct CardDetailView: View
             {
                 attachmentGallery
             }
-
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
@@ -936,8 +912,8 @@ struct CardDetailView: View
     }
 
 
-    var noteAttachmentsSheet: some View /* Note attachments sheet */
-    {  /* Note attachment browser and import controls */
+    var noteAttachmentsSheet: some View         /* Note attachments sheet                      */
+    {                                           /* Note attachment browser and import controls */
         NavigationStack
         {
             ScrollView
@@ -962,7 +938,6 @@ struct CardDetailView: View
                     Button("Add attachment", systemImage: "plus")
                     {
                         activeSheet = .attachmentSources
-
                     }
                     .frame(minHeight: 44)
                 }
@@ -977,19 +952,15 @@ struct CardDetailView: View
                     Button("Done")
                     {
                         activeSheet = nil
-
                     }
-
                 }
-
             }
-
         }
         .presentationDetents([.medium, .large])
     }
 
 
-    private var recordBookmarkButton: some View /* Save or unsave the current record */
+    private var recordBookmarkButton: some View         /* Save or unsave the current record */
     {
         Button(action: toggleSavedCard)
         {
@@ -1006,14 +977,13 @@ struct CardDetailView: View
     }
 
 
-    private var recordActionsMenu: some View /* Actions for the current record */
+    private var recordActionsMenu: some View    /* Actions for the current record */
     {
         Menu
         {
             Button("Info & History", systemImage: "clock.arrow.circlepath")
             {
                 activeSheet = .editHistory
-
             }
             .accessibilityIdentifier("card.editHistory")
 
@@ -1039,7 +1009,6 @@ struct CardDetailView: View
                         dismissEditing();
 
                         activeSheet = .reactions
-
                     }
 
                     if relocatedCard != nil || libraryImportance != nil
@@ -1058,57 +1027,51 @@ struct CardDetailView: View
                             {
                                 adjustCurrentImportance(by: -1)
                             }
-
                         }
-
                     }
 
                     Toggle(
-                                                                                            "Show reactions in previews",
-                                                                                            isOn: Binding(
-                                                                                                get:
-                                                                                                {
-                                                                                                    showsReactionsInPreviews != false
-                                                                                                },
-                                                                                                set:
-                                                                                                {
-                                                                                                    visible in
+                        "Show reactions in previews",
+                        isOn: Binding(
+                            get:
+                            {
+                                showsReactionsInPreviews != false
+                            },
+                            set:
+                            {
+                                visible in
 
-                                                                                                    let previous = /* Previous value for comparison */
-                                                                                                        showsReactionsInPreviews
+                                let previous =                  /* Previous value for comparison */
+                                    showsReactionsInPreviews
 
-                                                                                                    showsReactionsInPreviews = visible
+                                showsReactionsInPreviews = visible
 
-                                                                                                    if !syncCardState()
-                                                                                                    {
-                                                                                                        showsReactionsInPreviews = previous
-
-                                                                                                    }
-
-                                                                                                }))
+                                if !syncCardState()
+                                {
+                                    showsReactionsInPreviews = previous
+                                }
+                            }))
                     Toggle(
-                                                                                            "Show due date in lists",
-                                                                                            isOn: Binding(
-                                                                                                get:
-                                                                                                {
-                                                                                                    showsDueDateInList
-                                                                                                },
-                                                                                                set:
-                                                                                                {
-                                                                                                    visible in
+                        "Show due date in lists",
+                        isOn: Binding(
+                            get:
+                            {
+                                showsDueDateInList
+                            },
+                            set:
+                            {
+                                visible in
 
-                                                                                                    let previous = /* Previous value for comparison */
-                                                                                                        showsDueDateInList
+                                let previous =          /* Previous value for comparison */
+                                    showsDueDateInList
 
-                                                                                                    showsDueDateInList = visible
+                                showsDueDateInList = visible
 
-                                                                                                    if !syncCardState()
-                                                                                                    {
-                                                                                                        showsDueDateInList = previous
-
-                                                                                                    }
-
-                                                                                                }))
+                                if !syncCardState()
+                                {
+                                    showsDueDateInList = previous
+                                }
+                            }))
                 }
 
                 if displayFormat == .card, appearance?.hidesSubtitle(subtitleText) == true
@@ -1116,9 +1079,7 @@ struct CardDetailView: View
                     Button("Add subtitle", systemImage: "text.badge.plus")
                     {
                         editingHeaderField = .subtitle
-
                     }
-
                 }
 
                 Button("Appearance", systemImage: "paintpalette")
@@ -1126,7 +1087,6 @@ struct CardDetailView: View
                     dismissEditing()
 
                     activeSheet = .appearance
-
                 }
                 .disabled(onTitleToggle == nil)
 
@@ -1135,7 +1095,6 @@ struct CardDetailView: View
                     Button
                     {
                         richTextFocusedField = .description
-
                     }
                     label:
                     {
@@ -1159,28 +1118,25 @@ struct CardDetailView: View
                         moveCardMenu
                         {
                             Label(
-                                                                                                                    "Move \(displayFormat.title.lowercased())",
-                                                                                                                    systemImage: "arrowshape.turn.up.right")
+                                "Move \(displayFormat.title.lowercased())",
+                                systemImage: "arrowshape.turn.up.right")
                         }
-
                     }
 
                     Button
                     {
                         showsNoteDetails = true
                         activityFilter = .all
-
                     }
                     label:
                     {
                         Label("Show all activity", systemImage: "clock.arrow.circlepath")
                     }
-
                 }
 
 
                 if let onArchive, displayFormat != .divider
-                {  /* Available archive callback for an actionable record */
+                {                                               /* Available archive callback for an actionable record */
                     Button
                     {
                         if relocatedCard != nil
@@ -1197,7 +1153,7 @@ struct CardDetailView: View
                             }
                         }
                         else if let
-                        currentPersonalCollectionID, /* Current owner used to route relocated Note archiving */
+                        currentPersonalCollectionID,                            /* Current owner used to route relocated Note archiving */
                         currentPersonalCollectionID != personalCollectionID
                         {
                             syncCardState()
@@ -1206,7 +1162,6 @@ struct CardDetailView: View
                             {
                                 dismiss()
                             }
-
                         }
                         else
                         {
@@ -1214,13 +1169,11 @@ struct CardDetailView: View
                             onArchive()
                             dismiss()
                         }
-
                     }
                     label:
                     {
                         Label("Archive \(displayFormat.title)", systemImage: "archivebox")
                     }
-
                 }
 
 
@@ -1229,17 +1182,13 @@ struct CardDetailView: View
                     Button(role: .destructive)
                     {
                         showingDeleteConfirmation = true
-
                     }
                     label:
                     {
                         Label("Delete \(displayFormat.title)", systemImage: "trash")
                     }
-
                 }
-
             }
-
         }
         label:
         {
@@ -1307,7 +1256,6 @@ struct CardDetailView: View
             }
 
             recordActionsMenu
-
         }
 
         .padding(.horizontal, 16)
@@ -1332,14 +1280,14 @@ struct CardDetailView: View
 
     private var showsPhotoThroughHeader: Bool
     {
-        let material = (appearance?.studioSurface ?? inheritedStudioSurface)?.material /* Effective material */
+        let material = (appearance?.studioSurface ?? inheritedStudioSurface)?.material          /* Effective material */
 
         return appearance?.background == nil && (material == .photo || material == .unsplash)
     }
 
 
-    var body: some View /* Card editing interface */
-    {  /* Full card-detail presentation */
+    var body: some View         /* Card editing interface        */
+    {                           /* Full card-detail presentation */
         ScrollViewReader
         {
             scrollProxy in
@@ -1352,7 +1300,6 @@ struct CardDetailView: View
                         onOpenAttachment:
                         {
                             activeSheet = .attachmentPreview($0)
-
                         })
                 }
                 else if displayFormat == .divider
@@ -1375,49 +1322,49 @@ struct CardDetailView: View
                         }
 
                         Text(
-                                                                        "A named section includes everything beneath it until the next named section. Leave the heading blank for a simple line."
+                            "A named section includes everything beneath it until the next named section. Leave the heading blank for a simple line."
                         )
                         .font(.subheadline).foregroundStyle(.secondary)
                         if !titleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                         {
                             Toggle(
-                                                                                    "Collapse section",
-                                                                                    isOn: Binding(
-                                                                                        get:
-                                                                                        {
-                                                                                            appearance?.sectionCollapsed == true
-                                                                                        },
-                                                                                        set:
-                                                                                        {
-                                                                                            value in
+                                "Collapse section",
+                                isOn: Binding(
+                                    get:
+                                    {
+                                        appearance?.sectionCollapsed == true
+                                    },
+                                    set:
+                                    {
+                                        value in
 
-                                                                                            var updated = /* Edited value to publish */
-                                                                                                appearance ?? ItemAppearance()
+                                        var updated =                           /* Edited value to publish */
+                                            appearance ?? ItemAppearance()
 
-                                                                                            updated.sectionCollapsed = value
-                                                                                            appearance = updated
+                                        updated.sectionCollapsed = value
+                                        appearance = updated
 
-                                                                                            syncCardState()
-                                                                                        }))
+                                        syncCardState()
+                                    }))
                             Picker(
-                                                                                    "Section color",
-                                                                                    selection: Binding<ItemAccent?>(
-                                                                                        get:
-                                                                                        {
-                                                                                            appearance?.accent
-                                                                                        },
-                                                                                        set:
-                                                                                        {
-                                                                                            value in
+                                "Section color",
+                                selection: Binding<ItemAccent?>(
+                                    get:
+                                    {
+                                        appearance?.accent
+                                    },
+                                    set:
+                                    {
+                                        value in
 
-                                                                                            var updated = /* Edited value to publish */
-                                                                                                appearance ?? ItemAppearance()
+                                        var updated =                           /* Edited value to publish */
+                                            appearance ?? ItemAppearance()
 
-                                                                                            updated.accent = value
-                                                                                            appearance = updated.isEmpty ? nil : updated
+                                        updated.accent = value
+                                        appearance = updated.isEmpty ? nil : updated
 
-                                                                                            syncCardState()
-                                                                                        })
+                                        syncCardState()
+                                    })
                             )
                             {
                                 Text("Default").tag(ItemAccent?.none)
@@ -1426,9 +1373,7 @@ struct CardDetailView: View
                                     color in
                                     Text(color.rawValue.capitalized).tag(Optional(color))
                                 }
-
                             }
-
                         }
 
                         Spacer(minLength: 0)
@@ -1451,7 +1396,6 @@ struct CardDetailView: View
 
                                     activeSheet = .appearance
                                     showsAppearanceCover = true
-
                                 }
                                 label:
                                 {
@@ -1506,7 +1450,6 @@ struct CardDetailView: View
                                                         .task
                                                         {
                                                             focusedField = .title
-
                                                         }
                                                         .submitLabel(.done)
                                                         .onSubmit
@@ -1518,7 +1461,6 @@ struct CardDetailView: View
                                                             _, value in
                                                             syncCardState(title: value)
                                                         }
-
                                                     }
                                                     else
                                                     {
@@ -1527,13 +1469,11 @@ struct CardDetailView: View
                                                             onTap:
                                                             {
                                                                 editingHeaderField = .title
-
                                                             }
                                                         )
                                                         .accessibilityLabel("Card title, " + titleText)
                                                         .accessibilityIdentifier("card.readableTitle")
                                                     }
-
                                                 }
                                                 .font(.title2.weight(.bold))
                                                 .layoutPriority(1)
@@ -1555,9 +1495,7 @@ struct CardDetailView: View
                                                             if editingHeaderField == .subtitle
                                                             {
                                                                 focusedField = .subtitle
-
                                                             }
-
                                                         }
                                                         .submitLabel(.done)
                                                         .onSubmit
@@ -1569,7 +1507,6 @@ struct CardDetailView: View
                                                             _, value in
                                                             syncCardState(subtitle: value)
                                                         }
-
                                                     }
                                                     else
                                                     {
@@ -1578,19 +1515,16 @@ struct CardDetailView: View
                                                             onTap:
                                                             {
                                                                 editingHeaderField = .subtitle
-
                                                             }
                                                         )
                                                         .accessibilityLabel("Card subtitle, " + subtitleText)
                                                         .accessibilityIdentifier("card.readableSubtitle")
                                                     }
-
                                                 }
                                                 .font((appearance?.subtitleItalic ?? inheritedSubtitleItalic)
                                                       ? .subheadline.italic() : .subheadline)
                                                 .foregroundStyle(.secondary)
                                             }
-
                                         }
 
 
@@ -1617,18 +1551,14 @@ struct CardDetailView: View
                                     section in
                                     cardSection(section, using: scrollProxy)
                                 }
-
                             }
-
                         }
-
                     }
 
                     .padding(.bottom, 12)
                     // Add scrollable clearance without shortening the visible card-detail viewport
                     .contentMargins(.bottom, workspaceBottomBarHeight, for: .scrollContent)
                 }
-
             }
 
             // Keep scrolling content below the header even when the artwork shows through
@@ -1654,7 +1584,6 @@ struct CardDetailView: View
                 {
                     noteToolbar(using: scrollProxy)
                 }
-
             }
             .background
             {
@@ -1678,7 +1607,7 @@ struct CardDetailView: View
 
                 libraryItemOpened(card.id)
 
-                let owner = /* Owning collection or Week */
+                let owner =             /* Owning collection or Week */
                 checklistCollectionID
                 ?? checklistTypePlanningAccess?.document.weeks.first(where:
                     {
@@ -1689,7 +1618,6 @@ struct CardDetailView: View
                 {
                     ActivityRecentStore.remember(LibraryRecentItem(collectionID: owner, cardID: card.id))
                 }
-
             }
             .onAppear
             {
@@ -1710,7 +1638,6 @@ struct CardDetailView: View
                                 syncCardState();
                                 action()
                             }
-
                         },
                         next: keyboardNavigation.next.map
                         {
@@ -1720,7 +1647,6 @@ struct CardDetailView: View
                                 syncCardState();
                                 action()
                             }
-
                         },
                         attachment:
                         {
@@ -1732,7 +1658,6 @@ struct CardDetailView: View
                             dismissEditing();
 
                             activeSheet = .attachmentSources
-
                         },
                         checklist:
                         {
@@ -1777,15 +1702,12 @@ struct CardDetailView: View
                 if field != nil
                 {
                     richTextFocusedField = nil
-
                 }
 
                 if let editingHeaderField, field != editingHeaderField
                 {
                     self.editingHeaderField = nil
-
                 }
-
             }
             .onChange(of: selectedCoverPhoto)
             {
@@ -1793,10 +1715,10 @@ struct CardDetailView: View
                 guard let photoItem else
                 {
                     return
-                }  /* Newly selected library media awaiting cover import */
+                }                       /* Newly selected library media awaiting cover import */
 
 
-                let requestID = UUID() /* Identity used to reject superseded cover imports */
+                let requestID = UUID()          /* Identity used to reject superseded cover imports */
 
                 coverImportID = requestID
 
@@ -1804,7 +1726,6 @@ struct CardDetailView: View
                 {
                     await importPhotos(from: [photoItem], coverRequestID: requestID)
                 }
-
             }
             .onChange(of: selectedPhotoItems)
             {
@@ -1818,7 +1739,6 @@ struct CardDetailView: View
                 {
                     await importPhotos(from: photoItems)
                 }
-
             }
 
             .alert("Attachment notice", isPresented: $showingAttachmentNotice)
@@ -1826,7 +1746,6 @@ struct CardDetailView: View
                 Button("OK", role: .cancel)
                 {
                 }
-
             }
             message:
             {
@@ -1834,19 +1753,18 @@ struct CardDetailView: View
             }
 
             .alert(
-                                    "Permanently delete this \(displayFormat.title.lowercased())?", isPresented: $showingDeleteConfirmation
+                "Permanently delete this \(displayFormat.title.lowercased())?", isPresented: $showingDeleteConfirmation
             )
             {
                 Button("Delete \(displayFormat.title)", role: .destructive, action: deleteCard)
                 Button("Cancel", role: .cancel)
                 {
                 }
-
             }
             message:
             {
                 Text(
-                                                "This permanently deletes this \(displayFormat.title.lowercased()) and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone."
+                    "This permanently deletes this \(displayFormat.title.lowercased()) and its description, checklists, comments, member and label assignments, and attachments. This cannot be undone."
                 )
             }
 
@@ -1860,7 +1778,7 @@ struct CardDetailView: View
                     {
                         value in
 
-                        let previous = location /* Previous value for comparison */
+                        let previous = location         /* Previous value for comparison */
 
                         location = CardLocation.normalized(value)
 
@@ -1880,7 +1798,7 @@ struct CardDetailView: View
                         canUndo: !isEditingLocked && (onTitleToggle != nil || relocatedCard != nil),
                         onUndo: undoRevision, onClear: clearRevisionHistory)
 
-                case .date(let field): /* Date field selected for editing */
+                case .date(let field):          /* Date field selected for editing */
                     CardDateEditorSheet(
                         title: field.title,
                         date: field == .start ? startDate : dueDate,
@@ -1933,14 +1851,12 @@ struct CardDetailView: View
                         onAddLink:
                         {
                             activeSheet = .addLink
-
                         },
                         onPasteClipboard: addClipboardAttachment,
                         onComingSoon: showAttachmentSourceComingSoon,
                         onAddDrawing:
                         {
                             activeSheet = .addDrawing(DrawingCaptureDraft())
-
                         }
                     )
                     .databaseActivityOverlay()
@@ -1956,12 +1872,10 @@ struct CardDetailView: View
                         onOpenCover: displayFormat == .divider ? nil :
                         {
                             showsAppearanceCover = true
-
                         },
                         onOpenLayout:
                         {
                             showsLayoutEditor = true
-
                         },
                         displayFormat: displayFormat,
                         onSaveDisplay: saveDisplayAppearance
@@ -1975,9 +1889,7 @@ struct CardDetailView: View
                         cardCoverPanel
                         {
                             showsAppearanceCover = false
-
                         }
-
                     }
                     .sheet(isPresented: $showsLayoutEditor)
                     {
@@ -1985,7 +1897,7 @@ struct CardDetailView: View
                         {
                             updated in
 
-                            let previous = sectionLayout /* Previous value for comparison */
+                            let previous = sectionLayout        /* Previous value for comparison */
 
                             sectionLayout = updated
 
@@ -1998,7 +1910,6 @@ struct CardDetailView: View
 
                             return false
                         }
-
                     }
 
 
@@ -2006,7 +1917,6 @@ struct CardDetailView: View
                     cardCoverPanel
                     {
                         activeSheet = nil
-
                     }
 
 
@@ -2018,7 +1928,7 @@ struct CardDetailView: View
                     CardLinkAttachmentSheet(onSave: addWebLink)
                     .databaseActivityOverlay()
 
-                case .attachmentPreview(let attachment): /* Media selected for preview */
+                case .attachmentPreview(let attachment):        /* Media selected for preview */
                     CardAttachmentPreview(
                         attachment: attachment,
                         onSaveDrawing:
@@ -2032,7 +1942,7 @@ struct CardDetailView: View
                                 return false
                             }
 
-                            let previous = attachments /* Previous value for comparison */
+                            let previous = attachments          /* Previous value for comparison */
 
                             attachments[index] = replacement
 
@@ -2048,18 +1958,18 @@ struct CardDetailView: View
                     )
                     .databaseActivityOverlay()
 
-                case .actionDetail(let checklistID, let itemID): /* Selected checklist and action IDs        */
+                case .actionDetail(let checklistID, let itemID):        /* Selected checklist and action IDs        */
                     if let checklist = checklists.first(where:
-                        {  /* Checklist containing the selected action */
+                        {                                               /* Checklist containing the selected action */
                             $0.id == checklistID
-                        }), /* Owning checklist              */
+                        }),                                             /* Owning checklist              */
                     let item = checklist.items.first(where:
                         {
                             $0.id == itemID
                         }
-                    ), /* Selected action               */
+                    ),                                                  /* Selected action               */
                     case .actionDetail(let detail) = item.content
-                    {  /* Reduced Action Detail payload */
+                    {                                                   /* Reduced Action Detail payload */
                         ChecklistActionDetailView(
                             title: item.title,
                             detail: detail,
@@ -2079,18 +1989,13 @@ struct CardDetailView: View
                     else
                     {
                         ContentUnavailableView(
-                                                                        "Action unavailable",
-                                                                        systemImage: "doc.text.magnifyingglass",
-                                                                        description: Text("This checklist action could not be found.")
+                            "Action unavailable",
+                            systemImage: "doc.text.magnifyingglass",
+                            description: Text("This checklist action could not be found.")
                         )
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }

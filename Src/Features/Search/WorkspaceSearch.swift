@@ -21,14 +21,14 @@ import SwiftUI
 ///
 struct TodaySearchResult: Identifiable
 {
-    let listID:     Int           /* Board list opened when this result is selected */
-    let cardID:     Int?          /* Stable card identity, or nil for a list result */
-    let cardTitle:  String        /* Matching card title                            */
-    let listTitle:  String        /* Containing list title                          */
-    let detail:     String        /* Supporting detail shown under the title        */
-    var ownerID:    UUID?   = nil /* Record owner identifier                        */
-    var weekKey:    String? = nil /* Week key                                       */
-    var ownerTitle: String? = nil /* Owner title                                    */
+    let listID:     Int                 /* Board list opened when this result is selected */
+    let cardID:     Int?                /* Stable card identity, or nil for a list result */
+    let cardTitle:  String              /* Matching card title                            */
+    let listTitle:  String              /* Containing list title                          */
+    let detail:     String              /* Supporting detail shown under the title        */
+    var ownerID:    UUID?   = nil       /* Record owner identifier                        */
+    var weekKey:    String? = nil       /* Week key                                       */
+    var ownerTitle: String? = nil       /* Owner title                                    */
 
 
     ///
@@ -39,11 +39,10 @@ struct TodaySearchResult: Identifiable
     /// @return     (String) composite result identity
     /// @post       Result contents remain unchanged
     ///
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
                 "\(ownerID?.uuidString ?? "week"):\(listID):\(cardID.map(String.init) ?? "list")"
-    }  /* Composite search-result identity */
-
+    }                                                                                                   /* Composite search-result identity */
 }
 
 
@@ -68,11 +67,10 @@ enum TodaySearchScope: String, CaseIterable, Identifiable
     /// @return     (String) scope raw value
     /// @post       The selected scope is unchanged
     ///
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
-    }  /* Stable search-scope identity */
-
+    }                   /* Stable search-scope identity */
 }
 
 
@@ -104,8 +102,8 @@ enum TodaySearchIndex
     static func results(query: String, scope: TodaySearchScope, lists: [KanbanList], library: LabelLibrary)
     -> [TodaySearchResult]
     {
-        let term = query.trimmingCharacters( /* Normalized search term */
-            in: .whitespacesAndNewlines) /* Nonblank text matched against the chosen scope */
+        let term = query.trimmingCharacters(    /* Normalized search term */
+            in: .whitespacesAndNewlines)        /* Nonblank text matched against the chosen scope */
 
         guard !term.isEmpty else
         {
@@ -129,7 +127,6 @@ enum TodaySearchIndex
                     detail: "\(list.cards.filter { !$0.isSectionDivider } .count) cards"
                 )
             }
-
         }
 
 
@@ -145,25 +142,25 @@ enum TodaySearchIndex
                 }
 
 
-                let checklistText = card.checklists.flatMap /* Checklist text */
+                let checklistText = card.checklists.flatMap     /* Checklist text */
                 {
                     [$0.title] + $0.items.map(\.title)
-                }  /* Searchable checklist and action titles      */
+                }                                       /* Searchable checklist and action titles      */
 
-                let commentText = card.comments.flatMap /* Comment text */
+                let commentText = card.comments.flatMap         /* Comment text */
                 {
                     [$0.author, PlanRichText.plain($0.body)]
-                }  /* Searchable discussion authors and content   */
+                }                                               /* Searchable discussion authors and content   */
 
-                let users  = card.members.map(\.displayName) /* Searchable assignee names   */
-                let labels = library.labels.filter           /* Available label definitions */
+                let users  = card.members.map(\.displayName)    /* Searchable assignee names   */
+                let labels = library.labels.filter              /* Available label definitions */
                 {
                     card.labelIDs.contains($0.id)
-                }  /* Definitions of labels assigned to this card */
+                }                                       /* Definitions of labels assigned to this card */
 
-                let labelText = labels.flatMap /* Label text */
+                let labelText = labels.flatMap          /* Label text */
                 {
-                label in /* Searchable label and category names         */
+                label in                                        /* Searchable label and category names         */
                     [label.name] + library.categories.filter
                     {
                         $0.id == label.categoryID
@@ -171,7 +168,7 @@ enum TodaySearchIndex
                 }
 
 
-                let searchableText: [String] /* Card fields selected by the search scope */
+                let searchableText: [String]    /* Card fields selected by the search scope */
 
                 switch scope
                 {
@@ -195,7 +192,6 @@ enum TodaySearchIndex
                 case .boards:
 
                     searchableText = []
-
                 }
 
 
@@ -210,7 +206,7 @@ enum TodaySearchIndex
                 }
 
 
-                let detail: String /* Supporting text displayed beneath a matching card */
+                let detail: String      /* Supporting text displayed beneath a matching card */
 
                 switch scope
                 {
@@ -237,7 +233,6 @@ enum TodaySearchIndex
                             !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                         })
                     ?? checklistText.first ?? ""
-
                 }
 
 
@@ -245,11 +240,8 @@ enum TodaySearchIndex
                     listID: list.id, cardID: card.id, cardTitle: card.word, listTitle: list.title, detail: detail
                 )
             }
-
         }
-
     }
-
 }
 
 
@@ -288,18 +280,15 @@ enum LibrarySearchIndex
             {
                 match in
 
-                var result = match /* Accumulated output value */
+                var result = match      /* Accumulated output value */
 
                 result.ownerID = collection.id
                 result.ownerTitle = collection.title
 
                 return result
             }
-
         }
-
     }
-
 }
 
 
@@ -331,7 +320,7 @@ enum PlanningSharedSearchIndex
         labels: LabelLibrary
     ) -> [TodaySearchResult]
     {
-        let sources: [(UUID, String?, String, [KanbanList])] = /* Source records or files */
+        let sources: [(UUID, String?, String, [KanbanList])] =          /* Source records or files */
         access.document.weeks.map
         {
             (
@@ -357,7 +346,7 @@ enum PlanningSharedSearchIndex
             {
                 match in
 
-                var result = match /* Accumulated output value */
+                var result = match      /* Accumulated output value */
 
                 result.ownerID = ownerID;
                 result.weekKey = weekKey;
@@ -365,9 +354,6 @@ enum PlanningSharedSearchIndex
 
                 return result
             }
-
         }
-
     }
-
 }

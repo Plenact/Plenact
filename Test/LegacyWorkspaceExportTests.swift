@@ -22,10 +22,10 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws Fixture setup or assertion-support errors
     private func fixture(_ body: (UserDefaults, String, URL) throws -> Void) throws
     {
-        let domain   = "Plenact.ExportTests." + UUID().uuidString /* Lookup or storage namespace */
-        let defaults =                                            /* Preference store under test */
+        let domain   = "Plenact.ExportTests." + UUID().uuidString                               /* Lookup or storage namespace */
+        let defaults =                                                                          /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: domain))
-        let root     = /* Synthetic workspace root */
+        let root     =                                                                          /* Synthetic workspace root    */
             FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -46,12 +46,11 @@ final class LegacyWorkspaceExportTests: XCTestCase
     /// @throws An XCTest unwrap failure for a missing entry
     private func bytes(_ path: String, in wrapper: FileWrapper) throws -> Data
     {
-        var entry = wrapper /* Entry being processed */
+        var entry = wrapper     /* Entry being processed */
 
         for part in path.split(separator: "/")
         {
             entry = try XCTUnwrap(entry.fileWrappers?[String(part)])
-
         }
         return try XCTUnwrap(entry.regularFileContents)
     }
@@ -67,15 +66,15 @@ final class LegacyWorkspaceExportTests: XCTestCase
             defaults.register(defaults: ["Plenact.Board.v1": Data("[]".utf8)])
             defaults.set("private", forKey: "unrelated-secret")
 
-            let backup = /* Recoverable native snapshot */
+            let backup =                                                                                /* Recoverable native snapshot */
                 try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let values = /* Values being processed */
+            let values =                                                                                /* Values being processed      */
                 try PropertyListSerialization.propertyList(from: bytes("Preferences.plist", in: backup.files), format: nil) as? [String: Any]
 
             XCTAssertEqual(values?.count, 0)
             XCTAssertEqual(backup.storeCount, 0)
 
-            let report = /* Validation findings */
+            let report =        /* Validation findings */
                 try JSONSerialization.jsonObject(with: bytes("NativePreflight.json", in: backup.files)) as? [String: Any]
 
             XCTAssertEqual(report?["portable_conversion_complete"] as? Bool, false)
@@ -92,16 +91,16 @@ final class LegacyWorkspaceExportTests: XCTestCase
     {
         try fixture { defaults, domain, root in
 
-            let corrupt = Data([0, 255, 3]) /* Malformed input fixture */
+            let corrupt = Data([0, 255, 3])     /* Malformed input fixture */
 
             defaults.set(corrupt, forKey: "Plenact.Board.v1")
             defaults.set(Data("pending".utf8), forKey: "Plenact.DailyReviewTransaction.v1")
 
-            let before = /* State before the operation */
+            let before =                                                                                /* State before the operation  */
                 defaults.persistentDomain(forName: domain)!
-            let backup = /* Recoverable native snapshot */
+            let backup =                                                                                /* Recoverable native snapshot */
                 try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
-            let values = /* Values being processed */
+            let values =                                                                                /* Values being processed      */
                 try XCTUnwrap(try PropertyListSerialization.propertyList(from: bytes("Preferences.plist", in: backup.files), format: nil) as? [String: Any])
 
             XCTAssertEqual(values["Plenact.Board.v1"] as? Data, corrupt)
@@ -121,7 +120,7 @@ final class LegacyWorkspaceExportTests: XCTestCase
         try fixture { defaults, domain, root in
             defaults.set("sensitive", forKey: "Plenact.Future.private")
 
-            let backup = /* Recoverable native snapshot */
+            let backup =                                                                                /* Recoverable native snapshot */
                 try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
 
             XCTAssertEqual(backup.storeCount, 0)
@@ -140,13 +139,13 @@ final class LegacyWorkspaceExportTests: XCTestCase
         try fixture { defaults, domain, root in
             for area in LegacyWorkspaceExport.mediaRoots
             {
-                let folder = root.appendingPathComponent(area) /* Working folder location */
+                let folder = root.appendingPathComponent(area)          /* Working folder location */
 
                 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                 try Data([0, 1, 255]).write(to: folder.appendingPathComponent("original.bin"))
             }
 
-            let backup = /* Recoverable native snapshot */
+            let backup =                                                                                /* Recoverable native snapshot */
                 try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: root)
 
             XCTAssertEqual(backup.mediaCount, 4)
@@ -166,12 +165,12 @@ final class LegacyWorkspaceExportTests: XCTestCase
     {
         try fixture { defaults, domain, root in
 
-            let folder = /* Working folder location */
+            let folder =                                                                /* Working folder location */
                 root.appendingPathComponent(LegacyWorkspaceExport.mediaRoots[0])
 
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
-            let original = /* Baseline before changes */
+            let original =                                      /* Baseline before changes */
                 folder.appendingPathComponent("original.bin")
 
             try Data([7]).write(to: original)

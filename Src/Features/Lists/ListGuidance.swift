@@ -20,27 +20,27 @@ import UniformTypeIdentifiers
 ///
 struct SessionListGuidance: View
 {
-    let list:     KanbanList   /* List under consideration    */
-    let labels:   LabelLibrary /* Available label definitions */
-    var onReveal: () -> Void = /* Reveal callback             */
+    let list:     KanbanList            /* List under consideration    */
+    let labels:   LabelLibrary          /* Available label definitions */
+    var onReveal: () -> Void =          /* Reveal callback             */
     {
     }
 
-    var toggleRequest:        Int            = 0 /* Toggle request               */
-    var onPresentationChange: (Bool) -> Void =   /* Presentation change callback */
+    var toggleRequest:        Int            = 0        /* Toggle request               */
+    var onPresentationChange: (Bool) -> Void =          /* Presentation change callback */
     {
         _ in
     }
 
-    @State private var reportedInitialPresentation = false /* Reported initial presentation */
-    @State private var automaticRevealAttempted    = false /* Automatic reveal attempted */
-    @State private var handledToggleRequest        = 0 /* Handled toggle request */
-    @State private var entryWasEmpty: Bool /* Entry was empty */
-    @State private var isVisible            = false /* Visible state */
-    @State private var hasPreparedLayout    = false /* Prepared Layout availability */
-    @State private var guideHeight: CGFloat = 220 /* Guide height */
-    @State private var showsReadingView     = false /* Reading View visibility */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    @State private var reportedInitialPresentation = false                      /* Reported initial presentation */
+    @State private var automaticRevealAttempted    = false                      /* Automatic reveal attempted    */
+    @State private var handledToggleRequest        = 0                          /* Handled toggle request        */
+    @State private var entryWasEmpty: Bool                                      /* Entry was empty               */
+    @State private var isVisible            = false                             /* Visible state                 */
+    @State private var hasPreparedLayout    = false                             /* Prepared Layout availability  */
+    @State private var guideHeight: CGFloat = 220                               /* Guide height                  */
+    @State private var showsReadingView     = false                             /* Reading View visibility       */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference     */
 
 
     ///
@@ -73,11 +73,10 @@ struct SessionListGuidance: View
         self.toggleRequest = toggleRequest
         self.onPresentationChange = onPresentationChange
         _entryWasEmpty = State(initialValue: list.cards.isEmpty && DefaultListTutorial.guidance(for: list.title) != nil)
-
     }
 
 
-    var body: some View /* Session List Guidance layout */
+    var body: some View         /* Session List Guidance layout */
     {
         VStack(spacing: 0)
         {
@@ -86,7 +85,6 @@ struct SessionListGuidance: View
                 Button
                 {
                     showsReadingView = true
-
                 }
                 label:
                 {
@@ -117,9 +115,7 @@ struct SessionListGuidance: View
                     if height > 0
                     {
                         guideHeight = height
-
                     }
-
                 }
                 .offset(y: reduceMotion ? 0 : (isVisible ? 0 : -guideHeight))
                 .opacity(isVisible ? 1 : 0)
@@ -127,7 +123,6 @@ struct SessionListGuidance: View
                 .allowsHitTesting(isVisible)
                 .accessibilityHidden(!isVisible)
             }
-
         }
         .frame(height: hasPreparedLayout ? guideHeight : 0, alignment: .top)
         .clipped()
@@ -157,7 +152,6 @@ struct SessionListGuidance: View
                 }
 
                 handledToggleRequest = toggleRequest
-
             }
 
             if toggleRequest == 0
@@ -177,7 +171,6 @@ struct SessionListGuidance: View
                 {
                     return
                 }
-
             }
             else if isVisible
             {
@@ -187,7 +180,6 @@ struct SessionListGuidance: View
                 {
                     isVisible = false
                     hasPreparedLayout = false
-
                 }
 
                 return
@@ -214,7 +206,7 @@ struct SessionListGuidance: View
             }
 
             // Initial entry prepares the row while capture is hidden before revealing both
-            var layoutTransaction = Transaction(animation: nil) /* Layout transaction */
+            var layoutTransaction = Transaction(animation: nil)         /* Layout transaction */
 
             layoutTransaction.disablesAnimations = true
 
@@ -262,19 +254,11 @@ struct SessionListGuidance: View
                             Button("Done")
                             {
                                 showsReadingView = false
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }

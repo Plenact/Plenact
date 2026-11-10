@@ -87,14 +87,13 @@ func editBoardList(
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        let subtitleOverride = /* Subtitle override */
+        let subtitleOverride =                                                                  /* Subtitle override */
             subtitle == lists[index].subtitle ? lists[index].subtitleOverride : subtitle
 
         try lists[index].edit(title: title, subtitle: subtitleOverride)
         if let newItemPresentation
         {
             lists[index].newItemPresentation = newItemPresentation
-
         }
 
         return true
@@ -102,8 +101,7 @@ func editBoardList(
     catch
     {
         DatabaseActivity.shared.report(
-                        "Could not edit this list: \(error.localizedDescription) Its content has been retained.")
+            "Could not edit this list: \(error.localizedDescription) Its content has been retained.")
         return false
     }
-
 }

@@ -18,15 +18,15 @@ import Foundation
 ///
 struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 {
-    let id:                    Int          /* Stable numeric identifier for the card             */
-    var editHistory: [CardEditRecord]? = nil  /* Saved content changes; absent on legacy records */
-    var word:                  String       /* Display word shown as the card's title             */
-    var listTitle:             String       /* Name of the list where the card resides            */
-    var isDivider:             Bool         /* Whether this item is a movable section divider     */
-    var isTitleChecked:        Bool         /* Whether the card's main title checkbox is selected */
-    private var editingLocked: Bool? = nil  /* Missing means editable for older saved records     */
+    let id:                    Int              /* Stable numeric identifier for the card             */
+    var editHistory: [CardEditRecord]? = nil    /* Saved content changes; absent on legacy records    */
+    var word:                  String           /* Display word shown as the card's title             */
+    var listTitle:             String           /* Name of the list where the card resides            */
+    var isDivider:             Bool             /* Whether this item is a movable section divider     */
+    var isTitleChecked:        Bool             /* Whether the card's main title checkbox is selected */
+    private var editingLocked: Bool? = nil      /* Missing means editable for older saved records     */
 
-    var isEditingLocked: Bool /* Editing Locked state */
+    var isEditingLocked: Bool           /* Editing Locked state */
     {
         get
         {
@@ -36,42 +36,40 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         set
         {
             editingLocked = newValue ? true : nil
-
         }
-
     }
 
-    var members:  [CardAssignee] /* Registered and manual card assignments    */
-    var labelIDs: [String]       /* Stable IDs of labels assigned to the card */
+    var members:  [CardAssignee]        /* Registered and manual card assignments    */
+    var labelIDs: [String]              /* Stable IDs of labels assigned to the card */
 
-    var startDate:           Date?    /* Optional start date for the card                     */
-    var location:            String?  /* Optional place name or address opened in the preferred maps app */
-    var dueDate:             Date?    /* Optional due date for the card                       */
-    let createdAt:           Date?    /* Unknown for records created before timestamp support */
-    var descriptionOverride: String?  /* Optional user-edited description                     */
-    var startDateKind:       CardDateKind /* Start date kind */
-    var dueDateKind:         CardDateKind /* Due date kind */
-    var showsDueDateInList:  Bool /* Due Date In List visibility */
-    var sectionLayout:       CardSectionLayout? /* Section layout */
-    var subtitleOverride:    String? /* Optional user-edited board subtitle                */
+    var startDate:           Date?                      /* Optional start date for the card                                */
+    var location:            String?                    /* Optional place name or address opened in the preferred maps app */
+    var dueDate:             Date?                      /* Optional due date for the card                                  */
+    let createdAt:           Date?                      /* Unknown for records created before timestamp support            */
+    var descriptionOverride: String?                    /* Optional user-edited description                                */
+    var startDateKind:       CardDateKind               /* Start date kind                                                 */
+    var dueDateKind:         CardDateKind               /* Due date kind                                                   */
+    var showsDueDateInList:  Bool                       /* Due Date In List visibility                                     */
+    var sectionLayout:       CardSectionLayout?         /* Section layout                                                  */
+    var subtitleOverride:    String?                    /* Optional user-edited board subtitle                             */
 
-    var checklists:               [KanbanChecklist] /* List of checklists associated with the card        */
-    var showsReactionsInPreviews: Bool? = nil /* Reactions In Previews visibility */
+    var checklists:               [KanbanChecklist]     /* List of checklists associated with the card */
+    var showsReactionsInPreviews: Bool? = nil           /* Reactions In Previews visibility            */
 
-    var previewReactions:         [ItemEmojiReaction] /* Preview reactions */
+    var previewReactions:         [ItemEmojiReaction]           /* Preview reactions */
     {
         showsReactionsInPreviews != false && !isSectionDivider ? reactions ?? [] : []
     }
 
-    var reactions:         [ItemEmojiReaction]? = nil /* Stored item reactions */
-    var comments:          [KanbanComment]      /* Comments posted to the card's activity                  */
-    var attachments:       [KanbanAttachment]?  /* Photo attachments stored with the card                  */
-    var coverAttachmentID: UUID?                /* Explicitly chosen photo; nil disables this card's cover */
-    var appearance:        ItemAppearance? = nil /* Resolved appearance choices */
+    var reactions:         [ItemEmojiReaction]? = nil           /* Stored item reactions                                   */
+    var comments:          [KanbanComment]                      /* Comments posted to the card's activity                  */
+    var attachments:       [KanbanAttachment]?                  /* Photo attachments stored with the card                  */
+    var coverAttachmentID: UUID?                                /* Explicitly chosen photo; nil disables this card's cover */
+    var appearance:        ItemAppearance? = nil                /* Resolved appearance choices                             */
 
-    var dismissedActivityIDs:     Set<String>               /* Generated activity entries removed by the user        */
-    var listDisplayFormat:        ItemDisplayFormat? = nil  /* Explicit override; nil preserves legacy rendering     */
-    private var itemPresentation: ItemPresentation?         /* Optional persisted item kind for legacy compatibility */
+    var dismissedActivityIDs:     Set<String>                   /* Generated activity entries removed by the user        */
+    var listDisplayFormat:        ItemDisplayFormat? = nil      /* Explicit override; nil preserves legacy rendering     */
+    private var itemPresentation: ItemPresentation?             /* Optional persisted item kind for legacy compatibility */
 
 
     ///
@@ -92,11 +90,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return true
         }
 
-        var unlocked = self /* Unlocked operation value */
+        var unlocked = self     /* Unlocked operation value */
 
         unlocked.isEditingLocked = false
 
-        var candidate = updated /* Candidate under validation */
+        var candidate = updated         /* Candidate under validation */
 
         candidate.editHistory = editHistory
 
@@ -105,8 +103,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
 
     /// Missing presentation remains a Card; the default needs no new persisted key
-    var presentation: ItemPresentation /* Current presentation style */
-    {  /* Effective item kind with the legacy Card fallback */
+    var presentation: ItemPresentation          /* Current presentation style                        */
+    {                                           /* Effective item kind with the legacy Card fallback */
         get
         {
             itemPresentation ?? .card
@@ -119,16 +117,13 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             if listDisplayFormat == .card || listDisplayFormat == .note
             {
                 listDisplayFormat = newValue == .note ? .note : .card
-
             }
-
         }
-
     }
 
 
     /// Explicit choices override historical dash titles without modifying retained content
-    var displayFormat: ItemDisplayFormat /* Display format */
+    var displayFormat: ItemDisplayFormat        /* Display format */
     {
         get
         {
@@ -141,13 +136,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             if newValue == .card || newValue == .note || newValue == .title || newValue == .text
             {
                 presentation = newValue == .card ? .card : .note
-
             }
 
             listDisplayFormat = newValue
-
         }
-
     }
 
 
@@ -201,11 +193,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @details    Missing attachments, nonphotos, and dividers do not produce a cover
     /// @return     (KanbanAttachment?) selected photo metadata
     ///
-    var coverAttachment: KanbanAttachment? /* Cover attachment */
-    {  /* Valid featured photo resolved from this record's attachments */
+    var coverAttachment: KanbanAttachment?              /* Cover attachment                                             */
+    {                                                   /* Valid featured photo resolved from this record's attachments */
         guard !isSectionDivider, let coverAttachmentID
         else
-        {  /* Identity of the requested featured attachment                */
+        {               /* Identity of the requested featured attachment                */
             return nil
         }
 
@@ -214,29 +206,26 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         {
             $0.id == coverAttachmentID && $0.kind == .photo
         }
-
     }
 
 
-    var attachmentsExcludingCover: [KanbanAttachment] /* Attachments excluding cover */
-    {  /* Gallery records without the valid featured cover */
-        let displayedCoverID = coverAttachment?.id /* Featured attachment omitted from the gallery     */
+    var attachmentsExcludingCover: [KanbanAttachment]           /* Attachments excluding cover                      */
+    {                                                           /* Gallery records without the valid featured cover */
+        let displayedCoverID = coverAttachment?.id      /* Featured attachment omitted from the gallery     */
 
         return (attachments ?? []).filter
         {
             $0.id != displayedCoverID
         }
-
     }
 
 
-    var galleryPhotos: [KanbanAttachment] /* Gallery photos */
+    var galleryPhotos: [KanbanAttachment]       /* Gallery photos */
     {
         attachmentsExcludingCover.filter
         {
             $0.kind == .photo
         }
-
     }
 
 
@@ -265,12 +254,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        let text = /* Text being processed */
+        let text =                                                      /* Text being processed */
             caption.trimmingCharacters(in: .whitespacesAndNewlines)
 
         current[index].caption = text.isEmpty ? nil : text
         attachments = current
-
     }
 
 
@@ -287,7 +275,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     ///
     mutating func reorderGalleryPhotos(_ orderedIDs: [UUID]) throws
     {
-        let photos = galleryPhotos /* Photo selections or gallery entries */
+        let photos = galleryPhotos      /* Photo selections or gallery entries */
 
         guard orderedIDs.count == photos.count,
         Set(orderedIDs).count == orderedIDs.count,
@@ -298,11 +286,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
-        let byID = Dictionary(uniqueKeysWithValues: photos.map /* By ID */
+        let byID = Dictionary(uniqueKeysWithValues: photos.map          /* By ID                      */
             {
                 ($0.id, $0)
             })
-        let slots = current.indices.filter /* Available layout positions */
+        let slots = current.indices.filter                              /* Available layout positions */
         {
             current[$0].kind == .photo && current[$0].id != coverAttachment?.id
         }
@@ -315,11 +303,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             }
 
             current[slot] = photo
-
         }
 
         attachments = current
-
     }
 
 
@@ -337,7 +323,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     mutating func setCover(_ id: UUID?) throws
     {
         if let id
-        {  /* Requested attachment identity to validate as a cover */
+        {                               /* Requested attachment identity to validate as a cover */
             guard !isSectionDivider,
             attachments?.contains(where:
                 {
@@ -347,12 +333,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             {
                 throw CocoaError(.validationMissingMandatoryProperty)
             }
-
         }
 
 
         coverAttachmentID = id
-
     }
 
 
@@ -377,11 +361,11 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         }
 
 
-        let attachment = /* Owned attachment content */
+        let attachment =        /* Owned attachment content */
         attachments?.first
         {
             $0.exampleImage == image && $0.kind == .photo
-        }  /* Existing photo matching the requested example cover */
+        }                                                       /* Existing photo matching the requested example cover */
 
         ?? KanbanAttachment(mediaKind: .photo, exampleImage: image)
 
@@ -393,7 +377,6 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             if attachments == nil
             {
                 attachments = []
-
             }
 
             attachments?.append(attachment)
@@ -423,9 +406,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         if coverAttachmentID == id
         {
             coverAttachmentID = nil
-
         }
-
     }
 
 
@@ -437,8 +418,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     (Bool) whether the card should render and behave as a divider
     /// @post       Card state remains unchanged
     ///
-    var isSectionDivider: Bool /* Section Divider state */
-    {  /* Effective separator display, including legacy records */
+    var isSectionDivider: Bool          /* Section Divider state                                 */
+    {                                   /* Effective separator display, including legacy records */
         displayFormat == .divider
     }
 
@@ -457,7 +438,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     ///
     static func namedDividerHeading(_ title: String) -> String?
     {
-        let trimmed = /* Trimmed operation value */
+        let trimmed =                                                   /* Trimmed operation value */
             title.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let space = trimmed.firstIndex(where:
@@ -468,8 +449,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return nil
         }
 
-        let marker = trimmed[..<space]                      /* Marker operation value */
-        let dashes = CharacterSet(charactersIn: "-‐‑‒–—―−") /* Dashes operation value */
+        let marker = trimmed[..<space]                          /* Marker operation value */
+        let dashes = CharacterSet(charactersIn: "-‐‑‒–—―−")     /* Dashes operation value */
 
         guard marker.count >= 3, marker.unicodeScalars.allSatisfy(
             {
@@ -479,14 +460,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return nil
         }
 
-        let heading = /* Section heading text */
+        let heading =                                                           /* Section heading text */
             trimmed[space...].trimmingCharacters(in: .whitespacesAndNewlines)
 
         return heading.isEmpty ? nil : heading
     }
 
 
-    var sectionHeading: String? /* Section heading */
+    var sectionHeading: String?         /* Section heading */
     {
         guard isSectionDivider else
         {
@@ -498,7 +479,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return heading
         }
 
-        let trimmed = /* Trimmed operation value */
+        let trimmed =                                                   /* Trimmed operation value */
             word.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return trimmed.isEmpty || Self.isDividerTitle(trimmed) ? nil : trimmed
@@ -521,8 +502,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return true
         }
 
-        let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines) /* Title without surrounding spaces */
-        let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−")                /* Accepted divider dash characters */
+        let trimmedTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines)      /* Title without surrounding spaces */
+        let dashCharacters = CharacterSet(charactersIn: "-‐‑‒–—―−")                     /* Accepted divider dash characters */
 
         guard !trimmedTitle.isEmpty,
         trimmedTitle.unicodeScalars.allSatisfy(
@@ -601,27 +582,27 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         self.editingLocked = isEditingLocked ? true : nil
         self.showsReactionsInPreviews = showsReactionsInPreviews
         self.reactions = reactions?.isEmpty == true ? nil : reactions
-        self.id = id                          /* Stable numeric identifier for the card             */
-        self.word = word                      /* Display word shown as the card's title             */
-        self.listTitle = listTitle            /* Name of the list where the card resides            */
-        self.isDivider = isDivider            /* Whether this item renders as a section divider     */
-        self.isTitleChecked = isTitleChecked  /* Whether the card's main title checkbox is selected */
-        self.startDate = startDate            /* Optional start date for the card                   */
+        self.id = id                                                    /* Stable numeric identifier for the card             */
+        self.word = word                                                /* Display word shown as the card's title             */
+        self.listTitle = listTitle                                      /* Name of the list where the card resides            */
+        self.isDivider = isDivider                                      /* Whether this item renders as a section divider     */
+        self.isTitleChecked = isTitleChecked                            /* Whether the card's main title checkbox is selected */
+        self.startDate = startDate                                      /* Optional start date for the card                   */
         self.startDateKind = startDateKind
         self.dueDateKind = dueDateKind
         self.showsDueDateInList = showsDueDateInList ?? Self.defaultDueDateVisibility()
-        self.dueDate = dueDate /* Optional due date for the card                     */
+        self.dueDate = dueDate                                                          /* Optional due date for the card                     */
         self.createdAt = createdAt
-        self.comments = comments        /* Array of comments associated with the card */
-        self.members = members          /* Names of users assigned to the card        */
-        self.labelIDs = labelIDs        /* Stable IDs of labels assigned to the card  */
-        self.attachments = attachments  /* Photo attachment metadata for the card     */
+        self.comments = comments                        /* Array of comments associated with the card */
+        self.members = members                          /* Names of users assigned to the card        */
+        self.labelIDs = labelIDs                        /* Stable IDs of labels assigned to the card  */
+        self.attachments = attachments                  /* Photo attachment metadata for the card     */
         self.coverAttachmentID = coverAttachmentID
-        self.dismissedActivityIDs = dismissedActivityIDs  /* Set of activity IDs that were dismissed by user */
-        self.descriptionOverride = descriptionOverride    /* Optional user-edited description                */
-        self.subtitleOverride = subtitleOverride          /* Optional user-edited subtitle                   */
+        self.dismissedActivityIDs = dismissedActivityIDs        /* Set of activity IDs that were dismissed by user */
+        self.descriptionOverride = descriptionOverride          /* Optional user-edited description                */
+        self.subtitleOverride = subtitleOverride                /* Optional user-edited subtitle                   */
 
-        let retainedPresentation = /* Retained presentation */
+        let retainedPresentation =                              /* Retained presentation */
         [.note, .title, .text].contains(listDisplayFormat)
         ? ItemPresentation.note : (listDisplayFormat == .card ? .card : presentation)
 
@@ -642,7 +623,6 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
                 completed: 1),
             KanbanChecklist(title: "Routine", items: ["Home", "Gym", "Work"])
         ]
-
     }
 
 
@@ -660,20 +640,18 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     ///
     init(from decoder: Decoder) throws
     {
-        let container = try decoder.container(keyedBy: CodingKeys.self)  /* Card fields                        */
-        let decodedMembers: [CardAssignee]                               /* Typed or migrated card assignments */
+        let container = try decoder.container(keyedBy: CodingKeys.self)         /* Card fields                        */
+        let decodedMembers: [CardAssignee]                                      /* Typed or migrated card assignments */
 
         if let typedMembers = try? container.decode([CardAssignee].self, forKey: .members)
-        {  /* Current typed representation */
-            decodedMembers = typedMembers /* Keep registered identity references */
-
+        {                                                                                       /* Current typed representation */
+            decodedMembers = typedMembers       /* Keep registered identity references */
         }
         else
         {
-            let legacyMembers = try container.decodeIfPresent([String].self, forKey: .members) ?? [] /* Legacy names */
+            let legacyMembers = try container.decodeIfPresent([String].self, forKey: .members) ?? []    /* Legacy names */
 
-            decodedMembers = legacyMembers.map(CardAssignee.manual) /* Migrate old names as manual entries */
-
+            decodedMembers = legacyMembers.map(CardAssignee.manual)     /* Migrate old names as manual entries */
         }
 
 
@@ -709,7 +687,6 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         )
 
         editHistory = try container.decodeIfPresent([CardEditRecord].self, forKey: .editHistory)
-
     }
 
 
@@ -762,10 +739,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     (String) formatted date, or "Today" when no start date is set
     /// @post       Card dates are unchanged
     ///
-    var startDateLabel: String /* Start date label */
-    {  /* Start-date badge text or default */
+    var startDateLabel: String          /* Start date label                 */
+    {                                   /* Start-date badge text or default */
         guard let startDate else
-        {  /* No explicit start date */
+        {                               /* No explicit start date */
             return ""
         }
 
@@ -783,10 +760,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     (String) formatted date, or "Tomorrow" when no due date is set
     /// @post       Card dates are unchanged
     ///
-    var dueDateLabel: String /* Due date label */
-    {  /* Due-date badge text or default */
+    var dueDateLabel: String    /* Due date label                 */
+    {                           /* Due-date badge text or default */
         guard let dueDate else
-        {  /* No explicit due date */
+        {                       /* No explicit due date */
             return ""
         }
 
@@ -796,9 +773,9 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 
 
     /// Shared formatter used to render card date labels
-    private static let dateFormatter: DateFormatter = /* Date formatter */
-    {  /* Shared date-only display formatter */
-        let formatter = DateFormatter() /* Formatter used for card date labels */
+    private static let dateFormatter: DateFormatter =           /* Date formatter                     */
+    {                                                           /* Shared date-only display formatter */
+        let formatter = DateFormatter()         /* Formatter used for card date labels */
 
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
@@ -816,10 +793,10 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     (String) supporting text shown beneath the card title
     /// @post       Card state is unchanged
     ///
-    var subtitle: String /* Supporting item text */
-    {  /* Supporting card text or user override */
+    var subtitle: String        /* Supporting item text                  */
+    {                           /* Supporting card text or user override */
         if let subtitleOverride
-        {  /* Explicitly edited subtitle            */
+        {                               /* Explicitly edited subtitle            */
             return subtitleOverride
         }
 
@@ -841,8 +818,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     ([String]) action titles, or an empty array when no checklist exists
     /// @post       Checklist state is unchanged
     ///
-    var checklistItems: [String] /* Checklist items */
-    {  /* Titles from the first checklist */
+    var checklistItems: [String]                        /* Checklist items                 */
+    {                                                   /* Titles from the first checklist */
         checklists.first?.items.map(\.title) ?? []
     }
 
@@ -856,8 +833,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     (Int) completed action count, or zero when no checklist exists
     /// @post       Checklist state is unchanged
     ///
-    var completedChecklistItems: Int /* Completed checklist items */
-    {  /* Completion count for the first checklist */
+    var completedChecklistItems: Int            /* Completed checklist items                */
+    {                                           /* Completion count for the first checklist */
         checklists.first?.completed ?? 0
     }
 
@@ -871,8 +848,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     (Int) number of comments associated with the card
     /// @post       Comment state is unchanged
     ///
-    var commentCount: Int /* Comment count */
-    {  /* Number of activity comments */
+    var commentCount: Int       /* Comment count               */
+    {                           /* Number of activity comments */
         comments.count
     }
 
@@ -886,14 +863,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     (Bool) whether a due date is set
     /// @post       Card state is unchanged
     ///
-    var hasDueDate: Bool /* Due Date availability */
+    var hasDueDate: Bool        /* Due Date availability */
     {
         dueDate != nil
     }
 
 
     /// The badge is derived only from a stored due date and this card's saved display preference
-    var listDueDateLabel: String? /* List due date label */
+    var listDueDateLabel: String?       /* List due date label */
     {
         showsDueDateInList && hasDueDate ? dueDateLabel : nil
     }
@@ -920,7 +897,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return nil
         }
 
-        let matchesListDay = /* Matches list day */
+        let matchesListDay =                            /* Matches list day */
         dueDateKind.includesDate && listDate.map
         {
             calendar.isDate(dueDate, inSameDayAs: $0)
@@ -959,7 +936,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return false
         }
 
-        let dates = /* Dates used by this operation */
+        let dates =                                                             /* Dates used by this operation */
             [(startDate, startDateKind), (dueDate, dueDateKind)].compactMap
         {
             date, kind in
@@ -967,7 +944,6 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             {
                 ($0, kind)
             }
-
         }
 
         return !dates.isEmpty
@@ -975,7 +951,6 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         {
             $0.1 == .dateAndTime && calendar.isDate($0.0, inSameDayAs: listDate)
         }
-
     }
 
 
@@ -1009,7 +984,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return [CardScheduleBadge(title: "", value: badge.label, systemImage: badge.systemImage)]
         }
 
-        var entries: [(title: String, date: Date, kind: CardDateKind)] = /* Entries being processed */
+        var entries: [(title: String, date: Date, kind: CardDateKind)] =        /* Entries being processed */
             []
 
         if let startDate
@@ -1032,7 +1007,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             return []
         }
 
-        let sameDayTimes = /* Same day times */
+        let sameDayTimes =                                              /* Same day times */
             usesTimeOnlySchedule(on: listDate, calendar: calendar)
 
         if sameDayTimes
@@ -1043,7 +1018,6 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
                     title: $0.title, value: CardDateKind.time.label(for: $0.date),
                     systemImage: $0.title == "Start" ? "clock" : "checkmark.circle")
             }
-
         }
 
         if entries.count == 2
@@ -1054,7 +1028,6 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
                     title: $0.title == "Start" ? "Start date" : "Due date",
                     value: $0.kind.label(for: $0.date), systemImage: $0.kind == .time ? "clock" : "calendar")
             }
-
         }
 
         if dueDate == nil, let startDate
@@ -1100,15 +1073,15 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @return     (String) description shown for the card
     /// @post       Card state is unchanged
     ///
-    var funParagraph: String /* Supporting encouragement text */
-    {  /* User description or generated sample context */
+    var funParagraph: String            /* Supporting encouragement text                */
+    {                                   /* User description or generated sample context */
         if let descriptionOverride
-        {  /* User-authored description */
+        {                               /* User-authored description */
             return descriptionOverride
         }
 
 
-        let templates: [(String, String) -> String] = [ /* Generated card-context templates */
+        let templates: [(String, String) -> String] = [         /* Generated card-context templates */
             {
                 word, title in
                                         "Deep within the \(title) list, a \(word) staged a one-creature protest, demanding better lighting and a snack table. Management is 'reviewing the request', which is corporate for 'ignoring it politely'."
@@ -1151,9 +1124,8 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             }
         ]
 
-        let template = templates[id % templates.count] /* Deterministic template for this card */
+        let template = templates[id % templates.count]          /* Deterministic template for this card */
 
         return template(word, listTitle)
     }
-
 }

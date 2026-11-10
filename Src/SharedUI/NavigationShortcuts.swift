@@ -47,9 +47,7 @@ struct HideNavigationLinkIndicator: ViewModifier
         {
             content
         }
-
     }
-
 }
 
 
@@ -62,14 +60,14 @@ struct HideNavigationLinkIndicator: ViewModifier
 ///
 struct LowerCornerBackShortcut: ViewModifier
 {
-    let action: (() -> Void)? /* Requested user operation */
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData = /* Preferences data */
+    let action: (() -> Void)?                                                           /* Requested user operation */
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData =                 /* Preferences data         */
         Data()
-    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data() /* Profile data */
-    @Environment(\.workspaceBottomBarHeight) private var toolbarHeight /* Toolbar height */
-    @State private var keyboardVisible = false /* Keyboard visible */
+    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()          /* Profile data             */
+    @Environment(\.workspaceBottomBarHeight) private var toolbarHeight                  /* Toolbar height           */
+    @State private var keyboardVisible = false                                          /* Keyboard visible         */
 
-    private var enabled: Bool /* Feature availability flag */
+    private var enabled: Bool           /* Feature availability flag */
     {
         PlanPreferencesStore.resolved(preferencesData: preferencesData, profileData: profileData).enablesLowerCornerBack
     }
@@ -98,7 +96,7 @@ struct LowerCornerBackShortcut: ViewModifier
 
                     // Full-screen destinations have no toolbar below the target:
                     // include their home-indicator safe area in the touch region
-                    let bottomExtension = /* Bottom extension */
+                    let bottomExtension =                                       /* Bottom extension */
                         toolbarHeight > 0 ? 0 : geometry.safeAreaInsets.bottom
 
                     HStack(spacing: 0)
@@ -122,23 +120,18 @@ struct LowerCornerBackShortcut: ViewModifier
                 .frame(height: 44)
                 .padding(.bottom, max(0, toolbarHeight))
             }
-
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification))
         {
             _ in
 
             keyboardVisible = true
-
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
         {
             _ in
 
             keyboardVisible = false
-
         }
-
     }
-
 }

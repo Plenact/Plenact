@@ -13,12 +13,12 @@ import UniformTypeIdentifiers
 /// Carries the destination identity of a saved move back to the open editor
 struct CardMoveResult
 {
-    let card: KanbanCard /* Persisted destination record */
-    let ownerID: UUID   /* Destination collection or Week */
-    let listID: Int     /* Destination List identity */
-    let isSaved: Bool   /* Destination bookmark state */
+    let card: KanbanCard        /* Persisted destination record   */
+    let ownerID: UUID           /* Destination collection or Week */
+    let listID: Int             /* Destination List identity      */
+    let isSaved: Bool           /* Destination bookmark state     */
 
-    let day: Date?     /* Represented date for a dated List */
+    let day: Date?      /* Represented date for a dated List */
 
 
     /// Save a follow-up change against the destination's current snapshot
@@ -52,7 +52,6 @@ struct CardMoveResult
 
         return access.saveLibrary(collection)
     }
-
 }
 
 
@@ -65,17 +64,16 @@ struct CardMoveResult
 ///
 struct CardMovementAccess
 {
-    var destinations:      [CardMoveDestination]                                     = /* Available operation destinations */
+    var destinations:      [CardMoveDestination]                                     =                  /* Available operation destinations */
         []
-    var move:              ((KanbanCard, UUID?, CardMoveDestination) -> CardMoveResult?)?       = /* Move callback */
+    var move:              ((KanbanCard, UUID?, CardMoveDestination) -> CardMoveResult?)?       =       /* Move callback                    */
         nil
-    var moveToDate:        ((KanbanCard, UUID?, Date) -> CardMoveResult?)?                      = /* Move to date callback */
+    var moveToDate:        ((KanbanCard, UUID?, Date) -> CardMoveResult?)?                      =       /* Move to date callback            */
         nil
-    var moveSection:       ((KanbanCard, UUID?, CardMoveDestination, Bool) -> Bool)? = /* Move section callback */
+    var moveSection:       ((KanbanCard, UUID?, CardMoveDestination, Bool) -> Bool)? =                  /* Move section callback            */
         nil
-    var moveSectionToDate: ((KanbanCard, UUID?, Date, Bool) -> Bool)?                = /* Move section to date callback */
+    var moveSectionToDate: ((KanbanCard, UUID?, Date, Bool) -> Bool)?                =                  /* Move section to date callback    */
         nil
-
 }
 
 
@@ -88,8 +86,7 @@ struct CardMovementAccess
 ///
 struct CardMovementAccessKey: EnvironmentKey
 {
-    static let defaultValue = CardMovementAccess() /* Fallback environment value */
-
+    static let defaultValue = CardMovementAccess()      /* Fallback environment value */
 }
 
 
@@ -102,8 +99,7 @@ struct CardMovementAccessKey: EnvironmentKey
 ///
 struct CardMovementSourceKey: EnvironmentKey
 {
-    static let defaultValue: UUID? = nil /* Fallback environment value */
-
+    static let defaultValue: UUID? = nil        /* Fallback environment value */
 }
 
 
@@ -116,7 +112,7 @@ struct CardMovementSourceKey: EnvironmentKey
 ///
 extension EnvironmentValues
 {
-    var cardMovementAccess: CardMovementAccess /* Card movement access */
+    var cardMovementAccess: CardMovementAccess          /* Card movement access */
     {
         get
         {
@@ -126,12 +122,10 @@ extension EnvironmentValues
         set
         {
             self[CardMovementAccessKey.self] = newValue
-
         }
-
     }
 
-    var cardMovementSource: UUID? /* Card movement source */
+    var cardMovementSource: UUID?       /* Card movement source */
     {
         get
         {
@@ -141,11 +135,8 @@ extension EnvironmentValues
         set
         {
             self[CardMovementSourceKey.self] = newValue
-
         }
-
     }
-
 }
 
 
@@ -158,41 +149,41 @@ extension EnvironmentValues
 ///
 struct SectionMoveSheet: View
 {
-    let heading: KanbanCard   /* Section heading text */
-    var onMoved: () -> Void = /* Moved callback       */
+    let heading: KanbanCard             /* Section heading text */
+    var onMoved: () -> Void =           /* Moved callback       */
     {
     }
 
-    @Environment(\.cardMovementAccess) private var movement /* Owner-qualified transfer context */
-    @Environment(\.cardMovementSource) private var source /* Source value for this operation */
-    @Environment(\.planningCalendarAccess) private var planning /* Planning store projection */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @State private var chooseDate = false /* Choose date */
-    @State private var date       = Date() /* Date used by this operation */
-    @State private var shiftDates = false /* Shift dates */
-    @State private var failed     = false /* Rejected operation result */
+    @Environment(\.cardMovementAccess) private var movement             /* Owner-qualified transfer context */
+    @Environment(\.cardMovementSource) private var source               /* Source value for this operation  */
+    @Environment(\.planningCalendarAccess) private var planning         /* Planning store projection        */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation   */
+    @State private var chooseDate = false                               /* Choose date                      */
+    @State private var date       = Date()                              /* Date used by this operation      */
+    @State private var shiftDates = false                               /* Shift dates                      */
+    @State private var failed     = false                               /* Rejected operation result        */
 
-    @State private var destination: CardMoveDestination? /* Destination for the operation */
+    @State private var destination: CardMoveDestination?        /* Destination for the operation */
 
-    private var destinations: [CardMoveDestination] /* Available operation destinations */
+    private var destinations: [CardMoveDestination]     /* Available operation destinations */
     {
         movement.destinations.filter
         {
             item in
 
-            let current = planning?.document.weeks.first /* Current operation snapshot */
+            let current = planning?.document.weeks.first        /* Current operation snapshot */
             {
                 $0.startKey == planning?.document.currentWeekKey
             }?.id
-            let ownerID  = item.collectionID ?? current /* Record owner identifier */
-            let sourceID = source ?? current            /* Source ID               */
+            let ownerID  = item.collectionID ?? current         /* Record owner identifier */
+            let sourceID = source ?? current                    /* Source ID               */
 
             guard ownerID == sourceID else
             {
                 return true
             }
 
-            let owner = /* Owning collection or Week */
+            let owner =                         /* Owning collection or Week */
             planning?.document.weeks.first
             {
                 $0.id == sourceID
@@ -210,17 +201,16 @@ struct SectionMoveSheet: View
                     $0.id == heading.id && $0.createdAt == heading.createdAt
                 }) != true
         }
-
     }
 
-    private var destinationDay: Date? /* Destination day */
+    private var destinationDay: Date?           /* Destination day */
     {
         guard let destination, let document = planning?.document else
         {
             return nil
         }
 
-        let owner = destination.collectionID ?? document.weeks.first /* Owning collection or Week */
+        let owner = destination.collectionID ?? document.weeks.first    /* Owning collection or Week */
         {
             $0.startKey == document.currentWeekKey
         }?.id
@@ -236,10 +226,9 @@ struct SectionMoveSheet: View
         {
             PlanningDate.date($0.key, calendar: document.calendar)
         }
-
     }
 
-    var body: some View /* Section Move layout */
+    var body: some View         /* Section Move layout */
     {
         NavigationStack
         {
@@ -248,8 +237,8 @@ struct SectionMoveSheet: View
                 Section
                 {
                     Text(
-                                                            "Move “" + (heading.sectionHeading ?? "Section")
-                                                            + "” and everything beneath it up to the next named section.")
+                        "Move “" + (heading.sectionHeading ?? "Section")
+                        + "” and everything beneath it up to the next named section.")
                 }
 
                 Section("Destination")
@@ -277,15 +266,10 @@ struct SectionMoveSheet: View
                                         item in
                                         Text(item.title).tag(Optional(item))
                                     }
-
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
 
                 if chooseDate || destinationDay != nil
@@ -300,7 +284,6 @@ struct SectionMoveSheet: View
                         )
                         .font(.footnote).foregroundStyle(.secondary)
                     }
-
                 }
 
                 Section
@@ -308,7 +291,6 @@ struct SectionMoveSheet: View
                     Text("An Undo action remains available after moving, including when you navigate to another view.")
                     .font(.footnote).foregroundStyle(.secondary)
                 }
-
             }
             .navigationTitle("Move section")
             .navigationBarTitleDisplayMode(.inline)
@@ -320,26 +302,23 @@ struct SectionMoveSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
                 {
                     Button("Move")
                     {
-                        let succeeded: Bool /* Successful operation result */
+                        let succeeded: Bool     /* Successful operation result */
 
                         if chooseDate
                         {
                             succeeded = movement.moveSectionToDate?(heading, source, date, shiftDates) == true
-
                         }
                         else if let destination
                         {
                             succeeded =
                             movement.moveSection?(heading, source, destination, shiftDates && destinationDay != nil)
                             == true
-
                         }
                         else
                         {
@@ -354,29 +333,22 @@ struct SectionMoveSheet: View
                         else
                         {
                             failed = true
-
                         }
-
                     } .disabled(!chooseDate && destination == nil)
                 }
-
             }
             .alert("Section couldn't be moved", isPresented: $failed)
             {
                 Button("OK", role: .cancel)
                 {
                 }
-
             }
             message:
             {
                 Text("Your content has been retained. Check the destination and try again.")
             }
-
         }
-
     }
-
 }
 
 
@@ -389,25 +361,25 @@ struct SectionMoveSheet: View
 ///
 struct CardDestinationMenu: View
 {
-    let card:    KanbanCard   /* Card under consideration */
-    var onMoved: () -> Void = /* Moved callback           */
+    let card:    KanbanCard             /* Card under consideration */
+    var onMoved: () -> Void =           /* Moved callback           */
     {
     }
 
-    var onCardMoved: ((CardMoveResult) -> Void)? = nil /* Follow the saved move in an open editor */
-    var sourceOverride: UUID? = nil /* Owner after an earlier move in this editor */
-    var sourceListID: Int? = nil /* Exact current List after an earlier move */
+    var onCardMoved: ((CardMoveResult) -> Void)? = nil          /* Follow the saved move in an open editor    */
+    var sourceOverride: UUID? = nil                             /* Owner after an earlier move in this editor */
+    var sourceListID: Int? = nil                                /* Exact current List after an earlier move   */
 
-    var locationTitle: String?          = nil    /* Location title          */
-    @State private var showsSectionMove = false  /* Section Move visibility */
-    @State private var showsDatePicker  = false  /* Date Picker visibility  */
-    @State private var selectedMoveDate = Date() /* Selected move date      */
+    var locationTitle: String?          = nil           /* Location title          */
+    @State private var showsSectionMove = false         /* Section Move visibility */
+    @State private var showsDatePicker  = false         /* Date Picker visibility  */
+    @State private var selectedMoveDate = Date()        /* Selected move date      */
 
-    @Environment(\.planningCalendarAccess) private var calendarAccess /* Current Week owner */
-    @Environment(\.cardMovementAccess) private var access /* Scoped workspace operations     */
-    @Environment(\.cardMovementSource) private var source /* Source value for this operation */
+    @Environment(\.planningCalendarAccess) private var calendarAccess           /* Current Week owner              */
+    @Environment(\.cardMovementAccess) private var access                       /* Scoped workspace operations     */
+    @Environment(\.cardMovementSource) private var source                       /* Source value for this operation */
 
-    private var destinations: [CardMoveDestination] /* Available operation destinations */
+    private var destinations: [CardMoveDestination]     /* Available operation destinations */
     {
         access.destinations
     }
@@ -449,14 +421,13 @@ struct CardDestinationMenu: View
         }
     }
 
-    var body: some View /* Card Destination Menu layout */
+    var body: some View         /* Card Destination Menu layout */
     {
         if card.sectionHeading != nil, access.moveSection != nil
         {
             Button
             {
                 showsSectionMove = true
-
             }
             label:
             {
@@ -468,13 +439,11 @@ struct CardDestinationMenu: View
                 {
                     Label("Move section to…", systemImage: "arrowshape.turn.up.right")
                 }
-
             }
             .sheet(isPresented: $showsSectionMove)
             {
                 SectionMoveSheet(heading: card, onMoved: onMoved)
             }
-
         }
         else if access.move != nil
         {
@@ -497,11 +466,9 @@ struct CardDestinationMenu: View
                                 {
                                     completeMove(result)
                                 }
-
                             }
                             .disabled(isCurrentDestination(destination))
                         }
-
                     }
                     .disabled(!destinations.contains
                         {
@@ -514,11 +481,8 @@ struct CardDestinationMenu: View
                     Button("Choose a date…", systemImage: "calendar")
                     {
                         showsDatePicker = true
-
                     }
-
                 }
-
             }
             label:
             {
@@ -530,7 +494,6 @@ struct CardDestinationMenu: View
                 {
                     Label("Move \(card.displayFormat.title.lowercased())", systemImage: "arrowshape.turn.up.right")
                 }
-
             }
             .sheet(isPresented: $showsDatePicker)
             {
@@ -550,9 +513,7 @@ struct CardDestinationMenu: View
                             Button("Cancel")
                             {
                                 showsDatePicker = false
-
                             }
-
                         }
 
                         ToolbarItem(placement: .confirmationAction)
@@ -565,19 +526,11 @@ struct CardDestinationMenu: View
 
                                     completeMove(result)
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }

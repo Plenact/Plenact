@@ -19,8 +19,8 @@ import UniformTypeIdentifiers
 ///
 struct CardVisualCompletion: ViewModifier
 {
-    let card:     KanbanCard /* Card under consideration */
-    let onToggle: () -> Void /* Toggle item completion   */
+    let card:     KanbanCard    /* Card under consideration */
+    let onToggle: () -> Void    /* Toggle item completion   */
 
 
     ///
@@ -63,7 +63,6 @@ struct CardVisualCompletion: ViewModifier
                         .padding(2)
                         .accessibilityHidden(true)
                     }
-
                 }
                 .contentShape(Rectangle())
             }
@@ -77,9 +76,7 @@ struct CardVisualCompletion: ViewModifier
         {
             content
         }
-
     }
-
 }
 
 
@@ -91,30 +88,30 @@ struct CardVisualCompletion: ViewModifier
 ///
 struct KanbanCardView: View
 {
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic         /* Inherited subtitle styling */
 
 
-    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = /* Card Covers visibility */
-    true                                            /* Shared display-only preference                                */
-    let card:                KanbanCard             /* The kanban card being displayed                               */
-    let height:              CGFloat                /* Minimum card height; content may grow                         */
-    let displaySettings:     BoardDisplaySettings   /* Settings controlling which elements of the card are displayed */
-    var cardBackground:      KanbanListTint?       = nil /* Board-scoped tint, independent of item banner metadata        */
-    var compactCards:        Bool                  = false /* Compact cards */
-    var titleColor:          ListPreviewTextColor? = nil /* Title color */
-    var supportingTextColor: ListPreviewTextColor? = nil /* Supporting text color */
-    var listedOnDate:        Date?                 = nil // Assigned day from the list, independent of its editable title
+    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers =     /* Card Covers visibility                                        */
+    true                                                                        /* Shared display-only preference                                */
+    let card:                KanbanCard                                         /* The kanban card being displayed                               */
+    let height:              CGFloat                                            /* Minimum card height; content may grow                         */
+    let displaySettings:     BoardDisplaySettings                               /* Settings controlling which elements of the card are displayed */
+    var cardBackground:      KanbanListTint?       = nil                        /* Board-scoped tint, independent of item banner metadata        */
+    var compactCards:        Bool                  = false                      /* Compact cards                                                 */
+    var titleColor:          ListPreviewTextColor? = nil                        /* Title color                                                   */
+    var supportingTextColor: ListPreviewTextColor? = nil                        /* Supporting text color                                         */
+    var listedOnDate:        Date?                 = nil                        // Assigned day from the list, independent of its editable title
     /// Layout preset used to select compact card dimensions
-    var presentation: BoardPresentation = .standard  /* Board layout controlling the card row's density     */
-    let labelLibrary: LabelLibrary                   /* Shared label catalog used to resolve card label IDs */
-    let onUpdateCard: (KanbanCard) -> Void           /* The action invoked when card details are updated    */
-    let onDeleteCard: () -> Void                     /* The action invoked when this card is deleted        */
+    var presentation: BoardPresentation = .standard     /* Board layout controlling the card row's density     */
+    let labelLibrary: LabelLibrary                      /* Shared label catalog used to resolve card label IDs */
+    let onUpdateCard: (KanbanCard) -> Void              /* The action invoked when card details are updated    */
+    let onDeleteCard: () -> Void                        /* The action invoked when this card is deleted        */
     /// Requests archival of the displayed card
-    let onArchiveCard: () -> Void /* Archives this card through its containing list             */
-    let onToggle:      () -> Void /* Callback invoked when the card's title checkbox is toggled */
+    let onArchiveCard: () -> Void       /* Archives this card through its containing list             */
+    let onToggle:      () -> Void       /* Callback invoked when the card's title checkbox is toggled */
 
     /// Plain writing keeps previews readable without changing the stored rich note
-    private var noteExcerpt: String /* Note excerpt */
+    private var noteExcerpt: String     /* Note excerpt */
     {
         PlanRichText.plain(card.descriptionOverride ?? "")
         .replacingOccurrences(of: "\r\n", with: "\n")
@@ -123,12 +120,12 @@ struct KanbanCardView: View
     }
 
 
-    @State private var renameDraft        = ""     /* Draft text for the rename operation                        */
-    @State private var isRenaming         = false  /* Flag indicating if the rename operation is active          */
-    @State private var isEditingInfo      = false  /* Flag indicating if the card info editing mode is active    */
-    @State private var isConfirmingDelete = false  /* Flag indicating if the delete confirmation dialog is shown */
+    @State private var renameDraft        = ""          /* Draft text for the rename operation                        */
+    @State private var isRenaming         = false       /* Flag indicating if the rename operation is active          */
+    @State private var isEditingInfo      = false       /* Flag indicating if the card info editing mode is active    */
+    @State private var isConfirmingDelete = false       /* Flag indicating if the delete confirmation dialog is shown */
     /// Current Dynamic Type size used to adapt the compact card layout
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Text-size category used for adaptive card content */
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize         /* Text-size category used for adaptive card content */
 
 
     ///
@@ -139,8 +136,8 @@ struct KanbanCardView: View
     /// @return     (String) normalized rename text
     /// @post       Card content and draft state remain unchanged
     ///
-    private var trimmedRenameDraft: String /* Trimmed rename draft */
-    {  /* Normalized rename input */
+    private var trimmedRenameDraft: String                              /* Trimmed rename draft    */
+    {                                                                   /* Normalized rename input */
         renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -153,8 +150,8 @@ struct KanbanCardView: View
     /// @return     ([KanbanLabel]) resolved labels for card badges
     /// @post       Unresolved IDs are not removed from the card
     ///
-    private var cardLabels: [KanbanLabel] /* Card labels */
-    {  /* Resolved labels shown on this card */
+    private var cardLabels: [KanbanLabel]       /* Card labels                        */
+    {                                           /* Resolved labels shown on this card */
         card.labelIDs.compactMap
         {
             labelID in
@@ -163,7 +160,6 @@ struct KanbanCardView: View
                     $0.id == labelID
                 })
         }
-
     }
 
 
@@ -256,13 +252,13 @@ struct KanbanCardView: View
     /// @post       All card mutations delegate to parent callbacks; local state controls presentations only
     /// @note       Due-date badges require a stored date and this card's saved visibility setting
     ///
-    private var showsHeaderTimes: Bool /* Header Times visibility */
+    private var showsHeaderTimes: Bool          /* Header Times visibility */
     {
         displaySettings.showDueDateBadges && card.showsDueDateInList && card.usesTimeOnlySchedule(on: listedOnDate)
     }
 
 
-    private var headerTimes: some View /* Header times */
+    private var headerTimes: some View          /* Header times */
     {
         VStack(alignment: .trailing, spacing: 2)
         {
@@ -276,14 +272,13 @@ struct KanbanCardView: View
                 .accessibilityLabel(badge.title + ", " + badge.value)
                 .modifier(CardPreviewDateEditor(card: card, isStart: badge.title.hasPrefix("Start"), onUpdate: onUpdateCard))
             }
-
         }
         .fixedSize()
     }
 
 
-    var body: some View /* Kanban Card layout */
-    {  /* Compact card summary and card actions */
+    var body: some View                                                 /* Kanban Card layout                    */
+    {                                                                   /* Compact card summary and card actions */
         VStack(alignment: .leading, spacing: compactCards ? 2 : 9)
         {
             if (card.displayFormat == .title || card.displayFormat == .text) && !compactCards
@@ -301,9 +296,7 @@ struct KanbanCardView: View
                         cardActions
                         ImportantItemIndicator(cardID: card.id)
                     }
-
                 }
-
             }
             else if card.displayFormat == .picture && !compactCards
             {
@@ -313,12 +306,11 @@ struct KanbanCardView: View
                 {
                     ImportantItemIndicator(cardID: card.id).padding(10)
                 }
-
             }
             else
             {
                 if !compactCards && showsCardCovers, let cover = card.coverAttachment
-                {  /* Featured attachment allowed by the current display settings */
+                {                                                                       /* Featured attachment allowed by the current display settings */
                     CardCoverPreview(attachment: cover, height: presentation == .overview ? 72 : 128)
                 }
 
@@ -337,7 +329,6 @@ struct KanbanCardView: View
                             {
                                 Image(systemName: "photo").foregroundStyle(.secondary)
                             }
-
                         }
                         .frame(width: 44, height: 44)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -398,9 +389,7 @@ struct KanbanCardView: View
                         {
                             headerTimes
                         }
-
                     }
-
                 }
                 .itemBannerBackground(card.appearance)
 
@@ -419,7 +408,6 @@ struct KanbanCardView: View
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                     }
-
                 }
                 else if !compactCards && presentation == .standard && !card.subtitle.isEmpty
                 {
@@ -450,7 +438,6 @@ struct KanbanCardView: View
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(.secondary)
                             }
-
                         }
 
                         .fixedSize(horizontal: true, vertical: false)
@@ -458,7 +445,6 @@ struct KanbanCardView: View
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     }
-
                 }
 
 
@@ -480,7 +466,6 @@ struct KanbanCardView: View
                         {
                             cardBadges
                         }
-
                     }
 
                     .labelStyle(.titleAndIcon)
@@ -491,9 +476,7 @@ struct KanbanCardView: View
                     {
                         cardActions
                     }
-
                 }
-
             }
 
             ItemReactionPreview(card: card)
@@ -530,9 +513,7 @@ struct KanbanCardView: View
                     tint.color
                 }
                 StudioItemBackground(appearance: card.appearance, isNote: card.presentation == .note, preview: true)
-
             }
-
         }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(
@@ -563,7 +544,6 @@ struct KanbanCardView: View
             Button("Cancel", role: .cancel)
             {
             }
-
         }
 
         .sheet(isPresented: $isEditingInfo)
@@ -576,7 +556,6 @@ struct KanbanCardView: View
 
             .databaseActivityOverlay()
         }
-
     }
 
 
@@ -588,8 +567,8 @@ struct KanbanCardView: View
     /// @return     (some View) accessible card-action menu
     /// @post       Card state changes only after a selected action is invoked
     ///
-    private var cardActions: some View /* Card actions */
-    {  /* Item-kind, cover, archive, deletion, and editing menu */
+    private var cardActions: some View          /* Card actions                                          */
+    {                                           /* Item-kind, cover, archive, deletion, and editing menu */
         Menu
         {
             ItemDisplayFormatMenu(card: card, onUpdate: onUpdateCard)
@@ -597,41 +576,41 @@ struct KanbanCardView: View
             if !card.isSectionDivider
             {
                 Toggle(
-                                                "Show reactions in previews",
-                                                isOn: Binding(
-                                                    get:
-                                                    {
-                                                        card.showsReactionsInPreviews != false
-                                                    },
-                                                    set:
-                                                    {
-                                                        visible in
+                    "Show reactions in previews",
+                    isOn: Binding(
+                        get:
+                        {
+                            card.showsReactionsInPreviews != false
+                        },
+                        set:
+                        {
+                            visible in
 
-                                                        var updated = /* Edited value to publish */
-                                                            card
+                            var updated =       /* Edited value to publish */
+                                card
 
-                                                        updated.showsReactionsInPreviews = visible
+                            updated.showsReactionsInPreviews = visible
 
-                                                        onUpdateCard(updated)
-                                                    }))
+                            onUpdateCard(updated)
+                        }))
                 Toggle(
-                                                "Show due date in lists",
-                                                isOn: Binding(
-                                                    get:
-                                                    {
-                                                        card.showsDueDateInList
-                                                    },
-                                                    set:
-                                                    {
-                                                        visible in
+                    "Show due date in lists",
+                    isOn: Binding(
+                        get:
+                        {
+                            card.showsDueDateInList
+                        },
+                        set:
+                        {
+                            visible in
 
-                                                        var updated = /* Edited value to publish */
-                                                            card
+                            var updated =       /* Edited value to publish */
+                                card
 
-                                                        updated.showsDueDateInList = visible
+                            updated.showsDueDateInList = visible
 
-                                                        onUpdateCard(updated)
-                                                    }))
+                            onUpdateCard(updated)
+                        }))
             }
 
 
@@ -639,13 +618,12 @@ struct KanbanCardView: View
             {
                 Button("Remove Cover", systemImage: "photo.badge.minus")
                 {
-                    var updated = card /* Card snapshot clearing the featured cover without removing attachments */
+                    var updated = card          /* Card snapshot clearing the featured cover without removing attachments */
 
                     updated.coverAttachmentID = nil
 
                     onUpdateCard(updated)
                 }
-
             }
 
 
@@ -658,7 +636,6 @@ struct KanbanCardView: View
             Button(role: .destructive)
             {
                 isConfirmingDelete = true
-
             }
             label:
             {
@@ -669,7 +646,6 @@ struct KanbanCardView: View
             {
                 renameDraft = card.word
                 isRenaming = true
-
             }
             label:
             {
@@ -679,13 +655,11 @@ struct KanbanCardView: View
             Button
             {
                 isEditingInfo = true
-
             }
             label:
             {
                 Label("Update \(card.displayFormat.title) Info", systemImage: "slider.horizontal.3")
             }
-
         }
         label:
         {
@@ -710,8 +684,8 @@ struct KanbanCardView: View
     /// @post       Card data and display settings remain unchanged
     ///
     @ViewBuilder
-    private var cardBadges: some View /* Card badges */
-    {  /* Enabled discussion, checklist-progress, and due-date indicators */
+    private var cardBadges: some View           /* Card badges                                                     */
+    {                                           /* Enabled discussion, checklist-progress, and due-date indicators */
         if card.isEditingLocked
         {
             Label("Read-only", systemImage: "lock.fill")
@@ -745,11 +719,8 @@ struct KanbanCardView: View
                     in: RoundedRectangle(cornerRadius: 5))
                 .modifier(CardPreviewDateEditor(card: card, isStart: badge.title.hasPrefix("Start"), onUpdate: onUpdateCard))
             }
-
         }
-
     }
-
 }
 
 
@@ -761,19 +732,19 @@ struct KanbanCardView: View
 ///
 struct SingleListNoteRow: View
 {
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic         /* Inherited subtitle styling */
 
 
-    let card:      KanbanCard                 /* Card under consideration  */
-    let onToggle:  () -> Void                 /* Toggle item completion    */
-    var onArchive: (() -> Void)? = nil        /* Archive the selected item */
-    var onDelete:  (() -> Void)? = nil        /* Delete the selected item  */
-    let onUpdateCard: (KanbanCard) -> Void    /* Update card callback      */
-    @State private var confirmsDelete = false /* Confirms delete           */
+    let card:      KanbanCard                           /* Card under consideration  */
+    let onToggle:  () -> Void                           /* Toggle item completion    */
+    var onArchive: (() -> Void)? = nil                  /* Archive the selected item */
+    var onDelete:  (() -> Void)? = nil                  /* Delete the selected item  */
+    let onUpdateCard: (KanbanCard) -> Void              /* Update card callback      */
+    @State private var confirmsDelete = false           /* Confirms delete           */
 
-    private var preview: String /* Prepared content preview */
+    private var preview: String         /* Prepared content preview */
     {
-        let subtitle = /* Supporting item text */
+        let subtitle =                                                                          /* Supporting item text */
             card.subtitleOverride?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         if !subtitle.isEmpty
@@ -806,10 +777,9 @@ struct SingleListNoteRow: View
         case .dateAndTime:
             date.formatted(date: .abbreviated, time: .shortened)
         }
-
     }
 
-    var body: some View /* Single List Note layout */
+    var body: some View         /* Single List Note layout */
     {
         VStack(spacing: 0)
         {
@@ -828,7 +798,6 @@ struct SingleListNoteRow: View
                             {
                                 onToggle()
                             }
-
                         })
                     {
                         Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
@@ -869,9 +838,7 @@ struct SingleListNoteRow: View
                                 .secondary)
                             .modifier(CardPreviewDateEditor(card: card, isStart: false, onUpdate: onUpdateCard))
                         }
-
                     }
-
                 }
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 if let cover = card.coverAttachment,
@@ -881,7 +848,6 @@ struct SingleListNoteRow: View
                     Image(uiImage: image).resizable().scaledToFill().frame(width: 64, height: 64)
                     .clipped().clipShape(RoundedRectangle(cornerRadius: 6)).accessibilityHidden(true)
                 }
-
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
             Divider().padding(.leading, 58)
@@ -900,11 +866,8 @@ struct SingleListNoteRow: View
                 Button("Delete", systemImage: "trash", role: .destructive)
                 {
                     confirmsDelete = true
-
                 }
-
             }
-
         }
         .confirmationDialog("Delete \(card.word)?", isPresented: $confirmsDelete, titleVisibility: .visible)
         {
@@ -916,13 +879,10 @@ struct SingleListNoteRow: View
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text("Permanently deletes this item and its details. This cannot be undone.")
         }
-
     }
-
 }

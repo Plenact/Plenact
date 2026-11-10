@@ -31,21 +31,19 @@ enum DaySections
     ///
     static func owner(of id: Int, in cards: [KanbanCard]) -> KanbanCard?
     {
-        var heading: KanbanCard? /* Section heading text */
+        var heading: KanbanCard?        /* Section heading text */
 
         for card in cards
         {
             if card.sectionHeading != nil
             {
                 heading = card
-
             }
 
             if card.id == id
             {
                 return heading
             }
-
         }
 
         return nil
@@ -64,7 +62,7 @@ enum DaySections
     ///
     static func visible(_ cards: [KanbanCard]) -> [KanbanCard]
     {
-        var collapsed = false /* Collapsed-section state */
+        var collapsed = false           /* Collapsed-section state */
 
         return cards.filter
         {
@@ -78,7 +76,6 @@ enum DaySections
 
             return !collapsed
         }
-
     }
 
 
@@ -106,7 +103,6 @@ enum DaySections
         }
 
         cards[index].appearance?.sectionCollapsed = false
-
     }
 
 
@@ -129,7 +125,7 @@ enum DaySections
         id: Int, index: Int
     )?
     {
-        let rows = visible(cards) /* Rows used by this layout */
+        let rows = visible(cards)       /* Rows used by this layout */
 
         guard let source = sourceOffsets.first, rows.indices.contains(source),
         (0 ... rows.count).contains(destinationOffset),
@@ -142,12 +138,11 @@ enum DaySections
             return nil
         }
 
-        let boundary: Int /* Section or date boundary */
+        let boundary: Int       /* Section or date boundary */
 
         if destinationOffset == rows.count
         {
             boundary = cards.count
-
         }
         else
         {
@@ -155,7 +150,6 @@ enum DaySections
                 {
                     $0.id == rows[destinationOffset].id
                 }) ?? cards.count
-
         }
 
         return (rows[source].id, canonicalSource < boundary ? boundary - 1 : boundary)
@@ -186,13 +180,13 @@ enum DaySections
 
         guard cards[source].sectionHeading != nil else
         {
-            var result = cards /* Accumulated output value */
+            var result = cards          /* Accumulated output value */
 
             BoardCardReordering.move(itemID, to: destination, in: &result)
             return result
         }
 
-        let starts = cards.indices.filter /* Section boundary indices */
+        let starts = cards.indices.filter       /* Section boundary indices */
         {
             cards[$0].sectionHeading != nil
         }
@@ -202,16 +196,15 @@ enum DaySections
             return cards
         }
 
-        let target = starts.lastIndex(where: /* Target under consideration */
+        let target = starts.lastIndex(where:    /* Target under consideration */
             {
                 $0 <= min(max(0, destination), cards.count - 1)
             }) ?? 0
-        var result = cards /* Accumulated output value */
+        var result = cards                      /* Accumulated output value   */
 
         for _ in 0 ..< abs(target - position)
         {
             result = moved(result, sectionID: itemID, offset: target > position ? 1 : -1)
-
         }
 
         return result
@@ -232,7 +225,7 @@ enum DaySections
     ///
     static func moved(_ cards: [KanbanCard], sectionID: Int, offset: Int) -> [KanbanCard]
     {
-        let starts = cards.indices.filter /* Section boundary indices */
+        let starts = cards.indices.filter       /* Section boundary indices */
         {
             cards[$0].sectionHeading != nil
         }
@@ -248,17 +241,16 @@ enum DaySections
             return cards
         }
 
-        let start  = starts[position] /* Range start */
-        let end    =                  /* Range end   */
+        let start  = starts[position]                                           /* Range start                */
+        let end    =                                                            /* Range end                  */
             position + 1 < starts.count ? starts[position + 1] : cards.count
-        let target = /* Target under consideration */
+        let target =                                                            /* Target under consideration */
         offset < 0 ? starts[position - 1] : (position + 2 < starts.count ? starts[position + 2] : cards.count)
-        var result = cards                       /* Accumulated output value */
-        let block  = Array(cards[start ..< end]) /* Current grouped content  */
+        var result = cards                              /* Accumulated output value */
+        let block  = Array(cards[start ..< end])        /* Current grouped content  */
 
         result.removeSubrange(start ..< end)
         result.insert(contentsOf: block, at: target > start ? target - block.count : target)
         return result
     }
-
 }

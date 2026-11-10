@@ -19,10 +19,10 @@ import UniformTypeIdentifiers
 ///
 struct CreatedContentTarget: Identifiable, Equatable
 {
-    let id = UUID()     /* Record UUID                 */
-    let listID:    Int  /* Owner-local List identifier */
-    let cardID:    Int  /* Owner-local Card identifier */
-    let createdAt: Date /* Created at                  */
+    let id = UUID()             /* Record UUID                 */
+    let listID:    Int          /* Owner-local List identifier */
+    let cardID:    Int          /* Owner-local Card identifier */
+    let createdAt: Date         /* Created at                  */
 
 
     ///
@@ -40,9 +40,7 @@ struct CreatedContentTarget: Identifiable, Equatable
         {
             $0.id == cardID && $0.createdAt == createdAt
         }
-
     }
-
 }
 
 
@@ -56,8 +54,8 @@ struct CreatedContentTarget: Identifiable, Equatable
 @MainActor
 final class CreatedContentReveal: ObservableObject
 {
-    static let shared = CreatedContentReveal()                /* Shared operation value     */
-    @Published private(set) var target: CreatedContentTarget? /* Target under consideration */
+    static let shared = CreatedContentReveal()                          /* Shared operation value     */
+    @Published private(set) var target: CreatedContentTarget?           /* Target under consideration */
 
 
     ///
@@ -79,7 +77,6 @@ final class CreatedContentReveal: ObservableObject
         }
 
         target = CreatedContentTarget(listID: listID, cardID: card.id, createdAt: createdAt)
-
     }
 
 
@@ -97,11 +94,8 @@ final class CreatedContentReveal: ObservableObject
         if target?.id == request.id
         {
             target = nil
-
         }
-
     }
-
 }
 
 
@@ -114,19 +108,18 @@ final class CreatedContentReveal: ObservableObject
 ///
 struct RevealCreatedContent: ViewModifier
 {
-    let lists:         [KanbanList] /* Ordered List records */
-    var existingProxy: ScrollViewProxy? = nil /* Existing proxy */
-    @ObservedObject private var reveal  = CreatedContentReveal.shared /* Reveal operation value */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    let lists:         [KanbanList]                                             /* Ordered List records      */
+    var existingProxy: ScrollViewProxy? = nil                                   /* Existing proxy            */
+    @ObservedObject private var reveal  = CreatedContentReveal.shared           /* Reveal operation value    */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference */
 
-    private var request: CreatedContentTarget? /* Pending lookup request */
+    private var request: CreatedContentTarget?          /* Pending lookup request */
     {
         reveal.target.flatMap
         {
             target in
             lists.contains(where: target.matches) ? target : nil
         }
-
     }
 
 
@@ -153,9 +146,7 @@ struct RevealCreatedContent: ViewModifier
                 proxy in
                 revealing(content, using: proxy)
             }
-
         }
-
     }
 
 
@@ -197,7 +188,6 @@ struct RevealCreatedContent: ViewModifier
                     {
                         proxy.scrollTo(request.cardID, anchor: .center)
                     }
-
                 }
 
                 try await Task.sleep(for: .milliseconds(350))
@@ -210,11 +200,8 @@ struct RevealCreatedContent: ViewModifier
                 reveal.complete(request)
             }
             catch
-            {  /* A changed destination or dismissed view cancels its reveal  */
+            {           /* A changed destination or dismissed view cancels its reveal  */
             }
-
         }
-
     }
-
 }

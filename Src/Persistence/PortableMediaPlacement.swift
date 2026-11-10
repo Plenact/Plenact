@@ -13,8 +13,8 @@ import Foundation
 @MainActor
 struct PortableMediaPlacement
 {
-    let filenames: [String: String] /* Original file basenames      */
-    let files:     [String: Data]   /* Files used by this operation */
+    let filenames: [String: String]     /* Original file basenames      */
+    let files:     [String: Data]       /* Files used by this operation */
 
 
     /// @fcn PortableMediaPlacement.prepare
@@ -41,7 +41,7 @@ struct PortableMediaPlacement
             throw PortablePackageReview.Failure.invalid
         }
 
-        var areas: [String: Set<String>] = [:] /* Native media storage areas */
+        var areas: [String: Set<String>] = [:]          /* Native media storage areas */
 
         for mapping in mappings
         {
@@ -67,7 +67,7 @@ struct PortableMediaPlacement
                 {
                     if let id = child as? String
                     {
-                        let area: String? /* Native media storage area */
+                        let area: String?       /* Native media storage area */
 
                         switch key
                         {
@@ -88,7 +88,6 @@ struct PortableMediaPlacement
                         default:
 
                             area = nil
-
                         }
                         if let area
                         {
@@ -108,10 +107,10 @@ struct PortableMediaPlacement
         }
         usage(export, path: "")
 
-        var filenames: [String: String] = [:] /* Original file basenames    */
-        var output: [String: Data]      = [:] /* Operation output           */
-        var total                       = 0   /* Total matching entries     */
-        let available                   =     /* Available operation inputs */
+        var filenames: [String: String] = [:]                   /* Original file basenames    */
+        var output: [String: Data]      = [:]                   /* Operation output           */
+        var total                       = 0                     /* Total matching entries     */
+        let available                   =                       /* Available operation inputs */
             Set(assets.compactMap { $0["id"] as? String })
 
         guard Set(areas.keys).isSubset(of: available), Set(overrides.keys).isSubset(of: available),
@@ -129,7 +128,7 @@ struct PortableMediaPlacement
                 throw PortablePackageReview.Failure.invalid
             }
 
-            let bytes = /* Serialized or original bytes */
+            let bytes =                                                 /* Serialized or original bytes */
                 try MigrationBackupReader.file(blob, in: snapshot)
 
             guard payload["sha256"] as? String == MigrationBackupReader.digest(bytes),
@@ -138,19 +137,19 @@ struct PortableMediaPlacement
                 throw PortablePackageReview.Failure.integrity
             }
 
-            let original   = payload["original_name"] as? String ?? "" /* Baseline before changes */
-            let suffix     = /* Trailing display or path component */
+            let original   = payload["original_name"] as? String ?? ""                          /* Baseline before changes            */
+            let suffix     =                                                                    /* Trailing display or path component */
                 (original as NSString).pathExtension.lowercased()
-            let safeSuffix = /* Safe suffix */
+            let safeSuffix =                                                                    /* Safe suffix                        */
                 !suffix.isEmpty && suffix.count <= 12 && suffix.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) }
-            let name       = /* Display or lookup name */
+            let name       =                                                                    /* Display or lookup name             */
                 overrides[id] ?? (id.lowercased() + "." + (safeSuffix ? suffix : "bin"))
 
             filenames[id] = name
 
             for area in destinations
             {
-                let path = area + "/" + name /* Filesystem or navigation path */
+                let path = area + "/" + name    /* Filesystem or navigation path */
 
                 guard output[path] == nil, bytes.count <= LegacyWorkspaceExport.maximumBytes - total else
                 {
@@ -159,7 +158,6 @@ struct PortableMediaPlacement
 
                 output[path] = bytes
                 total += bytes.count
-
             }
         }
         return PortableMediaPlacement(filenames: filenames, files: output)
@@ -173,7 +171,7 @@ struct PortableMediaPlacement
     /// @throws Existing destination, unsafe plan, disk failure or corruption; partial candidate is removed
     func stage(at root: URL) throws
     {
-        let manager = FileManager.default /* Filesystem or media manager */
+        let manager = FileManager.default       /* Filesystem or media manager */
 
         guard !manager.fileExists(atPath: root.path), files.keys.allSatisfy({ path in
             guard let area = LegacyWorkspaceExport.mediaRoots.first(where: { path.hasPrefix($0 + "/") }) else
@@ -181,7 +179,7 @@ struct PortableMediaPlacement
                 return false
             }
 
-            let name = String(path.dropFirst(area.count + 1)) /* Display or lookup name */
+            let name = String(path.dropFirst(area.count + 1))           /* Display or lookup name */
 
             return !name.isEmpty && !name.contains("/") && !name.contains("\\") && name != "." && name != ".."
         }) else
@@ -189,7 +187,7 @@ struct PortableMediaPlacement
             throw PortablePackageReview.Failure.invalid
         }
 
-        var total = 0 /* Total matching entries */
+        var total = 0           /* Total matching entries */
 
         guard files.count <= 10000 else
         {
@@ -203,11 +201,10 @@ struct PortableMediaPlacement
             }
 
             total += bytes.count
-
         }
         try manager.createDirectory(at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
 
-        var finished = false /* Operation completion state */
+        var finished = false    /* Operation completion state */
 
         defer
         {
@@ -218,7 +215,7 @@ struct PortableMediaPlacement
         }
         for (path, bytes) in files.sorted(by: { $0.key < $1.key })
         {
-            let destination = root.appendingPathComponent(path) /* Destination for the operation */
+            let destination = root.appendingPathComponent(path)         /* Destination for the operation */
 
             try manager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
             try bytes.write(to: destination, options: [.atomic, .completeFileProtection])
@@ -226,7 +223,6 @@ struct PortableMediaPlacement
         try verify(at: root)
 
         finished = true
-
     }
 
 
@@ -237,19 +233,19 @@ struct PortableMediaPlacement
     /// @throws Missing, undeclared, nonregular or corrupted files
     func verify(at root: URL) throws
     {
-        let manager = FileManager.default /* Filesystem or media manager */
-        var actual  = Set<String>()       /* Observed operation result   */
+        let manager = FileManager.default       /* Filesystem or media manager */
+        var actual  = Set<String>()             /* Observed operation result   */
 
         for area in LegacyWorkspaceExport.mediaRoots
         {
-            let base = root.appendingPathComponent(area) /* Base value before overrides */
+            let base = root.appendingPathComponent(area)        /* Base value before overrides */
 
             if !manager.fileExists(atPath: base.path)
             {
                 continue
             }
 
-            var component = root /* Parsed value component */
+            var component = root        /* Parsed value component */
 
             for part in area.split(separator: "/")
             {
@@ -265,8 +261,8 @@ struct PortableMediaPlacement
             }
             for case let child as String in iterator
             {
-                let url  = base.appendingPathComponent(child) /* Resolved file location     */
-                let kind =                                    /* Content kind discriminator */
+                let url  = base.appendingPathComponent(child)                                   /* Resolved file location     */
+                let kind =                                                                      /* Content kind discriminator */
                     try manager.attributesOfItem(atPath: url.path)[.type] as? FileAttributeType
 
                 if kind == .typeDirectory
@@ -278,7 +274,7 @@ struct PortableMediaPlacement
                     throw PortablePackageReview.Failure.invalid
                 }
 
-                let path = area + "/" + child /* Filesystem or navigation path */
+                let path = area + "/" + child           /* Filesystem or navigation path */
 
                 guard let expected = files[path], try Data(contentsOf: url) == expected else
                 {

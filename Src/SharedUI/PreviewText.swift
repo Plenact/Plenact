@@ -20,7 +20,7 @@ import SwiftUI
 ///
 struct PreviewTextWidthKey: PreferenceKey
 {
-    static let defaultValue: CGFloat = 0 /* Fallback environment value */
+    static let defaultValue: CGFloat = 0        /* Fallback environment value */
 
 
     ///
@@ -36,9 +36,7 @@ struct PreviewTextWidthKey: PreferenceKey
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat)
     {
         value = nextValue()
-
     }
-
 }
 
 
@@ -50,7 +48,7 @@ struct PreviewTextWidthKey: PreferenceKey
 ///
 struct PreviewViewportWidthKey: PreferenceKey
 {
-    static let defaultValue: CGFloat = 0 /* Fallback environment value */
+    static let defaultValue: CGFloat = 0        /* Fallback environment value */
 
 
     ///
@@ -66,9 +64,7 @@ struct PreviewViewportWidthKey: PreferenceKey
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat)
     {
         value = nextValue()
-
     }
-
 }
 
 
@@ -81,7 +77,7 @@ struct PreviewViewportWidthKey: PreferenceKey
 ///
 struct PreviewVisibility: ViewModifier
 {
-    @Binding var visible: Bool /* Current visibility state */
+    @Binding var visible: Bool          /* Current visibility state */
 
 
     ///
@@ -101,26 +97,19 @@ struct PreviewVisibility: ViewModifier
             content.onScrollVisibilityChange(threshold: 0.1)
             {
                 visible = $0
-
             }
-
         }
         else
         {
             content.onAppear
             {
                 visible = true
-
             } .onDisappear
             {
                 visible = false
-
             }
-
         }
-
     }
-
 }
 
 
@@ -133,14 +122,14 @@ struct PreviewVisibility: ViewModifier
 ///
 struct GentleCollectionPreview: View
 {
-    let text: String                         /* Text being processed        */
-    var scrolls                 = false      /* Mounted native scroll views */
-    var textFont:        Font   = .caption   /* Text font                   */
-    var textColor:       Color  = .secondary /* Text color                  */
-    var pointsPerSecond: Double = 14         /* Points per second           */
-    var startPause:      Double = 2.5        /* Start pause                 */
-    var endPause:        Double = 2.5        /* End pause                   */
-    var travelsAcross           = false      /* Travels across              */
+    let text: String                            /* Text being processed        */
+    var scrolls                 = false         /* Mounted native scroll views */
+    var textFont:        Font   = .caption      /* Text font                   */
+    var textColor:       Color  = .secondary    /* Text color                  */
+    var pointsPerSecond: Double = 14            /* Points per second           */
+    var startPause:      Double = 2.5           /* Start pause                 */
+    var endPause:        Double = 2.5           /* End pause                   */
+    var travelsAcross           = false         /* Travels across              */
 
 
     ///
@@ -150,30 +139,29 @@ struct GentleCollectionPreview: View
     ///     Combines text, travel distance, and activity state so changes restart the appropriate
     ///     animation task
     ///
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
-    @Environment(\.dynamicTypeSize) private var typeSize /* Type size */
-    @State private var textWidth:     CGFloat = 0 /* Text width */
-    @State private var viewportWidth: CGFloat = 0 /* Viewport width */
-    @State private var offset:        CGFloat = 0 /* Current position offset */
-    @State private var opacity:       Double  = 1 /* Surface opacity */
-    @State private var visible                = false /* Current visibility state */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference */
+    @Environment(\.dynamicTypeSize) private var typeSize                        /* Type size                 */
+    @State private var textWidth:     CGFloat = 0                               /* Text width                */
+    @State private var viewportWidth: CGFloat = 0                               /* Viewport width            */
+    @State private var offset:        CGFloat = 0                               /* Current position offset   */
+    @State private var opacity:       Double  = 1                               /* Surface opacity           */
+    @State private var visible                = false                           /* Current visibility state  */
 
     private struct Loop: Hashable
     {
-        let text:     String  /* Text being processed              */
-        let distance: CGFloat /* Distance between layout positions */
-        let active:   Bool    /* Active operation state            */
-
+        let text:     String            /* Text being processed              */
+        let distance: CGFloat           /* Distance between layout positions */
+        let active:   Bool              /* Active operation state            */
     }
 
-    private var loop: Loop /* Current retry iteration */
+    private var loop: Loop      /* Current retry iteration */
     {
         Loop(
             text: text, distance: travelsAcross ? textWidth + viewportWidth : max(0, textWidth - viewportWidth),
             active: scrolls && !reduceMotion && !typeSize.isAccessibilitySize && visible && viewportWidth > 0)
     }
 
-    var body: some View /* Gentle Collection Preview layout */
+    var body: some View         /* Gentle Collection Preview layout */
     {
         Group
         {
@@ -191,7 +179,6 @@ struct GentleCollectionPreview: View
                             geometry in
                             Color.clear.preference(key: PreviewTextWidthKey.self, value: geometry.size.width)
                         }
-
                     }
                     .offset(x: offset).opacity(opacity)
                 }
@@ -202,7 +189,6 @@ struct GentleCollectionPreview: View
                         geometry in
                         Color.clear.preference(key: PreviewViewportWidthKey.self, value: geometry.size.width)
                     }
-
                 }
                 .clipped()
             }
@@ -211,24 +197,21 @@ struct GentleCollectionPreview: View
                 Text(text).lineLimit(travelsAcross ? nil : (typeSize.isAccessibilitySize ? 2 : 1))
                 .fixedSize(horizontal: false, vertical: travelsAcross)
             }
-
         }
         .font(textFont).foregroundStyle(textColor)
         .accessibilityElement(children: .ignore).accessibilityLabel(text)
         .onPreferenceChange(PreviewTextWidthKey.self)
         {
             textWidth = $0
-
         }
         .onPreferenceChange(PreviewViewportWidthKey.self)
         {
             viewportWidth = $0
-
         }
         .modifier(PreviewVisibility(visible: $visible))
         .task(id: loop)
         {
-            var reset = Transaction(); /* Requested state reset */
+            var reset = Transaction();          /* Requested state reset */
 
             reset.disablesAnimations = true
 
@@ -236,7 +219,6 @@ struct GentleCollectionPreview: View
             {
                 offset = travelsAcross && loop.active ? viewportWidth : 0;
                 opacity = 1
-
             }
 
             guard loop.active, loop.distance > 1 else
@@ -244,8 +226,8 @@ struct GentleCollectionPreview: View
                 return
             }
 
-            let distance = loop.distance /* Distance between layout positions */
-            let seconds  =               /* Elapsed time in seconds           */
+            let distance = loop.distance                                /* Distance between layout positions */
+            let seconds  =                                              /* Elapsed time in seconds           */
                 max(4, Double(distance) / max(1, pointsPerSecond))
 
             do
@@ -256,39 +238,31 @@ struct GentleCollectionPreview: View
                     withAnimation(.linear(duration: seconds))
                     {
                         offset = travelsAcross ? -textWidth : -distance
-
                     }
 
                     try await Task.sleep(for: .seconds(seconds + endPause))
                     withAnimation(.easeOut(duration: 0.4))
                     {
                         opacity = 0
-
                     }
 
                     try await Task.sleep(for: .seconds(0.4))
                     withTransaction(reset)
                     {
                         offset = travelsAcross ? viewportWidth : 0
-
                     }
 
                     withAnimation(.easeIn(duration: 0.6))
                     {
                         opacity = 1
-
                     }
 
                     try await Task.sleep(for: .seconds(0.6))
                 }
-
             }
             catch
-            {  /* Leaving the row or changing preferences cancels its loop  */
+            {           /* Leaving the row or changing preferences cancels its loop  */
             }
-
         }
-
     }
-
 }

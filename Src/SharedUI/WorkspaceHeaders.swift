@@ -19,16 +19,15 @@ import UniformTypeIdentifiers
 ///
 struct WorkspaceHeaderIcon: View
 {
-    let systemName: String /* System name */
+    let systemName: String      /* System name */
 
-    var body:       some View /* Workspace Header Icon layout */
+    var body:       some View           /* Workspace Header Icon layout */
     {
         Image(systemName: systemName)
         .font(.system(size: 20, weight: .medium))
         .frame(width: 44, height: 44)
         .contentShape(Rectangle())
     }
-
 }
 
 
@@ -40,8 +39,8 @@ struct WorkspaceHeaderIcon: View
 ///
 struct DayHeaderAccessibility: ViewModifier
 {
-    let label:  String        /* Resolved display label   */
-    let action: (() -> Void)? /* Requested user operation */
+    let label:  String                  /* Resolved display label   */
+    let action: (() -> Void)?           /* Requested user operation */
 
 
     ///
@@ -62,15 +61,12 @@ struct DayHeaderAccessibility: ViewModifier
             {
                 action()
             }
-
         }
         else
         {
             content
         }
-
     }
-
 }
 
 
@@ -83,36 +79,36 @@ struct DayHeaderAccessibility: ViewModifier
 ///
 struct SlideableHeaderText: View
 {
-    let text:             String               /* Text being processed     */
-    var onTap:            (() -> Void)?  = nil /* Tap callback             */
-    var onOverflowChange: (Bool) -> Void =     /* Overflow change callback */
+    let text:             String                        /* Text being processed     */
+    var onTap:            (() -> Void)?  = nil          /* Tap callback             */
+    var onOverflowChange: (Bool) -> Void =              /* Overflow change callback */
     {
         _ in
     }
 
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData = /* Preferences data */
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData =         /* Preferences data */
         Data()
 
-    private var allowsScrolling: Bool /* Allows scrolling */
+    private var allowsScrolling: Bool           /* Allows scrolling */
     {
         (try? JSONDecoder().decode(LocalProfilePreferences.self, from: preferencesData))?.scrollsOverflowingTitles
         ?? true
     }
 
-    @Environment(\.layoutDirection) private var readingDirection /* Reading direction */
-    @Namespace private var readingSpace                          /* Reading space     */
-    @State private var textFrame:     CGRect  = .zero            /* Text frame        */
-    @State private var ellipsisWidth: CGFloat = 18               /* Ellipsis width    */
-    @State private var textWidth:     CGFloat = 0                /* Text width        */
-    @State private var viewportWidth: CGFloat = 0                /* Viewport width    */
+    @Environment(\.layoutDirection) private var readingDirection        /* Reading direction */
+    @Namespace private var readingSpace                                 /* Reading space     */
+    @State private var textFrame:     CGRect  = .zero                   /* Text frame        */
+    @State private var ellipsisWidth: CGFloat = 18                      /* Ellipsis width    */
+    @State private var textWidth:     CGFloat = 0                       /* Text width        */
+    @State private var viewportWidth: CGFloat = 0                       /* Viewport width    */
 
-    private var overflows:            Bool /* Overflows state flag */
+    private var overflows:            Bool      /* Overflows state flag */
     {
         textWidth > viewportWidth + 1
     }
 
 
-    private var showsLeadingCue: Bool /* Leading Cue visibility */
+    private var showsLeadingCue: Bool           /* Leading Cue visibility */
     {
         guard overflows else
         {
@@ -123,7 +119,7 @@ struct SlideableHeaderText: View
     }
 
 
-    private var showsTrailingCue: Bool /* Trailing Cue visibility */
+    private var showsTrailingCue: Bool          /* Trailing Cue visibility */
     {
         guard overflows else
         {
@@ -134,7 +130,7 @@ struct SlideableHeaderText: View
     }
 
 
-    private var scrollingSurface: some View /* Scrolling surface */
+    private var scrollingSurface: some View     /* Scrolling surface */
     {
         Text(text.isEmpty ? " " : text)
         .lineLimit(1)
@@ -157,9 +153,7 @@ struct SlideableHeaderText: View
                     {
                         textFrame = $0
                         textWidth = $0.width
-
                     }
-
                 }
                 .id(text)
                 .coordinateSpace(name: readingSpace)
@@ -173,7 +167,6 @@ struct SlideableHeaderText: View
                 action:
                 {
                     viewportWidth = $0
-
                 }
                 .mask
                 {
@@ -201,9 +194,7 @@ struct SlideableHeaderText: View
                             .frame(width: 10)
                             Color.clear.frame(width: ellipsisWidth)
                         }
-
                     }
-
                 }
                 .overlay(alignment: .leading)
                 {
@@ -224,15 +215,12 @@ struct SlideableHeaderText: View
                     action:
                     {
                         ellipsisWidth = $0
-
                     }
                     .opacity(showsTrailingCue ? 1 : 0)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
                 }
-
             }
-
         }
         .clipped()
         .contentShape(Rectangle())
@@ -243,11 +231,10 @@ struct SlideableHeaderText: View
             _, value in
             onOverflowChange(allowsScrolling && value)
         }
-
     }
 
 
-    @ViewBuilder private var readingSurface: some View /* Reading surface */
+    @ViewBuilder private var readingSurface: some View          /* Reading surface */
     {
         if allowsScrolling
         {
@@ -262,11 +249,10 @@ struct SlideableHeaderText: View
             .contentShape(Rectangle())
             .accessibilityLabel(text)
         }
-
     }
 
 
-    var body: some View /* Slideable Header Text layout */
+    var body: some View         /* Slideable Header Text layout */
     {
         Group
         {
@@ -283,23 +269,19 @@ struct SlideableHeaderText: View
                 {
                     onTap()
                 }
-
             }
             else
             {
                 readingSurface
                 .accessibilityHint(allowsScrolling && overflows ? "Slide horizontally to read the full text." : "")
             }
-
         }
         .onChange(of: allowsScrolling, initial: true)
         {
             _, value in
             onOverflowChange(value && overflows)
         }
-
     }
-
 }
 
 
@@ -312,8 +294,7 @@ struct SlideableHeaderText: View
 ///
 struct WorkspaceHeaderTitleKey: LayoutValueKey
 {
-    static let defaultValue = false /* Fallback environment value */
-
+    static let defaultValue = false     /* Fallback environment value */
 }
 
 
@@ -345,12 +326,11 @@ enum WorkspaceHeaderSpacing
         gapCount: Int, regularSpacing: CGFloat
     ) -> CGFloat
     {
-        let titleSpace = /* Title space */
+        let titleSpace =                                                                        /* Title space */
             max(0, availableWidth - controlsWidth - CGFloat(max(0, gapCount)) * regularSpacing)
 
         return titleIdealWidth > titleSpace + 1 ? 0 : regularSpacing
     }
-
 }
 
 
@@ -363,8 +343,8 @@ enum WorkspaceHeaderSpacing
 ///
 struct AdaptiveWorkspaceHeaderLayout: Layout
 {
-    var regularSpacing:  CGFloat                        /* Regular spacing  */
-    var layoutDirection: LayoutDirection = .leftToRight /* Layout direction */
+    var regularSpacing:  CGFloat                                /* Regular spacing  */
+    var layoutDirection: LayoutDirection = .leftToRight         /* Layout direction */
 
 
     ///
@@ -381,7 +361,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     ///
     private func arrangement(width: CGFloat?, subviews: Subviews) -> (sizes: [CGSize], gap: CGFloat, width: CGFloat)
     {
-        let ideal = subviews.map /* Preferred layout size */
+        let ideal = subviews.map        /* Preferred layout size */
         {
             $0.sizeThatFits(.unspecified)
         }
@@ -391,7 +371,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
                 subviews[$0] [WorkspaceHeaderTitleKey.self]
             }) else
         {
-            let total = ideal.reduce(0) /* Total matching entries */
+            let total = ideal.reduce(0)         /* Total matching entries */
             {
                 $0 + $1.width
             }
@@ -400,7 +380,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
             return (ideal, regularSpacing, width ?? total)
         }
 
-        let controlsWidth = ideal.enumerated().filter /* Controls width */
+        let controlsWidth = ideal.enumerated().filter           /* Controls width */
         {
             $0.offset != title
         } .reduce(0)
@@ -408,16 +388,16 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
             $0 + $1.element.width
         }
 
-        let gapCount  = max(0, subviews.count - 1) /* Gap count                  */
-        let available =                            /* Available operation inputs */
+        let gapCount  = max(0, subviews.count - 1)                                              /* Gap count                     */
+        let available =                                                                         /* Available operation inputs    */
             width ?? (controlsWidth + ideal[title].width + CGFloat(gapCount) * regularSpacing)
-        let gap       = WorkspaceHeaderSpacing.gap( /* Spacing between visible items */
+        let gap       = WorkspaceHeaderSpacing.gap(                                             /* Spacing between visible items */
             availableWidth: available, titleIdealWidth: ideal[title].width,
             controlsWidth: controlsWidth, gapCount: gapCount, regularSpacing: regularSpacing)
-        let titleWidth = /* Title width */
+        let titleWidth =                                                                        /* Title width                   */
             max(0, available - controlsWidth - CGFloat(gapCount) * gap)
-        var sizes      = ideal /* Measured layout dimensions */
-        let titleSize  =       /* Title size                 */
+        var sizes      = ideal                                                                  /* Measured layout dimensions    */
+        let titleSize  =                                                                        /* Title size                    */
             subviews[title].sizeThatFits(ProposedViewSize(width: titleWidth, height: nil))
 
         sizes[title] = CGSize(width: titleWidth, height: titleSize.height)
@@ -439,7 +419,7 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     ///
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
     {
-        let layout = /* Resolved layout configuration */
+        let layout =                                                    /* Resolved layout configuration */
             arrangement(width: proposal.width, subviews: subviews)
 
         return CGSize(width: layout.width, height: layout.sizes.map(\.height).max() ?? 0)
@@ -461,14 +441,14 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
     ///
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
     {
-        let layout          = /* Resolved layout configuration */
+        let layout          =                                           /* Resolved layout configuration */
             arrangement(width: bounds.width, subviews: subviews)
-        var offset: CGFloat = 0 /* Current position offset */
+        var offset: CGFloat = 0                                         /* Current position offset       */
 
         for index in subviews.indices
         {
-            let size = layout.sizes[index] /* Content or layout size       */
-            let x    =                     /* Horizontal layout coordinate */
+            let size = layout.sizes[index]      /* Content or layout size       */
+            let x    =                          /* Horizontal layout coordinate */
             layoutDirection == .rightToLeft
             ? bounds.maxX - offset - size.width / 2
             : bounds.minX + offset + size.width / 2
@@ -478,9 +458,6 @@ struct AdaptiveWorkspaceHeaderLayout: Layout
                 proposal: ProposedViewSize(width: size.width, height: size.height))
 
             offset += size.width + layout.gap
-
         }
-
     }
-
 }

@@ -24,15 +24,15 @@ import UniformTypeIdentifiers
 ///
 struct ImportanceStarCluster: View
 {
-    let level:         Int                           /* Saved importance level */
-    var style:         ImportanceStarStyle = .tucked /* Selected display style */
+    let level:         Int                              /* Saved importance level */
+    var style:         ImportanceStarStyle = .tucked    /* Selected display style */
 
-    private var count: Int /* Number of entries */
+    private var count: Int      /* Number of entries */
     {
         min(5, max(0, level))
     }
 
-    var body: some View /* Importance Star Cluster layout */
+    var body: some View         /* Importance Star Cluster layout */
     {
         ZStack(alignment: .topLeading)
         {
@@ -49,7 +49,6 @@ struct ImportanceStarCluster: View
                 .rotationEffect(.degrees(style == .fanned ? Double(depth) * -9 : 0))
                 .offset(x: position(depth: depth).width, y: position(depth: depth).height)
             }
-
         }
         .frame(width: style == .tucked ? 24 : 28, height: 22, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
@@ -78,14 +77,13 @@ struct ImportanceStarCluster: View
             return CGSize(width: 3 + Double(depth) * 3.1, height: 7 - Double(depth) * 1.5)
         }
 
-        let positions: [CGSize] = [ /* Visible item positions */
+        let positions: [CGSize] = [                                     /* Visible item positions */
             CGSize(width: 6, height: 8), CGSize(width: 0, height: 3),
             CGSize(width: 11, height: 2), CGSize(width: 3, height: 0), CGSize(width: 8, height: 0)
         ]
 
         return positions[depth]
     }
-
 }
 
 
@@ -98,19 +96,19 @@ struct ImportanceStarCluster: View
 ///
 struct ImportantItemIndicator: View
 {
-    let cardID:  Int /* Owner-local Card identifier */
-    var ownerID: UUID?                                                   = /* Record owner identifier */
+    let cardID:  Int                                                                    /* Owner-local Card identifier      */
+    var ownerID: UUID?                                                   =              /* Record owner identifier          */
         nil
-    @AppStorage("Plenact.LibraryImportant.v1") private var importantData = /* Important data */
+    @AppStorage("Plenact.LibraryImportant.v1") private var importantData =              /* Important data                   */
         Data()
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData    = /* Preferences data */
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData    =              /* Preferences data                 */
         Data()
-    @AppStorage(LocalProfileStore.storageKey) private var profileData    = Data() /* Profile data */
-    @Environment(\.cardMovementSource) private var source /* Source value for this operation */
-    @Environment(\.libraryImportance) private var importance /* Owner-qualified importance state */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    @AppStorage(LocalProfileStore.storageKey) private var profileData    = Data()       /* Profile data                     */
+    @Environment(\.cardMovementSource) private var source                               /* Source value for this operation  */
+    @Environment(\.libraryImportance) private var importance                            /* Owner-qualified importance state */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion                  /* Reduced-motion preference        */
 
-    private var level: Int /* Saved importance level */
+    private var level: Int      /* Saved importance level */
     {
         if let owner = ownerID ?? source
         {
@@ -120,7 +118,7 @@ struct ImportantItemIndicator: View
         return importance?.level(cardID) ?? 0
     }
 
-    var body: some View /* Important Item Indicator layout */
+    var body: some View         /* Important Item Indicator layout */
     {
         if level > 0
         {
@@ -158,7 +156,6 @@ struct ImportantItemIndicator: View
                     case .second:
                         adjustImportance(by: 1)
                     }
-
                 }
             )
             .accessibilityHint("Tap to increase importance. Touch and hold to decrease it by one star.")
@@ -169,9 +166,7 @@ struct ImportantItemIndicator: View
             {
                 adjustImportance(by: -1)
             }
-
         }
-
     }
 
 
@@ -187,7 +182,7 @@ struct ImportantItemIndicator: View
     ///
     private func adjustImportance(by direction: Int)
     {
-        let previous = level /* Previous value for comparison */
+        let previous = level    /* Previous value for comparison */
 
         guard direction > 0 ? previous < 5 : previous > 0 else
         {
@@ -199,7 +194,6 @@ struct ImportantItemIndicator: View
             importantData = LibraryImportanceSelection.adjusting(
                 cardID: cardID, collectionID: owner,
                 direction: direction, data: importantData)
-
         }
         else
         {
@@ -210,9 +204,7 @@ struct ImportantItemIndicator: View
         {
             UISelectionFeedbackGenerator().selectionChanged()
         }
-
     }
-
 }
 
 
@@ -248,7 +240,7 @@ struct ImportanceInteractionRegion: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> Marker
     {
-        let marker = Marker() /* Marker operation value */
+        let marker = Marker()           /* Marker operation value */
 
         marker.isUserInteractionEnabled = false
 
@@ -299,9 +291,7 @@ struct ImportanceInteractionRegion: UIViewRepresentable
         {
             contains(point, from: coordinateSpace, in: $0)
         }
-
     }
-
 }
 
 
@@ -314,9 +304,9 @@ struct ImportanceInteractionRegion: UIViewRepresentable
 ///
 struct ImportanceStarStylePicker: View
 {
-    @Binding var selection: ImportanceStarStyle /* Current selection state */
+    @Binding var selection: ImportanceStarStyle         /* Current selection state */
 
-    var body:               some View /* Importance Star Style Picker layout */
+    var body:               some View           /* Importance Star Style Picker layout */
     {
         Picker("Importance stars", selection: $selection)
         {
@@ -329,9 +319,7 @@ struct ImportanceStarStylePicker: View
                     ImportanceStarCluster(level: 4, style: style)
                 } .tag(style)
             }
-
         }
         .accessibilityIdentifier("settings.importanceStarStyle")
     }
-
 }

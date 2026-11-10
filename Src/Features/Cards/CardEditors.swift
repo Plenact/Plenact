@@ -25,12 +25,12 @@ import UniformTypeIdentifiers
 ///
 struct CardMembersSheet: View
 {
-    let onSave:       ([CardAssignee]) -> Void  /* Save typed card assignments                        */
-    let memberColors: [String: Color]           /* Shared icon colors keyed by normalized member name */
+    let onSave:       ([CardAssignee]) -> Void          /* Save typed card assignments                        */
+    let memberColors: [String: Color]                   /* Shared icon colors keyed by normalized member name */
 
-    @Environment(\.dismiss) private var dismiss /* Dismiss action for the sheet               */
-    @State private var members: [CardAssignee]  /* Local typed assignments being edited       */
-    @State private var memberDraft = ""         /* Current text input for adding a new member */
+    @Environment(\.dismiss) private var dismiss         /* Dismiss action for the sheet               */
+    @State private var members: [CardAssignee]          /* Local typed assignments being edited       */
+    @State private var memberDraft = ""                 /* Current text input for adding a new member */
 
     ///
     /// @fcn        CardMembersSheet.trimmedMemberDraft
@@ -40,8 +40,8 @@ struct CardMembersSheet: View
     /// @return     (String) normalized member draft, potentially empty
     /// @post       Draft text and existing assignments remain unchanged
     ///
-    private var trimmedMemberDraft: String /* Trimmed member draft */
-    {  /* Normalized manual-assignee input */
+    private var trimmedMemberDraft: String                              /* Trimmed member draft             */
+    {                                                                   /* Normalized manual-assignee input */
         memberDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -55,14 +55,13 @@ struct CardMembersSheet: View
     /// @return     (Bool) whether Add or implicit draft inclusion on Save is permitted
     /// @post       No assignment is added by validation
     ///
-    private var canAddMember: Bool /* Add Member availability */
-    {  /* Draft is non-empty and not already assigned */
+    private var canAddMember: Bool      /* Add Member availability                     */
+    {                                   /* Draft is non-empty and not already assigned */
         !trimmedMemberDraft.isEmpty
         && !members.contains
         {
             $0.displayName.localizedCaseInsensitiveCompare(trimmedMemberDraft) == .orderedSame
         }
-
     }
 
 
@@ -75,22 +74,22 @@ struct CardMembersSheet: View
     /// @return     ([CardAssignee]) normalized assignments preserving first-occurrence order and identity
     /// @post       Local drafts remain unchanged; a valid unsubmitted name can be included in the result
     ///
-    private var normalizedMembers: [CardAssignee] /* Normalized members */
-    {  /* Deduplicated assignments prepared for saving */
-        var seenAssignments: Set<String> = [] /* Identity keys already emitted */
+    private var normalizedMembers: [CardAssignee]       /* Normalized members                           */
+    {                                                   /* Deduplicated assignments prepared for saving */
+        var seenAssignments: Set<String> = []           /* Identity keys already emitted */
 
-        let manualDraft = /* Manual draft */
-        canAddMember ? [CardAssignee.manual(trimmedMemberDraft)] : []  /* Optional new manual assignment        */
-        let membersToSave = members + manualDraft                      /* Existing assignments plus valid draft */
+        let manualDraft =                                                       /* Manual draft                          */
+        canAddMember ? [CardAssignee.manual(trimmedMemberDraft)] : []           /* Optional new manual assignment        */
+        let membersToSave = members + manualDraft                               /* Existing assignments plus valid draft */
 
         return membersToSave.compactMap
         {
             assignee in
 
-            let trimmedName = assignee.displayName.trimmingCharacters( /* Trimmed name */
-                in: .whitespacesAndNewlines) /* Normalized display name   */
-            let identityKey = /* Identity key */
-            assignee.kind == .registeredUser /* Stable identity namespace */
+            let trimmedName = assignee.displayName.trimmingCharacters(          /* Trimmed name              */
+                in: .whitespacesAndNewlines)                            /* Normalized display name   */
+            let identityKey =                                                   /* Identity key              */
+            assignee.kind == .registeredUser                                    /* Stable identity namespace */
             ? "user:\(assignee.userID ?? assignee.id.uuidString)"
             : "manual:\(trimmedName.lowercased())"
 
@@ -107,7 +106,6 @@ struct CardMembersSheet: View
                 displayName: trimmedName
             )
         }
-
     }
 
 
@@ -127,7 +125,6 @@ struct CardMembersSheet: View
         self.onSave = onSave
         self.memberColors = memberColors
         _members = State(initialValue: members)
-
     }
 
 
@@ -154,7 +151,6 @@ struct CardMembersSheet: View
         members.append(.manual(trimmedMemberDraft))
 
         memberDraft = ""
-
     }
 
 
@@ -168,8 +164,8 @@ struct CardMembersSheet: View
     /// @post       Save submits normalizedMembers, including a valid pending draft, then dismisses.
     ///             Cancel discards local changes without invoking onSave
     ///
-    var body: some View /* Card Members layout */
-    {  /* Member assignment editor */
+    var body: some View         /* Card Members layout      */
+    {                           /* Member assignment editor */
         NavigationStack
         {
             List
@@ -198,18 +194,17 @@ struct CardMembersSheet: View
                             if members[index].kind == .manual
                             {
                                 TextField(
-                                                                                                "Name or email",
-                                                                                                text: Binding(
-                                                                                                    get:
-                                                                                                    {
-                                                                                                        members[index].displayName
-                                                                                                    },
-                                                                                                    set:
-                                                                                                    {
-                                                                                                        members[index].displayName = $0
-
-                                                                                                    }
-                                                                                                )
+                                    "Name or email",
+                                    text: Binding(
+                                        get:
+                                        {
+                                            members[index].displayName
+                                        },
+                                        set:
+                                        {
+                                            members[index].displayName = $0
+                                        }
+                                    )
                                 ).textInputAutocapitalization(.sentences)
                             }
                             else
@@ -217,7 +212,6 @@ struct CardMembersSheet: View
                                 Text(members[index].displayName)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
-
                         }
 
                         .swipeActions(edge: .trailing, allowsFullSwipe: true)
@@ -230,11 +224,8 @@ struct CardMembersSheet: View
                             {
                                 Label("Remove", systemImage: "trash")
                             }
-
                         }
-
                     }
-
                 }
 
 
@@ -253,9 +244,7 @@ struct CardMembersSheet: View
                         .disabled(!canAddMember)
                         .accessibilityLabel("Add member")
                     }
-
                 }
-
             }
 
             .navigationTitle("Card members")
@@ -268,7 +257,6 @@ struct CardMembersSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
 
@@ -279,16 +267,12 @@ struct CardMembersSheet: View
                         onSave(normalizedMembers)
                         dismiss()
                     }
-
                 }
-
             }
-
         }
 
         .presentationDragIndicator(.visible)
     }
-
 }
 
 
@@ -301,12 +285,12 @@ struct CardMembersSheet: View
 ///
 struct CardLayoutEditor: View
 {
-    @State var layout: CardSectionLayout           /* Resolved layout configuration  */
-    var title = "Card Layout"                      /* Editor title */
-    let onSave:        (CardSectionLayout) -> Bool /* Persist the edited value       */
-    @Environment(\.dismiss) private var dismiss    /* Close the current presentation */
+    @State var layout: CardSectionLayout                /* Resolved layout configuration  */
+    var title = "Card Layout"                           /* Editor title                   */
+    let onSave:        (CardSectionLayout) -> Bool      /* Persist the edited value       */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
 
-    var body: some View /* Card Layout Editor layout */
+    var body: some View         /* Card Layout Editor layout */
     {
         NavigationStack
         {
@@ -334,7 +318,6 @@ struct CardLayoutEditor: View
                                     {
                                         layout.hidden.insert(section)
                                     }
-
                                 }
                             ))
                     }
@@ -342,7 +325,6 @@ struct CardLayoutEditor: View
                     {
                         layout.order.move(fromOffsets: $0, toOffset: $1)
                     }
-
                 }
                 footer:
                 {
@@ -352,9 +334,7 @@ struct CardLayoutEditor: View
                 Button("Reset layout")
                 {
                     layout = CardSectionLayout()
-
                 }
-
             }
             .environment(\.editMode, .constant(.active))
             .navigationTitle(title)
@@ -367,7 +347,6 @@ struct CardLayoutEditor: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -378,17 +357,11 @@ struct CardLayoutEditor: View
                         {
                             dismiss()
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -401,12 +374,12 @@ struct CardLayoutEditor: View
 ///
 struct CardDateEditorSheet: View
 {
-    let title:            String                        /* User-facing title              */
-    let hasExistingValue: Bool                          /* Existing Value availability    */
-    let onSave:           (Date?, CardDateKind) -> Bool /* Persist the edited value       */
-    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
-    @State private var date: Date                       /* Date used by this operation    */
-    @State private var kind: CardDateKind               /* Content kind discriminator     */
+    let title:            String                                /* User-facing title              */
+    let hasExistingValue: Bool                                  /* Existing Value availability    */
+    let onSave:           (Date?, CardDateKind) -> Bool         /* Persist the edited value       */
+    @Environment(\.dismiss) private var dismiss                 /* Close the current presentation */
+    @State private var date: Date                               /* Date used by this operation    */
+    @State private var kind: CardDateKind                       /* Content kind discriminator     */
 
 
     ///
@@ -429,10 +402,9 @@ struct CardDateEditorSheet: View
         self.onSave = onSave
         _date = State(initialValue: date ?? .now)
         _kind = State(initialValue: kind)
-
     }
 
-    var body: some View /* Card Date Editor layout */
+    var body: some View         /* Card Date Editor layout */
     {
         NavigationStack
         {
@@ -447,7 +419,6 @@ struct CardDateEditorSheet: View
                             kind in
                             Text(kind.title).tag(kind)
                         }
-
                     }
                     .pickerStyle(.segmented)
                     if kind.includesDate
@@ -472,11 +443,8 @@ struct CardDateEditorSheet: View
                             {
                                 dismiss()
                             }
-
                         }
-
                     }
-
                 } .padding()
             }
             .navigationTitle(title)
@@ -489,7 +457,6 @@ struct CardDateEditorSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -500,17 +467,11 @@ struct CardDateEditorSheet: View
                         {
                             dismiss()
                         }
-
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -523,14 +484,14 @@ struct CardDateEditorSheet: View
 ///
 struct ChecklistItemTypeEditor: View
 {
-    let item:                   KanbanChecklistItem           /* Item under consideration       */
-    let candidates:             [KanbanCard]                  /* Eligible operation targets     */
-    let onSave:                 (KanbanChecklistItem) -> Bool /* Persist the edited value       */
-    @State private var type:    ChecklistItemType             /* Content type discriminator     */
-    @State private var urlText: String                        /* URL text                       */
+    let item:                   KanbanChecklistItem                     /* Item under consideration   */
+    let candidates:             [KanbanCard]                            /* Eligible operation targets */
+    let onSave:                 (KanbanChecklistItem) -> Bool           /* Persist the edited value   */
+    @State private var type:    ChecklistItemType                       /* Content type discriminator */
+    @State private var urlText: String                                  /* URL text                   */
 
-    @State private var cardID:  Int?                          /* Owner-local Card identifier    */
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
+    @State private var cardID:  Int?                    /* Owner-local Card identifier    */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
 
 
     ///
@@ -557,12 +518,11 @@ struct ChecklistItemTypeEditor: View
         _type = State(initialValue: initialType)
         _cardID = State(initialValue: item.retainedCardID)
         _urlText = State(initialValue: item.retainedURL?.absoluteString ?? "")
-
     }
 
-    private var url: URL? /* Resource location */
+    private var url: URL?       /* Resource location */
     {
-        let text = /* Text being processed */
+        let text =                                                      /* Text being processed */
             urlText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let url = URL(string: text), ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
@@ -575,7 +535,7 @@ struct ChecklistItemTypeEditor: View
         return url
     }
 
-    var body: some View /* Checklist Item Type Editor layout */
+    var body: some View         /* Checklist Item Type Editor layout */
     {
         NavigationStack
         {
@@ -587,7 +547,6 @@ struct ChecklistItemTypeEditor: View
                     {
                         Text($0.title).tag($0)
                     }
-
                 }
 
                 if type == .linkedCard
@@ -608,11 +567,8 @@ struct ChecklistItemTypeEditor: View
                                 card in
                                 Text(card.word + " · " + card.listTitle).tag(Optional(card.id))
                             }
-
                         }
-
                     }
-
                 }
                 else if type == .webLink
                 {
@@ -621,7 +577,6 @@ struct ChecklistItemTypeEditor: View
                     ).autocorrectionDisabled()
                     Text("Enter a complete http or https website address.").font(.footnote).foregroundStyle(.secondary)
                 }
-
             }
             .navigationTitle("Checklist item type").navigationBarTitleDisplayMode(.inline)
             .toolbar
@@ -632,14 +587,13 @@ struct ChecklistItemTypeEditor: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
                 {
                     Button("Save")
                     {
-                        var updated = item /* Edited value to publish */
+                        var updated = item      /* Edited value to publish */
 
                         switch type
                         {
@@ -653,12 +607,10 @@ struct ChecklistItemTypeEditor: View
                                 if cardID != item.retainedCardID
                                 {
                                     updated.linkedCollectionID = nil
-
                                 }
                                 ;
 
                                 updated.content = .linkedCard(cardID: cardID)
-
                             }
 
                         case .actionDetail:
@@ -669,16 +621,13 @@ struct ChecklistItemTypeEditor: View
                             if let url
                             {
                                 updated.content = .webLink(url)
-
                             }
-
                         }
 
                         if onSave(updated)
                         {
                             dismiss()
                         }
-
                     }
                     .disabled(
                         (type == .linkedCard && !candidates.contains
@@ -687,13 +636,9 @@ struct ChecklistItemTypeEditor: View
                             })
                         || (type == .webLink && url == nil))
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -706,13 +651,13 @@ struct ChecklistItemTypeEditor: View
 ///
 struct CardInfoEditorSheet: View
 {
-    let onSave:       (String, String, String) -> Void  /* Callback receiving the edited card text       */
-    let presentation: ItemPresentation                  /* Item kind used for accessible creation labels */
+    let onSave:       (String, String, String) -> Void          /* Callback receiving the edited card text       */
+    let presentation: ItemPresentation                          /* Item kind used for accessible creation labels */
 
-    @Environment(\.dismiss) private var dismiss /* Dismiss action for the sheet         */
-    @State private var title:       String      /* Draft text for the title field       */
-    @State private var subtitle:    String      /* Draft text for the subtitle field    */
-    @State private var description: String      /* Draft text for the description field */
+    @Environment(\.dismiss) private var dismiss         /* Dismiss action for the sheet         */
+    @State private var title:       String              /* Draft text for the title field       */
+    @State private var subtitle:    String              /* Draft text for the subtitle field    */
+    @State private var description: String              /* Draft text for the description field */
 
 
     ///
@@ -725,8 +670,8 @@ struct CardInfoEditorSheet: View
     /// @pre        title contains the current text-field value
     /// @post       The stored title draft is unchanged
     ///
-    private var trimmedTitle: String /* Trimmed title */
-    {  /* Normalized card title draft */
+    private var trimmedTitle: String                            /* Trimmed title               */
+    {                                                           /* Normalized card title draft */
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -753,7 +698,6 @@ struct CardInfoEditorSheet: View
         _subtitle = State(initialValue: card.subtitle)
         _description = State(
             initialValue: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph)
-
     }
 
 
@@ -768,8 +712,8 @@ struct CardInfoEditorSheet: View
     /// @pre        Editor state has been initialized from the selected card
     /// @post       Save invokes onSave with the edited values; Cancel dismisses without applying them
     ///
-    var body: some View /* Card Info Editor layout */
-    {  /* Card title, subtitle, and description form */
+    var body: some View         /* Card Info Editor layout                    */
+    {                           /* Card title, subtitle, and description form */
         NavigationStack
         {
             Form
@@ -786,7 +730,6 @@ struct CardInfoEditorSheet: View
                 {
                     RichTextEditor(placeholder: "Description", text: $description)
                 }
-
             }
 
             .navigationTitle("Update \(presentation.title) Info")
@@ -799,7 +742,6 @@ struct CardInfoEditorSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
 
@@ -813,15 +755,12 @@ struct CardInfoEditorSheet: View
 
                     .disabled(trimmedTitle.isEmpty)
                 }
-
             }
-
         }
 
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
-
 }
 
 
@@ -834,10 +773,10 @@ struct CardInfoEditorSheet: View
 ///
 struct CardPreviewDateEditor: ViewModifier
 {
-    let card:     KanbanCard               /* Card under consideration */
-    let isStart:  Bool                     /* Start state              */
-    let onUpdate: (KanbanCard) -> Void     /* Publish item edits       */
-    @State private var isPresented = false /* Presentation visibility  */
+    let card:     KanbanCard                    /* Card under consideration */
+    let isStart:  Bool                          /* Start state              */
+    let onUpdate: (KanbanCard) -> Void          /* Publish item edits       */
+    @State private var isPresented = false      /* Presentation visibility  */
 
 
     ///
@@ -855,7 +794,6 @@ struct CardPreviewDateEditor: ViewModifier
         Button
         {
             isPresented = true
-
         }
         label:
         {
@@ -885,19 +823,17 @@ struct CardPreviewDateEditor: ViewModifier
                     return false
                 }
 
-                var updated = card /* Edited value to publish */
+                var updated = card      /* Edited value to publish */
 
                 if isStart
                 {
                     updated.startDate = value
                     updated.startDateKind = value == nil ? .date : kind
-
                 }
                 else
                 {
                     updated.dueDate = value
                     updated.dueDateKind = value == nil ? .date : kind
-
                 }
 
                 onUpdate(updated)
@@ -918,15 +854,15 @@ struct CardPreviewDateEditor: ViewModifier
 ///
 struct CardEditHistorySheet: View
 {
-    @Binding var card: KanbanCard                         /* Latest accepted content */
-    let canUndo: Bool                                    /* Editor can save a reversal */
-    let onUndo: (CardEditRecord, Bool) throws -> Void      /* Confirmed undo callback */
-    let onClear: () -> Bool                               /* Save the cleared history */
-    @Environment(\.dismiss) private var dismiss          /* Close the presentation */
-    @State private var pendingConflict: CardEditRecord?  /* Older revision with newer edits */
-    @State private var confirmsClear = false             /* Confirm revision deletion */
-    @State private var showsClearFailure = false         /* Clear could not be saved */
-    @State private var showsUndoFailure = false           /* Undo could not be applied */
+    @Binding var card: KanbanCard                               /* Latest accepted content         */
+    let canUndo: Bool                                           /* Editor can save a reversal      */
+    let onUndo: (CardEditRecord, Bool) throws -> Void           /* Confirmed undo callback         */
+    let onClear: () -> Bool                                     /* Save the cleared history        */
+    @Environment(\.dismiss) private var dismiss                 /* Close the presentation          */
+    @State private var pendingConflict: CardEditRecord?         /* Older revision with newer edits */
+    @State private var confirmsClear = false                    /* Confirm revision deletion       */
+    @State private var showsClearFailure = false                /* Clear could not be saved        */
+    @State private var showsUndoFailure = false                 /* Undo could not be applied       */
 
     var body: some View
     {

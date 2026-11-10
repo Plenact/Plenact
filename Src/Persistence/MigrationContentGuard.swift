@@ -13,7 +13,7 @@ import Foundation
 ///     Keep the native migration adapter from silently flattening future source payloads
 enum MigrationContentGuard
 {
-    static let fields: [String: Set<String>] = [ /* Record fields under review */
+    static let fields: [String: Set<String>] = [        /* Record fields under review */
         "KanbanCard": ["id", "editHistory", "word", "listTitle", "isDivider", "isTitleChecked", "editingLocked", "members", "labelIDs", "startDate", "location", "dueDate", "createdAt", "descriptionOverride", "startDateKind", "dueDateKind", "showsDueDateInList", "sectionLayout", "subtitleOverride", "checklists", "showsReactionsInPreviews", "reactions", "comments", "attachments", "coverAttachmentID", "appearance", "dismissedActivityIDs", "listDisplayFormat", "itemPresentation"],
         "KanbanList": ["id", "title", "subtitleOverride", "cards", "archivedCards", "isArchived", "appearance", "defaultItemPresentation"],
         "PersonalCollection": ["id", "title", "kind", "icon", "color", "lists", "savedCardIDs", "isArchived", "boardAppearance", "collectionDescription"],
@@ -49,7 +49,7 @@ enum MigrationContentGuard
     @MainActor
     static func richText(_ value: String) throws
     {
-        let prefix = "plenact-rich-v1:" /* Leading lookup or display text */
+        let prefix = "plenact-rich-v1:"         /* Leading lookup or display text */
 
         guard value.hasPrefix(prefix), let data = Data(base64Encoded: String(value.dropFirst(prefix.count))),
               let decoded = try? JSONSerialization.jsonObject(with: data) else
@@ -107,7 +107,7 @@ enum MigrationContentGuard
         }
         if let array = value as? [Any]
         {
-            let normalized = try array.map { try comparable($0) } /* Comparison-normalized value */
+            let normalized = try array.map { try comparable($0) }       /* Comparison-normalized value */
 
             if ["dismissedActivityIDs", "hidden", "savedCardIDs", "completedItemIndices", "important", "bookmarked", "allDay"].contains(key)
             {
@@ -151,9 +151,9 @@ enum MigrationContentGuard
             {
                 if let original = content[active], let mirror = object[retained], !(mirror is NSNull)
                 {
-                    let left  = /* First comparison operand */
+                    let left  =         /* First comparison operand  */
                         try JSONSerialization.data(withJSONObject: original, options: [.fragmentsAllowed, .sortedKeys])
-                    let right = /* Second comparison operand */
+                    let right =         /* Second comparison operand */
                         try JSONSerialization.data(withJSONObject: mirror, options: [.fragmentsAllowed, .sortedKeys])
 
                     guard left == right else
@@ -187,24 +187,22 @@ enum MigrationContentGuard
             }
         }
 
-        let accepted: Set<String> /* Input accepted by validation */
+        let accepted: Set<String>       /* Input accepted by validation */
 
         if type == "action_content"
         {
             accepted = ["kind", "cardID", "detail", "url"]
-
         }
         else
         {
             accepted = fields[type] ?? []
-
         }
         guard Set(object.keys).isSubset(of: accepted) else
         {
             throw MigrationContentValues.Failure.unsupportedField(type)
         }
 
-        let children: [String: String] = /* Nested view or record values */
+        let children: [String: String] =                                                /* Nested view or record values */
             ["collections": "PersonalCollection", "collection": "PersonalCollection",
             "weeks": "DatedPlanningWeek", "templates": "PlanningRoutineTemplate", "exampleFocus": "PlanningExampleFocus",
             "lists": "KanbanList", "cards": "KanbanCard", "archivedCards": "KanbanCard", "checklists": "KanbanChecklist",
@@ -217,17 +215,15 @@ enum MigrationContentGuard
 
         for (key, child) in object where !(child is NSNull)
         {
-            var childType = children[key] /* Child type */
+            var childType = children[key]       /* Child type */
 
             if key == "appearance"
             {
                 childType = "ItemAppearance"
-
             }
             if key == "color", type == "PersonalCollection"
             {
                 childType = "ProfileColor"
-
             }
             if let childType
             {
@@ -245,7 +241,7 @@ enum MigrationContentGuard
             }
             if ["dismissedActivityIDs", "hidden", "order", "completedItemIndices", "savedCardIDs", "important", "bookmarked", "allDay"].contains(key), let array = child as? [Any]
             {
-                let encoded = /* Serialized representation */
+                let encoded =           /* Serialized representation */
                     try array.map { try JSONSerialization.data(withJSONObject: $0, options: [.fragmentsAllowed, .sortedKeys]) }
 
                 guard Set(encoded).count == array.count else

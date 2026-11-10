@@ -22,10 +22,10 @@ final class LocalBackupRestoreTests: XCTestCase
     /// @throws Setup or test-operation errors
     private func fixture(_ body: (URL, URL, UserDefaults, String, FullMonthExampleStore) throws -> Void) throws
     {
-        let root     = /* Synthetic workspace root */
+        let root     =                                                  /* Synthetic workspace root    */
             FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).resolvingSymlinksInPath()
-        let domain   = "Plenact.RestoreTests." + UUID().uuidString /* Lookup or storage namespace */
-        let defaults =                                             /* Preference store under test */
+        let domain   = "Plenact.RestoreTests." + UUID().uuidString      /* Lookup or storage namespace */
+        let defaults =                                                  /* Preference store under test */
             try XCTUnwrap(UserDefaults(suiteName: domain))
 
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -35,44 +35,44 @@ final class LocalBackupRestoreTests: XCTestCase
             try? FileManager.default.removeItem(at: root)
         }
 
-        let sourceRoot = root.appendingPathComponent("source") /* Source root */
+        let sourceRoot = root.appendingPathComponent("source")          /* Source root */
 
         try FileManager.default.createDirectory(at: sourceRoot, withIntermediateDirectories: true)
 
-        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
+        var calendar = Calendar(identifier: .gregorian)         /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 2
 
-        let week     = /* Synthetic week fixture */
+        let week     =                                                                                  /* Synthetic week fixture    */
             DatedPlanningWeek.make(for: Date(timeIntervalSince1970: 1792843200), calendar: calendar)
-        let document = /* Working calendar document */
+        let document =                                                                                  /* Working calendar document */
             PlanningCalendarDocument(currentWeekKey: week.startKey, firstWeekday: 2, weeks: [week])
 
         defaults.set(try JSONEncoder().encode(document), forKey: "Plenact.CalendarWeeks.v1")
         defaults.set(try JSONEncoder().encode(week.collection.lists), forKey: "Plenact.Board.v1")
 
-        let originals = /* Retained original files */
+        let originals =                                                         /* Retained original files */
             sourceRoot.appendingPathComponent("Documents/CardAttachments")
 
         try FileManager.default.createDirectory(at: originals, withIntermediateDirectories: true)
         try Data([7, 8, 9]).write(to: originals.appendingPathComponent("original.bin"))
 
-        let backup   = /* Recoverable native snapshot */
+        let backup   =                                                                                  /* Recoverable native snapshot */
             try LegacyWorkspaceExport.capture(defaults: defaults, domain: domain, root: sourceRoot)
-        let preview  = /* Prepared content preview */
+        let preview  =                                                                                  /* Prepared content preview    */
             try MigrationPreview.prepare(backup: backup, journalURL: root.appendingPathComponent("SourceJournal/identities.json"))
-        let exported = root.appendingPathComponent("backup") /* Prepared portable export */
+        let exported = root.appendingPathComponent("backup")                                            /* Prepared portable export    */
 
         try preview.files.write(to: exported, options: .atomic, originalContentsURL: nil)
         defaults.setPersistentDomain(["destinationOnly": "retained", "Plenact.Board.v1": Data("[]".utf8)], forName: domain)
 
-        let destination = /* Destination for the operation */
+        let destination =                                                                       /* Destination for the operation */
             root.appendingPathComponent("destination")
-        let store       = /* Persistence boundary */
+        let store       =                                                                       /* Persistence boundary          */
             FullMonthExampleStore(root: destination.appendingPathComponent("Library/Recovery"),
-            documents: destination.appendingPathComponent("Documents"),
-            support: destination.appendingPathComponent("Library/Application Support"), domainName: domain)
+                documents: destination.appendingPathComponent("Documents"),
+                support: destination.appendingPathComponent("Library/Application Support"), domainName: domain)
 
         try body(exported, destination, defaults, domain, store)
     }
@@ -86,9 +86,9 @@ final class LocalBackupRestoreTests: XCTestCase
     {
         try fixture { source, _, defaults, domain, store in
 
-            let before = /* State before the operation */
+            let before =                                        /* State before the operation    */
                 defaults.persistentDomain(forName: domain)!
-            let review = /* Review record being inspected */
+            let review =                                        /* Review record being inspected */
                 try LocalBackupRestore.review(at: source)
 
             XCTAssertEqual(review.storeCount, 2)
@@ -109,15 +109,15 @@ final class LocalBackupRestoreTests: XCTestCase
     {
         try fixture { source, destination, defaults, domain, store in
 
-            let review   = /* Review record being inspected */
+            let review   =                                                      /* Review record being inspected */
                 try LocalBackupRestore.review(at: source)
-            let original = defaults.persistentDomain(forName: domain)! /* Baseline before changes */
-            let folder   =                                             /* Working folder location */
+            let original = defaults.persistentDomain(forName: domain)!          /* Baseline before changes       */
+            let folder   =                                                      /* Working folder location       */
                 destination.appendingPathComponent("Documents/CardAttachments")
 
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
-            let oldMedia = folder.appendingPathComponent("old.bin") /* Old media */
+            let oldMedia = folder.appendingPathComponent("old.bin")     /* Old media */
 
             try Data([1, 2, 3]).write(to: oldMedia)
             try store.installNativeSource
@@ -147,7 +147,7 @@ final class LocalBackupRestoreTests: XCTestCase
     {
         try fixture { _, destination, defaults, domain, store in
 
-            let original = defaults.persistentDomain(forName: domain)! /* Baseline before changes */
+            let original = defaults.persistentDomain(forName: domain)!          /* Baseline before changes */
 
             XCTAssertThrowsError(try store.installNativeSource
             {
@@ -185,12 +185,12 @@ final class LocalBackupRestoreTests: XCTestCase
     {
         try fixture { source, _, _, _, _ in
 
-            let directory = /* Working directory location */
+            let directory =                                                     /* Working directory location */
                 source.appendingPathComponent("Documents/CardAttachments")
 
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-            let file = directory.appendingPathComponent("extra.bin") /* File being processed */
+            let file = directory.appendingPathComponent("extra.bin")    /* File being processed */
 
             try Data([7]).write(to: file)
             XCTAssertThrowsError(try LocalBackupRestore.review(at: source))
@@ -209,7 +209,7 @@ final class LocalBackupRestoreTests: XCTestCase
     {
         try fixture { source, destination, defaults, domain, store in
 
-            let review = /* Review record being inspected */
+            let review =                                        /* Review record being inspected */
                 try LocalBackupRestore.review(at: source)
 
             try store.installNativeSource

@@ -41,7 +41,7 @@ enum MigrationBackupReader
     /// @throws Invalid paths or missing/nonregular entries
     static func file(_ path: String, in root: FileWrapper) throws -> Data
     {
-        let parts = /* Parsed value components */
+        let parts =                                                             /* Parsed value components */
             path.split(separator: "/", omittingEmptySubsequences: false)
 
         guard !parts.isEmpty, !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }),
@@ -50,7 +50,7 @@ enum MigrationBackupReader
             throw Failure.invalidBackup
         }
 
-        var wrapper = root /* File or view wrapper */
+        var wrapper = root      /* File or view wrapper */
 
         for part in parts
         {
@@ -60,7 +60,6 @@ enum MigrationBackupReader
             }
 
             wrapper = child
-
         }
         guard wrapper.isRegularFile, let data = wrapper.regularFileContents else
         {
@@ -78,7 +77,7 @@ enum MigrationBackupReader
     /// @throws Integrity, unsupported evidence or unresolved recovery errors
     static func values(in backup: LegacyWorkspaceBackup) throws -> [String: Any]
     {
-        let reportData = try file("NativePreflight.json", in: backup.files) /* Report data */
+        let reportData = try file("NativePreflight.json", in: backup.files)     /* Report data */
 
         guard let report = try JSONSerialization.jsonObject(with: reportData) as? [String: Any],
               report["format"] as? String == "plenact.ios-frozen-backup",
@@ -94,9 +93,9 @@ enum MigrationBackupReader
             throw Failure.pendingRecovery
         }
 
-        let portableRuntime = /* Portable runtime */
+        let portableRuntime =                                                                   /* Portable runtime             */
             try PortableRuntimeEvidence.backupFiles(report: report, files: backup.files)
-        let preferences     = /* Planning and display choices */
+        let preferences     =                                                                   /* Planning and display choices */
             try file("Preferences.plist", in: backup.files)
 
         guard digest(preferences) == report["preferences_sha256"] as? String,
@@ -118,7 +117,7 @@ enum MigrationBackupReader
             throw Failure.invalidBackup
         }
 
-        var seen: Set<String> = [] /* Identities already encountered */
+        var seen: Set<String> = []      /* Identities already encountered */
 
         for entry in media
         {
@@ -128,7 +127,7 @@ enum MigrationBackupReader
                 throw Failure.invalidBackup
             }
 
-            let bytes = try file(path, in: backup.files) /* Serialized or original bytes */
+            let bytes = try file(path, in: backup.files)        /* Serialized or original bytes */
 
             guard digest(bytes) == entry["sha256"] as? String, bytes.count == entry["byte_length"] as? Int else
             {
@@ -136,8 +135,8 @@ enum MigrationBackupReader
             }
         }
 
-        var actual: Set<String> = [] /* Observed operation result */
-        var total               =    /* Total matching entries    */
+        var actual: Set<String> = []                                                    /* Observed operation result */
+        var total               =                                                       /* Total matching entries    */
             preferences.count + portableRuntime.values.reduce(0, { $0 + $1.count })
 
         guard total <= LegacyWorkspaceExport.maximumBytes else
@@ -183,7 +182,7 @@ enum MigrationBackupReader
         }
         for area in LegacyWorkspaceExport.mediaRoots
         {
-            var wrapper: FileWrapper? = backup.files /* File or view wrapper */
+            var wrapper: FileWrapper? = backup.files    /* File or view wrapper */
 
             for part in area.split(separator: "/")
             {
@@ -193,7 +192,6 @@ enum MigrationBackupReader
                 }
 
                 wrapper = wrapper?.fileWrappers?[String(part)]
-
             }
             if let wrapper
             {

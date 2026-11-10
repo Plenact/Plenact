@@ -20,13 +20,13 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
 {
     case apple, google
 
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
     }
 
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         self == .apple ? "Apple Maps" : "Google Maps"
     }
@@ -48,7 +48,7 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
             return nil
         }
 
-        var components = URLComponents() /* Parsed value components */
+        var components = URLComponents()        /* Parsed value components */
 
         components.scheme = "https"
         components.host = self == .apple ? "maps.apple.com" : "www.google.com"
@@ -61,7 +61,6 @@ enum PreferredMapsApp: String, Codable, CaseIterable, Identifiable, Sendable
 
         return components.url
     }
-
 }
 
 
@@ -91,7 +90,6 @@ enum CardLocation
 
         return trimmed
     }
-
 }
 
 
@@ -105,15 +103,15 @@ enum CardLocation
 ///
 struct CardLocationRow: View
 {
-    let location: String?          /* Resolved place metadata */
-    var canEdit            = false /* Edit availability       */
-    var onEdit: () -> Void =       /* Edit callback           */
+    let location: String?               /* Resolved place metadata */
+    var canEdit            = false      /* Edit availability       */
+    var onEdit: () -> Void =            /* Edit callback           */
     {
     }
 
-    @AppStorage(PlanPreferencesStore.key) private var preferencesData = /* Preferences data */
+    @AppStorage(PlanPreferencesStore.key) private var preferencesData =                 /* Preferences data */
         Data()
-    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data() /* Profile data */
+    @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()          /* Profile data     */
 
 
     ///
@@ -123,9 +121,9 @@ struct CardLocationRow: View
     ///             addresses without changing the stored Card when a place is opened
     /// @return     (some View) an optional metadata row with provider-aware place navigation
     ///
-    var body: some View /* Card Location layout */
+    var body: some View         /* Card Location layout */
     {
-        let maps = PlanPreferencesStore.resolved( /* Preferred maps provider */
+        let maps = PlanPreferencesStore.resolved(                                               /* Preferred maps provider */
             preferencesData: preferencesData, profileData: profileData).preferredMapsApp
 
         if let location = CardLocation.normalized(location), let url = maps.placeURL(for: location)
@@ -159,7 +157,6 @@ struct CardLocationRow: View
                     .accessibilityLabel("Edit location")
                     .accessibilityIdentifier("card.location.edit")
                 }
-
             }
             .frame(minHeight: 44)
         }
@@ -175,9 +172,7 @@ struct CardLocationRow: View
             .buttonStyle(.plain)
             .accessibilityIdentifier("card.location.add")
         }
-
     }
-
 }
 
 
@@ -191,11 +186,11 @@ struct CardLocationRow: View
 ///
 struct CardLocationEditorSheet: View
 {
-    let onSave: (String?) -> Bool               /* Persist the edited value       */
-    private let hasLocation: Bool               /* Location availability          */
-    @State private var text: String             /* Text being processed           */
-    @State private var saveFailed = false       /* Save failed                    */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    let onSave: (String?) -> Bool                       /* Persist the edited value       */
+    private let hasLocation: Bool                       /* Location availability          */
+    @State private var text: String                     /* Text being processed           */
+    @State private var saveFailed = false               /* Save failed                    */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
 
 
     ///
@@ -211,7 +206,6 @@ struct CardLocationEditorSheet: View
         self.onSave = onSave
         self.hasLocation = CardLocation.normalized(location) != nil
         self._text = State(initialValue: location ?? "")
-
     }
 
 
@@ -233,9 +227,7 @@ struct CardLocationEditorSheet: View
         else
         {
             saveFailed = true
-
         }
-
     }
 
 
@@ -247,7 +239,7 @@ struct CardLocationEditorSheet: View
     ///             permission. Map selection fills this draft; Save remains the content boundary
     /// @return     (some View) native form for editing the Card's location
     ///
-    var body: some View /* Card Location Editor layout */
+    var body: some View         /* Card Location Editor layout */
     {
         NavigationStack
         {
@@ -265,7 +257,6 @@ struct CardLocationEditorSheet: View
                         CardLocationSearchView(query: text)
                         {
                             text = $0
-
                         }
                         .presentationDetents([.large])
                     }
@@ -282,9 +273,7 @@ struct CardLocationEditorSheet: View
                     {
                         save(nil)
                     }
-
                 }
-
             }
             .navigationTitle("Location")
             .navigationBarTitleDisplayMode(.inline)
@@ -296,7 +285,6 @@ struct CardLocationEditorSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -305,27 +293,21 @@ struct CardLocationEditorSheet: View
                     {
                         save(text)
                     }
-
                 }
-
             }
             .alert("Couldn’t save location", isPresented: $saveFailed)
             {
                 Button("OK", role: .cancel)
                 {
                 }
-
             }
 
             message:
             {
                 Text("This Card could not be updated. It may have been locked or removed.")
             }
-
         }
-
     }
-
 }
 
 
@@ -339,7 +321,7 @@ struct CardLocationEditorSheet: View
 ///
 struct MapsAppSettingsSection: View
 {
-    @Binding var selection: PreferredMapsApp /* Current selection state */
+    @Binding var selection: PreferredMapsApp    /* Current selection state */
 
 
     ///
@@ -348,7 +330,7 @@ struct MapsAppSettingsSection: View
     /// @details    Apple Maps is the default; the selected provider owns all subsequent map actions
     /// @return     (some View) a settings section bound to the surrounding preference draft
     ///
-    var body: some View /* Maps App Settings layout */
+    var body: some View         /* Maps App Settings layout */
     {
         Section("Maps")
         {
@@ -359,12 +341,8 @@ struct MapsAppSettingsSection: View
                 maps in
                     Text(maps.title).tag(maps)
                 }
-
             }
-
         }
-
     }
-
 }
 

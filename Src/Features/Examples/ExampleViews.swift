@@ -19,18 +19,18 @@ import SwiftUI
 ///
 struct PersonalListExamplesView: View
 {
-    var onLoadExampleWeek:     (() -> Bool)? = nil /* Load example week callback */
-    var onUndoExampleWeek:     (() -> Bool)? = nil /* Undo example week callback */
-    let onSelect:              (PersonalListExample) -> Void /* Delegate draft creation to the owning Library */
-    var onSelectMixedTemplate: ((MixedListTemplate) -> Void)?    = /* Select mixed template callback */
+    var onLoadExampleWeek:     (() -> Bool)? = nil                      /* Load example week callback                    */
+    var onUndoExampleWeek:     (() -> Bool)? = nil                      /* Undo example week callback                    */
+    let onSelect:              (PersonalListExample) -> Void            /* Delegate draft creation to the owning Library */
+    var onSelectMixedTemplate: ((MixedListTemplate) -> Void)?    =      /* Select mixed template callback                */
         nil
-    var onSelectBoardExample:  ((PersonalBoardExample) -> Void)? = /* Select board example callback */
+    var onSelectBoardExample:  ((PersonalBoardExample) -> Void)? =      /* Select board example callback                 */
         nil
-    @Environment(\.dismiss) private var dismiss /* Cancel the chooser without selecting */
-    @State private var confirmsLoadWeek = false /* Confirms load week                   */
-    @State private var confirmsUndoWeek = false /* Confirms undo week                   */
-    @State private var hasUndoableWeek: Bool    /* Undoable Week availability           */
-    @State private var operationError:  String? /* Operation error                      */
+    @Environment(\.dismiss) private var dismiss                         /* Cancel the chooser without selecting          */
+    @State private var confirmsLoadWeek = false                         /* Confirms load week                            */
+    @State private var confirmsUndoWeek = false                         /* Confirms undo week                            */
+    @State private var hasUndoableWeek: Bool                            /* Undoable Week availability                    */
+    @State private var operationError:  String?                         /* Operation error                               */
 
 
     ///
@@ -63,7 +63,6 @@ struct PersonalListExamplesView: View
         self.onSelectMixedTemplate = onSelectMixedTemplate
         self.onSelectBoardExample = onSelectBoardExample
         _hasUndoableWeek = State(initialValue: hasUndoableWeek)
-
     }
 
 
@@ -73,8 +72,8 @@ struct PersonalListExamplesView: View
     /// @details    Expanding a preview is read-only; Use example opens the save-before-adding flow
     /// @return     (some View) scrollable chooser with an explicit Cancel action
     ///
-    var body: some View /* Personal List Examples layout */
-    {  /* Personal List example chooser with expandable card previews */
+    var body: some View         /* Personal List Examples layout                               */
+    {                           /* Personal List example chooser with expandable card previews */
         NavigationStack
         {
             List
@@ -82,7 +81,7 @@ struct PersonalListExamplesView: View
                 Section
                 {
                     Text(
-                                                            "Explore Lists and Boards and make them your own. Selecting an example opens a draft; only Save adds it to Plans. Your Week and existing collections stay unchanged."
+                        "Explore Lists and Boards and make them your own. Selecting an example opens a draft; only Save adds it to Plans. Your Week and existing collections stay unchanged."
                     )
                     .foregroundStyle(.secondary)
                 }
@@ -95,7 +94,6 @@ struct PersonalListExamplesView: View
                         Button("Load Example Week View", systemImage: "square.and.arrow.down")
                         {
                             confirmsLoadWeek = true
-
                         }
                         .accessibilityIdentifier("library.examples.loadWeek")
                         if hasUndoableWeek, onUndoExampleWeek != nil
@@ -103,18 +101,16 @@ struct PersonalListExamplesView: View
                             Button("Undo Last Load", systemImage: "arrow.uturn.backward")
                             {
                                 confirmsUndoWeek = true
-
                             }
                             .accessibilityIdentifier("library.examples.undoWeek")
                         }
 
                         Text(
-                                                                        "Loading replaces your current Week Board, including archived Week content. Your previous Week Board is retained on this device for Undo Last Load. Personal Lists and Boards stay unchanged. Nothing is uploaded."
+                            "Loading replaces your current Week Board, including archived Week content. Your previous Week Board is retained on this device for Undo Last Load. Personal Lists and Boards stay unchanged. Nothing is uploaded."
                         )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     }
-
                 }
 
 
@@ -137,18 +133,16 @@ struct PersonalListExamplesView: View
                                         Spacer()
                                         Text("\(list.count) items").font(.caption).foregroundStyle(.secondary)
                                     }
-
                                 }
 
                                 Text(
-                                                                                                "Includes pictures, notes, named dividers, checklists, dates, labels, bookmarks, color overrides, and archived examples. Dates are illustrative and relative to when you create the draft."
+                                    "Includes pictures, notes, named dividers, checklists, dates, labels, bookmarks, color overrides, and archived examples. Dates are illustrative and relative to when you create the draft."
                                 )
                                 .font(.caption).foregroundStyle(.secondary)
                                 Button("Use \(example.rawValue)", systemImage: "plus")
                                 {
                                     onSelectBoardExample(example)
                                 }
-
                             }
                             label:
                             {
@@ -156,17 +150,13 @@ struct PersonalListExamplesView: View
                                 {
                                     Label(example.rawValue, systemImage: "rectangle.3.group").font(.headline)
                                     Text(
-                                                                                                            "\(example.listSummaries.count) lists · \(example.listSummaries.reduce(0) { $0 + $1.count }) items"
+                                        "\(example.listSummaries.count) lists · \(example.listSummaries.reduce(0) { $0 + $1.count }) items"
                                     )
                                     .font(.caption).foregroundStyle(.secondary)
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
 
 
@@ -184,7 +174,7 @@ struct PersonalListExamplesView: View
                                 {
                                     index in
 
-                                    let item = template.items[index] /* Item under consideration */
+                                    let item = template.items[index]    /* Item under consideration */
 
                                     VStack(alignment: .leading, spacing: 6)
                                     {
@@ -205,13 +195,9 @@ struct PersonalListExamplesView: View
                                 {
                                     onSelectMixedTemplate(template)
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
 
 
@@ -229,7 +215,7 @@ struct PersonalListExamplesView: View
                                 VStack(alignment: .leading, spacing: 4)
                                 {
                                     if index == 0, let illustration = example.coverIllustration
-                                    {  /* Example's featured offline cover image */
+                                    {                                                           /* Example's featured offline cover image */
                                         CardCoverPreview(
                                             attachment: KanbanAttachment(
                                                 mediaKind: .photo, exampleImage: illustration
@@ -248,7 +234,6 @@ struct PersonalListExamplesView: View
 
                                 .padding(.vertical, 4)
                             }
-
                         }
 
 
@@ -256,11 +241,8 @@ struct PersonalListExamplesView: View
                         {
                             onSelect(example)
                         }
-
                     }
-
                 }
-
             }
 
             .navigationTitle("Examples")
@@ -273,15 +255,12 @@ struct PersonalListExamplesView: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
         .databaseActivityOverlay()
         .confirmationDialog(
-                        "Replace the Week Board with the example?", isPresented: $confirmsLoadWeek, titleVisibility: .visible
+            "Replace the Week Board with the example?", isPresented: $confirmsLoadWeek, titleVisibility: .visible
         )
         {
             Button("Load Example Week View", role: .destructive)
@@ -296,24 +275,21 @@ struct PersonalListExamplesView: View
                 {
                     operationError =
                                                             "The example Week Board could not be loaded. Your current Week Board was not changed."
-
                 }
-
             }
 
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                    "This replaces the current active and archived Week lists and cards. Your previous Week Board is kept locally for undo. Personal collections stay unchanged."
+                "This replaces the current active and archived Week lists and cards. Your previous Week Board is kept locally for undo. Personal collections stay unchanged."
             )
         }
         .confirmationDialog(
-                        "Restore the previous Week Board?", isPresented: $confirmsUndoWeek, titleVisibility: .visible
+            "Restore the previous Week Board?", isPresented: $confirmsUndoWeek, titleVisibility: .visible
         )
         {
             Button("Undo Last Load", role: .destructive)
@@ -327,55 +303,46 @@ struct PersonalListExamplesView: View
                 else
                 {
                     operationError = "The saved Week Board snapshot could not be restored."
-
                 }
-
             }
 
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                    "This replaces the current Week Board, including edits made since loading the example, with the saved Week Board from before the last load."
+                "This replaces the current Week Board, including edits made since loading the example, with the saved Week Board from before the last load."
             )
         }
         .alert(
-                        "Could not update Week Board",
-                        isPresented: Binding(
-                            get:
-                            {
-                                operationError != nil
-                            },
-                            set:
-                            {
-                                if !$0
-                                {
-                                    operationError = nil
-
-                                }
-
-                            }
-                        )
+            "Could not update Week Board",
+            isPresented: Binding(
+                get:
+                {
+                    operationError != nil
+                },
+                set:
+                {
+                    if !$0
+                    {
+                        operationError = nil
+                    }
+                }
+            )
         )
         {
             Button("OK", role: .cancel)
             {
                 operationError = nil
-
             }
-
         }
         message:
         {
             Text(operationError ?? "")
         }
-
     }
-
 }
 
 
@@ -388,9 +355,9 @@ struct PersonalListExamplesView: View
 ///
 struct LibraryDaySectionExamples: View
 {
-    var query = ""                                   /* Search text                */
-    let onPreview: (PlanningRoutineTemplate) -> Void /* Preview callback           */
-    let onApply:   (PlanningRoutineTemplate) -> Void /* Apply the prepared changes */
+    var query = ""                                      /* Search text                */
+    let onPreview: (PlanningRoutineTemplate) -> Void    /* Preview callback           */
+    let onApply:   (PlanningRoutineTemplate) -> Void    /* Apply the prepared changes */
 
 
     ///
@@ -415,12 +382,11 @@ struct LibraryDaySectionExamples: View
                     $0.cards.map(\.word)
                 })
         }
-
     }
 
-    var body: some View /* Library Day Section Examples layout */
+    var body: some View         /* Library Day Section Examples layout */
     {
-        let examples = Self.matches(query: query) /* Seeded demonstration content */
+        let examples = Self.matches(query: query)       /* Seeded demonstration content */
 
         if !examples.isEmpty
         {
@@ -452,7 +418,6 @@ struct LibraryDaySectionExamples: View
                         {
                             onApply(template)
                         }
-
                     }
                     label:
                     {
@@ -466,9 +431,7 @@ struct LibraryDaySectionExamples: View
                             .font(.caption).foregroundStyle(.secondary)
                         } .padding(.vertical, 4)
                     }
-
                 }
-
             }
             header:
             {
@@ -477,14 +440,11 @@ struct LibraryDaySectionExamples: View
             footer:
             {
                 Text(
-                                                "Explore a daily rhythm, a build session, or a workout journey. Preview freely, then choose a day to apply. Existing plans stay unchanged until you confirm."
+                    "Explore a daily rhythm, a build session, or a workout journey. Preview freely, then choose a day to apply. Existing plans stay unchanged until you confirm."
                 )
             }
-
         }
-
     }
-
 }
 
 
@@ -497,11 +457,10 @@ struct LibraryDaySectionExamples: View
 ///
 struct LibraryExamplePreview: Identifiable
 {
-    var id = UUID()           /* Record UUID                 */
-    let title:   String       /* User-facing title           */
-    let summary: String       /* Aggregate operation results */
-    let lists:   [KanbanList] /* Ordered List records        */
-
+    var id = UUID()                     /* Record UUID                 */
+    let title:   String                 /* User-facing title           */
+    let summary: String                 /* Aggregate operation results */
+    let lists:   [KanbanList]           /* Ordered List records        */
 }
 
 
@@ -514,10 +473,10 @@ struct LibraryExamplePreview: Identifiable
 ///
 struct LibraryExamplePreviewView: View
 {
-    let preview: LibraryExamplePreview          /* Prepared content preview       */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
+    let preview: LibraryExamplePreview                  /* Prepared content preview       */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
 
-    var body: some View /* Library Example Preview layout */
+    var body: some View         /* Library Example Preview layout */
     {
         NavigationStack
         {
@@ -562,13 +521,9 @@ struct LibraryExamplePreviewView: View
                                     .modifier(DaySectionRail(cardID: card.id, cards: list.cards))
                                     .allowsHitTesting(false)
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
                 .padding()
                 .frame(maxWidth: 620)
@@ -585,11 +540,8 @@ struct LibraryExamplePreviewView: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
         .environment(\.cardMovementSource, nil)
         .environment(
@@ -613,5 +565,4 @@ struct LibraryExamplePreviewView: View
                         }?.word ?? "")
                 }))
     }
-
 }

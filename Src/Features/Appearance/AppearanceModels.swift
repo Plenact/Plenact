@@ -31,16 +31,15 @@ enum ItemAccent: String, CaseIterable, Codable, Sendable
 enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable
 {
     case neutral, blue, green, orange, red
-    var id: String /* Record or view identity */
+    var id: String                              /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         self == .neutral ? "Default" : rawValue.capitalized
     }
-
 }
 
 
@@ -53,16 +52,15 @@ enum KanbanListTint: String, CaseIterable, Identifiable, Codable, Sendable
 enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable
 {
     case compact, detailed
-    var id: String /* Record or view identity */
+    var id: String              /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         rawValue.capitalized
     }
-
 }
 
 
@@ -76,12 +74,12 @@ enum BoardCardDetail: String, Codable, CaseIterable, Identifiable, Sendable
 enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Sendable
 {
     case linen, sage, ocean, plum, sandstone, midnight, photo, tabletop, forestPath, sunlitWall, plain
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -108,9 +106,7 @@ enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Se
         case .plain:
                     "Plain"
         }
-
     }
-
 }
 
 
@@ -123,8 +119,8 @@ enum CollectionBackgroundPreset: String, Codable, CaseIterable, Identifiable, Se
 ///
 struct CollectionBackground: Hashable, Codable, Sendable
 {
-    var preset:        CollectionBackgroundPreset /* Selected appearance preset */
-    var photoFileName: String? = nil              /* Photo file name            */
+    var preset:        CollectionBackgroundPreset       /* Selected appearance preset */
+    var photoFileName: String? = nil                    /* Photo file name            */
 
 
     ///
@@ -157,7 +153,6 @@ struct CollectionBackground: Hashable, Codable, Sendable
         default:
             return nil
         }
-
     }
 
 
@@ -182,7 +177,6 @@ struct CollectionBackground: Hashable, Codable, Sendable
 
         return !datedWeekIDs.contains(collectionID)
     }
-
 }
 
 
@@ -195,19 +189,19 @@ struct CollectionBackground: Hashable, Codable, Sendable
 ///
 struct BoardAppearance: Hashable, Codable, Sendable
 {
-    static let weekStorageKey                       = /* Week storage key */
+    static let weekStorageKey                       =           /* Week storage key                                   */
         "Plenact.WeekAppearance.v1"
-    var bannerBackground:     ItemAccent?           = nil /* Banner background */
-    var listBackground:       KanbanListTint?       = nil /* List background */
-    var cardBackground:       KanbanListTint?       = nil /* Card background */
-    var cardDetail:           BoardCardDetail?      = nil /* Card detail */
-    var collectionBackground: CollectionBackground? = nil /* Collection background */
-    var cardTitleColor:       ListPreviewTextColor? = nil /* Card title color */
-    var cardTextColor:        ListPreviewTextColor? = nil /* Card text color */
-    var addItemTextColor:     ProfileColor?         = nil /* Add item text color */
-    var studioSurface:       StudioSurface?         = nil /* Studio surface */
-    var studioCardSurface:   StudioSurface?         = nil /* Studio card surface */
-    var subtitleItalic:      Bool?                  = nil /* Board default; missing preserves regular subtitles */
+    var bannerBackground:     ItemAccent?           = nil       /* Banner background                                  */
+    var listBackground:       KanbanListTint?       = nil       /* List background                                    */
+    var cardBackground:       KanbanListTint?       = nil       /* Card background                                    */
+    var cardDetail:           BoardCardDetail?      = nil       /* Card detail                                        */
+    var collectionBackground: CollectionBackground? = nil       /* Collection background                              */
+    var cardTitleColor:       ListPreviewTextColor? = nil       /* Card title color                                   */
+    var cardTextColor:        ListPreviewTextColor? = nil       /* Card text color                                    */
+    var addItemTextColor:     ProfileColor?         = nil       /* Add item text color                                */
+    var studioSurface:       StudioSurface?         = nil       /* Studio surface                                     */
+    var studioCardSurface:   StudioSurface?         = nil       /* Studio card surface                                */
+    var subtitleItalic:      Bool?                  = nil       /* Board default; missing preserves regular subtitles */
 
 
     ///
@@ -310,7 +304,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
     ///
     func resolved(_ appearance: ItemAppearance?) -> ItemAppearance
     {
-        var result = appearance ?? ItemAppearance() /* Appearance with inherited defaults */
+        var result = appearance ?? ItemAppearance()     /* Appearance with inherited defaults */
 
         result.background = result.background ?? bannerBackground
         result.listBackground = result.listBackground ?? listBackground
@@ -336,7 +330,7 @@ struct BoardAppearance: Hashable, Codable, Sendable
         {
             list in
 
-            var updated = list /* Edited value to publish */
+            var updated = list          /* Edited value to publish */
 
             if var appearance = updated.appearance
             {
@@ -349,12 +343,10 @@ struct BoardAppearance: Hashable, Codable, Sendable
                 appearance.studioSurface = nil
                 appearance.studioCardSurface = nil
                 updated.appearance = appearance.isEmpty ? nil : appearance
-
             }
 
             return updated
         }
-
     }
 
 
@@ -373,7 +365,6 @@ struct BoardAppearance: Hashable, Codable, Sendable
     {
         data.isEmpty ? BoardAppearance() : try JSONDecoder().decode(BoardAppearance.self, from: data)
     }
-
 }
 
 
@@ -387,16 +378,15 @@ struct BoardAppearance: Hashable, Codable, Sendable
 enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable
 {
     case graphite, blue, teal, green, plum, rose, amber
-    var id: String /* Record or view identity */
+    var id: String                                      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         rawValue.capitalized
     }
-
 }
 
 
@@ -410,16 +400,15 @@ enum ListPreviewTextColor: String, Codable, CaseIterable, Identifiable, Sendable
 enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable
 {
     case cards, noteList
-    var id: String /* Record or view identity */
+    var id: String              /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         self == .cards ? "Cards" : "Note List"
     }
-
 }
 
 
@@ -432,27 +421,27 @@ enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable
 ///
 struct ItemAppearance: Hashable, Codable, Sendable
 {
-    var accent:                        ItemAccent?             /* Selected accent color          */
-    var icon:                          PersonalCollectionIcon? /* Selected display icon          */
-    var background:                    ItemAccent?           = /* Resolved background appearance */
+    var accent:                        ItemAccent?                      /* Selected accent color                                */
+    var icon:                          PersonalCollectionIcon?          /* Selected display icon                                */
+    var background:                    ItemAccent?           =          /* Resolved background appearance                       */
         nil
-    var listBackground:                KanbanListTint?       = nil /* List background */
-    var cardBackground:                KanbanListTint?       = nil /* Card background */
-    var cardTitleColor:                ListPreviewTextColor? = nil /* Card title color */
-    var cardTextColor:                 ListPreviewTextColor? = nil /* Card text color */
-    var addItemTextColor:              ProfileColor?         = nil /* Add item text color */
-    var sectionCollapsed:              Bool?                 = nil /* Section collapsed */
-    var hideEmptySubtitle:             Bool?                 = nil /* Hide empty subtitle */
-    var studioSurface:                StudioSurface?         = nil /* Studio surface */
-    var studioCardSurface:            StudioSurface?         = nil /* Studio card surface */
-    var subtitleItalic:               Bool?                  = nil /* nil inherits; false explicitly requests regular type */
-    var cardDetail:                    BoardCardDetail?      = nil /* Card detail */
-    var listViewMode:                  SingleListViewMode?   = nil /* List view mode */
-    var iconColor:                     ProfileColor?         = nil /* Icon color */
-    var showsIconInHeader:             Bool?                 = nil /* Icon In Header visibility */
-    var listBackgroundOpacity:         Double?               = nil /* List background opacity */
+    var listBackground:                KanbanListTint?       = nil      /* List background                                      */
+    var cardBackground:                KanbanListTint?       = nil      /* Card background                                      */
+    var cardTitleColor:                ListPreviewTextColor? = nil      /* Card title color                                     */
+    var cardTextColor:                 ListPreviewTextColor? = nil      /* Card text color                                      */
+    var addItemTextColor:              ProfileColor?         = nil      /* Add item text color                                  */
+    var sectionCollapsed:              Bool?                 = nil      /* Section collapsed                                    */
+    var hideEmptySubtitle:             Bool?                 = nil      /* Hide empty subtitle                                  */
+    var studioSurface:                StudioSurface?         = nil      /* Studio surface                                       */
+    var studioCardSurface:            StudioSurface?         = nil      /* Studio card surface                                  */
+    var subtitleItalic:               Bool?                  = nil      /* nil inherits; false explicitly requests regular type */
+    var cardDetail:                    BoardCardDetail?      = nil      /* Card detail                                          */
+    var listViewMode:                  SingleListViewMode?   = nil      /* List view mode                                       */
+    var iconColor:                     ProfileColor?         = nil      /* Icon color                                           */
+    var showsIconInHeader:             Bool?                 = nil      /* Icon In Header visibility                            */
+    var listBackgroundOpacity:         Double?               = nil      /* List background opacity                              */
 
-    var resolvedListBackgroundOpacity: Double /* Resolved list background opacity */
+    var resolvedListBackgroundOpacity: Double           /* Resolved list background opacity */
     {
         guard let value = listBackgroundOpacity, value.isFinite else
         {
@@ -479,14 +468,13 @@ struct ItemAppearance: Hashable, Codable, Sendable
     }
 
 
-    var isEmpty: Bool /* Empty state */
+    var isEmpty: Bool           /* Empty state */
     {
         sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil
         && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil
         && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil
         && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil && subtitleItalic == nil && studioSurface == nil && studioCardSurface == nil
     }
-
 }
 
 
@@ -499,9 +487,9 @@ struct ItemAppearance: Hashable, Codable, Sendable
 ///
 enum NewCardAppearanceDefaults
 {
-    static let headerPalette:     [ItemAccent]     = /* Header palette */
+    static let headerPalette:     [ItemAccent]     =            /* Header palette     */
         [.teal, .blue, .purple, .rose, .orange, .green, .coral]
-    static let backgroundPalette: [KanbanListTint] = /* Background palette */
+    static let backgroundPalette: [KanbanListTint] =            /* Background palette */
         [.blue, .green, .orange, .red]
 
 
@@ -543,22 +531,18 @@ enum NewCardAppearanceDefaults
             return
         }
 
-        var appearance = card.appearance ?? ItemAppearance() /* Resolved appearance choices */
+        var appearance = card.appearance ?? ItemAppearance()    /* Resolved appearance choices */
 
         if preferences.randomizesNewCardHeaders && appearance.background == nil
         {
             appearance.background = headerPalette.randomElement()
-
         }
 
         if preferences.randomizesNewCardBackgrounds && appearance.cardBackground == nil
         {
             appearance.cardBackground = backgroundPalette.randomElement()
-
         }
 
         card.appearance = appearance.isEmpty ? nil : appearance
-
     }
-
 }

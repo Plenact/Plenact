@@ -66,12 +66,11 @@ import Foundation
 ///
 enum AppMetadata
 {
-    static let projectName  = "ProjectName"  /* Example project name        */
-    static let organization = "Company Name" /* Example owning organization */
-    static let author       = "Justin Reina" /* Example project author      */
-    static let created      = "2026-09-24"   /* Example creation date       */
-    static let lastRevision = "2026-09-24"   /* Example revision date       */
-
+    static let projectName  = "ProjectName"     /* Example project name        */
+    static let organization = "Company Name"    /* Example owning organization */
+    static let author       = "Justin Reina"    /* Example project author      */
+    static let created      = "2026-09-24"      /* Example creation date       */
+    static let lastRevision = "2026-09-24"      /* Example revision date       */
 }
 
 
@@ -88,10 +87,10 @@ enum AppMetadata
 ///
 enum AppError: LocalizedError, Sendable
 {
-    case missingConfiguration    /* Missing required configuration          */
-    case invalidInput(String)    /* Invalid input with associated message   */
-    case networkFailure(String)  /* Network failure with associated message */
-    case unknown                 /* Unknown error                           */
+    case missingConfiguration           /* Missing required configuration          */
+    case invalidInput(String)           /* Invalid input with associated message   */
+    case networkFailure(String)         /* Network failure with associated message */
+    case unknown                        /* Unknown error                           */
 
     ///
     /// @fcn        AppError.errorDescription
@@ -105,14 +104,14 @@ enum AppError: LocalizedError, Sendable
     ///
     /// @note   Keep output concise and actionable for support/debug workflows
     ///
-    var errorDescription: String? /* Readable failure explanation */
-    {  /* Example localized error description */
+    var errorDescription: String?       /* Readable failure explanation        */
+    {                                   /* Example localized error description */
         switch self
         {
         case .missingConfiguration:
             return "Missing required configuration."
 
-        case .invalidInput(let message):                /* Example input-validation message   */
+        case .invalidInput(let message):        /* Example input-validation message   */
             return "Invalid input: \(message)"
 
         case .networkFailure(let message):              /* Example network-failure message    */
@@ -121,9 +120,7 @@ enum AppError: LocalizedError, Sendable
         case .unknown:
             return "An unknown error has occurred."
         }
-
     }
-
 }
 
 
@@ -140,10 +137,10 @@ enum AppError: LocalizedError, Sendable
 ///
 struct Item: Identifiable, Codable, Sendable
 {
-    let id:        UUID    /* Example item identity                   */
-    let title:     String  /* Example display title                   */
-    let detail:    String? /* Example optional secondary content      */
-    let createdAt: Date    /* Example creation or retrieval timestamp */
+    let id:        UUID         /* Example item identity                   */
+    let title:     String       /* Example display title                   */
+    let detail:    String?      /* Example optional secondary content      */
+    let createdAt: Date         /* Example creation or retrieval timestamp */
 
 
     ///
@@ -160,13 +157,11 @@ struct Item: Identifiable, Codable, Sendable
     ///
     init(id: UUID = UUID(), title: String, detail: String? = nil, createdAt: Date = Date())
     {
-        self.id        = id         /* Assign the unique identifier for the item      */
-        self.title     = title      /* Assign the display title                       */
-        self.detail    = detail     /* Assign the optional secondary content          */
-        self.createdAt = createdAt  /* Assign the timestamp for creation or retrieval */
-
+        self.id        = id             /* Assign the unique identifier for the item      */
+        self.title     = title          /* Assign the display title                       */
+        self.detail    = detail         /* Assign the optional secondary content          */
+        self.createdAt = createdAt      /* Assign the timestamp for creation or retrieval */
     }
-
 }
 
 
@@ -216,14 +211,13 @@ final class ItemService: ItemServiceProtocol
     ///
     func fetchItems() async throws -> [Item]
     {
-        let now = Date()              /* Example shared item-creation timestamp */
+        let now = Date()        /* Example shared item-creation timestamp */
 
         return [
             Item(title: "Example Item", detail: "Sample content", createdAt: now),
             Item(title: "Second Item",  detail: "Another sample", createdAt: now.addingTimeInterval(60))
         ]
     }
-
 }
 
 
@@ -239,12 +233,12 @@ final class ItemService: ItemServiceProtocol
 @MainActor
 final class ItemListViewModel: ObservableObject
 {
-    @Published private(set) var items: [Item] = []    /* Example current item collection */
-    @Published private(set) var isLoading     = false /* Example loading-state indicator */
+    @Published private(set) var items: [Item] = []              /* Example current item collection */
+    @Published private(set) var isLoading     = false           /* Example loading-state indicator */
 
-    @Published private(set) var errorMessage: String?       /* Example current error message */
+    @Published private(set) var errorMessage: String?           /* Example current error message */
 
-    private let service: any ItemServiceProtocol            /* Example injected data-access dependency */
+    private let service: any ItemServiceProtocol        /* Example injected data-access dependency */
 
 
     ///
@@ -258,8 +252,7 @@ final class ItemListViewModel: ObservableObject
     ///
     init(service: any ItemServiceProtocol = ItemService())
     {
-        self.service = service      /* Assign the injected service to the local property */
-
+        self.service = service          /* Assign the injected service to the local property */
     }
 
 
@@ -275,35 +268,30 @@ final class ItemListViewModel: ObservableObject
     ///
     func loadItems() async
     {
-        isLoading    = true  /* Indicate that a loading operation is in progress */
-        errorMessage = nil   /* Clear any existing error message                 */
+        isLoading    = true     /* Indicate that a loading operation is in progress */
+        errorMessage = nil      /* Clear any existing error message                 */
 
 
         do
         {
             //Fetch attempt
             items = try await service.fetchItems()
-
         }
         catch let error as AppError
-        {  /* Example recognized application error */
+        {                               /* Example recognized application error */
             //Handle known application errors
             errorMessage = error.localizedDescription
-
         }
         catch
         {
             //Handle unexpected errors
             errorMessage = error.localizedDescription
-
         }
 
 
         //Update state
         isLoading = false
-
     }
-
 }
 
 
@@ -326,8 +314,8 @@ func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String
     let formatter = DateFormatter()     /* Example date-and-time formatter */
 
 
-    formatter.dateStyle = style   /* Set the desired date style */
-    formatter.timeStyle = .short  /* Set the desired time style */
+    formatter.dateStyle = style         /* Set the desired date style */
+    formatter.timeStyle = .short        /* Set the desired time style */
 
     return formatter.string(from: date)
 }
@@ -355,13 +343,13 @@ enum AppEntry
     ///
     static func run() async
     {
-        let viewModel = await ItemListViewModel(service: ItemService()) /* Example item-list presentation state */
+        let viewModel = await ItemListViewModel(service: ItemService())         /* Example item-list presentation state */
 
         // Load items from the service
         await viewModel.loadItems()
 
         // Retrieve the loaded items from the view model
-        let items = await viewModel.items /* Example loaded item collection */
+        let items = await viewModel.items       /* Example loaded item collection */
 
         // Iterate over the retrieved items and print their details
         for item in items
@@ -372,10 +360,8 @@ enum AppEntry
 
         // Check for any error messages and print them if present
         if let errorMessage = await viewModel.errorMessage
-        {  /* Example reported loading error */
+        {                                                       /* Example reported loading error */
             print("Error: \(errorMessage)")
         }
-
     }
-
 }

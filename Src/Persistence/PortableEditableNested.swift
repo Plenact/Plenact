@@ -40,7 +40,7 @@ extension PortableEditableContent
                 throw Failure.unsupported
             }
 
-            var raw = /* Unprocessed source value */
+            var raw =                                                                           /* Unprocessed source value */
                 try mapped(value, fields: ["id": "id", "author": "author", "body": "body",
                 "source_created_at_utc": "createdAt", "author_account_id": "_author"])
 
@@ -60,7 +60,7 @@ extension PortableEditableContent
     /// @throws Unsupported or malformed content
     func detail(_ value: [String: Any]) throws -> [String: Any]
     {
-        var raw = /* Unprocessed source value */
+        var raw =       /* Unprocessed source value */
             try mapped(value, fields: ["id": "id", "description": "description", "checklists": "checklists", "comments": "comments"])
 
         raw["checklists"] = try checklists(array(value["checklists"]))
@@ -79,12 +79,12 @@ extension PortableEditableContent
     {
         try values.map { list in
 
-            var raw = /* Unprocessed source value */
+            var raw =                                                                           /* Unprocessed source value */
                 try mapped(list, fields: ["id": "id", "title": "title", "items": "items"])
 
             raw["items"] = try array(list["items"]).map { item -> [String: Any] in
 
-                var result = /* Accumulated output value */
+                var result =    /* Accumulated output value */
                     try mapped(item, fields: ["id": "id", "title": "title", "completed": "isCompleted", "content": "content",
                     "retained_detail": "retainedDetail", "retained_card_id": "retainedCardID", "retained_url": "retainedURL", "linked_collection_id": "linkedCollectionID"])
 
@@ -132,7 +132,6 @@ extension PortableEditableContent
                 if let retained = item["retained_detail"] as? [String: Any]
                 {
                     result["retainedDetail"] = try detail(retained)
-
                 }
 
                 result["retainedCardID"] = try alias(item["retained_card_id"])
@@ -158,7 +157,7 @@ extension PortableEditableContent
         }
         return try array(value).map { entry -> [String: Any] in
 
-            var raw = /* Unprocessed source value */
+            var raw =                                                                                   /* Unprocessed source value */
                 try mapped(entry, fields: ["id": "id", "kind": "mediaKind", "asset_id": "fileName",
                 "drawing_asset_id": "drawingFileName", "url": "url", "source_added_at_utc": "addedAt",
                 "example_image": "exampleImage", "caption": "caption"])
@@ -185,13 +184,13 @@ extension PortableEditableContent
         }
         return try array(value).map { entry -> [String: Any] in
 
-            var raw = /* Unprocessed source value */
+            var raw =           /* Unprocessed source value */
                 try mapped(entry, fields: ["id": "id", "source_timestamp_utc": "timestamp", "changes": "changes"])
 
             raw["timestamp"] = try timestamp(entry["source_timestamp_utc"])
             raw["changes"] = try array(entry["changes"]).map { change -> [String: Any] in
 
-                var mappedChange = /* Mapped change */
+                var mappedChange =      /* Mapped change */
                     try mapped(change, fields: ["field": "field", "previous_value": "previousValue", "new_value": "newValue"])
 
                 for key in ["previousValue", "newValue"]
@@ -210,7 +209,6 @@ extension PortableEditableContent
                     }
 
                     mappedChange[key] = bytes
-
                 }
                 return mappedChange
             }
@@ -229,7 +227,7 @@ extension PortableEditableContent
     {
         try values.map { value in
 
-            let kind = value["kind"] as? String /* Content kind discriminator */
+            let kind = value["kind"] as? String         /* Content kind discriminator */
 
             guard (kind == "manual" && value["identity_scope"] as? String == "manual") ||
                 (kind == "registered_user" && value["identity_scope"] as? String == "legacy_demo") else
@@ -237,7 +235,7 @@ extension PortableEditableContent
                 throw Failure.unsupported
             }
 
-            var raw = /* Unprocessed source value */
+            var raw =           /* Unprocessed source value */
                 try mapped(value, fields: ["id": "id", "kind": "kind", "display_name": "displayName",
                 "user_id": "userID", "identity_scope": "_scope"])
 
@@ -267,7 +265,7 @@ extension PortableEditableContent
                         throw Failure.unsupported
                     }
 
-            var raw = /* Unprocessed source value */
+            var raw =           /* Unprocessed source value */
                 try mapped(entry, fields: ["id": "id", "emoji": "emoji", "source_author_id": "authorID",
                 "source_created_at_utc": "createdAt", "author_account_id": "_author"])
 

@@ -13,7 +13,7 @@ import SwiftUI
 ///     Restricts credential-bearing requests to the Unsplash API and preserves provider credits
 enum StudioUnsplash
 {
-    private static let service = "com.plenact.studio.unsplash" /* Injected operation service */
+    private static let service = "com.plenact.studio.unsplash"          /* Injected operation service */
 
 
     /// @fcn StudioUnsplash.key()
@@ -22,8 +22,8 @@ enum StudioUnsplash
     /// @return (String) configured key or an empty string
     static func key() -> String
     {
-        var value: CFTypeRef?      /* Keychain result reference  */
-        let query: [String: Any] = /* Keychain lookup attributes */
+        var value: CFTypeRef?                                   /* Keychain result reference  */
+        let query: [String: Any] =                              /* Keychain lookup attributes */
             [kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service, kSecReturnData as String: true]
 
@@ -46,9 +46,9 @@ enum StudioUnsplash
     /// @throws Keychain write failures propagate to the configuration UI
     static func saveKey(_ key: String) throws
     {
-        let query: [String: Any] = /* Keychain lookup attributes */
+        let query: [String: Any] =                                                              /* Keychain lookup attributes */
             [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
-        let cleaned              = /* Normalized input value */
+        let cleaned              =                                                              /* Normalized input value     */
             key.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if cleaned.isEmpty
@@ -57,10 +57,10 @@ enum StudioUnsplash
             return
         }
 
-        let values: [String: Any] = /* Values being processed */
+        let values: [String: Any] =                                                             /* Values being processed  */
             [kSecValueData as String: Data(cleaned.utf8),
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly]
-        let updated = /* Edited value to publish */
+        let updated =                                                                           /* Edited value to publish */
             SecItemUpdate(query as CFDictionary, values as CFDictionary)
 
         if updated == errSecItemNotFound
@@ -75,14 +75,12 @@ enum StudioUnsplash
             {
                 throw CocoaError(.fileWriteUnknown)
             }
-
         }
 
         else if updated != errSecSuccess
         {
             throw CocoaError(.fileWriteUnknown)
         }
-
     }
 
 
@@ -100,12 +98,12 @@ enum StudioUnsplash
             throw URLError(.userAuthenticationRequired)
         }
 
-        var request = URLRequest(url: url) /* Pending lookup request */
+        var request = URLRequest(url: url)      /* Pending lookup request */
 
         request.setValue("Client-ID " + key(), forHTTPHeaderField: "Authorization")
         request.setValue("v1", forHTTPHeaderField: "Accept-Version")
 
-        let (data, response) = try await URLSession.shared.data(for: request) /* Data response */
+        let (data, response) = try await URLSession.shared.data(for: request)           /* Data response */
 
         guard let http = response as? HTTPURLResponse, (200 ... 299).contains(http.statusCode) else
         {
@@ -125,13 +123,13 @@ enum StudioUnsplash
     /// @throws Request or response validation failures propagate without changing artwork
     static func search(_ query: String) async throws -> [StudioRemotePhoto]
     {
-        var url = /* Resource location */
+        var url =                                                               /* Resource location */
             URLComponents(string: "https://api.unsplash.com/search/photos")!
 
         url.queryItems = [URLQueryItem(name: "query", value: query), URLQueryItem(name: "per_page", value: "20")]
 
-        let data   = try await request(url.url!) /* Encoded or loaded bytes */
-        let object =                             /* Decoded JSON object     */
+        let data   = try await request(url.url!)                                /* Encoded or loaded bytes */
+        let object =                                                            /* Decoded JSON object     */
             try JSONSerialization.jsonObject(with: data) as? [String: Any]
 
         return (object? ["results"] as? [[String: Any]] ?? []).compactMap
@@ -161,9 +159,7 @@ enum StudioUnsplash
             return StudioRemotePhoto(id: id, imageURL: image, photographer: name, profileURL: profileURL,
                 downloadURL: download)
         }
-
     }
-
 }
 
 
@@ -173,15 +169,15 @@ enum StudioUnsplash
 ///     Keeps failed or cancelled searches from applying an image; the final surface editor tracks each use
 struct StudioUnsplashPicker: View
 {
-    let onSelect: (StudioRemotePhoto) -> Void           /* Handle the selected value */
-    @State private var query                       = "" /* Search text               */
-    @State private var key                         =    /* Lookup or persistence key */
+    let onSelect: (StudioRemotePhoto) -> Void                   /* Handle the selected value           */
+    @State private var query                       = ""         /* Search text                         */
+    @State private var key                         =            /* Lookup or persistence key           */
         StudioUnsplash.key()
-    @State private var photos: [StudioRemotePhoto] = []    /* Photo selections or gallery entries */
-    @State private var isBusy                      = false /* Operation in progress               */
-    @State private var error:       String?                /* Reported operation failure          */
-    @State private var requestTask: Task<Void, Never>?     /* Request task                        */
-    @Environment(\.dismiss) private var dismiss            /* Close the current presentation      */
+    @State private var photos: [StudioRemotePhoto] = []         /* Photo selections or gallery entries */
+    @State private var isBusy                      = false      /* Operation in progress               */
+    @State private var error:       String?                     /* Reported operation failure          */
+    @State private var requestTask: Task<Void, Never>?          /* Request task                        */
+    @Environment(\.dismiss) private var dismiss                 /* Close the current presentation      */
 
     ///
     /// @fcn        StudioUnsplashPicker.body
@@ -191,7 +187,7 @@ struct StudioUnsplashPicker: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View /* Studio Unsplash Picker layout */
+    var body: some View         /* Studio Unsplash Picker layout */
     {
         NavigationStack
         {
@@ -210,9 +206,7 @@ struct StudioUnsplashPicker: View
                         catch
                         {
                             self.error = error.localizedDescription
-
                         }
-
                     }
 
                     Link("Create an Unsplash developer application", destination: URL(string: "https://unsplash.com/developers")!)
@@ -234,13 +228,11 @@ struct StudioUnsplashPicker: View
                             defer
                             {
                                 isBusy = false
-
                             }
 
                             do
                             {
                                 photos = try await StudioUnsplash.search(query)
-
                             }
 
                             catch is CancellationError
@@ -250,11 +242,8 @@ struct StudioUnsplashPicker: View
                             catch
                             {
                                 self.error = "Search failed. Check the access key, connection, and API quota."
-
                             }
-
                         }
-
                     }
                     .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isBusy)
                     if isBusy
@@ -266,7 +255,6 @@ struct StudioUnsplashPicker: View
                     {
                         Text(error).foregroundStyle(.red)
                     }
-
                 }
 
                 ForEach(photos, id: \.id)
@@ -298,9 +286,7 @@ struct StudioUnsplashPicker: View
                         }
                         .disabled(isBusy)
                     }
-
                 }
-
             }
             .navigationTitle("Unsplash")
             .toolbar
@@ -311,18 +297,13 @@ struct StudioUnsplashPicker: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
             .onDisappear
             {
                 requestTask?.cancel()
             }
-
         }
-
     }
-
 }
 

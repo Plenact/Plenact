@@ -20,7 +20,7 @@ import SwiftUI
 ///
 enum TodaySloganCatalog
 {
-    static let slogans: [String] = [ /* Available encouragement text */
+    static let slogans: [String] = [                            /* Available encouragement text */
             "small steps today, bringing your plans to life",
             "a fresh page today, with room for what matters",
             "begin where you are, and grow from here",
@@ -98,19 +98,18 @@ enum TodaySloganCatalog
     static func slogan(on date: Date, calendar: Calendar = .current) -> String
     {
         // A fixed Gregorian anchor keeps rotation stable across relaunches, years, and DST
-        var local = Calendar(identifier: .gregorian) /* Local workspace representation */
+        var local = Calendar(identifier: .gregorian)    /* Local workspace representation */
 
         local.timeZone = calendar.timeZone
 
-        let anchor = /* Layout anchor position */
+        let anchor =                                                                                    /* Layout anchor position      */
             local.date(from: DateComponents(year: 2026, month: 10, day: 15))!
-        let days   = /* Dates in the selected range */
+        let days   =                                                                                    /* Dates in the selected range */
             local.dateComponents([.day], from: anchor, to: local.startOfDay(for: date)).day ?? 0
-        let index  = ((days % slogans.count) + slogans.count) % slogans.count /* Element position */
+        let index  = ((days % slogans.count) + slogans.count) % slogans.count                           /* Element position            */
 
         return slogans[index]
     }
-
 }
 
 
@@ -123,17 +122,16 @@ enum TodaySloganCatalog
 ///
 struct TodaySloganView: View
 {
-    @State private var showsFullSlogan = false          /* Full Slogan visibility */
-    @Environment(\.colorScheme) private var colorScheme /* Color scheme           */
+    @State private var showsFullSlogan = false                  /* Full Slogan visibility */
+    @Environment(\.colorScheme) private var colorScheme         /* Color scheme           */
 
-    var body: some View /* Today Slogan layout */
+    var body: some View         /* Today Slogan layout */
     {
         TimelineView(.everyMinute)
         {
             context in
             sloganContent(TodaySloganCatalog.slogan(on: context.date))
         }
-
     }
 
 
@@ -157,7 +155,6 @@ struct TodaySloganView: View
             onTap:
             {
                 showsFullSlogan = true
-
             }
         )
         .padding(.horizontal, 8)
@@ -169,15 +166,12 @@ struct TodaySloganView: View
             Button("Done", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(slogan)
         }
-
     }
-
 }
 
 
@@ -205,7 +199,7 @@ enum TodaySloganMotion
     ///
     static func position(elapsed: TimeInterval, start: CGFloat, viewport: CGFloat, textWidth: CGFloat) -> CGFloat
     {
-        let distance = viewport + textWidth /* Distance between layout positions */
+        let distance = viewport + textWidth     /* Distance between layout positions */
 
         guard distance > 0 else
         {
@@ -219,9 +213,9 @@ enum TodaySloganMotion
 
         // When released completely offscreen, restart at the invisible right edge
         // after the reading pause instead of spending minutes crossing blank space
-        let resumeStart = /* Resume start */
+        let resumeStart =                                               /* Resume start        */
             start > viewport || start < -textWidth ? viewport : start
-        let proposed    = resumeStart - elapsed * 35.1 /* Proposed edit state */
+        let proposed    = resumeStart - elapsed * 35.1                  /* Proposed edit state */
 
         if proposed >= -textWidth
         {
@@ -249,7 +243,6 @@ enum TodaySloganMotion
     {
         start + translation
     }
-
 }
 
 
@@ -262,17 +255,17 @@ enum TodaySloganMotion
 ///
 struct InteractiveSloganPreview: View
 {
-    let text:      String /* Text being processed */
-    let textColor: Color /* Text color */
-    let onTap:     () -> Void /* Tap callback */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
-    @Environment(\.dynamicTypeSize) private var typeSize /* Type size */
-    @State private var textWidth: CGFloat      = 0 /* Text width */
-    @State private var visible                 = false /* Current visibility state */
-    @State private var anchorDate              = Date() /* Anchor date */
-    @State private var anchorOffset:  CGFloat? = nil /* Scroll anchor displacement */
-    @State private var dragStart:     CGFloat? = nil /* Drag start */
-    @State private var draggedOffset: CGFloat? = nil /* Dragged offset */
+    let text:      String                                                       /* Text being processed       */
+    let textColor: Color                                                        /* Text color                 */
+    let onTap:     () -> Void                                                   /* Tap callback               */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference  */
+    @Environment(\.dynamicTypeSize) private var typeSize                        /* Type size                  */
+    @State private var textWidth: CGFloat      = 0                              /* Text width                 */
+    @State private var visible                 = false                          /* Current visibility state   */
+    @State private var anchorDate              = Date()                         /* Anchor date                */
+    @State private var anchorOffset:  CGFloat? = nil                            /* Scroll anchor displacement */
+    @State private var dragStart:     CGFloat? = nil                            /* Drag start                 */
+    @State private var draggedOffset: CGFloat? = nil                            /* Dragged offset             */
 
 
     ///
@@ -293,15 +286,15 @@ struct InteractiveSloganPreview: View
             return draggedOffset
         }
 
-        let start   = anchorOffset ?? width /* Range start                    */
-        let elapsed =                       /* Time since the operation began */
+        let start   = anchorOffset ?? width                                                     /* Range start                    */
+        let elapsed =                                                                           /* Time since the operation began */
             max(0, date.timeIntervalSince(anchorDate) - (anchorOffset == nil ? 0.4 : 0))
 
         return TodaySloganMotion.position(elapsed: elapsed, start: start, viewport: width, textWidth: textWidth)
     }
 
 
-    var body: some View /* Interactive Slogan Preview layout */
+    var body: some View         /* Interactive Slogan Preview layout */
     {
         Group
         {
@@ -334,7 +327,6 @@ struct InteractiveSloganPreview: View
                                     Color.clear.preference(
                                         key: PreviewTextWidthKey.self, value: measured.size.width)
                                 }
-
                             }
                             .offset(x: position(at: timeline.date, width: geometry.size.width))
                         }
@@ -353,14 +345,12 @@ struct InteractiveSloganPreview: View
                                 if dragStart == nil
                                 {
                                     dragStart = position(at: Date(), width: geometry.size.width)
-
                                 }
 
                                 draggedOffset = TodaySloganMotion.draggedPosition(
                                     start: dragStart ?? 0,
                                     translation: value.translation.width, viewport: geometry.size.width,
                                     textWidth: textWidth)
-
                             }
                             .onEnded
                             {
@@ -374,16 +364,13 @@ struct InteractiveSloganPreview: View
                                 anchorDate = Date().addingTimeInterval(1)
                                 self.draggedOffset = nil
                                 dragStart = nil
-
                             })
                     }
-
                 }
                 .clipped()
                 .onPreferenceChange(PreviewTextWidthKey.self)
                 {
                     textWidth = $0
-
                 }
                 .modifier(PreviewVisibility(visible: $visible))
                 .accessibilityElement(children: .ignore)
@@ -393,9 +380,7 @@ struct InteractiveSloganPreview: View
                 {
                     onTap()
                 }
-
             }
-
         }
         .font(.system(size: 27, design: .serif).italic())
         .foregroundStyle(textColor)
@@ -407,11 +392,8 @@ struct InteractiveSloganPreview: View
             anchorOffset = nil;
             dragStart = nil;
             draggedOffset = nil
-
         }
-
     }
-
 }
 
 
@@ -451,7 +433,7 @@ enum TodayFocusPresentation
     ///
     static func context(important: Bool, bookmarked: Bool, upNext: Bool, chronological: Bool) -> String
     {
-        let selected = /* Current selection */
+        let selected =                                                                  /* Current selection */
             [(upNext, "Up Next"), (important, "Important"), (bookmarked, "Bookmarked")]
         .filter
         {
@@ -468,5 +450,4 @@ enum TodayFocusPresentation
 
         return selected.joined(separator: " or ") + " · from today’s list"
     }
-
 }

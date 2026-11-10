@@ -39,24 +39,23 @@ enum KanbanAttachmentKind: String, Codable, Sendable
 ///
 struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
 {
-    let id:              UUID                   /* Stable attachment identity                                */
-    let fileName:        String?                /* Device-local media filename                               */
-    let url:             URL?                   /* Remote web-link destination                               */
-    let mediaKind:       KanbanAttachmentKind?  /* Explicit media type when known                            */
-    let addedAt:         Date                   /* Attachment creation time                                  */
-    let exampleImage:    ExampleCoverImage?     /* Immutable original example illustration, never user media */
-    var drawingFileName: String? = nil          /* Editable PencilKit strokes, absent in legacy photos       */
+    let id:              UUID                           /* Stable attachment identity                                */
+    let fileName:        String?                        /* Device-local media filename                               */
+    let url:             URL?                           /* Remote web-link destination                               */
+    let mediaKind:       KanbanAttachmentKind?          /* Explicit media type when known                            */
+    let addedAt:         Date                           /* Attachment creation time                                  */
+    let exampleImage:    ExampleCoverImage?             /* Immutable original example illustration, never user media */
+    var drawingFileName: String? = nil                  /* Editable PencilKit strokes, absent in legacy photos       */
 
-    var storedFileNames: [String] /* Stored file names */
+    var storedFileNames: [String]       /* Stored file names */
     {
         [fileName, drawingFileName].compactMap
         {
             $0
         }
-
     }
 
-    var caption: String? /* Optional photo text; absent in legacy attachment records */
+    var caption: String?        /* Optional photo text; absent in legacy attachment records */
 
     ///
     /// @fcn        KanbanAttachment.kind
@@ -69,8 +68,8 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
     /// @pre        The attachment contains its persisted metadata
     /// @post       No attachment fields are modified
     ///
-    var kind: KanbanAttachmentKind /* Content kind discriminator */
-    {  /* Resolved kind for legacy and current records */
+    var kind: KanbanAttachmentKind                      /* Content kind discriminator                   */
+    {                                                   /* Resolved kind for legacy and current records */
         mediaKind ?? (url == nil ? .photo : .link)
     }
 
@@ -107,9 +106,7 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
         self.addedAt = addedAt
         self.exampleImage = exampleImage
         self.caption = caption
-
     }
-
 }
 
 
@@ -138,8 +135,8 @@ enum CardAttachmentStore
     ///
     static func coverThumbnail(for attachment: KanbanAttachment) throws -> UIImage
     {
-        guard let url = imageURL(for: attachment),                   /* Resolved attachment image URL     */
-        let source = CGImageSourceCreateWithURL(url as CFURL, nil),  /* ImageIO source for the attachment */
+        guard let url = imageURL(for: attachment),                      /* Resolved attachment image URL     */
+        let source = CGImageSourceCreateWithURL(url as CFURL, nil),     /* ImageIO source for the attachment */
         let image = CGImageSourceCreateThumbnailAtIndex(
             source, 0,
             [
@@ -147,7 +144,7 @@ enum CardAttachmentStore
                 kCGImageSourceCreateThumbnailWithTransform: true,
                 kCGImageSourceThumbnailMaxPixelSize: 960,
                 kCGImageSourceShouldCacheImmediately: true
-            ] as CFDictionary) /* Orientation-correct bounded thumbnail */
+            ] as CFDictionary)                                  /* Orientation-correct bounded thumbnail */
         else
         {
             throw CocoaError(.fileReadCorruptFile)
@@ -191,7 +188,7 @@ enum CardAttachmentStore
     ///
     static func removeDeletedFiles(_ candidates: Set<String>, keeping retained: Set<String>) throws
     {
-        let retained = /* State retained for recovery */
+        let retained =                                                  /* State retained for recovery */
             retained.union(try PlanningRoutineStore.retainedFiles())
 
         for name in candidates.subtracting(retained)
@@ -204,10 +201,10 @@ enum CardAttachmentStore
             }
 
 
-            let attachment = KanbanAttachment(fileName: name) /* Metadata for the stored media file */
+            let attachment = KanbanAttachment(fileName: name)           /* Metadata for the stored media file */
 
             guard let url = fileURL(for: attachment) else
-            {  /* Local destination for the attachment */
+            {                                                   /* Local destination for the attachment */
                 throw CocoaError(.fileNoSuchFile)
             }
 
@@ -216,13 +213,11 @@ enum CardAttachmentStore
             {
                 try FileManager.default.removeItem(at: url)
             }
-
         }
-
     }
 
 
-    private static let directoryName = "CardAttachments" /* Local media folder name */
+    private static let directoryName = "CardAttachments"        /* Local media folder name */
 
 
     ///
@@ -246,17 +241,17 @@ enum CardAttachmentStore
     static func saveMedia(_ mediaData: Data, kind: KanbanAttachmentKind, fileExtension: String) throws
     -> KanbanAttachment
     {
-        let attachmentID        = UUID() /* Stable identity for the new media file */
-        let normalizedExtension = fileExtension.trimmingCharacters( /* Normalized extension */
-            in: CharacterSet(charactersIn: ". ")) /* Clean extension input                  */
-        let safeExtension = /* Safe extension */
+        let attachmentID        = UUID()                                /* Stable identity for the new media file */
+        let normalizedExtension = fileExtension.trimmingCharacters(     /* Normalized extension                   */
+            in: CharacterSet(charactersIn: ". "))                       /* Clean extension input                  */
+        let safeExtension =                                             /* Safe extension                         */
         normalizedExtension.isEmpty
         ? (kind == .video ? "mov" : (kind == .audio ? "m4a" : "jpg"))
-        : normalizedExtension                                         /* Valid file extension      */
-        let fileName     = "\(attachmentID.uuidString).\(safeExtension)" /* Unique stored filename    */
-        let directoryURL = try attachmentsDirectory()                    /* App-local media directory */
-        let fileURL      = directoryURL.appendingPathComponent( /* File URL */
-            fileName, isDirectory: false) /* Destination file URL                   */
+        : normalizedExtension                                                   /* Valid file extension      */
+        let fileName     = "\(attachmentID.uuidString).\(safeExtension)"        /* Unique stored filename    */
+        let directoryURL = try attachmentsDirectory()                           /* App-local media directory */
+        let fileURL      = directoryURL.appendingPathComponent(                 /* File URL                  */
+            fileName, isDirectory: false)                       /* Destination file URL                   */
 
         try mediaData.write(to: fileURL, options: .atomic)
 
@@ -281,16 +276,16 @@ enum CardAttachmentStore
     static func fileURL(for attachment: KanbanAttachment) -> URL?
     {
         if let exampleImage = attachment.exampleImage
-        {  /* Explicit bundled cover selection */
+        {                                               /* Explicit bundled cover selection */
             return exampleImage.url
         }
 
 
-        guard let fileName = attachment.fileName, /* Stored local filename */
+        guard let fileName = attachment.fileName,       /* Stored local filename */
 
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else
-        {  /* App Documents directory */
+        {               /* App Documents directory */
             return nil
         }
 
@@ -339,14 +334,14 @@ enum CardAttachmentStore
     ///
     static func webURL(from text: String) -> URL?
     {
-        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized pasted or typed URL */
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)          /* Normalized pasted or typed URL */
 
-        guard let components = URLComponents(string: trimmedText), /* Parsed URL components */
+        guard let components = URLComponents(string: trimmedText),      /* Parsed URL components */
 
-        let scheme = components.scheme?.lowercased(), /* Normalized URL scheme */
+        let scheme = components.scheme?.lowercased(),           /* Normalized URL scheme */
         ["http", "https"].contains(scheme),
 
-        let host = components.host, /* Required URL host */
+        let host = components.host,     /* Required URL host */
         !host.isEmpty
         else
         {
@@ -378,22 +373,22 @@ enum CardAttachmentStore
             return
         }
 
-        let fileNames = fileNames.union(templateFiles) /* File names */
+        let fileNames = fileNames.union(templateFiles)          /* File names */
 
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else
-        {  /* App Documents directory */
+        {               /* App Documents directory */
             return
         }
 
 
-        let directoryURL = documentsURL.appendingPathComponent( /* Directory URL */
-            directoryName, isDirectory: true) /* Attachment folder URL */
+        let directoryURL = documentsURL.appendingPathComponent(         /* Directory URL */
+            directoryName, isDirectory: true)                   /* Attachment folder URL */
 
         guard
         let files = try? FileManager.default.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
         else
-        {  /* Files available for cleanup */
+        {               /* Files available for cleanup */
             return
         }
 
@@ -402,7 +397,6 @@ enum CardAttachmentStore
         {
             try? FileManager.default.removeItem(at: fileURL)
         }
-
     }
 
 
@@ -424,17 +418,16 @@ enum CardAttachmentStore
     {
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else
-        {  /* App Documents directory */
+        {                                       /* App Documents directory */
             throw CocoaError(.fileNoSuchFile)
         }
 
 
-        let directoryURL = documentsURL.appendingPathComponent( /* Directory URL */
-            directoryName, isDirectory: true) /* Attachment folder URL */
+        let directoryURL = documentsURL.appendingPathComponent(         /* Directory URL */
+            directoryName, isDirectory: true)                   /* Attachment folder URL */
 
         try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
 
         return directoryURL
     }
-
 }

@@ -13,22 +13,22 @@ import Foundation
 @MainActor
 final class MigrationContentValues
 {
-    var journal: MigrationIdentityJournal                  /* Candidate identities; saved only after the slice succeeds */
-    var known: Set<String>                          = []    /* Canonical record IDs supplied by converted source records */
-    var unavailable: [String: [String: Any]]        = [:]   /* Typed explicit unavailable-reference documents            */
-    var precisionEvidence: [[String: Any]]          = []    /* Original epoch values not exactly representable in ms     */
-    var usedNested: Set<String>                     = [] /* Used nested */
-    var attachmentTargets: [String: String]         = [:] /* Attachment targets */
-    var originalCards: [String: [String: Any]]      = [:] /* Original cards */
-    var cardTargets: [String: String]               = [:]   /* Original owner + numeric Card identity                    */
-    var assetTargets: [String: String]              = [:]   /* Export-only verified source-path aliases; normal migration uses its journal */
-    var originalCollectionIDs: [String: String]     = [:] /* Original collection i ds */
-    var ownerScopesByCollection: [String: [String]] = [:] /* Owner scopes by collection */
-    var collectionTargets: [String: String]         = [:]   /* Original Collection UUID -> canonical UUID                 */
-    var calendarOwnerScopes: Set<String>            = [] /* Calendar owner scopes */
-    var checklistWeekOverrides: [String: String]    = [:] /* Checklist week overrides */
-    var timeZoneID: String                                 /* Explicit caller-confirmed original timezone                */
-    let mediaDigests: [String: String]                     /* Exact preserved-file identities                           */
+    var journal: MigrationIdentityJournal                       /* Candidate identities; saved only after the slice succeeds                   */
+    var known: Set<String>                          = []        /* Canonical record IDs supplied by converted source records                   */
+    var unavailable: [String: [String: Any]]        = [:]       /* Typed explicit unavailable-reference documents                              */
+    var precisionEvidence: [[String: Any]]          = []        /* Original epoch values not exactly representable in ms                       */
+    var usedNested: Set<String>                     = []        /* Used nested                                                                 */
+    var attachmentTargets: [String: String]         = [:]       /* Attachment targets                                                          */
+    var originalCards: [String: [String: Any]]      = [:]       /* Original cards                                                              */
+    var cardTargets: [String: String]               = [:]       /* Original owner + numeric Card identity                                      */
+    var assetTargets: [String: String]              = [:]       /* Export-only verified source-path aliases; normal migration uses its journal */
+    var originalCollectionIDs: [String: String]     = [:]       /* Original collection i ds                                                    */
+    var ownerScopesByCollection: [String: [String]] = [:]       /* Owner scopes by collection                                                  */
+    var collectionTargets: [String: String]         = [:]       /* Original Collection UUID -> canonical UUID                                  */
+    var calendarOwnerScopes: Set<String>            = []        /* Calendar owner scopes                                                       */
+    var checklistWeekOverrides: [String: String]    = [:]       /* Checklist week overrides                                                    */
+    var timeZoneID: String                                      /* Explicit caller-confirmed original timezone                                 */
+    let mediaDigests: [String: String]                          /* Exact preserved-file identities                                             */
 
 
     /// Structured conversion failures remain visible in the partial preview report
@@ -51,7 +51,6 @@ final class MigrationContentValues
         self.journal = journal
         self.timeZoneID = timeZoneID
         self.mediaDigests = mediaDigests
-
     }
 
 
@@ -62,7 +61,7 @@ final class MigrationContentValues
     /// @throws Native encoding/JSON errors
     static func object<T: Encodable>(_ value: T) throws -> [String: Any]
     {
-        let encoder = JSONEncoder() /* JSON encoding configuration */
+        let encoder = JSONEncoder()     /* JSON encoding configuration */
 
         encoder.dateEncodingStrategy = .secondsSince1970
 
@@ -112,12 +111,11 @@ final class MigrationContentValues
     {
         if !known.contains(target), unavailable[target] == nil
         {
-            let record = /* Record being processed */
+            let record =                                                                                /* Record being processed */
                 try id("unavailable_reference", owner: "unavailable", legacy: type + ":" + target)
 
             unavailable[target] = document("unavailable_reference", id: record,
                 payload: ["target_type": type, "target_id": target, "reason": "legacy_unresolved", "display_text": NSNull()])
-
         }
         return target
     }
@@ -157,14 +155,14 @@ final class MigrationContentValues
             throw Failure.invalid("media_filename")
         }
 
-        let path = area + "/" + name /* Filesystem or navigation path */
+        let path = area + "/" + name    /* Filesystem or navigation path */
 
         if let target = assetTargets[path]
         {
             return try reference("asset", target)
         }
 
-        let target = /* Target under consideration */
+        let target =                                                                                    /* Target under consideration */
             try id("asset", owner: "owned_media", legacy: path, discriminator: mediaDigests[path])
 
         return try reference("asset", target)
@@ -184,14 +182,14 @@ final class MigrationContentValues
             throw Failure.invalid("timestamp")
         }
 
-        let epoch = number.doubleValue /* Reference timestamp origin */
+        let epoch = number.doubleValue          /* Reference timestamp origin */
 
         guard epoch >= -62_135_596_800, epoch < 253_402_300_800 else
         {
             throw Failure.invalid("timestamp_range")
         }
 
-        let milliseconds = floor(epoch * 1000) /* Timestamp in milliseconds */
+        let milliseconds = floor(epoch * 1000)          /* Timestamp in milliseconds */
 
         if abs(epoch - milliseconds / 1000) > 0.000_000_1
         {
@@ -199,7 +197,7 @@ final class MigrationContentValues
                 "wire_epoch_milliseconds": milliseconds, "source_format": "native_date_seconds_since_1970"])
         }
 
-        let formatter = DateFormatter() /* Date or value formatter */
+        let formatter = DateFormatter()         /* Date or value formatter */
 
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")

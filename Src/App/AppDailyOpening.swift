@@ -15,12 +15,12 @@ import UIKit.UIGestureRecognizerSubclass
 ///     Persist the once-per-day decision across launches without sharing navigation as user data
 enum AppDailyOpening
 {
-    static let domain = "com.plenact.app.device-navigation" /* Lookup or storage namespace */
-    static let key    = "lastDailyWeekOpening"              /* Lookup or persistence key   */
+    static let domain = "com.plenact.app.device-navigation"     /* Lookup or storage namespace */
+    static let key    = "lastDailyWeekOpening"                  /* Lookup or persistence key   */
 
 
-    static let departureKey = "lastBackgroundDeparture" /* Device-local absence start */
-    static let longAbsence: TimeInterval = 8 * 60 * 60   /* Direct-to-Today threshold */
+    static let departureKey = "lastBackgroundDeparture"         /* Device-local absence start */
+    static let longAbsence: TimeInterval = 8 * 60 * 60          /* Direct-to-Today threshold  */
 
 
     /// @fcn AppDailyOpening.recordDeparture
@@ -46,7 +46,7 @@ enum AppDailyOpening
     /// @return True once for an eligible long absence; consumes the daily Week opening too
     static func consumeLongAbsence(at date: Date, protected: Bool, defaults: UserDefaults) -> Bool
     {
-        let departure = defaults.object(forKey: departureKey) as? Date /* Prior background time */
+        let departure = defaults.object(forKey: departureKey) as? Date          /* Prior background time */
 
         defaults.removeObject(forKey: departureKey)
         guard !protected, let departure, date.timeIntervalSince(departure) > longAbsence else
@@ -74,7 +74,7 @@ enum AppDailyOpening
             return false
         }
 
-        let day = PlanningDate.key(date, calendar: calendar) /* Day under consideration */
+        let day = PlanningDate.key(date, calendar: calendar)    /* Day under consideration */
 
         guard defaults.string(forKey: key) != day else
         {
@@ -97,8 +97,8 @@ extension AppRootView
     {
         guard let defaults = UserDefaults(suiteName: AppDailyOpening.domain),
               AppDailyOpening.consumeLongAbsence(at: date,
-                protected: hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture,
-                defaults: defaults) else
+                  protected: hasProtectedAppReturnContext || appReturnSession.hasProtectedDeparture,
+                  defaults: defaults) else
         {
             return false
         }
@@ -128,13 +128,13 @@ extension AppRootView
               lists.contains(where: { $0.id == target && !$0.isArchived }),
               let defaults = UserDefaults(suiteName: AppDailyOpening.domain),
               AppDailyOpening.claim(at: date, calendar: .current, protected: false,
-                targetAvailable: true, defaults: defaults) else
+                  targetAvailable: true, defaults: defaults) else
         {
             return false
         }
 
         // A not-yet-mounted Week must read the same top position as an already mounted Week
-        let memory = /* Owner-scoped viewport state */
+        let memory =                                            /* Owner-scoped viewport state */
             BoardViewportMemory(owner: week.id.uuidString)
 
         memory.resetScrollOffsets()
@@ -164,12 +164,12 @@ extension AppRootView
 ///     Cancellation consumes this opening; stale tasks cannot affect another opening
 struct DailyWeekOverview
 {
-    static let delay: Duration = .milliseconds(1250) /* Time before starting the transition */
+    static let delay: Duration = .milliseconds(1250)    /* Time before starting the transition */
 
-    private(set) var returnDelay = Self.delay           /* Delay for this transient Week preview */
-    private(set) var waitsForCreatedContent = false     /* Wait until the new Card is revealed */
-    private(set) var id: UUID?                          /* Record UUID                   */
-    private(set) var deadline: ContinuousClock.Instant? /* Monotonic transition deadline */
+    private(set) var returnDelay = Self.delay                   /* Delay for this transient Week preview */
+    private(set) var waitsForCreatedContent = false             /* Wait until the new Card is revealed   */
+    private(set) var id: UUID?                                  /* Record UUID                           */
+    private(set) var deadline: ContinuousClock.Instant?         /* Monotonic transition deadline         */
 
 
     /// Arm an eligible daily opening or a successfully created inline Card
@@ -179,7 +179,6 @@ struct DailyWeekOverview
         self.waitsForCreatedContent = waitsForCreatedContent
         id = UUID()
         deadline = nil
-
     }
 
 
@@ -214,7 +213,6 @@ struct DailyWeekOverview
     {
         id = nil
         deadline = nil
-
     }
 }
 
@@ -227,11 +225,11 @@ extension AppRootView
         guard dailyWeekVisible, scenePhase == .active, selectedDestination == .board,
               boardTargetListID == nil, !hasProtectedAppReturnContext,
               let request = dailyOverview.begin(at: .now,
-                contentRevealed: CreatedContentReveal.shared.target == nil) else
+                  contentRevealed: CreatedContentReveal.shared.target == nil) else
         {
             return
         }
-        let delay = dailyOverview.returnDelay /* Capture the delay for this request */
+        let delay = dailyOverview.returnDelay           /* Capture the delay for this request */
 
         Task { @MainActor in
 
@@ -246,7 +244,6 @@ extension AppRootView
                 reduceMotion: UIAccessibility.isReduceMotionEnabled)
             {
                 selectedDestination = .today
-
             }
         }
     }
@@ -259,7 +256,7 @@ extension AppRootView
 @MainActor
 final class DailyOverviewFade
 {
-    private(set) weak var overlay: UIView? /* Temporary display overlay */
+    private(set) weak var overlay: UIView?      /* Temporary display overlay */
 
 
     /// Switch tabs beneath a noninteractive snapshot, respecting Reduce Motion
@@ -290,7 +287,6 @@ final class DailyOverviewFade
             UIView.animate(withDuration: 0.4375, delay: 0, options: [.allowUserInteraction])
             {
                 snapshot.alpha = 0
-
             } completion:
             {
                 _ in
@@ -307,7 +303,6 @@ final class DailyOverviewFade
         overlay?.removeFromSuperview()
 
         overlay = nil
-
     }
 }
 
@@ -317,14 +312,14 @@ final class DailyOverviewFade
 ///     Touches fail immediately without delaying or preventing normal controls and scrolling
 struct DailyOverviewProbe: UIViewControllerRepresentable
 {
-    let armed: Bool               /* Pending one-shot transition */
-    let onVisible: (Bool) -> Void /* Visible callback            */
-    let onInteraction: () -> Void /* Interaction callback        */
+    let armed: Bool                     /* Pending one-shot transition */
+    let onVisible: (Bool) -> Void       /* Visible callback            */
+    let onInteraction: () -> Void       /* Interaction callback        */
 
 
     final class TouchObserver: UIGestureRecognizer
     {
-        var interaction: (() -> Void)? /* Interaction callback */
+        var interaction: (() -> Void)?          /* Interaction callback */
 
 
         override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent)
@@ -332,7 +327,6 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
             interaction?()
 
             state = .failed
-
         }
 
 
@@ -351,11 +345,11 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
 
     final class Controller: UIViewController
     {
-        var visible: ((Bool) -> Void)? /* Current visibility state */
-        var armed                             = false /* Pending one-shot transition */
-        let observer                          = TouchObserver() /* Native interaction observer */
-        var notifications: [NSObjectProtocol] = [] /* Installed notification observers */
-        weak var observedWindow: UIWindow? /* Observed window */
+        var visible: ((Bool) -> Void)?                                  /* Current visibility state         */
+        var armed                             = false                   /* Pending one-shot transition      */
+        let observer                          = TouchObserver()         /* Native interaction observer      */
+        var notifications: [NSObjectProtocol] = []                      /* Installed notification observers */
+        weak var observedWindow: UIWindow?                              /* Observed window                  */
 
 
         override func viewDidAppear(_ animated: Bool)
@@ -431,7 +425,7 @@ struct DailyOverviewProbe: UIViewControllerRepresentable
 
     func makeUIViewController(context: Context) -> Controller
     {
-        let controller = Controller() /* Native view controller */
+        let controller = Controller()           /* Native view controller */
 
         controller.view.isUserInteractionEnabled = false
 

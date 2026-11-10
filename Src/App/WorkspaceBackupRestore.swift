@@ -24,17 +24,16 @@ extension AppRootView
             pendingNativeRestore = nil
             undoingNativeRestore = false
             isSwitchingWorkspace = false
-
         }
 
-        var committed = false /* Saved operation result */
+        var committed = false           /* Saved operation result */
 
         do
         {
             #if targetEnvironment(simulator)
             KanbanBoardPersistence.waitForPendingSaves()
 
-            let store = try FullMonthExampleStore.live() /* Persistence boundary */
+            let store = try FullMonthExampleStore.live()        /* Persistence boundary */
 
             if undoingNativeRestore
             {
@@ -68,11 +67,9 @@ extension AppRootView
             if committed || (try? FullMonthExampleStore.live().needsRecovery) == true
             {
                 workspaceRecoveryError = error.localizedDescription
-
             }
 
             workspaceNotice = "The test restore could not finish. Recovery data has been retained: " + error.localizedDescription
-
         }
     }
 }

@@ -38,7 +38,6 @@ extension ContentView
             if let appearanceBinding
             {
                 appearanceBinding.wrappedValue = appearance
-
             }
             else
             {
@@ -49,14 +48,12 @@ extension ContentView
 
                 _ = try BoardAppearance.decodeWeek(weekAppearanceData)
                 weekAppearanceData = try JSONEncoder().encode(appearance)
-
             }
 
             if applyToAll
             {
                 lists = BoardAppearance.inheritingLists(lists)
                 archivedLists = BoardAppearance.inheritingLists(archivedLists)
-
             }
 
             return true
@@ -64,10 +61,9 @@ extension ContentView
         catch
         {
             DatabaseActivity.shared.report(
-                                    "Could not save Board Appearance: \(error.localizedDescription). Existing settings have been retained.")
+                "Could not save Board Appearance: \(error.localizedDescription). Existing settings have been retained.")
             return false
         }
-
     }
 
 
@@ -83,9 +79,7 @@ extension ContentView
         if draggedListID != nil || draggedCardID != nil
         {
             dragGeometryRevision &+= 1
-
         }
-
     }
 
 
@@ -127,9 +121,7 @@ extension ContentView
         withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2))
         {
             boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic)
-
         }
-
     }
 
 
@@ -163,7 +155,6 @@ extension ContentView
         @unknown default:
             break
         }
-
     }
 
 
@@ -187,9 +178,7 @@ extension ContentView
             isPanoramic.toggle()
 
             boardScale = BoardPanoramicZoom.preset(panoramic: isPanoramic)
-
         }
-
     }
 
 
@@ -208,7 +197,7 @@ extension ContentView
     ///
     func openPendingBoardTarget(using listProxy: ScrollViewProxy)
     {
-        guard let targetListID = boardTargetListID, /* Requested list identity to reveal */
+        guard let targetListID = boardTargetListID,     /* Requested list identity to reveal */
         lists.contains(where:
             {
                 $0.id == targetListID
@@ -227,7 +216,7 @@ extension ContentView
 
         listProxy.scrollTo(targetListID, anchor: presentation == .standard ? .center : .leading)
 
-        if let targetCardID = boardTargetCardID, /* Requested card identity to open                  */
+        if let targetCardID = boardTargetCardID,        /* Requested card identity to open                  */
         let card = lists.first(where:
             {
                 $0.id == targetListID
@@ -235,19 +224,17 @@ extension ContentView
             {
                 $0.id == targetCardID
             })
-        {  /* Requested record resolved in its containing list */
+        {                                       /* Requested record resolved in its containing list */
             navigationPath = NavigationPath()
 
             navigationPath.append(card)
 
             openedDirectItem = directItemReturn != nil
-
         }
 
 
         boardTargetListID = nil
         boardTargetCardID = nil
-
     }
 
 
@@ -265,7 +252,6 @@ extension ContentView
     {
         boardBoundaryJumpTarget = boundary
         boardBoundaryJumpRequest += 1
-
     }
 
 
@@ -291,7 +277,7 @@ extension ContentView
     ///
     func renameMember(from currentName: String, to proposedName: String)
     {
-        let updatedName = proposedName.trimmingCharacters(in: .whitespacesAndNewlines) /* Trimmed replacement name */
+        let updatedName = proposedName.trimmingCharacters(in: .whitespacesAndNewlines)          /* Trimmed replacement name */
 
         guard !updatedName.isEmpty else
         {
@@ -299,33 +285,33 @@ extension ContentView
         }
 
 
-        let currentKey = currentName.lowercased() /* Normalized key for the current member name */
-        let updatedKey = updatedName.lowercased() /* Normalized key for the updated member name */
+        let currentKey = currentName.lowercased()       /* Normalized key for the current member name */
+        let updatedKey = updatedName.lowercased()       /* Normalized key for the updated member name */
 
         for listIndex in lists.indices
         {
             for cardIndex in lists[listIndex].cards.indices
             {
-                var updatedCard = lists[listIndex].cards[ /* Updated card */
-                cardIndex]                       /* Copy of the current card for in-place updates     */
-                var seenNames: Set<String> = []  /* Track unique member names within the current card */
+                var updatedCard = lists[listIndex].cards[       /* Updated card                                      */
+                cardIndex]                                      /* Copy of the current card for in-place updates     */
+                var seenNames: Set<String> = []                 /* Track unique member names within the current card */
 
                 updatedCard.members = updatedCard.members.compactMap
                 {
                     assignee in
 
-                    let trimmedMember = /* Trimmed member */
+                    let trimmedMember =                                 /* Trimmed member */
                         assignee.displayName.trimmingCharacters(
-                        in: .whitespacesAndNewlines) /* Existing display name   */
-                    let renamedMember = /* Renamed member */
+                            in: .whitespacesAndNewlines)                /* Existing display name   */
+                    let renamedMember =                                 /* Renamed member */
                     assignee.kind == .manual
-                    && trimmedMember.lowercased() == currentKey /* Match only manual names */
+                    && trimmedMember.lowercased() == currentKey         /* Match only manual names */
                     ? updatedName
-                    : trimmedMember /* Name retained or updated for this assignment */
-                    let normalizedName = /* Normalized name */
-                    assignee.kind == .registeredUser /* Namespace stable IDs separately from names   */
+                    : trimmedMember                                             /* Name retained or updated for this assignment */
+                    let normalizedName =                                        /* Normalized name                              */
+                    assignee.kind == .registeredUser                            /* Namespace stable IDs separately from names   */
                     ? "user:\(assignee.userID ?? assignee.id.uuidString)"
-                    : "manual:\(renamedMember.lowercased())" /* Stable deduplication key */
+                    : "manual:\(renamedMember.lowercased())"                    /* Stable deduplication key */
 
                     guard !renamedMember.isEmpty, seenNames.insert(normalizedName).inserted else
                     {
@@ -363,25 +349,20 @@ extension ContentView
 
 
                 lists[listIndex].cards[cardIndex] = updatedCard
-
             }
-
         }
 
 
         if currentUserName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == currentKey
         {
             currentUserName = updatedName
-
         }
 
 
         if currentKey != updatedKey, let existingColor = memberColors.removeValue(forKey: currentKey)
-        {  /* Preserve the old icon color */
+        {                                                                               /* Preserve the old icon color */
             memberColors[updatedKey] = memberColors[updatedKey] ?? existingColor
-
         }
-
     }
 
 
@@ -402,9 +383,9 @@ extension ContentView
     ///
     func removeMember(_ memberName: String)
     {
-        let normalizedMemberName = /* Normalized member name */
+        let normalizedMemberName =                                      /* Normalized member name */
             memberName.trimmingCharacters(in: .whitespacesAndNewlines)
-        .lowercased() /* Normalized removal key */
+        .lowercased()                                                   /* Normalized removal key */
 
         guard !normalizedMemberName.isEmpty else
         {
@@ -423,9 +404,7 @@ extension ContentView
                     member.displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
                     == normalizedMemberName
                 }
-
             }
-
         }
 
 
@@ -434,9 +413,7 @@ extension ContentView
         if currentUserName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedMemberName
         {
             currentUserName = "You"
-
         }
-
     }
 
 
@@ -457,7 +434,6 @@ extension ContentView
     func setMemberColor(_ memberName: String, color: Color)
     {
         memberColors[memberName.lowercased()] = color
-
     }
 
 
@@ -503,12 +479,11 @@ extension ContentView
     ///
     func addList()
     {
-        let nextListID: Int /* Next list ID */
+        let nextListID: Int     /* Next list ID */
 
         do
         {
             nextListID = try PortableCreationIdentity.reserve(proposed: ((lists + archivedLists).map(\.id).max() ?? -1) + 1)
-
         }
         catch
         {
@@ -516,29 +491,27 @@ extension ContentView
             return
         }
 
-        let existingTitles = Set(lists.map /* Existing titles */
+        let existingTitles = Set(lists.map      /* Existing titles           */
             {
                 $0.title.lowercased()
-            })                     /* Normalized current titles */
-        var newTitle = "New List" /* First candidate list name */
-        var suffix   = 2          /* Duplicate-title suffix    */
+            })                          /* Normalized current titles */
+        var newTitle = "New List"               /* First candidate list name */
+        var suffix   = 2                        /* Duplicate-title suffix    */
 
         while existingTitles.contains(newTitle.lowercased())
         {
             newTitle = "New List \(suffix)"
             suffix += 1
-
         }
 
 
-        let newList = KanbanList(id: nextListID, title: newTitle, cards: []) /* New list */
+        let newList = KanbanList(id: nextListID, title: newTitle, cards: [])    /* New list */
 
         lists.append(newList)
 
         visibleListID = nextListID
         boardTargetListID = nextListID
         namingNewListID = nextListID
-
     }
 
 
@@ -565,17 +538,16 @@ extension ContentView
             return false
         }
 
-        let proposedCardID = ((lists + archivedLists).flatMap /* Proposed card ID */
+        let proposedCardID = ((lists + archivedLists).flatMap           /* Proposed card ID */
             {
                 $0.allCards.map(\.id)
             } .max() ?? -1) + 1
-        let nextCardID: Int /* Next card ID */
+        let nextCardID: Int                                             /* Next card ID     */
 
         do
         {
             nextCardID = try PortableCreationIdentity.reserve(proposed: proposedCardID,
                 count: max(1, MultilineEntry.titles(capture.title).count))
-
         }
         catch
         {
@@ -591,7 +563,7 @@ extension ContentView
             return false
         }
 
-        var snapshot = lists /* Working state snapshot */
+        var snapshot = lists    /* Working state snapshot */
 
         snapshot[listIndex].cards.append(contentsOf: created)
         if let first = created.first
@@ -609,7 +581,6 @@ extension ContentView
             {
                 try KanbanBoardPersistence.saveListsChecked(snapshot + archivedLists)
             }
-
         }
         catch
         {
@@ -643,8 +614,8 @@ extension ContentView
     @discardableResult
     func deleteCard(_ cardID: Int) -> Bool
     {
-        var snapshot  = lists + archivedLists /* Complete Board snapshot for checked removal  */
-        var bookmarks = savedCardIDs          /* Saved identities pruned with removed records */
+        var snapshot  = lists + archivedLists           /* Complete Board snapshot for checked removal  */
+        var bookmarks = savedCardIDs                    /* Saved identities pruned with removed records */
 
         BoardContentDeletion.card(cardID, in: &snapshot, savedCardIDs: &bookmarks)
 
@@ -669,8 +640,8 @@ extension ContentView
         }
 
 
-        var snapshot  = lists + archivedLists /* Complete Board snapshot for checked removal  */
-        var bookmarks = savedCardIDs          /* Saved identities pruned with removed records */
+        var snapshot  = lists + archivedLists           /* Complete Board snapshot for checked removal  */
+        var bookmarks = savedCardIDs                    /* Saved identities pruned with removed records */
 
         BoardContentDeletion.list(id, in: &snapshot, savedCardIDs: &bookmarks)
         commitDeletion(snapshot, bookmarks: bookmarks)
@@ -693,7 +664,7 @@ extension ContentView
         do
         {
             if let onCommitDeletion
-            {  /* Caller-supplied save-first deletion boundary */
+            {                                                   /* Caller-supplied save-first deletion boundary */
                 try onCommitDeletion(snapshot, bookmarks)
             }
             else
@@ -705,7 +676,6 @@ extension ContentView
 
                 archivedLists = snapshot.filter(\.isArchived)
                 savedCardIDs = bookmarks
-
             }
 
 
@@ -714,11 +684,10 @@ extension ContentView
         catch
         {
             DatabaseActivity.shared.report(
-                                    "Could not delete content: \(error.localizedDescription) It has been retained.")
+                "Could not delete content: \(error.localizedDescription) It has been retained.")
 
             return false
         }
-
     }
 
 
@@ -747,7 +716,6 @@ extension ContentView
         }
 
         lists[index].cards = DaySections.moved(lists[index].cards, sectionID: sectionID, offset: offset)
-
     }
 
 
@@ -767,7 +735,7 @@ extension ContentView
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the list containing the reordered card */
+            {                                   /* Position of the list containing the reordered card */
                 $0.id == listID
             })
         else
@@ -776,9 +744,9 @@ extension ContentView
         }
 
 
-        var cards = lists[listIndex].cards /* Mutable card-order copy */
+        var cards = lists[listIndex].cards      /* Mutable card-order copy */
 
-        let reordered = /* Items in the requested order */
+        let reordered =                                                         /* Items in the requested order */
             DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
 
         guard reordered != cards else
@@ -793,9 +761,7 @@ extension ContentView
         withAnimation(.easeInOut(duration: 0.2))
         {
             lists[listIndex].cards = cards
-
         }
-
     }
 
 
@@ -818,7 +784,7 @@ extension ContentView
     {
         guard
         let sourceIndex = lists.firstIndex(where:
-            {  /* List position before the requested reorder */
+            {                                           /* List position before the requested reorder */
                 $0.id == listID
             })
         else
@@ -827,7 +793,7 @@ extension ContentView
         }
 
 
-        let copiedList = /* Copied list */
+        let copiedList =                                                                                /* Copied list */
             ListCopying.copy(lists[sourceIndex], into: lists + archivedLists, crossBoard: false)
 
         lists.insert(copiedList, at: sourceIndex + 1)
@@ -853,7 +819,7 @@ extension ContentView
     {
         guard
         let sourceIndex = lists.firstIndex(where:
-            {  /* List position at the start of a drag reorder */
+            {                                           /* List position at the start of a drag reorder */
                 $0.id == listID
             })
         else
@@ -862,7 +828,7 @@ extension ContentView
         }
 
 
-        let destinationIndex = sourceIndex + offset /* Requested destination position */
+        let destinationIndex = sourceIndex + offset     /* Requested destination position */
 
         guard lists.indices.contains(destinationIndex) else
         {
@@ -903,14 +869,12 @@ extension ContentView
             withAnimation(reducesMotion ? nil : .smooth(duration: 0.25))
             {
                 draggedListID = listID
-
             }
-
         }
 
 
         guard draggedListID == listID, let value else
-        {  /* Current gesture sample for the active list drag */
+        {                                               /* Current gesture sample for the active list drag */
             return
         }
 
@@ -920,7 +884,6 @@ extension ContentView
             listDragGrabOffset =
             (value.startLocation.x - (listDragInitialCenter ?? value.startLocation.x))
             * (listDragScale / boardZoomScale)
-
         }
 
 
@@ -929,21 +892,21 @@ extension ContentView
 
         guard
         let source = lists.firstIndex(where:
-            {  /* Current position of the dragged list */
+            {                                   /* Current position of the dragged list */
                 $0.id == listID
             }),
         let center = dragGeometry.centers[listID]
         else
         {
             return
-        }  /* Measured center of the dragged list                 */
+        }               /* Measured center of the dragged list                 */
 
-        let direction   = value.location.x > center ? 1 : -1 /* Neighbor direction selected by the pointer position */
-        let destination = source + direction                 /* Adjacent list position considered for swapping      */
+        let direction   = value.location.x > center ? 1 : -1    /* Neighbor direction selected by the pointer position */
+        let destination = source + direction                    /* Adjacent list position considered for swapping      */
 
         guard lists.indices.contains(destination),
         let targetCenter = dragGeometry.centers[
-        lists[destination].id], /* Neighbor center used as the reorder threshold */
+        lists[destination].id],                                                                 /* Neighbor center used as the reorder threshold */
         direction > 0 ? value.location.x > targetCenter : value.location.x < targetCenter
         else
         {
@@ -953,9 +916,7 @@ extension ContentView
         withAnimation(reducesMotion ? nil : .easeInOut(duration: 0.2))
         {
             _ = BoardListReordering.move(listID, to: destination, in: &lists)
-
         }
-
     }
 
 
@@ -987,9 +948,7 @@ extension ContentView
             listDragGrabOffset = 0
             listDragInitialCenter = nil
             listDragTilt = 0
-
         }
-
     }
 
 
@@ -1008,12 +967,12 @@ extension ContentView
     func listDragOffset(for listID: Int) -> CGFloat
     {
         guard draggedListID == listID,
-        let location = listDragLocation, /* Pointer position driving the dragged list's offset */
+        let location = listDragLocation,                /* Pointer position driving the dragged list's offset */
         let center = dragGeometry.centers[listID]
         else
         {
             return 0
-        }  /* Measured resting center of the dragged list        */
+        }               /* Measured resting center of the dragged list        */
 
         return location - center - listDragGrabOffset
     }
@@ -1038,7 +997,7 @@ extension ContentView
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the list whose cards are being sorted */
+            {                                   /* Position of the list whose cards are being sorted */
                 $0.id == listID
             })
         else
@@ -1047,14 +1006,14 @@ extension ContentView
         }
 
 
-        var updatedList = lists[listIndex] /* Mutable list copy */
+        var updatedList = lists[listIndex]      /* Mutable list copy */
 
-        var sortedCards: [KanbanCard]    = [] /* Cards emitted in sorted order */
-        var currentSection: [KanbanCard] = [] /* Cards before the next divider */
+        var sortedCards: [KanbanCard]    = []           /* Cards emitted in sorted order */
+        var currentSection: [KanbanCard] = []           /* Cards before the next divider */
 
         // Iterate through each card in the list, grouping them by sections and sorting within each section
         for card in updatedList.cards
-        {  /* Preserve divider-separated sections */
+        {                                       /* Preserve divider-separated sections */
             guard card.isSectionDivider else
             {
                 currentSection.append(card)
@@ -1067,7 +1026,7 @@ extension ContentView
             sortedCards.append(
                 contentsOf: currentSection.sorted
                 {
-                    let comparison = $0.word.localizedStandardCompare($1.word) /* Locale-aware title ordering */
+                    let comparison = $0.word.localizedStandardCompare($1.word)          /* Locale-aware title ordering */
 
                     return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
                 })
@@ -1079,7 +1038,7 @@ extension ContentView
         sortedCards.append(
             contentsOf: currentSection.sorted
             {
-                let comparison = $0.word.localizedStandardCompare($1.word) /* Locale-aware title ordering */
+                let comparison = $0.word.localizedStandardCompare($1.word)      /* Locale-aware title ordering */
 
                 return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
             })
@@ -1087,7 +1046,6 @@ extension ContentView
         updatedList.cards = sortedCards
 
         lists[listIndex] = updatedList
-
     }
 
 
@@ -1108,7 +1066,7 @@ extension ContentView
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* List containing completed cards to archive */
+            {                                   /* List containing completed cards to archive */
                 $0.id == listID
             })
         else
@@ -1138,7 +1096,7 @@ extension ContentView
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the list receiving the requested edit */
+            {                                   /* Position of the list receiving the requested edit */
                 $0.id == listID
             })
         else
@@ -1167,7 +1125,7 @@ extension ContentView
     {
         guard
         let listIndex = lists.firstIndex(where:
-            {  /* Position of the list receiving the requested edit */
+            {                                   /* Position of the list receiving the requested edit */
                 $0.cards.contains(where:
                     {
                         $0.id == cardID
@@ -1204,7 +1162,7 @@ extension ContentView
 
         guard
         let index = lists.firstIndex(where:
-            {  /* Position of the active list to archive */
+            {                                   /* Position of the active list to archive */
                 $0.id == listID
             })
         else
@@ -1213,7 +1171,7 @@ extension ContentView
         }
 
 
-        var archived = lists[index] /* List snapshot marked archived before partition transfer */
+        var archived = lists[index]     /* List snapshot marked archived before partition transfer */
 
         archived.isArchived = true
 
@@ -1222,7 +1180,6 @@ extension ContentView
         {
             $0.id == listID
         }
-
     }
 
 
@@ -1244,7 +1201,7 @@ extension ContentView
     {
         guard
         let index = archivedLists.firstIndex(where:
-            {  /* Position of the archived list to restore */
+            {                                           /* Position of the archived list to restore */
                 $0.id == listID
             })
         else
@@ -1253,7 +1210,7 @@ extension ContentView
         }
 
 
-        var restored = archivedLists[index] /* List snapshot marked active before partition transfer */
+        var restored = archivedLists[index]     /* List snapshot marked active before partition transfer */
 
         restored.isArchived = false
 
@@ -1262,7 +1219,6 @@ extension ContentView
         {
             $0.id == listID
         }
-
     }
 
 
@@ -1288,12 +1244,12 @@ extension ContentView
         }
 
 
-        var updatedList = lists[listIndex] /* Mutable list copy */
+        var updatedList = lists[listIndex]      /* Mutable list copy */
 
         guard
         let cardIndex = updatedList.cards.firstIndex(
             where:
-            {  /* Position of the card receiving the requested edit */
+            {                   /* Position of the card receiving the requested edit */
                 $0.id == cardID
             })
         else
@@ -1307,13 +1263,12 @@ extension ContentView
             return
         }
 
-        var updatedCard = updatedList.cards[cardIndex] /* Mutable card copy */
+        var updatedCard = updatedList.cards[cardIndex]          /* Mutable card copy */
 
         updatedCard.isTitleChecked.toggle()
 
         updatedList.cards[cardIndex] = updatedCard
         lists[listIndex] = updatedList
-
     }
 
 
@@ -1330,7 +1285,7 @@ extension ContentView
     ///
     func keyboardNavigation(for card: KanbanCard) -> CardKeyboardNavigation
     {
-        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists) /* Adjacent items or Lists */
+        let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)          /* Adjacent items or Lists */
 
         return CardKeyboardNavigation(
             previous: neighbors.previous == nil
@@ -1342,12 +1297,11 @@ extension ContentView
                     return
                 }
 
-                var path = NavigationPath(); /* Filesystem or navigation path */
+                var path = NavigationPath();    /* Filesystem or navigation path */
 
                 path.append(target);
 
                 navigationPath = path
-
             },
             next: neighbors.next == nil
             ? nil
@@ -1358,12 +1312,11 @@ extension ContentView
                     return
                 }
 
-                var path = NavigationPath(); /* Filesystem or navigation path */
+                var path = NavigationPath();    /* Filesystem or navigation path */
 
                 path.append(target);
 
                 navigationPath = path
-
             })
     }
 
@@ -1382,16 +1335,16 @@ extension ContentView
     {
         for listIndex in lists.indices
         {
-            var updatedList = lists[listIndex] /* Mutable list being searched */
+            var updatedList = lists[listIndex]          /* Mutable list being searched */
 
             guard
             let cardIndex = updatedList.cards.firstIndex(
                 where:
-                {  /* Position of the card receiving the requested edit */
+                {                               /* Position of the card receiving the requested edit */
                     $0.id == updatedCard.id
                 })
             else
-            {  /* Matching card position */
+            {                   /* Matching card position */
                 continue
             }
 
@@ -1408,7 +1361,6 @@ extension ContentView
 
             return
         }
-
     }
 
 
@@ -1431,7 +1383,6 @@ extension ContentView
         do
         {
             _ = try PlanningCalendarStore.load()
-
         }
         catch
         {
@@ -1439,7 +1390,7 @@ extension ContentView
             return
         }
 
-        let referencedFileNames = Set( /* Attachment files retained by current Board cards */
+        let referencedFileNames = Set(          /* Attachment files retained by current Board cards */
             (lists + archivedLists + retainedAttachmentLists() + (planningCalendarAccess?.allRetainedLists ?? []))
             .flatMap(\.allCards)
             .flatMap
@@ -1494,9 +1445,8 @@ extension ContentView
         catch
         {
             DatabaseActivity.shared.report(
-                                    "Could not move this card: \(error.localizedDescription) Its content has been retained.")
+                "Could not move this card: \(error.localizedDescription) Its content has been retained.")
         }
-
     }
 
 
@@ -1520,7 +1470,6 @@ extension ContentView
 
 
         cardDragLocation = location
-
     }
 
 
@@ -1545,7 +1494,6 @@ extension ContentView
 
         draggedCardID = cardID
         cardDragLocation = location
-
     }
 
 
@@ -1575,9 +1523,8 @@ extension ContentView
 
 
         if let location
-        {  /* Final pointer sample supplied by the native drag session */
+        {                               /* Final pointer sample supplied by the native drag session */
             cardDragLocation = location
-
         }
 
 
@@ -1585,13 +1532,12 @@ extension ContentView
         {
             draggedCardID = nil
             cardDragLocation = nil
-
         }
 
 
         guard commit,
         let target = location.map(
-            {  /* Validated destination for the committed card drop */
+            {                                   /* Validated destination for the committed card drop */
                 BoardCardMovement.target(
                     for: cardID, at: $0, viewport: dragGeometry.viewport,
                     lists: lists, listFrames: dragGeometry.lists, cardFrames: dragGeometry.cards)
@@ -1608,11 +1554,9 @@ extension ContentView
         catch
         {
             DatabaseActivity.shared.report(
-                                    "Could not move this card: \(error.localizedDescription) Its content has been retained.")
+                "Could not move this card: \(error.localizedDescription) Its content has been retained.")
 
             return false
         }
-
     }
-
 }

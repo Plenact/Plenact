@@ -19,9 +19,9 @@ import UniformTypeIdentifiers
 ///
 struct NamedSectionDivider: View
 {
-    let card: KanbanCard /* Card under consideration */
+    let card: KanbanCard        /* Card under consideration */
 
-    var body: some View /* Named Section Divider layout */
+    var body: some View         /* Named Section Divider layout */
     {
         HStack(spacing: 10)
         {
@@ -30,7 +30,6 @@ struct NamedSectionDivider: View
                 Text(heading).font(.subheadline.weight(.semibold))
                 .foregroundStyle(card.appearance?.accent?.color ?? .secondary).fixedSize(
                     horizontal: false, vertical: true)
-
             }
 
             Rectangle().fill((card.appearance?.accent?.color ?? Color.secondary).opacity(0.35)).frame(height: 1)
@@ -40,7 +39,6 @@ struct NamedSectionDivider: View
         .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
         .contentShape(Rectangle())
     }
-
 }
 
 
@@ -52,15 +50,15 @@ struct NamedSectionDivider: View
 ///
 struct DaySectionRow: View
 {
-    let card:     KanbanCard                                /* Card under consideration         */
-    let cards:    [KanbanCard]                              /* Card records under consideration */
-    let onUpdate: (KanbanCard) -> Void                      /* Publish item edits               */
-    let onMove:   (Int) -> Void                             /* Move the selected item           */
-    var onOpen:   (() -> Void)? = nil                       /* Open the selected destination    */
-    @Environment(\.cardMovementAccess) private var movement /* Owner-qualified transfer context */
-    @State private var showsMove = false                    /* Move visibility                  */
+    let card:     KanbanCard                                    /* Card under consideration         */
+    let cards:    [KanbanCard]                                  /* Card records under consideration */
+    let onUpdate: (KanbanCard) -> Void                          /* Publish item edits               */
+    let onMove:   (Int) -> Void                                 /* Move the selected item           */
+    var onOpen:   (() -> Void)? = nil                           /* Open the selected destination    */
+    @Environment(\.cardMovementAccess) private var movement     /* Owner-qualified transfer context */
+    @State private var showsMove = false                        /* Move visibility                  */
 
-    @ViewBuilder private var heading: some View /* Section heading text */
+    @ViewBuilder private var heading: some View         /* Section heading text */
     {
         if let onOpen
         {
@@ -78,19 +76,17 @@ struct DaySectionRow: View
             .buttonStyle(.plain)
             .modifier(HideNavigationLinkIndicator())
         }
-
     }
 
-    private var headings: [KanbanCard] /* Ordered section headings */
+    private var headings: [KanbanCard]          /* Ordered section headings */
     {
         cards.filter
         {
             $0.sectionHeading != nil
         }
-
     }
 
-    var body: some View /* Day Section layout */
+    var body: some View         /* Day Section layout */
     {
         HStack(spacing: 0)
         {
@@ -99,8 +95,8 @@ struct DaySectionRow: View
             {
                 Button
                 {
-                    var updated    = card /* Edited value to publish     */
-                    var appearance =      /* Resolved appearance choices */
+                    var updated    = card                       /* Edited value to publish     */
+                    var appearance =                            /* Resolved appearance choices */
                         updated.appearance ?? ItemAppearance()
 
                     appearance.sectionCollapsed = appearance.sectionCollapsed != true
@@ -122,9 +118,7 @@ struct DaySectionRow: View
                         Button("Move section to…", systemImage: "arrowshape.turn.up.right")
                         {
                             showsMove = true
-
                         }
-
                     }
 
                     Menu("Section color", systemImage: "paintpalette")
@@ -146,9 +140,7 @@ struct DaySectionRow: View
                                 Label(color.rawValue.capitalized, systemImage: "circle.fill").foregroundStyle(
                                     color.color)
                             }
-
                         }
-
                     }
 
                     Button("Move section earlier", systemImage: "arrow.up")
@@ -168,13 +160,11 @@ struct DaySectionRow: View
                 }
                 .accessibilityLabel("Section options for " + (card.sectionHeading ?? ""))
             }
-
         }
         .sheet(isPresented: $showsMove)
         {
             SectionMoveSheet(heading: card)
         }
-
     }
 
 
@@ -190,15 +180,14 @@ struct DaySectionRow: View
     ///
     private func setColor(_ color: ItemAccent?)
     {
-        var updated    = card                                   /* Edited value to publish     */
-        var appearance = updated.appearance ?? ItemAppearance() /* Resolved appearance choices */
+        var updated    = card                                           /* Edited value to publish     */
+        var appearance = updated.appearance ?? ItemAppearance()         /* Resolved appearance choices */
 
         appearance.accent = color
         updated.appearance = appearance.isEmpty ? nil : appearance
 
         onUpdate(updated)
     }
-
 }
 
 
@@ -211,8 +200,8 @@ struct DaySectionRow: View
 ///
 struct DaySectionRail: ViewModifier
 {
-    let cardID: Int          /* Owner-local Card identifier      */
-    let cards:  [KanbanCard] /* Card records under consideration */
+    let cardID: Int             /* Owner-local Card identifier      */
+    let cards:  [KanbanCard]    /* Card records under consideration */
 
 
     ///
@@ -234,9 +223,6 @@ struct DaySectionRail: ViewModifier
                 RoundedRectangle(cornerRadius: 2).fill(color.color).frame(width: 3)
                 .padding(.vertical, 6).allowsHitTesting(false).accessibilityHidden(true)
             }
-
         }
-
     }
-
 }

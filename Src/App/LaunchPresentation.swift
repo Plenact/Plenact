@@ -21,7 +21,7 @@ import SwiftUI
 enum PlenactLaunchStage: Int, CaseIterable
 {
     case restore, plans, ready, welcome
-    var symbol: String /* Selected symbol name */
+    var symbol: String                  /* Selected symbol name */
     {
         switch self
         {
@@ -37,10 +37,9 @@ enum PlenactLaunchStage: Int, CaseIterable
         case .welcome:
                     "sun.max"
         }
-
     }
 
-    var label: String /* Resolved display label */
+    var label: String           /* Resolved display label */
     {
         switch self
         {
@@ -53,9 +52,7 @@ enum PlenactLaunchStage: Int, CaseIterable
         case .welcome:
                     "Welcoming you in"
         }
-
     }
-
 }
 
 
@@ -80,8 +77,8 @@ struct PlenactLaunchProgress: Equatable
         case waiting, running, complete
     }
 
-    var stage: PlenactLaunchStage = .restore /* Isolated staging workspace */
-    var finished                  = false    /* Operation completion state */
+    var stage: PlenactLaunchStage = .restore    /* Isolated staging workspace */
+    var finished                  = false       /* Operation completion state */
 
 
     ///
@@ -96,7 +93,7 @@ struct PlenactLaunchProgress: Equatable
     ///
     func paced(elapsed: TimeInterval) -> Self
     {
-        let index = min(3, max(0, Int(max(0, elapsed) / 0.22))) /* Element position */
+        let index = min(3, max(0, Int(max(0, elapsed) / 0.22)))         /* Element position */
 
         return Self(
             stage: PlenactLaunchStage(rawValue: index) ?? .restore,
@@ -123,7 +120,6 @@ struct PlenactLaunchProgress: Equatable
 
         return step == stage ? .running : .waiting
     }
-
 }
 
 
@@ -136,11 +132,11 @@ struct PlenactLaunchProgress: Equatable
 ///
 struct PlenactLaunchIndicators: View
 {
-    let progress: PlenactLaunchProgress /* Operation progress state */
-    var animates = true /* Animates state flag */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    let progress: PlenactLaunchProgress                                         /* Operation progress state  */
+    var animates = true                                                         /* Animates state flag       */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference */
 
-    var body: some View /* Plenact Launch Indicators layout */
+    var body: some View         /* Plenact Launch Indicators layout */
     {
         HStack(spacing: 44)
         {
@@ -148,7 +144,7 @@ struct PlenactLaunchIndicators: View
             {
                 step in
 
-                let status = progress.status(for: step) /* Current operation status */
+                let status = progress.status(for: step)         /* Current operation status */
 
                 Image(systemName: step.symbol)
                 .font(.system(size: 25.3, weight: .light))
@@ -166,11 +162,9 @@ struct PlenactLaunchIndicators: View
                 }
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: status)
             }
-
         }
         .accessibilityHidden(true)
     }
-
 }
 
 
@@ -183,11 +177,11 @@ struct PlenactLaunchIndicators: View
 ///
 struct PlenactLaunchSequence: View
 {
-    let progress: PlenactLaunchProgress   /* Operation progress state */
-    var animates: Bool                    /* Animates state flag      */
-    @State private var startedAt = Date() /* Started at               */
+    let progress: PlenactLaunchProgress         /* Operation progress state */
+    var animates: Bool                          /* Animates state flag      */
+    @State private var startedAt = Date()       /* Started at               */
 
-    var body: some View /* Plenact Launch Sequence layout */
+    var body: some View         /* Plenact Launch Sequence layout */
     {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0))
         {
@@ -196,9 +190,7 @@ struct PlenactLaunchSequence: View
                 progress: animates ? progress.paced(elapsed: context.date.timeIntervalSince(startedAt)) : progress,
                 animates: animates)
         }
-
     }
-
 }
 
 
@@ -211,12 +203,12 @@ struct PlenactLaunchSequence: View
 ///
 struct PlenactLoadingView: View
 {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
-    var animatesLogo = true /* Animates logo */
-    var fadesShadow  = false /* Fades shadow */
-    var progress     = PlenactLaunchProgress() /* Operation progress state */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference */
+    var animatesLogo = true                                                     /* Animates logo             */
+    var fadesShadow  = false                                                    /* Fades shadow              */
+    var progress     = PlenactLaunchProgress()                                  /* Operation progress state  */
 
-    var body: some View /* Plenact Loading layout */
+    var body: some View         /* Plenact Loading layout */
     {
         GeometryReader
         {
@@ -262,7 +254,6 @@ struct PlenactLoadingView: View
                 PlenactLaunchSequence(progress: progress, animates: animatesLogo)
                 .padding(.bottom, max(geometry.safeAreaInsets.bottom, 24) + 36)
             }
-
         }
         .background(Color("LaunchBackground"))
         .ignoresSafeArea()
@@ -271,7 +262,6 @@ struct PlenactLoadingView: View
         .accessibilityValue(progress.finished ? "Your workspace is ready" : progress.stage.label)
         .accessibilityIdentifier("app.loading")
     }
-
 }
 
 
@@ -297,18 +287,18 @@ final class TodayWelcomeCue: ObservableObject
         case profile, plan
     }
 
-    static let lastDepartureKey             = /* Last departure key */
+    static let lastDepartureKey             =                   /* Last departure key            */
         "Plenact.Welcome.lastDeparture.v1"
-    static let returnInterval: TimeInterval = 4 * 60 * 60 /* Return interval               */
-    @Published private(set) var requestID   = 0           /* Request ID                    */
-    @Published private(set) var illuminated = false       /* Illuminated state flag        */
-    private(set) var pending                = false       /* Operation awaiting completion */
-    private var hasActivated                = false       /* Activated availability        */
-    private var generation                  = 0                            /* Current navigation generation */
-    private let defaults: UserDefaults                    /* Preference storage domain     */
+    static let returnInterval: TimeInterval = 4 * 60 * 60       /* Return interval               */
+    @Published private(set) var requestID   = 0                 /* Request ID                    */
+    @Published private(set) var illuminated = false             /* Illuminated state flag        */
+    private(set) var pending                = false             /* Operation awaiting completion */
+    private var hasActivated                = false             /* Activated availability        */
+    private var generation                  = 0                 /* Current navigation generation */
+    private let defaults: UserDefaults                          /* Preference storage domain     */
 
-    @Published private(set) var target: Target?           /* Target under consideration    */
-    private var departure: Date?                          /* Departure reference date      */
+    @Published private(set) var target: Target?         /* Target under consideration */
+    private var departure: Date?                        /* Departure reference date   */
 
 
     ///
@@ -324,7 +314,6 @@ final class TodayWelcomeCue: ObservableObject
     init(defaults: UserDefaults = .standard)
     {
         self.defaults = defaults
-
     }
 
 
@@ -340,7 +329,7 @@ final class TodayWelcomeCue: ObservableObject
     ///
     func becameActive(at now: Date = .now)
     {
-        let shouldGreet = !hasActivated || departure.map /* Greet decision */
+        let shouldGreet = !hasActivated || departure.map        /* Greet decision */
         {
             now.timeIntervalSince($0) >= Self.returnInterval
         }
@@ -353,9 +342,7 @@ final class TodayWelcomeCue: ObservableObject
         {
             pending = true;
             requestID += 1
-
         }
-
     }
 
 
@@ -393,7 +380,7 @@ final class TodayWelcomeCue: ObservableObject
         generation += 1
         pending = false
 
-        var transaction = Transaction(); /* Transaction operation value */
+        var transaction = Transaction();        /* Transaction operation value */
 
         transaction.disablesAnimations = true
 
@@ -401,9 +388,7 @@ final class TodayWelcomeCue: ObservableObject
         {
             illuminated = false;
             target = nil
-
         }
-
     }
 
 
@@ -450,7 +435,7 @@ final class TodayWelcomeCue: ObservableObject
 
         pending = false
 
-        let token = generation /* Retained operation token */
+        let token = generation          /* Retained operation token */
 
 
         ///
@@ -481,18 +466,14 @@ final class TodayWelcomeCue: ObservableObject
             if reduceMotion
             {
                 illuminated = value
-
             }
             else
             {
                 withAnimation(.easeInOut(duration: 0.5 / (target == .plan ? planPulseSpeed : 1)))
                 {
                     illuminated = value
-
                 }
-
             }
-
         }
 
         defer
@@ -501,9 +482,7 @@ final class TodayWelcomeCue: ObservableObject
             {
                 illuminated = false;
                 target = nil
-
             }
-
         }
 
         do
@@ -548,7 +527,6 @@ final class TodayWelcomeCue: ObservableObject
                         light(false)
                         try await pause(.seconds(0.6 / (cue == .plan ? planPulseSpeed : 1)))
                     }
-
                 }
 
                 guard current() else
@@ -562,16 +540,12 @@ final class TodayWelcomeCue: ObservableObject
                 {
                     try await pause(.milliseconds(500))
                 }
-
             }
-
         }
         catch
-        {  /* View disappearance/backgrounding cancels the finite sequence  */
+        {       /* View disappearance/backgrounding cancels the finite sequence  */
         }
-
     }
-
 }
 
 
@@ -584,10 +558,10 @@ final class TodayWelcomeCue: ObservableObject
 ///
 struct TodayWelcomeGlow: ViewModifier
 {
-    let highlighted: Bool /* Current-day highlight state */
-    var circular         = false /* Circular state flag */
-    private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44) /* Soft gold */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    let highlighted: Bool                                                       /* Current-day highlight state */
+    var circular         = false                                                /* Circular state flag         */
+    private let softGold = Color(red: 0.94, green: 0.79, blue: 0.44)            /* Soft gold                   */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference   */
 
 
     ///
@@ -614,5 +588,4 @@ struct TodayWelcomeGlow: ViewModifier
         .shadow(color: softGold.opacity(highlighted ? 0.32 : 0), radius: highlighted ? 14 : 0)
         .scaleEffect(highlighted && !reduceMotion ? 1.035 : 1, anchor: circular ? .center : .leading)
     }
-
 }

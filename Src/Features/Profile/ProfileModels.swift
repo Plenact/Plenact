@@ -22,10 +22,10 @@ import Foundation
 ///
 struct ProfileColor: Hashable, Codable
 {
-    var red:         Double  /* sRGB red component                                    */
-    var green:       Double  /* sRGB green component                                  */
-    var blue:        Double  /* sRGB blue component                                   */
-    var legacyToken: String? /* Legacy palette token retained for compatible encoding */
+    var red:         Double     /* sRGB red component                                    */
+    var green:       Double     /* sRGB green component                                  */
+    var blue:        Double     /* sRGB blue component                                   */
+    var legacyToken: String?    /* Legacy palette token retained for compatible encoding */
 
 
     ///
@@ -61,7 +61,6 @@ struct ProfileColor: Hashable, Codable
         self.green = green
         self.blue = blue
         legacyToken = nil
-
     }
 
 
@@ -79,13 +78,13 @@ struct ProfileColor: Hashable, Codable
     ///
     init(hue: Double, saturation: Double, brightness: Double)
     {
-        let hue          = (hue - floor(hue)) * 6     /* Wrapped hue sector            */
-        let saturation   = min(max(saturation, 0), 1) /* Clamped saturation            */
-        let brightness   = min(max(brightness, 0), 1) /* Clamped brightness            */
-        let chroma       = brightness * saturation    /* Saturation-scaled color range */
-        let intermediate =                            /* Intermediate operation value  */
-        chroma * (1 - abs(hue.truncatingRemainder(dividingBy: 2) - 1))  /* Secondary RGB component              */
-        let components: (Double, Double, Double)                        /* RGB values for the active hue sector */
+        let hue          = (hue - floor(hue)) * 6                               /* Wrapped hue sector                   */
+        let saturation   = min(max(saturation, 0), 1)                           /* Clamped saturation                   */
+        let brightness   = min(max(brightness, 0), 1)                           /* Clamped brightness                   */
+        let chroma       = brightness * saturation                              /* Saturation-scaled color range        */
+        let intermediate =                                                      /* Intermediate operation value         */
+        chroma * (1 - abs(hue.truncatingRemainder(dividingBy: 2) - 1))          /* Secondary RGB component              */
+        let components: (Double, Double, Double)                                /* RGB values for the active hue sector */
 
         switch Int(floor(hue))
         {
@@ -112,11 +111,10 @@ struct ProfileColor: Hashable, Codable
         default:
 
             components = (chroma, 0, intermediate)
-
         }
 
 
-        let offset = brightness - chroma /* RGB adjustment restoring requested brightness */
+        let offset = brightness - chroma        /* RGB adjustment restoring requested brightness */
 
         self.init(
             red: components.0 + offset,
@@ -126,17 +124,17 @@ struct ProfileColor: Hashable, Codable
     }
 
 
-    static let teal     = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal")        /* Teal palette color     */
-    static let blue     = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue")        /* Blue palette color     */
-    static let green    = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green")      /* Green palette color    */
-    static let orange   = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange")        /* Orange palette color   */
-    static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite")  /* Graphite palette color */
-    static let white    = Self(red: 1, green: 1, blue: 1, legacyToken: "white")           /* White palette color    */
-    static let charcoal = Self( /* Charcoal operation value */
-        red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal")                   /* Charcoal palette color */
-    static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon")     /* Lemon palette color    */
-    static let sky   = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky")    /* Sky palette color      */
-    static let coral = Self(red: 0.96, green: 0.37, blue: 0.31, legacyToken: "coral")  /* Coral palette color    */
+    static let teal     = Self(red: 0, green: 0.5, blue: 0.5, legacyToken: "teal")              /* Teal palette color       */
+    static let blue     = Self(red: 0, green: 0.478, blue: 1, legacyToken: "blue")              /* Blue palette color       */
+    static let green    = Self(red: 0, green: 0.65, blue: 0.3, legacyToken: "green")            /* Green palette color      */
+    static let orange   = Self(red: 1, green: 0.5, blue: 0, legacyToken: "orange")              /* Orange palette color     */
+    static let graphite = Self(red: 0.5, green: 0.5, blue: 0.5, legacyToken: "graphite")        /* Graphite palette color   */
+    static let white    = Self(red: 1, green: 1, blue: 1, legacyToken: "white")                 /* White palette color      */
+    static let charcoal = Self(                                                                 /* Charcoal operation value */
+        red: 0.12, green: 0.15, blue: 0.17, legacyToken: "charcoal")                    /* Charcoal palette color */
+    static let lemon = Self(red: 1, green: 0.82, blue: 0.22, legacyToken: "lemon")              /* Lemon palette color      */
+    static let sky   = Self(red: 0.27, green: 0.72, blue: 0.94, legacyToken: "sky")             /* Sky palette color        */
+    static let coral = Self(red: 0.96, green: 0.37, blue: 0.31, legacyToken: "coral")           /* Coral palette color      */
 
 
     ///
@@ -158,7 +156,6 @@ struct ProfileColor: Hashable, Codable
         self.green = green
         self.blue = blue
         self.legacyToken = legacyToken
-
     }
 
 
@@ -173,32 +170,28 @@ struct ProfileColor: Hashable, Codable
     /// @pre        RGB components contain the color to convert
     /// @post       The stored RGB components remain unchanged
     ///
-    var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double) /* Hue saturation brightness */
-    {  /* HSB channels derived from the stored RGB values     */
-        let maximum = max(red, green, blue)  /* Brightest RGB channel                               */
-        let minimum = min(red, green, blue)  /* Darkest RGB channel                                 */
-        let delta   = maximum - minimum      /* RGB channel range used to derive hue and saturation */
-        let hue: Double                      /* Hue angle selected from the dominant RGB channel    */
+    var hueSaturationBrightness: (hue: Double, saturation: Double, brightness: Double)          /* Hue saturation brightness                       */
+    {                                                                                           /* HSB channels derived from the stored RGB values */
+        let maximum = max(red, green, blue)     /* Brightest RGB channel                               */
+        let minimum = min(red, green, blue)     /* Darkest RGB channel                                 */
+        let delta   = maximum - minimum         /* RGB channel range used to derive hue and saturation */
+        let hue: Double                         /* Hue angle selected from the dominant RGB channel    */
 
         if delta == 0
         {
             hue = 0
-
         }
         else if maximum == red
         {
             hue = ((green - blue) / delta + (green < blue ? 6 : 0)) / 6
-
         }
         else if maximum == green
         {
             hue = ((blue - red) / delta + 2) / 6
-
         }
         else
         {
             hue = ((red - green) / delta + 4) / 6
-
         }
 
 
@@ -219,11 +212,11 @@ struct ProfileColor: Hashable, Codable
     ///
     init(from decoder: Decoder) throws
     {
-        if let container = try? decoder.singleValueContainer(), /* Legacy single-value decoder     */
+        if let container = try? decoder.singleValueContainer(),         /* Legacy single-value decoder     */
         let token = try? container.decode(String.self)
-        {  /* Legacy color token              */
+        {                                                       /* Legacy color token              */
             guard let color = Self.legacyColor(token) else
-            {  /* Recognized legacy palette color */
+            {                                                   /* Recognized legacy palette color */
                 throw DecodingError.dataCorrupted(
                     .init(
                         codingPath: decoder.codingPath,
@@ -238,7 +231,7 @@ struct ProfileColor: Hashable, Codable
         }
 
 
-        let container = try decoder.container(keyedBy: CodingKeys.self) /* Keyed profile-color decoder */
+        let container = try decoder.container(keyedBy: CodingKeys.self)         /* Keyed profile-color decoder */
 
         self.init(
             red: try container.decode(Double.self, forKey: .red),
@@ -262,21 +255,20 @@ struct ProfileColor: Hashable, Codable
     func encode(to encoder: Encoder) throws
     {
         if let legacyToken
-        {  /* Preserved legacy palette token */
-            var container = encoder.singleValueContainer() /* Legacy single-token encoding container */
+        {                                                       /* Preserved legacy palette token */
+            var container = encoder.singleValueContainer()      /* Legacy single-token encoding container */
 
             try container.encode(legacyToken)
         }
         else
         {
-            var container = encoder.container( /* Keyed decoding container */
-                keyedBy: CodingKeys.self) /* Current keyed profile-color encoding container */
+            var container = encoder.container(          /* Keyed decoding container */
+                keyedBy: CodingKeys.self)       /* Current keyed profile-color encoding container */
 
             try container.encode(red, forKey: .red)
             try container.encode(green, forKey: .green)
             try container.encode(blue, forKey: .blue)
         }
-
     }
 
 
@@ -316,9 +308,7 @@ struct ProfileColor: Hashable, Codable
         default:
             nil
         }
-
     }
-
 }
 
 
@@ -371,11 +361,10 @@ enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable
     ///
     /// @return     (String) icon identifier
     ///
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
-    }  /* Stable SwiftUI identity from the stored icon token */
-
+    }                   /* Stable SwiftUI identity from the stored icon token */
 }
 
 
@@ -391,11 +380,10 @@ enum ProfileAvatarIcon: String, CaseIterable, Codable, Identifiable
 enum TodayFocusOrder: String, Codable, CaseIterable
 {
     case dayList, chronological
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         self == .dayList ? "Day list order" : "Chronological"
     }
-
 }
 
 
@@ -408,17 +396,17 @@ enum TodayFocusOrder: String, Codable, CaseIterable
 ///
 struct TodayFocusEntry: Identifiable
 {
-    let card:      KanbanCard /* Card under consideration */
-    let sectionID: Int?       /* Section ID               */
-    let heading:   String?    /* Section heading text     */
+    let card:      KanbanCard           /* Card under consideration */
+    let sectionID: Int?                 /* Section ID               */
+    let heading:   String?              /* Section heading text     */
 
-    var id:        Int /* Owner-local numeric ID */
+    var id:        Int          /* Owner-local numeric ID */
     {
         card.id
     }
 
     /// Date-only values do not claim a time; a timed start takes precedence over a timed due date
-    var previewTime: (date: Date, isStart: Bool)? /* Preview time */
+    var previewTime: (date: Date, isStart: Bool)?       /* Preview time */
     {
         if let start = card.startDate, card.startDateKind != .date
         {
@@ -433,7 +421,7 @@ struct TodayFocusEntry: Identifiable
         return nil
     }
 
-    var previewTimeLabel: String? /* Preview time label */
+    var previewTimeLabel: String?       /* Preview time label */
     {
         previewTime.map
         {
@@ -441,11 +429,10 @@ struct TodayFocusEntry: Identifiable
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "\u{202F}", with: "").lowercased()
         }
-
     }
 
 
-    var scheduleLabel: String? /* Schedule label */
+    var scheduleLabel: String?          /* Schedule label */
     {
         if let start = card.startDate
         {
@@ -497,7 +484,7 @@ struct TodayFocusEntry: Identifiable
 
             if kind == .time
             {
-                let parts = /* Parsed value components */
+                let parts =                                                             /* Parsed value components */
                     calendar.dateComponents([.hour, .minute, .second], from: value)
 
                 return calendar.date(
@@ -507,7 +494,7 @@ struct TodayFocusEntry: Identifiable
 
             if kind == .date
             {
-                let start = calendar.startOfDay(for: value) /* Range start */
+                let start = calendar.startOfDay(for: value)     /* Range start */
 
                 return end ? calendar.date(byAdding: .day, value: 1, to: start) : start
             }
@@ -515,11 +502,11 @@ struct TodayFocusEntry: Identifiable
             return value
         }
 
-        let start  = /* Range start */
+        let start  =                                                                            /* Range start            */
             resolved(card.startDate, kind: card.startDateKind, end: false)
-        let finish = /* Finish operation value */
+        let finish =                                                                            /* Finish operation value */
             resolved(card.dueDate, kind: card.dueDateKind, end: true)
-        let dayEnd = /* Day end */
+        let dayEnd =                                                                            /* Day end                */
             calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
 
         if let start, start >= dayEnd
@@ -530,7 +517,7 @@ struct TodayFocusEntry: Identifiable
         if let finish
         {
             // Date-only finish is an exclusive next-midnight boundary
-            let remains = /* Remains operation value */
+            let remains =                                                       /* Remains operation value */
                 card.dueDateKind == .date ? finish > now : finish >= now
 
             guard remains else
@@ -573,12 +560,12 @@ struct TodayFocusEntry: Identifiable
             return nil
         }
 
-        let kind = /* Content kind discriminator */
+        let kind =                                                              /* Content kind discriminator */
             card.startDate == nil ? card.dueDateKind : card.startDateKind
 
         if kind == .time
         {
-            let time = /* Local schedule time */
+            let time =                                                          /* Local schedule time */
                 calendar.dateComponents([.hour, .minute, .second], from: value)
 
             return calendar.date(
@@ -588,7 +575,6 @@ struct TodayFocusEntry: Identifiable
 
         return kind.normalized(value, calendar: calendar)
     }
-
 }
 
 
@@ -602,16 +588,15 @@ struct TodayFocusEntry: Identifiable
 enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable
 {
     case tucked, fanned
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         self == .tucked ? "Tucked" : "Fanned"
     }
-
 }
 
 
@@ -641,7 +626,7 @@ enum DayListTimeOrder
             return nil
         }
 
-        let components = /* Parsed value components */
+        let components =                                                        /* Parsed value components */
             calendar.dateComponents([.hour, .minute, .second], from: time)
 
         return calendar.date(bySettingHour: components.hour ?? 0, minute: components.minute ?? 0,
@@ -661,9 +646,9 @@ enum DayListTimeOrder
     ///
     static func cards(_ cards: [KanbanCard], calendar: Calendar = .current) -> [KanbanCard]
     {
-        let day                   = calendar.startOfDay(for: .now) /* Day under consideration  */
-        var result: [KanbanCard]  = []                             /* Accumulated output value */
-        var section: [KanbanCard] = []                             /* Section lookup entries   */
+        let day                   = calendar.startOfDay(for: .now)      /* Day under consideration  */
+        var result: [KanbanCard]  = []                                  /* Accumulated output value */
+        var section: [KanbanCard] = []                                  /* Section lookup entries   */
 
         ///
         /// @fcn        DayListTimeOrder.cards.flush
@@ -673,7 +658,7 @@ enum DayListTimeOrder
         ///
         func flush()
         {
-            let timed = section.enumerated().compactMap /* Only timed slots participate in sorting */
+            let timed = section.enumerated().compactMap         /* Only timed slots participate in sorting */
             {
                 offset, card -> (offset: Int, card: KanbanCard, time: Date)? in
                 guard let value = time(for: card, on: day, calendar: calendar) else
@@ -687,7 +672,7 @@ enum DayListTimeOrder
                 lhs, rhs in
                 lhs.time == rhs.time ? lhs.offset < rhs.offset : lhs.time < rhs.time
             }
-            var iterator = timed.makeIterator() /* Refill timed slots while retaining untimed positions */
+            var iterator = timed.makeIterator()         /* Refill timed slots while retaining untimed positions */
 
             result += section.map
             {
@@ -711,7 +696,6 @@ enum DayListTimeOrder
             {
                 section.append(card)
             }
-
         }
 
         flush()
@@ -739,22 +723,20 @@ enum DayListTimeOrder
                 return list
             }
 
-            let ordered = cards(list.cards, calendar: calendar) /* Values in display order */
+            let ordered = cards(list.cards, calendar: calendar)         /* Values in display order */
 
             guard ordered != list.cards else
             {
                 return list
             }
 
-            var updated = list /* Edited value to publish */
+            var updated = list          /* Edited value to publish */
 
             updated.cards = ordered
 
             return updated
         }
-
     }
-
 }
 
 
@@ -767,25 +749,25 @@ enum DayListTimeOrder
 ///
 struct LocalProfilePreferences: Hashable, Codable
 {
-    var defaultListID:                Int?  /* Preferred Today list */
-    var usesReducedContent:           Bool  /* Hide supporting copy */
-    var scrollsOverflowingTitles:     Bool /* Scrolls overflowing titles */
-    var importanceStarStyle:          ImportanceStarStyle /* Importance star style */
-    var enablesLowerCornerBack:       Bool /* Enables lower corner back */
-    var usesLargeControls:            Bool /* Use taller key actions */
-    var randomizesNewCardHeaders:     Bool /* Randomizes new card headers */
-    var randomizesNewCardBackgrounds: Bool /* Randomizes new card backgrounds */
-    var showsDueDatesOnNewCards:      Bool /* Due Dates On New Cards visibility */
-    var preferredMapsApp:             PreferredMapsApp /* Preferred maps app */
-    var keepsDayListsInTimeOrder:     Bool /* Chronological Day List ordering */
-    var todayFocusOrder:              TodayFocusOrder /* Today focus order */
-    var todayFocusGroupsBySection:    Bool /* Today focus groups by section */
-    var todayFocusIncludesUpNext:     Bool /* Today focus includes up next */
-    var todayFocusIncludesImportant:  Bool /* Today focus includes important */
-    var todayFocusIncludesBookmarked: Bool /* Today focus includes bookmarked */
-    var todayFocusHidesCompleted:     Bool /* Today focus hides completed */
-    var todayFocusItemCount:          Int   /* Visible row capacity: zero expands all matches; otherwise 1...12 */
-    var showsNavigationLabels:        Bool  /* Show labels beneath navigation icons                             */
+    var defaultListID:                Int?                      /* Preferred Today list                                             */
+    var usesReducedContent:           Bool                      /* Hide supporting copy                                             */
+    var scrollsOverflowingTitles:     Bool                      /* Scrolls overflowing titles                                       */
+    var importanceStarStyle:          ImportanceStarStyle       /* Importance star style                                            */
+    var enablesLowerCornerBack:       Bool                      /* Enables lower corner back                                        */
+    var usesLargeControls:            Bool                      /* Use taller key actions                                           */
+    var randomizesNewCardHeaders:     Bool                      /* Randomizes new card headers                                      */
+    var randomizesNewCardBackgrounds: Bool                      /* Randomizes new card backgrounds                                  */
+    var showsDueDatesOnNewCards:      Bool                      /* Due Dates On New Cards visibility                                */
+    var preferredMapsApp:             PreferredMapsApp          /* Preferred maps app                                               */
+    var keepsDayListsInTimeOrder:     Bool                      /* Chronological Day List ordering                                  */
+    var todayFocusOrder:              TodayFocusOrder           /* Today focus order                                                */
+    var todayFocusGroupsBySection:    Bool                      /* Today focus groups by section                                    */
+    var todayFocusIncludesUpNext:     Bool                      /* Today focus includes up next                                     */
+    var todayFocusIncludesImportant:  Bool                      /* Today focus includes important                                   */
+    var todayFocusIncludesBookmarked: Bool                      /* Today focus includes bookmarked                                  */
+    var todayFocusHidesCompleted:     Bool                      /* Today focus hides completed                                      */
+    var todayFocusItemCount:          Int                       /* Visible row capacity: zero expands all matches; otherwise 1...12 */
+    var showsNavigationLabels:        Bool                      /* Show labels beneath navigation icons                             */
 
 
     ///
@@ -893,7 +875,6 @@ struct LocalProfilePreferences: Hashable, Codable
         self.randomizesNewCardHeaders = randomizesNewCardHeaders
         self.randomizesNewCardBackgrounds = randomizesNewCardBackgrounds
         self.todayFocusItemCount = (0 ... 12).contains(todayFocusItemCount) ? todayFocusItemCount : 4
-
     }
 
 
@@ -919,12 +900,12 @@ struct LocalProfilePreferences: Hashable, Codable
         bookmarkedCardIDs: Set<Int> = []
     ) -> [TodayFocusEntry]
     {
-        var entries: [TodayFocusEntry] = [] /* Entries being processed */
+        var entries: [TodayFocusEntry] = []     /* Entries being processed */
 
-        var sectionID: Int?                 /* Section ID              */
-        var heading: String?                /* Section heading text    */
+        var sectionID: Int?     /* Section ID           */
+        var heading: String?    /* Section heading text */
 
-        let orderedCards = keepsDayListsInTimeOrder /* Follow the canonical Day arrangement */
+        let orderedCards = keepsDayListsInTimeOrder                     /* Follow the canonical Day arrangement */
             ? DayListTimeOrder.cards(cards, calendar: calendar) : cards
 
         for card in orderedCards
@@ -935,9 +916,7 @@ struct LocalProfilePreferences: Hashable, Codable
                 {
                     sectionID = card.id
                     heading = name
-
                 }
-
             }
             else if (!todayFocusHidesCompleted || !card.isTitleChecked)
             && ((!todayFocusIncludesImportant && !todayFocusIncludesBookmarked && !todayFocusIncludesUpNext)
@@ -949,13 +928,12 @@ struct LocalProfilePreferences: Hashable, Codable
             {
                 entries.append(TodayFocusEntry(card: card, sectionID: sectionID, heading: heading))
             }
-
         }
 
         if !keepsDayListsInTimeOrder && todayFocusOrder == .chronological
         {
             // Stable ties and undated items retain the user's original sequence
-            let sectionOrder = Dictionary( /* Section order */
+            let sectionOrder = Dictionary(      /* Section order */
                 uniqueKeysWithValues:
                 cards.enumerated().filter
                 {
@@ -970,12 +948,12 @@ struct LocalProfilePreferences: Hashable, Codable
                 lhs, rhs in
                 if todayFocusGroupsBySection
                 {
-                    let l = lhs.element.sectionID.flatMap /* Mapped l values */
+                    let l = lhs.element.sectionID.flatMap       /* Mapped l values */
                     {
                         sectionOrder[$0]
                     }
                     ?? 0
-                    let r = rhs.element.sectionID.flatMap /* Mapped r values */
+                    let r = rhs.element.sectionID.flatMap       /* Mapped r values */
                     {
                         sectionOrder[$0]
                     }
@@ -985,13 +963,12 @@ struct LocalProfilePreferences: Hashable, Codable
                     {
                         return l < r
                     }
-
                 }
 
-                let l = keepsDayListsInTimeOrder /* L operation value */
+                let l = keepsDayListsInTimeOrder                                                /* L operation value */
                     ? DayListTimeOrder.time(for: lhs.element.card, on: day, calendar: calendar)
                     : lhs.element.scheduleDate(on: day, calendar: calendar)
-                let r = keepsDayListsInTimeOrder /* R operation value */
+                let r = keepsDayListsInTimeOrder                                                /* R operation value */
                     ? DayListTimeOrder.time(for: rhs.element.card, on: day, calendar: calendar)
                     : rhs.element.scheduleDate(on: day, calendar: calendar)
 
@@ -1006,9 +983,7 @@ struct LocalProfilePreferences: Hashable, Codable
                 default:
                     return lhs.offset < rhs.offset
                 }
-
             } .map(\.element)
-
         }
 
         return entries
@@ -1046,7 +1021,7 @@ struct LocalProfilePreferences: Hashable, Codable
     ///
     init(from decoder: Decoder) throws
     {
-        let container = try decoder.container(keyedBy: CodingKeys.self) /* Saved preference fields */
+        let container = try decoder.container(keyedBy: CodingKeys.self)         /* Saved preference fields */
 
         self.init(
             defaultListID: try container.decodeIfPresent(Int.self, forKey: .defaultListID),
@@ -1080,7 +1055,6 @@ struct LocalProfilePreferences: Hashable, Codable
             preferredMapsApp: try container.decodeIfPresent(PreferredMapsApp.self, forKey: .preferredMapsApp) ?? .apple
         )
     }
-
 }
 
 
@@ -1096,16 +1070,16 @@ struct LocalProfilePreferences: Hashable, Codable
 ///
 struct LocalProfile: Identifiable, Hashable, Codable
 {
-    let id:                    UUID                     /* Stable local profile ID                         */
-    let createdAt:             Date                     /* Profile creation date                           */
-    var displayName:           String                   /* User-facing name                                */
-    var email:                 String                   /* Optional local email                            */
-    var context:               String                   /* Optional planning role                          */
-    var avatarColor:           ProfileColor             /* Avatar background color                         */
-    var avatarIcon:            ProfileAvatarIcon        /* Avatar icon token                               */
-    var avatarForegroundColor: ProfileColor             /* Icon and initials color                         */
-    var avatarPhotoFileName:   String?                  /* Filename for the separately stored avatar photo */
-    var preferences:           LocalProfilePreferences  /* Local personalization                           */
+    let id:                    UUID                             /* Stable local profile ID                         */
+    let createdAt:             Date                             /* Profile creation date                           */
+    var displayName:           String                           /* User-facing name                                */
+    var email:                 String                           /* Optional local email                            */
+    var context:               String                           /* Optional planning role                          */
+    var avatarColor:           ProfileColor                     /* Avatar background color                         */
+    var avatarIcon:            ProfileAvatarIcon                /* Avatar icon token                               */
+    var avatarForegroundColor: ProfileColor                     /* Icon and initials color                         */
+    var avatarPhotoFileName:   String?                          /* Filename for the separately stored avatar photo */
+    var preferences:           LocalProfilePreferences          /* Local personalization                           */
 
 
     ///
@@ -1145,7 +1119,7 @@ struct LocalProfile: Identifiable, Hashable, Codable
     ///
     init(from decoder: Decoder) throws
     {
-        let container = try decoder.container(keyedBy: CodingKeys.self) /* Keyed local-profile decoder */
+        let container = try decoder.container(keyedBy: CodingKeys.self)         /* Keyed local-profile decoder */
 
         self.init(
             id: try container.decode(UUID.self, forKey: .id),
@@ -1173,11 +1147,11 @@ struct LocalProfile: Identifiable, Hashable, Codable
     /// @pre        displayName contains the name text to summarize
     /// @post       Profile data remains unchanged
     ///
-    var initials: String /* Local profile initials */
-    {  /* Avatar text */
-        let components = displayName.split(whereSeparator: \.isWhitespace) /* Name components */
-        let characters = components.prefix(2).compactMap(\.first)          /* Initial letters */
-        let initials   = String(characters).uppercased()                   /* Avatar initials */
+    var initials: String                                                        /* Local profile initials */
+    {                                                                           /* Avatar text            */
+        let components = displayName.split(whereSeparator: \.isWhitespace)      /* Name components */
+        let characters = components.prefix(2).compactMap(\.first)               /* Initial letters */
+        let initials   = String(characters).uppercased()                        /* Avatar initials */
 
         return initials.isEmpty ? "P" : initials
     }
@@ -1226,7 +1200,5 @@ struct LocalProfile: Identifiable, Hashable, Codable
         self.avatarForegroundColor = avatarForegroundColor
         self.avatarPhotoFileName = avatarPhotoFileName
         self.preferences = preferences
-
     }
-
 }

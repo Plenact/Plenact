@@ -18,11 +18,10 @@ enum MigrationContentDates
     ///     Bound current migration support explicitly to Chicago/UTC during 1900–2100
     private struct Rules: Decodable
     {
-        let tzdb_version: String     /* Tzdb version                    */
-        let start_epoch: Int         /* Start epoch                     */
-        let end_epoch: Int           /* End epoch                       */
-        let zones: [String: [[Int]]] /* Supported conversion time zones */
-
+        let tzdb_version: String        /* Tzdb version                    */
+        let start_epoch: Int            /* Start epoch                     */
+        let end_epoch: Int              /* End epoch                       */
+        let zones: [String: [[Int]]]    /* Supported conversion time zones */
     }
 
 
@@ -46,7 +45,7 @@ enum MigrationContentDates
             throw MigrationContentValues.Failure.invalid("date_context")
         }
 
-        let rules = /* Validation or conversion rules */
+        let rules =                                                             /* Validation or conversion rules */
             try JSONDecoder().decode(Rules.self, from: Data(contentsOf: url))
 
         guard rules.tzdb_version == "2025b", let transitions = rules.zones[["GMT", "UTC", "Etc/GMT"].contains(context.timeZoneID) ? "Etc/UTC" : context.timeZoneID],
@@ -56,17 +55,17 @@ enum MigrationContentDates
             throw MigrationContentValues.Failure.invalid("unsupported_timezone_or_date_range")
         }
 
-        let offset = transitions[index][1] /* Current position offset */
+        let offset = transitions[index][1]      /* Current position offset */
 
         guard offset % 60 == 0 else
         {
             throw MigrationContentValues.Failure.invalid("subminute_timezone_offset")
         }
 
-        let wireEpoch = floor(epoch * 1000) / 1000 /* Wire epoch                     */
-        let local     =                            /* Local workspace representation */
+        let wireEpoch = floor(epoch * 1000) / 1000                      /* Wire epoch                     */
+        let local     =                                                 /* Local workspace representation */
             Date(timeIntervalSince1970: wireEpoch + Double(offset))
-        let formatter = DateFormatter() /* Date or value formatter */
+        let formatter = DateFormatter()                                 /* Date or value formatter        */
 
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -89,13 +88,13 @@ enum MigrationContentDates
             throw MigrationContentValues.Failure.invalid("date_kind")
         }
 
-        var occurrence = "unique" /* Matching source occurrence */
+        var occurrence = "unique"       /* Matching source occurrence */
 
         for i in 1..<transitions.count
         {
-            let delta   = /* Difference from the baseline */
+            let delta   =                                       /* Difference from the baseline */
                 transitions[i - 1][1] - transitions[i][1]
-            let instant = Double(transitions[i][0]) /* Transition timestamp */
+            let instant = Double(transitions[i][0])             /* Transition timestamp         */
 
             if delta > 0, wireEpoch >= instant - Double(delta), wireEpoch < instant + Double(delta)
             {
@@ -107,8 +106,8 @@ enum MigrationContentDates
 
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
 
-        let sign    = offset < 0 ? "-" : "+" /* Numeric or directional sign */
-        let minutes = abs(offset) / 60       /* Minute count or offset      */
+        let sign    = offset < 0 ? "-" : "+"    /* Numeric or directional sign */
+        let minutes = abs(offset) / 60          /* Minute count or offset      */
 
         return ["kind": kind, "local_date_time": formatter.string(from: local),
             "time_zone": context.timeZoneID, "tzdb_version": rules.tzdb_version,

@@ -12,11 +12,10 @@ import Foundation
 ///     Keep complete saved history separate from current Card state and runtime workflow actions
 struct PortablePlanningDocuments
 {
-    let daily:    DailyPlanStore.Document      /* Daily planning state          */
-    let weekly:   WeeklyReviewStore.Document   /* Weekly review state           */
-    let periodic: PeriodicReviewStore.Document /* Periodic review state         */
-    let rhythm:   ReviewRhythmPreferences?     /* Review invitation preferences */
-
+    let daily:    DailyPlanStore.Document               /* Daily planning state          */
+    let weekly:   WeeklyReviewStore.Document            /* Weekly review state           */
+    let periodic: PeriodicReviewStore.Document          /* Periodic review state         */
+    let rhythm:   ReviewRhythmPreferences?              /* Review invitation preferences */
 }
 
 
@@ -32,7 +31,7 @@ extension PortableEditableContent
     /// @throws Unsupported fields or undeclared identity targets
     func priority(_ value: [String: Any]) throws -> [String: Any]
     {
-        var raw = /* Unprocessed source value */
+        var raw =                                                                               /* Unprocessed source value */
             try mapped(value, fields: ["source_collection_id": "ownerID", "card_id": "cardID",
             "title": "title", "source_location": "location", "source_created_at_utc": "sourceCreatedAt"])
 
@@ -43,7 +42,7 @@ extension PortableEditableContent
                       return true
                   }
 
-                  let body = record["payload"] as? [String: Any] /* Note or description text */
+                  let body = record["payload"] as? [String: Any]        /* Note or description text */
 
                   return record["record_type"] as? String == "unavailable_reference" &&
                       body?["target_type"] as? String == "collection" && body?["target_id"] as? String == owner
@@ -77,7 +76,7 @@ extension PortableEditableContent
     /// @throws Duplicate or invalid references
     func priorities(_ value: Any?) throws -> [[String: Any]]
     {
-        var seen = Set<String>() /* Identities already encountered */
+        var seen = Set<String>()        /* Identities already encountered */
 
         return try array(value).map { item in
             guard let owner = item["source_collection_id"] as? String, let card = item["card_id"] as? String,
@@ -97,11 +96,11 @@ extension PortableEditableContent
     /// @throws Unsupported action, malformed dates or duplicate IDs
     func decisions(_ value: Any?) throws -> [[String: Any]]
     {
-        var seen = Set<String>() /* Identities already encountered */
+        var seen = Set<String>()        /* Identities already encountered */
 
         return try array(value).map { item in
 
-            var raw = /* Unprocessed source value */
+            var raw =                                                                           /* Unprocessed source value */
                 try mapped(item, fields: ["id": "id", "source": "source", "result": "result",
                 "action": "action", "recorded_at_utc": "recordedAt"])
 
@@ -125,7 +124,6 @@ extension PortableEditableContent
 
                 _ = try civil(day)
                 raw["action"] = ["date": ["_0": day]]
-
             }
             else
             {
@@ -135,7 +133,6 @@ extension PortableEditableContent
                 }
 
                 raw["action"] = [kind == "keep_tomorrow" ? "keepTomorrow" : kind: [String: Any]()]
-
             }
             return raw
         }
@@ -177,7 +174,7 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-        var raw = /* Unprocessed source value */
+        var raw =       /* Unprocessed source value */
             try mapped(value, fields: ["focus": "focus", "changed": "changed", "saved_at_utc": "savedAt"])
 
         raw["focus"] = try optionalPriority(value["focus"])
@@ -199,11 +196,11 @@ extension PortableEditableContent
             return NSNull()
         }
 
-        var seen = Set<String>() /* Identities already encountered */
+        var seen = Set<String>()        /* Identities already encountered */
 
         return try array(value).map { item -> [String: Any] in
 
-            var raw = /* Unprocessed source value */
+            var raw =           /* Unprocessed source value */
                 try mapped(item, fields: ["id": "id", "saved_at_utc": "savedAt", "changed": "changed", "focus": "focus",
                 "intention": "intention", "constraints": "constraints", "concerns": "concerns", "priorities": "priorities",
                 "legacy": "legacy", "mood": "mood", "completed_tasks": "completedTasks", "total_tasks": "totalTasks",
@@ -221,7 +218,6 @@ extension PortableEditableContent
             if let mood = item["mood"] as? [String: Any]
             {
                 _ = try mapped(mood, fields: ["emoji": "emoji", "label": "label"])
-
             }
             else if !(item["mood"] is NSNull)
             {
@@ -259,7 +255,7 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-        var raw = /* Unprocessed source value */
+        var raw =       /* Unprocessed source value */
             try mapped(value, fields: ["step": "step", "completed_at_utc": "completedAt", "helped": "helped",
             "difficult": "difficult", "tomorrow": "tomorrow", "decisions": "decisions", "achievements": "achievements"])
 
@@ -283,11 +279,11 @@ extension PortableEditableContent
     /// @throws Invalid status, duplicate identity or unknown fields
     func objectives(_ value: Any?) throws -> [[String: Any]]
     {
-        var seen = Set<String>() /* Identities already encountered */
+        var seen = Set<String>()        /* Identities already encountered */
 
         return try array(value).map { item in
 
-            var raw = /* Unprocessed source value */
+            var raw =           /* Unprocessed source value */
                 try mapped(item, fields: ["id": "id", "title": "title", "status": "status", "progress": "progress", "next_step": "nextStep"])
 
             guard let id = item["id"] as? String, UUID(uuidString: id) != nil, seen.insert(id).inserted,
@@ -310,10 +306,10 @@ extension PortableEditableContent
     /// @throws Unsupported values, duplicate logical store keys or missing historical evidence
     func planningDocuments() throws -> PortablePlanningDocuments
     {
-        var daily: [String: Any]    = [:] /* Daily planning state       */
-        var weekly: [String: Any]   = [:] /* Weekly review state        */
-        var periodic: [String: Any] = [:] /* Periodic review state      */
-        let reflections             =     /* Saved planning reflections */
+        var daily: [String: Any]    = [:]       /* Daily planning state       */
+        var weekly: [String: Any]   = [:]       /* Weekly review state        */
+        var periodic: [String: Any] = [:]       /* Periodic review state      */
+        let reflections             =           /* Saved planning reflections */
             ["step": "step", "highlights": "highlights", "learned": "learned", "direction": "direction",
             "risks": "risks", "priorities": "priorities", "updated_at_utc": "updatedAt", "completed_at_utc": "completedAt"]
 
@@ -330,7 +326,7 @@ extension PortableEditableContent
             }
             if kind == "daily_plan"
             {
-                var raw = /* Unprocessed source value */
+                var raw =       /* Unprocessed source value */
                     try mapped(payload, fields: ["date": "id", "time_zone": "timeZoneID", "intention": "intention",
                     "constraints": "constraints", "concerns": "concerns", "priorities": "priorities", "updated_at_utc": "updatedAt",
                     "vision_completed_at_utc": "visionCompletedAt", "vision_step": "visionStep", "check_in": "checkIn",
@@ -356,16 +352,15 @@ extension PortableEditableContent
                 raw["checkIns"] = try checkIns(payload["check_ins"])
                 raw["eveningReview"] = try evening(payload["evening_review"])
                 daily[date] = raw
-
             }
             else
             {
-                let extra = kind == "weekly_review" /* Extra operation value */
+                let extra = kind == "weekly_review"                                                     /* Extra operation value    */
                     ? ["source_review_key": "id", "start_date": "startKey", "time_zone": "timeZoneID", "first_weekday": "firstWeekday",
                        "constraints": "constraints", "decisions": "decisions"]
                     : ["title": "title", "start_date": "startKey", "end_date": "endKey", "time_zone": "timeZoneID",
                        "starting_objectives": "startingObjectives", "objectives": "objectives"]
-                var raw = /* Unprocessed source value */
+                var raw =                                                                               /* Unprocessed source value */
                     try mapped(payload, fields: reflections.merging(extra) { _, latest in latest })
 
                 guard let start = payload["start_date"] as? String, let zone = payload["time_zone"] as? String,
@@ -389,7 +384,6 @@ extension PortableEditableContent
 
                     raw["decisions"] = try decisions(payload["decisions"])
                     weekly[key] = raw
-
                 }
                 else
                 {
@@ -404,12 +398,11 @@ extension PortableEditableContent
                     raw["startingObjectives"] = try objectives(payload["starting_objectives"])
                     raw["objectives"] = try objectives(payload["objectives"])
                     periodic[uuid.uuidString] = raw
-
                 }
             }
         }
 
-        let rhythms = /* Review invitation settings */
+        let rhythms =                                                           /* Review invitation settings */
             records.filter { $0["record_type"] as? String == "review_rhythm" }
 
         guard rhythms.count <= 1 else
@@ -417,7 +410,7 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-        var rhythm: ReviewRhythmPreferences? /* Review invitation preferences */
+        var rhythm: ReviewRhythmPreferences?    /* Review invitation preferences */
 
         if let document = rhythms.first
         {
@@ -428,13 +421,12 @@ extension PortableEditableContent
                 throw Failure.invalid
             }
 
-            let raw = /* Unprocessed source value */
+            let raw =           /* Unprocessed source value */
                 try mapped(payload, fields: ["daily_invitations": "dailyInvitations", "weekly_invitations": "weeklyInvitations",
                 "daily_minutes": "dailyMinutes", "weekly_minutes": "weeklyMinutes", "weekly_weekday": "weeklyWeekday",
                 "daily_notifications": "dailyNotifications", "weekly_notifications": "weeklyNotifications"])
 
             rhythm = try JSONDecoder().decode(ReviewRhythmPreferences.self, from: JSONSerialization.data(withJSONObject: raw))
-
         }
         return PortablePlanningDocuments(
             daily: try JSONDecoder().decode(DailyPlanStore.Document.self, from: JSONSerialization.data(withJSONObject: ["version": 1, "plans": daily])),

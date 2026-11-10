@@ -29,13 +29,13 @@ enum PersonalCollectionKind: String, CaseIterable, Codable
 ///
 struct PersonalListNoteDraft
 {
-    var destinationID: UUID    /* Personal List selected for the unsaved Note */
-    var title           = ""   /* Editable Note heading                       */
-    var body            = ""   /* Editable Note content preserved as entered  */
-    let createdAt: Date = .now /* Draft creation time retained through saving */
+    var destinationID: UUID             /* Personal List selected for the unsaved Note */
+    var title           = ""            /* Editable Note heading                       */
+    var body            = ""            /* Editable Note content preserved as entered  */
+    let createdAt: Date = .now          /* Draft creation time retained through saving */
 
-    var normalizedTitle: String /* Normalized title */
-    {  /* Note heading without surrounding whitespace */
+    var normalizedTitle: String                                 /* Normalized title                            */
+    {                                                           /* Note heading without surrounding whitespace */
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -59,7 +59,6 @@ struct PersonalListNoteDraft
                     !$0.isArchived
                 })
         }
-
     }
 
 
@@ -78,7 +77,6 @@ struct PersonalListNoteDraft
         {
             $0.id == destinationID
         }
-
     }
 
 
@@ -125,7 +123,6 @@ struct PersonalListNoteDraft
 
         try onSave(destinationID, normalizedTitle, body, createdAt)
     }
-
 }
 
 
@@ -156,28 +153,28 @@ enum PersonalCollectionIcon: String, CaseIterable, Codable, Sendable
 ///
 struct PersonalCollection: Identifiable, Hashable, Codable
 {
-    let id:                    UUID                    /* Stable collection identity                  */
-    var title:                 String                  /* User-facing collection title                */
-    let kind:                  PersonalCollectionKind  /* List or multi-column board                  */
-    var icon:                  PersonalCollectionIcon  /* Symbol shown for the collection             */
-    var color:                 ProfileColor            /* Collection accent color                     */
-    var lists:                 [KanbanList]            /* Lists and cards owned by the collection     */
-    var savedCardIDs:          Set<Int>                /* Bookmarked cards retained by the collection */
-    var isArchived:            Bool?            = nil  /* Optional archive state for older saved data */
-    var boardAppearance:       BoardAppearance? = nil  /* Independent persisted List color defaults   */
-    var collectionDescription: String?          = nil /* Collection description */
+    let id:                    UUID                             /* Stable collection identity                  */
+    var title:                 String                           /* User-facing collection title                */
+    let kind:                  PersonalCollectionKind           /* List or multi-column board                  */
+    var icon:                  PersonalCollectionIcon           /* Symbol shown for the collection             */
+    var color:                 ProfileColor                     /* Collection accent color                     */
+    var lists:                 [KanbanList]                     /* Lists and cards owned by the collection     */
+    var savedCardIDs:          Set<Int>                         /* Bookmarked cards retained by the collection */
+    var isArchived:            Bool?            = nil           /* Optional archive state for older saved data */
+    var boardAppearance:       BoardAppearance? = nil           /* Independent persisted List color defaults   */
+    var collectionDescription: String?          = nil           /* Collection description                      */
 
     /// Primary shortcut Lists retain their containers while their Cards and Notes remain editable
-    var isPrimaryList: Bool /* Built-in List removal protection */
+    var isPrimaryList: Bool     /* Built-in List removal protection */
     {
         kind == .list && ["On the Table", "In the Queue", "Scheduled"].contains(title)
     }
 
 
     /// The three shortcut Lists share their focused layout across Today and Plans
-    var preferredFocusedListID: Int? /* Preferred focused list ID */
+    var preferredFocusedListID: Int?    /* Preferred focused list ID */
     {
-        let active = lists.filter /* Active operation state */
+        let active = lists.filter       /* Active operation state */
         {
             !$0.isArchived
         }
@@ -191,9 +188,9 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     }
 
 
-    var contentPreview: String /* Content preview */
+    var contentPreview: String          /* Content preview */
     {
-        let description = /* Supporting item description */
+        let description =                                                                       /* Supporting item description */
             collectionDescription?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         if !description.isEmpty
@@ -201,7 +198,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
             return description
         }
 
-        let titles = lists.filter /* Ordered display titles */
+        let titles = lists.filter       /* Ordered display titles */
         {
             !$0.isArchived
         } .flatMap(\.cards)
@@ -229,10 +226,10 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     /// @return     (Bool) whether the collection is not archived
     /// @post       Collection state is unchanged
     ///
-    var isActive: Bool /* Active state */
+    var isActive: Bool          /* Active state */
     {
         isArchived != true
-    }  /* Whether the collection belongs in the active directory */
+    }                           /* Whether the collection belongs in the active directory */
 
 
     ///
@@ -261,9 +258,9 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         self.icon = icon
         self.color = color
 
-        let columns = /* Visible Board List columns */
+        let columns =           /* Visible Board List columns */
         kind == .list
-        ? [title] : ["Ideas", "In progress", "Done"] /* Initial column headings selected by collection kind */
+        ? [title] : ["Ideas", "In progress", "Done"]    /* Initial column headings selected by collection kind */
 
         lists = columns.enumerated().map
         {
@@ -276,7 +273,6 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         }
 
         savedCardIDs = []
-
     }
 
 
@@ -301,9 +297,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         for index in lists.indices
         {
             lists[index].newItemPresentation = .note
-
         }
-
     }
 
 
@@ -315,8 +309,8 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     /// @return     (Int) number of active cards across the collection
     /// @post       Collection lists and cards are unchanged
     ///
-    var cardCount: Int /* Card count */
-    {  /* Active non-divider records counted for the directory */
+    var cardCount: Int          /* Card count                                           */
+    {                           /* Active non-divider records counted for the directory */
         lists.filter
         {
             !$0.isArchived
@@ -327,7 +321,6 @@ struct PersonalCollection: Identifiable, Hashable, Codable
                 !$0.isSectionDivider
             } .count
         }
-
     }
 
 
@@ -340,8 +333,8 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     ///
     /// @post       Collection content and bookmark membership remain unchanged
     ///
-    var bookmarkedCards: [PersonalCollectionBookmarkedCard] /* Bookmarked cards */
-    {  /* Current bookmarked personal items with navigation context */
+    var bookmarkedCards: [PersonalCollectionBookmarkedCard]     /* Bookmarked cards                                          */
+    {                                                           /* Current bookmarked personal items with navigation context */
         guard isActive else
         {
             return []
@@ -371,9 +364,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
                     card: card
                 )
             }
-
         }
-
     }
 
 
@@ -393,26 +384,24 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         title = name.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard kind == .list, let column = lists.first else
-        {  /* Single-list column whose name follows the collection */
+        {                                                       /* Single-list column whose name follows the collection */
             return
         }
 
 
-        var cards = column.cards /* Active records receiving the renamed list context */
+        var cards = column.cards        /* Active records receiving the renamed list context */
 
         for index in cards.indices
         {
             cards[index].listTitle = title
-
         }
 
 
-        var archivedCards = column.archivedCards /* Archived records receiving the renamed list context */
+        var archivedCards = column.archivedCards        /* Archived records receiving the renamed list context */
 
         for index in archivedCards.indices
         {
             archivedCards[index].listTitle = title
-
         }
 
         lists[0] = KanbanList(
@@ -421,7 +410,6 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         lists[0].isArchived = column.isArchived
         lists[0].subtitleOverride = column.subtitleOverride
         lists[0].appearance = column.appearance
-
     }
 
 
@@ -456,8 +444,8 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         origin: CardHistoryOrigin = .createdHere
     ) throws
     {
-        let trimmedTitle = title.trimmingCharacters( /* Trimmed title */
-            in: .whitespacesAndNewlines) /* Nonblank Note heading used for creation */
+        let trimmedTitle = title.trimmingCharacters(    /* Trimmed title */
+            in: .whitespacesAndNewlines)                /* Nonblank Note heading used for creation */
 
         guard kind == .list, isActive, !trimmedTitle.isEmpty, schedule?.isValid(calendar: calendar) != false,
         let listIndex = lists.firstIndex(where:
@@ -465,21 +453,21 @@ struct PersonalCollection: Identifiable, Hashable, Codable
                 !$0.isArchived
             })
         else
-        {  /* Active column receiving the new Note */
+        {                                                               /* Active column receiving the new Note */
             throw CocoaError(.validationMissingMandatoryProperty)
         }
 
 
-        let nextCardID = /* Next card ID */
+        let nextCardID =        /* Next card ID */
         (lists.flatMap
             {
                 $0.allCards.map(\.id)
             } .max() ?? -1)
-        + 1                                 /* Next identity beyond all retained collection records */
-        var destination = lists[listIndex]      /* Column snapshot receiving the new Note */
-        var note        = destination.makeItem( /* Note content record                    */
+        + 1                                                                                     /* Next identity beyond all retained collection records */
+        var destination = lists[listIndex]                                                      /* Column snapshot receiving the new Note               */
+        var note        = destination.makeItem(                                                 /* Note content record                                  */
             id: nextCardID, title: trimmedTitle, description: body, createdAt: createdAt,
-            presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences, origin: origin) /* New record carrying the draft's content and creation time */
+            presentationOverride: presentation, actions: actions, creationPreferences: creationPreferences, origin: origin)     /* New record carrying the draft's content and creation time */
 
         note.presentation = presentation
         note.subtitleOverride = subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -487,7 +475,6 @@ struct PersonalCollection: Identifiable, Hashable, Codable
         if presentation == .note || actions == nil
         {
             note.checklists = []
-
         }
 
         schedule?.apply(to: &note, calendar: calendar)
@@ -498,14 +485,12 @@ struct PersonalCollection: Identifiable, Hashable, Codable
                 {
                     $0.kind == .photo
                 })?.id
-
         }
 
         destination.cards.append(note)
         DaySections.reveal(note.id, in: &destination.cards)
 
         lists[listIndex] = destination
-
     }
 
 
@@ -522,7 +507,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     ///
     func matches(_ query: String) -> Bool
     {
-        let term = query.trimmingCharacters(in: .whitespacesAndNewlines) /* Normalized collection-search query */
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)        /* Normalized collection-search query */
 
         return term.isEmpty || title.localizedStandardContains(term)
         || lists.filter
@@ -538,9 +523,7 @@ struct PersonalCollection: Identifiable, Hashable, Codable
                 && ($0.word.localizedStandardContains(term)
                     || PlanRichText.plain($0.descriptionOverride ?? "").localizedStandardContains(term))
             }
-
         }
-
     }
 
 
@@ -557,13 +540,12 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     ///
     mutating func restore(existingTitles: [String])
     {
-        let base = /* Base value before overrides */
+        let base =              /* Base value before overrides */
         title == "Week Board"
-        ? "Week Board (Restored)" : title /* Restore name avoiding confusion with the live Week tab */
+        ? "Week Board (Restored)" : title       /* Restore name avoiding confusion with the live Week tab */
 
         title = Self.uniqueTitle(base, existingTitles: existingTitles)
         isArchived = false
-
     }
 
 
@@ -579,8 +561,8 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     ///
     static func archivedWeekBoard(lists: [KanbanList], savedCardIDs: Set<Int>) -> PersonalCollection
     {
-        var board = PersonalCollection( /* Board state under review */
-            title: "Week Board", kind: .board, icon: .project) /* Archived collection preserving the Week workspace */
+        var board = PersonalCollection(                         /* Board state under review */
+            title: "Week Board", kind: .board, icon: .project)          /* Archived collection preserving the Week workspace */
 
         board.lists = lists
         board.savedCardIDs = savedCardIDs
@@ -605,25 +587,23 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     ///
     static func uniqueTitle(_ base: String, existingTitles: [String]) -> String
     {
-        let titles = Set( /* Ordered display titles */
+        let titles = Set(       /* Ordered display titles                       */
             existingTitles.map
             {
                 $0.lowercased()
-            })                /* Existing names compared without case distinctions */
-        var candidate = base /* Proposed name retried until unique           */
-        var number    = 2    /* Numeric suffix for resolving name collisions */
+            })                  /* Existing names compared without case distinctions */
+        var candidate = base    /* Proposed name retried until unique           */
+        var number    = 2       /* Numeric suffix for resolving name collisions */
 
         while titles.contains(candidate.lowercased())
         {
             candidate = "\(base) (\(number))"
             number += 1
-
         }
 
 
         return candidate
     }
-
 }
 
 
@@ -635,11 +615,11 @@ struct PersonalCollection: Identifiable, Hashable, Codable
 ///
 struct PersonalCollectionBookmarkedCard: Identifiable, Hashable
 {
-    let collectionID:    UUID       /* Owning personal collection identity       */
-    let collectionTitle: String     /* Collection name shown in Saved            */
-    let listID:          Int        /* Containing collection-local list identity */
-    let listTitle:       String     /* Containing list name shown in Saved       */
-    let card:            KanbanCard /* Complete bookmarked record                */
+    let collectionID:    UUID           /* Owning personal collection identity       */
+    let collectionTitle: String         /* Collection name shown in Saved            */
+    let listID:          Int            /* Containing collection-local list identity */
+    let listTitle:       String         /* Containing list name shown in Saved       */
+    let card:            KanbanCard     /* Complete bookmarked record                */
 
     ///
     /// @fcn        PersonalCollectionBookmarkedCard.id
@@ -648,9 +628,8 @@ struct PersonalCollectionBookmarkedCard: Identifiable, Hashable
     ///
     /// @return     (String) composite row identity
     ///
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
             "\(collectionID.uuidString):\(card.id)"
-    }  /* Collection-scoped row identity */
-
+    }                                                   /* Collection-scoped row identity */
 }

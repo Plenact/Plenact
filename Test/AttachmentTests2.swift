@@ -33,23 +33,23 @@ extension PlenactBoardDocumentTests
     ///
     func testLargeLocalCoverIsDownsampledAndRemovalKeepsItsMedia() throws
     {
-        let format = UIGraphicsImageRendererFormat() /* Image-rendering configuration */
+        let format = UIGraphicsImageRendererFormat()    /* Image-rendering configuration */
 
         format.scale = 1
 
-        let renderer = UIGraphicsImageRenderer( /* Image rendering context */
-            size: CGSize(width: 2400, height: 1600), format: format) /* Synthetic image renderer                   */
-        let bytes = renderer.pngData /* Serialized or original bytes */
+        let renderer = UIGraphicsImageRenderer(                         /* Image rendering context      */
+            size: CGSize(width: 2400, height: 1600), format: format)    /* Synthetic image renderer                   */
+        let bytes = renderer.pngData                                    /* Serialized or original bytes */
         {
-        context in /* Rendered PNG bytes for the oversized cover */
+        context in                              /* Rendered PNG bytes for the oversized cover */
             UIColor.systemGreen.setFill()
             context.fill(CGRect(x: 0, y: 0, width: 2400, height: 1600))
         }
 
 
-        let photo = try CardAttachmentStore.saveMedia( /* Photo selection or source */
-            bytes, kind: .photo, fileExtension: "png")  /* Synthetic photo fixture */
-        let fileName = try XCTUnwrap(photo.fileName)    /* Stored avatar filename  */
+        let photo = try CardAttachmentStore.saveMedia(          /* Photo selection or source */
+            bytes, kind: .photo, fileExtension: "png")          /* Synthetic photo fixture */
+        let fileName = try XCTUnwrap(photo.fileName)            /* Stored avatar filename    */
 
         defer
         {
@@ -57,13 +57,13 @@ extension PlenactBoardDocumentTests
         }
 
 
-        var card = KanbanCard( /* Synthetic card fixture */
-            id: 1, word: "Synthetic", listTitle: "Local", checklists: [], attachments: [photo]) /* Card value under verification */
+        var card = KanbanCard(                                                                  /* Synthetic card fixture */
+            id: 1, word: "Synthetic", listTitle: "Local", checklists: [], attachments: [photo])         /* Card value under verification */
 
         try card.setCover(photo.id)
 
-        let image = try XCTUnwrap( /* Image used by this operation */
-            try CardAttachmentStore.coverThumbnail(for: photo).cgImage) /* Synthetic image fixture */
+        let image = try XCTUnwrap(                                      /* Image used by this operation */
+            try CardAttachmentStore.coverThumbnail(for: photo).cgImage)         /* Synthetic image fixture */
 
         XCTAssertEqual(image.width, 960)
         XCTAssertEqual(image.height, 640)
@@ -90,8 +90,8 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testCoverRowsRemainBoundedAndCanBeDisabledWithoutContentChanges() throws
     {
-        let suite    = "Plenact.CoverLayoutTests.\(UUID().uuidString)" /* Isolated preferences-suite key */
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))   /* Isolated test preferences      */
+        let suite    = "Plenact.CoverLayoutTests.\(UUID().uuidString)"          /* Isolated preferences-suite key */
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))            /* Isolated test preferences      */
 
         defer
         {
@@ -99,9 +99,9 @@ extension PlenactBoardDocumentTests
         }
 
 
-        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden) /* Synthetic photo fixture       */
-        let card  = KanbanCard( /* Synthetic card fixture */
-            id: 1, word: "Garden", listTitle: "Local", checklists: [], /* Card value under verification */
+        let photo = KanbanAttachment(mediaKind: .photo, exampleImage: .garden)          /* Synthetic photo fixture */
+        let card  = KanbanCard(                                                         /* Synthetic card fixture  */
+            id: 1, word: "Garden", listTitle: "Local", checklists: [],                  /* Card value under verification */
             attachments: [photo], coverAttachmentID: photo.id, subtitleOverride: "",
             appearance: ItemAppearance(accent: .green, icon: .home, background: .teal))
 
@@ -120,7 +120,7 @@ extension PlenactBoardDocumentTests
         {
             defaults.set(enabled, forKey: "Plenact.CardCovers.enabled")
 
-            let row = KanbanCardView( /* Rendered collection row */
+            let row = KanbanCardView(           /* Rendered collection row */
                 card: card, height: preset.minimumCardHeight, displaySettings: BoardDisplaySettings(),
                 presentation: preset, labelLibrary: .starter,
                 onUpdateCard:
@@ -146,8 +146,8 @@ extension PlenactBoardDocumentTests
         }
 
 
-        let standard = measure(.standard, enabled: true) /* Standard Card baseline      */
-        let overview = measure(.overview, enabled: true) /* Overview layout measurement */
+        let standard = measure(.standard, enabled: true)        /* Standard Card baseline      */
+        let overview = measure(.overview, enabled: true)        /* Overview layout measurement */
 
         XCTAssertGreaterThan(standard, overview)
         XCTAssertGreaterThan(standard, measure(.standard, enabled: false) + 100)
@@ -170,12 +170,12 @@ extension PlenactBoardDocumentTests
     ///
     func testDeletionMediaCleanupPreservesRetainedCopiesAndUnrelatedFiles() throws
     {
-        let candidate = try CardAttachmentStore.saveMedia( /* Candidate under validation */
-            Data([1, 2, 3]), kind: .photo, fileExtension: "jpg") /* Candidate value for validation */
-        let unrelated = try CardAttachmentStore.saveMedia( /* Unrelated content bytes */
-            Data([4, 5, 6]), kind: .photo, fileExtension: "jpg")  /* Unrelated retained value */
-        let candidateName = try XCTUnwrap(candidate.fileName) /* Candidate display name */
-        let unrelatedName = try XCTUnwrap(unrelated.fileName) /* Unrelated display name */
+        let candidate = try CardAttachmentStore.saveMedia(              /* Candidate under validation */
+            Data([1, 2, 3]), kind: .photo, fileExtension: "jpg")        /* Candidate value for validation */
+        let unrelated = try CardAttachmentStore.saveMedia(              /* Unrelated content bytes    */
+            Data([4, 5, 6]), kind: .photo, fileExtension: "jpg")        /* Unrelated retained value */
+        let candidateName = try XCTUnwrap(candidate.fileName)           /* Candidate display name     */
+        let unrelatedName = try XCTUnwrap(unrelated.fileName)           /* Unrelated display name     */
 
         defer
         {
@@ -183,17 +183,17 @@ extension PlenactBoardDocumentTests
         }
 
 
-        var card = KanbanCard( /* Synthetic card fixture */
-            id: 1, word: "Retained", listTitle: "Archive", checklists: []) /* Card value under verification */
+        var card = KanbanCard(                                                  /* Synthetic card fixture */
+            id: 1, word: "Retained", listTitle: "Archive", checklists: [])      /* Card value under verification */
 
         card.attachments = [candidate]
 
-        var archived = KanbanList( /* Archived records or state */
-            id: 1, title: "Archive", cards: [], archivedCards: [card]) /* Archived value for restoration checks */
+        var archived = KanbanList(                                      /* Archived records or state */
+            id: 1, title: "Archive", cards: [], archivedCards: [card])          /* Archived value for restoration checks */
 
         archived.isArchived = true
 
-        let retainedNames = CardAttachmentStore.fileNames(in: [archived]) /* Names preserved by filtering */
+        let retainedNames = CardAttachmentStore.fileNames(in: [archived])       /* Names preserved by filtering */
 
         try CardAttachmentStore.removeDeletedFiles([candidateName], keeping: retainedNames)
 
@@ -211,7 +211,5 @@ extension PlenactBoardDocumentTests
         {
             XCTAssertThrowsError(try CardAttachmentStore.removeDeletedFiles([invalidName], keeping: []))
         }
-
     }
-
 }

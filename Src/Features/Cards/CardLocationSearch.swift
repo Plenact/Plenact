@@ -18,22 +18,22 @@ import SwiftUI
 ///
 struct CardLocationSearchResult: Identifiable, Hashable, Sendable
 {
-    let id:        UUID   /* Record UUID            */
-    let name:      String /* Display or lookup name */
-    let address:   String /* Resolved place address */
-    let latitude:  Double /* Place latitude         */
-    let longitude: Double /* Place longitude        */
+    let id:        UUID         /* Record UUID            */
+    let name:      String       /* Display or lookup name */
+    let address:   String       /* Resolved place address */
+    let latitude:  Double       /* Place latitude         */
+    let longitude: Double       /* Place longitude        */
 
-    var coordinate: CLLocationCoordinate2D /* Resolved map coordinate */
+    var coordinate: CLLocationCoordinate2D      /* Resolved map coordinate */
     {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
 
-    var savedLocation: String /* Saved location */
+    var savedLocation: String           /* Saved location */
     {
-        let title   = CardLocation.normalized(name)    /* User-facing title      */
-        let address = CardLocation.normalized(address) /* Resolved place address */
+        let title   = CardLocation.normalized(name)             /* User-facing title      */
+        let address = CardLocation.normalized(address)          /* Resolved place address */
 
         if let title, let address, title.caseInsensitiveCompare(address) != .orderedSame
         {
@@ -68,7 +68,6 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
         self.address = address
         self.latitude = latitude
         self.longitude = longitude
-
     }
 
 
@@ -83,22 +82,20 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
     ///
     init?(item: MKMapItem)
     {
-        let coordinate: CLLocationCoordinate2D /* Resolved map coordinate */
-        let address: String                    /* Resolved place address  */
+        let coordinate: CLLocationCoordinate2D          /* Resolved map coordinate */
+        let address: String                             /* Resolved place address  */
 
         if #available(iOS 26.0, *)
         {
             coordinate = item.location.coordinate
             address = item.addressRepresentations?.fullAddress(includingRegion: true, singleLine: true)
             ?? item.address?.fullAddress ?? ""
-
         }
 
         else
         {
             coordinate = item.placemark.coordinate
             address = item.placemark.title ?? ""
-
         }
 
         guard CLLocationCoordinate2DIsValid(coordinate) else
@@ -109,7 +106,6 @@ struct CardLocationSearchResult: Identifiable, Hashable, Sendable
         self.init(name: item.name ?? address, address: address,
             latitude: coordinate.latitude, longitude: coordinate.longitude)
     }
-
 }
 
 
@@ -138,7 +134,7 @@ final class CardLocationSearchModel: ObservableObject
     }
 
 
-    @Published var query: String /* Search text */
+    @Published var query: String        /* Search text */
     {
         didSet
         {
@@ -146,26 +142,23 @@ final class CardLocationSearchModel: ObservableObject
             {
                 cancel()
             }
-
         }
-
     }
 
-    @Published private(set) var results: [CardLocationSearchResult] = /* Collected operation results */
+    @Published private(set) var results: [CardLocationSearchResult] =           /* Collected operation results */
         []
-    @Published private(set) var phase: Phase                        = /* Current app lifecycle phase */
+    @Published private(set) var phase: Phase                        =           /* Current app lifecycle phase */
         .idle
-    @Published var selectedID: UUID? /* Selected ID            */
-    private let searcher: Searcher   /* Place lookup service   */
-    private var revision = UUID()    /* Latest search revision */
+    @Published var selectedID: UUID?                                            /* Selected ID                 */
+    private let searcher: Searcher                                              /* Place lookup service        */
+    private var revision = UUID()                                               /* Latest search revision      */
 
-    var selectedResult: CardLocationSearchResult? /* Selected result */
+    var selectedResult: CardLocationSearchResult?       /* Selected result */
     {
         results.first
         {
             $0.id == selectedID
         }
-
     }
 
 
@@ -182,7 +175,6 @@ final class CardLocationSearchModel: ObservableObject
     {
         self.query = query
         self.searcher = searcher ?? Self.findPlaces
-
     }
 
 
@@ -200,7 +192,6 @@ final class CardLocationSearchModel: ObservableObject
         results = []
         selectedID = nil
         phase = .idle
-
     }
 
 
@@ -221,13 +212,13 @@ final class CardLocationSearchModel: ObservableObject
             return
         }
 
-        let requestRevision = revision /* Request revision */
+        let requestRevision = revision          /* Request revision */
 
         phase = .searching
 
         do
         {
-            let matches = try await searcher(query, region) /* Matching source entries */
+            let matches = try await searcher(query, region)     /* Matching source entries */
 
             guard revision == requestRevision else
             {
@@ -242,7 +233,6 @@ final class CardLocationSearchModel: ObservableObject
 
             results = matches
             phase = matches.isEmpty ? .empty : .results
-
         }
 
         catch
@@ -259,9 +249,7 @@ final class CardLocationSearchModel: ObservableObject
             }
 
             phase = .failed
-
         }
-
     }
 
 
@@ -278,7 +266,7 @@ final class CardLocationSearchModel: ObservableObject
     ///
     private static func findPlaces(_ query: String, region: MKCoordinateRegion?) async throws -> [CardLocationSearchResult]
     {
-        let request = MKLocalSearch.Request() /* Pending lookup request */
+        let request = MKLocalSearch.Request()           /* Pending lookup request */
 
         request.naturalLanguageQuery = query
         request.resultTypes = [.address, .pointOfInterest]
@@ -286,11 +274,10 @@ final class CardLocationSearchModel: ObservableObject
         if let region, region.span.latitudeDelta < 120, region.span.longitudeDelta < 180
         {
             request.region = region
-
         }
 
-        let search   = MKLocalSearch(request: request)       /* Active content search  */
-        let response = try await withTaskCancellationHandler /* Received lookup result */
+        let search   = MKLocalSearch(request: request)          /* Active content search  */
+        let response = try await withTaskCancellationHandler    /* Received lookup result */
         {
             try await search.start()
         }
@@ -302,12 +289,10 @@ final class CardLocationSearchModel: ObservableObject
             @MainActor in
                 search.cancel()
             }
-
         }
 
         return response.mapItems.compactMap(CardLocationSearchResult.init(item:))
     }
-
 }
 
 
@@ -321,15 +306,15 @@ final class CardLocationSearchModel: ObservableObject
 ///
 struct CardLocationSearchView: View
 {
-    let onSelect: (String) -> Void                          /* Handle the selected value       */
-    @StateObject private var model: CardLocationSearchModel /* Current data model              */
-    @State private var position: MapCameraPosition =        /* Current layout or item position */
+    let onSelect: (String) -> Void                              /* Handle the selected value       */
+    @StateObject private var model: CardLocationSearchModel     /* Current data model              */
+    @State private var position: MapCameraPosition =            /* Current layout or item position */
         .automatic
-    @State private var retryRevision = 0 /* Retry revision */
+    @State private var retryRevision = 0                        /* Retry revision                  */
 
-    @State private var visibleRegion: MKCoordinateRegion? /* Visible region */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduced-motion preference */
+    @State private var visibleRegion: MKCoordinateRegion?                       /* Visible region                 */
+    @Environment(\.dismiss) private var dismiss                                 /* Close the current presentation */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference      */
 
 
     ///
@@ -346,7 +331,6 @@ struct CardLocationSearchView: View
     {
         self.onSelect = onSelect
         self._model = StateObject(wrappedValue: model ?? CardLocationSearchModel(query: query))
-
     }
 
 
@@ -359,7 +343,7 @@ struct CardLocationSearchView: View
     /// @return     (some View) result list or compact search-state feedback
     ///
     @ViewBuilder
-    private var searchFeedback: some View /* Search feedback */
+    private var searchFeedback: some View       /* Search feedback */
     {
         switch model.phase
         {
@@ -370,7 +354,6 @@ struct CardLocationSearchView: View
                 Button
                 {
                     model.selectedID = place.id
-
                 }
 
                 label:
@@ -393,7 +376,6 @@ struct CardLocationSearchView: View
                             Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(Color.accentColor)
                         }
-
                     }
                     .contentShape(Rectangle())
                 }
@@ -420,9 +402,7 @@ struct CardLocationSearchView: View
                 Button("Try again")
                 {
                     retryRevision += 1
-
                 }
-
             }
             .padding()
         case .idle:
@@ -431,7 +411,6 @@ struct CardLocationSearchView: View
             .foregroundStyle(.secondary)
             .padding()
         }
-
     }
 
 
@@ -443,7 +422,7 @@ struct CardLocationSearchView: View
     ///             share one identity; leaving without Use this location preserves the parent draft
     /// @return     (some View) native Apple Maps search and selection workspace
     ///
-    var body: some View /* Card Location Search layout */
+    var body: some View         /* Card Location Search layout */
     {
         GeometryReader
         {
@@ -458,7 +437,6 @@ struct CardLocationSearchView: View
                         Marker(place.name, coordinate: place.coordinate)
                         .tag(place.id)
                     }
-
                 }
                 .mapControls
                 {
@@ -468,13 +446,11 @@ struct CardLocationSearchView: View
                 .onMapCameraChange(frequency: .onEnd)
                 {
                     visibleRegion = $0.region
-
                 }
                 .accessibilityIdentifier("card.location.search.map")
                 searchFeedback
                 .frame(maxHeight: model.phase == .results ? min(220, geometry.size.height * 0.4) : nil)
             }
-
         }
         .navigationTitle("Find on map")
         .navigationBarTitleDisplayMode(.inline)
@@ -483,7 +459,6 @@ struct CardLocationSearchView: View
         .onSubmit(of: .search)
         {
             retryRevision += 1
-
         }
         .toolbar
         {
@@ -493,9 +468,7 @@ struct CardLocationSearchView: View
                 {
                     dismiss()
                 }
-
             }
-
         }
         .safeAreaInset(edge: .bottom)
         {
@@ -551,7 +524,6 @@ struct CardLocationSearchView: View
         _, _ in
 
             position = .automatic
-
         }
         .onChange(of: model.selectedID)
         {
@@ -564,17 +536,13 @@ struct CardLocationSearchView: View
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25))
             {
                 position = .region(MKCoordinateRegion(center: selected.coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)))
-
+                    span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)))
             }
-
         }
         .onDisappear
         {
             model.cancel()
         }
-
     }
-
 }
 

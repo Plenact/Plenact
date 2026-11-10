@@ -24,7 +24,7 @@ struct TodayScrollOffsetPreferenceKey: PreferenceKey
     ///     Carry the latest vertical scroll offset from Today content to its observer
     ///
     /// Latest vertical offset reported by Today scroll content
-    static var defaultValue: CGFloat = 0 /* Unmeasured bottom navigation height */
+    static var defaultValue: CGFloat = 0        /* Unmeasured bottom navigation height */
 
 
     ///
@@ -40,9 +40,7 @@ struct TodayScrollOffsetPreferenceKey: PreferenceKey
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat)
     {
         value = nextValue()
-
     }
-
 }
 
 
@@ -55,9 +53,9 @@ struct TodayScrollOffsetPreferenceKey: PreferenceKey
 ///
 struct TodaySectionSnapBehavior: ScrollTargetBehavior
 {
-    var perspectiveTop:  CGFloat /* Perspective top           */
-    var shortcutsBottom: CGFloat /* Shortcuts bottom          */
-    var enabled:         Bool    /* Feature availability flag */
+    var perspectiveTop:  CGFloat        /* Perspective top           */
+    var shortcutsBottom: CGFloat        /* Shortcuts bottom          */
+    var enabled:         Bool           /* Feature availability flag */
 
 
     ///
@@ -89,7 +87,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
             return nil
         }
 
-        let revealBoundary = max(24, perspectiveTop - viewport * 0.7) /* Reveal boundary */
+        let revealBoundary = max(24, perspectiveTop - viewport * 0.7)           /* Reveal boundary */
 
         if proposed > start, start < perspectiveTop - 24,
         start <= revealBoundary, proposed >= revealBoundary
@@ -131,9 +129,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
         }
 
         target.rect.origin.y = y
-
     }
-
 }
 
 
@@ -146,7 +142,7 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
 ///
 struct TodayScrollFadeTracking: ViewModifier
 {
-    @Binding var isScrolled: Bool /* Header fade visibility state */
+    @Binding var isScrolled: Bool       /* Header fade visibility state */
 
 
     ///
@@ -175,9 +171,7 @@ struct TodayScrollFadeTracking: ViewModifier
                 _, contentIsScrolled in
 
                 isScrolled = contentIsScrolled
-
             }
-
         }
         else
         {
@@ -188,11 +182,7 @@ struct TodayScrollFadeTracking: ViewModifier
                 verticalOffset in
 
                 isScrolled = verticalOffset < -2
-
             }
-
         }
-
     }
-
 }

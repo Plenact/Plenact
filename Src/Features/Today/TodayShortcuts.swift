@@ -20,7 +20,7 @@ import SwiftUI
 ///
 enum TodayListPins
 {
-    static let key = "Plenact.TodayListShortcuts.v1" /* Lookup or persistence key */
+    static let key = "Plenact.TodayListShortcuts.v1"    /* Lookup or persistence key */
 
 
     ///
@@ -37,8 +37,8 @@ enum TodayListPins
     ///
     static func loadInitialCollections(from defaults: UserDefaults = .standard) -> [PersonalCollection]
     {
-        let existing  = PersonalCollectionStore.load(from: defaults) /* Previously retained value */
-        let savedKeys =                                              /* Saved keys                */
+        let existing  = PersonalCollectionStore.load(from: defaults)                                    /* Previously retained value */
+        let savedKeys =                                                                                 /* Saved keys                */
             ["Plenact.PersonalCollections.v1", "Plenact.Board.v1", PlanningCalendarStore.key, key]
 
         guard savedKeys.allSatisfy(
@@ -50,7 +50,7 @@ enum TodayListPins
         }
 
 
-        let initial = /* Initial operation state */
+        let initial =                                           /* Initial operation state */
             ["On the Table", "In the Queue", "Scheduled"].map
         {
             DefaultListTutorial.makeStarter(title: $0)
@@ -61,7 +61,7 @@ enum TodayListPins
         {
             try PersonalCollectionStore.saveChecked(initial, to: defaults)
 
-            let pins = initial.map /* Ordered pinned shortcuts */
+            let pins = initial.map      /* Ordered pinned shortcuts */
             {
                 WorkspaceListReference(ownerID: $0.id, listID: $0.lists[0].id)
             }
@@ -73,7 +73,6 @@ enum TodayListPins
         {
             return existing
         }
-
     }
 
 
@@ -89,7 +88,7 @@ enum TodayListPins
     ///
     static func normalized(_ pins: [WorkspaceListReference]) -> [WorkspaceListReference]
     {
-        var seen = Set<WorkspaceListReference>() /* Identities already encountered */
+        var seen = Set<WorkspaceListReference>()        /* Identities already encountered */
 
         return Array(pins.filter
             {
@@ -128,7 +127,6 @@ enum TodayListPins
     {
         (try? JSONEncoder().encode(normalized(pins))) ?? Data()
     }
-
 }
 
 
@@ -141,10 +139,10 @@ enum TodayListPins
 ///
 struct TodayShortcutEditor: View
 {
-    @State private var pins: [WorkspaceListReference]           /* Ordered pinned shortcuts       */
-    let owners:              [PersonalCollection]               /* Qualified record owners        */
-    let onSave:              ([WorkspaceListReference]) -> Void /* Persist the edited value       */
-    @Environment(\.dismiss) private var dismiss                 /* Close the current presentation */
+    @State private var pins: [WorkspaceListReference]                   /* Ordered pinned shortcuts       */
+    let owners:              [PersonalCollection]                       /* Qualified record owners        */
+    let onSave:              ([WorkspaceListReference]) -> Void         /* Persist the edited value       */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
 
 
     ///
@@ -167,15 +165,14 @@ struct TodayShortcutEditor: View
         _pins = State(initialValue: TodayListPins.normalized(pins))
         self.owners = owners;
         self.onSave = onSave
-
     }
 
-    private var available: [WorkspaceListDestination] /* Available operation inputs */
+    private var available: [WorkspaceListDestination]           /* Available operation inputs */
     {
         WorkspaceBrowseIndex.lists(in: owners)
     }
 
-    var body: some View /* Pinned-shortcut editor */
+    var body: some View         /* Pinned-shortcut editor */
     {
         NavigationStack
         {
@@ -187,7 +184,7 @@ struct TodayShortcutEditor: View
                     {
                         reference in
 
-                        let destination = available.first /* Destination for the operation */
+                        let destination = available.first       /* Destination for the operation */
                         {
                             $0.reference == reference
                         }
@@ -200,7 +197,6 @@ struct TodayShortcutEditor: View
                             )
                             .font(.caption).foregroundStyle(.secondary)
                         }
-
                     }
                     .onDelete
                     {
@@ -210,7 +206,6 @@ struct TodayShortcutEditor: View
                     {
                         pins.move(fromOffsets: $0, toOffset: $1)
                     }
-
                 }
                 header:
                 {
@@ -233,7 +228,7 @@ struct TodayShortcutEditor: View
                         {
                             list in
 
-                            let reference = /* Qualified record reference */
+                            let reference =                                                     /* Qualified record reference */
                                 WorkspaceListReference(ownerID: owner.id, listID: list.id)
 
                             Button
@@ -258,11 +253,8 @@ struct TodayShortcutEditor: View
                             }
                             .disabled(pins.contains(reference) || pins.count >= 6)
                         }
-
                     }
-
                 }
-
             }
             .environment(\.editMode, .constant(.active))
             .navigationTitle("My shortcuts")
@@ -275,7 +267,6 @@ struct TodayShortcutEditor: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -285,15 +276,10 @@ struct TodayShortcutEditor: View
                         onSave(pins);
                         dismiss()
                     }
-
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -306,16 +292,16 @@ struct TodayShortcutEditor: View
 ///
 struct TodayShortcutGrid: View
 {
-    let pinned:                 [WorkspaceListDestination]       /* Ordered shortcut selection    */
-    let onOpen:                 (WorkspaceListReference) -> Void /* Open the selected destination */
+    let pinned:                 [WorkspaceListDestination]              /* Ordered shortcut selection    */
+    let onOpen:                 (WorkspaceListReference) -> Void        /* Open the selected destination */
 
-    private var usesLargeIcons: Bool /* Uses large icons */
+    private var usesLargeIcons: Bool    /* Uses large icons */
     {
         pinned.count <= 3
     }
 
 
-    var body: some View /* Today Shortcut Grid layout */
+    var body: some View         /* Today Shortcut Grid layout */
     {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10)
         {
@@ -349,9 +335,6 @@ struct TodayShortcutGrid: View
                 } .buttonStyle(.plain)
                 .accessibilityHint("Opens " + destination.owner.title + ", " + destination.list.title)
             }
-
         }
-
     }
-
 }

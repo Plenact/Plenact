@@ -34,7 +34,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     ///
     func routineCalendar(firstWeekday: Int = 2) -> Calendar
     {
-        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
+        var calendar = Calendar(identifier: .gregorian)         /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = firstWeekday
@@ -72,7 +72,6 @@ final class PlenactBoardDocumentTests: XCTestCase
             {
                 return found
             }
-
         }
 
         return nil
@@ -89,7 +88,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     ///
     func planningTestCalendar() -> Calendar
     {
-        var calendar = Calendar(identifier: .gregorian) /* Date calculation calendar */
+        var calendar = Calendar(identifier: .gregorian)         /* Date calculation calendar */
 
         calendar.timeZone = TimeZone(identifier: "America/Chicago")!
         calendar.firstWeekday = 1
@@ -109,7 +108,7 @@ final class PlenactBoardDocumentTests: XCTestCase
     @MainActor
     func drawingFixture() -> PKDrawing
     {
-        let points = /* Mapped points values */
+        let points =    /* Mapped points values */
             [CGPoint(x: 100, y: 100), CGPoint(x: 300, y: 180), CGPoint(x: 200, y: 350)].enumerated().map
         {
         index, point in
@@ -198,7 +197,7 @@ final class PlenactBoardDocumentTests: XCTestCase
 
                 if url.host == "success.example.test"
                 {
-                    let response = HTTPURLResponse( /* Synthetic API response */
+                    let response = HTTPURLResponse(                     /* Synthetic API response */
                         url: url, statusCode: 200, httpVersion: nil,
                         headerFields: ["Content-Type": "application/json"]
                     )!
@@ -213,9 +212,7 @@ final class PlenactBoardDocumentTests: XCTestCase
                         self, didFailWithError: URLError(url.host == "timeout.example.test" ? .timedOut : .cancelled)
                     )
                 }
-
             }
-
         }
 
 
@@ -230,7 +227,5 @@ final class PlenactBoardDocumentTests: XCTestCase
         override func stopLoading()
         {
         }
-
     }
-
 }

@@ -18,15 +18,14 @@ enum MigrationStudioPreview
     ///     Keep source-order/global-default preservation distinct from final contract integration
     struct Result
     {
-        let document:      [String: Any]       /* Source document snapshot */
-        let appearanceDocument: [String: Any]  /* Appearance document      */
-        let appearanceRecords: [[String: Any]] /* Appearance records       */
-        let records:       [[String: Any]]     /* Records being processed  */
-        let assetRecords:  [[String: Any]]     /* Asset records            */
-        let preparedCount: Int                 /* Prepared count           */
-        let artworkCount:  Int                 /* Artwork count            */
-        let issueCount:    Int                 /* Issue count              */
-
+        let document:      [String: Any]                /* Source document snapshot */
+        let appearanceDocument: [String: Any]           /* Appearance document      */
+        let appearanceRecords: [[String: Any]]          /* Appearance records       */
+        let records:       [[String: Any]]              /* Records being processed  */
+        let assetRecords:  [[String: Any]]              /* Asset records            */
+        let preparedCount: Int                          /* Prepared count           */
+        let artworkCount:  Int                          /* Artwork count            */
+        let issueCount:    Int                          /* Issue count              */
     }
 
 
@@ -62,7 +61,7 @@ enum MigrationStudioPreview
     static func prepare(values: [String: Any], records: [[String: Any]], mediaDigests: [String: String],
         journal: inout MigrationIdentityJournal, assetTargets: [String: String] = [:]) throws -> Result
     {
-        let context = /* Operation context */
+        let context =           /* Operation context */
             MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: mediaDigests)
 
         context.known = Set(records.compactMap { $0["id"] as? String })
@@ -76,13 +75,13 @@ enum MigrationStudioPreview
             }
         }
 
-        var studio: Any                   = NSNull() /* Studio operation value         */
-        var week: Any                     = NSNull() /* Dated Week under consideration */
-        var assetRecords: [[String: Any]] = []       /* Asset records                  */
-        var output: [[String: Any]]       = []       /* Operation output               */
-        var artworkIDs: [String]          = []       /* Artwork i ds                   */
-        let issues: [String]              = []       /* Validation findings            */
-        var prepared                      = 0        /* Prepared operation input       */
+        var studio: Any                   = NSNull()    /* Studio operation value         */
+        var week: Any                     = NSNull()    /* Dated Week under consideration */
+        var assetRecords: [[String: Any]] = []          /* Asset records                  */
+        var output: [[String: Any]]       = []          /* Operation output               */
+        var artworkIDs: [String]          = []          /* Artwork i ds                   */
+        let issues: [String]              = []          /* Validation findings            */
+        var prepared                      = 0           /* Prepared operation input       */
 
         if let value = values["Plenact.Studio.Settings.v1"]
         {
@@ -106,7 +105,7 @@ enum MigrationStudioPreview
                 }
             }
 
-            let saved = /* Saved state under review */
+            let saved =                                                         /* Saved state under review */
                 try JSONDecoder().decode(StudioSettings.self, from: data)
 
             guard saved.palette.allSatisfy({ $0.range(of: "^[0-9A-F]{6}$", options: .regularExpression) != nil }) else
@@ -114,7 +113,7 @@ enum MigrationStudioPreview
                 throw MigrationContentValues.Failure.invalid("studio_palette_format")
             }
 
-            var mappedViews: [[String: Any]] = [] /* Mapped views */
+            var mappedViews: [[String: Any]] = []       /* Mapped views */
 
             for destination in saved.views.keys.sorted()
             {
@@ -122,12 +121,12 @@ enum MigrationStudioPreview
                     "surface": try surface(saved.views[destination]!, context: context)])
             }
 
-            let payload: [String: Any] = ["views": mappedViews, /* Canonical record payload */
+            let payload: [String: Any] = ["views": mappedViews,         /* Canonical record payload */
                 "default_card_surface": try saved.defaultCardSurface.map { try surface($0, context: context) } as Any? ?? NSNull(),
                 "default_note_surface": try saved.defaultNoteSurface.map { try surface($0, context: context) } as Any? ?? NSNull(),
                 "varies_new_surfaces": saved.variesNewSurfaces, "varies_new_headers": saved.variesNewHeaders,
                 "palette": saved.palette]
-            let id = /* Portable record identity */
+            let id =                                                    /* Portable record identity */
                 try context.id("studio_settings", owner: "workspace_metadata", legacy: "Plenact.Studio.Settings.v1")
 
             studio = ["id": id, "payload": payload]
@@ -135,7 +134,6 @@ enum MigrationStudioPreview
             assetRecords.append(["record_type": "studio_settings_preview", "id": id, "payload": payload])
 
             prepared += 1
-
         }
         if let value = values["Plenact.Studio.Artwork.v1"]
         {
@@ -154,7 +152,7 @@ enum MigrationStudioPreview
                 try MigrationContentGuard.check(savedSurface, type: "StudioSurface")
             }
 
-            let artwork = /* Reusable artwork definition */
+            let artwork =                                                       /* Reusable artwork definition */
                 try JSONDecoder().decode([StudioArtwork].self, from: data)
 
             guard Set(artwork.map(\.id)).count == artwork.count else
@@ -163,7 +161,7 @@ enum MigrationStudioPreview
             }
             for item in artwork
             {
-                let id = /* Portable record identity */
+                let id =        /* Portable record identity */
                     try context.id("studio_artwork", owner: "artwork_library", legacy: item.id.uuidString.lowercased())
 
                 artworkIDs.append(id)
@@ -181,23 +179,22 @@ enum MigrationStudioPreview
                 throw MigrationContentValues.Failure.invalid("studio_week_storage_type")
             }
 
-            let raw = try JSONSerialization.jsonObject(with: data) /* Unprocessed source value */
+            let raw = try JSONSerialization.jsonObject(with: data)      /* Unprocessed source value */
 
             try MigrationContentGuard.check(raw, type: "BoardAppearance")
 
-            let saved = /* Saved state under review */
+            let saved =                                                         /* Saved state under review */
                 try JSONDecoder().decode(BoardAppearance.self, from: data)
 
             // Validate complete surfaces even where the generic appearance mapper preserves strings
             for item in [saved.studioSurface, saved.studioCardSurface].compactMap({ $0 })
             {
                 _ = try surface(item, context: context)
-
             }
 
-            let appearance = /* Resolved appearance choices */
+            let appearance =    /* Resolved appearance choices */
                 try context.appearance(MigrationContentValues.object(saved), kind: "board_appearance")
-            let id         = /* Portable record identity */
+            let id         =    /* Portable record identity    */
                 try context.id("workspace_display_preferences", owner: "legacy_global_week_appearance", legacy: "Plenact.WeekAppearance.v1")
 
             week = ["id": id, "appearance": appearance]
@@ -205,21 +202,20 @@ enum MigrationStudioPreview
             assetRecords.append(["record_type": "week_appearance_preview", "id": id, "payload": appearance])
 
             prepared += 1
-
         }
 
-        let global             = /* Workspace-wide appearance choices */
+        let global             =                                                                /* Workspace-wide appearance choices */
             (week as? [String: Any])?["appearance"] as? [String: Any]
-        let appearanceDocument = /* Appearance document */
+        let appearanceDocument =                                                                /* Appearance document               */
             try MigrationAppearanceModel.prepare(globalWeek: global, artworkIDs: artworkIDs,
-            artworkPresent: values["Plenact.Studio.Artwork.v1"] != nil, context: context)
-        let appearanceRecords = /* Appearance records */
+                artworkPresent: values["Plenact.Studio.Artwork.v1"] != nil, context: context)
+        let appearanceRecords =                                                                 /* Appearance records                */
             [appearanceDocument["workspace_appearance"], appearanceDocument["artwork_library"]]
             .compactMap { $0 as? [String: Any] }
 
         output += context.unavailable.keys.sorted().map { context.unavailable[$0]! }
 
-        let document: [String: Any] = /* Source document snapshot */
+        let document: [String: Any] =                                           /* Source document snapshot */
             ["format": "plenact.ios-studio-preview", "format_version": 2,
             "appearance_model_version": "1.1",
             "target_user_data_model_version": "1.0", "account_binding_pending": true,

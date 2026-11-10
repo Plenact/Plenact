@@ -22,9 +22,9 @@ import UniformTypeIdentifiers
 ///
 struct ActivityRow: View
 {
-    let text:       String     /* The main text content of the activity row */
-    let actorColor: Color      /* The icon color for the activity actor     */
-    let onDelete:   () -> Void /* Activity deletion callback                */
+    let text:       String              /* The main text content of the activity row */
+    let actorColor: Color               /* The icon color for the activity actor     */
+    let onDelete:   () -> Void          /* Activity deletion callback                */
 
 
     ///
@@ -36,8 +36,8 @@ struct ActivityRow: View
     /// @post       Deletion delegates to onDelete rather than removing a stored event directly
     /// @note       Today at 7:00 AM is fixed display copy, not a timestamp from persisted activity
     ///
-    var body: some View /* Activity layout */
-    {  /* Generated activity text and timestamp */
+    var body: some View                         /* Activity layout                       */
+    {                                           /* Generated activity text and timestamp */
         ActivitySwipeRow(onDelete: onDelete)
         {
             HStack(alignment: .top, spacing: 10)
@@ -54,13 +54,9 @@ struct ActivityRow: View
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -72,9 +68,9 @@ struct ActivityRow: View
 ///
 struct CommentActivityRow: View
 {
-    let comment:     KanbanComment /* The comment data rendered by the row           */
-    let memberColor: Color         /* The assigned icon color for the comment author */
-    let onDelete:    () -> Void    /* The action invoked when the comment is deleted */
+    let comment:     KanbanComment      /* The comment data rendered by the row           */
+    let memberColor: Color              /* The assigned icon color for the comment author */
+    let onDelete:    () -> Void         /* The action invoked when the comment is deleted */
 
     ///
     /// @fcn        CommentActivityRow.body
@@ -85,8 +81,8 @@ struct CommentActivityRow: View
     /// @return     (some View) deletable comment activity row
     /// @post       Rendering does not modify the comment; deletion delegates to onDelete
     ///
-    var body: some View /* Comment Activity layout */
-    {  /* Posted comment and authoring time */
+    var body: some View                         /* Comment Activity layout           */
+    {                                           /* Posted comment and authoring time */
         ActivitySwipeRow(onDelete: onDelete)
         {
             HStack(alignment: .top, spacing: 10)
@@ -103,13 +99,9 @@ struct CommentActivityRow: View
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
-
             }
-
         }
-
     }
-
 }
 
 
@@ -124,10 +116,10 @@ struct CommentActivityRow: View
 ///
 struct ActivitySwipeRow<Content: View>: View
 {
-    let onDelete:                        () -> Void     /* The action invoked when the row is deleted     */
-    let deletionAccessibilityLabel:      String         /* Accessibility label for the swipe action       */
-    @ViewBuilder let content:            () -> Content  /* The content view rendered inside the swipe row */
-    @State private var horizontalOffset: CGFloat = 0    /* The current horizontal offset of the swipe row */
+    let onDelete:                        () -> Void             /* The action invoked when the row is deleted     */
+    let deletionAccessibilityLabel:      String                 /* Accessibility label for the swipe action       */
+    @ViewBuilder let content:            () -> Content          /* The content view rendered inside the swipe row */
+    @State private var horizontalOffset: CGFloat = 0            /* The current horizontal offset of the swipe row */
 
 
     ///
@@ -151,7 +143,6 @@ struct ActivitySwipeRow<Content: View>: View
         self.onDelete = onDelete
         self.deletionAccessibilityLabel = deletionAccessibilityLabel
         self.content = content
-
     }
 
 
@@ -165,8 +156,8 @@ struct ActivitySwipeRow<Content: View>: View
     /// @post       Deletion invokes onDelete without a separate confirmation dialog;
     ///             smaller horizontal releases animate closed or open according to the threshold
     ///
-    var body: some View /* Activity Swipe layout */
-    {  /* Swipe-to-delete activity container */
+    var body: some View                 /* Activity Swipe layout              */
+    {                                   /* Swipe-to-delete activity container */
         ZStack(alignment: .trailing)
         {
             Button(role: .destructive, action: onDelete)
@@ -199,7 +190,6 @@ struct ActivitySwipeRow<Content: View>: View
                     }
 
                     horizontalOffset = min(0, max(-72, value.translation.width))
-
                 }
 
                 .onEnded
@@ -219,18 +209,14 @@ struct ActivitySwipeRow<Content: View>: View
                         else
                         {
                             horizontalOffset = value.translation.width < -36 ? -72 : 0
-
                         }
-
                     }
-
                 }
             )
         }
 
         .clipped()
     }
-
 }
 
 
@@ -243,12 +229,12 @@ struct ActivitySwipeRow<Content: View>: View
 ///
 struct ItemReactionStrip: View
 {
-    let reactions:      [ItemEmojiReaction] /* Stored item reactions  */
-    let authorID:       UUID?               /* Author ID              */
-    let onToggle:       (String) -> Void    /* Toggle item completion */
-    let onAdd:          () -> Void          /* Add callback           */
+    let reactions:      [ItemEmojiReaction]     /* Stored item reactions  */
+    let authorID:       UUID?                   /* Author ID              */
+    let onToggle:       (String) -> Void        /* Toggle item completion */
+    let onAdd:          () -> Void              /* Add callback           */
 
-    private var emojis: [String] /* Available emoji choices */
+    private var emojis: [String]        /* Available emoji choices */
     {
         reactions.reduce(into: [])
         {
@@ -256,12 +242,10 @@ struct ItemReactionStrip: View
             {
                 $0.append($1.emoji)
             }
-
         }
-
     }
 
-    var body: some View /* Item Reaction Strip layout */
+    var body: some View         /* Item Reaction Strip layout */
     {
         ScrollView(.horizontal)
         {
@@ -271,12 +255,12 @@ struct ItemReactionStrip: View
                 {
                     emoji in
 
-                    let matching = reactions.filter /* Values matching the query */
+                    let matching = reactions.filter     /* Values matching the query */
                     {
                         $0.emoji == emoji
                     }
 
-                    let mine = matching.contains /* Mine operation value */
+                    let mine = matching.contains        /* Mine operation value */
                     {
                         $0.authorID == authorID
                     }
@@ -294,7 +278,6 @@ struct ItemReactionStrip: View
                             {
                                 Text("\(matching.count)").font(.caption)
                             }
-
                         }
                         .padding(.horizontal, 10).frame(minHeight: 44)
                         .background(
@@ -312,12 +295,10 @@ struct ItemReactionStrip: View
                 .buttonStyle(.plain).foregroundStyle(.tint)
                 .accessibilityIdentifier("item.addReaction")
             }
-
         }
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
-
 }
 
 
@@ -330,11 +311,11 @@ struct ItemReactionStrip: View
 ///
 struct ItemReactionPicker: View
 {
-    let selected: Set<String>                   /* Current selection              */
-    let onChoose: (String) -> Void              /* Choose callback                */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @State private var custom = ""              /* User-defined configuration     */
-    private let choices       = [               /* Available user selections      */
+    let selected: Set<String>                           /* Current selection              */
+    let onChoose: (String) -> Void                      /* Choose callback                */
+    @Environment(\.dismiss) private var dismiss         /* Close the current presentation */
+    @State private var custom = ""                      /* User-defined configuration     */
+    private let choices       = [                       /* Available user selections      */
             "❤️", "👍", "🎉", "😊", "✨", "💪", "🔥", "🙌", "🤔", "🙏", "👏", "😂", "😍", "🥰", "🌱", "☀️", "😅", "😮", "😔", "💡", "🎯", "🫶",
             "😎", "✅"
     ]
@@ -356,7 +337,7 @@ struct ItemReactionPicker: View
         dismiss()
     }
 
-    var body: some View /* Item Reaction Picker layout */
+    var body: some View         /* Item Reaction Picker layout */
     {
         NavigationStack
         {
@@ -384,14 +365,12 @@ struct ItemReactionPicker: View
                             .accessibilityLabel(emoji)
                             .accessibilityHint(selected.contains(emoji) ? "Remove your reaction" : "Add your reaction")
                         }
-
                     }
-
                 }
                 footer:
                 {
                     Text(
-                                                            "Choose what feels right. Tap one of your reactions again to remove it. Reactions do not change importance, bookmarks, or completion."
+                        "Choose what feels right. Tap one of your reactions again to remove it. Reactions do not change importance, bookmarks, or completion."
                     )
                 }
 
@@ -405,11 +384,9 @@ struct ItemReactionPicker: View
                         {
                             choose(emoji)
                         }
-
                     }
                     .disabled(ItemEmojiReaction.validatedEmoji(custom) == nil)
                 }
-
             }
             .navigationTitle("Add reaction").navigationBarTitleDisplayMode(.inline)
             .toolbar
@@ -420,15 +397,11 @@ struct ItemReactionPicker: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
-
         }
         .presentationDetents([.medium, .large])
     }
-
 }
 
 
@@ -441,9 +414,9 @@ struct ItemReactionPicker: View
 ///
 struct ItemReactionPreview: View
 {
-    let card:           KanbanCard /* Card under consideration */
+    let card:           KanbanCard      /* Card under consideration */
 
-    private var emojis: [String] /* Available emoji choices */
+    private var emojis: [String]        /* Available emoji choices */
     {
         card.previewReactions.reduce(into: [])
         {
@@ -451,12 +424,10 @@ struct ItemReactionPreview: View
             {
                 $0.append($1.emoji)
             }
-
         }
-
     }
 
-    var body: some View /* Item Reaction Preview layout */
+    var body: some View         /* Item Reaction Preview layout */
     {
         if !emojis.isEmpty
         {
@@ -468,14 +439,13 @@ struct ItemReactionPreview: View
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(
-                                    "Reactions: "
-                                    + emojis.map
-                                    {
-                                        emoji in
-                                                                            "\(emoji), \(card.previewReactions.filter { $0.emoji == emoji } .count)"
-                                    } .joined(separator: ", "))
+                "Reactions: "
+                + emojis.map
+                {
+                    emoji in
+                                                        "\(emoji), \(card.previewReactions.filter { $0.emoji == emoji } .count)"
+                } .joined(separator: ", "))
         }
-
     }
 
 
@@ -501,7 +471,7 @@ struct ItemReactionPreview: View
                 {
                     Text(emoji)
 
-                    let count = card.previewReactions.filter /* Number of entries */
+                    let count = card.previewReactions.filter    /* Number of entries */
                     {
                         $0.emoji == emoji
                     } .count
@@ -510,17 +480,13 @@ struct ItemReactionPreview: View
                     {
                         Text("\(count)").font(.caption2).foregroundStyle(.secondary)
                     }
-
                 }
-
             }
 
             if remaining > 0
             {
                 Text("+\(remaining)").font(.caption).foregroundStyle(.secondary)
             }
-
         } .font(.subheadline).fixedSize()
     }
-
 }

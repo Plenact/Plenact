@@ -19,15 +19,15 @@ import UniformTypeIdentifiers
 ///
 struct InlineBoardListTitle: View
 {
-    let list:                 KanbanList /* List under consideration */
-    let onSave:               (String) -> Bool /* Persist the edited value */
-    let onFinish:             () -> Void /* Finish callback */
-    @State private var title: String /* User-facing title */
-    @State private var focused                                            = /* Current focus selection */
+    let list:                 KanbanList                                                /* List under consideration   */
+    let onSave:               (String) -> Bool                                          /* Persist the edited value   */
+    let onFinish:             () -> Void                                                /* Finish callback            */
+    @State private var title: String                                                    /* User-facing title          */
+    @State private var focused                                            =             /* Current focus selection    */
         false
-    @State private var finished                                           = /* Operation completion state */
+    @State private var finished                                           =             /* Operation completion state */
         false
-    @ScaledMetric(relativeTo: .headline) private var titleHeight: CGFloat = 36 /* Title height */
+    @ScaledMetric(relativeTo: .headline) private var titleHeight: CGFloat = 36          /* Title height               */
 
 
     ///
@@ -47,11 +47,10 @@ struct InlineBoardListTitle: View
         self.onSave = onSave
         self.onFinish = onFinish
         _title = State(initialValue: list.title)
-
     }
 
 
-    var body: some View /* Inline Board List Title layout */
+    var body: some View         /* Inline Board List Title layout */
     {
         ListTitleField(
             text: $title, focused: $focused, selectsInitialTitle: true,
@@ -61,7 +60,6 @@ struct InlineBoardListTitle: View
         .task
         {
             focused = true
-
         }
         .onChange(of: focused)
         {
@@ -70,13 +68,11 @@ struct InlineBoardListTitle: View
             {
                 finish()
             }
-
         }
         .onDisappear
         {
             finish()
         }
-
     }
 
 
@@ -95,7 +91,7 @@ struct InlineBoardListTitle: View
             return
         }
 
-        let trimmed = /* Trimmed operation value */
+        let trimmed =                                                   /* Trimmed operation value */
             title.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard onSave(trimmed.isEmpty ? list.title : trimmed) else
@@ -110,7 +106,6 @@ struct InlineBoardListTitle: View
 
         onFinish()
     }
-
 }
 
 
@@ -123,13 +118,13 @@ struct InlineBoardListTitle: View
 ///
 struct ListTitleField: UIViewRepresentable
 {
-    @Binding var text:       String                                 /* Text being processed    */
-    @Binding var focused:    Bool                                   /* Current focus selection */
-    let selectsInitialTitle: Bool                                   /* Selects initial title   */
-    var returnKeyType:       UIReturnKeyType  = .next               /* Return key type         */
-    var textStyle:           UIFont.TextStyle = .body               /* Text style              */
-    var identifier                            = "list-editor-title" /* Record identity value   */
-    let onNext: () -> Void                                          /* Next callback           */
+    @Binding var text:       String                                     /* Text being processed    */
+    @Binding var focused:    Bool                                       /* Current focus selection */
+    let selectsInitialTitle: Bool                                       /* Selects initial title   */
+    var returnKeyType:       UIReturnKeyType  = .next                   /* Return key type         */
+    var textStyle:           UIFont.TextStyle = .body                   /* Text style              */
+    var identifier                            = "list-editor-title"     /* Record identity value   */
+    let onNext: () -> Void                                              /* Next callback           */
 
 
     ///
@@ -157,7 +152,7 @@ struct ListTitleField: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> UITextField
     {
-        let field = UITextField() /* Native input field */
+        let field = UITextField()       /* Native input field */
 
         field.placeholder = "List title"
         field.font = .preferredFont(forTextStyle: textStyle)
@@ -197,10 +192,9 @@ struct ListTitleField: UIViewRepresentable
         if field.text != text
         {
             field.text = text
-
         }
 
-        let coordinator = context.coordinator /* Native view lifecycle bridge */
+        let coordinator = context.coordinator           /* Native view lifecycle bridge */
 
         DispatchQueue.main.async
         {
@@ -218,9 +212,7 @@ struct ListTitleField: UIViewRepresentable
             {
                 field.resignFirstResponder()
             }
-
         }
-
     }
 
 
@@ -233,8 +225,8 @@ struct ListTitleField: UIViewRepresentable
     ///
     final class Coordinator: NSObject, UITextFieldDelegate
     {
-        var parent: ListTitleField               /* Latest representable bindings */
-        private var selectedInitialTitle = false /* Selected initial title        */
+        var parent: ListTitleField                      /* Latest representable bindings */
+        private var selectedInitialTitle = false        /* Selected initial title        */
 
 
         ///
@@ -249,7 +241,6 @@ struct ListTitleField: UIViewRepresentable
         init(_ parent: ListTitleField)
         {
             self.parent = parent
-
         }
 
 
@@ -265,7 +256,6 @@ struct ListTitleField: UIViewRepresentable
         @objc func changed(_ field: UITextField)
         {
             parent.text = field.text ?? ""
-
         }
 
 
@@ -284,7 +274,6 @@ struct ListTitleField: UIViewRepresentable
             if !parent.focused
             {
                 parent.focused = true
-
             }
 
             guard parent.selectsInitialTitle, !selectedInitialTitle else
@@ -303,9 +292,7 @@ struct ListTitleField: UIViewRepresentable
                 }
 
                 field.selectedTextRange = field.textRange(from: field.beginningOfDocument, to: field.endOfDocument)
-
             }
-
         }
 
 
@@ -323,9 +310,7 @@ struct ListTitleField: UIViewRepresentable
             if parent.focused
             {
                 parent.focused = false
-
             }
-
         }
 
 
@@ -344,9 +329,7 @@ struct ListTitleField: UIViewRepresentable
             parent.onNext()
             return false
         }
-
     }
-
 }
 
 
@@ -359,14 +342,14 @@ struct ListTitleField: UIViewRepresentable
 ///
 struct ListInfoEditorSheet: View
 {
-    let onSave:                       (String, String, ItemPresentation) -> Bool /* Persist the edited value */
-    private let focusesTitleOnAppear: Bool /* Focuses title on appear */
-    @State private var titleFocused = false /* Title focused */
-    @FocusState private var subtitleFocused: Bool /* Subtitle focused */
-    @State private var defaultPresentation:  ItemPresentation /* Default presentation */
-    @Environment(\.dismiss) private var dismiss /* Close the current presentation */
-    @State private var title:    String /* User-facing title */
-    @State private var subtitle: String /* Supporting item text */
+    let onSave:                       (String, String, ItemPresentation) -> Bool        /* Persist the edited value       */
+    private let focusesTitleOnAppear: Bool                                              /* Focuses title on appear        */
+    @State private var titleFocused = false                                             /* Title focused                  */
+    @FocusState private var subtitleFocused: Bool                                       /* Subtitle focused               */
+    @State private var defaultPresentation:  ItemPresentation                           /* Default presentation           */
+    @Environment(\.dismiss) private var dismiss                                         /* Close the current presentation */
+    @State private var title:    String                                                 /* User-facing title              */
+    @State private var subtitle: String                                                 /* Supporting item text           */
 
 
     ///
@@ -388,7 +371,6 @@ struct ListInfoEditorSheet: View
             title, subtitle, _ in
             onSave(title, subtitle)
         }
-
     }
 
 
@@ -414,11 +396,10 @@ struct ListInfoEditorSheet: View
         self.onSave = onSave
         _title = State(initialValue: list.title)
         _subtitle = State(initialValue: list.subtitle)
-
     }
 
 
-    var body: some View /* List Info Editor layout */
+    var body: some View         /* List Info Editor layout */
     {
         NavigationStack
         {
@@ -433,7 +414,6 @@ struct ListInfoEditorSheet: View
                         {
                             titleFocused = false;
                             subtitleFocused = true
-
                         })
                 }
 
@@ -451,7 +431,7 @@ struct ListInfoEditorSheet: View
                 footer:
                 {
                     Text(
-                                                            "Leave empty to hide the subtitle. Renaming a weekday list makes it an ordinary list; Today creates a new weekday list when needed."
+                        "Leave empty to hide the subtitle. Renaming a weekday list makes it an ordinary list; Today creates a new weekday list when needed."
                     )
                 }
 
@@ -464,23 +444,19 @@ struct ListInfoEditorSheet: View
                             format in
                             Text(format.title).tag(format)
                         }
-
                     }
                     .accessibilityIdentifier("list-editor-default")
                     Text("Applies only to new items. Existing items keep their display format.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
-
             }
             .task
             {
                 if focusesTitleOnAppear
                 {
                     titleFocused = true
-
                 }
-
             }
             .onChange(of: titleFocused)
             {
@@ -488,9 +464,7 @@ struct ListInfoEditorSheet: View
                 if focused
                 {
                     subtitleFocused = false
-
                 }
-
             }
             .onChange(of: subtitleFocused)
             {
@@ -498,9 +472,7 @@ struct ListInfoEditorSheet: View
                 if focused
                 {
                     titleFocused = false
-
                 }
-
             }
             .navigationTitle("Edit list")
             .navigationBarTitleDisplayMode(.inline)
@@ -512,7 +484,6 @@ struct ListInfoEditorSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -525,15 +496,10 @@ struct ListInfoEditorSheet: View
                         {
                             dismiss()
                         }
-
                     }
                     .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-
             }
-
         }
-
     }
-
 }

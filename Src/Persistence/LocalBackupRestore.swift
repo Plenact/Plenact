@@ -13,14 +13,13 @@ import SwiftUI
 ///     Separate selecting/validating files from any destination mutation
 struct ReviewedLocalBackup
 {
-    let files:      FileWrapper    /* Private immutable snapshot, independent of file-provider changes */
-    let values:     [String: Any]  /* Exact source persistent-domain values                            */
-    let storeCount: Int            /* Reviewed saved source stores                                    */
-    let listCount:  Int            /* Lists in the active Board                                       */
-    let cardCount:  Int            /* Active Cards in the active Board                                */
-    let mediaCount: Int            /* Verified original files                                         */
-    let journal:    Data?          /* Verified retained migration identity evidence                    */
-
+    let files:      FileWrapper         /* Private immutable snapshot, independent of file-provider changes */
+    let values:     [String: Any]       /* Exact source persistent-domain values                            */
+    let storeCount: Int                 /* Reviewed saved source stores                                     */
+    let listCount:  Int                 /* Lists in the active Board                                        */
+    let cardCount:  Int                 /* Active Cards in the active Board                                 */
+    let mediaCount: Int                 /* Verified original files                                          */
+    let journal:    Data?               /* Verified retained migration identity evidence                    */
 }
 
 
@@ -40,7 +39,7 @@ enum LocalBackupRestore
         /// @fcn Failure.errorDescription
         /// @brief Explain the failed review without exposing private source values
         /// @return Actionable local-only feedback
-        var errorDescription: String? /* Readable failure explanation */
+        var errorDescription: String?           /* Readable failure explanation */
         {
             switch self
             {
@@ -68,19 +67,18 @@ enum LocalBackupRestore
             throw Failure.unsafe
         }
 
-        let manager    = FileManager.default /* Filesystem or media manager */
-        let attributes =                     /* Attributed-text settings    */
+        let manager    = FileManager.default                            /* Filesystem or media manager */
+        let attributes =                                                /* Attributed-text settings    */
             try manager.attributesOfItem(atPath: url.path)
-        let kind       = attributes[.type] as? FileAttributeType /* Content kind discriminator */
+        let kind       = attributes[.type] as? FileAttributeType        /* Content kind discriminator  */
 
         if kind == .typeDirectory
         {
-            var children: [String: FileWrapper] = [:] /* Nested view or record values */
+            var children: [String: FileWrapper] = [:]           /* Nested view or record values */
 
             for child in try manager.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
             {
                 children[child.lastPathComponent] = try readTree(child, remaining: &remaining, depth: depth + 1)
-
             }
             return FileWrapper(directoryWithFileWrappers: children)
         }
@@ -94,7 +92,7 @@ enum LocalBackupRestore
             throw Failure.tooLarge
         }
 
-        let data = try Data(contentsOf: url) /* Loaded original file bytes */
+        let data = try Data(contentsOf: url)    /* Loaded original file bytes */
 
         guard data.count <= remaining else
         {
@@ -124,7 +122,7 @@ enum LocalBackupRestore
             throw Failure.unsafe
         }
 
-        var result: Set<String> = [] /* Accumulated output value */
+        var result: Set<String> = []    /* Accumulated output value */
 
         for (name, child) in wrapper.fileWrappers ?? [:]
         {
@@ -143,8 +141,8 @@ enum LocalBackupRestore
     /// @throws Integrity, native decoding or reconciliation errors
     static func review(at url: URL) throws -> ReviewedLocalBackup
     {
-        var remaining = LegacyWorkspaceExport.maximumBytes       /* Entries still to process     */
-        let files     = try readTree(url, remaining: &remaining) /* Files used by this operation */
+        var remaining = LegacyWorkspaceExport.maximumBytes              /* Entries still to process     */
+        let files     = try readTree(url, remaining: &remaining)        /* Files used by this operation */
 
         guard files.isDirectory,
               let report = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("NativePreflight.json", in: files)) as? [String: Any],
@@ -154,20 +152,19 @@ enum LocalBackupRestore
             throw Failure.reviewRequired
         }
 
-        let backup                   = /* Recoverable native snapshot */
+        let backup                   =                          /* Recoverable native snapshot */
             LegacyWorkspaceBackup(files: files, storeCount: stores, mediaCount: media, reviewCodes: issues)
-        let values                   = /* Values being processed */
+        let values                   =                          /* Values being processed      */
             try MigrationBackupReader.values(in: backup)
-        var actualMedia: Set<String> = [] /* Actual media */
+        var actualMedia: Set<String> = []                       /* Actual media                */
 
         for area in LegacyWorkspaceExport.mediaRoots
         {
-            var entry: FileWrapper? = files /* Entry being processed */
+            var entry: FileWrapper? = files     /* Entry being processed */
 
             for part in area.split(separator: "/")
             {
                 entry = entry?.fileWrappers?[String(part)]
-
             }
             if let entry
             {
@@ -195,11 +192,11 @@ enum LocalBackupRestore
             throw Failure.invalid
         }
 
-        let board    = /* Board state under review */
+        let board    =                                                                  /* Board state under review   */
             try JSONDecoder().decode([KanbanList].self, from: boardData)
-        let calendar = /* Date calculation calendar */
+        let calendar =                                                                  /* Date calculation calendar  */
             try JSONDecoder().decode(PlanningCalendarDocument.self, from: calendarData)
-        let current  = /* Current operation snapshot */
+        let current  =                                                                  /* Current operation snapshot */
             calendar.weeks.filter { $0.startKey == calendar.currentWeekKey }
 
         guard calendar.version == 1, (1...7).contains(calendar.firstWeekday),
@@ -210,19 +207,18 @@ enum LocalBackupRestore
             throw Failure.projectionMismatch
         }
 
-        var journal: Data? /* Migration identity journal */
+        var journal: Data?      /* Migration identity journal */
 
         if files.fileWrappers?["Migration"] != nil
         {
             journal = try MigrationBackupReader.file("Migration/IdentityJournal.json", in: files)
             _ = try MigrationIdentityJournal.decode(journal!)
-
         }
         if files.fileWrappers?["MigrationPreview"] != nil
         {
-            let data      = /* Encoded or loaded bytes */
+            let data      =                                                                             /* Encoded or loaded bytes    */
                 try MigrationBackupReader.file("MigrationPreview/IdentityJournal.json", in: files)
-            let candidate = /* Candidate under validation */
+            let candidate =                                                                             /* Candidate under validation */
                 try MigrationIdentityJournal.decode(data)
 
             guard let preview = try JSONSerialization.jsonObject(with: MigrationBackupReader.file("MigrationPreview/Report.json", in: files)) as? [String: Any],
@@ -235,9 +231,9 @@ enum LocalBackupRestore
             }
             if let journal
             {
-                let original = /* Baseline before changes */
+                let original =                                          /* Baseline before changes          */
                     try MigrationIdentityJournal.decode(journal)
-                let mapped   = /* Value after identity translation */
+                let mapped   =                                          /* Value after identity translation */
                     Dictionary(uniqueKeysWithValues: candidate.entries.map { ($0.source, $0.target) })
 
                 guard original.sourceInstallationID == candidate.sourceInstallationID,
@@ -249,7 +245,6 @@ enum LocalBackupRestore
             }
 
             journal = data
-
         }
         return ReviewedLocalBackup(files: files, values: values, storeCount: stores, listCount: board.count,
             cardCount: board.reduce(0) { $0 + $1.cards.count }, mediaCount: media, journal: journal)
@@ -281,23 +276,22 @@ enum LocalBackupRestore
     {
         #if targetEnvironment(simulator)
 
-        let manager = FileManager.default /* Filesystem or media manager */
+        let manager = FileManager.default       /* Filesystem or media manager */
 
         for area in LegacyWorkspaceExport.mediaRoots
         {
-            let target = root.appendingPathComponent(area) /* Target under consideration */
+            let target = root.appendingPathComponent(area)      /* Target under consideration */
 
             if manager.fileExists(atPath: target.path)
             {
                 try manager.removeItem(at: target)
             }
 
-            var source: FileWrapper? = backup.files /* Source value for this operation */
+            var source: FileWrapper? = backup.files     /* Source value for this operation */
 
             for part in area.split(separator: "/")
             {
                 source = source?.fileWrappers?[String(part)]
-
             }
             if let source
             {
@@ -310,7 +304,7 @@ enum LocalBackupRestore
             }
         }
 
-        let migration = /* Prepared migration evidence */
+        let migration =                                                                 /* Prepared migration evidence */
             root.appendingPathComponent("Library/Application Support/PlenactMigration")
 
         if manager.fileExists(atPath: migration.path)
@@ -335,7 +329,7 @@ enum LocalBackupRestore
                 throw Failure.invalid
             }
 
-            let installed = /* Installed workspace state */
+            let installed =                                             /* Installed workspace state */
                 try Data(contentsOf: root.appendingPathComponent(path))
 
             guard MigrationBackupReader.digest(installed) == entry["sha256"] as? String else
@@ -351,9 +345,9 @@ enum LocalBackupRestore
             }
         }
 
-        let portable = /* Canonical portable representation */
+        let portable =                                                                          /* Canonical portable representation */
             try PortableRuntimeEvidence.backupFiles(report: sourceReport, files: backup.files)
-        let runtime  = /* Retained import evidence */
+        let runtime  =                                                                          /* Retained import evidence          */
             root.appendingPathComponent(PortableRuntimeEvidence.area)
 
         if manager.fileExists(atPath: runtime.path)
@@ -373,7 +367,7 @@ enum LocalBackupRestore
             }
         }
 
-        var destination = /* Destination for the operation */
+        var destination =       /* Destination for the operation */
             (defaults.persistentDomain(forName: domain) ?? [:]).filter { !LegacyStoreValidation.includes($0.key) }
 
         destination.merge(backup.values) { _, imported in imported }
@@ -394,9 +388,8 @@ enum LocalBackupRestore
 ///     Prevent a Settings sheet from installing data while old editors can still autosave
 struct LocalBackupRestoreAccess
 {
-    let restore: (ReviewedLocalBackup) -> Void /* Confirmed restore request                     */
-    let undo:    () -> Void                    /* Explicit recovery of the pre-import workspace */
-
+    let restore: (ReviewedLocalBackup) -> Void          /* Confirmed restore request                     */
+    let undo:    () -> Void                             /* Explicit recovery of the pre-import workspace */
 }
 
 
@@ -405,8 +398,7 @@ struct LocalBackupRestoreAccess
 ///     Make standalone previews inert rather than mutating storage
 private struct LocalBackupRestoreKey: EnvironmentKey
 {
-    static let defaultValue: LocalBackupRestoreAccess? = nil /* Fallback environment value */
-
+    static let defaultValue: LocalBackupRestoreAccess? = nil    /* Fallback environment value */
 }
 
 
@@ -415,12 +407,11 @@ extension EnvironmentValues
     /// @fcn EnvironmentValues.localBackupRestore
     /// @brief Expose the root-owned explicit restore boundary
     /// @return Optional installed restore callbacks
-    var localBackupRestore: LocalBackupRestoreAccess? /* Local backup restore */
+    var localBackupRestore: LocalBackupRestoreAccess?           /* Local backup restore */
     {
         get { self[LocalBackupRestoreKey.self] }
         set {
             self[LocalBackupRestoreKey.self] = newValue
-
         }
     }
 }

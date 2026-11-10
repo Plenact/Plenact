@@ -16,13 +16,12 @@ import Foundation
 ///
 struct ExampleLoadUndoSnapshot: Codable, Equatable
 {
-    let lists:            [KanbanList]             /* Board lists to restore                   */
-    let todayListID:      Int?                     /* Previously selected Today list, when set */
-    var week:             DatedPlanningWeek? = nil /* Dated Week under consideration           */
-    var savedCardIDs:     Set<Int>?          = nil /* Saved card i ds                          */
-    var importantCardIDs: Set<Int>?          = nil /* Important card i ds                      */
-    var importanceLevels: [Int: Int]?        = nil /* Importance levels                        */
-
+    let lists:            [KanbanList]                  /* Board lists to restore                   */
+    let todayListID:      Int?                          /* Previously selected Today list, when set */
+    var week:             DatedPlanningWeek? = nil      /* Dated Week under consideration           */
+    var savedCardIDs:     Set<Int>?          = nil      /* Saved card i ds                          */
+    var importantCardIDs: Set<Int>?          = nil      /* Important card i ds                      */
+    var importanceLevels: [Int: Int]?        = nil      /* Importance levels                        */
 }
 
 
@@ -35,7 +34,7 @@ struct ExampleLoadUndoSnapshot: Codable, Equatable
 enum ExampleLoadUndoStore
 {
     /// Versioned storage key for the saved undo snapshot
-    private static let storageKey = "Plenact.ExampleLoadUndo.v1" /* Versioned example-load recovery key */
+    private static let storageKey = "Plenact.ExampleLoadUndo.v1"        /* Versioned example-load recovery key */
 
 
     ///
@@ -68,13 +67,13 @@ enum ExampleLoadUndoStore
         to defaults: UserDefaults = .standard
     ) -> Bool
     {
-        let snapshot = ExampleLoadUndoSnapshot( /* Working state snapshot */
+        let snapshot = ExampleLoadUndoSnapshot(         /* Working state snapshot */
             lists: lists, todayListID: todayListID,
             week: week, savedCardIDs: savedCardIDs, importantCardIDs: importantCardIDs,
-            importanceLevels: importanceLevels) /* Week state and Today selection retained for undo */
+            importanceLevels: importanceLevels)                                         /* Week state and Today selection retained for undo */
 
         guard let data = try? JSONEncoder().encode(snapshot) else
-        {  /* Encoded recovery snapshot ready for storage */
+        {                                                               /* Encoded recovery snapshot ready for storage */
             return false
         }
 
@@ -99,7 +98,7 @@ enum ExampleLoadUndoStore
     static func load(from defaults: UserDefaults = .standard) -> ExampleLoadUndoSnapshot?
     {
         guard let data = defaults.data(forKey: storageKey) else
-        {  /* Stored example-load recovery document */
+        {                                                       /* Stored example-load recovery document */
             return nil
         }
 
@@ -121,5 +120,4 @@ enum ExampleLoadUndoStore
     {
         defaults.removeObject(forKey: storageKey)
     }
-
 }

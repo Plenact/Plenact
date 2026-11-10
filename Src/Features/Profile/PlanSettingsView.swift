@@ -16,24 +16,24 @@ import SwiftUI
 ///
 struct PlanSettingsView: View
 {
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
-    @State private var preferences                     =      /* Planning and display choices   */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation  */
+    @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations     */
+    @State private var preferences                     =                /* Planning and display choices    */
         PlanPreferencesStore.load()
-    @State private var firstWeekday                    = 1 /* Calendar week boundary */
-    @State private var loaded                          = false /* Initial load completed      */
-    @State private var showsTemplates                  = false /* Templates visibility */
-    @State private var opensLibraryAfterTemplates      = false /* Deferred Template Library route */
-    @State private var confirmsTemplateNavigation      = false /* Unsaved-settings prompt flag */
-    @State private var showsShortcuts                  = false /* Shortcuts visibility */
-    @State private var showsReviewRhythmSettings       = /* Reminder editor visibility        */
+    @State private var firstWeekday                    = 1              /* Calendar week boundary          */
+    @State private var loaded                          = false          /* Initial load completed          */
+    @State private var showsTemplates                  = false          /* Templates visibility            */
+    @State private var opensLibraryAfterTemplates      = false          /* Deferred Template Library route */
+    @State private var confirmsTemplateNavigation      = false          /* Unsaved-settings prompt flag    */
+    @State private var showsShortcuts                  = false          /* Shortcuts visibility            */
+    @State private var showsReviewRhythmSettings       =                /* Reminder editor visibility      */
         false
-    @State private var showsStudio                     = false  /* Studio visibility              */
-    @State private var path: [PlanSettingsPage]        = []     /* Settings navigation stack      */
-    @AppStorage(TodayListPins.key) private var pinData = Data() /* Saved shortcut selections      */
-    let lists:         [KanbanList]                             /* Ordered List records           */
-    let onSaveProfile: (LocalProfile) -> Void                   /* Persist local profile edits    */
-    var onOpenTemplateLibrary: (() -> Void)? = nil              /* Open template library callback */
+    @State private var showsStudio                     = false          /* Studio visibility               */
+    @State private var path: [PlanSettingsPage]        = []             /* Settings navigation stack       */
+    @AppStorage(TodayListPins.key) private var pinData = Data()         /* Saved shortcut selections       */
+    let lists:         [KanbanList]                                     /* Ordered List records            */
+    let onSaveProfile: (LocalProfile) -> Void                           /* Persist local profile edits     */
+    var onOpenTemplateLibrary: (() -> Void)? = nil                      /* Open template library callback  */
 
 
     /// @fcn PlanSettingsView.savePreferences
@@ -67,7 +67,7 @@ struct PlanSettingsView: View
     }
 
 
-    var body: some View /* Settings directory and sheets */
+    var body: some View         /* Settings directory and sheets */
     {
         NavigationStack(path: $path)
         {
@@ -83,7 +83,6 @@ struct PlanSettingsView: View
                             Button
                             {
                                 showsReviewRhythmSettings = true
-
                             }
                             label:
                             {
@@ -113,14 +112,11 @@ struct PlanSettingsView: View
                     lists: lists, onSave: commitAndDismiss,
                     onStudio: {
                         showsStudio = true
-
                     }, onTemplates: {
                         showsTemplates = true
-
                     },
                     onShortcuts: {
                         showsShortcuts = true
-
                     })
             }
             .modifier(StudioFormWallpaper(destination: .settings))
@@ -137,7 +133,6 @@ struct PlanSettingsView: View
                             dismiss()
                         }
                     }
-
                 }
 
                 ToolbarItem(placement: .confirmationAction)
@@ -147,7 +142,6 @@ struct PlanSettingsView: View
                         Button("Save", action: commitAndDismiss)
                     }
                 }
-
             }
             .onAppear
             {
@@ -158,7 +152,6 @@ struct PlanSettingsView: View
 
                 firstWeekday = access?.document.firstWeekday ?? Calendar.current.firstWeekday
                 loaded = true
-
             }
         }
         .sheet(isPresented: $showsStudio)
@@ -181,13 +174,12 @@ struct PlanSettingsView: View
 
             opensLibraryAfterTemplates = false
 
-            let savedFirstWeekday = /* Saved first weekday */
+            let savedFirstWeekday =                                             /* Saved first weekday */
                 access?.document.firstWeekday ?? Calendar.current.firstWeekday
 
             if preferences != PlanPreferencesStore.load() || firstWeekday != savedFirstWeekday
             {
                 confirmsTemplateNavigation = true
-
             }
             else
             {
@@ -199,7 +191,6 @@ struct PlanSettingsView: View
             {
                 opensLibraryAfterTemplates = true
                 showsTemplates = false
-
             })
         }
         .confirmationDialog("Save settings before opening Templates?", isPresented: $confirmsTemplateNavigation,
@@ -228,14 +219,11 @@ struct PlanSettingsView: View
             )
             {
                 pinData = TodayListPins.encode($0)
-
             }
-
         }
         .databaseActivityOverlay()
         .presentationDetents([.large])
     }
-
 }
 
 

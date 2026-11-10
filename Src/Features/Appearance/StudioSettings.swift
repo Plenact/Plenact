@@ -12,14 +12,14 @@ import SwiftUI
 ///     Makes personalization discoverable from Plan Settings while preserving all existing defaults
 struct StudioSettingsView: View
 {
-    @State private var draft   = StudioSettings.load() /* Local editing draft   */
-    @State private var palette =                       /* Artwork color palette */
+    @State private var draft   = StudioSettings.load()          /* Local editing draft   */
+    @State private var palette =                                /* Artwork color palette */
         StudioSettings.load().palette.joined(separator: ", ")
-    @State private var showsLibrary = false                   /* Library visibility             */
+    @State private var showsLibrary = false                     /* Library visibility    */
 
-    @State private var error: String?                         /* Reported operation failure     */
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes       */
+    @State private var error: String?                                   /* Reported operation failure     */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
+    @AppStorage(StudioSettings.key) private var data = Data()           /* Persisted settings bytes       */
 
 
     /// @fcn StudioSettingsView.destinationBinding(_:)
@@ -35,7 +35,6 @@ struct StudioSettingsView: View
             }, set:
             {
                 draft.views[destination.rawValue] = $0
-
             })
     }
 
@@ -45,7 +44,7 @@ struct StudioSettingsView: View
     /// @return Void; invalid palette input keeps the draft open for correction
     private func save()
     {
-        let colors = palette.split(separator: ",").map /* Colors used by this appearance */
+        let colors = palette.split(separator: ",").map          /* Colors used by this appearance */
         {
             $0.trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -72,9 +71,7 @@ struct StudioSettingsView: View
         catch
         {
             self.error = error.localizedDescription
-
         }
-
     }
 
 
@@ -106,7 +103,7 @@ struct StudioSettingsView: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View /* Studio directory and editors */
+    var body: some View         /* Studio directory and editors */
     {
         Form
         {
@@ -115,7 +112,6 @@ struct StudioSettingsView: View
                 Button("My art", systemImage: "paintpalette")
                 {
                     showsLibrary = true
-
                 }
 
                 Text("Reuse a favorite image or complete look across Cards, Notes, Lists, and Boards. Imported artwork stays on this device.")
@@ -175,7 +171,6 @@ struct StudioSettingsView: View
                     }
                 }
             }
-
         }
         .navigationTitle("Plenact Studio").navigationBarTitleDisplayMode(.inline)
         .toolbar
@@ -186,15 +181,12 @@ struct StudioSettingsView: View
                 {
                     dismiss()
                 }
-
             }
 
             ToolbarItem(placement: .confirmationAction)
             {
                 Button("Save", action: save)
-
             }
-
         }
         .sheet(isPresented: $showsLibrary)
         {
@@ -208,26 +200,20 @@ struct StudioSettingsView: View
                     if !$0
                     {
                         error = nil
-
                     }
-
                 }))
         {
             Button("OK")
             {
                 error = nil
-
             }
-
         }
 
         message:
         {
             Text(error ?? "")
         }
-
     }
-
 }
 
 
@@ -237,8 +223,8 @@ struct StudioSettingsView: View
 ///     Shares per-view selection consistently across primary destinations and their existing safe areas
 struct StudioWorkspaceBackground: View
 {
-    let destination: StudioDestination                        /* Destination for the operation */
-    @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes      */
+    let destination: StudioDestination                                  /* Destination for the operation */
+    @AppStorage(StudioSettings.key) private var data = Data()           /* Persisted settings bytes      */
 
     ///
     /// @fcn        StudioWorkspaceBackground.body
@@ -248,16 +234,14 @@ struct StudioWorkspaceBackground: View
     ///
     /// @return     (some View) accessible surface controls or resolved workspace background
     ///
-    var body: some View /* Studio Workspace Background layout */
+    var body: some View         /* Studio Workspace Background layout */
     {
         if let settings = try? JSONDecoder().decode(StudioSettings.self, from: data),
         let surface = settings.views[destination.rawValue]
         {
             StudioSurfaceView(surface: surface)
         }
-
     }
-
 }
 
 
@@ -267,8 +251,8 @@ struct StudioWorkspaceBackground: View
 ///     Keeps Settings wallpaper opt-in and avoids changing unconfigured form backgrounds
 struct StudioFormWallpaper: ViewModifier
 {
-    let destination: StudioDestination                        /* Destination for the operation */
-    @AppStorage(StudioSettings.key) private var data = Data() /* Persisted settings bytes      */
+    let destination: StudioDestination                                  /* Destination for the operation */
+    @AppStorage(StudioSettings.key) private var data = Data()           /* Persisted settings bytes      */
 
     ///
     /// @fcn        StudioFormWallpaper.body
@@ -288,15 +272,12 @@ struct StudioFormWallpaper: ViewModifier
             {
                 StudioSurfaceView(surface: surface)
             }
-
         }
 
         else
         {
             content
         }
-
     }
-
 }
 

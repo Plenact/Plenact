@@ -34,15 +34,14 @@ enum TodayVisionSelection
         date: Date, access: PlanningCalendarAccess, referenceLabelIDs: Set<String>, calendar: Calendar
     ) -> [PlanningSearchResult]
     {
-        let key       = PlanningDate.key(date, calendar: calendar) /* Local calendar-day key */
-        let datedList = access.document.week(for: date, calendar: calendar).flatMap /* Dated list */
+        let key       = PlanningDate.key(date, calendar: calendar)                      /* Local calendar-day key */
+        let datedList = access.document.week(for: date, calendar: calendar).flatMap     /* Dated list             */
         {
             week in
             week.dayListIDs[key].map
             {
                 (week.id, $0)
             }
-
         }
 
         return access.searchableItems.filter
@@ -53,12 +52,12 @@ enum TodayVisionSelection
                 return false
             }
 
-            let onDay = datedList.map /* Day callback */
+            let onDay = datedList.map           /* Day callback */
             {
                 $0.0 == item.collectionID && $0.1 == item.listID
             }
             ?? false
-            let dated = /* Calendar-backed owner */
+            let dated =                                                 /* Calendar-backed owner */
                 [item.card.startDate, item.card.dueDate].compactMap
             {
                 $0
@@ -67,26 +66,22 @@ enum TodayVisionSelection
                 calendar.isDate($0, inSameDayAs: date)
             }
 
-            let spanning: Bool /* Spanning state flag */
+            let spanning: Bool          /* Spanning state flag */
 
             if let start = item.card.startDate, let end = item.card.dueDate
             {
                 spanning =
                 calendar.startOfDay(for: start) <= calendar.startOfDay(for: date)
                 && calendar.startOfDay(for: end) >= calendar.startOfDay(for: date)
-
             }
             else
             {
                 spanning = false
-
             }
 
             return onDay || dated || spanning
         }
-
     }
-
 }
 
 
@@ -99,42 +94,42 @@ enum TodayVisionSelection
 ///
 struct TodayVisionView: View
 {
-    @Binding var plan: DailyPlan                              /* Daily planning record          */
-    let date:          Date                                   /* Date used by this operation    */
-    let onSave:        () -> Bool                             /* Persist the edited value       */
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @State private var step           = 0                        /* Current review step            */
-    @State private var showsPicker    = false                    /* Picker visibility              */
-    @State private var showsNew       = false                    /* New visibility                 */
-    @State private var transferError  = false                 /* Transfer error                 */
-    @State private var planSaveFailed = false                 /* Plan save failed               */
-    @State private var saving         = false                 /* Save operation in progress     */
+    @Binding var plan: DailyPlan                                        /* Daily planning record          */
+    let date:          Date                                             /* Date used by this operation    */
+    let onSave:        () -> Bool                                       /* Persist the edited value       */
+    @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
+    @State private var step           = 0                               /* Current review step            */
+    @State private var showsPicker    = false                           /* Picker visibility              */
+    @State private var showsNew       = false                           /* New visibility                 */
+    @State private var transferError  = false                           /* Transfer error                 */
+    @State private var planSaveFailed = false                           /* Plan save failed               */
+    @State private var saving         = false                           /* Save operation in progress     */
 
-    @State private var transfer: PlanningSearchResult?        /* Prepared owner-qualified move  */
+    @State private var transfer: PlanningSearchResult?          /* Prepared owner-qualified move  */
 
-    private var calendar: Calendar /* Date calculation calendar */
+    private var calendar: Calendar      /* Date calculation calendar */
     {
-        var result = access?.document.calendar ?? .current /* Accumulated output value */
+        var result = access?.document.calendar ?? .current      /* Accumulated output value */
 
         result.timeZone = TimeZone(identifier: plan.timeZoneID) ?? .current
 
         return result
     }
 
-    private var sources: [PlanningSearchResult] /* Source records or files */
+    private var sources: [PlanningSearchResult]         /* Source records or files */
     {
         access?.searchableItems ?? []
     }
 
-    private var candidates: [PlanningSearchResult] /* Eligible operation targets */
+    private var candidates: [PlanningSearchResult]      /* Eligible operation targets */
     {
         guard let access else
         {
             return []
         }
 
-        let labels = LabelLibraryStore.load().labels.filter /* Available label definitions */
+        let labels = LabelLibraryStore.load().labels.filter     /* Available label definitions */
         {
             $0.name.caseInsensitiveCompare("Reference") == .orderedSame || $0.id == LabelLibrary.referenceLabel.id
         }
@@ -143,13 +138,12 @@ struct TodayVisionView: View
             date: date, access: access, referenceLabelIDs: Set(labels.map(\.id)), calendar: calendar)
     }
 
-    private var table: WorkspaceListDestination? /* Table content under review */
+    private var table: WorkspaceListDestination?        /* Table content under review */
     {
         WorkspaceBrowseIndex.lists(in: access?.library ?? []).first
         {
             $0.owner.kind == .list && $0.owner.title == "On the Table"
         }
-
     }
 
 
@@ -184,7 +178,7 @@ struct TodayVisionView: View
     ///
     private func select(_ source: PlanningSearchResult)
     {
-        let priority = DailyPlanPriority(source) /* Selected planning priority */
+        let priority = DailyPlanPriority(source)        /* Selected planning priority */
 
         if !plan.priorities.contains(where:
             {
@@ -193,7 +187,6 @@ struct TodayVisionView: View
         {
             plan.priorities.append(priority)
         }
-
     }
 
 
@@ -214,15 +207,14 @@ struct TodayVisionView: View
 
         saving = true
 
-        let previousStep       = plan.visionStep        /* Previous step       */
-        let previousCompletion = plan.visionCompletedAt /* Previous completion */
+        let previousStep       = plan.visionStep                /* Previous step       */
+        let previousCompletion = plan.visionCompletedAt         /* Previous completion */
 
         plan.visionStep = step == 2 ? nil : step + 1
 
         if step == 2
         {
             plan.visionCompletedAt = .now
-
         }
 
         if onSave()
@@ -234,23 +226,19 @@ struct TodayVisionView: View
             else
             {
                 step += 1
-
             }
-
         }
         else
         {
             plan.visionStep = previousStep
             plan.visionCompletedAt = previousCompletion
             planSaveFailed = true
-
         }
 
         saving = false
-
     }
 
-    var body: some View /* Today Vision layout */
+    var body: some View         /* Today Vision layout */
     {
         NavigationStack
         {
@@ -261,13 +249,13 @@ struct TodayVisionView: View
                     VStack(alignment: .leading, spacing: 12)
                     {
                         Text(
-                                                                        "\(step + 1) of 3 · "
-                                                                        + ["What's already ahead?", "What matters most?", "What's realistic?"] [step]
+                            "\(step + 1) of 3 · "
+                            + ["What's already ahead?", "What matters most?", "What's realistic?"] [step]
                         ).font(.headline)
                         Text(date.formatted(date: .complete, time: .omitted)).font(.subheadline).foregroundStyle(
                             .secondary)
                         ProgressView(value: Double(step + 1), total: 3).accessibilityLabel(
-                                                                        "Morning plan, step \(step + 1) of 3")
+                            "Morning plan, step \(step + 1) of 3")
                     } .padding(.vertical, 4)
                 }
 
@@ -276,12 +264,12 @@ struct TodayVisionView: View
                     Section
                     {
                         Text(
-                                                                        "A look at today's Day List and items with a start or due date today. Nothing moves unless you confirm it."
+                            "A look at today's Day List and items with a start or due date today. Nothing moves unless you confirm it."
                         ).foregroundStyle(.secondary)
                         if candidates.isEmpty
                         {
                             Text(
-                                                                                    "Nothing dated for today needs attention. You can choose any priorities in the next step."
+                                "Nothing dated for today needs attention. You can choose any priorities in the next step."
                             )
                         }
 
@@ -312,14 +300,10 @@ struct TodayVisionView: View
                                     Button("Move to On the Table", systemImage: "arrow.right.circle")
                                     {
                                         transfer = source
-
                                     }
-
                                 }
-
                             } .padding(.vertical, 4)
                         }
-
                     }
                     header:
                     {
@@ -331,7 +315,6 @@ struct TodayVisionView: View
                         Text("On the Table isn't available. You can still plan using items in their current locations.")
                         .font(.footnote).foregroundStyle(.secondary)
                     }
-
                 }
                 else if step == 1
                 {
@@ -353,7 +336,6 @@ struct TodayVisionView: View
                                 Image(systemName: "line.3.horizontal").foregroundStyle(.secondary).accessibilityHidden(
                                     true)
                             }
-
                         }
                         .onDelete
                         {
@@ -367,15 +349,12 @@ struct TodayVisionView: View
                         Button("Choose priorities", systemImage: "plus.circle")
                         {
                             showsPicker = true
-
                         }
 
                         Button("Add priority", systemImage: "square.and.pencil")
                         {
                             showsNew = true
-
                         }
-
                     }
                     header:
                     {
@@ -385,7 +364,6 @@ struct TodayVisionView: View
                     {
                         Text("Use Edit to reorder or remove links. The original items stay where they are.")
                     }
-
                 }
                 else
                 {
@@ -398,7 +376,7 @@ struct TodayVisionView: View
                     Section("Make room for")
                     {
                         TextField(
-                                                                        "Available time, energy, or other constraints", text: $plan.constraints, axis: .vertical
+                            "Available time, energy, or other constraints", text: $plan.constraints, axis: .vertical
                         ).textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
                     }
 
@@ -413,7 +391,6 @@ struct TodayVisionView: View
                         Text("These reflections are optional. Choose a plan that fits the day you have.")
                         .foregroundStyle(.secondary)
                     }
-
                 }
 
                 Section
@@ -423,18 +400,15 @@ struct TodayVisionView: View
                         Button("Previous step")
                         {
                             step -= 1
-
                         }
-
                     }
 
                     Button(step == 2 ? "Save today's vision" : "Save and continue", action: advance)
                     .font(.headline).frame(maxWidth: .infinity, minHeight: 44).disabled(saving)
                     Text(
-                                                            "Each step saves your plan so you can return later. Confirmed moves are saved immediately and are not undone by leaving this flow."
+                        "Each step saves your plan so you can return later. Confirmed moves are saved immediately and are not undone by leaving this flow."
                     ).font(.footnote).foregroundStyle(.secondary)
                 }
-
             }
             .navigationTitle("Today's Vision").navigationBarTitleDisplayMode(.inline)
             .toolbar
@@ -453,14 +427,11 @@ struct TodayVisionView: View
                     {
                         EditButton()
                     }
-
                 }
-
             }
             .onAppear
             {
                 step = min(2, max(0, plan.visionStep ?? 0))
-
             }
             .sheet(isPresented: $showsPicker)
             {
@@ -472,23 +443,20 @@ struct TodayVisionView: View
                 {
                     select($0)
                 }
-
             }
             .confirmationDialog(
-                                    "Move to On the Table?",
-                                    isPresented: Binding(get:
-                                        {
-                                            transfer != nil
-                                        }, set:
-                                        {
-                                            if !$0
-                                            {
-                                                transfer = nil
-
-                                            }
-
-                                        }),
-                                    titleVisibility: .visible
+                "Move to On the Table?",
+                isPresented: Binding(get:
+                    {
+                        transfer != nil
+                    }, set:
+                    {
+                        if !$0
+                        {
+                            transfer = nil
+                        }
+                    }),
+                titleVisibility: .visible
             )
             {
                 Button("Move original item")
@@ -503,7 +471,7 @@ struct TodayVisionView: View
                         return
                     }
 
-                    let reference = DailyPlanPriority(moved) /* Qualified record reference */
+                    let reference = DailyPlanPriority(moved)    /* Qualified record reference */
 
                     if let index = plan.priorities.firstIndex(where:
                         {
@@ -511,7 +479,6 @@ struct TodayVisionView: View
                         })
                     {
                         plan.priorities[index] = reference
-
                     }
                     else
                     {
@@ -524,22 +491,18 @@ struct TodayVisionView: View
                     if !onSave()
                     {
                         planSaveFailed = true
-
                     }
-
                 }
 
                 Button("Cancel", role: .cancel)
                 {
                     transfer = nil
-
                 }
-
             }
             message:
             {
                 Text(
-                                                "Moves ‘\(transfer?.card.word ?? "")’ from Scheduled to On the Table and selects it for today. Dates, times, and details are retained. This does not create a second item."
+                    "Moves ‘\(transfer?.card.word ?? "")’ from Scheduled to On the Table and selects it for today. Dates, times, and details are retained. This does not create a second item."
                 )
             }
             .alert("Plan not saved", isPresented: $planSaveFailed)
@@ -547,12 +510,11 @@ struct TodayVisionView: View
                 Button("OK", role: .cancel)
                 {
                 }
-
             }
             message:
             {
                 Text(
-                                                "Your draft is still open. The saved plan may have changed, or saving failed. Return to your plan to review it and retry. Any confirmed item moves remain saved."
+                    "Your draft is still open. The saved plan may have changed, or saving failed. Return to your plan to review it and retry. Any confirmed item moves remain saved."
                 )
             }
             .alert("Item wasn't moved", isPresented: $transferError)
@@ -560,19 +522,15 @@ struct TodayVisionView: View
                 Button("OK", role: .cancel)
                 {
                 }
-
             }
             message:
             {
                 Text(
-                                                "The source or destination may have changed, or saving failed. Your original item has been retained. Please try again."
+                    "The source or destination may have changed, or saving failed. Your original item has been retained. Please try again."
                 )
             }
-
         }
-
     }
-
 }
 
 
@@ -585,10 +543,9 @@ struct TodayVisionView: View
 ///
 struct DailyCheckIn: Codable, Equatable
 {
-    var focus: DailyPlanPriority? = nil /* Today Focus selection      */
-    var changed                   = ""  /* Value with requested edits */
-    var savedAt: Date?            = nil /* Saved at                   */
-
+    var focus: DailyPlanPriority? = nil         /* Today Focus selection      */
+    var changed                   = ""          /* Value with requested edits */
+    var savedAt: Date?            = nil         /* Saved at                   */
 }
 
 
@@ -601,10 +558,10 @@ struct DailyCheckIn: Codable, Equatable
 ///
 struct CheckInMood: Codable, Equatable
 {
-    let emoji:   String /* Chosen emoji symbol    */
-    let label:   String /* Resolved display label */
+    let emoji:   String         /* Chosen emoji symbol    */
+    let label:   String         /* Resolved display label */
 
-    var display: String /* Display display text */
+    var display: String         /* Display display text */
     {
         emoji + " " + label
     }
@@ -624,12 +581,12 @@ struct CheckInMood: Codable, Equatable
     ///
     static func custom(emoji: String, label: String) -> CheckInMood?
     {
-        let emoji   = /* Chosen emoji symbol */
+        let emoji   =                                                   /* Chosen emoji symbol    */
             emoji.trimmingCharacters(in: .whitespacesAndNewlines)
-        let label   = /* Resolved display label */
+        let label   =                                                   /* Resolved display label */
             label.trimmingCharacters(in: .whitespacesAndNewlines)
-        let scalars = emoji.unicodeScalars /* Unicode scalar values */
-        let isEmoji =                      /* Emoji state           */
+        let scalars = emoji.unicodeScalars                              /* Unicode scalar values  */
+        let isEmoji =                                                   /* Emoji state            */
         scalars.contains
         {
             $0.properties.isEmojiPresentation
@@ -651,7 +608,6 @@ struct CheckInMood: Codable, Equatable
 
         return CheckInMood(emoji: emoji, label: label)
     }
-
 }
 
 
@@ -665,12 +621,12 @@ struct CheckInMood: Codable, Equatable
 enum CheckInMoodChoice: String, CaseIterable, Identifiable
 {
     case none, great, good, okay, low, struggling, custom
-    var id: Self /* Record or view identity */
+    var id: Self                                                /* Record or view identity */
     {
         self
     }
 
-    var mood: CheckInMood? /* Saved check-in mood */
+    var mood: CheckInMood?      /* Saved check-in mood */
     {
         switch self
         {
@@ -687,10 +643,9 @@ enum CheckInMoodChoice: String, CaseIterable, Identifiable
         case .struggling:
             CheckInMood(emoji: "😣", label: "Struggling")
         }
-
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         switch self
         {
@@ -701,9 +656,7 @@ enum CheckInMoodChoice: String, CaseIterable, Identifiable
         default:
             mood?.display ?? ""
         }
-
     }
-
 }
 
 
@@ -716,21 +669,20 @@ enum CheckInMoodChoice: String, CaseIterable, Identifiable
 ///
 struct DailyCheckInEntry: Codable, Equatable, Identifiable
 {
-    let id:             String              /* Record or view identity     */
-    let savedAt:        Date                /* Saved at                    */
-    let changed:        String              /* Value with requested edits  */
-    let focus:          DailyPlanPriority?  /* Today Focus selection       */
-    let intention:      String              /* Saved daily intention       */
-    let constraints:    String              /* Available time or capacity  */
-    let concerns:       String              /* Saved planning concerns     */
-    let priorities:     [DailyPlanPriority] /* Ordered planning priorities */
-    let completedTasks: Int?                /* Completed tasks             */
-    let totalTasks:     Int?                /* Total tasks                 */
-    let notes:          Int?                /* Note content records        */
-    let unavailable:    Int?                /* Unresolved reference state  */
-    let legacy:         Bool                /* Earlier-format input        */
-    var mood:           CheckInMood? = nil  /* Saved check-in mood         */
-
+    let id:             String                  /* Record or view identity     */
+    let savedAt:        Date                    /* Saved at                    */
+    let changed:        String                  /* Value with requested edits  */
+    let focus:          DailyPlanPriority?      /* Today Focus selection       */
+    let intention:      String                  /* Saved daily intention       */
+    let constraints:    String                  /* Available time or capacity  */
+    let concerns:       String                  /* Saved planning concerns     */
+    let priorities:     [DailyPlanPriority]     /* Ordered planning priorities */
+    let completedTasks: Int?                    /* Completed tasks             */
+    let totalTasks:     Int?                    /* Total tasks                 */
+    let notes:          Int?                    /* Note content records        */
+    let unavailable:    Int?                    /* Unresolved reference state  */
+    let legacy:         Bool                    /* Earlier-format input        */
+    var mood:           CheckInMood? = nil      /* Saved check-in mood         */
 }
 
 
@@ -744,7 +696,7 @@ struct DailyCheckInEntry: Codable, Equatable, Identifiable
 extension DailyPlan
 {
     /// Legacy records have no historical plan/progress snapshot. Do not invent one
-    var checkInHistory: [DailyCheckInEntry] /* Check in history */
+    var checkInHistory: [DailyCheckInEntry]     /* Check in history */
     {
         if let checkIns
         {
@@ -782,10 +734,10 @@ extension DailyPlan
         changed: String, sources: [PlanningSearchResult], at timestamp: Date = .now, mood: CheckInMood? = nil
     )
     {
-        var entries  = checkInHistory /* Entries being processed */
-        let focus    =                /* Today Focus selection   */
+        var entries  = checkInHistory                                   /* Entries being processed  */
+        let focus    =                                                  /* Today Focus selection    */
             DailyCheckInProgress.focus(plan: self, sources: sources)
-        let progress = /* Operation progress state */
+        let progress =                                                  /* Operation progress state */
             DailyCheckInProgress.counts(plan: self, sources: sources)
 
         entries.append(
@@ -797,9 +749,7 @@ extension DailyPlan
 
         checkIns = entries
         checkIn = DailyCheckIn(focus: focus, changed: changed, savedAt: timestamp)
-
     }
-
 }
 
 
@@ -812,16 +762,16 @@ extension DailyPlan
 ///
 struct DailyHistoryReviewView: View
 {
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
-    @Environment(\.scenePhase) private var scenePhase         /* Scene phase                    */
-    @State private var date: Date                             /* Date used by this operation    */
-    @State private var document = DailyPlanStore.Document()   /* Daily-plan store snapshot      */
-    @AppStorage private var storedData: Data                  /* Stored data                    */
-    private let calendar:               Calendar              /* Date calculation calendar      */
-    private let defaults:               UserDefaults          /* Preference storage domain      */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
+    @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
+    @Environment(\.scenePhase) private var scenePhase                   /* Scene phase                    */
+    @State private var date: Date                                       /* Date used by this operation    */
+    @State private var document = DailyPlanStore.Document()             /* Daily-plan store snapshot      */
+    @AppStorage private var storedData: Data                            /* Stored data                    */
+    private let calendar:               Calendar                        /* Date calculation calendar      */
+    private let defaults:               UserDefaults                    /* Preference storage domain      */
 
-    @State private var loadError:       String?               /* Load error                     */
+    @State private var loadError:       String?         /* Load error                     */
 
 
     ///
@@ -842,15 +792,14 @@ struct DailyHistoryReviewView: View
         self.calendar = calendar;
         self.defaults = defaults
         _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
-
     }
 
-    private var plan: DailyPlan? /* Daily planning record */
+    private var plan: DailyPlan?        /* Daily planning record */
     {
         document.plans[PlanningDate.key(date, calendar: calendar)]
     }
 
-    private var isToday: Bool /* Today state */
+    private var isToday: Bool           /* Today state */
     {
         calendar.isDateInToday(date)
     }
@@ -870,14 +819,11 @@ struct DailyHistoryReviewView: View
         {
             document = try DailyPlanStore.load(from: defaults);
             loadError = nil
-
         }
         catch
         {
             loadError = error.localizedDescription
-
         }
-
     }
 
 
@@ -893,7 +839,7 @@ struct DailyHistoryReviewView: View
     ///
     private func checkInTime(_ timestamp: Date, timeZoneID: String) -> String
     {
-        var style = Date.FormatStyle(date: .omitted, time: .shortened) /* Selected display style */
+        var style = Date.FormatStyle(date: .omitted, time: .shortened)          /* Selected display style */
 
         style.timeZone = TimeZone(identifier: timeZoneID) ?? calendar.timeZone
 
@@ -922,14 +868,11 @@ struct DailyHistoryReviewView: View
                     Text(title).font(.caption).foregroundStyle(.secondary)
                     Text(value)
                 }
-
             }
-
         }
-
     }
 
-    var body: some View /* Daily History Review layout */
+    var body: some View         /* Daily History Review layout */
     {
         NavigationStack
         {
@@ -951,13 +894,9 @@ struct DailyHistoryReviewView: View
                                 Button(day.formatted(date: .abbreviated, time: .omitted))
                                 {
                                     date = day
-
                                 }
-
                             }
-
                         }
-
                     } .disabled(document.plans.isEmpty)
                 }
 
@@ -968,7 +907,6 @@ struct DailyHistoryReviewView: View
                         Text(loadError)
                         Button("Try again", action: reload)
                     }
-
                 }
                 else if let plan
                 {
@@ -977,7 +915,7 @@ struct DailyHistoryReviewView: View
                         text("Intention", plan.intention)
                         if isToday
                         {
-                            let counts = /* Aggregate record counts */
+                            let counts =        /* Aggregate record counts */
                                 DailyCheckInProgress.counts(plan: plan, sources: access?.searchableItems ?? [])
 
                             Text("\(counts.completed) of \(counts.tasks) priority tasks complete").font(.headline)
@@ -996,8 +934,8 @@ struct DailyHistoryReviewView: View
                         let focus = DailyCheckInProgress.focus(plan: plan, sources: access?.searchableItems ?? [])
                         {
                             text(
-                                                                                    "Your next focus",
-                                                                                    focus.resolve(in: access?.searchableItems ?? [])?.card.word ?? focus.title)
+                                "Your next focus",
+                                focus.resolve(in: access?.searchableItems ?? [])?.card.word ?? focus.title)
                         }
 
                         text("Make room for", plan.constraints)
@@ -1014,7 +952,6 @@ struct DailyHistoryReviewView: View
                                 .caption
                             ).foregroundStyle(.secondary)
                         }
-
                     }
 
                     Section("Check-ins · " + plan.timeZoneID)
@@ -1039,7 +976,6 @@ struct DailyHistoryReviewView: View
                                     {
                                         Text(mood.display).font(.subheadline)
                                     }
-
                                 } .accessibilityElement(children: .combine)
                                 if entry.changed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                 {
@@ -1066,7 +1002,7 @@ struct DailyHistoryReviewView: View
                                 if entry.legacy
                                 {
                                     Text(
-                                                                                                            "Retained from the original Check-in. A plan and progress snapshot was not recorded at that time."
+                                        "Retained from the original Check-in. A plan and progress snapshot was not recorded at that time."
                                     ).font(.caption).foregroundStyle(.secondary)
                                 }
                                 else
@@ -1081,14 +1017,10 @@ struct DailyHistoryReviewView: View
                                             priority in
                                             Text(priority.title)
                                         }
-
                                     }
-
                                 }
-
                             } .padding(.vertical, 6)
                         }
-
                     }
 
                     if let review = plan.eveningReview
@@ -1104,11 +1036,8 @@ struct DailyHistoryReviewView: View
                                 item in
                                 Text(item.title)
                             }
-
                         }
-
                     }
-
                 }
                 else
                 {
@@ -1116,9 +1045,7 @@ struct DailyHistoryReviewView: View
                     {
                         Text("No saved plan or Check-ins for this day.").foregroundStyle(.secondary)
                     }
-
                 }
-
             }
             .textSelection(.enabled)
             .navigationTitle("Daily review").navigationBarTitleDisplayMode(.inline)
@@ -1130,9 +1057,7 @@ struct DailyHistoryReviewView: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
             .task
             {
@@ -1150,14 +1075,11 @@ struct DailyHistoryReviewView: View
                 {
                     reload()
                 }
-
             }
-
         }
         .environment(\.calendar, calendar)
         .environment(\.timeZone, calendar.timeZone)
     }
-
 }
 
 
@@ -1186,7 +1108,7 @@ enum DailyCheckInProgress
         completed: Int, tasks: Int, notes: Int, unavailable: Int
     )
     {
-        var result = /* Accumulated output value */
+        var result =                                            /* Accumulated output value */
             (completed: 0, tasks: 0, notes: 0, unavailable: 0)
 
         for priority in plan.priorities
@@ -1201,7 +1123,6 @@ enum DailyCheckInProgress
             if source.card.presentation == .note
             {
                 result.notes += 1
-
             }
             else
             {
@@ -1210,11 +1131,8 @@ enum DailyCheckInProgress
                 if source.card.isTitleChecked
                 {
                     result.completed += 1
-
                 }
-
             }
-
         }
 
         return result
@@ -1249,7 +1167,6 @@ enum DailyCheckInProgress
 
         return focus
     }
-
 }
 
 
@@ -1262,42 +1179,42 @@ enum DailyCheckInProgress
 ///
 struct TodayCheckInView: View
 {
-    @Binding var plan: DailyPlan                              /* Daily planning record          */
-    let date:          Date                                   /* Date used by this operation    */
-    let onSave:        () -> Bool                             /* Persist the edited value       */
-    @Environment(\.planningCalendarAccess) private var access /* Checked calendar operations    */
-    @Environment(\.dismiss) private var dismiss               /* Close the current presentation */
-    @State private var showsPicker = false                    /* Picker visibility              */
-    @State private var showsNew    = false                    /* New visibility                 */
-    @State private var saveFailed  = false                    /* Save failed                    */
+    @Binding var plan: DailyPlan                                        /* Daily planning record          */
+    let date:          Date                                             /* Date used by this operation    */
+    let onSave:        () -> Bool                                       /* Persist the edited value       */
+    @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
+    @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
+    @State private var showsPicker = false                              /* Picker visibility              */
+    @State private var showsNew    = false                              /* New visibility                 */
+    @State private var saveFailed  = false                              /* Save failed                    */
 
-    private var sources: [PlanningSearchResult] /* Source records or files */
+    private var sources: [PlanningSearchResult]         /* Source records or files */
     {
         access?.searchableItems ?? []
     }
 
-    private var checkIn: DailyCheckIn /* Check in */
+    private var checkIn: DailyCheckIn           /* Check in */
     {
         plan.checkIn ?? DailyCheckIn()
     }
 
-    @State private var changed                       = ""    /* Value with requested edits */
-    @State private var moodChoice: CheckInMoodChoice = .none /* Mood choice                */
-    @State private var customEmoji                   = ""    /* Custom emoji               */
-    @State private var customFeeling                 = ""    /* Custom feeling             */
+    @State private var changed                       = ""       /* Value with requested edits */
+    @State private var moodChoice: CheckInMoodChoice = .none    /* Mood choice                */
+    @State private var customEmoji                   = ""       /* Custom emoji               */
+    @State private var customFeeling                 = ""       /* Custom feeling             */
 
-    private var selectedMood: CheckInMood? /* Selected mood */
+    private var selectedMood: CheckInMood?      /* Selected mood */
     {
         moodChoice == .custom ? CheckInMood.custom(emoji: customEmoji, label: customFeeling) : moodChoice.mood
     }
 
-    private var hasUnsavedCheckIn: Bool /* Unsaved Check In availability */
+    private var hasUnsavedCheckIn: Bool         /* Unsaved Check In availability */
     {
         !changed.isEmpty || moodChoice != .none || !customEmoji.isEmpty || !customFeeling.isEmpty
     }
 
-    @State private var didSave = false                   /* Save completion flag */
-    @State private var selectedFocus: DailyPlanPriority? /* Selected focus       */
+    @State private var didSave = false                          /* Save completion flag */
+    @State private var selectedFocus: DailyPlanPriority?        /* Selected focus       */
 
 
     ///
@@ -1318,13 +1235,12 @@ struct TodayCheckInView: View
         self.date = date;
         self.onSave = onSave
         _selectedFocus = State(initialValue: plan.wrappedValue.checkIn?.focus)
-
     }
 
-    private var focusPlan: DailyPlan /* Focus plan */
+    private var focusPlan: DailyPlan    /* Focus plan */
     {
-        var result = plan     /* Accumulated output value   */
-        var latest = checkIn; /* Most recent retained value */
+        var result = plan               /* Accumulated output value   */
+        var latest = checkIn;           /* Most recent retained value */
 
         latest.focus = selectedFocus;
         result.checkIn = latest
@@ -1332,7 +1248,7 @@ struct TodayCheckInView: View
         return result
     }
 
-    @State private var confirmsLeaving = false /* Confirms leaving */
+    @State private var confirmsLeaving = false          /* Confirms leaving */
 
 
     ///
@@ -1348,7 +1264,6 @@ struct TodayCheckInView: View
     private func selectFocus(_ priority: DailyPlanPriority?)
     {
         selectedFocus = priority
-
     }
 
 
@@ -1367,7 +1282,7 @@ struct TodayCheckInView: View
             return
         }
 
-        let previous = plan /* Previous value for comparison */
+        let previous = plan     /* Previous value for comparison */
 
         plan.checkIns = plan.checkInHistory
         plan.checkIn = focusPlan.checkIn
@@ -1383,12 +1298,10 @@ struct TodayCheckInView: View
         {
             plan = previous;
             saveFailed = true
-
         }
-
     }
 
-    var body: some View /* Today Check In layout */
+    var body: some View         /* Today Check In layout */
     {
         NavigationStack
         {
@@ -1404,7 +1317,7 @@ struct TodayCheckInView: View
 
                 Section("Where am I?")
                 {
-                    let progress = /* Operation progress state */
+                    let progress =                                                      /* Operation progress state */
                         DailyCheckInProgress.counts(plan: plan, sources: sources)
 
                     Text("\(progress.completed) of \(progress.tasks) priority tasks complete").font(.headline)
@@ -1428,7 +1341,6 @@ struct TodayCheckInView: View
                     {
                         Text("You can start a plan now, even without a morning review.").foregroundStyle(.secondary)
                     }
-
                 }
 
                 Section
@@ -1437,7 +1349,7 @@ struct TodayCheckInView: View
                     {
                         priority in
 
-                        let source = /* Source value for this operation */
+                        let source =                            /* Source value for this operation */
                             priority.resolve(in: sources)
 
                         HStack(alignment: .top, spacing: 12)
@@ -1462,7 +1374,7 @@ struct TodayCheckInView: View
                                 ).font(.caption).foregroundStyle(.secondary)
                                 if let source, source.card.presentation == .note || !source.card.isTitleChecked
                                 {
-                                    let focused = /* Current focus selection */
+                                    let focused =       /* Current focus selection */
                                     DailyCheckInProgress.focus(plan: focusPlan, sources: sources)?.id == priority.id
 
                                     Button(focused ? "Next focus ✓" : "Focus on this next")
@@ -1471,9 +1383,7 @@ struct TodayCheckInView: View
                                     }
                                     .accessibilityValue(focused ? "Selected" : "Not selected")
                                 }
-
                             }
-
                         } .padding(.vertical, 4)
                     }
                     .onDelete
@@ -1488,15 +1398,12 @@ struct TodayCheckInView: View
                     Button("Choose priorities", systemImage: "plus.circle")
                     {
                         showsPicker = true
-
                     }
 
                     Button("Add priority", systemImage: "square.and.pencil")
                     {
                         showsNew = true
-
                     }
-
                 }
                 header:
                 {
@@ -1505,7 +1412,7 @@ struct TodayCheckInView: View
                 footer:
                 {
                     Text(
-                                                            "Use Edit to reorder or set a priority aside. Removing a link keeps the original item in place. Your next focus is optional."
+                        "Use Edit to reorder or set a priority aside. Removing a link keeps the original item in place. Your next focus is optional."
                     )
                 }
 
@@ -1518,7 +1425,6 @@ struct TodayCheckInView: View
                             choice in
                             Text(choice.title).tag(choice)
                         }
-
                     } .pickerStyle(.menu)
                     if moodChoice == .custom
                     {
@@ -1533,7 +1439,6 @@ struct TodayCheckInView: View
                             _, value in
 
                             customFeeling = String(value.prefix(40))
-
                         }
 
                         if selectedMood == nil
@@ -1545,9 +1450,7 @@ struct TodayCheckInView: View
                         {
                             Text(selectedMood.display).accessibilityLabel("Your mood: " + selectedMood.display)
                         }
-
                     }
-
                 }
                 header:
                 {
@@ -1561,7 +1464,7 @@ struct TodayCheckInView: View
                 Section("What changed?")
                 {
                     TextField(
-                                                            "New information, a small win, or a change of plan (optional)", text: $changed, axis: .vertical
+                        "New information, a small win, or a change of plan (optional)", text: $changed, axis: .vertical
                     ).textInputAutocapitalization(.sentences).lineLimit(2 ... 5)
                 }
 
@@ -1589,10 +1492,9 @@ struct TodayCheckInView: View
                     }
 
                     Text(
-                                                            "Each Save adds a timestamped entry to Daily review and updates your shared daily plan. Plan adjustments stay open when returning to Plan; an unsaved Check-in note or mood must be saved here."
+                        "Each Save adds a timestamped entry to Daily review and updates your shared daily plan. Plan adjustments stay open when returning to Plan; an unsaved Check-in note or mood must be saved here."
                     ).font(.footnote).foregroundStyle(.secondary)
                 }
-
             }
             .navigationTitle("Today's Check-in").navigationBarTitleDisplayMode(.inline)
             .toolbar
@@ -1604,13 +1506,11 @@ struct TodayCheckInView: View
                         if hasUnsavedCheckIn
                         {
                             confirmsLeaving = true
-
                         }
                         else
                         {
                             dismiss()
                         }
-
                     } .accessibilityLabel("Back to Today's Plan")
                 }
 
@@ -1618,7 +1518,6 @@ struct TodayCheckInView: View
                 {
                     EditButton()
                 }
-
             }
             .sheet(isPresented: $showsPicker)
             {
@@ -1630,7 +1529,7 @@ struct TodayCheckInView: View
                 {
                     source in
 
-                    let priority = DailyPlanPriority(source) /* Selected planning priority */
+                    let priority = DailyPlanPriority(source)    /* Selected planning priority */
 
                     if !plan.priorities.contains(where:
                         {
@@ -1639,13 +1538,11 @@ struct TodayCheckInView: View
                     {
                         plan.priorities.append(priority)
                     }
-
                 }
-
             }
             .interactiveDismissDisabled(hasUnsavedCheckIn)
             .confirmationDialog(
-                                    "Leave without saving this Check-in?", isPresented: $confirmsLeaving, titleVisibility: .visible
+                "Leave without saving this Check-in?", isPresented: $confirmsLeaving, titleVisibility: .visible
             )
             {
                 Button("Discard Check-in and return to Plan", role: .destructive)
@@ -1656,26 +1553,21 @@ struct TodayCheckInView: View
                 Button("Keep editing", role: .cancel)
                 {
                 }
-
             }
             .alert("Check-in not saved", isPresented: $saveFailed)
             {
                 Button("OK", role: .cancel)
                 {
                 }
-
             }
             message:
             {
                 Text(
-                                                "Your edits are still open. The saved plan may have changed, or saving failed. Return to Plan to save or reopen it before retrying."
+                    "Your edits are still open. The saved plan may have changed, or saving failed. Return to Plan to save or reopen it before retrying."
                 )
             }
-
         }
-
     }
-
 }
 
 
@@ -1688,20 +1580,20 @@ struct TodayCheckInView: View
 ///
 struct TodayPlanSummaryPanel: View
 {
-    @ScaledMetric(relativeTo: .title2) private var headingSize:    CGFloat = 26 /* Heading size */
-    @ScaledMetric(relativeTo: .headline) private var subtitleSize: CGFloat = 20 /* Subtitle size */
-    @ScaledMetric(relativeTo: .body) private var bodySize:         CGFloat = 19 /* Body size */
-    let date:                                                      Date /* Date used by this operation */
-    let calendar:                                                  Calendar /* Date calculation calendar */
-    let sources:                                                   [PlanningSearchResult] /* Source records or files */
-    let onOpen:                                                    () -> Void /* Open the selected destination */
-    let welcomesPlan:                                              Bool /* Welcomes plan */
-    private let defaults:                                          UserDefaults /* Preference storage domain */
-    @AppStorage private var storedData:                            Data /* Stored data */
-    @Environment(\.scenePhase) private var scenePhase /* Scene phase */
-    @State private var readFailed = false /* Read failed */
+    @ScaledMetric(relativeTo: .title2) private var headingSize:    CGFloat = 26                 /* Heading size                  */
+    @ScaledMetric(relativeTo: .headline) private var subtitleSize: CGFloat = 20                 /* Subtitle size                 */
+    @ScaledMetric(relativeTo: .body) private var bodySize:         CGFloat = 19                 /* Body size                     */
+    let date:                                                      Date                         /* Date used by this operation   */
+    let calendar:                                                  Calendar                     /* Date calculation calendar     */
+    let sources:                                                   [PlanningSearchResult]       /* Source records or files       */
+    let onOpen:                                                    () -> Void                   /* Open the selected destination */
+    let welcomesPlan:                                              Bool                         /* Welcomes plan                 */
+    private let defaults:                                          UserDefaults                 /* Preference storage domain     */
+    @AppStorage private var storedData:                            Data                         /* Stored data                   */
+    @Environment(\.scenePhase) private var scenePhase                                           /* Scene phase                   */
+    @State private var readFailed = false                                                       /* Read failed                   */
 
-    @State private var plan: DailyPlan? /* Daily planning record */
+    @State private var plan: DailyPlan?         /* Daily planning record */
 
 
     ///
@@ -1732,7 +1624,6 @@ struct TodayPlanSummaryPanel: View
 
         self.onOpen = onOpen
         _storedData = AppStorage(wrappedValue: Data(), DailyPlanStore.key, store: defaults)
-
     }
 
 
@@ -1750,18 +1641,15 @@ struct TodayPlanSummaryPanel: View
         {
             plan = try DailyPlanStore.load(from: defaults).plans[PlanningDate.key(date, calendar: calendar)]
             readFailed = false
-
         }
         catch
         {
             plan = nil;
             readFailed = true
-
         }
-
     }
 
-    var body: some View /* Today Plan Summary Panel layout */
+    var body: some View         /* Today Plan Summary Panel layout */
     {
         VStack(alignment: .leading, spacing: 14)
         {
@@ -1777,7 +1665,7 @@ struct TodayPlanSummaryPanel: View
             if readFailed
             {
                 Text(
-                                                "Your saved plan couldn't be read. Open Today's Plan to review the issue. Your records have been kept unchanged."
+                    "Your saved plan couldn't be read. Open Today's Plan to review the issue. Your records have been kept unchanged."
                 ).foregroundStyle(.secondary)
             }
             else if let plan
@@ -1798,7 +1686,7 @@ struct TodayPlanSummaryPanel: View
                 if plan.priorities.isEmpty
                 {
                     Text(
-                                                            "What deserves your attention today? Choose a Card or Note, or add a new priority in your plan."
+                        "What deserves your attention today? Choose a Card or Note, or add a new priority in your plan."
                     ).foregroundStyle(.secondary)
                 }
                 else
@@ -1808,7 +1696,7 @@ struct TodayPlanSummaryPanel: View
                     {
                         priority in
 
-                        let source = /* Source value for this operation */
+                        let source =                            /* Source value for this operation */
                             priority.resolve(in: sources)
 
                         HStack(alignment: .top, spacing: 12)
@@ -1844,15 +1732,13 @@ struct TodayPlanSummaryPanel: View
                         Text("\(plan.priorities.count - 3) more priorities in your plan").font(.caption)
                         .foregroundStyle(.secondary)
                     }
-
                 }
-
             }
             else
             {
                 Text("What would make today meaningful?").font(.system(size: subtitleSize, weight: .semibold))
                 Text(
-                                                "Choose a few priorities, leave room for real life, and take one useful step. Your morning vision, check-in, and evening review all connect here."
+                    "Choose a few priorities, leave room for real life, and take one useful step. Your morning vision, check-in, and evening review all connect here."
                 ).foregroundStyle(.secondary)
             }
 
@@ -1881,9 +1767,6 @@ struct TodayPlanSummaryPanel: View
             {
                 reload()
             }
-
         }
-
     }
-
 }

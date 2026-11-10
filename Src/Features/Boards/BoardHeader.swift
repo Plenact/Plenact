@@ -20,12 +20,11 @@ import UniformTypeIdentifiers
 struct BoardDisplaySettings
 {
     /// Whether cards show checklist completion progress
-    var showChecklistProgress = true /* Display checklist progress on cards */
+    var showChecklistProgress = true    /* Display checklist progress on cards */
     /// Whether cards show their comment count
-    var showCommentCounts = true /* Display comment counts on cards     */
+    var showCommentCounts = true        /* Display comment counts on cards     */
     /// Whether cards show due-date badges
-    var showDueDateBadges = true /* Display due date badges on cards    */
-
+    var showDueDateBadges = true        /* Display due date badges on cards    */
 }
 
 
@@ -41,7 +40,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     case overview
 
     /// User-defaults key for the locally stored Board presentation selection
-    static let storageKey = "Plenact.BoardPresentation.v1" /* Versioned Board layout preference key */
+    static let storageKey = "Plenact.BoardPresentation.v1"      /* Versioned Board layout preference key */
 
     ///
     /// @fcn        BoardPresentation.id
@@ -51,10 +50,10 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     /// @return     (String) presentation identity
     /// @post       No presentation preference is changed
     ///
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         rawValue
-    }  /* Stable Board layout identity */
+    }                   /* Stable Board layout identity */
 
 
     ///
@@ -65,10 +64,10 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     /// @return     (String) Standard or Overview
     /// @post       The selected presentation remains unchanged
     ///
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         self == .standard ? "Standard" : "Overview"
-    }  /* User-facing Board layout label */
+    }                                                   /* User-facing Board layout label */
 
 
     ///
@@ -79,10 +78,10 @@ enum BoardPresentation: String, CaseIterable, Identifiable
     /// @return     (CGFloat) minimum card height in points
     /// @post       No view or preference state is modified
     ///
-    var minimumCardHeight: CGFloat /* Minimum card height */
+    var minimumCardHeight: CGFloat      /* Minimum card height */
     {
         self == .standard ? 112 : 80
-    }  /* Minimum row height for the selected layout */
+    }                                   /* Minimum row height for the selected layout */
 
 
     ///
@@ -108,7 +107,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable
         }
 
 
-        let available = viewportWidth - 28 /* Viewport width after outer list margins */
+        let available = viewportWidth - 28      /* Viewport width after outer list margins */
 
         if accessibilitySize || (self == .standard && fillsAvailableWidth)
         {
@@ -125,7 +124,6 @@ enum BoardPresentation: String, CaseIterable, Identifiable
 
         return min(available, 240)
     }
-
 }
 
 
@@ -138,7 +136,7 @@ enum BoardPresentation: String, CaseIterable, Identifiable
 struct BoardCardHeightPreferenceKey: PreferenceKey
 {
     /// Current card-height reports keyed by card identity
-    static var defaultValue: [Int: CGFloat] = [:] /* Empty list-center measurements before layout */
+    static var defaultValue: [Int: CGFloat] = [:]       /* Empty list-center measurements before layout */
 
 
     ///
@@ -161,7 +159,6 @@ struct BoardCardHeightPreferenceKey: PreferenceKey
                 latest
             })
     }
-
 }
 
 
@@ -176,79 +173,79 @@ struct BoardCardHeightPreferenceKey: PreferenceKey
 ///
 struct BoardHeader: View
 {
-    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic /* Inherited subtitle styling */
+    @Environment(\.inheritedSubtitleItalic) private var inheritedSubtitleItalic         /* Inherited subtitle styling */
 
 
-    @Environment(\.layoutDirection) private var headerLayoutDirection /* Header layout direction */
-    @Binding var settings: BoardDisplaySettings                       /* Board display settings  */
+    @Environment(\.layoutDirection) private var headerLayoutDirection           /* Header layout direction */
+    @Binding var settings: BoardDisplaySettings                                 /* Board display settings  */
     /// Shared Standard/Overview selection displayed in the Board options menu
-    @Binding var presentation: BoardPresentation         /* Shared Standard or Overview layout selection */
-    let activeMembers:         [String]                  /* Unique users assigned to active cards        */
-    let memberColors:          [String: Color]           /* Icon colors keyed by normalized member name  */
-    let onRenameMember:        (String, String) -> Void  /* Rename a member across all card assignments  */
-    let onDeleteMember:        (String) -> Void          /* Remove a member from all card assignments    */
-    let onSetMemberColor:      (String, Color) -> Void   /* Update a member's shared icon color          */
+    @Binding var presentation: BoardPresentation                /* Shared Standard or Overview layout selection */
+    let activeMembers:         [String]                         /* Unique users assigned to active cards        */
+    let memberColors:          [String: Color]                  /* Icon colors keyed by normalized member name  */
+    let onRenameMember:        (String, String) -> Void         /* Rename a member across all card assignments  */
+    let onDeleteMember:        (String) -> Void                 /* Remove a member from all card assignments    */
+    let onSetMemberColor:      (String, Color) -> Void          /* Update a member's shared icon color          */
     /// Opens the calendar view for the current board
-    let onOpenCalendar: () -> Void /* Presents the Board's calendar browser */
+    let onOpenCalendar: () -> Void      /* Presents the Board's calendar browser */
     /// Board name shown in the header
-    let title: String /* Board heading displayed in the header */
+    let title: String           /* Board heading displayed in the header */
     /// Supporting board description shown in the header
-    let subtitle: String /* Supporting Board header text */
+    let subtitle: String        /* Supporting Board header text */
     /// Whether to expose list creation in the header
-    let allowsAddingLists: Bool /* Whether list creation is offered on the board */
+    let allowsAddingLists: Bool         /* Whether list creation is offered on the board */
     /// Optional action returning to the owning collection
-    let onClose: (() -> Void)? /* Optional return action to the collection directory */
+    let onClose: (() -> Void)?          /* Optional return action to the collection directory */
     /// Opens the archived-list browser
-    let onViewArchivedLists: () -> Void /* Presents this Board's archived lists */
+    let onViewArchivedLists: () -> Void         /* Presents this Board's archived lists */
     /// Optional callback that archives the board after confirmation
-    let onArchiveBoard:   (() -> Void)? /* Optional whole-Board archive action                    */
-    let onDeleteBoard:    (() -> Void)? /* Confirmed parent-owned Board removal                   */
-    let deleteBoardTitle: String        /* Week content clearing or personal Board deletion label */
+    let onArchiveBoard:   (() -> Void)?         /* Optional whole-Board archive action                    */
+    let onDeleteBoard:    (() -> Void)?         /* Confirmed parent-owned Board removal                   */
+    let deleteBoardTitle: String                /* Week content clearing or personal Board deletion label */
     /// Navigates to the first active list when more than one list exists
-    let onJumpToFirstList: (() -> Void)? /* Optional navigation action revealing the first active list */
+    let onJumpToFirstList: (() -> Void)?        /* Optional navigation action revealing the first active list */
     /// Navigates to the last active list when more than one list exists
-    let onJumpToLastList: (() -> Void)? /* Optional navigation action revealing the last active list */
+    let onJumpToLastList: (() -> Void)?         /* Optional navigation action revealing the last active list */
 
-    var listViewMode:    Binding<SingleListViewMode>?                             = /* List view mode */
+    var listViewMode:    Binding<SingleListViewMode>?                             =     /* List view mode                 */
         nil
-    var titleAppearance: ItemAppearance?                                          = /* Title appearance */
+    var titleAppearance: ItemAppearance?                                          =     /* Title appearance               */
         nil
-    var onAppearance:    (() -> Void)?                                            = /* Publish appearance choices */
+    var onAppearance:    (() -> Void)?                                            =     /* Publish appearance choices     */
         nil
-    var onListActions:   (() -> Void)?                                            = /* Open List actions */
+    var onListActions:   (() -> Void)?                                            =     /* Open List actions              */
         nil
-    var onSearch:        (() -> Void)?                                            = /* Open search */
+    var onSearch:        (() -> Void)?                                            =     /* Open search                    */
         nil
-    var onToggleZoom:    (() -> Void)?                                            = /* Toggle Board zoom */
+    var onToggleZoom:    (() -> Void)?                                            =     /* Toggle Board zoom              */
         nil
-    var onToggleGallery: (() -> Void)?                                            = /* Toggle Board gallery */
+    var onToggleGallery: (() -> Void)?                                            =     /* Toggle Board gallery           */
         nil
-    var isGallery                                                                 = /* Gallery state */
+    var isGallery                                                                 =     /* Gallery state                  */
         false
-    var isPanoramic: Bool                                                         = /* Panoramic state */
+    var isPanoramic: Bool                                                         =     /* Panoramic state                */
         false
-    var zoomPercentage                                                            = /* Zoom percentage */
+    var zoomPercentage                                                            =     /* Zoom percentage                */
         62
-    var onResetZoom:                (() -> Void)?                                 = /* Reset zoom callback */
+    var onResetZoom:                (() -> Void)?                                 =     /* Reset zoom callback            */
         nil
-    var onAdjustZoom:               ((AccessibilityAdjustmentDirection) -> Void)? = /* Adjust zoom callback */
+    var onAdjustZoom:               ((AccessibilityAdjustmentDirection) -> Void)? =     /* Adjust zoom callback           */
         nil
-    var calendarAccessibilityTitle: String                                        = /* Calendar accessibility title */
+    var calendarAccessibilityTitle: String                                        =     /* Calendar accessibility title   */
         "Open this month"
-    var onSubtitleTap:              (() -> Void)?                                 = /* Subtitle tap callback */
+    var onSubtitleTap:              (() -> Void)?                                 =     /* Subtitle tap callback          */
         nil
-    let onAddList:                  () -> Void /* Callback for adding a new list                      */
+    let onAddList:                  () -> Void                                          /* Callback for adding a new list */
 
-    @State private var titleOverflows    = false /* Title overflows */
-    @State private var subtitleOverflows = false /* Subtitle overflows */
-    @State private var showsBoardOptions = false /* Board Options visibility */
-    @State private var showingSettings   = false /* Controls the visibility of the board settings sheet */
+    @State private var titleOverflows    = false        /* Title overflows                                     */
+    @State private var subtitleOverflows = false        /* Subtitle overflows                                  */
+    @State private var showsBoardOptions = false        /* Board Options visibility                            */
+    @State private var showingSettings   = false        /* Controls the visibility of the board settings sheet */
 
     /// Controls confirmation before archiving the complete board
-    @State private var confirmsArchiveBoard = false /* Whole-Board archive confirmation state */
-    @State private var confirmsDeleteBoard  = false /* Permanent Board deletion confirmation  */
+    @State private var confirmsArchiveBoard = false     /* Whole-Board archive confirmation state */
+    @State private var confirmsDeleteBoard  = false     /* Permanent Board deletion confirmation  */
 
-    @State private var pendingBoardAction: BoardOptionsAction? /* Pending board action */
+    @State private var pendingBoardAction: BoardOptionsAction?          /* Pending board action */
 
 
     ///
@@ -296,14 +293,12 @@ struct BoardHeader: View
         case .delete:
 
             confirmsDeleteBoard = true
-
         }
-
     }
 
 
-    var titleSwipeArea: some View /* Title swipe area */
-    {  /* Header heading surface accepting boundary-navigation swipes */
+    var titleSwipeArea: some View               /* Title swipe area                                            */
+    {                                           /* Header heading surface accepting boundary-navigation swipes */
         VStack(alignment: .leading, spacing: 2)
         {
             HStack(spacing: 8)
@@ -313,7 +308,6 @@ struct BoardHeader: View
                 SlideableHeaderText(text: title, onOverflowChange:
                     {
                         titleOverflows = $0
-
                     })
                 .font(onClose == nil ? .largeTitle.weight(.bold) : .title2.weight(.bold))
                 .foregroundStyle(.white)
@@ -327,7 +321,6 @@ struct BoardHeader: View
                     onOverflowChange:
                     {
                         subtitleOverflows = $0
-
                     }
                 )
                 .font(inheritedSubtitleItalic ? .subheadline.italic() : .subheadline)
@@ -336,11 +329,8 @@ struct BoardHeader: View
                 .onDisappear
                 {
                     subtitleOverflows = false
-
                 }
-
             }
-
         }
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         .contentShape(Rectangle())
@@ -352,10 +342,10 @@ struct BoardHeader: View
 
                 guard
                 let boundary = BoardListReordering.boundary(
-                    forHorizontalSwipe: value.translation), /* Board edge selected by the horizontal swipe  */
+                    forHorizontalSwipe: value.translation),                             /* Board edge selected by the horizontal swipe  */
                 let action = boundary == .first ? onJumpToFirstList : onJumpToLastList
                 else
-                {  /* Available callback for the selected boundary */
+                {               /* Available callback for the selected boundary */
                     return
                 }
 
@@ -384,12 +374,12 @@ struct BoardHeader: View
     /// @post       User actions invoke supplied callbacks; archive is requested only after confirmation.
     ///             Display settings change through the shared binding, not a separate persisted draft
     ///
-    var body: some View /* Board Header layout */
-    {  /* Board header and global actions */
+    var body: some View                                                                                 /* Board Header layout             */
+    {                                                                                                   /* Board header and global actions */
         AdaptiveWorkspaceHeaderLayout(regularSpacing: 8, layoutDirection: headerLayoutDirection)
         {
             if let onClose
-            {  /* Available return action shown beside the Board heading */
+            {                           /* Available return action shown beside the Board heading */
                 Button(action: onClose)
                 {
                     Image(systemName: "chevron.left")
@@ -435,7 +425,7 @@ struct BoardHeader: View
                 .accessibilityLabel(isPanoramic ? "Reset to Normal zoom" : "Reset to Panoramic zoom")
                 .accessibilityValue("\(isPanoramic ? "Panoramic" : "Normal"), \(zoomPercentage) percent")
                 .accessibilityHint(
-                                                "Pinch the board to adjust zoom. Tap to reset to the other zoom preset, or adjust this control."
+                    "Pinch the board to adjust zoom. Tap to reset to the other zoom preset, or adjust this control."
                 )
                 .accessibilityAdjustableAction
                 {
@@ -449,7 +439,6 @@ struct BoardHeader: View
             Button
             {
                 showsBoardOptions = true
-
             }
             label:
             {
@@ -471,16 +460,13 @@ struct BoardHeader: View
 
                     pendingBoardAction = action
                     showsBoardOptions = false
-
                 }
                 .presentationCompactAdaptation(.popover)
                 .onDisappear
                 {
                     performPendingBoardAction()
                 }
-
             }
-
         }
 
         .padding(.horizontal, 18)
@@ -496,7 +482,6 @@ struct BoardHeader: View
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
@@ -513,12 +498,11 @@ struct BoardHeader: View
             Button("Cancel", role: .cancel)
             {
             }
-
         }
         message:
         {
             Text(
-                                    "Removes all active and archived lists, cards, and bookmarks in this board. Other boards and retained archive copies are unchanged."
+                "Removes all active and archived lists, cards, and bookmarks in this board. Other boards and retained archive copies are unchanged."
             )
         }
 
@@ -534,9 +518,7 @@ struct BoardHeader: View
                 onSetMemberColor: onSetMemberColor
             )
         }
-
     }
-
 }
 
 
@@ -550,26 +532,26 @@ struct BoardHeader: View
 ///
 struct BoardSettingsView: View
 {
-    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers = /* Card Covers visibility */
-    true                                         /* Device-only visibility                   */
-    @Binding var settings: BoardDisplaySettings  /* Bound to the board's display preferences */
+    @AppStorage("Plenact.CardCovers.enabled") private var showsCardCovers =     /* Card Covers visibility                   */
+    true                                                                        /* Device-only visibility                   */
+    @Binding var settings: BoardDisplaySettings                                 /* Bound to the board's display preferences */
     /// Shared presentation choice updated immediately from Board settings
-    @Binding var presentation: BoardPresentation /* Shared Board layout selection edited by this menu */
+    @Binding var presentation: BoardPresentation        /* Shared Board layout selection edited by this menu */
 
-    @Environment(\.dismiss) private var dismiss /* Dismiss action for the settings sheet           */
+    @Environment(\.dismiss) private var dismiss         /* Dismiss action for the settings sheet           */
 
-    let activeMembers:    [String]                 /* Active assigned users in board order        */
-    let memberColors:     [String: Color]          /* Member icon colors keyed by normalized name */
-    let onRenameMember:   (String, String) -> Void /* Rename a member across all assigned cards   */
-    let onDeleteMember:   (String) -> Void         /* Remove a member from all assigned cards     */
-    let onSetMemberColor: (String, Color) -> Void  /* Update a member's shared icon color         */
+    let activeMembers:    [String]                      /* Active assigned users in board order        */
+    let memberColors:     [String: Color]               /* Member icon colors keyed by normalized name */
+    let onRenameMember:   (String, String) -> Void      /* Rename a member across all assigned cards   */
+    let onDeleteMember:   (String) -> Void              /* Remove a member from all assigned cards     */
+    let onSetMemberColor: (String, Color) -> Void       /* Update a member's shared icon color         */
 
-    @State private var memberNameDraft  = ""    /* Draft name for renaming a member             */
-    @State private var isRenamingMember = false /* Flag indicating if member rename in progress */
+    @State private var memberNameDraft  = ""            /* Draft name for renaming a member             */
+    @State private var isRenamingMember = false         /* Flag indicating if member rename in progress */
 
-    @State private var editingMember:       String?             /* Currently edited member name      */
-    @State private var memberToDelete:      String?             /* Member slated for deletion        */
-    @State private var selectedMemberColor: MemberColorTarget?  /* Target member for color selection */
+    @State private var editingMember:       String?                     /* Currently edited member name      */
+    @State private var memberToDelete:      String?                     /* Member slated for deletion        */
+    @State private var selectedMemberColor: MemberColorTarget?          /* Target member for color selection */
 
 
     ///
@@ -580,8 +562,8 @@ struct BoardSettingsView: View
     /// @return     (String) trimmed name, which may be empty
     /// @post       Member assignments and draft text remain unchanged
     ///
-    private var trimmedMemberNameDraft: String /* Trimmed member name draft */
-    {  /* Normalized member rename input */
+    private var trimmedMemberNameDraft: String                          /* Trimmed member name draft      */
+    {                                                                   /* Normalized member rename input */
         memberNameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -598,8 +580,8 @@ struct BoardSettingsView: View
     /// @post       Toggle changes update the binding; member actions invoke parent callbacks.
     ///             Done dismisses without reverting already applied settings
     ///
-    var body: some View /* Board Settings layout */
-    {  /* Board settings and member management form */
+    var body: some View         /* Board Settings layout                     */
+    {                           /* Board settings and member management form */
         NavigationStack
         {
             Form
@@ -618,7 +600,7 @@ struct BoardSettingsView: View
                 footer:
                 {
                     Text(
-                                                            "Applies to Board and Today card rows on this device. Turning this off keeps every cover selection and attachment."
+                        "Applies to Board and Today card rows on this device. Turning this off keeps every cover selection and attachment."
                     )
                 }
 
@@ -638,14 +620,13 @@ struct BoardSettingsView: View
 
                             HStack(spacing: 12)
                             {
-                                let memberColor = /* Member color */
+                                let memberColor =                       /* Member color */
                                 memberColors[member.lowercased()]
-                                ?? .accentColor /* Fallback to accent color if no custom color is set */
+                                ?? .accentColor                         /* Fallback to accent color if no custom color is set */
 
                                 Button
                                 {
                                     selectedMemberColor = MemberColorTarget(member: member, color: memberColor)
-
                                 }
                                 label:
                                 {
@@ -667,7 +648,6 @@ struct BoardSettingsView: View
                                     editingMember = member
                                     memberNameDraft = member
                                     isRenamingMember = true
-
                                 }
                                 label:
                                 {
@@ -686,21 +666,15 @@ struct BoardSettingsView: View
                                 Button(role: .destructive)
                                 {
                                     memberToDelete = member
-
                                 }
                                 label:
                                 {
                                     Label("Remove", systemImage: "person.crop.circle.badge.minus")
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
 
             .navigationTitle("Board Settings")
@@ -713,9 +687,7 @@ struct BoardSettingsView: View
                     {
                         dismiss()
                     }
-
                 }
-
             }
 
             .alert("Edit member", isPresented: $isRenamingMember)
@@ -730,7 +702,7 @@ struct BoardSettingsView: View
                 Button("Save")
                 {
                     guard let editingMember else
-                    {  /* Assignee currently being renamed */
+                    {                                   /* Assignee currently being renamed */
                         return
                     }
 
@@ -747,30 +719,28 @@ struct BoardSettingsView: View
 
             .confirmationDialog(
 
-                                    "Remove \(memberToDelete ?? "member") from the board?",
+                "Remove \(memberToDelete ?? "member") from the board?",
 
-                                    isPresented: Binding(
-                                        get:
-                                        {
-                                            memberToDelete != nil
-                                        },
-                                        set:
-                                        {
-                                            if !$0
-                                            {
-                                                memberToDelete = nil
-
-                                            }
-
-                                        }
-                                    ),
-                                    titleVisibility: .visible
+                isPresented: Binding(
+                    get:
+                    {
+                        memberToDelete != nil
+                    },
+                    set:
+                    {
+                        if !$0
+                        {
+                            memberToDelete = nil
+                        }
+                    }
+                ),
+                titleVisibility: .visible
             )
             {
                 Button("Remove member", role: .destructive)
                 {
                     guard let memberToDelete else
-                    {  /* Assignee selected for removal */
+                    {                                   /* Assignee selected for removal */
                         return
                     }
 
@@ -778,16 +748,13 @@ struct BoardSettingsView: View
                     onDeleteMember(memberToDelete)
 
                     self.memberToDelete = nil
-
                 }
 
 
                 Button("Cancel", role: .cancel)
                 {
                     memberToDelete = nil
-
                 }
-
             }
             message:
             {
@@ -803,15 +770,12 @@ struct BoardSettingsView: View
                     color in
                     onSetMemberColor(target.member, color)
                 }
-
             }
-
         }
 
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
-
 }
 
 
@@ -827,8 +791,8 @@ struct BoardSettingsView: View
 ///
 struct MemberColorTarget: Identifiable
 {
-    let member: String /* The name of the member whose color is being edited */
-    let color:  Color  /* The current color of the member's icon             */
+    let member: String          /* The name of the member whose color is being edited */
+    let color:  Color           /* The current color of the member's icon             */
 
     ///
     /// @fcn        MemberColorTarget.id
@@ -838,11 +802,10 @@ struct MemberColorTarget: Identifiable
     /// @return     (String) normalized presentation identity
     /// @post       The member name and seed color remain unchanged
     ///
-    var id: String /* Record or view identity */
+    var id: String      /* Record or view identity */
     {
         member.lowercased()
-    }  /* Use the lowercased member name as the unique identifier for the sheet */
-
+    }                           /* Use the lowercased member name as the unique identifier for the sheet */
 }
 
 
@@ -864,11 +827,11 @@ struct MemberColorTarget: Identifiable
 ///
 struct MemberColorEditorSheet: View
 {
-    let memberName: String          /* The name of the member whose color is being edited         */
-    let onSave:     (Color) -> Void /* The closure to call when the user saves the selected color */
+    let memberName: String              /* The name of the member whose color is being edited         */
+    let onSave:     (Color) -> Void     /* The closure to call when the user saves the selected color */
 
-    @Environment(\.dismiss) private var dismiss /* Dismiss action for the color editor */
-    @State private var selectedColor: Color     /* Draft member icon color             */
+    @Environment(\.dismiss) private var dismiss         /* Dismiss action for the color editor */
+    @State private var selectedColor: Color             /* Draft member icon color             */
 
 
     ///
@@ -888,7 +851,6 @@ struct MemberColorEditorSheet: View
         self.memberName = memberName
         self.onSave = onSave
         _selectedColor = State(initialValue: initialColor)
-
     }
 
 
@@ -900,8 +862,8 @@ struct MemberColorEditorSheet: View
     /// @return     (some View) medium-sheet member color form
     /// @post       Applying/persisting the chosen color belongs to the onSave caller
     ///
-    var body: some View /* Member Color Editor layout */
-    {  /* Member icon color editor */
+    var body: some View         /* Member Color Editor layout */
+    {                           /* Member icon color editor   */
         NavigationStack
         {
             Form
@@ -910,7 +872,6 @@ struct MemberColorEditorSheet: View
                 {
                     ColorPicker("Icon color", selection: $selectedColor, supportsOpacity: false)
                 }
-
             }
 
             .navigationTitle("Member icon")
@@ -923,7 +884,6 @@ struct MemberColorEditorSheet: View
                     {
                         dismiss()
                     }
-
                 }
 
 
@@ -934,16 +894,12 @@ struct MemberColorEditorSheet: View
                         onSave(selectedColor)
                         dismiss()
                     }
-
                 }
-
             }
-
         }
 
         .presentationDetents([.medium])
     }
-
 }
 
 
@@ -969,19 +925,19 @@ enum BoardOptionsAction
 ///
 struct BoardOptionsPopover: View
 {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize /* Dynamic type size         */
-    let canJumpFirst:  Bool                                     /* Jump First availability   */
-    let canJumpLast:   Bool                                     /* Jump Last availability    */
-    let hasAppearance: Bool                                     /* Appearance availability   */
-    let canArchive:    Bool                                     /* Archive availability      */
-    let canDelete:     Bool                                     /* Delete availability       */
-    let deleteTitle:   String                                   /* Delete title              */
-    var hasGallery                                 = false      /* Gallery availability      */
-    var isGallery                                  = false      /* Gallery state             */
-    var canResetZoom                               = false      /* Reset Zoom availability   */
-    var hasListActions                             = false      /* List Actions availability */
-    var listViewMode: Binding<SingleListViewMode>? = nil        /* List view mode            */
-    let onAction:     (BoardOptionsAction) -> Void              /* Action callback           */
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize         /* Dynamic type size         */
+    let canJumpFirst:  Bool                                             /* Jump First availability   */
+    let canJumpLast:   Bool                                             /* Jump Last availability    */
+    let hasAppearance: Bool                                             /* Appearance availability   */
+    let canArchive:    Bool                                             /* Archive availability      */
+    let canDelete:     Bool                                             /* Delete availability       */
+    let deleteTitle:   String                                           /* Delete title              */
+    var hasGallery                                 = false              /* Gallery availability      */
+    var isGallery                                  = false              /* Gallery state             */
+    var canResetZoom                               = false              /* Reset Zoom availability   */
+    var hasListActions                             = false              /* List Actions availability */
+    var listViewMode: Binding<SingleListViewMode>? = nil                /* List view mode            */
+    let onAction:     (BoardOptionsAction) -> Void                      /* Action callback           */
 
 
     ///
@@ -1021,7 +977,7 @@ struct BoardOptionsPopover: View
     }
 
 
-    var body: some View /* Board Options layout */
+    var body: some View         /* Board Options layout */
     {
         VStack(spacing: 0)
         {
@@ -1033,7 +989,6 @@ struct BoardOptionsPopover: View
                     {
                         Text($0.title).tag($0)
                     }
-
                 }
                 .pickerStyle(.segmented)
                 .padding(12)
@@ -1142,9 +1097,7 @@ struct BoardOptionsPopover: View
                     Spacer(minLength: 0)
                     icon("trash", name: deleteTitle, action: .delete, color: .red)
                 }
-
             }
-
         }
         .font(.body)
         .foregroundStyle(.primary)
@@ -1153,5 +1106,4 @@ struct BoardOptionsPopover: View
         .frame(width: dynamicTypeSize.isAccessibilitySize ? 320 : nil)
         .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize, vertical: true)
     }
-
 }

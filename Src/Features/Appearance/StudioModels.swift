@@ -13,16 +13,15 @@ import Foundation
 enum StudioMaterial: String, Codable, CaseIterable, Identifiable, Sendable
 {
     case plain, color, gradient, paper, linen, dots, grid, canvas, photo, unsplash
-    var id: String /* Record or view identity */
+    var id: String                                                                      /* Record or view identity */
     {
         rawValue
     }
 
-    var title: String /* User-facing title */
+    var title: String           /* User-facing title */
     {
         rawValue.capitalized
     }
-
 }
 
 
@@ -32,12 +31,11 @@ enum StudioMaterial: String, Codable, CaseIterable, Identifiable, Sendable
 ///     Keeps external photographs separate from offline user imports and preserves required credits
 struct StudioRemotePhoto: Codable, Hashable, Sendable
 {
-    let id:           String /* Record or view identity   */
-    let imageURL:     URL    /* Image URL                 */
-    let photographer: String /* Photographer display text */
-    let profileURL:   URL    /* Profile URL               */
-    let downloadURL:  URL    /* Download URL              */
-
+    let id:           String    /* Record or view identity   */
+    let imageURL:     URL       /* Image URL                 */
+    let photographer: String    /* Photographer display text */
+    let profileURL:   URL       /* Profile URL               */
+    let downloadURL:  URL       /* Download URL              */
 }
 
 
@@ -47,17 +45,16 @@ struct StudioRemotePhoto: Codable, Hashable, Sendable
 ///     Allows each use of an artwork to retain independent strength, readability, and framing
 struct StudioSurface: Codable, Hashable, Sendable
 {
-    var material:         StudioMaterial     = .paper   /* Selected surface material   */
-    var color:            String             = "EDE3CA" /* Resolved color value        */
-    var secondaryColor:   String             = "C4DADB" /* Secondary color             */
-    var strength:         Double             = 0.65     /* Surface effect intensity    */
-    var readability:      Double             = 0.55     /* Readability operation value */
-    var verticalPosition: Double             = 0.5      /* Vertical position           */
-    var zoom:             Double             = 1        /* Current Board zoom          */
-    var showsInPreviews:  Bool               = true     /* In Previews visibility      */
-    var photoFileName:    String?            = nil      /* Photo file name             */
-    var remotePhoto:      StudioRemotePhoto? = nil      /* Remote photo                */
-
+    var material:         StudioMaterial     = .paper           /* Selected surface material   */
+    var color:            String             = "EDE3CA"         /* Resolved color value        */
+    var secondaryColor:   String             = "C4DADB"         /* Secondary color             */
+    var strength:         Double             = 0.65             /* Surface effect intensity    */
+    var readability:      Double             = 0.55             /* Readability operation value */
+    var verticalPosition: Double             = 0.5              /* Vertical position           */
+    var zoom:             Double             = 1                /* Current Board zoom          */
+    var showsInPreviews:  Bool               = true             /* In Previews visibility      */
+    var photoFileName:    String?            = nil              /* Photo file name             */
+    var remotePhoto:      StudioRemotePhoto? = nil              /* Remote photo                */
 }
 
 
@@ -67,14 +64,13 @@ struct StudioSurface: Codable, Hashable, Sendable
 ///     Stores references rather than duplicated image bytes, so removing an individual use leaves art intact
 struct StudioArtwork: Codable, Identifiable, Hashable, Sendable
 {
-    var id = UUID()                                 /* Record UUID                */
-    var name:           String                      /* Display or lookup name     */
-    var surface:        StudioSurface               /* Artwork surface definition */
-    var header:         ItemAccent?           = nil /* Resolved header appearance */
-    var italicSubtitle: Bool?                 = nil /* Italic subtitle            */
-    var titleColor:     ListPreviewTextColor? = nil /* Title color                */
-    var textColor:      ListPreviewTextColor? = nil /* Text color                 */
-
+    var id = UUID()                                     /* Record UUID                */
+    var name:           String                          /* Display or lookup name     */
+    var surface:        StudioSurface                   /* Artwork surface definition */
+    var header:         ItemAccent?           = nil     /* Resolved header appearance */
+    var italicSubtitle: Bool?                 = nil     /* Italic subtitle            */
+    var titleColor:     ListPreviewTextColor? = nil     /* Title color                */
+    var textColor:      ListPreviewTextColor? = nil     /* Text color                 */
 }
 
 
@@ -86,11 +82,10 @@ enum StudioDestination: String, Codable, CaseIterable, Identifiable
 {
     case today = "Today", week = "Week", plans = "Plans", activity = "Activity"
     case calendar = "Calendar", search = "Search", settings = "Settings"
-    var id: String /* Record or view identity */
+    var id: String                                                              /* Record or view identity */
     {
         rawValue
     }
-
 }
 
 
@@ -100,15 +95,15 @@ enum StudioDestination: String, Codable, CaseIterable, Identifiable
 ///     Provides new-item defaults and per-view wallpapers while leaving unset destinations unchanged
 struct StudioSettings: Codable, Equatable
 {
-    static let key                                  = /* Persistence lookup key */
+    static let key                                  =                                   /* Persistence lookup key     */
         "Plenact.Studio.Settings.v1"
-    static let libraryKey                           = "Plenact.Studio.Artwork.v1" /* Library key */
-    var views:              [String: StudioSurface] = [:] /* Per-view wallpaper choices */
-    var defaultCardSurface: StudioSurface?          = nil /* Artwork for new Cards */
-    var defaultNoteSurface: StudioSurface?          = nil /* Artwork for new Notes */
-    var variesNewSurfaces                           = false /* Varies new surfaces */
-    var variesNewHeaders                            = false /* Varies new headers */
-    var palette: [String]                           = /* Artwork color palette */
+    static let libraryKey                           = "Plenact.Studio.Artwork.v1"       /* Library key                */
+    var views:              [String: StudioSurface] = [:]                               /* Per-view wallpaper choices */
+    var defaultCardSurface: StudioSurface?          = nil                               /* Artwork for new Cards      */
+    var defaultNoteSurface: StudioSurface?          = nil                               /* Artwork for new Notes      */
+    var variesNewSurfaces                           = false                             /* Varies new surfaces        */
+    var variesNewHeaders                            = false                             /* Varies new headers         */
+    var palette: [String]                           =                                   /* Artwork color palette      */
         ["EDE3CA", "DDE8D8", "DCE7EE", "E9DDEB", "F0DDD3"]
 
 
@@ -143,7 +138,7 @@ struct StudioSettings: Codable, Equatable
             return
         }
 
-        var surface = /* Artwork surface definition */
+        var surface =           /* Artwork surface definition */
             card.appearance?.studioSurface ?? (card.presentation == .note ? settings.defaultNoteSurface : settings.defaultCardSurface)
 
         if surface == nil, card.presentation == .note
@@ -156,30 +151,24 @@ struct StudioSettings: Codable, Equatable
             if surface == nil
             {
                 surface = StudioSurface(material: .color)
-
             }
 
             surface?.color = color
-
         }
 
-        var appearance = card.appearance ?? ItemAppearance() /* Resolved appearance choices */
+        var appearance = card.appearance ?? ItemAppearance()    /* Resolved appearance choices */
 
         if settings.variesNewHeaders, appearance.background == nil
         {
             appearance.background = ItemAccent.allCases.randomElement()
-
         }
 
         if let surface
         {
             appearance.studioSurface = surface
-
         }
 
         card.appearance = appearance.isEmpty ? nil : appearance
-
     }
-
 }
 

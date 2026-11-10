@@ -297,6 +297,7 @@ struct SavedCardsView: View
     @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards = /* Uses square recent cards */
         false
     @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion /* Reduce recent motion */
+    @State private var isRecentShelfCollapsed = false /* Recent disclosure state */
     @Environment(\.appReturnResetRequest) private var appReturnResetRequest /* App return reset request */
     @State private var query                           = "" /* Search text */
     @State private var showsSearch                     = false /* Search visibility */
@@ -681,11 +682,13 @@ struct SavedCardsView: View
 
     private var recentSection: some View /* Recent section */
     {
-        VStack(alignment: .leading, spacing: 10)
+        let isCollapsed = revisit == nil && isRecentShelfCollapsed /* Shelf disclosure on the main Activity view */
+
+        return VStack(alignment: .leading, spacing: 10)
         {
-            HStack
+            if revisit == nil
             {
-                if revisit == nil
+                HStack
                 {
                     Button
                     {
@@ -704,78 +707,94 @@ struct SavedCardsView: View
                     .accessibilityValue(usesSquareRecentCards ? "Square" : "Full size")
                     .accessibilityHint(usesSquareRecentCards ? "Show full-size recent cards" : "Show square recent cards")
                     .accessibilityIdentifier("activity.recent.toggleSize")
-                }
 
-                Spacer()
+                    Spacer()
 
-                if !recents.isEmpty
-                {
-                    Button("Clear")
+                    Button
                     {
-                        confirmsClear = true
-                    }
-                    .font(.subheadline)
-                    .accessibilityLabel("Clear recent history")
-                    .accessibilityIdentifier("activity.recent.clear")
-                }
-            }
-
-            if recents.isEmpty
-            {
-                Text(
-                    query.isEmpty
-                    ? "Recently opened Cards and Notes will appear here." : "No recent items match your search."
-                )
-                .font(.subheadline).foregroundStyle(.secondary)
-            }
-            else
-            {
-                ScrollView(.horizontal, showsIndicators: false)
-                {
-                    HStack(spacing: 10)
-                    {
-                        ForEach(recents)
+                        withAnimation(reduceRecentMotion ? nil : .easeInOut(duration: 0.2))
                         {
-                            result in
-                            Button
-                            {
-                                openRecent(result)
-                            }
-                            label:
-                            {
-                                VStack(alignment: .leading, spacing: usesSquareRecentCards ? 6 : 8)
-                                {
-                                    if showsCovers, let cover = result.card.coverAttachment
-                                    {
-                                        CardCoverPreview(attachment: cover, height: usesSquareRecentCards ? 40 : 64)
-                                            .frame(height: usesSquareRecentCards ? 40 : 64).clipShape(
-                                            RoundedRectangle(cornerRadius: 8))
-                                    }
-
-                                    Text(result.card.word).font(.subheadline.weight(.semibold)).lineLimit(usesSquareRecentCards ? 2 : 3)
-                                    Spacer(minLength: 0)
-                                    Text(result.location).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                                }
-                                .padding(12)
-                                .frame(
-                                    width: usesSquareRecentCards && !showsCovers ? 144 : 156,
-                                    height: usesSquareRecentCards ? (showsCovers ? 156 : 144) : (showsCovers ? 210 : 144),
-                                    alignment: .topLeading
-                                )
-                                .clipped()
-                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-                            } .buttonStyle(.plain).accessibilityHint("Reopen this item in " + result.location)
+                            isRecentShelfCollapsed.toggle()
                         }
+                    }
+                    label:
+                    {
+                        Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, height: 44, alignment: .trailing)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isCollapsed ? "Expand Recent" : "Collapse Recent")
+                    .accessibilityIdentifier("activity.recent.toggleDisclosure")
+                }
+            }
+            if !isCollapsed
+            {
+                recentShelfContent
+            }
+        }
+    }
 
+
+    @ViewBuilder
+    private var recentShelfContent: some View /* Recent cards or empty state */
+    {
+        if recents.isEmpty
+        {
+            Text(
+                query.isEmpty
+                ? "Recently opened Cards and Notes will appear here." : "No recent items match your search."
+            )
+            .font(.subheadline).foregroundStyle(.secondary)
+        }
+        else
+        {
+            ScrollView(.horizontal, showsIndicators: false)
+            {
+                HStack(spacing: 10)
+                {
+                    ForEach(recents)
+                    {
+                        result in
+                        Button
+                        {
+                            openRecent(result)
+                        }
+                        label:
+                        {
+                            VStack(alignment: .leading, spacing: usesSquareRecentCards ? 6 : 8)
+                            {
+                                if showsCovers, let cover = result.card.coverAttachment
+                                {
+                                    CardCoverPreview(attachment: cover, height: usesSquareRecentCards ? 40 : 64)
+                                        .frame(height: usesSquareRecentCards ? 40 : 64).clipShape(
+                                        RoundedRectangle(cornerRadius: 8))
+                                }
+
+                                Text(result.card.word).font(.subheadline.weight(.semibold)).lineLimit(usesSquareRecentCards ? 2 : 3)
+                                Spacer(minLength: 0)
+                                Text(result.location).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                            }
+                            .padding(12)
+                            .frame(
+                                width: usesSquareRecentCards && !showsCovers ? 144 : 156,
+                                height: usesSquareRecentCards ? (showsCovers ? 156 : 144) : (showsCovers ? 210 : 144),
+                                alignment: .topLeading
+                            )
+                            .clipped()
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                        } .buttonStyle(.plain).accessibilityHint("Reopen this item in " + result.location)
                     }
 
                 }
-                .frame(height: usesSquareRecentCards ? (showsCovers ? 156 : 144) : (showsCovers ? 210 : 144))
 
             }
+            .frame(height: usesSquareRecentCards ? (showsCovers ? 156 : 144) : (showsCovers ? 210 : 144))
+            .modifier(CardShelfEdgeFade())
 
         }
-
     }
 
 
@@ -1234,6 +1253,7 @@ struct SavedCardsView: View
                     ScrollView(.vertical)
                     {
                         activityHeader
+                            .padding(.horizontal, CardShelfEdgeFade.edgeWidth)
                             .fixedSize(horizontal: false, vertical: true)
                             .onGeometryChange(for: CGFloat.self)
                             {
@@ -1248,6 +1268,8 @@ struct SavedCardsView: View
                     .scrollIndicators(.hidden)
                     .scrollBounceBehavior(.basedOnSize)
                     .frame(height: min(activityHeaderHeight > 0 ? activityHeaderHeight : headerLimit, headerLimit))
+                    // Leave room for the Recent fades inside the vertical scroll view's clip
+                    .padding(.horizontal, -CardShelfEdgeFade.edgeWidth)
 
                     if revisit == nil
                     {

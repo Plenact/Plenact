@@ -64,6 +64,10 @@ struct BoardListsView: View
     @State private var archivingCollection:         PersonalCollection? /* Collection awaiting archive confirmation       */
     @State private var showsRecentShelf                                                           = /* Recent Shelf visibility */
         false
+    @State private var isPlateShelfCollapsed = false /* Coming Soon disclosure state */
+    @State private var plateOverflowNudge = false /* Chevron animation trigger */
+    @AppStorage("com.plenact.tips.comingSoonOverflowSeen") private var hasSeenPlateOverflow = false /* Device tutorial state */
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion /* Reduce Motion preference */
     @AppStorage("Plenact.LibraryImportant.v1") private var importantData                          = /* Important data */
         Data()
     @State private var recentItems                                                                = /* Recent items */
@@ -79,6 +83,7 @@ struct BoardListsView: View
     @State var browseFilter:                                      LibraryBrowseFilter             = .all /* Initial scope may be supplied by Library navigation */
     @ScaledMetric(relativeTo: .body) private var plateTileHeight: CGFloat                         = /* Plate tile height */
         110
+    private let collectionRowInset: CGFloat = 16 /* Row inset inside the grouped List */
     @State var searchText                                                                         = ""   /* Directory search query                     */
     @State private var importanceExampleDrafts: Set<UUID>                                         = /* Importance example drafts */
         []
@@ -421,7 +426,7 @@ struct BoardListsView: View
         }
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+        .listRowInsets(EdgeInsets(top: 0, leading: collectionRowInset, bottom: 0, trailing: collectionRowInset))
         .accessibilityActions
         {
             Button("Edit Collection")
@@ -1240,59 +1245,148 @@ struct BoardListsView: View
     {
         VStack(alignment: .leading, spacing: 10)
         {
-            Text("Coming Soon")
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(.secondary)
+            TimelineView(.everyMinute)
+            {
+                context in
+                plateHeader(dueTodayCount: isPlateShelfCollapsed ? plateDueTodayCount(at: context.date) : 0)
+            }
             .padding(.horizontal, 28)
-            .accessibilityAddTraits(.isHeader)
-            if plateItems.isEmpty
+
+            if !isPlateShelfCollapsed
             {
-                Text(
-                                                "Nothing urgent right now. Mark an item important from its menu or add a due date to bring it here."
-                )
-                .font(.subheadline).foregroundStyle(.secondary)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
-                .padding(.horizontal, 28)
+                plateShelfContent
+                // Match the grouped List's outer gutter and its collection row inset
+                .padding(.horizontal, 20 + collectionRowInset)
             }
-            else
-            {
-                ScrollView(.horizontal, showsIndicators: false)
-                {
-                    HStack(alignment: .top, spacing: 10)
-                    {
-                        ForEach(plateItems)
-                        {
-                            item in
-                            Button
-                            {
-                                boardTargetListID = item.list.id
-                                boardTargetCardID = item.card.id
-                                openedCollection = item.collection
-
-                            }
-                            label:
-                            {
-                                LibraryPlateTile(item: item)
-                                .frame(height: plateTileHeight)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("Opens this item directly")
-                        }
-
-                    }
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 4)
-                }
-                .contentMargins(.all, 0, for: .scrollContent)
-                .frame(height: plateTileHeight + 8)
-            }
-
         }
         .padding(.top, 10)
         .padding(.bottom, 5)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+
+    private func plateDueTodayCount(at date: Date) -> Int
+    {
+        let calendar = Calendar.autoupdatingCurrent /* Local day boundary */
+        let items = LibraryPlateSelection.items(
+            in: collections, important: importantItems, now: date, calendar: calendar, limit: nil)
+        return items.lazy.filter { calendar.isDate($0.date, inSameDayAs: date) }.count
+    }
+
+
+    private func plateHeader(dueTodayCount: Int) -> some View
+    {
+        Button
+        {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2))
+            {
+                isPlateShelfCollapsed.toggle()
+            }
+        }
+        label:
+        {
+            HStack
+            {
+                Text("Coming Soon")
+                if dueTodayCount > 0
+                {
+                    Text("· \(dueTodayCount) due today")
+                }
+                Spacer(minLength: 0)
+                Image(systemName: isPlateShelfCollapsed ? "chevron.down" : "chevron.up")
+                .font(.subheadline.weight(.semibold))
+                .keyframeAnimator(initialValue: 0.0, trigger: plateOverflowNudge)
+                {
+                    chevron, angle in
+                    chevron.rotationEffect(.degrees(angle))
+                }
+                keyframes:
+                {
+                    _ in
+                    CubicKeyframe(12.0, duration: 0.09)
+                    CubicKeyframe(-10.0, duration: 0.12)
+                    CubicKeyframe(0.0, duration: 0.11)
+                }
+                .frame(width: 44, height: 44, alignment: .trailing)
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityLabel(isPlateShelfCollapsed ? "Expand Coming Soon" : "Collapse Coming Soon")
+        .accessibilityValue(dueTodayCount > 0 ? "\(dueTodayCount) due today" : "")
+    }
+
+
+    @ViewBuilder
+    private var plateShelfContent: some View /* Coming Soon cards or empty state */
+    {
+        if plateItems.isEmpty
+        {
+            Text(
+                "Nothing urgent right now. Mark an item important from its menu or add a due date to bring it here."
+            )
+            .font(.subheadline).foregroundStyle(.secondary)
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
+        }
+        else
+        {
+            ScrollView(.horizontal, showsIndicators: false)
+            {
+                HStack(alignment: .top, spacing: 10)
+                {
+                    ForEach(plateItems)
+                    {
+                        item in
+                        Button
+                        {
+                            boardTargetListID = item.list.id
+                            boardTargetCardID = item.card.id
+                            openedCollection = item.collection
+
+                        }
+                        label:
+                        {
+                            LibraryPlateTile(item: item)
+                            .frame(height: plateTileHeight)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Opens this item directly")
+                    }
+
+                }
+                .padding(.vertical, 4)
+                .onGeometryChange(for: Bool.self)
+                {
+                    geometry in
+                    guard let viewport = geometry.bounds(of: .named("comingSoonViewport")) else
+                    {
+                        return false
+                    }
+                    return geometry.size.width + 2 * CardShelfEdgeFade.edgeWidth > viewport.width + 1
+                }
+                action:
+                {
+                    overflows in
+                    if overflows && !hasSeenPlateOverflow
+                    {
+                        hasSeenPlateOverflow = true
+                        if !reduceMotion
+                        {
+                            plateOverflowNudge.toggle()
+                        }
+                    }
+                }
+            }
+            .coordinateSpace(.named("comingSoonViewport"))
+            .contentMargins(.vertical, 0, for: .scrollContent)
+            .frame(height: plateTileHeight + 8)
+            .modifier(CardShelfEdgeFade())
+        }
     }
 
 

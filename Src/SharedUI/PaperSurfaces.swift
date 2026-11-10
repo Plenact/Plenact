@@ -11,6 +11,39 @@ import Speech
 import SwiftUI
 
 
+/// Softens the edges of a horizontal card shelf beyond its resting content margins
+struct CardShelfEdgeFade: ViewModifier
+{
+    static let edgeWidth: CGFloat = 16 /* Width of each fade */
+
+    func body(content: Content) -> some View
+    {
+        content
+        .contentMargins(.horizontal, Self.edgeWidth, for: .scrollContent)
+        .mask
+        {
+            GeometryReader
+            {
+                geometry in
+                let fade = min(Self.edgeWidth / max(geometry.size.width, 1), 0.5) /* Fraction of shelf width per edge */
+
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .white, location: fade),
+                        .init(color: .white, location: 1 - fade),
+                        .init(color: .clear, location: 1)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+        }
+        .padding(.horizontal, -Self.edgeWidth)
+    }
+}
+
+
 ///
 /// Draws the shared paper texture behind Today surfaces
 ///

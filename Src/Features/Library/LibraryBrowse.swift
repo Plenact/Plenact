@@ -209,12 +209,13 @@ enum LibraryPlateSelection
     /// @param[in]  important    Importance selections or the Important filter state
     /// @param[in]  now          Reference time used instead of an implicit clock read
     /// @param[in]  calendar     Calendar supplying local-day, time-zone, and week-boundary rules
+    /// @param[in]  limit        Maximum preview items, or nil for the complete selection
     ///
     /// @return     ([LibraryPlateItem]) ranked upcoming or important unfinished Library items
     ///
     static func items(
         in collections: [PersonalCollection], important: [LibraryRecentItem], now: Date = .now,
-        calendar: Calendar = .current
+        calendar: Calendar = .current, limit: Int? = 4
     ) -> [LibraryPlateItem]
     {
         let today                     = calendar.startOfDay(for: now) /* Current local day      */
@@ -297,7 +298,7 @@ enum LibraryPlateSelection
                 }
 
                 return $0.id < $1.id
-            } .prefix(4))
+            } .prefix(limit ?? items.count))
     }
 
 }

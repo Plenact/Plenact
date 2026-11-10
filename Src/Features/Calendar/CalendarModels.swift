@@ -170,17 +170,17 @@ enum PlanningDate
 ///
 struct DatedPlanningWeek: Identifiable, Hashable, Codable
 {
-    var startKey:        String             /* Dated Week boundary key    */
-    var collection:      PersonalCollection /* Personal collection record */
-    var dayListIDs:      [String: Int]      /* Day list i ds              */
-    var explicitlySaved: Bool = false       /* Explicitly saved           */
+    var startKey:        String                         /* Dated Week boundary key    */
+    var collection:      PersonalCollection             /* Personal collection record */
+    var dayListIDs:      [String: Int]                  /* Day list i ds              */
+    var explicitlySaved: Bool = false                   /* Explicitly saved           */
 
-    var id:              UUID               /* Record UUID                */
+    var id:              UUID                           /* Record UUID                */
     {
         collection.id
     }
 
-    var hasContent: Bool                   /* Content availability        */
+    var hasContent: Bool                                /* Content availability        */
     {
         collection.lists.contains
         {
@@ -189,9 +189,9 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
 
     }
 
-    var rangeTitle: String                  /* Full Week date range       */
+    var rangeTitle: String                              /* Full Week date range       */
     {
-        let days = PlanningDate.days(in: startKey) /* Dates in the selected range */
+        let days = PlanningDate.days(in: startKey)      /* Dates in the selected range */
 
         guard let first = days.first, let last = days.last else
         {
@@ -202,9 +202,9 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
                         "\(first.formatted(.dateTime.month(.abbreviated).day())) – \(last.formatted(.dateTime.month(.abbreviated).day().year()))"
     }
 
-    var compactRangeTitle: String /* Condensed Week date range */
+    var compactRangeTitle: String                       /* Condensed Week date range   */
     {
-        let days = PlanningDate.days(in: startKey) /* Dates in the selected range */
+        let days = PlanningDate.days(in: startKey)      /* Dates in the selected range */
 
         guard let first = days.first, let last = days.last else
         {

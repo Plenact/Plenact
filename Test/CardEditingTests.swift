@@ -758,17 +758,11 @@ extension PlenactBoardDocumentTests
 
 
     ///
-    /// @fcn        PlenactBoardDocumentTests.testNoteNavigationReportsToolbarVisibilityAndRestoresOnReturn
-    /// @brief      Verify that note Navigation Reports Toolbar Visibility And Restores On Return
-    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`,
-    ///             `previous?.makeKey`. Checks `XCTAssertFalse(probe.noteIsVisible)`;
-    ///             `XCTAssertTrue(probe.noteIsVisible, "A pushed Note must hide the app bar")`
-    ///
-    /// @return     (Void) no return value
-    /// @throws     Errors from throwing dependencies propagate unless handled within this operation
+    /// @fcn        PlenactBoardDocumentTests.testItemNavigationReportsAndSettlesToolbarVisibility
+    /// @brief      Verify that only Card toolbars hide after entry and that item navigation clears the active toolbar
     ///
     @MainActor
-    func testNoteNavigationReportsToolbarVisibilityAndRestoresOnReturn() async throws
+    func testItemNavigationReportsAndSettlesToolbarVisibility() async throws
     {
         let scene =                                                             /* Owning window scene      */
             try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
@@ -793,31 +787,41 @@ extension PlenactBoardDocumentTests
         }
 
         try await Task.sleep(for: .milliseconds(150))
-        XCTAssertFalse(probe.noteIsVisible)
+        XCTAssertNil(probe.itemToolbars.active)
 
         probe.path = [KanbanCard(id: 1, word: "Note", listTitle: "Sunday", presentation: .note)]
 
         try await Task.sleep(for: .milliseconds(400))
-        XCTAssertTrue(probe.noteIsVisible, "A pushed Note must hide the app bar")
+        XCTAssertEqual(probe.itemToolbars.active?.presentation, .note)
+        let noteToolbar = try XCTUnwrap(probe.itemToolbars.active?.toolbar)
+        XCTAssertFalse(noteToolbar.isHidden)
+
+        try await Task.sleep(for: .seconds(2))
+        XCTAssertFalse(noteToolbar.isHidden, "The Note toolbar must stay visible so Back is available")
 
         probe.path = []
-
-        for _ in 0 ..< 20
+        for _ in 0 ..< 20 where probe.itemToolbars.active != nil
         {
-            if !probe.noteIsVisible
-            {
-                break
-            }
-
             try await Task.sleep(for: .milliseconds(100))
         }
-
-        XCTAssertFalse(probe.noteIsVisible, "Returning to Week must restore the app bar")
+        XCTAssertNil(probe.itemToolbars.active, "Returning to Week must release the item toolbar")
 
         probe.path = [KanbanCard(id: 2, word: "Card", listTitle: "Sunday")]
 
         try await Task.sleep(for: .milliseconds(400))
-        XCTAssertFalse(probe.noteIsVisible, "Ordinary Card navigation remains unchanged")
+        XCTAssertEqual(probe.itemToolbars.active?.presentation, .card)
+        let cardToolbar = try XCTUnwrap(probe.itemToolbars.active?.toolbar)
+        XCTAssertFalse(cardToolbar.isHidden)
+
+        for _ in 0 ..< 25 where !cardToolbar.isHidden
+        {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertTrue(cardToolbar.isHidden, "The Card toolbar should hide after its delay")
+        cardToolbar.keepVisible()
+        XCTAssertFalse(cardToolbar.isHidden, "Revealing the toolbar should show it again")
+        cardToolbar.hideIfIdle()
+        XCTAssertFalse(cardToolbar.isHidden, "Revealing the toolbar should keep it visible")
     }
 
 

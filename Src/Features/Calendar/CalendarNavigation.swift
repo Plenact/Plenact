@@ -202,6 +202,8 @@ struct PlanningCalendarWeekView: View
     let onLeaveForHome: () -> Void                                      /* Leave for home callback        */
     var isWeekTab                = false                                /* Week Tab state                 */
     var initialBoardListID: Int? = nil                                  /* Initial board list ID          */
+    @Environment(\.workspaceItemToolbarVisibility) private var reportWorkspaceItemToolbar
+    @State private var itemToolbars = WorkspaceItemToolbars()
     @Environment(\.workspaceBottomBarTopInset) private var workspaceBottomBarTopInset
     @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
     @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
@@ -275,9 +277,10 @@ struct PlanningCalendarWeekView: View
             boardAppearance: $week.collection.boardAppearance
         )
         .id(week.id)
-        .safeAreaInset(edge: .bottom)
+        .safeAreaInset(edge: .bottom, spacing: 0)
         {
-            if !isWeekTab
+            if !isWeekTab, itemToolbars.active == nil
+                || (itemToolbars.active?.presentation == .card && itemToolbars.active?.toolbar.isHidden == false)
             {
                 HStack
                 {
@@ -310,6 +313,28 @@ struct PlanningCalendarWeekView: View
                 }
                 .padding(12)
                 .background(.regularMaterial)
+                .keepItemToolbarVisibleOnTouch(itemToolbars.active?.toolbar)
+                .transition(.move(edge: .bottom))
+            }
+        }
+        .overlay(alignment: .bottom)
+        {
+            if !isWeekTab, let active = itemToolbars.active, active.presentation == .card, active.toolbar.isHidden
+            {
+                ItemToolbarRevealButton(toolbar: active.toolbar)
+                .transition(.opacity)
+            }
+        }
+        .environment(\.workspaceItemToolbarVisibility)
+        {
+            toolbar, presentation in
+            if isWeekTab
+            {
+                reportWorkspaceItemToolbar(toolbar, presentation)
+            }
+            else
+            {
+                itemToolbars.update(toolbar, presentation: presentation)
             }
         }
         .environment(\.workspaceBottomBarTopInset, isWeekTab ? workspaceBottomBarTopInset : 0)

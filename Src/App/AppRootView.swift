@@ -67,11 +67,16 @@ struct AppRootView: View
         bottomToolbarLayout.reservedHeight(bottomInset: bottomNavigationSafeInset)
     }
 
-    @State var visibleNoteIDs: Set<UUID> = []           /* Visible note i ds */
+    @State var itemToolbars = WorkspaceItemToolbars()
 
-    var isNotePresented:       Bool     /* Note editor visibility */
+    private var showsWorkspaceToolbar: Bool
     {
-        !visibleNoteIDs.isEmpty
+        guard let active = itemToolbars.active else
+        {
+            return true
+        }
+
+        return active.presentation == .card && !active.toolbar.isHidden
     }
 
     @State var dailyWeekVisible                  = false                        /* Daily week visible                                  */
@@ -733,7 +738,7 @@ struct AppRootView: View
         .safeAreaInset(edge: .bottom, spacing: 0)
         {
             Color.clear
-            .frame(height: isNotePresented ? 0 : bottomNavigationHeight)
+            .frame(height: showsWorkspaceToolbar ? bottomNavigationHeight : 0)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
         }
@@ -745,9 +750,16 @@ struct AppRootView: View
                 VStack(spacing: 0)
                 {
                     Spacer(minLength: 0)
-                    if !isNotePresented
+                    if showsWorkspaceToolbar
                     {
                         bottomNavigationBar
+                        .keepItemToolbarVisibleOnTouch(itemToolbars.active?.toolbar)
+                        .transition(.move(edge: .bottom))
+                    }
+                    else if let active = itemToolbars.active, active.presentation == .card
+                    {
+                        ItemToolbarRevealButton(toolbar: active.toolbar)
+                        .transition(.opacity)
                     }
                 }
                 .onAppear
@@ -764,21 +776,12 @@ struct AppRootView: View
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
 
-        .environment(
-            \.workspaceNoteVisibility,
-            {
-                id, visible in
-                if visible
-                {
-                    visibleNoteIDs.insert(id)
-                }
-                else
-                {
-                    visibleNoteIDs.remove(id)
-                }
-            }
-        )
-        .environment(\.workspaceBottomBarHeight, isNotePresented ? 0 : bottomNavigationHeight)
+        .environment(\.workspaceItemToolbarVisibility)
+        {
+            toolbar, presentation in
+            itemToolbars.update(toolbar, presentation: presentation)
+        }
+        .environment(\.workspaceBottomBarHeight, showsWorkspaceToolbar ? bottomNavigationHeight : 0)
         .environment(\.workspaceBottomBarTopInset, bottomToolbarLayout.backgroundTopInset)
         .environment(\.cardMovementAccess, cardMovementAccess)
         .environment(\.planningCalendarAccess, planningCalendarAccess)

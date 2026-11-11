@@ -81,8 +81,15 @@ struct CardDetailView: View
 
     @Environment(\.cardKeyboardNavigation) var keyboardNavigation               /* Keyboard navigation            */
     @State var keyboardContextID = UUID()                                       /* Keyboard context ID            */
-    @Environment(\.workspaceNoteVisibility) var workspaceNoteVisibility         /* Workspace note visibility      */
-    @State var noteVisibilityID = UUID()                                        /* Note visibility ID             */
+    @Environment(\.workspaceItemToolbarVisibility) private var workspaceItemToolbarVisibility
+    @Environment(\.accessibilityReduceMotion) private var reduceToolbarMotion
+    @State private var itemToolbar = ItemToolbarVisibility()
+
+    private var toolbarPresentation: ItemPresentation?
+    {
+        displayFormat == .divider ? nil : presentation
+    }
+
     @Environment(\.planningCalendarAccess) var checklistTypePlanningAccess      /* Checklist type planning access */
     @Environment(\.checklistLinkCandidates) var checklistLinkCandidates         /* Checklist link candidates      */
     @Environment(\.cardMovementSource) var checklistCollectionID                /* Checklist collection ID        */
@@ -1590,7 +1597,7 @@ struct CardDetailView: View
                     ? -workspaceBottomBarTopInset : 0)
             .safeAreaInset(edge: .bottom, spacing: 0)
             {
-                if presentation == .note && displayFormat != .divider
+                if toolbarPresentation == .note
                 {
                     noteToolbar(using: scrollProxy)
                 }
@@ -1691,16 +1698,36 @@ struct CardDetailView: View
             }
             .onAppear
             {
-                workspaceNoteVisibility(noteVisibilityID, presentation == .note && displayFormat != .divider)
+                itemToolbar.reset()
+                workspaceItemToolbarVisibility(itemToolbar, toolbarPresentation)
             }
             .onDisappear
             {
-                workspaceNoteVisibility(noteVisibilityID, false)
+                workspaceItemToolbarVisibility(itemToolbar, nil)
             }
-            .onChange(of: displayFormat)
+            .onChange(of: toolbarPresentation)
             {
-                _, _ in
-                workspaceNoteVisibility(noteVisibilityID, presentation == .note && displayFormat != .divider)
+                _, presentation in
+                itemToolbar.reset()
+                workspaceItemToolbarVisibility(itemToolbar, presentation)
+            }
+            .task(id: toolbarPresentation)
+            {
+                guard toolbarPresentation == .card else { return }
+                do
+                {
+                    try await Task.sleep(for: .milliseconds(1_500))
+                    try Task.checkCancellation()
+                }
+                catch
+                {
+                    return
+                }
+
+                withAnimation(reduceToolbarMotion ? nil : .easeInOut(duration: 0.25))
+                {
+                    itemToolbar.hideIfIdle()
+                }
             }
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)

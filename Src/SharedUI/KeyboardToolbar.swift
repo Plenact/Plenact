@@ -11,42 +11,116 @@ import UIKit
 import UniformTypeIdentifiers
 
 
-///
-/// Defines the workspace Note-visibility reporting callback
-///
-/// @section    Purpose
-///     Uses an inert default so standalone editors can report appearance without requiring a root
-///     toolbar owner
-///
-struct WorkspaceNoteVisibilityKey: EnvironmentKey
+@Observable
+final class ItemToolbarVisibility
 {
-    static let defaultValue: (UUID, Bool) -> Void =     /* Fallback environment callback */
+    private(set) var isHidden = false
+    private var keepsVisible = false
+
+    func reset()
     {
-        _, _ in
+        isHidden = false
+        keepsVisible = false
+    }
+
+    func hideIfIdle()
+    {
+        if !keepsVisible
+        {
+            isHidden = true
+        }
+    }
+
+    func keepVisible()
+    {
+        keepsVisible = true
+        isHidden = false
     }
 }
 
 
-///
-/// Exposes Note visibility reporting to nested editors
-///
-/// @section    Purpose
-///     Passes editor identity and visibility to the injected owner so workspace chrome can follow
-///     the active presentation
-///
+struct WorkspaceItemToolbars
+{
+    private var entries: [(toolbar: ItemToolbarVisibility, presentation: ItemPresentation)] = []
+
+    var active: (toolbar: ItemToolbarVisibility, presentation: ItemPresentation)?
+    {
+        entries.last
+    }
+
+    mutating func update(_ toolbar: ItemToolbarVisibility, presentation: ItemPresentation?)
+    {
+        if let index = entries.firstIndex(where: { $0.toolbar === toolbar })
+        {
+            if let presentation
+            {
+                entries[index].presentation = presentation
+            }
+            else
+            {
+                entries.remove(at: index)
+            }
+        }
+        else if let presentation
+        {
+            entries.append((toolbar, presentation))
+        }
+    }
+}
+
+
+private struct WorkspaceItemToolbarVisibilityKey: EnvironmentKey
+{
+    static let defaultValue: (ItemToolbarVisibility, ItemPresentation?) -> Void = { _, _ in }
+}
+
 extension EnvironmentValues
 {
-    var workspaceNoteVisibility: (UUID, Bool) -> Void           /* Workspace note visibility callback */
+    var workspaceItemToolbarVisibility: (ItemToolbarVisibility, ItemPresentation?) -> Void
     {
-        get
-        {
-            self[WorkspaceNoteVisibilityKey.self]
-        }
+        get { self[WorkspaceItemToolbarVisibilityKey.self] }
+        set { self[WorkspaceItemToolbarVisibilityKey.self] = newValue }
+    }
+}
 
-        set
+
+struct ItemToolbarRevealButton: View
+{
+    let toolbar: ItemToolbarVisibility
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View
+    {
+        Button
         {
-            self[WorkspaceNoteVisibilityKey.self] = newValue
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25))
+            {
+                toolbar.keepVisible()
+            }
         }
+        label:
+        {
+            Capsule()
+            .fill(.secondary)
+            .frame(width: 34, height: 5)
+            .frame(width: 72, height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Show toolbar")
+        .accessibilityIdentifier("item.showToolbar")
+    }
+}
+
+
+extension View
+{
+    func keepItemToolbarVisibleOnTouch(_ toolbar: ItemToolbarVisibility?) -> some View
+    {
+        simultaneousGesture(
+            DragGesture(minimumDistance: 0).onChanged { _ in toolbar?.keepVisible() },
+            including: toolbar == nil ? .none : .all
+        )
     }
 }
 

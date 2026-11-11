@@ -25,12 +25,8 @@ import XCTest
 final class NoteNavigationProbe: ObservableObject
 {
     @Published var path: [KanbanCard] = []      /* Filesystem or navigation path */
-    var visibleNotes:    Set<UUID>    = []      /* Visible notes                 */
+    var itemToolbars = WorkspaceItemToolbars()
 
-    var noteIsVisible:   Bool           /* Note is visible */
-    {
-        !visibleNotes.isEmpty
-    }
 }
 
 
@@ -55,19 +51,11 @@ struct NoteNavigationTestView: View
                 CardDetailView(card: card)
             }
         }
-        .environment(
-            \.workspaceNoteVisibility,
-            {
-                id, visible in
-                if visible
-                {
-                    probe.visibleNotes.insert(id)
-                }
-                else
-                {
-                    probe.visibleNotes.remove(id)
-                }
-            })
+        .environment(\.workspaceItemToolbarVisibility)
+        {
+            toolbar, presentation in
+            probe.itemToolbars.update(toolbar, presentation: presentation)
+        }
     }
 }
 

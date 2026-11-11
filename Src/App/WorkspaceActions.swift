@@ -1759,7 +1759,7 @@ extension AppRootView
         boardTargetCardID = nil
         savedPersonalCardTarget = nil
         activePersonalListNewNote = nil
-        visibleNoteIDs = []
+        itemToolbars = WorkspaceItemToolbars()
         selectedDestination = .lists
         workspaceGeneration = UUID()
     }

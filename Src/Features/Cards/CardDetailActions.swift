@@ -1037,7 +1037,7 @@ extension CardDetailView
 
 
         dismissEditing()
-        dismiss()
+        closeDetail()
     }
 
 
@@ -1292,7 +1292,7 @@ extension CardDetailView
                 Button(list.title)
                 {
                     onMoveToList?(list.id)
-                    dismiss()
+                    closeDetail()
                 }
             }
         }

@@ -36,7 +36,7 @@ extension CardDetailView
             Button
             {
                 dismissEditing()
-                dismiss()
+                closeDetail()
             }
             label:
             {

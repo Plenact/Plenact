@@ -180,7 +180,7 @@ extension EnvironmentValues
 
 
 ///
-/// Carries optional previous and next Card navigation actions
+/// Carries optional Back, previous, and next Card navigation actions
 ///
 /// @section    Purpose
 ///     Leaves unavailable neighbors nil so keyboard controls can reflect the current owner's
@@ -188,6 +188,7 @@ extension EnvironmentValues
 ///
 struct CardKeyboardNavigation
 {
+    var back:     (() -> Void)? = nil           /* Return to the owning navigation path */
     var previous: (() -> Void)? = nil           /* Previous value for comparison */
     var next:     (() -> Void)? = nil           /* Candidate next state          */
 }
@@ -209,7 +210,7 @@ struct CardKeyboardNavigationKey: EnvironmentKey
 /// Exposes owner-supplied Card keyboard navigation
 ///
 /// @section    Purpose
-///     Passes previous and next actions to detail editors without giving them ownership of List
+///     Passes Back, previous, and next actions to detail editors without giving them ownership of List
 ///     ordering
 ///
 extension EnvironmentValues

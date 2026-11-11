@@ -782,7 +782,7 @@ struct CardDetailView: View
                 {
                     hasMovedCard = true;
 
-                    dismiss()
+                    closeDetail()
                 }, onCardMoved: followMovedCard, sourceOverride: relocatedCard?.ownerID,
                 sourceListID: relocatedCard?.listID, locationTitle: currentListTitle)
         }
@@ -1117,7 +1117,7 @@ struct CardDetailView: View
                             {
                                 hasMovedCard = true;
 
-                                dismiss()
+                                closeDetail()
                             }, onCardMoved: followMovedCard, sourceOverride: relocatedCard?.ownerID,
                             sourceListID: relocatedCard?.listID)
                     }
@@ -1157,7 +1157,7 @@ struct CardDetailView: View
                             })
                             {
                                 hasMovedCard = true
-                                dismiss()
+                                closeDetail()
                             }
                         }
                         else if let
@@ -1168,14 +1168,14 @@ struct CardDetailView: View
                             if onArchiveMovedNote?(currentPersonalCollectionID, workingCardSnapshot)
                             == true
                             {
-                                dismiss()
+                                closeDetail()
                             }
                         }
                         else
                         {
                             syncCardState()
                             onArchive()
-                            dismiss()
+                            closeDetail()
                         }
                     }
                     label:
@@ -1211,6 +1211,22 @@ struct CardDetailView: View
     }
 
 
+    /// @fcn CardDetailView.closeDetail
+    /// @brief Return through the owning List path or the current presentation
+    func closeDetail()
+    {
+        dismissEditing()
+        if let back = keyboardNavigation.back
+        {
+            back()
+        }
+        else
+        {
+            dismiss()
+        }
+    }
+
+
     private func topHeader(using scrollProxy: ScrollViewProxy) -> some View
     {
         HStack(spacing: 12)
@@ -1219,7 +1235,7 @@ struct CardDetailView: View
             {
                 Button
                 {
-                    dismiss()
+                    closeDetail()
                 }
                 label:
                 {
@@ -1588,7 +1604,7 @@ struct CardDetailView: View
                 LowerCornerBackShortcut(
                     action: (presentation != .note || displayFormat == .divider) ?
                     {
-                        dismiss()
+                        closeDetail()
                     } : nil,
                     reservesSpace: isEditingLocked || displayFormat == .divider)
             )
@@ -1645,7 +1661,7 @@ struct CardDetailView: View
                         {
                             dismissEditing();
                             syncCardState();
-                            dismiss()
+                            closeDetail()
                         },
                         previous: keyboardNavigation.previous.map
                         {

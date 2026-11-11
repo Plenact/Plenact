@@ -555,6 +555,13 @@ struct TodayListDetailView: View
         let neighbors = CardKeyboardNeighbors.resolve(card, in: lists)          /* Adjacent items or Lists */
 
         return CardKeyboardNavigation(
+            back:
+            {
+                if !keyboardDetailPath.isEmpty
+                {
+                    keyboardDetailPath.removeLast()
+                }
+            },
             previous: neighbors.previous == nil
             ? nil
             :
@@ -1239,6 +1246,7 @@ struct TodayListDetailView: View
                 }
             }
 
+            .modifier(LowerCornerBackShortcut(action: onClose))
             .navigationDestination(for: KanbanCard.self)
             {
                 card in
@@ -1282,7 +1290,6 @@ struct TodayListDetailView: View
             }
         }
 
-        .modifier(LowerCornerBackShortcut(action: onClose))
         .modifier(
             PlanningSharedSearchPresentation(
                 isPresented: $showsDaySearch,

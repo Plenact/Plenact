@@ -825,6 +825,44 @@ extension PlenactBoardDocumentTests
     }
 
 
+    @MainActor
+    func testCardAndNoteBackUseOwningListNavigationPath() async throws
+    {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let probe = NoteNavigationProbe()
+        let host = UIHostingController(rootView: NoteNavigationTestView(probe: probe))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+
+        try await Task.sleep(for: .milliseconds(150))
+        for presentation in [ItemPresentation.card, .note]
+        {
+            probe.path = [KanbanCard(id: 701, word: "Return to Day", listTitle: "Tuesday", presentation: presentation)]
+            for _ in 0 ..< 30 where probe.itemToolbars.active == nil
+            {
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            XCTAssertEqual(probe.itemToolbars.active?.presentation, presentation)
+            let back = try XCTUnwrap(PlenactKeyboard.shared.actions.exit)
+            back()
+            for _ in 0 ..< 30 where !probe.path.isEmpty || probe.itemToolbars.active != nil
+            {
+                try await Task.sleep(for: .milliseconds(100))
+            }
+            XCTAssertTrue(probe.path.isEmpty, "Back must pop the item from the owning Day path")
+            XCTAssertNil(probe.itemToolbars.active, "Back must finish the detail session")
+        }
+    }
+
+
     ///
     /// @fcn        PlenactBoardDocumentTests.testChecklistTypeSwitchesPreserveInactiveContentAndIdentity
     /// @brief      Verify that checklist Type Switches Preserve Inactive Content And Identity

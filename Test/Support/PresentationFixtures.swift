@@ -49,6 +49,13 @@ struct NoteNavigationTestView: View
             {
                 card in
                 CardDetailView(card: card)
+                .environment(\.cardKeyboardNavigation, CardKeyboardNavigation(back:
+                    {
+                        if !probe.path.isEmpty
+                        {
+                            probe.path.removeLast()
+                        }
+                    }))
             }
         }
         .environment(\.workspaceItemToolbarVisibility)

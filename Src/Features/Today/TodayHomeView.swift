@@ -925,7 +925,7 @@ struct TodayHomeView: View
                                 showsPerspectivePlan = true
                             })
                     }
-                    .padding(.top, 16)
+                    .padding(.top, UIDevice.current.userInterfaceIdiom == .phone ? 120 : 16)
                     .onGeometryChange(for: CGFloat.self)
                     {
                         $0.frame(in: .named("TodaySectionContent")).minY
@@ -939,7 +939,7 @@ struct TodayHomeView: View
                 // Restore the space reclaimed by removing capture’s heading and destination caption on iPhone
                 .padding(.top, UIDevice.current.userInterfaceIdiom == .pad ? 0 : 10)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
-                .padding(.bottom, 112)
+                .padding(.bottom, UIDevice.current.userInterfaceIdiom == .phone ? 64 : 112)
                 .coordinateSpace(name: "TodaySectionContent")
             }
             .scrollTargetBehavior(

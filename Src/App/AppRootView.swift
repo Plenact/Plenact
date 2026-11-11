@@ -779,6 +779,7 @@ struct AppRootView: View
             }
         )
         .environment(\.workspaceBottomBarHeight, isNotePresented ? 0 : bottomNavigationHeight)
+        .environment(\.workspaceBottomBarTopInset, bottomToolbarLayout.backgroundTopInset)
         .environment(\.cardMovementAccess, cardMovementAccess)
         .environment(\.planningCalendarAccess, planningCalendarAccess)
         .environment(\.openTemplateLibrary,

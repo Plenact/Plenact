@@ -95,6 +95,7 @@ struct CardDetailView: View
     @State var sectionLayout:      CardSectionLayout                            /* Section layout                 */
     @State var showsLayoutEditor = false                                        /* Layout Editor visibility       */
     @Environment(\.workspaceBottomBarHeight) var workspaceBottomBarHeight       /* Workspace bottom bar height    */
+    @Environment(\.workspaceBottomBarTopInset) private var workspaceBottomBarTopInset
 
     // ----------------------------------- MARK: - Date Field Enum ------------------------------ //
 
@@ -1278,6 +1279,12 @@ struct CardDetailView: View
     }
 
 
+    var showsArtworkBehindSections: Bool
+    {
+        presentation == .card && (appearance?.studioSurface ?? inheritedStudioSurface) != nil
+    }
+
+
     private var showsPhotoThroughHeader: Bool
     {
         let material = (appearance?.studioSurface ?? inheritedStudioSurface)?.material          /* Effective material */
@@ -1555,9 +1562,8 @@ struct CardDetailView: View
                         }
                     }
 
-                    .padding(.bottom, 12)
-                    // Add scrollable clearance without shortening the visible card-detail viewport
-                    .contentMargins(.bottom, workspaceBottomBarHeight, for: .scrollContent)
+                    // Keep the last controls scrollable above the corner Back target
+                    .contentMargins(.bottom, presentation == .card ? 44 : 12, for: .scrollContent)
                 }
             }
 
@@ -1576,8 +1582,12 @@ struct CardDetailView: View
                     action: (presentation != .note || displayFormat == .divider) ?
                     {
                         dismiss()
-                    } : nil)
+                    } : nil,
+                    reservesSpace: isEditingLocked || displayFormat == .divider)
             )
+            .padding(.bottom,
+                presentation == .card && !isEditingLocked && displayFormat != .divider && workspaceBottomBarHeight > 0
+                    ? -workspaceBottomBarTopInset : 0)
             .safeAreaInset(edge: .bottom, spacing: 0)
             {
                 if presentation == .note && displayFormat != .divider

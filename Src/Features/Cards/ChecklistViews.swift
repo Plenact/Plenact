@@ -300,6 +300,7 @@ struct ChecklistBlock: View
     let focusFirstItem:           Bool                                                                  /* Whether the first item should be focused when the checklist is rendered */
     let onFirstItemFocused:       () -> Void                                                            /* The action invoked when the first item receives focus                   */
     var onChangeType:             ((KanbanChecklistItem) -> Bool)? = nil                                /* Change type callback                                                    */
+    var showsRowBackground = true
     @State private var requestedType                               = ChecklistItemType.standard         /* Requested type                                                          */
 
     @State private var typeDraft: KanbanChecklistItem?          /* Type draft */
@@ -383,6 +384,7 @@ struct ChecklistBlock: View
                 {
                     onDeleteItem(entry.offset)
                 },
+                showsBackground: showsRowBackground,
                 shouldFocus: false, onFocusHandled:
                 {
                 })
@@ -403,6 +405,7 @@ struct ChecklistBlock: View
                 {
                     onDeleteItem(entry.offset)
                 },
+                showsBackground: showsRowBackground,
                 shouldFocus: focusFirstItem && entry.offset == 0,
                 onFocusHandled: onFirstItemFocused
             )
@@ -428,6 +431,7 @@ struct ChecklistBlock: View
                 {
                     onDeleteItem(entry.offset)
                 },
+                showsBackground: showsRowBackground,
                 shouldFocus: false,
                 onFocusHandled:
                 {
@@ -455,6 +459,7 @@ struct ChecklistBlock: View
                 {
                     onDeleteItem(entry.offset)
                 },
+                showsBackground: showsRowBackground,
                 shouldFocus: false,
                 onFocusHandled:
                 {
@@ -810,6 +815,7 @@ struct ChecklistItemRow: View
     let onToggle:       () -> Void              /* The action invoked by the checkbox                            */
     let onUpdate:       (String) -> Void        /* The action invoked by text editing                            */
     let onDelete:       () -> Void              /* The action invoked by delete                                  */
+    let showsBackground: Bool
     let shouldFocus:    Bool                    /* Indicates whether the text field should receive focus         */
     let onFocusHandled: () -> Void              /* The action invoked when the text field focus has been handled */
 
@@ -855,6 +861,7 @@ struct ChecklistItemRow: View
         onToggle: @escaping () -> Void,
         onUpdate: @escaping (String) -> Void,
         onDelete: @escaping () -> Void,
+        showsBackground: Bool = true,
         shouldFocus: Bool,
         onFocusHandled: @escaping () -> Void
     )
@@ -870,6 +877,7 @@ struct ChecklistItemRow: View
         self.onToggle = onToggle
         self.onUpdate = onUpdate
         self.onDelete = onDelete
+        self.showsBackground = showsBackground
         self.shouldFocus = shouldFocus
         self.onFocusHandled = onFocusHandled
     }
@@ -907,6 +915,10 @@ struct ChecklistItemRow: View
 
             .buttonStyle(.plain)
             .accessibilityLabel("Delete item")
+            // Keep the delete button outside the transparent row until the swipe exposes it
+            .offset(x: showsBackground ? 0 : 72 + horizontalOffset)
+            .allowsHitTesting(showsBackground || horizontalOffset < 0)
+            .accessibilityHidden(!showsBackground && horizontalOffset == 0)
 
             HStack(spacing: 10)
             {
@@ -918,6 +930,13 @@ struct ChecklistItemRow: View
 
                 .buttonStyle(.plain)
                 .accessibilityLabel(isCompleted ? "Mark item incomplete" : "Mark item complete")
+                .accessibilityActions
+                {
+                    if !showsBackground
+                    {
+                        Button("Delete item", role: .destructive, action: onDelete)
+                    }
+                }
 
                 if let webURL
                 {
@@ -1006,7 +1025,14 @@ struct ChecklistItemRow: View
 
             .padding(.vertical, 6)
             .padding(.horizontal, 2)
-            .background(.background)
+            .background
+            {
+                if showsBackground
+                {
+                    Rectangle().fill(.background)
+                }
+            }
+            .contentShape(Rectangle())
             .offset(x: horizontalOffset)
             .simultaneousGesture(
 

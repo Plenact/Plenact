@@ -136,24 +136,27 @@ extension CardDetailView
         switch section
         {
         case .quickActions:
-            DetailSection(title: "Quick Actions", collapsible: true)
+            DetailSection(title: "Quick Actions", collapsible: true, showsBackground: !showsArtworkBehindSections)
             {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8)
                 {
                     ActionTile(
                         title: "Add Checklist", icon: "checklist", color: .green,
+                        showsBackground: !showsArtworkBehindSections,
                         action:
                         {
                             addChecklist(using: scrollProxy)
                         })
                     ActionTile(
                         title: "Add Attachment", icon: "paperclip", color: .cyan,
+                        showsBackground: !showsArtworkBehindSections,
                         action:
                         {
                             activeSheet = .attachmentSources
                         }
                     )
-                    ActionTile(title: "Members", icon: "person.2", color: .purple, action:
+                    ActionTile(title: "Members", icon: "person.2", color: .purple,
+                        showsBackground: !showsArtworkBehindSections, action:
                         {
                             activeSheet = .members
                         })
@@ -192,7 +195,7 @@ extension CardDetailView
         case .description:
             if presentation == .card
             {
-                DetailSection(title: "Description", collapsible: true)
+                DetailSection(title: "Description", collapsible: true, showsBackground: !showsArtworkBehindSections)
                 {
                     RichTextEditor(
                         placeholder: "Description", text: descriptionEditingBinding,
@@ -213,7 +216,7 @@ extension CardDetailView
         //****************************************************************************//
 
         case .details:
-            DetailSection(title: "Details", collapsible: true)
+            DetailSection(title: "Details", collapsible: true, showsBackground: !showsArtworkBehindSections)
             {
                 CardLocationRow(location: location, canEdit: !isEditingLocked)
                 {
@@ -340,7 +343,7 @@ extension CardDetailView
 
         case .checklists:
             DetailSection(
-                title: "Checklists", collapsible: true, trailing: "plus",
+                title: "Checklists", collapsible: true, showsBackground: !showsArtworkBehindSections, trailing: "plus",
                 trailingAction:
                 {
                     addChecklist(using: scrollProxy)
@@ -431,7 +434,13 @@ extension CardDetailView
                 }
             }
             .padding(16)
-            .background(.background)
+            .background
+            {
+                if !showsArtworkBehindSections
+                {
+                    Rectangle().fill(.background)
+                }
+            }
             .overlay(alignment: .bottom)
             {
                 Divider()

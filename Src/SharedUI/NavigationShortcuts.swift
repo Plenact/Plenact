@@ -61,10 +61,12 @@ struct HideNavigationLinkIndicator: ViewModifier
 struct LowerCornerBackShortcut: ViewModifier
 {
     let action: (() -> Void)?                                                           /* Requested user operation */
+    var reservesSpace = true
     @AppStorage(PlanPreferencesStore.key) private var preferencesData =                 /* Preferences data         */
         Data()
     @AppStorage(LocalProfileStore.storageKey) private var profileData = Data()          /* Profile data             */
     @Environment(\.workspaceBottomBarHeight) private var toolbarHeight                  /* Toolbar height           */
+    @Environment(\.layoutDirection) private var layoutDirection
     @State private var keyboardVisible = false                                          /* Keyboard visible         */
 
     private var enabled: Bool           /* Feature availability flag */
@@ -85,40 +87,35 @@ struct LowerCornerBackShortcut: ViewModifier
     ///
     func body(content: Content) -> some View
     {
-        content
-        .safeAreaInset(edge: .bottom, spacing: 0)
+        Group
         {
-            if enabled, !keyboardVisible, let action
+            if reservesSpace
             {
-                GeometryReader
+                content.safeAreaInset(edge: .bottom, spacing: 0)
                 {
-                    geometry in
-
-                    // Full-screen destinations have no toolbar below the target:
-                    // include their home-indicator safe area in the touch region
-                    let bottomExtension =                                       /* Bottom extension */
-                        toolbarHeight > 0 ? 0 : geometry.safeAreaInsets.bottom
-
-                    HStack(spacing: 0)
+                    if enabled, !keyboardVisible, let action
                     {
-                        Color.clear
-                        .frame(width: 88, height: 44 + bottomExtension)
-                        .contentShape(Rectangle())
-                        .onTapGesture(perform: action)
-                        .accessibilityElement()
-                        .accessibilityLabel("Back")
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityAction
+                        GeometryReader
                         {
-                            action()
+                            geometry in
+                            let bottomExtension = toolbarHeight > 0 ? 0 : geometry.safeAreaInsets.bottom
+                            backTarget(height: 44 + bottomExtension, action: action)
+                            .frame(maxWidth: .infinity, alignment: layoutDirection == .leftToRight ? .leading : .trailing)
                         }
-                        .accessibilityIdentifier("navigation.lowerCornerBack")
-                        Spacer(minLength: 0)
+                        .frame(height: 44)
+                        .padding(.bottom, max(0, toolbarHeight))
                     }
-                    .environment(\.layoutDirection, .leftToRight)
                 }
-                .frame(height: 44)
-                .padding(.bottom, max(0, toolbarHeight))
+            }
+            else
+            {
+                content.overlay(alignment: layoutDirection == .leftToRight ? .bottomLeading : .bottomTrailing)
+                {
+                    if enabled, !keyboardVisible, let action
+                    {
+                        backTarget(height: 44, action: action)
+                    }
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification))
@@ -133,5 +130,21 @@ struct LowerCornerBackShortcut: ViewModifier
 
             keyboardVisible = false
         }
+    }
+
+    private func backTarget(height: CGFloat, action: @escaping () -> Void) -> some View
+    {
+        Color.clear
+        .frame(width: 88, height: height)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
+        .accessibilityElement()
+        .accessibilityLabel("Back")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction
+        {
+            action()
+        }
+        .accessibilityIdentifier("navigation.lowerCornerBack")
     }
 }

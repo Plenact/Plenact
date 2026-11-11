@@ -90,6 +90,7 @@ struct DetailSection<Content: View>: View
     let title:          String                  /* The title of the detail section                    */
     var trailing:       String?                 /* The optional trailing symbol of the detail section */
     var trailingAction: (() -> Void)?           /* The optional action for the trailing symbol        */
+    let showsBackground: Bool
 
     @ViewBuilder let content: () -> Content     /* Content rendered beneath the section heading */
 
@@ -105,16 +106,19 @@ struct DetailSection<Content: View>: View
     /// @param[in]  content         Content rendered below the section heading
     ///
     /// @param[in]  collapsible     Whether the section heading exposes its local collapse control
+    /// @param[in]  showsBackground Whether to draw a solid surface behind the section
     ///
     /// @return     (DetailSection) configured detail section
     /// @post       Content and trailing action are retained without being invoked
     ///
     init(
-        title: String, collapsible: Bool = false, trailing: String? = nil, trailingAction: (() -> Void)? = nil,
+        title: String, collapsible: Bool = false, showsBackground: Bool = true,
+        trailing: String? = nil, trailingAction: (() -> Void)? = nil,
         @ViewBuilder content: @escaping () -> Content
     )
     {
         self.collapsible = collapsible
+        self.showsBackground = showsBackground
         self.title = title                      /* The title of the detail section                    */
         self.trailing = trailing                /* The optional trailing symbol of the detail section */
         self.trailingAction = trailingAction    /* The optional action for the trailing symbol        */
@@ -187,7 +191,13 @@ struct DetailSection<Content: View>: View
         }
 
         .padding(16)
-        .background(.background)
+        .background
+        {
+            if showsBackground
+            {
+                Rectangle().fill(.background)
+            }
+        }
         .overlay(alignment: .bottom)
         {
             Divider()
@@ -210,6 +220,7 @@ struct ActionTile: View
     let title:  String          /* The title of the action tile                  */
     let icon:   String          /* The icon representing the action tile         */
     let color:  Color           /* The color of the action tile                  */
+    var showsBackground = true
     let action: () -> Void      /* The action to perform when the tile is tapped */
 
     ///
@@ -229,7 +240,7 @@ struct ActionTile: View
             .foregroundStyle(.primary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(showsBackground ? Color(.secondarySystemGroupedBackground) : .clear)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .tint(color)
         }

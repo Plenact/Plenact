@@ -202,6 +202,7 @@ struct PlanningCalendarWeekView: View
     let onLeaveForHome: () -> Void                                      /* Leave for home callback        */
     var isWeekTab                = false                                /* Week Tab state                 */
     var initialBoardListID: Int? = nil                                  /* Initial board list ID          */
+    @Environment(\.workspaceBottomBarTopInset) private var workspaceBottomBarTopInset
     @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
     @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */
     private enum DayExit
@@ -311,6 +312,7 @@ struct PlanningCalendarWeekView: View
                 .background(.regularMaterial)
             }
         }
+        .environment(\.workspaceBottomBarTopInset, isWeekTab ? workspaceBottomBarTopInset : 0)
         .environment(\.planningDirectItemReturn, initialCardID == nil ? nil :
             {
                 dismiss()

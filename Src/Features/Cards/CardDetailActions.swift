@@ -299,12 +299,12 @@ extension CardDetailView
                     }
                 )
                 .padding(16)
-                .background(Color(.secondarySystemGroupedBackground))
+                .background(showsArtworkBehindSections ? Color.clear : Color(.secondarySystemGroupedBackground))
             }
 
             if !otherMedia.isEmpty
             {
-                DetailSection(title: "Attachments")
+                DetailSection(title: "Attachments", showsBackground: !showsArtworkBehindSections)
                 {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 8)], spacing: 8)
                     {
@@ -2143,7 +2143,8 @@ extension CardDetailView
                 }
 
                 return true
-            }
+            },
+            showsRowBackground: !showsArtworkBehindSections
         )
         .id(checklist.id)
     }

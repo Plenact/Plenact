@@ -87,6 +87,21 @@ extension EnvironmentValues
 }
 
 
+private struct WorkspaceBottomBarTopInsetKey: EnvironmentKey
+{
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues
+{
+    var workspaceBottomBarTopInset: CGFloat
+    {
+        get { self[WorkspaceBottomBarTopInsetKey.self] }
+        set { self[WorkspaceBottomBarTopInsetKey.self] = newValue }
+    }
+}
+
+
 // Shared accessory actions are scoped to the visible editor, never persisted
 
 

@@ -183,8 +183,8 @@ struct BoardHeader: View
     let activeMembers:         [String]                         /* Unique users assigned to active cards        */
     let memberColors:          [String: Color]                  /* Icon colors keyed by normalized member name  */
     let onRenameMember:        (String, String) -> Void         /* Rename a member across all card assignments  */
-    let onDeleteMember:        (String) -> Void                 /* Remove a member from all card assignments    */
-    let onSetMemberColor:      (String, Color) -> Void          /* Update a member's shared icon color          */
+    let onDeleteMember:        (String)         -> Void         /* Remove a member from all card assignments    */
+    let onSetMemberColor:      (String, Color)  -> Void         /* Update a member's shared icon color          */
     /// Opens the calendar view for the current board
     let onOpenCalendar: () -> Void      /* Presents the Board's calendar browser */
     /// Board name shown in the header
@@ -543,8 +543,8 @@ struct BoardSettingsView: View
     let activeMembers:    [String]                      /* Active assigned users in board order        */
     let memberColors:     [String: Color]               /* Member icon colors keyed by normalized name */
     let onRenameMember:   (String, String) -> Void      /* Rename a member across all assigned cards   */
-    let onDeleteMember:   (String) -> Void              /* Remove a member from all assigned cards     */
-    let onSetMemberColor: (String, Color) -> Void       /* Update a member's shared icon color         */
+    let onDeleteMember:   (String)         -> Void      /* Remove a member from all assigned cards     */
+    let onSetMemberColor: (String, Color)  -> Void      /* Update a member's shared icon color         */
 
     @State private var memberNameDraft  = ""            /* Draft name for renaming a member             */
     @State private var isRenamingMember = false         /* Flag indicating if member rename in progress */

@@ -397,8 +397,8 @@ struct TransferConfirmationToast: View
 struct SectionUndoToast: View
 {
     let message: String                         /* User-facing status message */
-    let undo:    () -> Bool                     /* Restore the prior edit     */
-    let close:   () -> Void                     /* Close callback             */
+    let undo:    ()       -> Bool               /* Restore the prior edit     */
+    let close:   ()       -> Void               /* Close callback             */
     let onFrame: (CGRect) -> Void               /* Frame callback             */
     @State private var failed = false           /* Rejected operation result  */
 

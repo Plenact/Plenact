@@ -19,10 +19,10 @@ import SwiftUI
 ///
 struct PersonalListExamplesView: View
 {
-    var onLoadExampleWeek:     (() -> Bool)? = nil                      /* Load example week callback                    */
-    var onUndoExampleWeek:     (() -> Bool)? = nil                      /* Undo example week callback                    */
+    var onLoadExampleWeek:     (()                   -> Bool)? = nil    /* Load example week callback                    */
+    var onUndoExampleWeek:     (()                   -> Bool)? = nil    /* Undo example week callback                    */
     let onSelect:              (PersonalListExample) -> Void            /* Delegate draft creation to the owning Library */
-    var onSelectMixedTemplate: ((MixedListTemplate) -> Void)?    =      /* Select mixed template callback                */
+    var onSelectMixedTemplate: ((MixedListTemplate)  -> Void)?    =     /* Select mixed template callback                */
         nil
     var onSelectBoardExample:  ((PersonalBoardExample) -> Void)? =      /* Select board example callback                 */
         nil
@@ -53,8 +53,8 @@ struct PersonalListExamplesView: View
         onUndoExampleWeek: (() -> Bool)? = nil,
         hasUndoableWeek: Bool = false,
         onSelectBoardExample: ((PersonalBoardExample) -> Void)? = nil,
-        onSelectMixedTemplate: ((MixedListTemplate) -> Void)? = nil,
-        onSelect: @escaping (PersonalListExample) -> Void
+        onSelectMixedTemplate: ((MixedListTemplate)   -> Void)? = nil,
+        onSelect: @escaping (PersonalListExample)     -> Void
     )
     {
         self.onLoadExampleWeek = onLoadExampleWeek

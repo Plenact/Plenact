@@ -13,7 +13,7 @@ import SwiftUI
 struct PortableWorkspaceImportAccess
 {
     let install: (ReviewedPortablePackage) -> Void      /* Install callback       */
-    let undo:    () -> Void                             /* Restore the prior edit */
+    let undo:    ()                        -> Void      /* Restore the prior edit */
 }
 
 

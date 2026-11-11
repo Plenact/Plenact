@@ -20,11 +20,11 @@ struct PlanningCalendarAccess
 {
     var document:        PlanningCalendarDocument               /* Working calendar document    */
     var library:         [PersonalCollection]                   /* Retained library contents    */
-    var saveWeek:        (DatedPlanningWeek) -> Bool            /* Save week callback           */
-    var openCurrentWeek: () -> Void                             /* Open current week callback   */
-    var openToday:       () -> Void                             /* Open today callback          */
+    var saveWeek:        (DatedPlanningWeek)       -> Bool      /* Save week callback           */
+    var openCurrentWeek: ()                        -> Void      /* Open current week callback   */
+    var openToday:       ()                        -> Void      /* Open today callback          */
     var openLibraryCard: (PersonalSavedCardTarget) -> Void      /* Open library card callback   */
-    var saveLibrary:     (PersonalCollection) -> Bool           /* Save library callback        */
+    var saveLibrary:     (PersonalCollection)      -> Bool      /* Save library callback        */
     var applyWeeklyReview:                                      /* Apply weekly review callback */
     ((PlanningSearchResult, DailyReviewAction, WeeklyReviewRecord, WeeklyReviewRecord?) -> WeeklyReviewRecord?)? =
     nil
@@ -43,10 +43,10 @@ struct PlanningCalendarAccess
         _ in
     }
 
-    var moveList:         ((Int, UUID, UUID?) -> Bool)?            = nil        /* Move list callback         */
-    var openWeekOnDay:    ((DatedPlanningWeek, Date) -> Void)?     =            /* Open week on day callback  */
+    var moveList:         ((Int, UUID, UUID?)        -> Bool)?            = nil         /* Move list callback         */
+    var openWeekOnDay:    ((DatedPlanningWeek, Date) -> Void)?     =                    /* Open week on day callback  */
         nil
-    var saveExampleWeek:  ((DatedPlanningWeek, Set<Int>) -> Bool)? =            /* Save example week callback */
+    var saveExampleWeek:  ((DatedPlanningWeek, Set<Int>) -> Bool)? =                    /* Save example week callback */
         nil
 
     var completeManualWeek: ((ManualWeekOpening) -> Void)? = nil        /* Complete manual week callback */
@@ -868,8 +868,8 @@ struct PlanningSelectedDayView: View
     let selection:              PlanningDaySelection                    /* Current selection state        */
     let currentUserName:        String                                  /* Current user name              */
     let returnDestinationTitle: String                                  /* Return destination title       */
-    let onClose:                () -> Void                              /* Close the current surface      */
-    let onSelectDay:            (Date) -> Void                          /* Select day callback            */
+    let onClose:                ()                  -> Void             /* Close the current surface      */
+    let onSelectDay:            (Date)              -> Void             /* Select day callback            */
     let onOpenSelectedWeek: ((PlanningDaySelection) -> Void)?           /* Enclosing Calendar Week route  */
     @State private var week:    DatedPlanningWeek                       /* Dated Week under consideration */
     @State private var labels          = LabelLibraryStore.load()       /* Available label definitions    */
@@ -893,7 +893,7 @@ struct PlanningSelectedDayView: View
     ///
     init(
         selection: PlanningDaySelection, currentUserName: String, returnDestinationTitle: String,
-        onClose: @escaping () -> Void, onSelectDay: @escaping (Date) -> Void,
+        onClose: @escaping ()                       -> Void, onSelectDay: @escaping (Date) -> Void,
         onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil
     )
     {

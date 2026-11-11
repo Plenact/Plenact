@@ -435,7 +435,7 @@ struct BoardCardDragSource: UIViewRepresentable
     let token:     String                                                       /* Board-session token carried by each drag item         */
     let onBegan:   (CGPoint) -> Void                                            /* Reports the initial global card-drag position         */
     let onChanged: (CGPoint) -> Void                                            /* Reports subsequent global card-drag positions         */
-    let onEnded:   () -> Void                                                   /* Clears parent state when the native drag session ends */
+    let onEnded:   ()        -> Void                                            /* Clears parent state when the native drag session ends */
 
     var onDirectDrop: ((CGPoint) -> Bool)? = nil        /* Optional hold-and-drag movement within a Day List */
 

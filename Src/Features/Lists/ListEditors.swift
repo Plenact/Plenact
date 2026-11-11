@@ -21,7 +21,7 @@ struct InlineBoardListTitle: View
 {
     let list:                 KanbanList                                                /* List under consideration   */
     let onSave:               (String) -> Bool                                          /* Persist the edited value   */
-    let onFinish:             () -> Void                                                /* Finish callback            */
+    let onFinish:             ()       -> Void                                          /* Finish callback            */
     @State private var title: String                                                    /* User-facing title          */
     @State private var focused                                            =             /* Current focus selection    */
         false

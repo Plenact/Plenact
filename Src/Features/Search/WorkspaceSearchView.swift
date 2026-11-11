@@ -22,12 +22,12 @@ import SwiftUI
 struct TodaySearchView: View
 {
     let lists:           [KanbanList]           /* Current locally stored Board snapshot    */
-    let onOpenBoardList: (Int) -> Void          /* Navigate to a result's containing list   */
+    let onOpenBoardList: (Int)      -> Void     /* Navigate to a result's containing list   */
     let onOpenBoardCard: (Int, Int) -> Void     /* Route to a Week card by list/card IDs    */
-    let onArchiveCard:   (Int) -> Void          /* Canonical Week archive                   */
-    let onDeleteCard:    (Int) -> Bool          /* Confirmed canonical Week deletion result */
-    let onArchiveList:   (Int) -> Void          /* Canonical Week list archive              */
-    let onDeleteList:    (Int) -> Bool          /* Confirmed canonical list deletion result */
+    let onArchiveCard:   (Int)      -> Void     /* Canonical Week archive                   */
+    let onDeleteCard:    (Int)      -> Bool     /* Confirmed canonical Week deletion result */
+    let onArchiveList:   (Int)      -> Void     /* Canonical Week list archive              */
+    let onDeleteList:    (Int)      -> Bool     /* Confirmed canonical list deletion result */
 
     var resultProvider: ((String, TodaySearchScope, LabelLibrary) -> [TodaySearchResult])? =    /* Result provider callback */
         nil

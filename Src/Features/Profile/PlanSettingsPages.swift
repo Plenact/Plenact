@@ -93,8 +93,8 @@ struct PlanSettingsModulePage: View
     @Binding var preferences: LocalProfilePreferences           /* Planning and display choices */
     @Binding var firstWeekday: Int                              /* Calendar week boundary       */
     let lists: [KanbanList]                                     /* Ordered List records         */
-    let onSave: () -> Void                                      /* Persist the edited value     */
-    let onStudio: () -> Void                                    /* Studio callback              */
+    let onSave: ()      -> Void                                 /* Persist the edited value     */
+    let onStudio: ()    -> Void                                 /* Studio callback              */
     let onTemplates: () -> Void                                 /* Templates callback           */
     let onShortcuts: () -> Void                                 /* Shortcuts callback           */
     @State private var showsDefaultCardLayout = false           /* Layout editor visibility     */

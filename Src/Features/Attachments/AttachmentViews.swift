@@ -132,10 +132,10 @@ struct CardAttachmentSourceSheet: View
 {
     @Binding var photoSelection: [PhotosPickerItem]     /* Current Photos-picker selection */
 
-    let onAddLink:        () -> Void                    /* Callback opening manual link entry                    */
-    let onPasteClipboard: () -> Void                    /* Callback importing clipboard images or a link         */
+    let onAddLink:        ()       -> Void              /* Callback opening manual link entry                    */
+    let onPasteClipboard: ()       -> Void              /* Callback importing clipboard images or a link         */
     let onComingSoon:     (String) -> Void              /* Callback reporting unsupported source                 */
-    var onAddDrawing:     (() -> Void)? = nil           /* Opens the editable canvas when supported by the owner */
+    var onAddDrawing:     (()      -> Void)? = nil      /* Opens the editable canvas when supported by the owner */
 
     @Environment(\.dismiss) private var dismiss         /* Sheet dismissal action */
 
@@ -364,10 +364,10 @@ struct CardPhotoGallery: View
     let photos:                  [KanbanAttachment]             /* Photo selections or gallery entries */
     @Binding var photoSelection: [PhotosPickerItem]             /* Photo selection                     */
     let onOpen:                  (KanbanAttachment) -> Void     /* Open the selected destination       */
-    let onCaption:               (UUID, String) -> Bool         /* Caption callback                    */
-    let onReorder:               ([UUID]) -> Bool               /* Reorder callback                    */
+    let onCaption:               (UUID, String)     -> Bool     /* Caption callback                    */
+    let onReorder:               ([UUID])           -> Bool     /* Reorder callback                    */
     let onRemove:                (KanbanAttachment) -> Void     /* Remove callback                     */
-    let onSetCover:              (UUID) -> Void                 /* Set cover callback                  */
+    let onSetCover:              (UUID)             -> Void     /* Set cover callback                  */
 
     @ScaledMetric(relativeTo: .body) private var photoWidth  = 220      /* Photo width            */
     @ScaledMetric(relativeTo: .body) private var photoHeight = 180      /* Photo height           */

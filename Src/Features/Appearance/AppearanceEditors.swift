@@ -25,8 +25,8 @@ struct ItemAppearanceSheet: View
 {
     let title:                       String                                             /* User-facing title             */
     let onSave:                      (ItemAppearance?) -> Bool                          /* Persist the edited value      */
-    let onOpenCover:                 (() -> Void)?                                      /* Open cover callback           */
-    let onOpenLayout:                (() -> Void)?                                      /* Open layout callback          */
+    let onOpenCover:                 (()               -> Void)?                        /* Open cover callback           */
+    let onOpenLayout:                (()               -> Void)?                        /* Open layout callback          */
     let showsListBackground:         Bool                                               /* List Background visibility    */
     let inheritedAddItemTextColor:   Color?                                             /* Inherited add item text color */
     let onSaveDisplay:               ((ItemAppearance?, ItemDisplayFormat) -> Bool)?    /* Save display callback         */
@@ -58,7 +58,7 @@ struct ItemAppearanceSheet: View
         title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, onOpenLayout: (() -> Void)? = nil,
         showsListBackground: Bool = false, displayFormat: ItemDisplayFormat? = nil,
         onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, inheritedAddItemTextColor: Color? = nil,
-        onSave: @escaping (ItemAppearance?) -> Bool
+        onSave: @escaping (ItemAppearance?)                  -> Bool
     )
     {
         self.title = title
@@ -430,7 +430,7 @@ struct BoardAppearanceSheet: View
     @State private var draftHeaderIcon:      PersonalCollectionIcon                                                     /* Draft header icon             */
     @State private var applyToAll = false                                                                               /* Apply to all                  */
     @State private var draftPresentation: BoardPresentation                                                             /* Draft presentation            */
-    let onSavePresentation:               ((BoardPresentation) -> Void)?                                                /* Save presentation callback    */
+    let onSavePresentation:               ((BoardPresentation)    -> Void)?                                             /* Save presentation callback    */
     let onSave:                           (BoardAppearance, Bool) -> Bool                                               /* Persist the edited value      */
 
     @State private var draftIconColor:       ProfileColor?      /* Draft icon color               */
@@ -466,7 +466,7 @@ struct BoardAppearanceSheet: View
         listSurface: KanbanList? = nil,
         listHeaderIcon: PersonalCollectionIcon? = nil,
         onSaveListSurface: ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)? = nil,
-        onSave: @escaping (BoardAppearance, Bool) -> Bool
+        onSave: @escaping (BoardAppearance, Bool)                                 -> Bool
     )
     {
         _draftShowsHeaderIcon = State(initialValue: listSurface?.showsIconInHeader ?? false)

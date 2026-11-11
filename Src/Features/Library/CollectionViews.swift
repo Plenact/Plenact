@@ -224,12 +224,12 @@ struct PersonalCollectionBoardView: View
     (UUID, QuickCaptureSubmission, Date) throws ->
     Void                                                        /* Checked creation callback for a destination List         */
     let onMoveNote:                                             /* Move note callback                                       */
-    (KanbanCard, UUID, UUID) throws -> KanbanCard               /* Checked movement callback returning the relocated Note   */
+    (KanbanCard, UUID, UUID) throws            -> KanbanCard    /* Checked movement callback returning the relocated Note   */
     let onUpdateMovedNote:  (UUID, KanbanCard) -> Bool          /* Persists edits in the Note's current collection          */
     let onArchiveMovedNote: (UUID, KanbanCard) -> Bool          /* Archives the Note in its current collection              */
     let onDeleteMovedNote:  (UUID, KanbanCard) -> Bool          /* Permanently removes the Note from its current collection */
     let onToggleMovedNoteBookmark:                              /* Toggle moved note bookmark callback                      */
-    (UUID, Int, Bool) -> Bool                                   /* Persists the Note's collection-local saved state         */
+    (UUID, Int, Bool)         -> Bool                           /* Persists the Note's collection-local saved state         */
     let registerNewNote: ((() -> Void)?) -> Void                /* Registers or clears the presented List's Note action     */
     @Environment(\.dismiss) private var dismiss                 /* Close the collection board                               */
     @State private var showsNewNoteComposer = false             /* Presentation state of the List-scoped Note draft         */

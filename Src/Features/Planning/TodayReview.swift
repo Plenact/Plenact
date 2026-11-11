@@ -184,7 +184,7 @@ struct TodayReviewView: View
     @Binding var plan: DailyPlan                                        /* Daily planning record          */
     let date:          Date                                             /* Date used by this operation    */
     let baseline:      DailyPlan?                                       /* Original state for comparison  */
-    let onSave:        () -> Bool                                       /* Persist the edited value       */
+    let onSave:        ()          -> Bool                              /* Persist the edited value       */
     let onCommitted:   (DailyPlan) -> Void                              /* Committed callback             */
     @Environment(\.planningCalendarAccess) private var access           /* Checked calendar operations    */
     @Environment(\.dismiss) private var dismiss                         /* Close the current presentation */

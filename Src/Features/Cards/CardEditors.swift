@@ -857,7 +857,7 @@ struct CardEditHistorySheet: View
     @Binding var card: KanbanCard                               /* Latest accepted content         */
     let canUndo: Bool                                           /* Editor can save a reversal      */
     let onUndo: (CardEditRecord, Bool) throws -> Void           /* Confirmed undo callback         */
-    let onClear: () -> Bool                                     /* Save the cleared history        */
+    let onClear: ()                           -> Bool           /* Save the cleared history        */
     @Environment(\.dismiss) private var dismiss                 /* Close the presentation          */
     @State private var pendingConflict: CardEditRecord?         /* Older revision with newer edits */
     @State private var confirmsClear = false                    /* Confirm revision deletion       */

@@ -64,7 +64,7 @@ struct ContentLifecycleActions: ViewModifier
     let title:     String                               /* Canonical content name used for confirmation              */
     let kind:      String                               /* Card or List                                              */
     let onArchive: (() -> Void)?                        /* Optional retention action; dividers support deletion only */
-    let onDelete:  () -> Bool                           /* Owner reports saved removal of the confirmed record       */
+    let onDelete:  ()  -> Bool                          /* Owner reports saved removal of the confirmed record       */
     @State private var confirmsDelete = false           /* Permanent removal confirmation                            */
     @Environment(\.dismiss) private var dismiss         /* Close snapshot projections after mutation                 */
 

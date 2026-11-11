@@ -408,12 +408,12 @@ struct ContentView: View
         allowsAddingLists: Bool = true,
         allowsRemovingLists: Bool = true,
         fillsAvailableListWidth: Bool = false,
-        onClose: (() -> Void)? = nil,
+        onClose: (()        -> Void)? = nil,
         onArchiveBoard: (() -> Void)? = nil,
-        onDeleteBoard: (() -> Void)? = nil,
+        onDeleteBoard: (()  -> Void)? = nil,
         deleteBoardTitle: String = "Delete Board",
 
-        onCommitDeletion: (([KanbanList], Set<Int>) throws -> Void)? = nil,
+        onCommitDeletion: (([KanbanList], Set<Int>) throws  -> Void)? = nil,
         onListsChanged: @escaping @MainActor ([KanbanList]) -> Void = KanbanBoardPersistence.saveListsInBackground,
 
         retainedAttachmentLists: @escaping () -> [KanbanList] =
@@ -423,10 +423,10 @@ struct ContentView: View
         personalCollectionID: UUID? = nil,
         availablePersonalLists: [PersonalCollection] = [],
         onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
-        onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
-        onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
-        onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
-        onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil,
+        onUpdateMovedNote: ((UUID, KanbanCard)              -> Bool)? = nil,
+        onArchiveMovedNote: ((UUID, KanbanCard)             -> Bool)? = nil,
+        onDeleteMovedNote: ((UUID, KanbanCard)              -> Bool)? = nil,
+        onToggleMovedNoteBookmark: ((UUID, Int, Bool)       -> Bool)? = nil,
         boardAppearance: Binding<BoardAppearance?>? = nil,
         viewportOwnerID: UUID? = nil,
         viewportDefaults: UserDefaults = .standard

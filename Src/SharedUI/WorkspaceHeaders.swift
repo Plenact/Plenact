@@ -80,7 +80,7 @@ struct DayHeaderAccessibility: ViewModifier
 struct SlideableHeaderText: View
 {
     let text:             String                        /* Text being processed     */
-    var onTap:            (() -> Void)?  = nil          /* Tap callback             */
+    var onTap:            (()    -> Void)?  = nil       /* Tap callback             */
     var onOverflowChange: (Bool) -> Void =              /* Overflow change callback */
     {
         _ in

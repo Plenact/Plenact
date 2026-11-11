@@ -162,7 +162,7 @@ struct ListCheckmarkReset: Equatable
     /// @return     ([KanbanChecklist]) hierarchy copies with completion fields transformed by stable identity path
     ///
     private static func transform(_ lists: [KanbanChecklist], path: String, change: (String, Bool) -> Bool)
-    -> [KanbanChecklist]
+                                                                                                   -> [KanbanChecklist]
     {
         lists.map
         {

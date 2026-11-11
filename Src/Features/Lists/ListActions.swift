@@ -38,10 +38,10 @@ struct KanbanListActionsSheet: View
     let canMoveEarlier:          Bool                           /* Indicates if the list can be moved earlier                                 */
     let canMoveLater:            Bool                           /* Indicates if the list can be moved later                                   */
     @Binding var isWatching:     Bool                           /* Indicates if the user is watching the list                                 */
-    let onAddCard:               () -> Void                     /* Action to perform when adding a card                                       */
-    let onCopyList:              () -> Void                     /* Action to perform when copying the list                                    */
-    var onMoveToBoard:           (() -> Void)? = nil            /* Move to board callback                                                     */
-    let onMoveList:              (Int) -> Void                  /* Action to perform when moving the list by a given offset                   */
+    let onAddCard:               ()     -> Void                 /* Action to perform when adding a card                                       */
+    let onCopyList:              ()     -> Void                 /* Action to perform when copying the list                                    */
+    var onMoveToBoard:           (()    -> Void)? = nil         /* Move to board callback                                                     */
+    let onMoveList:              (Int)  -> Void                 /* Action to perform when moving the list by a given offset                   */
     let onSortList:              (Bool) -> Void                 /* Action to perform when sorting the list; true for A to Z, false for Z to A */
     @Binding var cardEditMode:                                  /* Card edit mode                                                             */
     EditMode                                                    /* Manual card ordering in the owning List                                    */
@@ -52,8 +52,8 @@ struct KanbanListActionsSheet: View
     let onRestoreArchivedCard:     (Int) -> Void                                        /* Restores a retained record by identity           */
     let onDeleteArchivedCard:      (Int) -> Void                                        /* Permanently remove a confirmed archived card     */
     var canRemoveList: Bool = true                                                      /* Allows whole-list archive and deletion           */
-    let onArchiveList:             () -> Void                                           /* Action to perform when archiving the entire list */
-    let onDeleteList:              () -> Void                                           /* Permanently remove this list after confirmation  */
+    let onArchiveList:             ()                                  -> Void          /* Action to perform when archiving the entire list */
+    let onDeleteList:              ()                                  -> Void          /* Permanently remove this list after confirmation  */
     var onEditList:                ((String, String, ItemPresentation) -> Bool)? =      /* Edit list callback                               */
         nil
     var onAppearance:              ((ItemAppearance?) -> Bool)?                  =      /* Publish appearance choices                       */
@@ -748,11 +748,11 @@ struct ListCheckmarkResetControl: View
 ///
 struct ListCheckmarkResetConfirmation: ViewModifier
 {
-    let list:                   KanbanList?             /* List under consideration              */
-    @Binding var session:       ListCheckmarkReset?     /* Current operation session             */
-    @Binding var confirmsClear: Bool                    /* Confirms clear                        */
-    let onUpdateCard:           (KanbanCard) -> Void    /* Update card callback                  */
-    var onClear:               () -> Void = {}          /* Finish the owning menu after clearing */
+    let list:                   KanbanList?                             /* List under consideration              */
+    @Binding var session:       ListCheckmarkReset?                     /* Current operation session             */
+    @Binding var confirmsClear: Bool                                    /* Confirms clear                        */
+    let onUpdateCard:           (KanbanCard) -> Void                    /* Update card callback                  */
+    var onClear:               ()            -> Void = {}               /* Finish the owning menu after clearing */
 
 
     ///

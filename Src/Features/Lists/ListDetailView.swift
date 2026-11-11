@@ -45,8 +45,8 @@ struct TodayListDetailView: View
 
     let listID:            Int                  /* Focused list identity                    */
     let currentUserName:   String               /* Current activity author                  */
-    let onClose:           () -> Void           /* Return to Today                          */
-    let onOpenWeek:        () -> Void           /* Open this list in the Week workspace     */
+    let onClose:           ()    -> Void        /* Return to Today                          */
+    let onOpenWeek:        ()    -> Void        /* Open this list in the Week workspace     */
     let onPermanentDelete: (Int) -> Bool        /* Parent's save-first Week deletion result */
 
     @Environment(\.layoutDirection) private var headerLayoutDirection                   /* Header layout direction             */

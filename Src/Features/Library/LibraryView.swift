@@ -43,8 +43,8 @@ struct BoardListsView: View
     var toolbarCollectionRequest: Binding<PersonalCollectionKind?>? =           /* Toolbar collection request                      */
         nil
     let registerListNewNote:      ((() -> Void)?) -> Void                       /* Registers the directory's scoped Note action    */
-    let onOpenSaved:              () -> Void                                    /* Select the existing canonical Saved destination */
-    var onLoadExampleWeek:        (() -> Bool)?                  =              /* Load example week callback                      */
+    let onOpenSaved:              ()   -> Void                                  /* Select the existing canonical Saved destination */
+    var onLoadExampleWeek:        (()  -> Bool)?                  =             /* Load example week callback                      */
         nil
     var onUndoExampleWeek:        (() -> Bool)?                  =              /* Undo example week callback                      */
         nil

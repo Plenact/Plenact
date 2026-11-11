@@ -50,8 +50,8 @@ struct CalendarCardResult: Identifiable
 struct TodayCalendarView: View
 {
     let lists:           [KanbanList]           /* Current Board snapshot                             */
-    let onArchiveCard:   (Int) -> Void          /* Canonical archive callback                         */
-    let onDeleteCard:    (Int) -> Bool          /* Confirmed deletion result                          */
+    let onArchiveCard:   (Int)      -> Void     /* Canonical archive callback                         */
+    let onDeleteCard:    (Int)      -> Bool     /* Confirmed deletion result                          */
     let onOpenBoardCard: (Int, Int) -> Void     /* Navigate using containing list and card identities */
 
     @State private var displayedMonth =                                         /* Displayed month    */

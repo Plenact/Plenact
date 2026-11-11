@@ -66,19 +66,19 @@ struct TodayHomeView: View
     @Binding var savedCardIDs:  Set<Int>                                /* Device-local bookmarks used by card details        */
     let profile:                LocalProfile?                           /* Current local profile and preferences              */
     let onSaveProfile:          (LocalProfile) -> Void                  /* Save local identity and personalization            */
-    let onRemoveProfile:        () -> Void                              /* Remove only local profile information              */
+    let onRemoveProfile:        ()             -> Void                  /* Remove only local profile information              */
     let onAddCard:                                                      /* Add card callback                                  */
     (Int, String, String, String, ItemPresentation?, [String]?) ->
     Void                                                                /* Create canonical Week records                 */
-    let onAddQuickCard: ((Int, String) -> Void)?                        /* Inline creation with a transient Week preview */
+    let onAddQuickCard: ((Int, String)                   -> Void)?      /* Inline creation with a transient Week preview */
     let onAddCapture:           (QuickCaptureSubmission) -> Bool        /* Add capture callback                          */
-    let onToggleCardCompletion: (Int, Int) -> Void                      /* Toggle local card completion                  */
-    let onOpenBoardList:        (Int) -> Void                           /* Route to Board at the selected list ID        */
-    let onOpenBoardCard:        (Int, Int) -> Void                      /* Route to a Week card by list/card IDs         */
-    let onArchiveCard:          (Int) -> Void                           /* Retain a canonical Week card                  */
-    let onDeleteCard:           (Int) -> Bool                           /* Report successful confirmed Week card removal */
-    let onArchiveList:          (Int) -> Void                           /* Retain a canonical Week list                  */
-    let onDeleteList:           (Int) -> Bool                           /* Report successful confirmed Week list removal */
+    let onToggleCardCompletion: (Int, Int)               -> Void        /* Toggle local card completion                  */
+    let onOpenBoardList:        (Int)                    -> Void        /* Route to Board at the selected list ID        */
+    let onOpenBoardCard:        (Int, Int)               -> Void        /* Route to a Week card by list/card IDs         */
+    let onArchiveCard:          (Int)                    -> Void        /* Retain a canonical Week card                  */
+    let onDeleteCard:           (Int)                    -> Bool        /* Report successful confirmed Week card removal */
+    let onArchiveList:          (Int)                    -> Void        /* Retain a canonical Week list                  */
+    let onDeleteList:           (Int)                    -> Bool        /* Report successful confirmed Week list removal */
     let quickCreateRequest:     Int                                     /* Center-bar requests for the Today composer    */
 
     @State private var showsAccountSettings                                   = false           /* Account & Settings sheet presentation */
@@ -390,18 +390,18 @@ struct TodayHomeView: View
         archivedLists: Binding<[KanbanList]>,
         savedCardIDs: Binding<Set<Int>>,
         profile: LocalProfile?,
-        onSaveProfile: @escaping (LocalProfile) -> Void,
-        onRemoveProfile: @escaping () -> Void,
+        onSaveProfile: @escaping (LocalProfile)                                          -> Void,
+        onRemoveProfile: @escaping ()                                                    -> Void,
         onAddCard: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void,
-        onAddQuickCard: ((Int, String) -> Void)? = nil,
-        onAddCapture: @escaping (QuickCaptureSubmission) -> Bool,
-        onToggleCardCompletion: @escaping (Int, Int) -> Void,
-        onOpenBoardList: @escaping (Int) -> Void,
-        onOpenBoardCard: @escaping (Int, Int) -> Void,
-        onArchiveCard: @escaping (Int) -> Void,
-        onDeleteCard: @escaping (Int) -> Bool,
-        onArchiveList: @escaping (Int) -> Void,
-        onDeleteList: @escaping (Int) -> Bool,
+        onAddQuickCard: ((Int, String)                                                   -> Void)? = nil,
+        onAddCapture: @escaping (QuickCaptureSubmission)                                 -> Bool,
+        onToggleCardCompletion: @escaping (Int, Int)                                     -> Void,
+        onOpenBoardList: @escaping (Int)                                                 -> Void,
+        onOpenBoardCard: @escaping (Int, Int)                                            -> Void,
+        onArchiveCard: @escaping (Int)                                                   -> Void,
+        onDeleteCard: @escaping (Int)                                                    -> Bool,
+        onArchiveList: @escaping (Int)                                                   -> Void,
+        onDeleteList: @escaping (Int)                                                    -> Bool,
         quickCreateRequest: Int
     )
     {

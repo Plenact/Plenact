@@ -53,8 +53,8 @@ struct DaySectionRow: View
     let card:     KanbanCard                                    /* Card under consideration         */
     let cards:    [KanbanCard]                                  /* Card records under consideration */
     let onUpdate: (KanbanCard) -> Void                          /* Publish item edits               */
-    let onMove:   (Int) -> Void                                 /* Move the selected item           */
-    var onOpen:   (() -> Void)? = nil                           /* Open the selected destination    */
+    let onMove:   (Int)        -> Void                          /* Move the selected item           */
+    var onOpen:   (()          -> Void)? = nil                  /* Open the selected destination    */
     @Environment(\.cardMovementAccess) private var movement     /* Owner-qualified transfer context */
     @State private var showsMove = false                        /* Move visibility                  */
 

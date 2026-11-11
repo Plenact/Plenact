@@ -389,7 +389,7 @@ enum LocalBackupRestore
 struct LocalBackupRestoreAccess
 {
     let restore: (ReviewedLocalBackup) -> Void          /* Confirmed restore request                     */
-    let undo:    () -> Void                             /* Explicit recovery of the pre-import workspace */
+    let undo:    ()                    -> Void          /* Explicit recovery of the pre-import workspace */
 }
 
 

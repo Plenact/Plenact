@@ -112,7 +112,7 @@ struct QuickNoteComposer: View
         template: QuickCaptureTemplate? = nil,
         captureAction: TodayCaptureAction? = nil,
         initialPresentation: ItemPresentation? = nil,
-        onSaveCapture: ((QuickCaptureSubmission) -> Bool)? = nil,
+        onSaveCapture: ((QuickCaptureSubmission)                                      -> Bool)? = nil,
         onSave: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     )
     {

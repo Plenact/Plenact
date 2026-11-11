@@ -772,11 +772,11 @@ struct SavedCardsView: View
     @Binding var collections: [PersonalCollection]              /* Collections whose archived boards can be restored    */
     let onOpenBoardCard:      (Int, Int) -> Void                /* Open the exact bookmarked item                       */
     let onOpenPersonalCard:                                     /* Open personal card callback                          */
-    (PersonalSavedCardTarget) -> Void                           /* Navigate to a bookmarked personal record             */
+    (PersonalSavedCardTarget)                  -> Void          /* Navigate to a bookmarked personal record             */
     let onRestoreBoard:                 (UUID) -> Void          /* Restore a saved board by identity                    */
     let onDeleteBoard:                  (UUID) -> Bool          /* Save permanent collection removal and report success */
-    let onArchiveCard:                  (Int) -> Void           /* Archive a Week bookmark's canonical card             */
-    let onDeleteCard:                   (Int) -> Bool           /* Report confirmed Week bookmark-card removal          */
+    let onArchiveCard:                  (Int)  -> Void          /* Archive a Week bookmark's canonical card             */
+    let onDeleteCard:                   (Int)  -> Bool          /* Report confirmed Week bookmark-card removal          */
     @State private var deletingBoard:   PersonalCollection?     /* Saved collection awaiting removal                    */
     @State private var deletingCard:    KanbanCard?             /* Week bookmark awaiting removal                       */
     @State private var inspectingBoard: PersonalCollection?     /* Archived collection being browsed                    */

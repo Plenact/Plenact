@@ -283,22 +283,22 @@ struct ChecklistBlock: View
     let checklist: KanbanChecklist                                                                      /* The checklist data rendered by the block                                */
     let linkedCardsByID:                                                                                /* Linked cards by ID                                                      */
     [Int: KanbanCard]                                                                                   /* Linked cards keyed by stable ID                                         */
-    let onDelete:     () -> Void                                                                        /* The action invoked when the checklist is deleted                        */
+    let onDelete:     ()       -> Void                                                                  /* The action invoked when the checklist is deleted                        */
     let onAddItem:    (String) -> Void                                                                  /* The action invoked when a new item is added                             */
-    let onToggleItem: (Int) -> Void                                                                     /* The action invoked when an item is toggled                              */
+    let onToggleItem: (Int)    -> Void                                                                  /* The action invoked when an item is toggled                              */
     let onUpdateItem:                                                                                   /* Update item callback                                                    */
-    (Int, String) -> Void                                                                               /* The action invoked when item text is edited                             */
+    (Int, String)           -> Void                                                                     /* The action invoked when item text is edited                             */
     let onDeleteItem: (Int) -> Void                                                                     /* The action invoked when an item is deleted                              */
     let onOpenActionDetail:                                                                             /* Open action detail callback                                             */
-    (UUID) -> Void                                                                                      /* The action invoked for reduced detail                                   */
+    (UUID)                         -> Void                                                              /* The action invoked for reduced detail                                   */
     let onRename:         (String) -> Void                                                              /* The action invoked when the checklist title is renamed                  */
-    let onToggleAllItems: () -> Void                                                                    /* The action invoked when all items are toggled                           */
+    let onToggleAllItems: ()       -> Void                                                              /* The action invoked when all items are toggled                           */
     let onMove:                                                                                         /* Move the selected item                                                  */
     (ChecklistMoveDirection) -> Void                                                                    /* The action invoked when the checklist is moved                          */
     let canMoveUp:                Bool                                                                  /* Whether the checklist can be moved up in the list                       */
     let canMoveDown:              Bool                                                                  /* Whether the checklist can be moved down in the list                     */
     let focusFirstItem:           Bool                                                                  /* Whether the first item should be focused when the checklist is rendered */
-    let onFirstItemFocused:       () -> Void                                                            /* The action invoked when the first item receives focus                   */
+    let onFirstItemFocused:       ()                     -> Void                                        /* The action invoked when the first item receives focus                   */
     var onChangeType:             ((KanbanChecklistItem) -> Bool)? = nil                                /* Change type callback                                                    */
     var showsRowBackground = true
     @State private var requestedType                               = ChecklistItemType.standard         /* Requested type                                                          */
@@ -806,15 +806,15 @@ struct ChecklistItemRow: View
     let linkedCollectionID: UUID?                                               /* Linked collection ID */
     @Environment(\.cardMovementSource) private var linkedSourceID               /* Linked source ID     */
 
-    let item:           String                  /* The editable item text                                        */
-    let isCompleted:    Bool                    /* The current completion state                                  */
-    let linkedCardID:   Int?                    /* Stable linked card ID, when present                           */
-    let linkedCard:     KanbanCard?             /* Resolved linked card, when available                          */
-    var webURL:         URL? = nil              /* Web URL                                                       */
-    let onOpenDetail:   (() -> Void)?           /* Action Detail presentation callback                           */
-    let onToggle:       () -> Void              /* The action invoked by the checkbox                            */
-    let onUpdate:       (String) -> Void        /* The action invoked by text editing                            */
-    let onDelete:       () -> Void              /* The action invoked by delete                                  */
+    let item:           String                  /* The editable item text               */
+    let isCompleted:    Bool                    /* The current completion state         */
+    let linkedCardID:   Int?                    /* Stable linked card ID, when present  */
+    let linkedCard:     KanbanCard?             /* Resolved linked card, when available */
+    var webURL:         URL? = nil              /* Web URL                              */
+    let onOpenDetail:   (()      -> Void)?      /* Action Detail presentation callback  */
+    let onToggle:       ()       -> Void        /* The action invoked by the checkbox   */
+    let onUpdate:       (String) -> Void        /* The action invoked by text editing   */
+    let onDelete:       ()       -> Void        /* The action invoked by delete         */
     let showsBackground: Bool
     let shouldFocus:    Bool                    /* Indicates whether the text field should receive focus         */
     let onFocusHandled: () -> Void              /* The action invoked when the text field focus has been handled */
@@ -858,9 +858,9 @@ struct ChecklistItemRow: View
         linkedCard: KanbanCard? = nil,
         onOpenDetail: (() -> Void)? = nil,
         webURL: URL? = nil,
-        onToggle: @escaping () -> Void,
+        onToggle: @escaping ()       -> Void,
         onUpdate: @escaping (String) -> Void,
-        onDelete: @escaping () -> Void,
+        onDelete: @escaping ()       -> Void,
         showsBackground: Bool = true,
         shouldFocus: Bool,
         onFocusHandled: @escaping () -> Void

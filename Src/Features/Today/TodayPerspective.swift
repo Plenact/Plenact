@@ -23,9 +23,9 @@ struct TodayPerspectiveSection: View
     let completed:    [KanbanCard]                      /* Completion state  */
     let tomorrowList: KanbanList?                       /* Tomorrow list     */
     let onReview:     (ReviewRhythmRoute) -> Void       /* Review callback   */
-    let onSettings:   () -> Void                        /* Settings callback */
-    let onReflect:    () -> Void                        /* Reflect callback  */
-    let onPrepare:    () -> Void                        /* Prepare callback  */
+    let onSettings:   ()                  -> Void       /* Settings callback */
+    let onReflect:    ()                  -> Void       /* Reflect callback  */
+    let onPrepare:    ()                  -> Void       /* Prepare callback  */
 
     private var tomorrowItems: [KanbanCard]     /* Tomorrow items */
     {

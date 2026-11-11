@@ -33,7 +33,7 @@ struct PlanSettingsView: View
     @AppStorage(TodayListPins.key) private var pinData = Data()         /* Saved shortcut selections       */
     let lists:         [KanbanList]                                     /* Ordered List records            */
     let onSaveProfile: (LocalProfile) -> Void                           /* Persist local profile edits     */
-    var onOpenTemplateLibrary: (() -> Void)? = nil                      /* Open template library callback  */
+    var onOpenTemplateLibrary: (()    -> Void)? = nil                   /* Open template library callback  */
 
 
     /// @fcn PlanSettingsView.savePreferences

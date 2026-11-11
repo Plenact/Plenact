@@ -354,16 +354,16 @@ struct CardDetailView: View
     let currentUserName:       String                                           /* Current actor name shown in card activity                */
     @Binding var savedCardIDs: Set<Int>                                         /* Local identities saved for quick access                  */
     let onTitleToggle:         ((KanbanCard) -> Void)?                          /* Callback invoked when the card title checkbox is toggled */
-    let onMoveToList:          ((Int) -> Void)?                                 /* Callback invoked to move the card to a selected list     */
+    let onMoveToList:          ((Int)        -> Void)?                          /* Callback invoked to move the card to a selected list     */
     let personalCollectionID:  UUID?                                            /* Original personal collection owning this detail session  */
     @Environment(\.studioCardSurface) private var inheritedStudioSurface        /* List or Board artwork                                    */
     @Environment(\.cardMovementAccess) var cardMovementAccess                   /* Card movement access                                     */
     let availablePersonalLists: [PersonalCollection]                            /* Personal Lists offered as Note movement destinations     */
     let onMoveNoteToPersonalList:                                               /* Move note to personal list callback                      */
-    ((KanbanCard, UUID, UUID) -> KanbanCard?)?                                  /* Moves the Note and returns its destination-local record  */
+    ((KanbanCard, UUID, UUID)                  -> KanbanCard?)?                 /* Moves the Note and returns its destination-local record  */
     let onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)?                        /* Persists edits after the Note changes collections        */
     let onArchiveMovedNote:                                                     /* Archive moved note callback                              */
-    ((UUID, KanbanCard) -> Bool)?                                               /* Archives the Note in its current collection              */
+    ((UUID, KanbanCard)                        -> Bool)?                        /* Archives the Note in its current collection              */
     let onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)?                        /* Permanently removes the Note from its current collection */
     let onToggleMovedNoteBookmark:                                              /* Toggle moved note bookmark callback                      */
     ((UUID, Int, Bool) -> Bool)?                                                /* Persists the relocated Note's saved state                */
@@ -491,16 +491,16 @@ struct CardDetailView: View
         currentUserName: String = "Justin Reina",
         savedCardIDs: Binding<Set<Int>> = .constant([]),
         onTitleToggle: ((KanbanCard) -> Void)? = nil,           /* Callback invoked when the card title checkbox is toggled */
-        onMoveToList: ((Int) -> Void)? = nil,                   /* Callback invoked when the card is moved                  */
+        onMoveToList: ((Int)         -> Void)? = nil,           /* Callback invoked when the card is moved                  */
         personalCollectionID: UUID? = nil,
         availablePersonalLists: [PersonalCollection] = [],
         onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
-        onUpdateMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
-        onArchiveMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
-        onDeleteMovedNote: ((UUID, KanbanCard) -> Bool)? = nil,
-        onToggleMovedNoteBookmark: ((UUID, Int, Bool) -> Bool)? = nil,
-        onArchive: (() -> Void)? = nil,
-        onDelete: (() -> Bool)? = nil,
+        onUpdateMovedNote: ((UUID, KanbanCard)              -> Bool)? = nil,
+        onArchiveMovedNote: ((UUID, KanbanCard)             -> Bool)? = nil,
+        onDeleteMovedNote: ((UUID, KanbanCard)              -> Bool)? = nil,
+        onToggleMovedNoteBookmark: ((UUID, Int, Bool)       -> Bool)? = nil,
+        onArchive: (()                                      -> Void)? = nil,
+        onDelete: (()                                       -> Bool)? = nil,
         listedOnDate: Date? = nil
     )
     {

@@ -129,10 +129,10 @@ struct TodayFocusSection: View
         _, _ in false
     }
 
-    let onToggleCard:    (Int) -> Void                  /* Toggle local completion state           */
+    let onToggleCard:    (Int)        -> Void           /* Toggle local completion state           */
     let onOpenCard:      (KanbanCard) -> Void           /* Open card callback                      */
-    let onDeleteCard:    (Int) -> Bool                  /* Delete card callback                    */
-    let onOpenTodayList: () -> Void                     /* Open the focused single-list Today view */
+    let onDeleteCard:    (Int)        -> Bool           /* Delete card callback                    */
+    let onOpenTodayList: ()           -> Void           /* Open the focused single-list Today view */
 
     ///
     /// @fcn        TodayFocusSection.focusDateControl

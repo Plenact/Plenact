@@ -105,7 +105,7 @@ struct KanbanCardView: View
     var presentation: BoardPresentation = .standard     /* Board layout controlling the card row's density     */
     let labelLibrary: LabelLibrary                      /* Shared label catalog used to resolve card label IDs */
     let onUpdateCard: (KanbanCard) -> Void              /* The action invoked when card details are updated    */
-    let onDeleteCard: () -> Void                        /* The action invoked when this card is deleted        */
+    let onDeleteCard: ()           -> Void              /* The action invoked when this card is deleted        */
     /// Requests archival of the displayed card
     let onArchiveCard: () -> Void       /* Archives this card through its containing list             */
     let onToggle:      () -> Void       /* Callback invoked when the card's title checkbox is toggled */
@@ -736,9 +736,9 @@ struct SingleListNoteRow: View
 
 
     let card:      KanbanCard                           /* Card under consideration  */
-    let onToggle:  () -> Void                           /* Toggle item completion    */
-    var onArchive: (() -> Void)? = nil                  /* Archive the selected item */
-    var onDelete:  (() -> Void)? = nil                  /* Delete the selected item  */
+    let onToggle:  ()              -> Void              /* Toggle item completion    */
+    var onArchive: (()             -> Void)? = nil      /* Archive the selected item */
+    var onDelete:  (()             -> Void)? = nil      /* Delete the selected item  */
     let onUpdateCard: (KanbanCard) -> Void              /* Update card callback      */
     @State private var confirmsDelete = false           /* Confirms delete           */
 

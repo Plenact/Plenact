@@ -232,7 +232,7 @@ struct ItemReactionStrip: View
     let reactions:      [ItemEmojiReaction]     /* Stored item reactions  */
     let authorID:       UUID?                   /* Author ID              */
     let onToggle:       (String) -> Void        /* Toggle item completion */
-    let onAdd:          () -> Void              /* Add callback           */
+    let onAdd:          ()       -> Void        /* Add callback           */
 
     private var emojis: [String]        /* Available emoji choices */
     {

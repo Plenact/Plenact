@@ -59,30 +59,30 @@ struct KanbanListView: View
     let availableListHeight: CGFloat                    /* Vertical viewport space available to this list panel           */
     let displaySettings:     BoardDisplaySettings       /* The board's display settings affecting card and list rendering */
     /// Layout preset that controls the list's card dimensions
-    let presentation:       BoardPresentation                   /* Board layout controlling list density and dimensions           */
-    let labelLibrary:       LabelLibrary                        /* Shared categorized labels available to the cards               */
-    let toggleCardTitle:    (Int) -> Void                       /* The action invoked to toggle the title of a card               */
-    let canMoveEarlier:     Bool                                /* Indicates whether the list can be moved earlier in the board   */
-    let canMoveLater:       Bool                                /* Indicates whether the list can be moved later in the board     */
-    let onAddCard:          (QuickCaptureSubmission) -> Bool    /* The action invoked to add a new card to the list               */
-    let onCopyList:         () -> Void                          /* The action invoked to copy the list                            */
-    var onMoveToBoard:      (() -> Void)? = nil                 /* Move to board callback                                         */
-    let onMoveList:         (Int) -> Void                       /* The action invoked to move the list by a specified offset      */
-    let onSortList:         (Bool) -> Void                      /* The action invoked to sort the list based on a specified order */
-    let onArchiveCompleted: () -> Void                          /* The action invoked to archive all completed cards in the list  */
+    let presentation:       BoardPresentation                                           /* Board layout controlling list density and dimensions           */
+    let labelLibrary:       LabelLibrary                                                /* Shared categorized labels available to the cards               */
+    let toggleCardTitle:    (Int) -> Void                                               /* The action invoked to toggle the title of a card               */
+    let canMoveEarlier:     Bool                                                        /* Indicates whether the list can be moved earlier in the board   */
+    let canMoveLater:       Bool                                                        /* Indicates whether the list can be moved later in the board     */
+    let onAddCard:          (QuickCaptureSubmission) -> Bool                            /* The action invoked to add a new card to the list               */
+    let onCopyList:         ()                       -> Void                            /* The action invoked to copy the list                            */
+    var onMoveToBoard:      (()                      -> Void)? = nil                    /* Move to board callback                                         */
+    let onMoveList:         (Int)                    -> Void                            /* The action invoked to move the list by a specified offset      */
+    let onSortList:         (Bool)                   -> Void                            /* The action invoked to sort the list based on a specified order */
+    let onArchiveCompleted: ()                       -> Void                            /* The action invoked to archive all completed cards in the list  */
     /// Archived cards retained by this list
     @Binding var archivedCards: [KanbanCard]    /* Retained records belonging to this list's archive */
     /// Requests restoration of an archived card by identity
     let onRestoreArchivedCard: (Int) -> Void    /* Restores a retained card to the active list              */
     let onDeleteArchivedCard:  (Int) -> Void    /* Confirmed removal of a retained card                     */
     var canRemoveList: Bool = true              /* Allows whole-list archive and deletion                   */
-    let onArchiveList:         () -> Void       /* The action invoked to archive the entire list            */
-    let onDeleteList:          () -> Void       /* Confirmed removal of this list and its retained content  */
+    let onArchiveList:         ()    -> Void    /* The action invoked to archive the entire list            */
+    let onDeleteList:          ()    -> Void    /* Confirmed removal of this list and its retained content  */
     let onDeleteCard:          (Int) -> Void    /* The action invoked to delete a card at a specified index */
     /// Requests archival of an active card by identity
-    let onArchiveCard: (Int) -> Void            /* Archives an active card by identity                */
+    let onArchiveCard: (Int)        -> Void     /* Archives an active card by identity                */
     let onUpdateCard:  (KanbanCard) -> Void     /* The action invoked to save edited card information */
-    let onMoveCard:    (Int, Int) -> Void       /* Move a card to a destination index in this list    */
+    let onMoveCard:    (Int, Int)   -> Void     /* Move a card to a destination index in this list    */
     /// Reports list-reorder drag updates to the owning board
     let onListDragChanged: (DragGesture.Value?) -> Void         /* Reports list-reorder gesture samples to the Board */
     /// Reports completion or cancellation of a list-reorder drag

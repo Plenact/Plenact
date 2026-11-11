@@ -261,8 +261,8 @@ struct ArchivedListsView: View
     /// Archived lists available for restoration
     @Binding var lists: [KanbanList]    /* Shared archived-list partition */
     /// Requests restoration of a list by identity
-    let onRestore:                   (Int) -> Void              /* Restores an archived list by identity        */
-    let onDelete:                    (Int) -> Void              /* Permanently remove a confirmed archived list */
+    let onRestore:                   (Int)      -> Void         /* Restores an archived list by identity        */
+    let onDelete:                    (Int)      -> Void         /* Permanently remove a confirmed archived list */
     let onDeleteCard:                (Int, Int) -> Void         /* Remove a card within the archived list       */
     @State private var deletingList: KanbanList?                /* List awaiting permanent deletion             */
     /// Dismiss action for the archive browser
@@ -410,7 +410,7 @@ struct ArchivedListContentsView: View
     @Binding var lists:              [KanbanList]       /* Canonical retained lists         */
     let listID:                      Int                /* Archived list identity           */
     let onDeleteCard:                (Int) -> Void      /* Owner removes confirmed cards    */
-    let onDeleteList:                () -> Void         /* Owner removes the confirmed list */
+    let onDeleteList:                ()    -> Void      /* Owner removes the confirmed list */
     @State private var confirmsDeleteList = false       /* Complete retained list deletion  */
 
     @State private var deletingCard: KanbanCard?        /* Card awaiting permanent removal */

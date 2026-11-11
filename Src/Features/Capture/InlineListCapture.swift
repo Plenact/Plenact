@@ -260,7 +260,7 @@ struct InlineListCapture: View
     var isPresented           = true                                            /* Presentation visibility   */
     @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference */
     let onCreate:                      (QuickCaptureSubmission) -> Bool         /* Create callback           */
-    let onOpenComposer:                () -> Void                               /* Open composer callback    */
+    let onOpenComposer:                ()                       -> Void         /* Open composer callback    */
     @FocusState private var isFocused: Bool                                     /* Native editor focus state */
 
     var body: some View         /* Inline List Capture layout */

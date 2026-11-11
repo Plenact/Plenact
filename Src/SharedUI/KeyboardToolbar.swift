@@ -312,8 +312,8 @@ struct KeyboardCardActions
 struct KeyboardFormatting
 {
     let toggle: (UIFontDescriptor.SymbolicTraits) -> Void       /* Toggle callback      */
-    let color:  (String) -> Void                                /* Resolved color value */
-    let font:   (String?, Double?) -> Void                      /* Resolved text font   */
+    let color:  (String)                          -> Void       /* Resolved color value */
+    let font:   (String?, Double?)                -> Void       /* Resolved text font   */
 }
 
 
@@ -669,7 +669,7 @@ final class PlenactKeyboardToolbar: UIView
     /// @return     (UIBarButtonItem) toolbar button backed by the requested optional context callback
     ///
     private func contextual(_ title: String, symbol: String, key: KeyPath<KeyboardCardActions, (() -> Void)?>)
-    -> UIBarButtonItem
+                                                                                                   -> UIBarButtonItem
     {
         let item = action(title, symbol: symbol)        /* Item under consideration */
         {

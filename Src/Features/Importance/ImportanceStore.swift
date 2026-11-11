@@ -281,9 +281,9 @@ enum LibraryImportanceSelection
 ///
 struct LibraryImportanceAccess
 {
-    let contains: (Int) -> Bool                 /* Contains callback      */
+    let contains: (Int)       -> Bool           /* Contains callback      */
     let set:      (Int, Bool) -> Void           /* Set callback           */
-    var level:    (Int) -> Int =                /* Saved importance level */
+    var level:    (Int)       -> Int =          /* Saved importance level */
     {
         _ in
         0

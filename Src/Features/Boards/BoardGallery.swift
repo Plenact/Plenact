@@ -66,10 +66,10 @@ struct BoardGalleryView: View
 {
     @Environment(\.boardViewportMemory) private var viewportMemory      /* Viewport memory */
 
-    let lists:     [KanbanList]                 /* Ordered List records          */
-    let listTitle: (KanbanList) -> String       /* List title callback           */
-    let onOpen:    (KanbanCard, Int) -> Void    /* Open the selected destination */
-    var onUpdate:  (KanbanCard) -> Void =       /* Publish item edits            */
+    let lists:     [KanbanList]                         /* Ordered List records          */
+    let listTitle: (KanbanList)      -> String          /* List title callback           */
+    let onOpen:    (KanbanCard, Int) -> Void            /* Open the selected destination */
+    var onUpdate:  (KanbanCard)      -> Void =          /* Publish item edits            */
     {
         _ in
     }

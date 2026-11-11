@@ -490,7 +490,7 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
 struct ReviewRhythmPanel: View
 {
     let onOpen:      (ReviewRhythmRoute) -> Void                                        /* Open the selected destination */
-    let onSettings:  () -> Void                                                         /* Settings callback             */
+    let onSettings:  ()                  -> Void                                        /* Settings callback             */
     var defaults:    UserDefaults = .standard                                           /* Preference storage domain     */
     var nowOverride: Date?        = nil                                                 /* Now override                  */
     @Environment(\.planningCalendarAccess) private var access                           /* Checked calendar operations   */

@@ -114,7 +114,7 @@ struct DetailSection<Content: View>: View
     init(
         title: String, collapsible: Bool = false, showsBackground: Bool = true,
         trailing: String? = nil, trailingAction: (() -> Void)? = nil,
-        @ViewBuilder content: @escaping () -> Content
+        @ViewBuilder content: @escaping ()           -> Content
     )
     {
         self.collapsible = collapsible

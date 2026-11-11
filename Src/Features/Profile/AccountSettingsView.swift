@@ -120,7 +120,7 @@ struct AccountSettingsView: View
     let profile:  LocalProfile?                 /* Existing local profile */
     let lists:    [KanbanList]                  /* Default-list choices   */
     let onSave:   (LocalProfile) -> Void        /* Profile save callback  */
-    let onRemove: () -> Void                    /* Profile removal        */
+    let onRemove: ()             -> Void        /* Profile removal        */
 
     @Environment(\.planningCalendarAccess) private var planningAccess           /* Planning access                 */
     @AppStorage(TodayListPins.key) private var listPinData = Data()             /* List pin data                   */
@@ -202,7 +202,7 @@ struct AccountSettingsView: View
         profile: LocalProfile?,
         lists: [KanbanList],
         onSave: @escaping (LocalProfile) -> Void,
-        onRemove: @escaping () -> Void
+        onRemove: @escaping ()           -> Void
     )
     {
         let preferences = PlanPreferencesStore.load()           /* Initial settings */

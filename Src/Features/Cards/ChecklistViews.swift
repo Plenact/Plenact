@@ -50,10 +50,10 @@ struct ChecklistActionDetailView: View
     /// @post       The source detail and parent card remain unchanged until explicit Save
     ///
     init(
-        title: String,
-        detail: KanbanChecklistActionDetail,
+        title:           String,
+        detail:          KanbanChecklistActionDetail,
         currentUserName: String,
-        onSave: @escaping (KanbanChecklistActionDetail) -> Void
+        onSave:          @escaping (KanbanChecklistActionDetail) -> Void
     )
     {
         self.title = title
@@ -850,20 +850,20 @@ struct ChecklistItemRow: View
     /// @post       Initialization installs inputs without invoking any callbacks
     ///
     init(
-        item: String,
-        isCompleted: Bool,
-        planningLinkID: UUID? = nil,
-        linkedCardID: Int? = nil,
-        linkedCollectionID: UUID? = nil,
-        linkedCard: KanbanCard? = nil,
-        onOpenDetail: (() -> Void)? = nil,
-        webURL: URL? = nil,
-        onToggle: @escaping ()       -> Void,
-        onUpdate: @escaping (String) -> Void,
-        onDelete: @escaping ()       -> Void,
-        showsBackground: Bool = true,
-        shouldFocus: Bool,
-        onFocusHandled: @escaping () -> Void
+        item:               String,
+        isCompleted:        Bool,
+        planningLinkID:     UUID?       = nil,
+        linkedCardID:       Int?        = nil,
+        linkedCollectionID: UUID?       = nil,
+        linkedCard:         KanbanCard? = nil,
+        onOpenDetail:       (() -> Void)? = nil,
+        webURL:             URL? = nil,
+        onToggle:           @escaping ()       -> Void,
+        onUpdate:           @escaping (String) -> Void,
+        onDelete:           @escaping ()       -> Void,
+        showsBackground:    Bool = true,
+        shouldFocus:        Bool,
+        onFocusHandled:     @escaping () -> Void
     )
     {
         self.item = item

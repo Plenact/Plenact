@@ -31,7 +31,10 @@ enum TodayVisionSelection
     /// @return     ([PlanningSearchResult]) unfinished day-related candidates excluding reference-labeled material
     ///
     static func candidates(
-        date: Date, access: PlanningCalendarAccess, referenceLabelIDs: Set<String>, calendar: Calendar
+        date:              Date,
+        access:            PlanningCalendarAccess,
+        referenceLabelIDs: Set<String>,
+        calendar:          Calendar
     ) -> [PlanningSearchResult]
     {
         let key       = PlanningDate.key(date, calendar: calendar)                      /* Local calendar-day key */
@@ -731,7 +734,10 @@ extension DailyPlan
     /// @return     (Void) no return value
     ///
     mutating func recordCheckIn(
-        changed: String, sources: [PlanningSearchResult], at timestamp: Date = .now, mood: CheckInMood? = nil
+        changed:      String,
+        sources:      [PlanningSearchResult],
+        at timestamp: Date         = .now,
+        mood:         CheckInMood? = nil
     )
     {
         var entries  = checkInHistory                                   /* Entries being processed  */
@@ -1612,8 +1618,12 @@ struct TodayPlanSummaryPanel: View
     /// @return     (TodayPlanSummaryPanel) initialized instance
     ///
     init(
-        date: Date, calendar: Calendar, sources: [PlanningSearchResult], defaults: UserDefaults = .standard,
-        welcomesPlan: Bool = false, onOpen: @escaping () -> Void
+        date:         Date,
+        calendar:     Calendar,
+        sources:      [PlanningSearchResult],
+        defaults:     UserDefaults = .standard,
+        welcomesPlan: Bool         = false,
+        onOpen:       @escaping () -> Void
     )
     {
         self.welcomesPlan = welcomesPlan

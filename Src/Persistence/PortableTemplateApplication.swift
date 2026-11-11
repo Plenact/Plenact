@@ -22,8 +22,11 @@ enum PortableTemplateApplication
     /// @param[in] root App container or isolated synthetic container
     /// @return Identity-safe Week and translated importance markers
     /// @throws Invalid preview identities, partial runtime evidence or reservation failure
-    static func reserve(_ preview: DatedPlanningWeek, original: DatedPlanningWeek?, importantIDs: Set<Int>,
-        root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws
+    static func reserve(
+        _ preview:    DatedPlanningWeek,
+        original:     DatedPlanningWeek?,
+        importantIDs: Set<Int>,
+        root:         URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws
         -> (week: DatedPlanningWeek, importantIDs: Set<Int>)
     {
         guard let original, !(try PortableRuntimeEvidence.capture(root: root)).isEmpty else
@@ -161,8 +164,10 @@ enum PortableTemplateApplication
     /// @param[in] root App container or isolated synthetic container
     /// @return Original bytes when unchanged, otherwise the filtered original entry objects
     /// @throws Malformed/duplicate/unknown source entries or invalid runtime evidence
-    static func importanceForSavedWeek(_ week: DatedPlanningWeek, data: Data,
-        root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws -> Data
+    static func importanceForSavedWeek(
+        _ week: DatedPlanningWeek,
+        data:   Data,
+        root:   URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws -> Data
     {
         guard !data.isEmpty else
         {

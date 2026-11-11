@@ -22,8 +22,9 @@ struct CardMoveResult
 
 
     /// Save a follow-up change against the destination's current snapshot
-    func saveChange(using access: PlanningCalendarAccess,
-        _ change: (inout PersonalCollection, Int, Int) -> Void) -> Bool
+    func saveChange(
+        using access: PlanningCalendarAccess,
+        _ change:     (inout PersonalCollection, Int, Int) -> Void) -> Bool
     {
         func apply(to collection: inout PersonalCollection) -> Bool
         {

@@ -387,8 +387,9 @@ struct ListInfoEditorSheet: View
     /// @return     (ListInfoEditorSheet) initialized instance
     ///
     init(
-        list: KanbanList, focusesTitleOnAppear: Bool = false,
-        onSave: @escaping (String, String, ItemPresentation) -> Bool
+        list:                 KanbanList,
+        focusesTitleOnAppear: Bool = false,
+        onSave:               @escaping (String, String, ItemPresentation) -> Bool
     )
     {
         self.focusesTitleOnAppear = focusesTitleOnAppear

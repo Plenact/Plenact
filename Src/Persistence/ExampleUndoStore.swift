@@ -58,13 +58,13 @@ enum ExampleLoadUndoStore
     ///
     @discardableResult
     static func save(
-        lists: [KanbanList],
-        todayListID: Int?,
-        week: DatedPlanningWeek? = nil,
-        savedCardIDs: Set<Int>? = nil,
-        importantCardIDs: Set<Int>? = nil,
-        importanceLevels: [Int: Int]? = nil,
-        to defaults: UserDefaults = .standard
+        lists:            [KanbanList],
+        todayListID:      Int?,
+        week:             DatedPlanningWeek? = nil,
+        savedCardIDs:     Set<Int>?          = nil,
+        importantCardIDs: Set<Int>?          = nil,
+        importanceLevels: [Int: Int]?        = nil,
+        to defaults:      UserDefaults       = .standard
     ) -> Bool
     {
         let snapshot = ExampleLoadUndoSnapshot(         /* Working state snapshot */

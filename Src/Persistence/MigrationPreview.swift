@@ -91,7 +91,10 @@ struct MigrationPreview
     /// @param[in,out] journal Durable identity allocation candidate
     /// @return Exact portable JSON object
     /// @throws Invalid identity errors
-    private static func document(type: String, source: String, payload: [String: Any],
+    private static func document(
+        type:    String,
+        source:  String,
+        payload: [String: Any],
         journal: inout MigrationIdentityJournal) throws -> [String: Any]
     {
         let target =                                                            /* Target under consideration */

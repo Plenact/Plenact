@@ -91,7 +91,10 @@ enum MigrationSettingsPreview
     /// @param[in] journal Existing identity mappings
     /// @param[in] records Actual converted records proving parent/child membership
     /// @return Existing canonical Collection/List pair, or nil for unresolved evidence
-    private static func list(owner: String, id: Int, journal: MigrationIdentityJournal,
+    private static func list(
+        owner:   String,
+        id:      Int,
+        journal: MigrationIdentityJournal,
         records: [[String: Any]]) -> (String, String)?
     {
         let collection = journal.entries.first {        /* Personal collection record */
@@ -126,8 +129,11 @@ enum MigrationSettingsPreview
     /// @param[in,out] journal Candidate migration identity mappings
     /// @return Local settings evidence, canonical shortcuts and avatar-file references
     /// @throws Invalid source, unsafe avatar paths or broken shortcut membership
-    static func prepare(values: [String: Any], records: [[String: Any]], mediaDigests: [String: String],
-        journal: inout MigrationIdentityJournal) throws -> Result
+    static func prepare(
+        values:       [String: Any],
+        records:      [[String: Any]],
+        mediaDigests: [String: String],
+        journal:      inout MigrationIdentityJournal) throws -> Result
     {
         let context =                                   /* Operation context    */
             MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: mediaDigests)

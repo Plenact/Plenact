@@ -352,8 +352,11 @@ struct ManualWeekOpening
     /// @param[in] mode Application mode
     /// @param[in] hadBaseline Whether the Week existed before application
     /// @return Completion request, or nil for day templates and additive edits to existing Weeks
-    static func completion(week: DatedPlanningWeek, kind: PlanningRoutineTemplate.Kind,
-        mode: PlanningTemplateApplication.Mode, hadBaseline: Bool) -> Self?
+    static func completion(
+        week:        DatedPlanningWeek,
+        kind:        PlanningRoutineTemplate.Kind,
+        mode:        PlanningTemplateApplication.Mode,
+        hadBaseline: Bool) -> Self?
     {
         guard kind == .week, !hadBaseline || mode == .replace else
         {

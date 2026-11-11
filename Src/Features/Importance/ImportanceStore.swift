@@ -104,7 +104,9 @@ enum LibraryImportanceSelection
     /// @note       Only call for freshly created demonstration owners, never on a user's existing weeks
     ///
     static func demoData(
-        in owners: [PersonalCollection], preserving data: Data = Data(), includesAllExamples: Bool = false
+        in owners:           [PersonalCollection],
+        preserving data:     Data = Data(),
+        includesAllExamples: Bool = false
     ) -> Data
     {
         let names: Set<String> = [                                                              /* Names used by this operation */

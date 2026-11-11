@@ -55,10 +55,15 @@ struct ItemAppearanceSheet: View
     /// @return     (ItemAppearanceSheet) initialized instance
     ///
     init(
-        title: String, appearance: ItemAppearance?, onOpenCover: (() -> Void)? = nil, onOpenLayout: (() -> Void)? = nil,
-        showsListBackground: Bool = false, displayFormat: ItemDisplayFormat? = nil,
-        onSaveDisplay: ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil, inheritedAddItemTextColor: Color? = nil,
-        onSave: @escaping (ItemAppearance?)                  -> Bool
+        title:                     String,
+        appearance:                ItemAppearance?,
+        onOpenCover:               (() -> Void)? = nil,
+        onOpenLayout:              (() -> Void)? = nil,
+        showsListBackground:       Bool               = false,
+        displayFormat:             ItemDisplayFormat? = nil,
+        onSaveDisplay:             ((ItemAppearance?, ItemDisplayFormat) -> Bool)? = nil,
+        inheritedAddItemTextColor: Color? = nil,
+        onSave:                    @escaping (ItemAppearance?) -> Bool
     )
     {
         self.title = title
@@ -459,14 +464,15 @@ struct BoardAppearanceSheet: View
     /// @return     (BoardAppearanceSheet) initialized instance
     ///
     init(
-        appearance: BoardAppearance, presentation: BoardPresentation = .standard,
-        onSavePresentation: ((BoardPresentation) -> Void)? = nil,
-        allowsCollectionBackground: Bool = false,
-        defaultCollectionBackground: CollectionBackground? = nil,
-        listSurface: KanbanList? = nil,
-        listHeaderIcon: PersonalCollectionIcon? = nil,
-        onSaveListSurface: ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)? = nil,
-        onSave: @escaping (BoardAppearance, Bool)                                 -> Bool
+        appearance:                  BoardAppearance,
+        presentation:                BoardPresentation = .standard,
+        onSavePresentation:          ((BoardPresentation) -> Void)? = nil,
+        allowsCollectionBackground:  Bool                    = false,
+        defaultCollectionBackground: CollectionBackground?   = nil,
+        listSurface:                 KanbanList?             = nil,
+        listHeaderIcon:              PersonalCollectionIcon? = nil,
+        onSaveListSurface:           ((Double, Bool, PersonalCollectionIcon, ProfileColor?) -> Void)? = nil,
+        onSave:                      @escaping (BoardAppearance, Bool)                      -> Bool
     )
     {
         _draftShowsHeaderIcon = State(initialValue: listSurface?.showsIconInHeader ?? false)

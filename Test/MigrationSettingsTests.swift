@@ -21,7 +21,8 @@ final class MigrationSettingsTests: XCTestCase
     /// @param[in] body Assertions receiving preserved source and a private journal path
     /// @return Void after deleting only synthetic preferences and files
     /// @throws Fixture setup, encoding or assertion-support errors
-    private func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
+    private func fixture(
+        edit:   ((inout [String: Any]) throws       -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
         let domain   =                                          /* Lookup or storage namespace */

@@ -49,12 +49,12 @@ struct PersonalListExamplesView: View
     /// @return     (PersonalListExamplesView) initialized instance
     ///
     init(
-        onLoadExampleWeek: (() -> Bool)? = nil,
-        onUndoExampleWeek: (() -> Bool)? = nil,
-        hasUndoableWeek: Bool = false,
-        onSelectBoardExample: ((PersonalBoardExample) -> Void)? = nil,
-        onSelectMixedTemplate: ((MixedListTemplate)   -> Void)? = nil,
-        onSelect: @escaping (PersonalListExample)     -> Void
+        onLoadExampleWeek:     (() -> Bool)? = nil,
+        onUndoExampleWeek:     (() -> Bool)? = nil,
+        hasUndoableWeek:       Bool = false,
+        onSelectBoardExample:  ((PersonalBoardExample)         -> Void)? = nil,
+        onSelectMixedTemplate: ((MixedListTemplate)            -> Void)? = nil,
+        onSelect:              @escaping (PersonalListExample) -> Void
     )
     {
         self.onLoadExampleWeek = onLoadExampleWeek

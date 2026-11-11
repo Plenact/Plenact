@@ -158,7 +158,8 @@ struct TodayShortcutEditor: View
     /// @return     (TodayShortcutEditor) initialized instance
     ///
     init(
-        pins: [WorkspaceListReference], owners: [PersonalCollection],
+        pins:   [WorkspaceListReference],
+        owners: [PersonalCollection],
         onSave: @escaping ([WorkspaceListReference]) -> Void
     )
     {

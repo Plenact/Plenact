@@ -890,10 +890,10 @@ struct PlenactAPIClient
     /// @post       Request processing is delegated with the encoded body
     ///
     private func send<Response: Decodable, Body: Encodable>(
-        path: String,
+        path:   String,
         method: String,
-        token: String? = nil,
-        body: Body
+        token:  String? = nil,
+        body:   Body
     ) async throws -> Response
     {
         let encodedBody = try JSONEncoder().encode(body)        /* Encoded request payload */
@@ -924,9 +924,9 @@ struct PlenactAPIClient
     /// @post       No request body is attached
     ///
     private func send<Response: Decodable>(
-        path: String,
+        path:   String,
         method: String,
-        token: String? = nil
+        token:  String? = nil
     ) async throws -> Response
     {
         try await send(path: path, method: method, token: token, bodyData: nil)
@@ -952,9 +952,9 @@ struct PlenactAPIClient
     /// @post       The activity entry is ended before returning or rethrowing
     ///
     private func send<Response: Decodable>(
-        path: String,
-        method: String,
-        token: String?,
+        path:     String,
+        method:   String,
+        token:    String?,
         bodyData: Data?
     ) async throws -> Response
     {
@@ -996,9 +996,9 @@ struct PlenactAPIClient
     ///             failures; transport errors are propagated
     ///
     private func executeRequest<Response: Decodable>(
-        path: String,
-        method: String,
-        token: String?,
+        path:     String,
+        method:   String,
+        token:    String?,
         bodyData: Data?
     ) async throws -> Response
     {

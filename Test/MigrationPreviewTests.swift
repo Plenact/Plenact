@@ -21,8 +21,9 @@ final class MigrationPreviewTests: XCTestCase
     /// @param[in] body Assertions receiving the frozen backup and private journal path
     /// @return Void after cleanup
     /// @throws Setup, source capture or assertion support errors
-    private func fixture(_ values: [String: Any] = [:],
-        _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
+    private func fixture(
+        _ values: [String: Any] = [:],
+        _ body:   (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
         let domain   =                                          /* Lookup or storage namespace */
             "Plenact.MigrationTests." + UUID().uuidString

@@ -459,8 +459,10 @@ enum ListItemCreation
     /// @return     ([KanbanCard]?) generated items, or nil when input or destination validation fails
     ///
     static func items(
-        _ capture: QuickCaptureSubmission, in list: KanbanList, startingAt id: Int,
-        calendar: Calendar = .current
+        _ capture:     QuickCaptureSubmission,
+        in list:       KanbanList,
+        startingAt id: Int,
+        calendar:      Calendar = .current
     ) -> [KanbanCard]?
     {
         guard capture.listID == list.id, !list.isArchived,

@@ -130,7 +130,9 @@ struct StudioSettings: Codable, Equatable
     /// @param[in,out] card New item receiving appearance defaults
     /// @param[in] settings Optional injected configuration for deterministic callers
     /// @return (Void) updates only an eligible new Card or Note
-    static func apply(to card: inout KanbanCard, settings: StudioSettings = .load(),
+    static func apply(
+        to card:  inout KanbanCard,
+        settings: StudioSettings = .load(),
                       defaults: UserDefaults = .standard)
     {
         guard !card.isSectionDivider else

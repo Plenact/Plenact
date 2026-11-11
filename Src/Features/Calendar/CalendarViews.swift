@@ -46,7 +46,9 @@ struct PlanningCalendarView: View
     ///
     /// @return     (PlanningCalendarView) initialized instance
     ///
-    init(initialDate: Date = .now, onLeaveForHome: @escaping () -> Void =
+    init(
+        initialDate:    Date = .now,
+        onLeaveForHome: @escaping () -> Void =
         {
         })
     {
@@ -583,9 +585,11 @@ struct PlanningWeekSelector: View
     /// @return     (PlanningWeekSelector) initialized instance
     ///
     init(
-        initialDate: Date, document: PlanningCalendarDocument, selectedWeekKey: String,
-        sources: [PlanningSearchResult] = [],
-        onSelect: @escaping (DatedPlanningWeek, Date) -> Void
+        initialDate:     Date,
+        document:        PlanningCalendarDocument,
+        selectedWeekKey: String,
+        sources:         [PlanningSearchResult] = [],
+        onSelect:        @escaping (DatedPlanningWeek, Date) -> Void
     )
     {
         self.document = document

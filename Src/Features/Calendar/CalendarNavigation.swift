@@ -892,9 +892,12 @@ struct PlanningSelectedDayView: View
     /// @return     (PlanningSelectedDayView) initialized instance
     ///
     init(
-        selection: PlanningDaySelection, currentUserName: String, returnDestinationTitle: String,
-        onClose: @escaping ()                       -> Void, onSelectDay: @escaping (Date) -> Void,
-        onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil
+        selection:              PlanningDaySelection,
+        currentUserName:        String,
+        returnDestinationTitle: String,
+        onClose:                @escaping ()            -> Void,
+        onSelectDay:            @escaping (Date)        -> Void,
+        onOpenSelectedWeek:     ((PlanningDaySelection) -> Void)? = nil
     )
     {
         self.selection = selection

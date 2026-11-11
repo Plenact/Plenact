@@ -505,8 +505,10 @@ enum NewCardAppearanceDefaults
     /// @return     (Void) no return value
     ///
     static func apply(
-        to card: inout KanbanCard, preferences: LocalProfilePreferences = PlanPreferencesStore.load(),
-        defaults: UserDefaults = .standard, origin: CardHistoryOrigin = .createdHere
+        to card:     inout KanbanCard,
+        preferences: LocalProfilePreferences = PlanPreferencesStore.load(),
+        defaults:    UserDefaults            = .standard,
+        origin:      CardHistoryOrigin       = .createdHere
     )
     {
         if !card.isSectionDivider, card.createdAt != nil, card.creationHistory == nil

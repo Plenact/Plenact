@@ -484,24 +484,24 @@ struct CardDetailView: View
     /// @note       Without onTitleToggle, main-card edits remain local to this detail instance
     ///
     init(
-        card: KanbanCard,
-        labelLibrary: Binding<LabelLibrary> = .constant(.starter),
-        availableLists: [KanbanList] = [],                              /* Other lists available as move destinations */
-        memberColors: [String: Color] = [:],                            /* Shared member icon colors                  */
-        currentUserName: String = "Justin Reina",
-        savedCardIDs: Binding<Set<Int>> = .constant([]),
-        onTitleToggle: ((KanbanCard) -> Void)? = nil,           /* Callback invoked when the card title checkbox is toggled */
-        onMoveToList: ((Int)         -> Void)? = nil,           /* Callback invoked when the card is moved                  */
-        personalCollectionID: UUID? = nil,
-        availablePersonalLists: [PersonalCollection] = [],
-        onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
-        onUpdateMovedNote: ((UUID, KanbanCard)              -> Bool)? = nil,
-        onArchiveMovedNote: ((UUID, KanbanCard)             -> Bool)? = nil,
-        onDeleteMovedNote: ((UUID, KanbanCard)              -> Bool)? = nil,
-        onToggleMovedNoteBookmark: ((UUID, Int, Bool)       -> Bool)? = nil,
-        onArchive: (()                                      -> Void)? = nil,
-        onDelete: (()                                       -> Bool)? = nil,
-        listedOnDate: Date? = nil
+        card:                      KanbanCard,
+        labelLibrary:              Binding<LabelLibrary> = .constant(.starter),
+        availableLists:            [KanbanList]          = [],          /* Other lists available as move destinations */
+        memberColors:              [String: Color]       = [:],         /* Shared member icon colors                  */
+        currentUserName:           String                = "Justin Reina",
+        savedCardIDs:              Binding<Set<Int>>     = .constant([]),
+        onTitleToggle:             ((KanbanCard) -> Void)? = nil,           /* Callback invoked when the card title checkbox is toggled */
+        onMoveToList:              ((Int)        -> Void)? = nil,           /* Callback invoked when the card is moved                  */
+        personalCollectionID:      UUID?                = nil,
+        availablePersonalLists:    [PersonalCollection] = [],
+        onMoveNoteToPersonalList:  ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
+        onUpdateMovedNote:         ((UUID, KanbanCard)       -> Bool)?        = nil,
+        onArchiveMovedNote:        ((UUID, KanbanCard)       -> Bool)?        = nil,
+        onDeleteMovedNote:         ((UUID, KanbanCard)       -> Bool)?        = nil,
+        onToggleMovedNoteBookmark: ((UUID, Int, Bool)        -> Bool)?        = nil,
+        onArchive:                 (()                       -> Void)?        = nil,
+        onDelete:                  (()                       -> Bool)?        = nil,
+        listedOnDate:              Date? = nil
     )
     {
         self.card = card                        /* The kanban card being displayed in detail                            */

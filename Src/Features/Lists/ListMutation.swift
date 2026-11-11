@@ -68,8 +68,11 @@ func setListAppearance(_ listID: Int, appearance: ItemAppearance?, in lists: ino
 @MainActor
 @discardableResult
 func editBoardList(
-    _ listID: Int, title: String, subtitle: String, newItemPresentation: ItemPresentation? = nil,
-    in lists: inout [KanbanList]
+    _ listID:            Int,
+    title:               String,
+    subtitle:            String,
+    newItemPresentation: ItemPresentation? = nil,
+    in lists:            inout [KanbanList]
 ) -> Bool
 {
     do

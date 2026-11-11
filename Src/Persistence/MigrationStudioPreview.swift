@@ -58,8 +58,12 @@ enum MigrationStudioPreview
     /// @param[in,out] journal Candidate migration identities; committed only after success
     /// @return Artwork records plus local Studio/Week evidence and explicit review issues
     /// @throws Unknown source fields, invalid saved shapes, duplicate identities or surface errors
-    static func prepare(values: [String: Any], records: [[String: Any]], mediaDigests: [String: String],
-        journal: inout MigrationIdentityJournal, assetTargets: [String: String] = [:]) throws -> Result
+    static func prepare(
+        values:       [String: Any],
+        records:      [[String: Any]],
+        mediaDigests: [String: String],
+        journal:      inout MigrationIdentityJournal,
+        assetTargets: [String: String] = [:]) throws -> Result
     {
         let context =           /* Operation context */
             MigrationContentValues(journal: journal, timeZoneID: "Etc/UTC", mediaDigests: mediaDigests)

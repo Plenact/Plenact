@@ -90,8 +90,12 @@ enum MigrationContentConverter
     /// @param[in] journal Uncommitted journal candidate
     /// @return Complete content slice and evidence
     /// @throws Ambiguous projections, source fields, IDs, links or dates
-    static func convert(values: [String: Any], timeZoneID: String, mediaDigests: [String: String],
-        existing: [[String: Any]], journal: MigrationIdentityJournal) throws -> Result
+    static func convert(
+        values:       [String: Any],
+        timeZoneID:   String,
+        mediaDigests: [String: String],
+        existing:     [[String: Any]],
+        journal:      MigrationIdentityJournal) throws -> Result
     {
         let context =           /* Operation context */
             MigrationContentValues(journal: journal, timeZoneID: timeZoneID, mediaDigests: mediaDigests)
@@ -374,8 +378,12 @@ enum MigrationContentConverter
     /// @param[in] context Candidate identity/evidence context
     /// @return Complete canonical Card record
     /// @throws Nested identity, source URL, appearance or date errors
-    static func convertCard(_ card: KanbanCard, archived: Bool, list: String, owner: String,
-        context: MigrationContentValues) throws -> [String: Any]
+    static func convertCard(
+        _ card:   KanbanCard,
+        archived: Bool,
+        list:     String,
+        owner:    String,
+        context:  MigrationContentValues) throws -> [String: Any]
     {
         var raw = try MigrationContentValues.object(card)       /* Unprocessed source value */
 
@@ -498,8 +506,11 @@ enum MigrationSelectionPreview
     /// @param[in] currentScope Calendar owner of the unqualified Board bookmark projection
     /// @param[in] targets Existing owner-qualified canonical Card mappings
     /// @return Local-only entries and explicit review issues; originals are never changed
-    static func prepare(values: [String: Any], owners: [(String, PersonalCollection)],
-        currentScope: String?, targets: [String: String]) -> Result
+    static func prepare(
+        values:       [String: Any],
+        owners:       [(String, PersonalCollection)],
+        currentScope: String?,
+        targets:      [String: String]) -> Result
     {
         var issues: [String]            = []            /* Validation findings               */
         var entries: [[String: Any]]    = []            /* Entries being processed           */

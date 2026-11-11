@@ -835,25 +835,25 @@ struct LocalProfilePreferences: Hashable, Codable
     /// @post       Stored values match the provided preference selections
     ///
     init(
-        defaultListID: Int? = nil,
-        usesReducedContent: Bool = false,
-        usesLargeControls: Bool = false,
-        showsNavigationLabels: Bool = true,
-        showsDueDatesOnNewCards: Bool = true,
-        todayFocusItemCount: Int = 4,
-        randomizesNewCardHeaders: Bool = false,
-        randomizesNewCardBackgrounds: Bool = false,
-        todayFocusOrder: TodayFocusOrder = .dayList,
-        todayFocusGroupsBySection: Bool = false,
-        todayFocusHidesCompleted: Bool = true,
-        todayFocusIncludesImportant: Bool = false,
-        todayFocusIncludesBookmarked: Bool = false,
-        todayFocusIncludesUpNext: Bool = false,
-        scrollsOverflowingTitles: Bool = true,
-        enablesLowerCornerBack: Bool = true,
-        importanceStarStyle: ImportanceStarStyle = .tucked,
-        keepsDayListsInTimeOrder: Bool = true,
-        preferredMapsApp: PreferredMapsApp = .apple
+        defaultListID:                Int?                = nil,
+        usesReducedContent:           Bool                = false,
+        usesLargeControls:            Bool                = false,
+        showsNavigationLabels:        Bool                = true,
+        showsDueDatesOnNewCards:      Bool                = true,
+        todayFocusItemCount:          Int                 = 4,
+        randomizesNewCardHeaders:     Bool                = false,
+        randomizesNewCardBackgrounds: Bool                = false,
+        todayFocusOrder:              TodayFocusOrder     = .dayList,
+        todayFocusGroupsBySection:    Bool                = false,
+        todayFocusHidesCompleted:     Bool                = true,
+        todayFocusIncludesImportant:  Bool                = false,
+        todayFocusIncludesBookmarked: Bool                = false,
+        todayFocusIncludesUpNext:     Bool                = false,
+        scrollsOverflowingTitles:     Bool                = true,
+        enablesLowerCornerBack:       Bool                = true,
+        importanceStarStyle:          ImportanceStarStyle = .tucked,
+        keepsDayListsInTimeOrder:     Bool                = true,
+        preferredMapsApp:             PreferredMapsApp    = .apple
     )
     {
         self.scrollsOverflowingTitles = scrollsOverflowingTitles
@@ -896,7 +896,10 @@ struct LocalProfilePreferences: Hashable, Codable
     ///             boundaries are captured before filtering; viewport capacity never removes matches
     ///
     func todayFocusEntries(
-        in cards: [KanbanCard], on day: Date = .now, calendar: Calendar = .current, importantCardIDs: Set<Int> = [],
+        in cards:          [KanbanCard],
+        on day:            Date     = .now,
+        calendar:          Calendar = .current,
+        importantCardIDs:  Set<Int> = [],
         bookmarkedCardIDs: Set<Int> = []
     ) -> [TodayFocusEntry]
     {
@@ -1178,16 +1181,16 @@ struct LocalProfile: Identifiable, Hashable, Codable
     /// @post       Stored values match the supplied profile fields
     ///
     init(
-        id: UUID = UUID(),
-        createdAt: Date = .now,
-        displayName: String = "",
-        email: String = "",
-        context: String = "",
-        avatarColor: ProfileColor = .teal,
-        avatarIcon: ProfileAvatarIcon = .initials,
-        avatarForegroundColor: ProfileColor = .white,
-        avatarPhotoFileName: String? = nil,
-        preferences: LocalProfilePreferences = LocalProfilePreferences()
+        id:                    UUID                    = UUID(),
+        createdAt:             Date                    = .now,
+        displayName:           String                  = "",
+        email:                 String                  = "",
+        context:               String                  = "",
+        avatarColor:           ProfileColor            = .teal,
+        avatarIcon:            ProfileAvatarIcon       = .initials,
+        avatarForegroundColor: ProfileColor            = .white,
+        avatarPhotoFileName:   String?                 = nil,
+        preferences:           LocalProfilePreferences = LocalProfilePreferences()
     )
     {
         self.id = id

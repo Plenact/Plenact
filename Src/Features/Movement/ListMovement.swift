@@ -141,8 +141,9 @@ enum CrossBoardListMovement
     ///             dependencies propagate unless handled within this operation
     ///
     static func detach(
-        listID: Int, from sourceID: UUID,
-        collections: inout [PersonalCollection]
+        listID:        Int,
+        from sourceID: UUID,
+        collections:   inout [PersonalCollection]
     ) throws -> PersonalCollection
     {
         guard let source = collections.first(where:
@@ -202,8 +203,10 @@ enum CrossBoardListMovement
     ///             handled within this operation
     ///
     static func move(
-        listID: Int, from sourceID: UUID, to destinationID: UUID,
-        collections: inout [PersonalCollection]
+        listID:           Int,
+        from sourceID:    UUID,
+        to destinationID: UUID,
+        collections:      inout [PersonalCollection]
     ) throws -> KanbanList
     {
         guard sourceID != destinationID,

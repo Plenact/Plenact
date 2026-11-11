@@ -405,7 +405,9 @@ extension AppRootView
     /// @return     (Bool) true after the week and related marker changes save successfully; false on rejection
     ///
     func savePlanningWeek(
-        _ week: DatedPlanningWeek, exampleImportantIDs: Set<Int>, replaceImportant: Bool = false,
+        _ week:                   DatedPlanningWeek,
+        exampleImportantIDs:      Set<Int>,
+        replaceImportant:         Bool        = false,
         restoredImportanceLevels: [Int: Int]? = nil
     ) -> Bool
     {
@@ -548,8 +550,10 @@ extension AppRootView
     ///             propagate unless handled within this operation
     ///
     func saveSectionOwners(
-        _ owners: [PersonalCollection], document original: PlanningCalendarDocument, importance: Data?,
-        dailyPlans: Data?
+        _ owners:          [PersonalCollection],
+        document original: PlanningCalendarDocument,
+        importance:        Data?,
+        dailyPlans:        Data?
     ) throws
     {
         var document = original         /* Source document snapshot */
@@ -638,8 +642,11 @@ extension AppRootView
     /// @return     (Bool) true after a valid section transfer is saved; false if validation or persistence fails
     ///
     func movePlanningSection(
-        _ heading: KanbanCard, source: UUID?, destination: CardMoveDestination,
-        shiftDates: Bool, documentOverride: PlanningCalendarDocument? = nil
+        _ heading:        KanbanCard,
+        source:           UUID?,
+        destination:      CardMoveDestination,
+        shiftDates:       Bool,
+        documentOverride: PlanningCalendarDocument? = nil
     ) -> Bool
     {
         do
@@ -1239,7 +1246,9 @@ extension AppRootView
     /// @return     (WeeklyReviewRecord?) saved weekly review record, or nil when the decision cannot be committed
     ///
     func applyWeeklyReview(
-        _ source: PlanningSearchResult, action: DailyReviewAction, draft: WeeklyReviewRecord,
+        _ source: PlanningSearchResult,
+        action:   DailyReviewAction,
+        draft:    WeeklyReviewRecord,
         baseline: WeeklyReviewRecord?
     ) -> WeeklyReviewRecord?
     {
@@ -1319,7 +1328,10 @@ extension AppRootView
     /// @return     (DailyPlan?) saved daily plan, or nil when the review decision cannot be committed
     ///
     func applyDailyReview(
-        _ source: PlanningSearchResult, action: DailyReviewAction, draft: DailyPlan, baseline: DailyPlan?
+        _ source: PlanningSearchResult,
+        action:   DailyReviewAction,
+        draft:    DailyPlan,
+        baseline: DailyPlan?
     ) -> DailyPlan?
     {
         let previousDocument    = calendarDocument      /* Previous document    */
@@ -1467,7 +1479,9 @@ extension AppRootView
     /// @return     (Bool) true after the card transfer saves successfully; false on invalid input or save failure
     ///
     func movePlanningCard(
-        _ card: KanbanCard, source: UUID?, destination: CardMoveDestination,
+        _ card:           KanbanCard,
+        source:           UUID?,
+        destination:      CardMoveDestination,
         documentOverride: PlanningCalendarDocument? = nil
     ) -> Bool
     {
@@ -1477,7 +1491,9 @@ extension AppRootView
 
 
     func movePlanningCardWithResult(
-        _ card: KanbanCard, source: UUID?, destination: CardMoveDestination,
+        _ card:           KanbanCard,
+        source:           UUID?,
+        destination:      CardMoveDestination,
         documentOverride: PlanningCalendarDocument? = nil
     ) -> CardMoveResult?
     {

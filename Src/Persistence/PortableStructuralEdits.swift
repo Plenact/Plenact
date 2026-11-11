@@ -20,8 +20,10 @@ enum PortableCreationIdentity
     /// @param[in] root App container or isolated synthetic container
     /// @return First reserved native number, or unchanged proposed number for a nonportable workspace
     /// @throws Invalid evidence, exhausted identity space or failed atomic reservation
-    static func reserve(proposed: Int, count: Int = 1,
-        root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws -> Int
+    static func reserve(
+        proposed: Int,
+        count:    Int = 1,
+        root:     URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)) throws -> Int
     {
         let evidence =                                          /* Retained verification evidence */
             try PortableRuntimeEvidence.capture(root: root)
@@ -144,9 +146,16 @@ enum PortableStructuralEdits
     /// @param[in] values Frozen native stores including checklist week overrides
     /// @return Ephemeral conversion context; never saves a migration journal
     /// @throws Invalid source values or reference seeding
-    private static func context(workspace: String, zone: String, owner: String, target: String,
-        card: KanbanCard?, base: [String: Any], media: PortableMediaPlacement,
-        cardTargets: [String: String], values: [String: Any]) throws -> MigrationContentValues
+    private static func context(
+        workspace:   String,
+        zone:        String,
+        owner:       String,
+        target:      String,
+        card:        KanbanCard?,
+        base:        [String: Any],
+        media:       PortableMediaPlacement,
+        cardTargets: [String: String],
+        values:      [String: Any]) throws -> MigrationContentValues
     {
         var journal =           /* Migration identity journal */
             try JSONSerialization.jsonObject(with: JSONEncoder().encode(MigrationIdentityJournal())) as! [String: Any]
@@ -311,7 +320,10 @@ enum PortableStructuralEdits
     /// @param[in] baseline Original reconstructed workspace
     /// @return Expanded assembly, normalized comparison stores and stable aliases
     /// @throws Invalid dates, ambiguous references, unsupported metadata or conflicting retained identities
-    static func rollovers(assembly: [String: Any], current: [String: Any], aliases: [String: Int],
+    static func rollovers(
+        assembly: [String: Any],
+        current:  [String: Any],
+        aliases:  [String: Int],
         baseline: PortableWorkspaceCandidate) throws -> (assembly: [String: Any], current: [String: Any], aliases: [String: Int])
     {
         guard let bytes = current["Plenact.CalendarWeeks.v1"] as? Data,
@@ -683,7 +695,10 @@ enum PortableStructuralEdits
     /// @param[in] baseline Reconstructed imported workspace
     /// @return Pruned assembly; live source and runtime evidence remain unchanged
     /// @throws Unsupported ownership, references or malformed library identity
-    static func removeTemplates(assembly: [String: Any], current: [String: Any], aliases: [String: Int],
+    static func removeTemplates(
+        assembly: [String: Any],
+        current:  [String: Any],
+        aliases:  [String: Int],
         baseline: PortableWorkspaceCandidate) throws -> [String: Any]
     {
         let key = "Plenact.PlanningTemplates.v1"        /* Lookup or persistence key */
@@ -862,7 +877,10 @@ enum PortableStructuralEdits
     /// @param[in] baseline Reconstructed imported workspace
     /// @return Expanded assembly, comparison stores and aliases
     /// @throws Invalid identities, unresolved references, malformed content or unsupported lifecycle
-    static func newTemplates(assembly: [String: Any], current: [String: Any], aliases: [String: Int],
+    static func newTemplates(
+        assembly: [String: Any],
+        current:  [String: Any],
+        aliases:  [String: Int],
         baseline: PortableWorkspaceCandidate) throws -> (assembly: [String: Any], current: [String: Any], aliases: [String: Int])
     {
         let key = "Plenact.PlanningTemplates.v1"        /* Lookup or persistence key */
@@ -1202,8 +1220,11 @@ enum PortableStructuralEdits
     /// @param[in] baseline Reconstructed import baseline
     /// @return Void; mutations affect only the export candidate
     /// @throws Unknown fields, missing originals, identity changes or incompatible metadata
-    private static func personalization(base: inout [String: Any], export: inout [String: Any],
-        current: [String: Any], baseline: PortableWorkspaceCandidate) throws
+    private static func personalization(
+        base:     inout [String: Any],
+        export:   inout [String: Any],
+        current:  [String: Any],
+        baseline: PortableWorkspaceCandidate) throws
     {
         let context =                                                                           /* Operation context */
             try self.context(workspace: baseline.workspaceID, zone: baseline.timeZoneID,
@@ -1408,7 +1429,10 @@ enum PortableStructuralEdits
     /// @param[in] baseline Reconstructed original native values and verified media
     /// @return Canonical assembly with structural edits, leaving existing Card content for field reconciliation
     /// @throws Unreserved/colliding identities, missing owners, List deletion or unsupported new content
-    static func apply(assembly: [String: Any], current: [String: Any], aliases: [String: Int],
+    static func apply(
+        assembly: [String: Any],
+        current:  [String: Any],
+        aliases:  [String: Int],
         baseline: PortableWorkspaceCandidate) throws -> [String: Any]
     {
         var assembly       = assembly                                   /* Assembled portable records       */

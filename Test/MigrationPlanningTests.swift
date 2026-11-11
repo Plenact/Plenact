@@ -22,7 +22,8 @@ final class MigrationPlanningTests: XCTestCase
     /// @param[in] body Assertions receiving frozen source and an isolated journal path
     /// @return Void after removing synthetic source state
     /// @throws Fixture encoding, source capture or assertion-support errors
-    private func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
+    private func fixture(
+        edit:   ((inout [String: Any]) throws       -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
         let domain   =                                                  /* Lookup or storage namespace */

@@ -66,8 +66,12 @@ enum AppDailyOpening
     /// @param[in] targetAvailable Whether today's retained List can be opened safely
     /// @param[in] defaults Dedicated device-local preference domain or isolated test domain
     /// @return True once for the local day, without touching a workspace preference domain
-    static func claim(at date: Date, calendar: Calendar, protected: Bool,
-        targetAvailable: Bool, defaults: UserDefaults) -> Bool
+    static func claim(
+        at date:         Date,
+        calendar:        Calendar,
+        protected:       Bool,
+        targetAvailable: Bool,
+        defaults:        UserDefaults) -> Bool
     {
         guard !protected, targetAvailable else
         {

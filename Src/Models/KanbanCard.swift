@@ -566,15 +566,35 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
     /// @post       The card retains supplied values; nil checklists receive the default groups
     ///
     init(
-        id: Int, word: String, listTitle: String, isDivider: Bool = false, isTitleChecked: Bool = false,
-        startDate: Date? = nil, dueDate: Date? = nil, checklists: [KanbanChecklist]? = nil,
-        comments: [KanbanComment] = [], members: [CardAssignee] = [], labelIDs: [String] = [],
-        attachments: [KanbanAttachment]? = nil, coverAttachmentID: UUID? = nil, dismissedActivityIDs: Set<String> = [],
-        descriptionOverride: String? = nil, subtitleOverride: String? = nil, presentation: ItemPresentation = .card,
-        createdAt: Date? = nil, appearance: ItemAppearance? = nil, listDisplayFormat: ItemDisplayFormat? = nil,
-        sectionLayout: CardSectionLayout? = nil, showsDueDateInList: Bool? = nil, startDateKind: CardDateKind = .date,
-        dueDateKind: CardDateKind = .date, reactions: [ItemEmojiReaction]? = nil, showsReactionsInPreviews: Bool? = nil,
-        isEditingLocked: Bool = false, editHistory: [CardEditRecord]? = nil, location: String? = nil
+        id:                       Int,
+        word:                     String,
+        listTitle:                String,
+        isDivider:                Bool                 = false,
+        isTitleChecked:           Bool                 = false,
+        startDate:                Date?                = nil,
+        dueDate:                  Date?                = nil,
+        checklists:               [KanbanChecklist]?   = nil,
+        comments:                 [KanbanComment]      = [],
+        members:                  [CardAssignee]       = [],
+        labelIDs:                 [String]             = [],
+        attachments:              [KanbanAttachment]?  = nil,
+        coverAttachmentID:        UUID?                = nil,
+        dismissedActivityIDs:     Set<String>          = [],
+        descriptionOverride:      String?              = nil,
+        subtitleOverride:         String?              = nil,
+        presentation:             ItemPresentation     = .card,
+        createdAt:                Date?                = nil,
+        appearance:               ItemAppearance?      = nil,
+        listDisplayFormat:        ItemDisplayFormat?   = nil,
+        sectionLayout:            CardSectionLayout?   = nil,
+        showsDueDateInList:       Bool?                = nil,
+        startDateKind:            CardDateKind         = .date,
+        dueDateKind:              CardDateKind         = .date,
+        reactions:                [ItemEmojiReaction]? = nil,
+        showsReactionsInPreviews: Bool?                = nil,
+        isEditingLocked:          Bool                 = false,
+        editHistory:              [CardEditRecord]?    = nil,
+        location:                 String?              = nil
     )
     {
         self.editHistory = editHistory

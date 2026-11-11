@@ -696,9 +696,12 @@ enum PlanningTemplateItemCreation
     /// @param[in] createdAt Authored creation instant, independent of the template's anchor date
     /// @return Void after successful reservation and draft append
     /// @throws Invalid runtime evidence or exhausted identity space
-    static func append(_ presentation: ItemPresentation, to list: inout KanbanList,
-        allLists: [KanbanList], root: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true),
-        createdAt: Date = .now) throws
+    static func append(
+        _ presentation: ItemPresentation,
+        to list:        inout KanbanList,
+        allLists:       [KanbanList],
+        root:           URL  = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true),
+        createdAt:      Date = .now) throws
     {
         let maximum =                                                                   /* Upper supported bound */
             ((allLists.flatMap(\.allCards) + list.allCards).map(\.id).max() ?? -1)

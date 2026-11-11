@@ -291,7 +291,9 @@ enum PeriodicReviewStore
     ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func save(
-        _ draft: PeriodicReviewRecord, replacing baseline: PeriodicReviewRecord?, to defaults: UserDefaults = .standard
+        _ draft:            PeriodicReviewRecord,
+        replacing baseline: PeriodicReviewRecord?,
+        to defaults:        UserDefaults = .standard
     ) throws -> PeriodicReviewRecord
     {
         try validate(draft)

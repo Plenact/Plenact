@@ -151,7 +151,9 @@ enum DailyReviewTransaction
     ///             propagate unless handled within this operation
     ///
     static func perform<T>(
-        in defaults: UserDefaults = .standard, additionalKeys: [String] = [], _ action: () throws -> T
+        in defaults:    UserDefaults = .standard,
+        additionalKeys: [String]     = [],
+        _ action:       () throws -> T
     ) throws -> T
     {
         let snapshot =                                                  /* Working state snapshot */

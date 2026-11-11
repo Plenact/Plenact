@@ -93,9 +93,14 @@ enum SectionTransfer
     ///             dependencies propagate unless handled within this operation
     ///
     static func move(
-        heading: KanbanCard, source: WorkspaceListReference, destination: WorkspaceListReference,
-        owners: inout [PersonalCollection], sourceDay: Date? = nil, destinationDay: Date? = nil,
-        shiftDates: Bool = false, calendar: Calendar = .current
+        heading:        KanbanCard,
+        source:         WorkspaceListReference,
+        destination:    WorkspaceListReference,
+        owners:         inout [PersonalCollection],
+        sourceDay:      Date?    = nil,
+        destinationDay: Date?    = nil,
+        shiftDates:     Bool     = false,
+        calendar:       Calendar = .current
     ) throws -> SectionTransferReceipt
     {
         guard source != destination,

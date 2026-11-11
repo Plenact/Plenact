@@ -42,7 +42,10 @@ struct KanbanChecklistActionDetail: Identifiable, Hashable, Codable, Sendable
     /// @return     (KanbanChecklistActionDetail) configured reduced detail record
     ///
     init(
-        id: UUID = UUID(), description: String = "", checklists: [KanbanChecklist] = [], comments: [KanbanComment] = []
+        id:          UUID              = UUID(),
+        description: String            = "",
+        checklists:  [KanbanChecklist] = [],
+        comments:    [KanbanComment]   = []
     )
     {
         self.id = id
@@ -457,8 +460,11 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     /// @return     (KanbanChecklist) configured checklist
     ///
     init(
-        id: UUID = UUID(), title: String, items: [KanbanChecklistItem] = [], completed: Int? = nil,
-        completedItemIndices: Set<Int>? = nil
+        id:                   UUID = UUID(),
+        title:                String,
+        items:                [KanbanChecklistItem] = [],
+        completed:            Int?                  = nil,
+        completedItemIndices: Set<Int>?             = nil
     )
     {
         var normalizedItems = items     /* Mutable item snapshot */

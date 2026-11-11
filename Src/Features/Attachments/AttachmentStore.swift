@@ -95,8 +95,13 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
     /// @post       Stored fields match the provided values
     ///
     init(
-        id: UUID = UUID(), fileName: String? = nil, url: URL? = nil, mediaKind: KanbanAttachmentKind? = nil,
-        addedAt: Date = .now, exampleImage: ExampleCoverImage? = nil, caption: String? = nil
+        id:           UUID                  = UUID(),
+        fileName:     String?               = nil,
+        url:          URL?                  = nil,
+        mediaKind:    KanbanAttachmentKind? = nil,
+        addedAt:      Date                  = .now,
+        exampleImage: ExampleCoverImage?    = nil,
+        caption:      String?               = nil
     )
     {
         self.id = id

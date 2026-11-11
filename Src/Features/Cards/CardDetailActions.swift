@@ -769,17 +769,17 @@ extension CardDetailView
     ///
     @discardableResult
     func syncCardState(
-        title: String? = nil,                           /* Updated card title               */
-        subtitle: String? = nil,                        /* Updated card subtitle            */
-        members: [CardAssignee]? = nil,                 /* Updated card assignees           */
-        labelIDs: [String]? = nil,                      /* Updated card label IDs           */
-        attachments: [KanbanAttachment]? = nil,         /* Updated card attachments         */
-        titleChecked: Bool? = nil,                      /* Updated card title checked state */
-        startDate: Date? = nil,                         /* Updated card start date          */
-        dueDate: Date? = nil,                           /* Updated card due date            */
-        clearStartDate: Bool = false,                   /* Whether to clear the start date  */
-        clearDueDate: Bool = false,                     /* Whether to clear the due date    */
-        editingLocked: Bool? = nil                      /* Explicit lock or unlock request  */
+        title:          String?             = nil,      /* Updated card title               */
+        subtitle:       String?             = nil,      /* Updated card subtitle            */
+        members:        [CardAssignee]?     = nil,      /* Updated card assignees           */
+        labelIDs:       [String]?           = nil,      /* Updated card label IDs           */
+        attachments:    [KanbanAttachment]? = nil,      /* Updated card attachments         */
+        titleChecked:   Bool?               = nil,      /* Updated card title checked state */
+        startDate:      Date?               = nil,      /* Updated card start date          */
+        dueDate:        Date?               = nil,      /* Updated card due date            */
+        clearStartDate: Bool                = false,    /* Whether to clear the start date  */
+        clearDueDate:   Bool                = false,    /* Whether to clear the due date    */
+        editingLocked:  Bool?               = nil       /* Explicit lock or unlock request  */
     ) -> Bool
     {
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked || editingLocked == false else

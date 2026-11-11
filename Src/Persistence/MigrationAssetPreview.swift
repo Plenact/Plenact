@@ -85,7 +85,9 @@ enum MigrationAssetPreview
     /// @param[in,out] journal Durable original-media identity mappings
     /// @return Local AssetPreview document and UI counts
     /// @throws Invalid evidence, unsafe paths, integrity mismatches or missing identity provenance
-    static func prepare(backup: LegacyWorkspaceBackup, records: [[String: Any]],
+    static func prepare(
+        backup:  LegacyWorkspaceBackup,
+        records: [[String: Any]],
         journal: inout MigrationIdentityJournal) throws -> Result
     {
         _ = try MigrationBackupReader.values(in: backup)

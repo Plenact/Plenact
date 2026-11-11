@@ -105,9 +105,9 @@ enum PersonalCollectionStore
     /// @throws     EncodingError when the updated snapshot cannot be encoded
     ///
     static func archiveBoard(
-        id: UUID,
+        id:             UUID,
         in collections: [PersonalCollection],
-        to defaults: UserDefaults = .standard
+        to defaults:    UserDefaults = .standard
     ) throws -> [PersonalCollection]
     {
         guard
@@ -145,7 +145,9 @@ enum PersonalCollectionStore
     /// @throws     Validation or encoding errors; original state is unchanged
     ///
     static func archiveCollection(
-        id: UUID, in collections: [PersonalCollection], to defaults: UserDefaults = .standard
+        id:             UUID,
+        in collections: [PersonalCollection],
+        to defaults:    UserDefaults = .standard
     ) throws -> [PersonalCollection]
     {
         guard

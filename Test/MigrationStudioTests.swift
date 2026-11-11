@@ -21,7 +21,8 @@ final class MigrationStudioTests: XCTestCase
     /// @param[in] body Assertions receiving frozen source and an isolated journal path
     /// @return Void after removing only synthetic files and preferences
     /// @throws Fixture, capture or assertion-support errors
-    func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
+    func fixture(
+        edit:   ((inout [String: Any]) throws       -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
         let domain   = "Plenact.StudioTests." + UUID().uuidString       /* Lookup or storage namespace */

@@ -199,10 +199,10 @@ struct AccountSettingsView: View
     /// @post       Draft state begins with the existing profile or local defaults
     ///
     init(
-        profile: LocalProfile?,
-        lists: [KanbanList],
-        onSave: @escaping (LocalProfile) -> Void,
-        onRemove: @escaping ()           -> Void
+        profile:  LocalProfile?,
+        lists:    [KanbanList],
+        onSave:   @escaping (LocalProfile) -> Void,
+        onRemove: @escaping ()             -> Void
     )
     {
         let preferences = PlanPreferencesStore.load()           /* Initial settings */

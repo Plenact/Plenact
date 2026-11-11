@@ -296,8 +296,10 @@ struct DatedPlanningWeek: Identifiable, Hashable, Codable
     /// @return     (DatedPlanningWeek) constructed value
     ///
     static func make(
-        for date: Date, lists: [KanbanList]? = nil, saved: Set<Int> = [],
-        calendar: Calendar = .current
+        for date: Date,
+        lists:    [KanbanList]? = nil,
+        saved:    Set<Int>      = [],
+        calendar: Calendar      = .current
     ) -> Self
     {
         let start      = PlanningDate.weekKey(date, calendar: calendar)         /* Range start                */
@@ -425,8 +427,11 @@ struct PlanningCalendarDocument: Hashable, Codable
     /// @return     (DatedPlanningWeek) selected incoming week after the outgoing week has been retained
     ///
     mutating func rollForward(
-        to date: Date, currentLists: [KanbanList], saved: Set<Int>,
-        calendar suppliedCalendar: Calendar? = nil, newWeek: DatedPlanningWeek? = nil
+        to date:                   Date,
+        currentLists:              [KanbanList],
+        saved:                     Set<Int>,
+        calendar suppliedCalendar: Calendar?          = nil,
+        newWeek:                   DatedPlanningWeek? = nil
     ) -> DatedPlanningWeek
     {
         let calendar = suppliedCalendar ?? self.calendar        /* Date calculation calendar */

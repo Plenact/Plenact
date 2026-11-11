@@ -395,7 +395,9 @@ enum PortableEditedExport
     /// @param[in] baseline Retained imported projection
     /// @return Assembly with validated authored review-rhythm preferences
     /// @throws Missing retained store, unknown fields, invalid types, ranges or singleton shape
-    private static func reviewRhythm(assembly: [String: Any], current: [String: Any],
+    private static func reviewRhythm(
+        assembly: [String: Any],
+        current:  [String: Any],
         baseline: PortableWorkspaceCandidate) throws -> [String: Any]
     {
         let key = "Plenact.ReviewRhythm.v1"     /* Explicitly supported planning preference store */
@@ -482,8 +484,12 @@ enum PortableEditedExport
     /// @param[in] family Explicit daily, weekly or periodic store family
     /// @return Assembly containing verified planning snapshots
     /// @throws Invalid source, identity changes, ambiguous references or unsupported removals
-    private static func planningEdits(assembly: [String: Any], current: [String: Any],
-        baseline: PortableWorkspaceCandidate, aliases: [String: Int], family: PlanningFamily = .daily) throws -> [String: Any]
+    private static func planningEdits(
+        assembly: [String: Any],
+        current:  [String: Any],
+        baseline: PortableWorkspaceCandidate,
+        aliases:  [String: Int],
+        family:   PlanningFamily = .daily) throws -> [String: Any]
     {
         let weekly        = family == .weekly                                           /* Weekly review state        */
         let periodic      = family == .periodic                                         /* Periodic review state      */
@@ -788,7 +794,9 @@ enum PortableEditedExport
     /// @param[in] baseline Imported native projection
     /// @return Assembly with retained template/library identities and supported metadata edits
     /// @throws Changed identity/context, unsupported library lifecycle or invalid default selection
-    private static func templateMetadata(assembly: [String: Any], current: [String: Any],
+    private static func templateMetadata(
+        assembly: [String: Any],
+        current:  [String: Any],
         baseline: PortableWorkspaceCandidate) throws -> [String: Any]
     {
         let key = "Plenact.PlanningTemplates.v1"        /* Lookup or persistence key */
@@ -886,8 +894,11 @@ enum PortableEditedExport
     /// @param[in] aliases Verified canonical-to-native identity mappings
     /// @return Assembly with the checked shortcut singleton or unchanged absence
     /// @throws Unknown fields, duplicates, excess items, missing stores or invalid owner membership
-    private static func shortcuts(assembly: [String: Any], current: [String: Any],
-        baseline: PortableWorkspaceCandidate, aliases: [String: Int]) throws -> [String: Any]
+    private static func shortcuts(
+        assembly: [String: Any],
+        current:  [String: Any],
+        baseline: PortableWorkspaceCandidate,
+        aliases:  [String: Int]) throws -> [String: Any]
     {
         let key = TodayListPins.key     /* Lookup or persistence key */
 

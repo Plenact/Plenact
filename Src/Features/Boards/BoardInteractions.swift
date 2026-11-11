@@ -170,7 +170,7 @@ final class BoardCardSwipeGate: UIPanGestureRecognizer, UIGestureRecognizerDeleg
     /// @return     (Bool) true only for the enclosing Board pan
     ///
     func gestureRecognizer(
-        _ gestureRecognizer: UIGestureRecognizer,
+        _ gestureRecognizer:                                      UIGestureRecognizer,
         shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
     ) -> Bool
     {
@@ -887,7 +887,8 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @return     (Void) ends the active source session at most once
         ///
         func dragInteraction(
-            _ interaction: UIDragInteraction, session: UIDragSession,
+            _ interaction:        UIDragInteraction,
+            session:              UIDragSession,
             didEndWith operation: UIDropOperation
         )
         {
@@ -907,7 +908,8 @@ struct BoardCardDragSource: UIViewRepresentable
         /// @return     (Bool) true to restrict the session to the originating application
         ///
         func dragInteraction(
-            _ interaction: UIDragInteraction, sessionIsRestrictedToDraggingApplication session: UIDragSession
+            _ interaction:                                    UIDragInteraction,
+            sessionIsRestrictedToDraggingApplication session: UIDragSession
         ) -> Bool
         {
             true
@@ -1344,7 +1346,8 @@ struct BoardCardDropSurface: UIViewRepresentable
         ///             otherwise a forbidden proposal
         ///
         func collectionView(
-            _ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession,
+            _ collectionView:                              UICollectionView,
+            dropSessionDidUpdate session:                  UIDropSession,
             withDestinationIndexPath destinationIndexPath: IndexPath?
         ) -> UICollectionViewDropProposal
         {
@@ -1374,7 +1377,8 @@ struct BoardCardDropSurface: UIViewRepresentable
         /// @return     (Void) attempts canonical movement for the validated native items
         ///
         func collectionView(
-            _ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator
+            _ collectionView:            UICollectionView,
+            performDropWith coordinator: UICollectionViewDropCoordinator
         )
         {
             guard let window = collectionView.window else

@@ -455,8 +455,12 @@ struct PortableEditableContent
     /// @param[in] listDates Explicit civil date per mapped day List
     /// @return Actual editable personal collection without persistence
     /// @throws Ownership, membership, date-context or decoding errors
-    func collection(_ record: [String: Any], selections: [[String: Any]], accountID: String,
-        timeZoneID: String, listDates: [String: String]) throws -> PersonalCollection
+    func collection(
+        _ record:   [String: Any],
+        selections: [[String: Any]],
+        accountID:  String,
+        timeZoneID: String,
+        listDates:  [String: String]) throws -> PersonalCollection
     {
         guard record["record_type"] as? String == "collection", let id = record["id"] as? String,
               let payload = record["payload"] as? [String: Any], let listIDs = payload["list_ids"] as? [String],

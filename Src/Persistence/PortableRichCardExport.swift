@@ -51,7 +51,9 @@ enum PortableRichCardExport
     /// @param[in] baseline Original verified native placement and canonical identities
     /// @return Reviewed augmented members and explicit source-filename overrides used only for comparison
     /// @throws Changed original, unsafe inventory or unsupported new drawing
-    static func enrich(backup: LegacyWorkspaceBackup, snapshot: FileWrapper,
+    static func enrich(
+        backup:   LegacyWorkspaceBackup,
+        snapshot: FileWrapper,
         baseline: PortableWorkspaceCandidate) throws -> (files: FileWrapper, names: [String: String])
     {
         let report    =                                                 /* Validation findings       */

@@ -112,7 +112,7 @@ struct PersonalListNoteDraft
     ///
     func save(
         in collections: [PersonalCollection],
-        onSave: (UUID, String, String, Date) throws -> Void
+        onSave:         (UUID, String, String, Date) throws -> Void
     ) throws
     {
         guard canSave(in: collections) else
@@ -248,8 +248,11 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     /// @post       No collection persistence or board edits are performed
     ///
     init(
-        id: UUID = UUID(), title: String, kind: PersonalCollectionKind,
-        icon: PersonalCollectionIcon = .notes, color: ProfileColor = .teal
+        id:    UUID = UUID(),
+        title: String,
+        kind:  PersonalCollectionKind,
+        icon:  PersonalCollectionIcon = .notes,
+        color: ProfileColor           = .teal
     )
     {
         self.id = id
@@ -437,11 +440,17 @@ struct PersonalCollection: Identifiable, Hashable, Codable
     /// @throws     CocoaError when the destination or title is invalid
     ///
     mutating func addNote(
-        title: String, body: String, createdAt: Date = .now, presentation: ItemPresentation = .note,
-        subtitle: String = "", attachments: [KanbanAttachment] = [],
+        title:               String,
+        body:                String,
+        createdAt:           Date                    = .now,
+        presentation:        ItemPresentation        = .note,
+        subtitle:            String                  = "",
+        attachments:         [KanbanAttachment]      = [],
         creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load(),
-        actions: [String]? = nil, schedule: QuickCaptureSchedule? = nil, calendar: Calendar = .current,
-        origin: CardHistoryOrigin = .createdHere
+        actions:             [String]?               = nil,
+        schedule:            QuickCaptureSchedule?   = nil,
+        calendar:            Calendar                = .current,
+        origin:              CardHistoryOrigin       = .createdHere
     ) throws
     {
         let trimmedTitle = title.trimmingCharacters(    /* Trimmed title */

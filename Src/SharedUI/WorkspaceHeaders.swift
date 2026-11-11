@@ -322,8 +322,11 @@ enum WorkspaceHeaderSpacing
     /// @return     (CGFloat) regular spacing when text fits, otherwise zero
     ///
     static func gap(
-        availableWidth: CGFloat, titleIdealWidth: CGFloat, controlsWidth: CGFloat,
-        gapCount: Int, regularSpacing: CGFloat
+        availableWidth:  CGFloat,
+        titleIdealWidth: CGFloat,
+        controlsWidth:   CGFloat,
+        gapCount:        Int,
+        regularSpacing:  CGFloat
     ) -> CGFloat
     {
         let titleSpace =                                                                        /* Title space */

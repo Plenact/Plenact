@@ -107,7 +107,11 @@ enum TodayReviewSelection
     ///             evening review
     ///
     static func items(
-        plan: DailyPlan, date: Date, access: PlanningCalendarAccess, referenceLabelIDs: Set<String>, calendar: Calendar
+        plan:              DailyPlan,
+        date:              Date,
+        access:            PlanningCalendarAccess,
+        referenceLabelIDs: Set<String>,
+        calendar:          Calendar
     ) -> [PlanningSearchResult]
     {
         let day    =                                                    /* Day under consideration     */
@@ -854,7 +858,9 @@ enum WeeklyReviewStore
     ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func save(
-        _ draft: WeeklyReviewRecord, replacing baseline: WeeklyReviewRecord?, to defaults: UserDefaults = .standard
+        _ draft:            WeeklyReviewRecord,
+        replacing baseline: WeeklyReviewRecord?,
+        to defaults:        UserDefaults = .standard
     ) throws -> WeeklyReviewRecord
     {
         var document = try load(from: defaults)         /* Source document snapshot */

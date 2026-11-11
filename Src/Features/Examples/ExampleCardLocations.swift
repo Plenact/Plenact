@@ -156,7 +156,9 @@ enum ExampleCardLocations
     /// @throws     Propagates routine validation, encoding, and verified-storage failures
     ///
     static func applyOnce(
-        lists: [KanbanList], calendar: PlanningCalendarDocument, collections: [PersonalCollection],
+        lists:       [KanbanList],
+        calendar:    PlanningCalendarDocument,
+        collections: [PersonalCollection],
         to defaults: UserDefaults = .standard
     ) throws -> Snapshot?
     {

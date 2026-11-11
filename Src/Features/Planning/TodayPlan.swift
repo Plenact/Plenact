@@ -396,8 +396,10 @@ struct TodayPlanView: View
     /// @return     (TodayPlanView) initialized instance
     ///
     init(
-        date: Date = .now, calendar: Calendar = .current, defaults: UserDefaults = .standard,
-        opensEveningReview: Bool = false
+        date:               Date         = .now,
+        calendar:           Calendar     = .current,
+        defaults:           UserDefaults = .standard,
+        opensEveningReview: Bool         = false
     )
     {
         self.opensEveningReview = opensEveningReview
@@ -1096,8 +1098,12 @@ enum DailyPriorityCreation
     /// @return     (PlanningSearchResult?) saved item and its owner context, or nil when creation is rejected
     ///
     static func create(
-        title: String, body: String, presentation: ItemPresentation,
-        destination: WorkspaceListReference, access: PlanningCalendarAccess, attachments: [KanbanAttachment] = []
+        title:        String,
+        body:         String,
+        presentation: ItemPresentation,
+        destination:  WorkspaceListReference,
+        access:       PlanningCalendarAccess,
+        attachments:  [KanbanAttachment] = []
     ) -> PlanningSearchResult?
     {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)       /* User-facing title */

@@ -252,10 +252,15 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// @return     (KanbanCard) new record without modifying the list
     ///
     func makeItem(
-        id: Int, title: String, description: String? = nil, subtitle: String = "", createdAt: Date = .now,
-        presentationOverride: ItemPresentation? = nil, actions: [String]? = nil,
-        creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load(),
-        origin: CardHistoryOrigin = .createdHere
+        id:                   Int,
+        title:                String,
+        description:          String?                 = nil,
+        subtitle:             String                  = "",
+        createdAt:            Date                    = .now,
+        presentationOverride: ItemPresentation?       = nil,
+        actions:              [String]?               = nil,
+        creationPreferences:  LocalProfilePreferences = PlanPreferencesStore.load(),
+        origin:               CardHistoryOrigin       = .createdHere
     ) -> KanbanCard
     {
         let isDivider    = KanbanCard.isDividerTitle(title)     /* Whether the title creates a section separator */
@@ -320,7 +325,10 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
     /// @post       The list is active; archive status defaults to false
     ///
     init(
-        id: Int, title: String, cards: [KanbanCard], archivedCards: [KanbanCard] = [],
+        id:                  Int,
+        title:               String,
+        cards:               [KanbanCard],
+        archivedCards:       [KanbanCard]     = [],
         newItemPresentation: ItemPresentation = .card
     )
     {
@@ -597,10 +605,14 @@ extension KanbanList
     /// @return     ([KanbanCard]) newly allocated cards, notes, or dividers corresponding to the usable title lines
     ///
     func makeItems(
-        startingAt id: Int, titles: String, description: String? = nil, subtitle: String = "",
-        presentation: ItemPresentation? = nil, actions: [String]? = nil,
+        startingAt id:       Int,
+        titles:              String,
+        description:         String?                 = nil,
+        subtitle:            String                  = "",
+        presentation:        ItemPresentation?       = nil,
+        actions:             [String]?               = nil,
         creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load(),
-        origin: CardHistoryOrigin = .createdHere
+        origin:              CardHistoryOrigin       = .createdHere
     ) -> [KanbanCard]
     {
         MultilineEntry.titles(titles).enumerated().map
@@ -810,8 +822,11 @@ extension KanbanCard
     /// @param[in]  date      Timestamp assigned to this update
     /// @return     (KanbanCard) proposed content carrying its accumulated edit history
     ///
-    func recordingEdits(from previous: KanbanCard, at date: Date = .now,
-        author: CardHistoryAuthor? = nil, undoing revision: CardEditRecord? = nil) -> KanbanCard
+    func recordingEdits(
+        from previous:    KanbanCard,
+        at date:          Date               = .now,
+        author:           CardHistoryAuthor? = nil,
+        undoing revision: CardEditRecord?    = nil) -> KanbanCard
     {
         var result = self       /* Accumulated output value */
 
@@ -985,8 +1000,11 @@ extension CardEditRecord
         }
     }
 
-    func undo(on card: KanbanCard, replacingConflicts: Bool = false,
-        author: CardHistoryAuthor? = nil, at date: Date = .now) throws -> KanbanCard
+    func undo(
+        on card:            KanbanCard,
+        replacingConflicts: Bool               = false,
+        author:             CardHistoryAuthor? = nil,
+        at date:            Date               = .now) throws -> KanbanCard
     {
         let changes = undoableChanges
 

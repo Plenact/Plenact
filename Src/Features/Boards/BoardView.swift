@@ -393,43 +393,43 @@ struct ContentView: View
     ///             a writable binding. An empty board exposes Add list even when normally disabled
     ///
     init(
-        lists: Binding<[KanbanList]>,
-        archivedLists: Binding<[KanbanList]> = .constant([]),
-        boardTargetListID: Binding<Int?> = .constant(nil),
-        boardTargetCardID: Binding<Int?> = .constant(nil),
-        boardRootRequest: Int = 0,
-        savedCardIDs: Binding<Set<Int>> = .constant([]),
-        onListViewed: @escaping (Int) -> Void =
+        lists:                     Binding<[KanbanList]>,
+        archivedLists:             Binding<[KanbanList]> = .constant([]),
+        boardTargetListID:         Binding<Int?>         = .constant(nil),
+        boardTargetCardID:         Binding<Int?>         = .constant(nil),
+        boardRootRequest:          Int                   = 0,
+        savedCardIDs:              Binding<Set<Int>>     = .constant([]),
+        onListViewed:              @escaping (Int) -> Void =
         {
             _ in
         },
-        boardTitle: String = "Plenact",
-        boardSubtitle: String = "Work Week Board",
-        allowsAddingLists: Bool = true,
-        allowsRemovingLists: Bool = true,
-        fillsAvailableListWidth: Bool = false,
-        onClose: (()        -> Void)? = nil,
-        onArchiveBoard: (() -> Void)? = nil,
-        onDeleteBoard: (()  -> Void)? = nil,
-        deleteBoardTitle: String = "Delete Board",
+        boardTitle:                String = "Plenact",
+        boardSubtitle:             String = "Work Week Board",
+        allowsAddingLists:         Bool   = true,
+        allowsRemovingLists:       Bool   = true,
+        fillsAvailableListWidth:   Bool   = false,
+        onClose:                   (() -> Void)? = nil,
+        onArchiveBoard:            (() -> Void)? = nil,
+        onDeleteBoard:             (() -> Void)? = nil,
+        deleteBoardTitle:          String = "Delete Board",
 
-        onCommitDeletion: (([KanbanList], Set<Int>) throws  -> Void)? = nil,
-        onListsChanged: @escaping @MainActor ([KanbanList]) -> Void = KanbanBoardPersistence.saveListsInBackground,
+        onCommitDeletion:          (([KanbanList], Set<Int>) throws    -> Void)? = nil,
+        onListsChanged:            @escaping @MainActor ([KanbanList]) -> Void   = KanbanBoardPersistence.saveListsInBackground,
 
-        retainedAttachmentLists: @escaping () -> [KanbanList] =
+        retainedAttachmentLists:   @escaping () -> [KanbanList] =
         {
             PersonalCollectionStore.load().flatMap(\.lists) + (ExampleLoadUndoStore.load()?.lists ?? [])
         },
-        personalCollectionID: UUID? = nil,
-        availablePersonalLists: [PersonalCollection] = [],
-        onMoveNoteToPersonalList: ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
-        onUpdateMovedNote: ((UUID, KanbanCard)              -> Bool)? = nil,
-        onArchiveMovedNote: ((UUID, KanbanCard)             -> Bool)? = nil,
-        onDeleteMovedNote: ((UUID, KanbanCard)              -> Bool)? = nil,
-        onToggleMovedNoteBookmark: ((UUID, Int, Bool)       -> Bool)? = nil,
-        boardAppearance: Binding<BoardAppearance?>? = nil,
-        viewportOwnerID: UUID? = nil,
-        viewportDefaults: UserDefaults = .standard
+        personalCollectionID:      UUID?                = nil,
+        availablePersonalLists:    [PersonalCollection] = [],
+        onMoveNoteToPersonalList:  ((KanbanCard, UUID, UUID) -> KanbanCard?)? = nil,
+        onUpdateMovedNote:         ((UUID, KanbanCard)       -> Bool)?        = nil,
+        onArchiveMovedNote:        ((UUID, KanbanCard)       -> Bool)?        = nil,
+        onDeleteMovedNote:         ((UUID, KanbanCard)       -> Bool)?        = nil,
+        onToggleMovedNoteBookmark: ((UUID, Int, Bool)        -> Bool)?        = nil,
+        boardAppearance:           Binding<BoardAppearance?>? = nil,
+        viewportOwnerID:           UUID?                      = nil,
+        viewportDefaults:          UserDefaults               = .standard
     )
     {
         let memory =    /* Owner-scoped viewport state */

@@ -204,8 +204,12 @@ enum ReviewRhythmStore
     ///             suppresses it
     ///
     static func isDue(
-        _ kind: ReviewRhythmKind, now: Date, preferences: ReviewRhythmPreferences,
-        calendar: Calendar, completed: Bool, deferredUntil: Date?
+        _ kind:        ReviewRhythmKind,
+        now:           Date,
+        preferences:   ReviewRhythmPreferences,
+        calendar:      Calendar,
+        completed:     Bool,
+        deferredUntil: Date?
     ) -> Bool
     {
         guard !completed, deferredUntil.map(
@@ -246,8 +250,11 @@ enum ReviewRhythmStore
     /// @return     (Void) no return value
     ///
     static func deferInvitation(
-        _ kind: ReviewRhythmKind, date: Date, calendar: Calendar,
-        until: Date, defaults: UserDefaults = .standard
+        _ kind:   ReviewRhythmKind,
+        date:     Date,
+        calendar: Calendar,
+        until:    Date,
+        defaults: UserDefaults = .standard
     )
     {
         var values =                                    /* Values being processed */
@@ -437,7 +444,8 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     /// @return     (Void) no return value
     ///
     nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+        _ center:                                UNUserNotificationCenter,
+        didReceive response:                     UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     )
     {
@@ -471,7 +479,8 @@ final class ReviewRhythmNotifications: NSObject, ObservableObject, UNUserNotific
     /// @return     (Void) no return value
     ///
     nonisolated func userNotificationCenter(
-        _ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+        _ center:                                UNUserNotificationCenter,
+        willPresent notification:                UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     )
     {

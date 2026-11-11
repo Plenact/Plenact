@@ -75,9 +75,13 @@ struct TodaySectionSnapBehavior: ScrollTargetBehavior
     /// @return     (CGFloat?) snapped vertical offset, or nil to preserve native scrolling
     ///
     static func destination(
-        start: CGFloat, proposed: CGFloat, perspectiveTop: CGFloat,
-        shortcutsBottom: CGFloat, viewport: CGFloat, maximum: CGFloat,
-        enabled: Bool
+        start:           CGFloat,
+        proposed:        CGFloat,
+        perspectiveTop:  CGFloat,
+        shortcutsBottom: CGFloat,
+        viewport:        CGFloat,
+        maximum:         CGFloat,
+        enabled:         Bool
     ) -> CGFloat?
     {
         guard enabled, perspectiveTop > shortcutsBottom, shortcutsBottom > 0, viewport > 0,

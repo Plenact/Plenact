@@ -955,8 +955,11 @@ struct BoardOptionsPopover: View
     /// @return     (some View) an accessible board-option icon button
     ///
     private func icon(
-        _ symbol: String, name: String, action: BoardOptionsAction,
-        color: Color = .primary, enabled: Bool = true
+        _ symbol: String,
+        name:     String,
+        action:   BoardOptionsAction,
+        color:    Color = .primary,
+        enabled:  Bool  = true
     ) -> some View
     {
         Button

@@ -105,15 +105,15 @@ struct QuickNoteComposer: View
     /// @return     (QuickNoteComposer) initialized unsaved composer
     ///
     init(
-        lists: Binding<[KanbanList]>,
-        initialListID: Int?,
-        initialTitle: String = "",
-        draftKey: String? = nil,
-        template: QuickCaptureTemplate? = nil,
-        captureAction: TodayCaptureAction? = nil,
-        initialPresentation: ItemPresentation? = nil,
-        onSaveCapture: ((QuickCaptureSubmission)                                      -> Bool)? = nil,
-        onSave: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void
+        lists:               Binding<[KanbanList]>,
+        initialListID:       Int?,
+        initialTitle:        String                = "",
+        draftKey:            String?               = nil,
+        template:            QuickCaptureTemplate? = nil,
+        captureAction:       TodayCaptureAction?   = nil,
+        initialPresentation: ItemPresentation?     = nil,
+        onSaveCapture:       ((QuickCaptureSubmission)                                             -> Bool)? = nil,
+        onSave:              @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void
     )
     {
         _lists = lists
@@ -1014,8 +1014,9 @@ struct NewPersonalNoteComposer: View
     /// @return     (NewPersonalNoteComposer) initialized instance
     ///
     init(
-        initialCollectionID: UUID, availablePersonalLists: [PersonalCollection],
-        onSave: @escaping (UUID, QuickCaptureSubmission, Date) throws -> Void
+        initialCollectionID:    UUID,
+        availablePersonalLists: [PersonalCollection],
+        onSave:                 @escaping (UUID, QuickCaptureSubmission, Date) throws -> Void
     )
     {
         self.initialCollectionID = initialCollectionID

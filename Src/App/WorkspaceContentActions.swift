@@ -219,9 +219,16 @@ extension AppRootView
     ///
     @discardableResult
     func addCard(
-        to listID: Int, title: String, description: String, subtitle: String, presentation: ItemPresentation? = nil,
-        actions: [String]? = nil, attachments: [KanbanAttachment] = [], schedule: QuickCaptureSchedule? = nil,
-        checkedSave: Bool = false, origin: CardHistoryOrigin = .createdHere
+        to listID:    Int,
+        title:        String,
+        description:  String,
+        subtitle:     String,
+        presentation: ItemPresentation?     = nil,
+        actions:      [String]?             = nil,
+        attachments:  [KanbanAttachment]    = [],
+        schedule:     QuickCaptureSchedule? = nil,
+        checkedSave:  Bool                  = false,
+        origin:       CardHistoryOrigin     = .createdHere
     ) -> Bool
     {
         guard

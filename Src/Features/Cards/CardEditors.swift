@@ -508,8 +508,10 @@ struct ChecklistItemTypeEditor: View
     /// @return     (ChecklistItemTypeEditor) initialized instance
     ///
     init(
-        item: KanbanChecklistItem, initialType: ChecklistItemType, candidates: [KanbanCard],
-        onSave: @escaping (KanbanChecklistItem) -> Bool
+        item:        KanbanChecklistItem,
+        initialType: ChecklistItemType,
+        candidates:  [KanbanCard],
+        onSave:      @escaping (KanbanChecklistItem) -> Bool
     )
     {
         self.item = item;

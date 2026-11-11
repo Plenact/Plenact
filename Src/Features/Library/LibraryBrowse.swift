@@ -207,8 +207,11 @@ enum LibraryPlateSelection
     /// @return     ([LibraryPlateItem]) ranked upcoming or important unfinished Library items
     ///
     static func items(
-        in collections: [PersonalCollection], important: [LibraryRecentItem], now: Date = .now,
-        calendar: Calendar = .current, limit: Int? = 4
+        in collections: [PersonalCollection],
+        important:      [LibraryRecentItem],
+        now:            Date     = .now,
+        calendar:       Calendar = .current,
+        limit:          Int?     = 4
     ) -> [LibraryPlateItem]
     {
         let today                     = calendar.startOfDay(for: now)           /* Current local day      */

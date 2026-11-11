@@ -112,9 +112,12 @@ struct DetailSection<Content: View>: View
     /// @post       Content and trailing action are retained without being invoked
     ///
     init(
-        title: String, collapsible: Bool = false, showsBackground: Bool = true,
-        trailing: String? = nil, trailingAction: (() -> Void)? = nil,
-        @ViewBuilder content: @escaping ()           -> Content
+        title:                String,
+        collapsible:          Bool    = false,
+        showsBackground:      Bool    = true,
+        trailing:             String? = nil,
+        trailingAction:       (()          -> Void)? = nil,
+        @ViewBuilder content: @escaping () -> Content
     )
     {
         self.collapsible = collapsible

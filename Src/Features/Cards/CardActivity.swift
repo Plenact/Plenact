@@ -135,9 +135,9 @@ struct ActivitySwipeRow<Content: View>: View
     /// @post       Content construction and deletion are deferred until rendering/interaction
     ///
     init(
-        onDelete: @escaping () -> Void,
+        onDelete:                   @escaping () -> Void,
         deletionAccessibilityLabel: String = "Delete activity",
-        @ViewBuilder content: @escaping () -> Content
+        @ViewBuilder content:       @escaping () -> Content
     )
     {
         self.onDelete = onDelete

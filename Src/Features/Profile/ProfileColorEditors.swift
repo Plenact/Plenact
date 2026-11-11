@@ -201,11 +201,11 @@ struct ProfileAvatarIconPicker: View
     /// @return     (ProfileAvatarIconPicker) initialized avatar editor
     ///
     init(
-        selection: Binding<ProfileAvatarIcon>,
-        avatarColor: Binding<ProfileAvatarColor>,
+        selection:       Binding<ProfileAvatarIcon>,
+        avatarColor:     Binding<ProfileAvatarColor>,
         foregroundColor: Binding<ProfileAvatarForegroundColor>,
-        photoData: Binding<Data?>,
-        displayName: String
+        photoData:       Binding<Data?>,
+        displayName:     String
     )
     {
         _selection = selection
@@ -658,10 +658,10 @@ struct ProfileAvatarIconPicker: View
     /// @return     (some View) circular avatar preview
     ///
     private func avatarPreview(
-        icon: ProfileAvatarIcon,
+        icon:       ProfileAvatarIcon,
         background: ProfileAvatarColor,
         foreground: ProfileAvatarForegroundColor,
-        size: CGFloat
+        size:       CGFloat
     ) -> some View
     {
         ZStack
@@ -1130,10 +1130,10 @@ struct ProfileColorMapPicker: View
     /// @return     (ProfileColorMapPicker) initialized color editor
     ///
     init(
-        title: String,
-        selection: Binding<ProfileColor>,
+        title:        String,
+        selection:    Binding<ProfileColor>,
         defaultColor: ProfileColor,
-        presets: [ProfileColorPreset]
+        presets:      [ProfileColorPreset]
     )
     {
         self.title = title

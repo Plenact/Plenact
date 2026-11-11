@@ -707,7 +707,9 @@ enum PlanningRoutineStore
     ///             Errors from throwing dependencies propagate unless handled within this operation
     ///
     static func save(
-        _ value: PlanningRoutineLibrary, baseline: PlanningRoutineLibrary, to defaults: UserDefaults = .standard
+        _ value:     PlanningRoutineLibrary,
+        baseline:    PlanningRoutineLibrary,
+        to defaults: UserDefaults = .standard
     ) throws
     {
         guard try load(from: defaults) == baseline else
@@ -892,8 +894,12 @@ enum PlanningTemplateApplication
     ///             dependencies propagate unless handled within this operation
     ///
     static func apply(
-        _ template: PlanningRoutineTemplate, to original: DatedPlanningWeek, date: Date,
-        calendar: Calendar, mode: Mode, now: Date = .now
+        _ template:  PlanningRoutineTemplate,
+        to original: DatedPlanningWeek,
+        date:        Date,
+        calendar:    Calendar,
+        mode:        Mode,
+        now:         Date = .now
     ) throws -> DatedPlanningWeek
     {
         try PlanningRoutineStore.validate(PlanningRoutineLibrary(templates: [template], defaultWeekID: nil))

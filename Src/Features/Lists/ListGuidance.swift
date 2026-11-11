@@ -58,9 +58,12 @@ struct SessionListGuidance: View
     /// @return     (SessionListGuidance) transient visit-scoped guidance
     ///
     init(
-        list: KanbanList, labels: LabelLibrary, onReveal: @escaping () -> Void =
+        list:                 KanbanList,
+        labels:               LabelLibrary,
+        onReveal:             @escaping () -> Void =
         {
-        }, toggleRequest: Int = 0,
+        },
+        toggleRequest:        Int = 0,
         onPresentationChange: @escaping (Bool) -> Void =
         {
             _ in

@@ -22,7 +22,8 @@ final class MigrationContentTests: XCTestCase
     /// @param[in] body Assertions receiving the backup and private journal location
     /// @return Void after private test cleanup
     /// @throws Source setup/capture/assertion-support errors
-    private func fixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
+    private func fixture(
+        edit:   ((inout [String: Any]) throws       -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
         let domain   =                                                  /* Lookup or storage namespace */
@@ -1270,7 +1271,8 @@ extension MigrationStudioTests
     /// @param[in] body Isolated backup assertions
     /// @return Void after synthetic cleanup
     /// @throws Fixture or assertion errors
-    func retainedTemplateFixture(edit: ((inout [String: Any]) throws -> Void)? = nil,
+    func retainedTemplateFixture(
+        edit:   ((inout [String: Any]) throws       -> Void)? = nil,
         _ body: (LegacyWorkspaceBackup, URL) throws -> Void) throws
     {
         try fixture(edit: { values in

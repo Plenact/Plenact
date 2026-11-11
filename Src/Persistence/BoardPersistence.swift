@@ -161,7 +161,8 @@ enum KanbanBoardPersistence
     ///
     @MainActor
     static func enqueueSave(
-        _ lists: [KanbanList], suiteName: String? = nil,
+        _ lists:   [KanbanList],
+        suiteName: String? = nil,
         onSuccess: (@MainActor () -> Void)? = nil
     )
     {

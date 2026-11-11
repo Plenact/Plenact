@@ -386,23 +386,23 @@ struct TodayHomeView: View
     ///             a resolved starter selection is stored for today. Board content is unchanged
     ///
     init(
-        lists: Binding<[KanbanList]>,
-        archivedLists: Binding<[KanbanList]>,
-        savedCardIDs: Binding<Set<Int>>,
-        profile: LocalProfile?,
-        onSaveProfile: @escaping (LocalProfile)                                          -> Void,
-        onRemoveProfile: @escaping ()                                                    -> Void,
-        onAddCard: @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void,
-        onAddQuickCard: ((Int, String)                                                   -> Void)? = nil,
-        onAddCapture: @escaping (QuickCaptureSubmission)                                 -> Bool,
-        onToggleCardCompletion: @escaping (Int, Int)                                     -> Void,
-        onOpenBoardList: @escaping (Int)                                                 -> Void,
-        onOpenBoardCard: @escaping (Int, Int)                                            -> Void,
-        onArchiveCard: @escaping (Int)                                                   -> Void,
-        onDeleteCard: @escaping (Int)                                                    -> Bool,
-        onArchiveList: @escaping (Int)                                                   -> Void,
-        onDeleteList: @escaping (Int)                                                    -> Bool,
-        quickCreateRequest: Int
+        lists:                  Binding<[KanbanList]>,
+        archivedLists:          Binding<[KanbanList]>,
+        savedCardIDs:           Binding<Set<Int>>,
+        profile:                LocalProfile?,
+        onSaveProfile:          @escaping (LocalProfile)                                              -> Void,
+        onRemoveProfile:        @escaping ()                                                          -> Void,
+        onAddCard:              @escaping (Int, String, String, String, ItemPresentation?, [String]?) -> Void,
+        onAddQuickCard:         ((Int, String)                                                        -> Void)? = nil,
+        onAddCapture:           @escaping (QuickCaptureSubmission)                                    -> Bool,
+        onToggleCardCompletion: @escaping (Int, Int)                                                  -> Void,
+        onOpenBoardList:        @escaping (Int)                                                       -> Void,
+        onOpenBoardCard:        @escaping (Int, Int)                                                  -> Void,
+        onArchiveCard:          @escaping (Int)                                                       -> Void,
+        onDeleteCard:           @escaping (Int)                                                       -> Bool,
+        onArchiveList:          @escaping (Int)                                                       -> Void,
+        onDeleteList:           @escaping (Int)                                                       -> Bool,
+        quickCreateRequest:     Int
     )
     {
         self._lists = lists

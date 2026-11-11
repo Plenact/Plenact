@@ -52,8 +52,10 @@ enum BoardCardMovement
     ///
     @discardableResult
     static func move(
-        _ cardID: Int, to listID: Int, before beforeCardID: Int? = nil,
-        in lists: inout [KanbanList]
+        _ cardID:            Int,
+        to listID:           Int,
+        before beforeCardID: Int? = nil,
+        in lists:            inout [KanbanList]
     ) throws -> Bool
     {
         let sources = lists.indices.filter      /* Source records or files */
@@ -158,8 +160,11 @@ enum BoardCardMovement
     ///             establish a destination
     ///
     static func target(
-        for cardID: Int, at point: CGPoint, viewport: CGRect,
-        lists: [KanbanList], listFrames: [Int: CGRect],
+        for cardID: Int,
+        at point:   CGPoint,
+        viewport:   CGRect,
+        lists:      [KanbanList],
+        listFrames: [Int: CGRect],
         cardFrames: [Int: CGRect]
     ) -> BoardCardDropTarget?
     {
@@ -315,7 +320,7 @@ enum BoardListReordering
     ///
     static func boundary(
         forHorizontalSwipe translation: CGSize,
-        minimumDistance: CGFloat = 48
+        minimumDistance:                CGFloat = 48
     ) -> BoardListBoundary?
     {
         guard translation.width.isFinite, translation.height.isFinite,
@@ -442,10 +447,10 @@ enum PersonalCollectionNoteMovement
     /// @throws     CocoaError when the source, Note, or destination is invalid or ambiguous
     ///
     static func move(
-        noteID: Int,
-        from sourceID: UUID,
+        noteID:           Int,
+        from sourceID:    UUID,
         to destinationID: UUID,
-        in collections: inout [PersonalCollection]
+        in collections:   inout [PersonalCollection]
     ) throws -> KanbanCard
     {
         guard sourceID != destinationID,
@@ -655,9 +660,12 @@ enum CrossBoardCardMovement
     ///
     @discardableResult
     static func move(
-        _ card: KanbanCard, from sourceID: UUID?, to destination: CardMoveDestination,
-        week: inout [KanbanList], collections: inout [PersonalCollection],
-        saved: inout Set<Int>
+        _ card:         KanbanCard,
+        from sourceID:  UUID?,
+        to destination: CardMoveDestination,
+        week:           inout [KanbanList],
+        collections:    inout [PersonalCollection],
+        saved:          inout Set<Int>
     ) throws -> KanbanCard
     {
         var sourceLists: [KanbanList]           /* Source lists */

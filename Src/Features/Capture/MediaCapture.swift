@@ -399,8 +399,10 @@ enum QuickCaptureMediaCommit
     ///             propagate unless handled within this operation
     ///
     static func save(
-        _ photos: [QuickCapturePhoto], audio: Data? = nil, drawings: [DrawingCaptureDraft] = [],
-        commit: ([KanbanAttachment]) -> Bool
+        _ photos: [QuickCapturePhoto],
+        audio:    Data?                 = nil,
+        drawings: [DrawingCaptureDraft] = [],
+        commit:   ([KanbanAttachment]) -> Bool
     ) throws -> Bool
     {
         var saved: [KanbanAttachment] = []      /* Saved state under review */
@@ -567,7 +569,7 @@ struct QuickCaptureCamera: UIViewControllerRepresentable
         /// @return     (Void) no return value
         ///
         func imagePickerController(
-            _ picker: UIImagePickerController,
+            _ picker:                           UIImagePickerController,
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         )
         {

@@ -21,8 +21,11 @@ enum MigrationAppearanceModel
     /// @param[in] context Candidate journal and local workspace namespace
     /// @return Local evidence containing nullable Model 1.1 records and their explicit base version
     /// @throws Invalid source identities or incompatible journal errors
-    static func prepare(globalWeek: [String: Any]?, artworkIDs: [String], artworkPresent: Bool,
-        context: MigrationContentValues) throws -> [String: Any]
+    static func prepare(
+        globalWeek:     [String: Any]?,
+        artworkIDs:     [String],
+        artworkPresent: Bool,
+        context:        MigrationContentValues) throws -> [String: Any]
     {
         let workspace       =                                           /* Active workspace snapshot   */
             context.journal.previewWorkspaceID.uuidString.lowercased()

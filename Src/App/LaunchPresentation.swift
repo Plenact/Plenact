@@ -421,8 +421,9 @@ final class TodayWelcomeCue: ObservableObject
     /// @return     (Void) no return value
     ///
     func play(
-        reduceMotion: Bool, planPulseSpeed: Double = 1,
-        pause: (Duration) async throws -> Void =
+        reduceMotion:   Bool,
+        planPulseSpeed: Double = 1,
+        pause:          (Duration) async throws -> Void =
         {
             try await Task.sleep(for: $0)
         }

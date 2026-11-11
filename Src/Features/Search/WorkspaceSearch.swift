@@ -316,7 +316,9 @@ enum PlanningSharedSearchIndex
     ///             metadata
     ///
     static func results(
-        query: String, scope: TodaySearchScope, access: PlanningCalendarAccess,
+        query:  String,
+        scope:  TodaySearchScope,
+        access: PlanningCalendarAccess,
         labels: LabelLibrary
     ) -> [TodaySearchResult]
     {

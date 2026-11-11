@@ -56,8 +56,12 @@ enum MigrationCalendarTemplates
     /// @param[in] active Whether archived Lists must be rejected for a live day mapping
     /// @return Existing canonical List UUID
     /// @throws Missing or archived mapping errors
-    private static func listTarget(_ id: Int, collection: PersonalCollection, scope: String,
-        context: MigrationContentValues, active: Bool) throws -> String
+    private static func listTarget(
+        _ id:       Int,
+        collection: PersonalCollection,
+        scope:      String,
+        context:    MigrationContentValues,
+        active:     Bool) throws -> String
     {
         guard let list = collection.lists.first(where: { $0.id == id }), !active || !list.isArchived else
         {

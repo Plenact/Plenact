@@ -94,8 +94,12 @@ struct StudioSurfaceEditor: View
     /// @param[in] titleColor Optional preview title-color draft
     /// @param[in] textColor Optional supporting-text color draft
     /// @return (StudioSurfaceEditor) initialized local editor
-    init(surface: Binding<StudioSurface?>, header: Binding<ItemAccent?>? = nil, italic: Binding<Bool?>? = nil,
-        titleColor: Binding<ListPreviewTextColor?>? = nil, textColor: Binding<ListPreviewTextColor?>? = nil)
+    init(
+        surface:    Binding<StudioSurface?>,
+        header:     Binding<ItemAccent?>?           = nil,
+        italic:     Binding<Bool?>?                 = nil,
+        titleColor: Binding<ListPreviewTextColor?>? = nil,
+        textColor:  Binding<ListPreviewTextColor?>? = nil)
     {
         _surface = surface
         self.header = header

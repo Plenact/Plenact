@@ -128,8 +128,8 @@ enum TodayListSelection
     /// @post       Existing list and card records remain unchanged
     ///
     static func ensureCurrentDayList(
-        lists: [KanbanList],
-        date: Date = .now,
+        lists:    [KanbanList],
+        date:     Date     = .now,
         calendar: Calendar = .current
     ) -> (lists: [KanbanList], dayList: KanbanList)
     {

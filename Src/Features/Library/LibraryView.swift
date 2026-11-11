@@ -484,8 +484,8 @@ struct BoardListsView: View
     ///
     static func resolveNoteDestination(
         mostRecentlyOpenedListID: UUID?,
-        collections: [PersonalCollection],
-        visibleCollections: [PersonalCollection]
+        collections:              [PersonalCollection],
+        visibleCollections:       [PersonalCollection]
     ) -> PersonalCollection?
     {
         if let mostRecentlyOpenedListID,                /* Remembered personal List identity                 */
@@ -712,7 +712,7 @@ struct BoardListsView: View
     /// @post       A failed save leaves the published collection snapshot unchanged
     ///
     private func persistMovedNoteCollection(
-        _ updated: PersonalCollection,
+        _ updated:      PersonalCollection,
         failureMessage: String
     ) -> Bool
     {

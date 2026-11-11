@@ -133,7 +133,10 @@ enum MigrationPlanningPreview
     /// @param[in] priorityResolver Optional verified export-only historical reference resolver
     /// @return Canonical planning records and local precision/store-presence report
     /// @throws Invalid histories, source keys, civil dates, ranges or reference provenance
-    static func prepare(values: [String: Any], records: [[String: Any]], journal: inout MigrationIdentityJournal,
+    static func prepare(
+        values:           [String: Any],
+        records:          [[String: Any]],
+        journal:          inout MigrationIdentityJournal,
         priorityResolver: (([String: Any]) throws -> [String: Any])? = nil) throws -> Result
     {
         let context =                                                                           /* Operation context */

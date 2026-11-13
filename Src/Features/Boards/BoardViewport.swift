@@ -317,6 +317,14 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     let memory: BoardViewportMemory?                                    /* Owner-scoped viewport state */
     let key:    String                                                  /* Lookup or persistence key   */
     var horizontal = false                                              /* Horizontal scrolling axis   */
+    var initialScroll: InitialScroll? = nil
+
+    struct InitialScroll
+    {
+        let distance: CGFloat
+        let duration: TimeInterval
+    }
+
     @Environment(\.appReturnResetRequest) private var resetRequest      /* Reset request               */
 
 
@@ -380,7 +388,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
         view.isUserInteractionEnabled = false
 
-        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest)
+        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest, initialScroll: initialScroll)
 
         view.attached =
         {
@@ -408,7 +416,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     ///
     func updateUIView(_ view: Marker, context: Context)
     {
-        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest)
+        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest, initialScroll: initialScroll)
         if view.window != nil
         {
             context.coordinator.findScroll(from: view)
@@ -453,6 +461,9 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         private var finding      = false                /* Finding state flag           */
         private var resetRequest = 0                    /* Reset request                */
 
+        private var initialScroll: InitialScroll?
+        private var didApplyInitialScroll = false
+        private var initialScrollTask: Task<Void, Never>?
         private var observation: NSKeyValueObservation?         /* Active change observation    */
         private var desired: Double?                            /* Requested scroll destination */
 
@@ -469,8 +480,10 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         /// @return     (Void) no return value
         ///
-        func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool, resetRequest: Int = 0)
+        func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool, resetRequest: Int = 0,
+                       initialScroll: InitialScroll? = nil)
         {
+            self.initialScroll = initialScroll
             if self.memory === memory, self.key == key, self.horizontal == horizontal
             {
                 if self.resetRequest != resetRequest
@@ -482,10 +495,12 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                     memory?.record(0, for: key)
                     restore()
                 }
+                applyInitialScroll()
                 return
             }
 
             finish()
+            didApplyInitialScroll = false
 
             self.memory = memory;
             self.key = key;
@@ -572,7 +587,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 return
             }
 
-            guard memory != nil, !finding, attempts < 16 else
+            guard memory != nil || initialScroll != nil, !finding, attempts < 16 else
             {
                 return
             }
@@ -663,6 +678,52 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             {
                 [weak self] in
                 self?.restore()
+                self?.applyInitialScroll()
+            }
+        }
+
+
+        /// Scroll the native rows together so the user can pull back to the original top.
+        private func applyInitialScroll()
+        {
+            guard restored, !didApplyInitialScroll, let initialScroll, initialScroll.distance > 0,
+                  let scroll else { return }
+
+            didApplyInitialScroll = true
+            initialScrollTask = Task { [weak scroll] in
+                guard !Task.isCancelled, let scroll, scroll.window != nil else { return }
+
+                scroll.layoutIfNeeded()
+                let start = scroll.contentOffset
+                let top = -scroll.adjustedContentInset.top
+                guard abs(start.y - top) < 1, !scroll.isTracking, !scroll.isDecelerating else { return }
+
+                // Short days still need enough scroll range to move past the overview.
+                let end = top + initialScroll.distance
+                let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
+                if bottom < end
+                {
+                    scroll.contentInset.bottom += end - bottom
+                }
+
+                guard initialScroll.duration > 0 else
+                {
+                    scroll.setContentOffset(CGPoint(x: start.x, y: end), animated: false)
+                    return
+                }
+
+                // Update the native offset each frame so List can lay out entering rows as they scroll in.
+                let started = CACurrentMediaTime()
+                while !Task.isCancelled, scroll.window != nil, !scroll.isTracking, !scroll.isDecelerating
+                {
+                    let progress = min(1, (CACurrentMediaTime() - started) / initialScroll.duration)
+                    let eased = progress * progress * (3 - 2 * progress)
+                    let offset = start.y + (end - start.y) * eased
+                    scroll.setContentOffset(CGPoint(x: start.x, y: offset), animated: false)
+                    if progress == 1 { return }
+
+                    try? await Task.sleep(for: .milliseconds(16))
+                }
             }
         }
 
@@ -752,6 +813,8 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         func finish()
         {
+            initialScrollTask?.cancel()
+            initialScrollTask = nil
             capture();
             observation?.invalidate();
 

@@ -1138,6 +1138,7 @@ struct TodayHomeView: View
                     })
                 {                               /* Current list associated with the focus selection */
                     TodayListDetailView(
+                        autoDismissesDaySummary: true,
                         lists: $lists,
                         reservedLists: archivedLists,
                         labelLibrary: $labelLibrary,

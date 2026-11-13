@@ -18,6 +18,13 @@ import UniformTypeIdentifiers
 ///
 struct TodayListDetailView: View
 {
+    @Environment(\.accessibilityReduceMotion) private var reduceSummaryMotion
+    @State private var daySummaryScrollDuration: TimeInterval?
+    @State private var daySummaryHeight: CGFloat = 0
+    @State private var isDaySummaryDismissalPending = true
+    @State private var isDayVisible = false
+    var autoDismissesDaySummary = false
+
     @State private var keyboardDetailPath: [KanbanCard] = []            /* Keyboard detail path     */
     @State private var confirmsCheckmarkReset           = false         /* Confirms checkmark reset */
 
@@ -641,7 +648,19 @@ struct TodayListDetailView: View
                                     cards: focusedList.cards, labels: labelLibrary, day: day,
                                     calendar: planningCalendarAccess?.document.calendar ?? .current
                                 )
-                                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
+                                .padding(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
+                                .onGeometryChange(for: CGFloat.self)
+                                {
+                                    $0.size.height
+                                }
+                                action:
+                                {
+                                    if autoDismissesDaySummary
+                                    {
+                                        daySummaryHeight = $0
+                                    }
+                                }
+                                .listRowInsets(EdgeInsets())
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .id("day.scheduleOverview")
@@ -816,7 +835,12 @@ struct TodayListDetailView: View
                         // Explicit task focus takes priority over restoring an old viewport
                         .background(
                             BoardViewportScrollProbe(
-                                memory: focusesFirstUncheckedTask ? nil : focusedViewportMemory, key: "vertical")
+                                memory: focusesFirstUncheckedTask ? nil : focusedViewportMemory, key: "vertical",
+                                initialScroll: daySummaryScrollDuration.map
+                                {
+                                    .init(distance: daySummaryHeight, duration: $0)
+                                }
+                            )
                         )
                         .modifier(RevealCreatedContent(lists: [focusedList], existingProxy: scrollProxy))
                         .onAppear
@@ -902,7 +926,7 @@ struct TodayListDetailView: View
 
                         .task(id: cardViewport.size)
                         {
-                            guard focusesFirstUncheckedTask, !didApplyInitialTaskFocus,
+                            guard focusesFirstUncheckedTask, !autoDismissesDaySummary, !didApplyInitialTaskFocus,
                             cardViewport.height > 0, cardViewport.width > 0,
                             let target = focusedList.firstUncheckedTaskID
                             else
@@ -932,7 +956,6 @@ struct TodayListDetailView: View
 
                         VStack(spacing: 0)
                         {
-                            // Animate the guide above the List without resizing a native row
                             sessionGuidance(for: focusedList)
                                 .padding(.horizontal, 8)
 
@@ -1247,6 +1270,35 @@ struct TodayListDetailView: View
             }
 
             .modifier(LowerCornerBackShortcut(action: onClose))
+            .background
+            {
+                if autoDismissesDaySummary
+                {
+                    DailyOverviewProbe(
+                        armed: isDaySummaryDismissalPending,
+                        onVisible: { isDayVisible = $0 },
+                        onInteraction: { isDaySummaryDismissalPending = false }
+                    )
+                }
+            }
+            .task(id: autoDismissesDaySummary && isDayVisible && isDaySummaryDismissalPending && scenePhase == .active)
+            {
+                guard autoDismissesDaySummary, isDayVisible, isDaySummaryDismissalPending,
+                      scenePhase == .active, representedDate != nil else { return }
+
+                do
+                {
+                    try await Task.sleep(for: .seconds(2))
+                }
+                catch
+                {
+                    return
+                }
+
+                guard !Task.isCancelled, isDaySummaryDismissalPending else { return }
+                isDaySummaryDismissalPending = false
+                daySummaryScrollDuration = reduceSummaryMotion ? 0 : 1
+            }
             .navigationDestination(for: KanbanCard.self)
             {
                 card in

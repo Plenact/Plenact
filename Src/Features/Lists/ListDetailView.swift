@@ -19,9 +19,14 @@ import UniformTypeIdentifiers
 struct TodayListDetailView: View
 {
     @Environment(\.accessibilityReduceMotion) private var reduceSummaryMotion
-    @State private var daySummaryScrollDuration: TimeInterval?
+    @State private var daySummaryScrollID = 0
+    @State private var canDismissPartiallyVisibleSummary = false
     @State private var daySummaryHeight: CGFloat = 0
-    @State private var isDaySummaryDismissalPending = true
+    @State private var isDaySummaryDismissalPending: Bool?
+    private var shouldDismissDaySummary: Bool
+    {
+        isDaySummaryDismissalPending ?? autoDismissesDaySummary
+    }
     @State private var isDayVisible = false
     var autoDismissesDaySummary = false
 
@@ -35,6 +40,7 @@ struct TodayListDetailView: View
     @State private var showsDaySearch                 = false                           /* Day Search visibility    */
     @State private var guidanceToggleRequest          = 0                               /* Guidance toggle request  */
     @State private var showsDaySelector               = false                           /* Day Selector visibility  */
+    @State private var showsWeekSelector = false
     var onSelectDay:                ((Date) -> Void)? = nil                             /* Select day callback      */
 
     var onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil     /* Switch to the selected date’s Week */
@@ -502,6 +508,25 @@ struct TodayListDetailView: View
                 dayContent
             }
         }
+        .sheet(isPresented: $showsWeekSelector)
+        {
+            if let date = representedDate, let access = planningCalendarAccess
+            {
+                PlanningWeekSelector(
+                    initialDate: date,
+                    document: access.document,
+                    selectedWeekKey: PlanningDate.weekKey(date, calendar: access.document.calendar),
+                    sources: access.searchableItems,
+                    opensDay: true
+                )
+                {
+                    _, date in
+
+                    showsWeekSelector = false
+                    selectDay(date)
+                }
+            }
+        }
         .sheet(isPresented: $showsDaySelector)
         {
             PlanningDaySelector(initialDate: representedDate ?? .now)
@@ -590,6 +615,14 @@ struct TodayListDetailView: View
     }
 
 
+    private func dismissDaySummary(allowingPartialVisibility: Bool = false)
+    {
+        isDaySummaryDismissalPending = false
+        canDismissPartiallyVisibleSummary = allowingPartialVisibility
+        daySummaryScrollID += 1
+    }
+
+
     private var dayContent: some View                   /* Day content                                           */
     {                                                   /* Focused-list Board surface and card-detail navigation */
         NavigationStack(path: $keyboardDetailPath)
@@ -646,7 +679,8 @@ struct TodayListDetailView: View
                             {
                                 DayScheduleOverview(
                                     cards: focusedList.cards, labels: labelLibrary, day: day,
-                                    calendar: planningCalendarAccess?.document.calendar ?? .current
+                                    calendar: planningCalendarAccess?.document.calendar ?? .current,
+                                    onDismissSummary: { dismissDaySummary(allowingPartialVisibility: true) }
                                 )
                                 .padding(EdgeInsets(top: 8, leading: 12, bottom: 12, trailing: 12))
                                 .onGeometryChange(for: CGFloat.self)
@@ -655,10 +689,7 @@ struct TodayListDetailView: View
                                 }
                                 action:
                                 {
-                                    if autoDismissesDaySummary
-                                    {
-                                        daySummaryHeight = $0
-                                    }
+                                    daySummaryHeight = $0
                                 }
                                 .listRowInsets(EdgeInsets())
                                 .listRowSeparator(.hidden)
@@ -836,10 +867,16 @@ struct TodayListDetailView: View
                         .background(
                             BoardViewportScrollProbe(
                                 memory: focusesFirstUncheckedTask ? nil : focusedViewportMemory, key: "vertical",
-                                initialScroll: daySummaryScrollDuration.map
+                                initialScroll: daySummaryScrollID > 0
+                                ? .init(id: daySummaryScrollID, distance: daySummaryHeight,
+                                        duration: reduceSummaryMotion ? 0 : 1,
+                                        requiresTop: !canDismissPartiallyVisibleSummary)
+                                : nil,
+                                returnToTopDistance: daySummaryHeight,
+                                onReturnToTop: representedDate != nil ?
                                 {
-                                    .init(distance: daySummaryHeight, duration: $0)
-                                }
+                                    isDaySummaryDismissalPending = $0
+                                } : nil
                             )
                         )
                         .modifier(RevealCreatedContent(lists: [focusedList], existingProxy: scrollProxy))
@@ -1071,17 +1108,34 @@ struct TodayListDetailView: View
                                             {
                                                 $0.id == dayMovementSource
                                             })?.color))
-                                SlideableHeaderText(
+                                let title = SlideableHeaderText(
                                     text: focusedList?.title ?? representedDate.map
                                     {
                                         PlanningDate.weekdayTitle($0)
                                     }
-
                                     ?? "Today"
                                 )
                                 .font(.title2.weight(.bold))
-
                                 .foregroundStyle(.white)
+
+                                if representedDate != nil, planningCalendarAccess != nil
+                                {
+                                    Button
+                                    {
+                                        showsWeekSelector = true
+                                    }
+                                    label:
+                                    {
+                                        title.contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityHint("Choose the day displayed in this view")
+                                    .accessibilityIdentifier("day.weekSelector")
+                                }
+                                else
+                                {
+                                    title
+                                }
                             }
 
 
@@ -1272,18 +1326,18 @@ struct TodayListDetailView: View
             .modifier(LowerCornerBackShortcut(action: onClose))
             .background
             {
-                if autoDismissesDaySummary
+                if representedDate != nil
                 {
                     DailyOverviewProbe(
-                        armed: isDaySummaryDismissalPending,
+                        armed: shouldDismissDaySummary,
                         onVisible: { isDayVisible = $0 },
                         onInteraction: { isDaySummaryDismissalPending = false }
                     )
                 }
             }
-            .task(id: autoDismissesDaySummary && isDayVisible && isDaySummaryDismissalPending && scenePhase == .active)
+            .task(id: isDayVisible && shouldDismissDaySummary && scenePhase == .active)
             {
-                guard autoDismissesDaySummary, isDayVisible, isDaySummaryDismissalPending,
+                guard isDayVisible, shouldDismissDaySummary,
                       scenePhase == .active, representedDate != nil else { return }
 
                 do
@@ -1295,9 +1349,8 @@ struct TodayListDetailView: View
                     return
                 }
 
-                guard !Task.isCancelled, isDaySummaryDismissalPending else { return }
-                isDaySummaryDismissalPending = false
-                daySummaryScrollDuration = reduceSummaryMotion ? 0 : 1
+                guard !Task.isCancelled, shouldDismissDaySummary else { return }
+                dismissDaySummary()
             }
             .navigationDestination(for: KanbanCard.self)
             {

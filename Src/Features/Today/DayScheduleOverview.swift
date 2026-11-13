@@ -57,6 +57,7 @@ struct DayScheduleOverview: View
     let labels:   LabelLibrary                                          /* Available label definitions      */
     let day:      Date                                                  /* Day under consideration          */
     var calendar: Calendar                               = .current     /* Date calculation calendar        */
+    var onDismissSummary: (() -> Void)? = nil
     @State private var showsDetails                      = false        /* Details visibility               */
     @State private var showsPlan                         = false        /* Plan visibility                  */
     @AppStorage(DailyPlanStore.key) private var planData = Data()       /* Plan data                        */
@@ -124,11 +125,31 @@ struct DayScheduleOverview: View
 
             Text("\(data.completedCount) of \(data.taskCount) tasks complete")
             .font(.subheadline).foregroundStyle(.secondary)
-            Button(planTitle, systemImage: "arrow.right", action:
+            HStack
+            {
+                Button(planTitle, systemImage: "arrow.right", action:
+                    {
+                        showsPlan = true
+                    })
+                .font(.subheadline)
+                .frame(minHeight: 44)
+
+                Spacer()
+
+                if let onDismissSummary
                 {
-                    showsPlan = true
-                })
-            .font(.subheadline).frame(minHeight: 44)
+                    Button(action: onDismissSummary)
+                    {
+                        Image(systemName: "chevron.up")
+                        .font(.footnote.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Hide day summary")
+                }
+            }
         }
         .padding(16).frame(maxWidth: .infinity, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))

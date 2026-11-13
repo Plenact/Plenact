@@ -561,6 +561,7 @@ struct PlanningWeekSelector: View
 {
     let document:                          PlanningCalendarDocument             /* Working calendar document      */
     let sources:                           [PlanningSearchResult]               /* Source records or files        */
+    let opensDay: Bool
     let onSelect:                          (DatedPlanningWeek, Date) -> Void    /* Handle the selected value      */
     @State private var referenceDate:      Date                                 /* Reference date                 */
     @State private var selectedDate:       Date                                 /* Selected date                  */
@@ -589,10 +590,12 @@ struct PlanningWeekSelector: View
         document:        PlanningCalendarDocument,
         selectedWeekKey: String,
         sources:         [PlanningSearchResult] = [],
+        opensDay:        Bool = false,
         onSelect:        @escaping (DatedPlanningWeek, Date) -> Void
     )
     {
         self.document = document
+        self.opensDay = opensDay
         self.onSelect = onSelect
         self.sources = sources
         _referenceDate = State(initialValue: initialDate)
@@ -856,7 +859,7 @@ struct PlanningWeekSelector: View
                                     .accessibilityLabel(
                                         "\(date.formatted(.dateTime.weekday(.wide).month(.wide).day().year())), \(count) items"
                                     )
-                                    .accessibilityHint("Show the week containing this day")
+                                    .accessibilityHint(opensDay ? "Show this day" : "Show the week containing this day")
                                     .accessibilityAddTraits(selected ? .isSelected : [])
                                 }
                             }
@@ -872,7 +875,7 @@ struct PlanningWeekSelector: View
                         Text("Items planned or scheduled").font(.caption).foregroundStyle(.secondary)
                     }
 
-                    Text("Tap any day to show its week.").font(.footnote).foregroundStyle(.secondary)
+                    Text(opensDay ? "Tap any date to show its day." : "Tap any day to show its week.").font(.footnote).foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -882,7 +885,7 @@ struct PlanningWeekSelector: View
             .background(Color(.systemBackground))
             .toolbarBackground(Color(.systemBackground), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .navigationTitle("Choose week")
+            .navigationTitle(opensDay ? "Choose day" : "Choose week")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {

@@ -318,11 +318,15 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     let key:    String                                                  /* Lookup or persistence key   */
     var horizontal = false                                              /* Horizontal scrolling axis   */
     var initialScroll: InitialScroll? = nil
+    var returnToTopDistance: CGFloat = 0
+    var onReturnToTop: ((Bool) -> Void)? = nil
 
     struct InitialScroll
     {
+        let id: Int
         let distance: CGFloat
         let duration: TimeInterval
+        let requiresTop: Bool
     }
 
     @Environment(\.appReturnResetRequest) private var resetRequest      /* Reset request               */
@@ -388,7 +392,8 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
         view.isUserInteractionEnabled = false
 
-        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest, initialScroll: initialScroll)
+        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest, initialScroll: initialScroll, returnToTopDistance: returnToTopDistance,
+                                      onReturnToTop: onReturnToTop)
 
         view.attached =
         {
@@ -416,7 +421,8 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     ///
     func updateUIView(_ view: Marker, context: Context)
     {
-        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest, initialScroll: initialScroll)
+        context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest, initialScroll: initialScroll, returnToTopDistance: returnToTopDistance,
+                                      onReturnToTop: onReturnToTop)
         if view.window != nil
         {
             context.coordinator.findScroll(from: view)
@@ -462,7 +468,12 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         private var resetRequest = 0                    /* Reset request                */
 
         private var initialScroll: InitialScroll?
-        private var didApplyInitialScroll = false
+        private var appliedScrollID: Int?
+        private var onReturnToTop: ((Bool) -> Void)?
+        private var returnToTopDistance: CGFloat = 0
+        private var hasScrolledAway = false
+        private var returnedToTop = false
+        private var returnToTopTask: Task<Void, Never>?
         private var initialScrollTask: Task<Void, Never>?
         private var observation: NSKeyValueObservation?         /* Active change observation    */
         private var desired: Double?                            /* Requested scroll destination */
@@ -481,9 +492,12 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         /// @return     (Void) no return value
         ///
         func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool, resetRequest: Int = 0,
-                       initialScroll: InitialScroll? = nil)
+                       initialScroll: InitialScroll? = nil, returnToTopDistance: CGFloat = 0,
+                       onReturnToTop: ((Bool) -> Void)? = nil)
         {
             self.initialScroll = initialScroll
+            self.onReturnToTop = onReturnToTop
+            self.returnToTopDistance = returnToTopDistance
             if self.memory === memory, self.key == key, self.horizontal == horizontal
             {
                 if self.resetRequest != resetRequest
@@ -500,7 +514,9 @@ struct BoardViewportScrollProbe: UIViewRepresentable
             }
 
             finish()
-            didApplyInitialScroll = false
+            appliedScrollID = nil
+            hasScrolledAway = false
+            returnedToTop = false
 
             self.memory = memory;
             self.key = key;
@@ -587,7 +603,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 return
             }
 
-            guard memory != nil || initialScroll != nil, !finding, attempts < 16 else
+            guard memory != nil || initialScroll != nil || onReturnToTop != nil, !finding, attempts < 16 else
             {
                 return
             }
@@ -671,6 +687,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 MainActor.assumeIsolated
                 {
                     self?.capture()
+                    self?.observeReturnToTop()
                 }
             }
 
@@ -683,23 +700,66 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         }
 
 
+        /// Report a return only after the list settles at the top following a scroll away.
+        private func observeReturnToTop()
+        {
+            guard restored, onReturnToTop != nil, let scroll else { return }
+
+            let offset = scroll.contentOffset.y + scroll.adjustedContentInset.top
+            if offset > 1
+            {
+                if returnToTopDistance > 0, offset >= returnToTopDistance - 1
+                {
+                    hasScrolledAway = true
+                }
+                returnToTopTask?.cancel()
+                returnToTopTask = nil
+                if returnedToTop
+                {
+                    returnedToTop = false
+                    Task { [weak self] in self?.onReturnToTop?(false) }
+                }
+            }
+            else if hasScrolledAway, returnToTopTask == nil
+            {
+                returnToTopTask = Task { [weak self, weak scroll] in
+                    guard let scroll else { return }
+                    while scroll.window != nil, scroll.isTracking || scroll.isDragging || scroll.isDecelerating
+                    {
+                        do { try await Task.sleep(for: .milliseconds(50)) }
+                        catch { return }
+                    }
+                    guard !Task.isCancelled, let self else { return }
+                    self.returnToTopTask = nil
+                    guard scroll.window != nil,
+                          abs(scroll.contentOffset.y + scroll.adjustedContentInset.top) <= 1 else { return }
+                    self.hasScrolledAway = false
+                    self.returnedToTop = true
+                    self.onReturnToTop?(true)
+                }
+            }
+        }
+
+
         /// Scroll the native rows together so the user can pull back to the original top.
         private func applyInitialScroll()
         {
-            guard restored, !didApplyInitialScroll, let initialScroll, initialScroll.distance > 0,
+            guard restored, let initialScroll, appliedScrollID != initialScroll.id, initialScroll.distance > 0,
                   let scroll else { return }
 
-            didApplyInitialScroll = true
+            appliedScrollID = initialScroll.id
+            initialScrollTask?.cancel()
             initialScrollTask = Task { [weak scroll] in
                 guard !Task.isCancelled, let scroll, scroll.window != nil else { return }
 
                 scroll.layoutIfNeeded()
                 let start = scroll.contentOffset
                 let top = -scroll.adjustedContentInset.top
-                guard abs(start.y - top) < 1, !scroll.isTracking, !scroll.isDecelerating else { return }
+                let end = top + initialScroll.distance
+                guard start.y < end, !scroll.isTracking, !scroll.isDecelerating,
+                      !initialScroll.requiresTop || abs(start.y - top) < 1 else { return }
 
                 // Short days still need enough scroll range to move past the overview.
-                let end = top + initialScroll.distance
                 let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
                 if bottom < end
                 {
@@ -815,6 +875,8 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         {
             initialScrollTask?.cancel()
             initialScrollTask = nil
+            returnToTopTask?.cancel()
+            returnToTopTask = nil
             capture();
             observation?.invalidate();
 

@@ -59,7 +59,7 @@ struct PersonalListExamplesView: View
     {
         self.onLoadExampleWeek = onLoadExampleWeek
         self.onUndoExampleWeek = onUndoExampleWeek
-        self.onSelect = onSelect
+        self.onSelect = onSelect	
         self.onSelectMixedTemplate = onSelectMixedTemplate
         self.onSelectBoardExample = onSelectBoardExample
         _hasUndoableWeek = State(initialValue: hasUndoableWeek)

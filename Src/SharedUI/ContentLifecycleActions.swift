@@ -17,7 +17,7 @@ import UniformTypeIdentifiers
 ///     Keep Search, labels, Calendar, and list pickers from owning duplicate content
 ///
 /// Reveal Delete without UIKit's optimistic destructive-row removal. The owning
-/// screen confirms the action and performs its existing checked deletion
+/// screen handles confirmation or Undo and performs its checked deletion
 struct ListItemSwipeDelete: ViewModifier
 {
     let enabled:   Bool                 /* Feature availability flag */
@@ -27,8 +27,7 @@ struct ListItemSwipeDelete: ViewModifier
     ///
     /// @fcn        ListItemSwipeDelete.body
     /// @brief      Install an explicit trailing swipe-delete action
-    /// @details    Exposes Delete only when enabled and disables full-swipe deletion so the user must choose the
-    ///             action
+    /// @details    Requires tapping the revealed Delete action
     ///
     /// @param[in]  content  View content to decorate with this modifier
     ///

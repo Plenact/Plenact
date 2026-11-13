@@ -200,6 +200,15 @@ extension PlenactBoardDocumentTests
         XCTAssertTrue(
             FileManager.default.fileExists(atPath: try XCTUnwrap(CardAttachmentStore.fileURL(for: candidate)).path))
 
+        let undoToken = UUID()
+        CardAttachmentStore.retainForUndo([candidateName], token: undoToken)
+        defer { CardAttachmentStore.releaseUndoMedia(token: undoToken) }
+
+        try CardAttachmentStore.removeDeletedFiles([candidateName], keeping: [])
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: try XCTUnwrap(CardAttachmentStore.fileURL(for: candidate)).path))
+
+        CardAttachmentStore.releaseUndoMedia(token: undoToken)
         try CardAttachmentStore.removeDeletedFiles([candidateName], keeping: [])
 
         XCTAssertFalse(

@@ -591,6 +591,7 @@ struct AppRootView: View
                     onOpenBoardCard: openBoardCard,
                     onArchiveCard: archiveWeekCard,
                     onDeleteCard: deleteWeekCard,
+                    onRestoreDeletedCard: restoreWeekCardDeletion,
                     onArchiveList: archiveWeekList,
                     onDeleteList: deleteWeekList,
                     quickCreateRequest: quickCreateRequest
@@ -988,7 +989,7 @@ struct AppRootView: View
             {
                 week, importantIDs in
                 savePlanningWeek(week, exampleImportantIDs: importantIDs)
-            }, completeManualWeek: completeManualWeek)
+            }, cleanDeletedMedia: cleanDeletedMedia, completeManualWeek: completeManualWeek)
     }
 
 

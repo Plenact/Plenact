@@ -2518,6 +2518,20 @@ extension AppRootView
     }
 
 
+    func restoreWeekCardDeletion(_ snapshot: [KanbanList], _ bookmarks: Set<Int>) -> Bool
+    {
+        do
+        {
+            try commitWeekDeletion(snapshot, bookmarks)
+            return true
+        }
+        catch
+        {
+            return false
+        }
+    }
+
+
     ///
     /// @fcn        AppRootView.deleteWeekCard(_:)
     /// @brief      Permanently remove a confirmed bookmarked Week card

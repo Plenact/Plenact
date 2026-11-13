@@ -261,6 +261,7 @@ struct InlineListCapture: View
     @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference */
     let onCreate:                      (QuickCaptureSubmission) -> Bool         /* Create callback           */
     let onOpenComposer:                ()                       -> Void         /* Open composer callback    */
+    var keepsFocusAfterSubmit = true
     @FocusState private var isFocused: Bool                                     /* Native editor focus state */
 
     var body: some View         /* Inline List Capture layout */
@@ -328,7 +329,7 @@ struct InlineListCapture: View
     ///
     /// @fcn        InlineListCapture.createInline()
     /// @brief      Save a title directly into the current List
-    /// @details    Retains focus for successive captures and retains writing if saving fails
+    /// @details    Optionally retains focus for successive captures and retains writing if saving fails
     ///
     /// @return     (Void) requests creation without opening a detail view
     ///
@@ -348,7 +349,7 @@ struct InlineListCapture: View
             CreatedContentReveal.shared.complete(request)
         }
 
-        isFocused = true
+        isFocused = keepsFocusAfterSubmit
     }
 }
 

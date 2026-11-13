@@ -49,6 +49,8 @@ struct PlanningCalendarAccess
     var saveExampleWeek:  ((DatedPlanningWeek, Set<Int>) -> Bool)? =                    /* Save example week callback */
         nil
 
+    var cleanDeletedMedia: (Set<String>) -> Void = { _ in }
+
     var completeManualWeek: ((ManualWeekOpening) -> Void)? = nil        /* Complete manual week callback */
 
     var allRetainedLists: [KanbanList]          /* All retained lists */
@@ -493,6 +495,16 @@ struct PlanningCalendarWeekView: View
 
                         week = next;
 
+                        return true
+                    },
+                    onRestoreDeletedCard:
+                    {
+                        lists, bookmarks in
+                        var next = week
+                        next.collection.lists = lists
+                        next.collection.savedCardIDs = bookmarks
+                        guard access?.saveWeek(next) == true else { return false }
+                        week = next
                         return true
                     }, boardAppearance: week.collection.boardAppearance,
                     returnDestinationTitle: "Calendar", boardViewActionTitle: "Switch to this week's view",
@@ -954,6 +966,16 @@ struct PlanningSelectedDayView: View
 
                 week = next
 
+                return true
+            },
+            onRestoreDeletedCard:
+            {
+                lists, bookmarks in
+                var next = week
+                next.collection.lists = lists
+                next.collection.savedCardIDs = bookmarks
+                guard access?.saveWeek(next) == true else { return false }
+                week = next
                 return true
             }, boardAppearance: week.collection.boardAppearance,
             returnDestinationTitle: returnDestinationTitle,

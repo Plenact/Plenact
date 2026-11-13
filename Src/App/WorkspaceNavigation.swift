@@ -577,6 +577,16 @@ struct PinnedListDayContent: View
                 collection = updated;
 
                 return true
+            },
+            onRestoreDeletedCard:
+            {
+                lists, bookmarks in
+                var updated = collection
+                updated.lists = lists
+                updated.savedCardIDs = bookmarks
+                guard save(updated) else { return false }
+                collection = updated
+                return true
             }, boardAppearance: collection.boardAppearance, returnDestinationTitle: returnDestinationTitle,
             boardViewActionTitle: week == nil ? "Back to \(returnDestinationTitle)" : "Switch to Week View",
             representedDate: date

@@ -1609,6 +1609,7 @@ struct ContentView: View
                             focusedDayListID = nil
                         },
                         onPermanentDelete: deleteCard,
+                        onRestoreDeletedCard: { commitDeletion($0, bookmarks: $1) },
                         boardAppearance: storedBoardAppearance,
                         returnDestinationTitle: personalCollectionID == nil ? "Week" : boardTitle,
                         boardViewActionTitle: personalCollectionID == nil

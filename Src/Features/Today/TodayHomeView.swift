@@ -76,6 +76,7 @@ struct TodayHomeView: View
     let onOpenBoardList:        (Int)                    -> Void        /* Route to Board at the selected list ID        */
     let onOpenBoardCard:        (Int, Int)               -> Void        /* Route to a Week card by list/card IDs         */
     let onArchiveCard:          (Int)                    -> Void        /* Retain a canonical Week card                  */
+    let onRestoreDeletedCard: (([KanbanList], Set<Int>) -> Bool)?
     let onDeleteCard:           (Int)                    -> Bool        /* Report successful confirmed Week card removal */
     let onArchiveList:          (Int)                    -> Void        /* Retain a canonical Week list                  */
     let onDeleteList:           (Int)                    -> Bool        /* Report successful confirmed Week list removal */
@@ -400,6 +401,7 @@ struct TodayHomeView: View
         onOpenBoardCard:        @escaping (Int, Int)                                                  -> Void,
         onArchiveCard:          @escaping (Int)                                                       -> Void,
         onDeleteCard:           @escaping (Int)                                                       -> Bool,
+        onRestoreDeletedCard:   (([KanbanList], Set<Int>) -> Bool)? = nil,
         onArchiveList:          @escaping (Int)                                                       -> Void,
         onDeleteList:           @escaping (Int)                                                       -> Bool,
         quickCreateRequest:     Int
@@ -419,6 +421,7 @@ struct TodayHomeView: View
         self.onOpenBoardCard = onOpenBoardCard
         self.onArchiveCard = onArchiveCard
         self.onDeleteCard = onDeleteCard
+        self.onRestoreDeletedCard = onRestoreDeletedCard
         self.onArchiveList = onArchiveList
         self.onDeleteList = onDeleteList
         self.quickCreateRequest = quickCreateRequest
@@ -1156,6 +1159,7 @@ struct TodayHomeView: View
                             onOpenBoardList(focusedList.id)
                         },
                         onPermanentDelete: onDeleteCard,
+                        onRestoreDeletedCard: onRestoreDeletedCard,
                         focusesFirstUncheckedTask: true,
                         representedDate: .now
                     )

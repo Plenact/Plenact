@@ -62,6 +62,8 @@ struct TodayListDetailView: View
     let onOpenWeek:        ()    -> Void        /* Open this list in the Week workspace     */
     let onPermanentDelete: (Int) -> Bool        /* Parent's save-first Week deletion result */
 
+    var onRestoreDeletedCard: (([KanbanList], Set<Int>) -> Bool)? = nil
+
     @Environment(\.layoutDirection) private var headerLayoutDirection                   /* Header layout direction             */
     @AppStorage(BoardAppearance.weekStorageKey) private var weekAppearanceData =        /* Week appearance data                */
         Data()
@@ -113,7 +115,22 @@ struct TodayListDetailView: View
     @State private var cardFrames:       [Int: CGRect] = [:]                            /* Card frames                                       */
     @State private var cardViewport:     CGRect        = .zero                          /* Card viewport                                     */
 
-    @State private var deletingCard: KanbanCard?                /* Deleting card      */
+    @State private var swipeDeletion: SwipeDeletion?
+    @GestureState private var swipeOffset: (id: Int, x: CGFloat)?
+    @State private var slidingOutCardID: Int?
+
+    private struct SwipeDeletion
+    {
+        let token = UUID()
+        let card: KanbanCard
+        let listID: Int
+        let index: Int
+        let previousID: Int?
+        let nextID: Int?
+        let wasBookmarked: Bool
+        let media: Set<String>
+        let cleanMedia: ((Set<String>) -> Void)?
+    }
     @State private var draggedCardID:    Int?                   /* Dragged card ID    */
     @State private var cardDragLocation: CGPoint?               /* Card drag location */
     @Environment(\.scenePhase) private var scenePhase           /* Scene phase        */
@@ -464,7 +481,8 @@ struct TodayListDetailView: View
             onOpenComposer:
             {
                 showsNewCard = true
-            }
+            },
+            keepsFocusAfterSubmit: representedDate == nil
         )
 
         .padding(12)
@@ -819,13 +837,32 @@ struct TodayListDetailView: View
                                     )
                                     .listRowSeparator(.hidden)
                                     .listRowBackground(Color.clear)
-                                    .modifier(
-                                        ListItemSwipeDelete(
-                                            enabled: editMode != .active,
-                                            onRequest:
+                                    .offset(x: slidingOutCardID == card.id
+                                        ? -max(cardViewport.width, cardFrames[card.id]?.width ?? 0) - 24
+                                        : (swipeOffset?.id == card.id ? swipeOffset?.x ?? 0 : 0))
+                                    .simultaneousGesture(
+                                        DragGesture(minimumDistance: 24, coordinateSpace: .global)
+                                            .updating($swipeOffset)
                                             {
-                                                deletingCard = card
-                                            }))
+                                                drag, offset, _ in
+                                                if !reduceSummaryMotion, canSwipeDelete(drag)
+                                                {
+                                                    offset = (card.id, drag.translation.width)
+                                                }
+                                            }
+                                            .onEnded
+                                            {
+                                                drag in
+                                                guard canSwipeDelete(drag), drag.translation.width <= -80 else { return }
+                                                slideOutCard(card)
+                                            },
+                                        including: editMode == .active ? .none : .all
+                                    )
+                                    .accessibilityAction(named: "Delete")
+                                    {
+                                        guard editMode != .active else { return }
+                                        swipeDelete(card)
+                                    }
                                 }
                             }
 
@@ -1021,53 +1058,28 @@ struct TodayListDetailView: View
             {
                 _, _ in
 
-                checkmarkReset = nil;
-                deletingCard = nil
+                checkmarkReset = nil
+                slidingOutCardID = nil
+                finishSwipeDeletion()
             }
             .onDisappear
             {
-                checkmarkReset = nil;
-                deletingCard = nil
+                slidingOutCardID = nil
+                checkmarkReset = nil
+                finishSwipeDeletion()
             }
-            .confirmationDialog(
-                "Delete \(deletingCard?.word ?? "item")?",
-                isPresented: Binding(
-                    get:
-                    {
-                        deletingCard != nil
-                    }, set:
-                    {
-                        if !$0
-                        {
-                            deletingCard = nil
-                        }
-                    }
-                ), titleVisibility: .visible
-            )
+            .overlay(alignment: .bottom)
             {
-                Button("Delete \(deletingCard?.presentation.title ?? "item")", role: .destructive)
-                {
-                    if let target = deletingCard,
-                    focusedList?.cards.contains(where:
-                        {
-                            $0.id == target.id && $0.createdAt == target.createdAt
-                        })
-                    == true
-                    {
-                        deleteCard(target.id)
-                    }
-
-                    deletingCard = nil
-                }
-
-                Button("Cancel", role: .cancel)
-                {
-                    deletingCard = nil
-                }
+                swipeDeletionNotice
             }
-            message:
+            .task(id: swipeDeletion?.token)
             {
-                Text("Permanently deletes this item, its details, and its bookmark. This cannot be undone.")
+                guard let token = swipeDeletion?.token else { return }
+                do { try await Task.sleep(for: .seconds(5)) }
+                catch { return }
+
+                guard !Task.isCancelled, swipeDeletion?.token == token else { return }
+                finishSwipeDeletion()
             }
             .modifier(
                 ListCheckmarkResetConfirmation(
@@ -1618,6 +1630,160 @@ struct TodayListDetailView: View
         }
 
         lists[listIndex].cards[cardIndex] = updatedCard
+    }
+
+
+    @ViewBuilder
+    private var swipeDeletionNotice: some View
+    {
+        if let deletion = swipeDeletion
+        {
+            HStack(spacing: 16)
+            {
+                Text("\(deletion.card.presentation.title) deleted")
+                    .font(.subheadline.weight(.medium))
+                Spacer(minLength: 8)
+                Button("Undo")
+                {
+                    undoSwipeDeletion(deletion)
+                }
+                .font(.headline)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("day.item.delete.undo")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(alignment: .top)
+            {
+                Rectangle()
+                    .fill(.regularMaterial)
+                    .ignoresSafeArea(.container, edges: .bottom)
+            }
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+            .transition(reduceSummaryMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    private func canSwipeDelete(_ drag: DragGesture.Value) -> Bool
+    {
+        editMode != .active && draggedCardID == nil && slidingOutCardID == nil
+            && -drag.translation.width > abs(drag.translation.height) * 2
+    }
+
+    private func slideOutCard(_ card: KanbanCard)
+    {
+        guard !reduceSummaryMotion else
+        {
+            swipeDelete(card)
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.25), completionCriteria: .logicallyComplete)
+        {
+            slidingOutCardID = card.id
+        }
+        completion:
+        {
+            guard slidingOutCardID == card.id else { return }
+            swipeDelete(card)
+            withAnimation(.easeOut(duration: 0.2))
+            {
+                slidingOutCardID = nil
+            }
+        }
+    }
+
+    private func swipeDelete(_ card: KanbanCard)
+    {
+        guard let cards = focusedList?.cards,
+              let index = cards.firstIndex(where: { $0.id == card.id && $0.createdAt == card.createdAt })
+        else { return }
+
+        let current = cards[index]
+        let deletion = SwipeDeletion(
+            card: current, listID: listID, index: index,
+            previousID: index > 0 ? cards[index - 1].id : nil,
+            nextID: index + 1 < cards.count ? cards[index + 1].id : nil,
+            wasBookmarked: savedCardIDs.contains(card.id),
+            media: Set((current.attachments ?? []).flatMap(\.storedFileNames)),
+            cleanMedia: planningCalendarAccess?.cleanDeletedMedia
+        )
+
+        CardAttachmentStore.retainForUndo(deletion.media, token: deletion.token)
+        // Animate the saved List mutation so UIKit can close the row gap with the swipe.
+        let deleted = withAnimation(reduceSummaryMotion ? nil : .smooth(duration: 0.35))
+        {
+            deleteCard(card.id)
+        }
+        guard deleted else
+        {
+            CardAttachmentStore.releaseUndoMedia(token: deletion.token)
+            return
+        }
+
+        finishSwipeDeletion()
+        withAnimation(.easeOut(duration: 0.2))
+        {
+            swipeDeletion = deletion
+        }
+    }
+
+    private func undoSwipeDeletion(_ deletion: SwipeDeletion)
+    {
+        guard swipeDeletion?.token == deletion.token else { return }
+
+        var snapshot = lists + reservedLists
+        guard let listIndex = snapshot.firstIndex(where: { $0.id == deletion.listID && !$0.isArchived }),
+              !snapshot.contains(where: { $0.allCards.contains(where: { $0.id == deletion.card.id }) })
+        else
+        {
+            DatabaseActivity.shared.report("Could not undo the deletion because the list or item changed.")
+            return
+        }
+
+        let cards = snapshot[listIndex].cards
+        let next = cards.firstIndex { $0.id == deletion.nextID }
+        let previous = cards.firstIndex { $0.id == deletion.previousID }
+        let index = next ?? previous.map { $0 + 1 } ?? min(deletion.index, cards.count)
+        var card = deletion.card
+        card.listTitle = snapshot[listIndex].title
+        snapshot[listIndex].cards.insert(card, at: index)
+
+        var bookmarks = savedCardIDs
+        if deletion.wasBookmarked
+        {
+            bookmarks.insert(card.id)
+        }
+
+        if let onRestoreDeletedCard
+        {
+            guard onRestoreDeletedCard(snapshot, bookmarks) else
+            {
+                DatabaseActivity.shared.report("Could not undo the deletion. Your current content has been retained.")
+                return
+            }
+        }
+        else
+        {
+            lists = snapshot.filter { !$0.isArchived }
+            savedCardIDs = bookmarks
+        }
+
+        finishSwipeDeletion(restored: true)
+    }
+
+    private func finishSwipeDeletion(restored: Bool = false)
+    {
+        guard let deletion = swipeDeletion else { return }
+        withAnimation(.easeOut(duration: 0.2))
+        {
+            swipeDeletion = nil
+        }
+        CardAttachmentStore.releaseUndoMedia(token: deletion.token)
+        if !restored
+        {
+            deletion.cleanMedia?(deletion.media)
+        }
     }
 
 

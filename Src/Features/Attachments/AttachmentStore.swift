@@ -127,6 +127,23 @@ struct KanbanAttachment: Identifiable, Hashable, Codable, Sendable
 ///
 enum CardAttachmentStore
 {
+    private static let undoMediaLock = NSLock()
+    private static var undoMedia: [UUID: Set<String>] = [:]
+
+    static func retainForUndo(_ files: Set<String>, token: UUID)
+    {
+        undoMediaLock.lock()
+        defer { undoMediaLock.unlock() }
+        undoMedia[token] = files
+    }
+
+    static func releaseUndoMedia(token: UUID)
+    {
+        undoMediaLock.lock()
+        defer { undoMediaLock.unlock() }
+        undoMedia.removeValue(forKey: token)
+    }
+
     ///
     /// @fcn        CardAttachmentStore.coverThumbnail(for:)
     /// @brief      Decode a bounded, orientation-correct cover image
@@ -196,7 +213,11 @@ enum CardAttachmentStore
         let retained =                                                  /* State retained for recovery */
             retained.union(try PlanningRoutineStore.retainedFiles())
 
-        for name in candidates.subtracting(retained)
+        undoMediaLock.lock()
+        defer { undoMediaLock.unlock() }
+        let protectedFiles = Set(undoMedia.values.joined())
+
+        for name in candidates.subtracting(retained).subtracting(protectedFiles)
         {
             guard name == (name as NSString).lastPathComponent,
             !name.isEmpty, name != ".", name != ".."
@@ -398,7 +419,12 @@ enum CardAttachmentStore
         }
 
 
+        undoMediaLock.lock()
+        defer { undoMediaLock.unlock() }
+        let protectedFiles = Set(undoMedia.values.joined())
+
         for fileURL in files where !fileNames.contains(fileURL.lastPathComponent)
+            && !protectedFiles.contains(fileURL.lastPathComponent)
         {
             try? FileManager.default.removeItem(at: fileURL)
         }

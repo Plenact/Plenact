@@ -842,7 +842,8 @@ struct KanbanListView: View
                 onOpenComposer:
                 {
                     activeSheet = .newCard
-                }
+                },
+                keepsFocusAfterSubmit: false
             )
             .background
             {

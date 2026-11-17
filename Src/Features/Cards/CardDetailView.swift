@@ -1316,6 +1316,192 @@ struct CardDetailView: View
     }
 
 
+    private func editableDetail(using scrollProxy: ScrollViewProxy) -> some View
+    {
+        ScrollView
+        {
+            VStack(alignment: .leading, spacing: 0)
+            {
+                if displayFormat == .picture
+                {
+                    Button
+                    {
+                        dismissEditing()
+
+                        activeSheet = .appearance
+                        showsAppearanceCover = true
+                    }
+                    label:
+                    {
+                        ItemPicturePreview(attachment: workingCardSnapshot.coverAttachment)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        workingCardSnapshot.coverAttachment == nil ? "Choose picture" : "Change picture"
+                    )
+                    .disabled(onTitleToggle == nil)
+                    .padding(16)
+                }
+
+                if presentation == .note
+                {
+                    // Keep the Note editor’s generic type out of the Card layout.
+                    AnyView(noteEditor)
+                }
+
+
+                if presentation == .card || showsNoteDetails
+                {
+                    Color.clear
+                    .frame(height: 0)
+                    .id("note.detailsStart")
+
+                    if presentation == .card
+                    {
+                        editableCardHeading
+                    }
+
+
+                    //****************************************************************************//
+                    // SECTION: Quick Actions                                                     //
+                    //                                                                            //
+                    //          Presents the primary actions available for the selected card      //
+                    //****************************************************************************//
+                    if presentation == .card && reactions?.isEmpty == false
+                    {
+                        reactionStrip.padding(.horizontal, 16).padding(.vertical, 8)
+                    }
+
+                    ForEach(sectionLayout.sections)
+                    {
+                        section in
+                        // ForEach retains section identity while keeping section types out of the stack.
+                        AnyView(cardSection(section, using: scrollProxy))
+                    }
+                }
+            }
+        }
+
+        // Keep the last controls scrollable above the corner Back target
+        .contentMargins(.bottom, presentation == .card ? 44 : 12, for: .scrollContent)
+    }
+
+
+    private var editableCardHeading: some View
+    {
+        HStack(alignment: .center, spacing: 12)
+        {
+            Button(action: toggleCardTitle)
+            {
+                Image(systemName: titleChecked ? "checkmark.square.fill" : "square")
+                .font(.title2)
+                .foregroundStyle(titleChecked ? .blue : .secondary)
+            }
+
+            .buttonStyle(.plain)
+            .accessibilityLabel(titleChecked ? "Uncheck card title" : "Check card title")
+
+            VStack(alignment: .leading, spacing: 5)
+            {
+                HStack(alignment: .firstTextBaseline, spacing: 8)
+                {
+                    ItemAppearanceMark(appearance: appearance)
+                    Group
+                    {
+                        if editingHeaderField == .title
+                        {
+                            TextField("Card title", text: $titleText)
+                            .textInputAutocapitalization(.sentences)
+                            .focused($focusedField, equals: .title)
+                            .task
+                            {
+                                focusedField = .title
+                            }
+                            .submitLabel(.done)
+                            .onSubmit
+                            {
+                                dismissEditing()
+                            }
+                            .onChange(of: titleText)
+                            {
+                                _, value in
+                                syncCardState(title: value)
+                            }
+                        }
+                        else
+                        {
+                            SlideableHeaderText(
+                                text: titleText.isEmpty ? "Card title" : titleText,
+                                onTap:
+                                {
+                                    editingHeaderField = .title
+                                }
+                            )
+                            .accessibilityLabel("Card title, " + titleText)
+                            .accessibilityIdentifier("card.readableTitle")
+                        }
+                    }
+                    .font(.title2.weight(.bold))
+                    .layoutPriority(1)
+                }
+
+
+                if appearance?.hidesSubtitle(subtitleText) != true
+                || editingHeaderField == .subtitle
+                {
+                    Group
+                    {
+                        if editingHeaderField == .subtitle || subtitleText.isEmpty
+                        {
+                            TextField("Card subtitle", text: $subtitleText)
+                            .textInputAutocapitalization(.sentences)
+                            .focused($focusedField, equals: .subtitle)
+                            .task
+                            {
+                                if editingHeaderField == .subtitle
+                                {
+                                    focusedField = .subtitle
+                                }
+                            }
+                            .submitLabel(.done)
+                            .onSubmit
+                            {
+                                dismissEditing()
+                            }
+                            .onChange(of: subtitleText)
+                            {
+                                _, value in
+                                syncCardState(subtitle: value)
+                            }
+                        }
+                        else
+                        {
+                            SlideableHeaderText(
+                                text: subtitleText,
+                                onTap:
+                                {
+                                    editingHeaderField = .subtitle
+                                }
+                            )
+                            .accessibilityLabel("Card subtitle, " + subtitleText)
+                            .accessibilityIdentifier("card.readableSubtitle")
+                        }
+                    }
+                    .font((appearance?.subtitleItalic ?? inheritedSubtitleItalic)
+                          ? .subheadline.italic() : .subheadline)
+                    .foregroundStyle(.secondary)
+                }
+            }
+
+
+            Spacer()
+        }
+
+        .padding(16)
+        .itemBannerBackground(appearance)
+    }
+
+
     var body: some View         /* Card editing interface        */
     {                           /* Full card-detail presentation */
         ScrollViewReader
@@ -1414,179 +1600,7 @@ struct CardDetailView: View
                 }
                 else
                 {
-                    ScrollView
-                    {
-                        VStack(alignment: .leading, spacing: 0)
-                        {
-                            if displayFormat == .picture
-                            {
-                                Button
-                                {
-                                    dismissEditing()
-
-                                    activeSheet = .appearance
-                                    showsAppearanceCover = true
-                                }
-                                label:
-                                {
-                                    ItemPicturePreview(attachment: workingCardSnapshot.coverAttachment)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(
-                                    workingCardSnapshot.coverAttachment == nil ? "Choose picture" : "Change picture"
-                                )
-                                .disabled(onTitleToggle == nil)
-                                .padding(16)
-                            }
-
-                            if presentation == .note
-                            {
-                                noteEditor
-                            }
-
-
-                            if presentation == .card || showsNoteDetails
-                            {
-                                Color.clear
-                                .frame(height: 0)
-                                .id("note.detailsStart")
-
-                                if presentation == .card
-                                {
-                                    HStack(alignment: .center, spacing: 12)
-                                    {
-                                        Button(action: toggleCardTitle)
-                                        {
-                                            Image(systemName: titleChecked ? "checkmark.square.fill" : "square")
-                                            .font(.title2)
-                                            .foregroundStyle(titleChecked ? .blue : .secondary)
-                                        }
-
-                                        .buttonStyle(.plain)
-                                        .accessibilityLabel(titleChecked ? "Uncheck card title" : "Check card title")
-
-                                        VStack(alignment: .leading, spacing: 5)
-                                        {
-                                            HStack(alignment: .firstTextBaseline, spacing: 8)
-                                            {
-                                                ItemAppearanceMark(appearance: appearance)
-                                                Group
-                                                {
-                                                    if editingHeaderField == .title
-                                                    {
-                                                        TextField("Card title", text: $titleText)
-                                                        .textInputAutocapitalization(.sentences)
-                                                        .focused($focusedField, equals: .title)
-                                                        .task
-                                                        {
-                                                            focusedField = .title
-                                                        }
-                                                        .submitLabel(.done)
-                                                        .onSubmit
-                                                        {
-                                                            dismissEditing()
-                                                        }
-                                                        .onChange(of: titleText)
-                                                        {
-                                                            _, value in
-                                                            syncCardState(title: value)
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        SlideableHeaderText(
-                                                            text: titleText.isEmpty ? "Card title" : titleText,
-                                                            onTap:
-                                                            {
-                                                                editingHeaderField = .title
-                                                            }
-                                                        )
-                                                        .accessibilityLabel("Card title, " + titleText)
-                                                        .accessibilityIdentifier("card.readableTitle")
-                                                    }
-                                                }
-                                                .font(.title2.weight(.bold))
-                                                .layoutPriority(1)
-                                            }
-
-
-                                            if appearance?.hidesSubtitle(subtitleText) != true
-                                            || editingHeaderField == .subtitle
-                                            {
-                                                Group
-                                                {
-                                                    if editingHeaderField == .subtitle || subtitleText.isEmpty
-                                                    {
-                                                        TextField("Card subtitle", text: $subtitleText)
-                                                        .textInputAutocapitalization(.sentences)
-                                                        .focused($focusedField, equals: .subtitle)
-                                                        .task
-                                                        {
-                                                            if editingHeaderField == .subtitle
-                                                            {
-                                                                focusedField = .subtitle
-                                                            }
-                                                        }
-                                                        .submitLabel(.done)
-                                                        .onSubmit
-                                                        {
-                                                            dismissEditing()
-                                                        }
-                                                        .onChange(of: subtitleText)
-                                                        {
-                                                            _, value in
-                                                            syncCardState(subtitle: value)
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        SlideableHeaderText(
-                                                            text: subtitleText,
-                                                            onTap:
-                                                            {
-                                                                editingHeaderField = .subtitle
-                                                            }
-                                                        )
-                                                        .accessibilityLabel("Card subtitle, " + subtitleText)
-                                                        .accessibilityIdentifier("card.readableSubtitle")
-                                                    }
-                                                }
-                                                .font((appearance?.subtitleItalic ?? inheritedSubtitleItalic)
-                                                      ? .subheadline.italic() : .subheadline)
-                                                .foregroundStyle(.secondary)
-                                            }
-                                        }
-
-
-                                        Spacer()
-                                    }
-
-                                    .padding(16)
-                                    .itemBannerBackground(appearance)
-                                }
-
-
-                                //****************************************************************************//
-                                // SECTION: Quick Actions                                                     //
-                                //                                                                            //
-                                //          Presents the primary actions available for the selected card      //
-                                //****************************************************************************//
-                                if presentation == .card && reactions?.isEmpty == false
-                                {
-                                    reactionStrip.padding(.horizontal, 16).padding(.vertical, 8)
-                                }
-
-                                ForEach(sectionLayout.sections)
-                                {
-                                    section in
-                                    cardSection(section, using: scrollProxy)
-                                }
-                            }
-                        }
-                    }
-
-                    // Keep the last controls scrollable above the corner Back target
-                    .contentMargins(.bottom, presentation == .card ? 44 : 12, for: .scrollContent)
+                    editableDetail(using: scrollProxy)
                 }
             }
 

@@ -755,16 +755,11 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 scroll.layoutIfNeeded()
                 let start = scroll.contentOffset
                 let top = -scroll.adjustedContentInset.top
-                let end = top + initialScroll.distance
+                // Keep the last row at the native scroll limit, including on short days.
+                let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
+                let end = min(top + initialScroll.distance, bottom)
                 guard start.y < end, !scroll.isTracking, !scroll.isDecelerating,
                       !initialScroll.requiresTop || abs(start.y - top) < 1 else { return }
-
-                // Short days still need enough scroll range to move past the overview.
-                let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
-                if bottom < end
-                {
-                    scroll.contentInset.bottom += end - bottom
-                }
 
                 guard initialScroll.duration > 0 else
                 {

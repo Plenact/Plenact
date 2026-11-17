@@ -16,7 +16,7 @@ import Foundation
 ///
 enum PersonalListExample: String, CaseIterable, Identifiable
 {
-    case onTheTable = "On the Table"
+    case onTheTable = "On the Table"            /// FIX THREE
     case inTheQueue = "In the Queue"
     case scheduled = "Scheduled"
     case shopping = "Shopping"
@@ -39,13 +39,14 @@ enum PersonalListExample: String, CaseIterable, Identifiable
     /// @fcn        PersonalListExample.coverIllustration
     /// @brief      Identify the optional original illustration for the first example card
     /// @details    Only three examples demonstrate covers; the remaining cards stay text-only
+    /// FIX ONE
     /// @return     (ExampleCoverImage?) bundled illustration without creating attachment files
     ///
     var coverIllustration: ExampleCoverImage?           /* Cover illustration                                        */
     {                                                   /* Offline illustration featured on the example's first card */
         switch self
         {
-        case .onTheTable:
+        case .onTheTable:       /// FIX TWO INDENTS HERE
             .garden
         case .inTheQueue:
             .workspace

@@ -113,6 +113,7 @@ struct TodayListDetailView: View
     @State private var editMode:     EditMode          = .inactive                      /* Whether Today rows expose native reorder controls */
     @State private var cardDragToken                   = UUID().uuidString              /* Card drag token                                   */
     @State private var cardFrames:       [Int: CGRect] = [:]                            /* Card frames                                       */
+    @State private var dayBottomSafeInset: CGFloat = 0
     @State private var cardViewport:     CGRect        = .zero                          /* Card viewport                                     */
 
     @State private var swipeDeletion: SwipeDeletion?
@@ -641,6 +642,19 @@ struct TodayListDetailView: View
     }
 
 
+    private struct DayFooterBounds: PreferenceKey
+    {
+        static var defaultValue: Anchor<CGRect>? { nil }
+
+        static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?)
+        {
+            value = nextValue() ?? value
+        }
+    }
+
+    private var dayFooterHeight: CGFloat { 4 + dayBottomSafeInset }
+
+
     private var dayContent: some View                   /* Day content                                           */
     {                                                   /* Focused-list Board surface and card-detail navigation */
         NavigationStack(path: $keyboardDetailPath)
@@ -661,30 +675,20 @@ struct TodayListDetailView: View
                 }
 
 
-                VStack(spacing: 0)
-                {
-                    Color.clear.frame(height: 129)
-
-                    Spacer(minLength: 0)
-                }
-
-                .ignoresSafeArea()
-                .overlay(alignment: .bottom)
+                if representedDate == nil
                 {
                     Rectangle()
-                    .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
-                    .frame(height: 4)
-                    .background
-                    {
-                        // Match the Day banner below the gold edge through the home-indicator area
-                        headerColor
-                        .ignoresSafeArea(edges: .bottom)
-                    }
-                    .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+                        .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
+                        .frame(height: 4)
+                        .background
+                        {
+                            headerColor.ignoresSafeArea(edges: .bottom)
+                        }
+                        .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
-
 
                 if let focusedList
                 {                       /* Selected list available for rendering */
@@ -887,8 +891,45 @@ struct TodayListDetailView: View
                             .listRowInsets(EdgeInsets(top: 8, leading: 8, bottom: 16, trailing: 8))
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
+
+                            if representedDate != nil
+                            {
+                                Color.clear
+                                .frame(height: dayFooterHeight)
+                                .anchorPreference(key: DayFooterBounds.self, value: .bounds) { $0 }
+                                .accessibilityHidden(true)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                            }
                         }
 
+                        .overlayPreferenceValue(DayFooterBounds.self)
+                        {
+                            anchor in
+                            GeometryReader
+                            {
+                                viewport in
+                                if let anchor
+                                {
+                                    let bottom = viewport.size.height
+                                    let top = max(bottom - dayFooterHeight, viewport[anchor].minY)
+                                    if top < bottom
+                                    {
+                                        headerColor
+                                            .overlay(alignment: .top)
+                                            {
+                                                Color(red: 0.82, green: 0.68, blue: 0.40)
+                                                    .frame(height: 4)
+                                            }
+                                            .frame(height: bottom - top)
+                                            .offset(y: top)
+                                    }
+                                }
+                            }
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                        }
                         .listStyle(.plain)
                         .environment(\.defaultMinListRowHeight, 0)
                         .environment(\.editMode, $editMode)
@@ -1034,6 +1075,7 @@ struct TodayListDetailView: View
                                 .padding(.horizontal, 8)
 
                             cards
+                                .ignoresSafeArea(.container, edges: representedDate == nil ? [] : .bottom)
                         }
                     }
                 }
@@ -1043,6 +1085,14 @@ struct TodayListDetailView: View
                 }
             }
 
+            .onGeometryChange(for: CGFloat.self)
+            {
+                $0.safeAreaInsets.bottom
+            }
+            action:
+            {
+                dayBottomSafeInset = $0
+            }
             .onChange(of: focusedList.map
                 {
                     ListCheckmarkReset.values(in: $0)

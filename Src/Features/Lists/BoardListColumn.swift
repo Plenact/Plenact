@@ -79,6 +79,7 @@ struct KanbanListView: View
     let onArchiveList:         ()    -> Void    /* The action invoked to archive the entire list            */
     let onDeleteList:          ()    -> Void    /* Confirmed removal of this list and its retained content  */
     let onDeleteCard:          (Int) -> Void    /* The action invoked to delete a card at a specified index */
+    var onSwipeDelete: ((KanbanCard) -> Void)? = nil
     /// Requests archival of an active card by identity
     let onArchiveCard: (Int)        -> Void     /* Archives an active card by identity                */
     let onUpdateCard:  (KanbanCard) -> Void     /* The action invoked to save edited card information */
@@ -810,10 +811,20 @@ struct KanbanListView: View
                     .modifier(
                         ListItemSwipeDelete(
                             enabled: editMode != .active,
+                            allowsFullSwipe: onSwipeDelete != nil,
                             onRequest:
                             {
-                                deletingCard = card
-                            }))
+                                if let onSwipeDelete
+                                {
+                                    onSwipeDelete(card)
+                                }
+                                else
+                                {
+                                    deletingCard = card
+                                }
+                            }
+                        )
+                    )
                 }
             }
             .onMove

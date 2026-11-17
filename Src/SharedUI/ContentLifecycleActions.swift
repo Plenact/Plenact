@@ -16,26 +16,16 @@ import UniformTypeIdentifiers
 /// @section    Purpose
 ///     Keep Search, labels, Calendar, and list pickers from owning duplicate content
 ///
-/// Reveal Delete without UIKit's optimistic destructive-row removal. The owning
-/// screen handles confirmation or Undo and performs its checked deletion
+/// Installs the native trailing Delete action. The owner saves the deletion.
 struct ListItemSwipeDelete: ViewModifier
 {
-    let enabled:   Bool                 /* Feature availability flag */
-    let onRequest: () -> Void           /* Request callback          */
+    let enabled: Bool
+    let allowsFullSwipe: Bool
+    let onRequest: () -> Void
 
-
-    ///
-    /// @fcn        ListItemSwipeDelete.body
-    /// @brief      Install an explicit trailing swipe-delete action
-    /// @details    Requires tapping the revealed Delete action
-    ///
-    /// @param[in]  content  View content to decorate with this modifier
-    ///
-    /// @return     (some View) install an explicit trailing swipe-delete action
-    ///
     func body(content: Content) -> some View
     {
-        content.swipeActions(edge: .trailing, allowsFullSwipe: false)
+        content.swipeActions(edge: .trailing, allowsFullSwipe: allowsFullSwipe)
         {
             if enabled
             {
@@ -134,6 +124,196 @@ struct ContentLifecycleActions: ViewModifier
             Text(
                 "Permanently deletes this \(kind.lowercased()) and its contents and bookmarks. This cannot be undone. Other retained copies are unchanged."
             )
+        }
+    }
+}
+
+
+/// Retains deleted list items and their media for newest-first Undo.
+struct ListSwipeUndo
+{
+    private(set) var deletions: [Deletion] = []
+
+    struct Deletion
+    {
+        let token = UUID()
+        let card: KanbanCard
+        let listID: Int
+        let index: Int
+        let previousID: Int?
+        let nextID: Int?
+        let wasBookmarked: Bool
+        let media: Set<String>
+        let cleanMedia: ((Set<String>) -> Void)?
+
+        func restoring(in lists: [KanbanList], bookmarks saved: Set<Int>) -> ([KanbanList], Set<Int>)?
+        {
+            var snapshot = lists
+            guard let listIndex = snapshot.firstIndex(where: { $0.id == self.listID && !$0.isArchived }),
+                  !snapshot.contains(where: { $0.allCards.contains(where: { $0.id == self.card.id }) })
+            else
+            {
+                return nil
+            }
+
+            let cards = snapshot[listIndex].cards
+            let next = cards.firstIndex { $0.id == self.nextID }
+            let previous = cards.firstIndex { $0.id == self.previousID }
+            let index = next ?? previous.map { $0 + 1 } ?? min(self.index, cards.count)
+            var card = self.card
+            card.listTitle = snapshot[listIndex].title
+            snapshot[listIndex].cards.insert(card, at: index)
+
+            var bookmarks = saved
+            if self.wasBookmarked
+            {
+                bookmarks.insert(card.id)
+            }
+
+            return (snapshot, bookmarks)
+        }
+    }
+
+    mutating func delete(_ card: KanbanCard, from list: KanbanList, bookmarks: Set<Int>,
+                         reduceMotion: Bool, cleanMedia: ((Set<String>) -> Void)?, save: (Int) -> Bool)
+    {
+        let cards = list.cards
+        guard let index = cards.firstIndex(where: { $0.id == card.id && $0.createdAt == card.createdAt })
+        else { return }
+
+        let current = cards[index]
+        let deletion = Deletion(
+            card: current, listID: list.id, index: index,
+            previousID: index > 0 ? cards[index - 1].id : nil,
+            nextID: index + 1 < cards.count ? cards[index + 1].id : nil,
+            wasBookmarked: bookmarks.contains(card.id),
+            media: Set((current.attachments ?? []).flatMap(\.storedFileNames)),
+            cleanMedia: cleanMedia
+        )
+
+        CardAttachmentStore.retainForUndo(deletion.media, token: deletion.token)
+        // Animate the saved List mutation so UIKit can close the row gap with the swipe.
+        let deleted = withAnimation(reduceMotion ? nil : .smooth(duration: 0.35))
+        {
+            save(card.id)
+        }
+        guard deleted else
+        {
+            CardAttachmentStore.releaseUndoMedia(token: deletion.token)
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.2))
+        {
+            deletions.append(deletion)
+        }
+    }
+
+    @MainActor
+    mutating func undo(_ deletion: Deletion, restore: (Deletion) -> Bool)
+    {
+        guard deletions.last?.token == deletion.token else { return }
+        guard restore(deletion) else
+        {
+            DatabaseActivity.shared.report("Could not undo the deletion. Your current content has been retained.")
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.2))
+        {
+            _ = deletions.popLast()
+        }
+        CardAttachmentStore.releaseUndoMedia(token: deletion.token)
+    }
+
+    mutating func expire()
+    {
+        let expired = deletions
+        guard !expired.isEmpty else { return }
+
+        withAnimation(.easeOut(duration: 0.2))
+        {
+            deletions.removeAll()
+        }
+        for deletion in expired
+        {
+            CardAttachmentStore.releaseUndoMedia(token: deletion.token)
+            deletion.cleanMedia?(deletion.media)
+        }
+    }
+
+}
+
+struct ListSwipeUndoBanner: ViewModifier
+{
+    @Binding var history: ListSwipeUndo
+    let accessibilityID: String
+    var clearsWorkspaceToolbar = false
+    let restore: (ListSwipeUndo.Deletion) -> Bool
+    @Environment(\.workspaceBottomBarHeight) private var toolbarHeight
+    @Environment(\.workspaceBottomBarTopInset) private var toolbarTopInset
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View
+    {
+        content
+            .overlay(alignment: .bottom)
+            {
+                if clearsWorkspaceToolbar, toolbarHeight > 0, !history.deletions.isEmpty
+                {
+                    GeometryReader
+                    {
+                        geometry in
+                        swipeDeletionNotice
+                            .padding(.bottom, max(0, toolbarHeight - geometry.safeAreaInsets.bottom) + toolbarTopInset + 12)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                    }
+                }
+                else
+                {
+                    swipeDeletionNotice
+                }
+            }
+            .task(id: history.deletions.last?.token)
+            {
+                guard let token = history.deletions.last?.token else { return }
+                do { try await Task.sleep(for: .seconds(5)) }
+                catch { return }
+
+                guard !Task.isCancelled, history.deletions.last?.token == token else { return }
+                history.expire()
+            }
+    }
+
+    @ViewBuilder
+    private var swipeDeletionNotice: some View
+    {
+        if let deletion = history.deletions.last
+        {
+            HStack(spacing: 16)
+            {
+                Text("\(deletion.card.presentation.title) deleted")
+                    .font(.subheadline.weight(.medium))
+                Spacer(minLength: 8)
+                Button("Undo")
+                {
+                    history.undo(deletion, restore: restore)
+                }
+                .font(.headline)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier(accessibilityID)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(alignment: .top)
+            {
+                Rectangle()
+                    .fill(.regularMaterial)
+                    .ignoresSafeArea(.container, edges: .bottom)
+            }
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+            .id(deletion.token)
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         }
     }
 }

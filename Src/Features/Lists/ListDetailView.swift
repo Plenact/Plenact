@@ -116,22 +116,10 @@ struct TodayListDetailView: View
     @State private var dayBottomSafeInset: CGFloat = 0
     @State private var cardViewport:     CGRect        = .zero                          /* Card viewport                                     */
 
-    @State private var swipeDeletion: SwipeDeletion?
+    @State private var swipeUndo = ListSwipeUndo()
     @GestureState private var swipeOffset: (id: Int, x: CGFloat)?
     @State private var slidingOutCardID: Int?
 
-    private struct SwipeDeletion
-    {
-        let token = UUID()
-        let card: KanbanCard
-        let listID: Int
-        let index: Int
-        let previousID: Int?
-        let nextID: Int?
-        let wasBookmarked: Bool
-        let media: Set<String>
-        let cleanMedia: ((Set<String>) -> Void)?
-    }
     @State private var draggedCardID:    Int?                   /* Dragged card ID    */
     @State private var cardDragLocation: CGPoint?               /* Card drag location */
     @Environment(\.scenePhase) private var scenePhase           /* Scene phase        */
@@ -1110,27 +1098,15 @@ struct TodayListDetailView: View
 
                 checkmarkReset = nil
                 slidingOutCardID = nil
-                finishSwipeDeletion()
+                swipeUndo.expire()
             }
             .onDisappear
             {
                 slidingOutCardID = nil
                 checkmarkReset = nil
-                finishSwipeDeletion()
+                swipeUndo.expire()
             }
-            .overlay(alignment: .bottom)
-            {
-                swipeDeletionNotice
-            }
-            .task(id: swipeDeletion?.token)
-            {
-                guard let token = swipeDeletion?.token else { return }
-                do { try await Task.sleep(for: .seconds(5)) }
-                catch { return }
-
-                guard !Task.isCancelled, swipeDeletion?.token == token else { return }
-                finishSwipeDeletion()
-            }
+            .modifier(ListSwipeUndoBanner(history: $swipeUndo, accessibilityID: "day.item.delete.undo", restore: restoreSwipeDeletion))
             .modifier(
                 ListCheckmarkResetConfirmation(
                     list: focusedList, session: $checkmarkReset,
@@ -1683,37 +1659,6 @@ struct TodayListDetailView: View
     }
 
 
-    @ViewBuilder
-    private var swipeDeletionNotice: some View
-    {
-        if let deletion = swipeDeletion
-        {
-            HStack(spacing: 16)
-            {
-                Text("\(deletion.card.presentation.title) deleted")
-                    .font(.subheadline.weight(.medium))
-                Spacer(minLength: 8)
-                Button("Undo")
-                {
-                    undoSwipeDeletion(deletion)
-                }
-                .font(.headline)
-                .frame(minHeight: 44)
-                .accessibilityIdentifier("day.item.delete.undo")
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(alignment: .top)
-            {
-                Rectangle()
-                    .fill(.regularMaterial)
-                    .ignoresSafeArea(.container, edges: .bottom)
-            }
-            .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
-            .transition(reduceSummaryMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-        }
-    }
-
     private func canSwipeDelete(_ drag: DragGesture.Value) -> Bool
     {
         editMode != .active && draggedCardID == nil && slidingOutCardID == nil
@@ -1745,95 +1690,24 @@ struct TodayListDetailView: View
 
     private func swipeDelete(_ card: KanbanCard)
     {
-        guard let cards = focusedList?.cards,
-              let index = cards.firstIndex(where: { $0.id == card.id && $0.createdAt == card.createdAt })
-        else { return }
-
-        let current = cards[index]
-        let deletion = SwipeDeletion(
-            card: current, listID: listID, index: index,
-            previousID: index > 0 ? cards[index - 1].id : nil,
-            nextID: index + 1 < cards.count ? cards[index + 1].id : nil,
-            wasBookmarked: savedCardIDs.contains(card.id),
-            media: Set((current.attachments ?? []).flatMap(\.storedFileNames)),
-            cleanMedia: planningCalendarAccess?.cleanDeletedMedia
-        )
-
-        CardAttachmentStore.retainForUndo(deletion.media, token: deletion.token)
-        // Animate the saved List mutation so UIKit can close the row gap with the swipe.
-        let deleted = withAnimation(reduceSummaryMotion ? nil : .smooth(duration: 0.35))
-        {
-            deleteCard(card.id)
-        }
-        guard deleted else
-        {
-            CardAttachmentStore.releaseUndoMedia(token: deletion.token)
-            return
-        }
-
-        finishSwipeDeletion()
-        withAnimation(.easeOut(duration: 0.2))
-        {
-            swipeDeletion = deletion
-        }
+        guard let focusedList else { return }
+        swipeUndo.delete(card, from: focusedList, bookmarks: savedCardIDs, reduceMotion: reduceSummaryMotion,
+                         cleanMedia: planningCalendarAccess?.cleanDeletedMedia, save: deleteCard)
     }
 
-    private func undoSwipeDeletion(_ deletion: SwipeDeletion)
+    private func restoreSwipeDeletion(_ deletion: ListSwipeUndo.Deletion) -> Bool
     {
-        guard swipeDeletion?.token == deletion.token else { return }
-
-        var snapshot = lists + reservedLists
-        guard let listIndex = snapshot.firstIndex(where: { $0.id == deletion.listID && !$0.isArchived }),
-              !snapshot.contains(where: { $0.allCards.contains(where: { $0.id == deletion.card.id }) })
-        else
-        {
-            DatabaseActivity.shared.report("Could not undo the deletion because the list or item changed.")
-            return
-        }
-
-        let cards = snapshot[listIndex].cards
-        let next = cards.firstIndex { $0.id == deletion.nextID }
-        let previous = cards.firstIndex { $0.id == deletion.previousID }
-        let index = next ?? previous.map { $0 + 1 } ?? min(deletion.index, cards.count)
-        var card = deletion.card
-        card.listTitle = snapshot[listIndex].title
-        snapshot[listIndex].cards.insert(card, at: index)
-
-        var bookmarks = savedCardIDs
-        if deletion.wasBookmarked
-        {
-            bookmarks.insert(card.id)
-        }
+        guard let (snapshot, bookmarks) = deletion.restoring(in: lists + reservedLists, bookmarks: savedCardIDs)
+        else { return false }
 
         if let onRestoreDeletedCard
         {
-            guard onRestoreDeletedCard(snapshot, bookmarks) else
-            {
-                DatabaseActivity.shared.report("Could not undo the deletion. Your current content has been retained.")
-                return
-            }
-        }
-        else
-        {
-            lists = snapshot.filter { !$0.isArchived }
-            savedCardIDs = bookmarks
+            return onRestoreDeletedCard(snapshot, bookmarks)
         }
 
-        finishSwipeDeletion(restored: true)
-    }
-
-    private func finishSwipeDeletion(restored: Bool = false)
-    {
-        guard let deletion = swipeDeletion else { return }
-        withAnimation(.easeOut(duration: 0.2))
-        {
-            swipeDeletion = nil
-        }
-        CardAttachmentStore.releaseUndoMedia(token: deletion.token)
-        if !restored
-        {
-            deletion.cleanMedia?(deletion.media)
-        }
+        lists = snapshot.filter { !$0.isArchived }
+        savedCardIDs = bookmarks
+        return true
     }
 
 

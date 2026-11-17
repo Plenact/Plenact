@@ -16,7 +16,7 @@ import Foundation
 ///
 enum PersonalListExample: String, CaseIterable, Identifiable
 {
-    case onTheTable = "On the Table"            /// FIX THREE
+    case onTheTable = "On the Table"            /// FIX THREE!
     case inTheQueue = "In the Queue"
     case scheduled = "Scheduled"
     case shopping = "Shopping"

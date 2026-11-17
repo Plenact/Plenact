@@ -323,6 +323,24 @@ struct ContentView: View
         boardZoomScale * (draggedListID != nil && !reducesMotion ? (isPanoramic ? 0.94 : 0.72) : 1)
     }
 
+    @State private var swipeUndo = ListSwipeUndo()
+    @Environment(\.accessibilityReduceMotion) private var reduceSwipeMotion
+
+    private func swipeDelete(_ card: KanbanCard, from listID: Int)
+    {
+        guard let list = lists.first(where: { $0.id == listID }) else { return }
+        swipeUndo.delete(card, from: list, bookmarks: savedCardIDs, reduceMotion: reduceSwipeMotion,
+                         cleanMedia: planningCalendarAccess?.cleanDeletedMedia, save: deleteCard)
+    }
+
+    private func restoreSwipeDeletion(_ deletion: ListSwipeUndo.Deletion) -> Bool
+    {
+        guard let (snapshot, bookmarks) = deletion.restoring(in: lists + archivedLists, bookmarks: savedCardIDs)
+        else { return false }
+
+        return commitDeletion(snapshot, bookmarks: bookmarks)
+    }
+
     @State var draggedCardID:    Int?                   /* Card identity participating in the native drag session    */
     @State var cardDragLocation: CGPoint?               /* Current card-drag pointer in global coordinates           */
     @State var cardDragToken = UUID().uuidString        /* Per-Board token rejecting drags from other Board surfaces */
@@ -831,6 +849,10 @@ struct ContentView: View
                                                         {
                                                             cardID in
                                                             deleteCard(cardID)
+                                                        },
+                                                        onSwipeDelete:
+                                                        {
+                                                            swipeDelete($0, from: list.id)
                                                         },
                                                         onArchiveCard: archiveCard,
                                                         onUpdateCard: updateCard,
@@ -1382,6 +1404,8 @@ struct ContentView: View
                 }
             }
 
+            .modifier(ListSwipeUndoBanner(history: $swipeUndo, accessibilityID: "board.item.delete.undo",
+                                          clearsWorkspaceToolbar: true, restore: restoreSwipeDeletion))
             .toolbar(.hidden, for: .navigationBar)
             .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect())
             {
@@ -1450,6 +1474,7 @@ struct ContentView: View
                 list: isStandaloneListView ? lists.first?.appearance : nil))
             .onDisappear
             {
+                swipeUndo.expire()
                 persistViewport()
             }
             .onChange(of: navigationPath.count)

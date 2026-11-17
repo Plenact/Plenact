@@ -1,0 +1,20 @@
+{
+  "protocol_version": "1.0",
+  "device_id": "10000000-0000-4000-8000-000000000001",
+  "platform": "ios",
+  "application_version": "fixture-build",
+  "read_model_versions": [
+    "1.0"
+  ],
+  "write_model_versions": [
+    "1.0"
+  ],
+  "read_record_types": [
+    "content_selection",
+    "user_preferences"
+  ],
+  "write_record_types": [
+    "content_selection",
+    "user_preferences"
+  ]
+}

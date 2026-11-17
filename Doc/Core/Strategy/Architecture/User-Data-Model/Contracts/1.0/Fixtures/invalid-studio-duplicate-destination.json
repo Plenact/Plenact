@@ -1,0 +1,61 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "studio_settings",
+  "id": "40000000-0000-4000-8000-000000000005",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "account_id": "30000000-0000-4000-8000-000000000001",
+    "views": [
+      {
+        "destination": "today",
+        "surface": {
+          "material": "photo",
+          "color": "EDE3CA",
+          "secondary_color": "C4DADB",
+          "strength": 0.65,
+          "readability": 0.55,
+          "vertical_position": 0.5,
+          "zoom": 1.25,
+          "shows_in_previews": true,
+          "photo_asset_id": "20000000-0000-4000-8000-000000000020",
+          "remote_photo": null
+        }
+      },
+      {
+        "destination": "today",
+        "surface": {
+          "material": "photo",
+          "color": "EDE3CA",
+          "secondary_color": "C4DADB",
+          "strength": 0.65,
+          "readability": 0.55,
+          "vertical_position": 0.5,
+          "zoom": 1.25,
+          "shows_in_previews": true,
+          "photo_asset_id": "20000000-0000-4000-8000-000000000020",
+          "remote_photo": null
+        }
+      }
+    ],
+    "default_card_surface": null,
+    "default_note_surface": {
+      "material": "photo",
+      "color": "EDE3CA",
+      "secondary_color": "C4DADB",
+      "strength": 0.65,
+      "readability": 0.55,
+      "vertical_position": 0.5,
+      "zoom": 1.25,
+      "shows_in_previews": true,
+      "photo_asset_id": "20000000-0000-4000-8000-000000000020",
+      "remote_photo": null
+    },
+    "varies_new_surfaces": false,
+    "varies_new_headers": true,
+    "palette": [
+      "EDE3CA",
+      "DDE8D8"
+    ]
+  }
+}

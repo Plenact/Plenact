@@ -1,0 +1,53 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "weekly_review",
+  "id": "30000000-0000-4000-8000-000000000006",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "source_review_key": "synthetic-week:2026-10-19",
+    "start_date": "2026-10-19",
+    "time_zone": "America/Chicago",
+    "first_weekday": 2,
+    "step": 1,
+    "highlights": "",
+    "learned": "",
+    "direction": "",
+    "constraints": "",
+    "risks": "",
+    "priorities": [
+      {
+        "source_collection_id": "20000000-0000-4000-8000-000000000002",
+        "card_id": "20000000-0000-4000-8000-000000000004",
+        "title": "Historical title — preserved",
+        "source_location": "Week · Saturday",
+        "source_created_at_utc": null
+      }
+    ],
+    "decisions": [
+      {
+        "id": "30000000-0000-4000-8000-000000000020",
+        "source": {
+          "source_collection_id": "20000000-0000-4000-8000-000000000002",
+          "card_id": "20000000-0000-4000-8000-000000000004",
+          "title": "Historical title — preserved",
+          "source_location": "Week · Saturday",
+          "source_created_at_utc": null
+        },
+        "result": {
+          "source_collection_id": "20000000-0000-4000-8000-000000000002",
+          "card_id": "20000000-0000-4000-8000-000000000090",
+          "title": "Historical unavailable item",
+          "source_location": "Week · Saturday",
+          "source_created_at_utc": null
+        },
+        "action": {
+          "kind": "keep"
+        },
+        "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+      }
+    ],
+    "updated_at_utc": "2026-10-24T12:00:00.000Z",
+    "completed_at_utc": null
+  }
+}

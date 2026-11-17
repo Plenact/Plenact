@@ -1,0 +1,272 @@
+{
+  "protocol_version": "1.0",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "epoch": "70000000-0000-4000-8000-000000000001",
+  "after_sequence": "0",
+  "through_sequence": "2",
+  "records": [
+    {
+      "user_data_model_version": "1.0",
+      "workspace_id": "20000000-0000-4000-8000-000000000001",
+      "record_type": "card",
+      "record_id": "20000000-0000-4000-8000-000000000004",
+      "epoch": "70000000-0000-4000-8000-000000000001",
+      "revision": "2",
+      "change_sequence": "2",
+      "stored_at_utc": "2026-10-24T12:00:00.000Z",
+      "stored_by_account_id": "70000000-0000-4000-8000-000000000002",
+      "deleted": true,
+      "document": null,
+      "asset_content": null
+    },
+    {
+      "user_data_model_version": "1.0",
+      "workspace_id": "20000000-0000-4000-8000-000000000001",
+      "record_type": "card",
+      "record_id": "20000000-0000-4000-8000-000000000004",
+      "epoch": "70000000-0000-4000-8000-000000000001",
+      "revision": "1",
+      "change_sequence": "1",
+      "stored_at_utc": "2026-10-24T12:00:00.000Z",
+      "stored_by_account_id": "70000000-0000-4000-8000-000000000002",
+      "deleted": false,
+      "document": {
+        "user_data_model_version": "1.0",
+        "payload_schema_version": 1,
+        "record_type": "card",
+        "id": "20000000-0000-4000-8000-000000000004",
+        "workspace_id": "20000000-0000-4000-8000-000000000001",
+        "payload": {
+          "list_id": "20000000-0000-4000-8000-000000000003",
+          "archived": false,
+          "title": "Gym — synthetic sample",
+          "is_divider": false,
+          "completed": false,
+          "editing_locked": false,
+          "presentation": "card",
+          "display_format": null,
+          "description_override": "",
+          "subtitle_override": null,
+          "location": "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902",
+          "start": {
+            "kind": "date_and_time",
+            "local_date_time": "2026-10-24T07:00:00.000",
+            "time_zone": "America/Chicago",
+            "tzdb_version": "2025b",
+            "utc_instant": "2026-10-24T12:00:00.000Z",
+            "utc_offset": "-05:00",
+            "occurrence": "unique"
+          },
+          "start_kind": "date_and_time",
+          "due": {
+            "kind": "date",
+            "date": "2026-10-24"
+          },
+          "due_kind": "date",
+          "shows_due_date_in_list": true,
+          "source_created_at_utc": null,
+          "checklists": [
+            {
+              "id": "20000000-0000-4000-8000-000000000040",
+              "title": "All four action variants",
+              "items": [
+                {
+                  "id": "20000000-0000-4000-8000-000000000041",
+                  "title": "Checklist action",
+                  "completed": false,
+                  "content": {
+                    "kind": "standard"
+                  },
+                  "retained_detail": {
+                    "id": "20000000-0000-4000-8000-000000000032",
+                    "description": "Inactive detail retained on type change",
+                    "checklists": [],
+                    "comments": [
+                      {
+                        "id": "20000000-0000-4000-8000-000000000030",
+                        "author": "Synthetic author",
+                        "body": "Keep this text: café 🌿",
+                        "source_created_at_utc": "2026-10-24T12:00:00.000Z",
+                        "author_account_id": null
+                      }
+                    ]
+                  },
+                  "retained_card_id": "20000000-0000-4000-8000-000000000090",
+                  "retained_url": "https://example.com/retained",
+                  "linked_collection_id": "20000000-0000-4000-8000-000000000002"
+                },
+                {
+                  "id": "20000000-0000-4000-8000-000000000042",
+                  "title": "Checklist action",
+                  "completed": false,
+                  "content": {
+                    "kind": "linked_card",
+                    "card_id": "20000000-0000-4000-8000-000000000090"
+                  },
+                  "retained_detail": null,
+                  "retained_card_id": null,
+                  "retained_url": null,
+                  "linked_collection_id": null
+                },
+                {
+                  "id": "20000000-0000-4000-8000-000000000043",
+                  "title": "Checklist action",
+                  "completed": false,
+                  "content": {
+                    "kind": "action_detail",
+                    "detail": {
+                      "id": "20000000-0000-4000-8000-000000000045",
+                      "description": "Editable detail",
+                      "checklists": [
+                        {
+                          "id": "20000000-0000-4000-8000-000000000046",
+                          "title": "Nested",
+                          "items": [
+                            {
+                              "id": "20000000-0000-4000-8000-000000000047",
+                              "title": "Checklist action",
+                              "completed": false,
+                              "content": {
+                                "kind": "standard"
+                              },
+                              "retained_detail": null,
+                              "retained_card_id": null,
+                              "retained_url": null,
+                              "linked_collection_id": null
+                            }
+                          ]
+                        }
+                      ],
+                      "comments": []
+                    }
+                  },
+                  "retained_detail": null,
+                  "retained_card_id": null,
+                  "retained_url": null,
+                  "linked_collection_id": null
+                },
+                {
+                  "id": "20000000-0000-4000-8000-000000000044",
+                  "title": "Checklist action",
+                  "completed": false,
+                  "content": {
+                    "kind": "web_link",
+                    "url": "https://example.com/path?q=hello"
+                  },
+                  "retained_detail": null,
+                  "retained_card_id": null,
+                  "retained_url": null,
+                  "linked_collection_id": null
+                }
+              ]
+            }
+          ],
+          "members": [
+            {
+              "id": "20000000-0000-4000-8000-000000000050",
+              "kind": "manual",
+              "user_id": null,
+              "display_name": "Manual person",
+              "identity_scope": "manual"
+            }
+          ],
+          "label_ids": [
+            "20000000-0000-4000-8000-000000000091"
+          ],
+          "comments": [],
+          "reactions": [
+            {
+              "id": "20000000-0000-4000-8000-000000000051",
+              "emoji": "🌿",
+              "source_author_id": "20000000-0000-4000-8000-000000000052",
+              "source_created_at_utc": "2026-10-24T12:00:00.000Z",
+              "author_account_id": null
+            }
+          ],
+          "shows_reactions_in_previews": false,
+          "attachments": [
+            {
+              "id": "20000000-0000-4000-8000-000000000021",
+              "kind": "photo",
+              "asset_id": "20000000-0000-4000-8000-000000000020",
+              "url": null,
+              "source_added_at_utc": "2026-10-24T12:00:00.000Z",
+              "example_image": null,
+              "drawing_asset_id": "20000000-0000-4000-8000-000000000022",
+              "caption": "Editable original retained"
+            }
+          ],
+          "cover_attachment_id": "20000000-0000-4000-8000-000000000021",
+          "dismissed_activity_ids": [
+            "legacy-generated-item"
+          ],
+          "appearance": {
+            "accent": null,
+            "icon": null,
+            "background": null,
+            "list_background": null,
+            "card_background": null,
+            "card_detail": null,
+            "card_title_color": null,
+            "card_text_color": null,
+            "add_item_text_color": null,
+            "studio_surface": {
+              "material": "photo",
+              "color": "EDE3CA",
+              "secondary_color": "C4DADB",
+              "strength": 0.65,
+              "readability": 0.55,
+              "vertical_position": 0.5,
+              "zoom": 1.25,
+              "shows_in_previews": true,
+              "photo_asset_id": "20000000-0000-4000-8000-000000000020",
+              "remote_photo": null
+            },
+            "studio_card_surface": null,
+            "subtitle_italic": false,
+            "section_collapsed": null,
+            "hide_empty_subtitle": null,
+            "list_view_mode": null,
+            "icon_color": null,
+            "shows_icon_in_header": null,
+            "list_background_opacity": null
+          },
+          "section_layout": {
+            "order": [
+              "details",
+              "description",
+              "checklists",
+              "activity",
+              "media",
+              "quick_actions"
+            ],
+            "hidden": [
+              "activity"
+            ]
+          },
+          "edit_history": [
+            {
+              "id": "20000000-0000-4000-8000-000000000060",
+              "source_timestamp_utc": "2026-10-24T12:00:00.000Z",
+              "changes": [
+                {
+                  "field": "word",
+                  "previous_value": {
+                    "encoding": "base64",
+                    "source_format": "swift_codable_json",
+                    "source_model_version": "local_legacy",
+                    "data": "Ikd5bSI="
+                  },
+                  "new_value": null
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "asset_content": null
+    }
+  ],
+  "has_more": false,
+  "next_cursor": "synthetic-next-cursor"
+}

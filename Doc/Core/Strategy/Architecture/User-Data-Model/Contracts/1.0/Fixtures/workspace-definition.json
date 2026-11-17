@@ -1,0 +1,13 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "workspace",
+  "id": "20000000-0000-4000-8000-000000000001",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "owner_account_id": "30000000-0000-4000-8000-000000000001",
+    "display_name": "Synthetic workspace",
+    "calendar_system": "gregorian",
+    "state": "active"
+  }
+}

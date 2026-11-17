@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:studio-artwork",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "studio_artwork"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "surface": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/surface"
+        },
+        "header": {
+          "anyOf": [
+            {
+              "enum": [
+                "teal",
+                "blue",
+                "purple",
+                "rose",
+                "orange",
+                "green",
+                "coral",
+                "graphite"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "italic_subtitle": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title_color": {
+          "anyOf": [
+            {
+              "enum": [
+                "graphite",
+                "blue",
+                "teal",
+                "green",
+                "plum",
+                "rose",
+                "amber"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "text_color": {
+          "anyOf": [
+            {
+              "enum": [
+                "graphite",
+                "blue",
+                "teal",
+                "green",
+                "plum",
+                "rose",
+                "amber"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "surface",
+        "header",
+        "italic_subtitle",
+        "title_color",
+        "text_color"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

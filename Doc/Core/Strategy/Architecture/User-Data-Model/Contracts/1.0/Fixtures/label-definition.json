@@ -1,0 +1,12 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "label",
+  "id": "20000000-0000-4000-8000-000000000091",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "name": "Example label",
+    "category_id": "40000000-0000-4000-8000-000000000003",
+    "color": "green"
+  }
+}

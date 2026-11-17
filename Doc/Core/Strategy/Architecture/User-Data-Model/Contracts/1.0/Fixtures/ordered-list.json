@@ -1,0 +1,21 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "list",
+  "id": "20000000-0000-4000-8000-000000000003",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "collection_id": "20000000-0000-4000-8000-000000000002",
+    "title": "Today",
+    "subtitle_override": "",
+    "archived": false,
+    "default_item_presentation": null,
+    "appearance": null,
+    "card_ids": [
+      "20000000-0000-4000-8000-000000000004"
+    ],
+    "archived_card_ids": [
+      "20000000-0000-4000-8000-000000000005"
+    ]
+  }
+}

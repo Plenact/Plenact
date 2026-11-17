@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:read-only-capture",
+  "type": "object",
+  "properties": {
+    "export_format": {
+      "const": "plenact.read-only-capture"
+    },
+    "capture_format_version": {
+      "const": 1
+    },
+    "target_user_data_model_version": {
+      "const": "1.0"
+    },
+    "portable_conversion_complete": {
+      "const": false
+    },
+    "status": {
+      "enum": [
+        "captured",
+        "needs_review"
+      ]
+    },
+    "source_preference_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_preservation_verified": {
+      "const": true
+    },
+    "stores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value_file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "classification": {
+            "enum": [
+              "user_data",
+              "device_state",
+              "recovery"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "value_file",
+          "sha256",
+          "classification"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_relative_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blob_file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "byte_length": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)$"
+          }
+        },
+        "required": [
+          "source_relative_path",
+          "blob_file",
+          "sha256",
+          "byte_length"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "excluded_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "store_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_relative_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "store_key",
+          "source_relative_path"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "export_format",
+    "capture_format_version",
+    "target_user_data_model_version",
+    "portable_conversion_complete",
+    "status",
+    "source_preference_sha256",
+    "source_preservation_verified",
+    "stores",
+    "files",
+    "excluded_keys",
+    "diagnostics"
+  ],
+  "additionalProperties": false
+}

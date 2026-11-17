@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:calendar-week",
+  "title": "Week metadata referencing a separately defined Collection",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "calendar_week"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "start_date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "format": "date"
+        },
+        "collection_id": {
+          "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+        },
+        "first_weekday": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "time_zone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "time_zone_source": {
+          "enum": [
+            "source_context",
+            "template",
+            "user_confirmed"
+          ]
+        },
+        "day_lists": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                "format": "date"
+              },
+              "list_id": {
+                "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+              }
+            },
+            "required": [
+              "date",
+              "list_id"
+            ],
+            "additionalProperties": false
+          },
+          "uniqueItems": true
+        },
+        "explicitly_saved": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "start_date",
+        "collection_id",
+        "first_weekday",
+        "time_zone",
+        "time_zone_source",
+        "day_lists",
+        "explicitly_saved"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

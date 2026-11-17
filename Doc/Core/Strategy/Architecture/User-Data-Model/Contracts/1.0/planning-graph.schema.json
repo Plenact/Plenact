@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:planning-graph",
+  "title": "Calendar/planning/media metadata graph slice; not a sync request or complete backup",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "account_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "content": {
+      "$ref": "urn:plenact:user-data:1.0:content-graph"
+    },
+    "calendar_indexes": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:calendar-index"
+      },
+      "maxItems": 1
+    },
+    "weeks": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:calendar-week"
+      }
+    },
+    "daily_plans": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:daily-plan"
+      }
+    },
+    "weekly_reviews": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:weekly-review"
+      }
+    },
+    "periodic_reviews": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:periodic-review"
+      }
+    },
+    "templates": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:planning-template"
+      }
+    },
+    "template_libraries": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:template-library"
+      },
+      "maxItems": 1
+    },
+    "review_rhythms": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:review-rhythm"
+      },
+      "maxItems": 1
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:plenact:user-data:1.0:asset"
+      }
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "workspace_id",
+    "account_id",
+    "content",
+    "calendar_indexes",
+    "weeks",
+    "daily_plans",
+    "weekly_reviews",
+    "periodic_reviews",
+    "templates",
+    "template_libraries",
+    "review_rhythms",
+    "assets"
+  ],
+  "additionalProperties": false
+}

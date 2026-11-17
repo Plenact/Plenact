@@ -1,0 +1,13 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "unavailable_reference",
+  "id": "91f65172-bfe8-56cf-b22b-a8273daafceb",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "target_type": "card",
+    "target_id": "20000000-0000-4000-8000-000000000090",
+    "reason": "legacy_unresolved",
+    "display_text": null
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "title": "Client capability offer, not an endpoint",
+  "description": "Array order is irrelevant. No account ownership is established by this message.",
+  "type": "object",
+  "properties": {
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "device_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "platform": {
+      "enum": [
+        "ios",
+        "web",
+        "windows"
+      ]
+    },
+    "application_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "read_model_versions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+      },
+      "uniqueItems": true
+    },
+    "write_model_versions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+      },
+      "uniqueItems": true
+    },
+    "read_record_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      },
+      "uniqueItems": true
+    },
+    "write_record_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,63}$"
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "protocol_version",
+    "device_id",
+    "platform",
+    "application_version",
+    "read_model_versions",
+    "write_model_versions",
+    "read_record_types",
+    "write_record_types"
+  ],
+  "additionalProperties": false,
+  "$id": "urn:plenact:user-data:1.0:client-capabilities"
+}

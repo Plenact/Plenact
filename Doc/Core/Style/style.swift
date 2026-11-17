@@ -1,0 +1,367 @@
+// -------------------------------------------------------------------------------------------------
+// @file       style.swift
+// @brief      Swift style template with disciplined, human-readable engineering headers
+// @details    This file combines modern Swift conventions with a function/header style that matches
+//             the established embedded/system templates used elsewhere in the repository
+//
+// @author     Justin Reina, Firmware/Systems Engineering
+// @created    9/24/26
+// @last rev   10/8/26
+//
+// @notes      This template favors readability, maintainability, and debug support over compactness
+//             The result is intentionally practical for human review and long-term support
+//             File headers use @file, @brief, and @details; add notes and sections when relevant
+//             Keep @author, @created, and @last rev header tags only in App.swift
+//             Function headers use @fcn, @brief, @details, and @return, plus @param for each input
+//             Type headers describe the declaration and include a focused @section Purpose
+//             Include @throws for throwing functions and @pre, @post, or @note where relevant
+//             Add concise trailing /* ... */ descriptors to let/var declarations, including locals
+//             Describe each declaration’s role briefly; target 100 columns including its inline comment
+//             Wrap long initializers when helpful and preserve useful existing descriptions
+//             Omit final periods from prose comment descriptions; retain punctuation within paragraphs
+//             Preserve meaningful abbreviations, URLs, ellipses, code examples, and ! or ? endings
+//             Vertically align = in consecutive let/var declarations at the same indentation
+//             Keep blank lines and intervening statements as alignment-group boundaries
+//             Group independent optional declarations last, separated by a blank line
+//             Preserve initializer dependencies, side-effect order, and synthesized initializer APIs
+//             Leave at least one blank line above and below each stored/local declaration block
+//             Apply this spacing to single declarations and multiline initializers; keep docs attached
+//             Leave at least one blank line above and below consecutive assignment statements too
+//             Keep adjacent writes together, including single writes and compound assignments such as +=
+//             Vertically align both /* and */ markers in consecutive trailing block-comment groups
+//             Use two empty physical lines before class/struct/enum/protocol and function/init definitions
+//             Place those blank lines before doc-comment blocks so comments remain attached
+//             Use blank lines after function/control-flow openings and between logical steps
+//             Put block opening braces on their own lines; expand inline executable blocks
+//             Limit each Swift file to 1,200 source lines, excluding comments and blank or bracket-only lines
+//             Separate fixture setup, operation, and assertion groups with blank lines
+//             Keep related declarations and assertions together; expand dense one-line bodies
+//             Align named argument values to a common column in multiline calls, preserving indentation
+//
+// @section    Opens
+//      none current
+//
+// @section    Legal Disclaimer
+//      Company confidential and for template/reference use only
+//
+// -------------------------------------------------------------------------------------------------
+
+
+import Foundation
+
+
+// -------------------------------------- MARK: - Metadata -------------------------------------- //
+
+
+///
+/// Application metadata used for project ownership and traceability
+///
+/// This template preserves the disciplined engineering structure of the existing
+/// repository while aligning with modern Swift conventions used in Apple ecosystem apps
+///
+/// @section    Purpose
+///     Centralize project metadata in a single declaration block
+///
+/// @note   Keep this short and consistent across files for easy scanning and support
+///
+enum AppMetadata
+{
+    static let projectName  = "ProjectName"     /* Example project name        */
+    static let organization = "Company Name"    /* Example owning organization */
+    static let author       = "Justin Reina"    /* Example project author      */
+    static let created      = "2026-09-24"      /* Example creation date       */
+    static let lastRevision = "2026-09-24"      /* Example revision date       */
+}
+
+
+// -------------------------------------- MARK: - Errors ---------------------------------------- //
+
+
+///
+/// Centralized domain errors for app-level operations
+///
+/// @section    Purpose
+///     Standardize error semantics for logging, UI feedback, and diagnostics
+///
+/// @note   Keep the error set small and explicit to preserve clarity and supportability
+///
+enum AppError: LocalizedError, Sendable
+{
+    case missingConfiguration           /* Missing required configuration          */
+    case invalidInput(String)           /* Invalid input with associated message   */
+    case networkFailure(String)         /* Network failure with associated message */
+    case unknown                        /* Unknown error                           */
+
+    ///
+    /// @fcn        AppError.errorDescription
+    /// @brief      Exposes a human-readable message for the error case
+    /// @details    Used for UI display and logging. The property remains lightweight and explicit
+    ///
+    /// @return     (String?) localised error description
+    ///
+    /// @pre        self must be a valid enum case
+    /// @post       None
+    ///
+    /// @note   Keep output concise and actionable for support/debug workflows
+    ///
+    var errorDescription: String?       /* Readable failure explanation        */
+    {                                   /* Example localized error description */
+        switch self
+        {
+        case .missingConfiguration:
+            return "Missing required configuration."
+
+        case .invalidInput(let message):        /* Example input-validation message   */
+            return "Invalid input: \(message)"
+
+        case .networkFailure(let message):              /* Example network-failure message    */
+            return "Network request failed: \(message)"
+
+        case .unknown:
+            return "An unknown error has occurred."
+        }
+    }
+}
+
+
+// -------------------------------------- MARK: - Models ---------------------------------------- //
+
+
+///
+/// Simple, value-based model used throughout the app
+///
+/// @section    Purpose
+///     Demonstrate a value-centric model with explicit and inspectable fields
+///
+/// @note   This is intentionally clear and support-oriented rather than over-simplified
+///
+struct Item: Identifiable, Codable, Sendable
+{
+    let id:        UUID         /* Example item identity                   */
+    let title:     String       /* Example display title                   */
+    let detail:    String?      /* Example optional secondary content      */
+    let createdAt: Date         /* Example creation or retrieval timestamp */
+
+
+    ///
+    /// @fcn        Item.init
+    /// @brief      Initialize a model with defaults and explicit values
+    /// @details    Default values keep the data structure practical while preserving readability
+    ///
+    /// @param[in]  id         Unique identifier for the item
+    /// @param[in]  title      Display title
+    /// @param[in]  detail     Optional secondary content
+    /// @param[in]  createdAt  Timestamp for creation or retrieval
+    ///
+    /// @return     (Item) configured instance
+    ///
+    init(id: UUID = UUID(), title: String, detail: String? = nil, createdAt: Date = Date())
+    {
+        self.id        = id             /* Assign the unique identifier for the item      */
+        self.title     = title          /* Assign the display title                       */
+        self.detail    = detail         /* Assign the optional secondary content          */
+        self.createdAt = createdAt      /* Assign the timestamp for creation or retrieval */
+    }
+}
+
+
+// -------------------------------------- MARK: - Protocols ------------------------------------- //
+
+
+///
+/// Abstract boundary for data retrieval
+///
+/// @section    Purpose
+///     Permit dependency injection and keep data access abstract from the UI layer
+///
+protocol ItemServiceProtocol: Sendable
+{
+    ///
+    /// @fcn        ItemServiceProtocol.fetchItems()
+    /// @brief      Retrieve a collection of domain items
+    /// @details    Async contract keeps the UI layer decoupled from implementation details
+    ///
+    /// @return     ([Item]) list of retrieved items
+    ///
+    /// @throws     AppError or lower-level service errors when retrieval fails
+    ///
+    func fetchItems() async throws -> [Item]
+}
+
+
+// -------------------------------------- MARK: - Services -------------------------------------- //
+
+
+///
+/// Concrete implementation of the data-access layer
+///
+/// @section    Purpose
+///     Provide the concrete dependency behind the abstract repository/service contract
+///
+final class ItemService: ItemServiceProtocol
+{
+    ///
+    /// @fcn        ItemService.fetchItems()
+    /// @brief      Return example data for the template
+    /// @details    This sample intentionally keeps the implementation simple and easy to trace
+    ///
+    /// @return     ([Item]) current item collection
+    ///
+    /// @throws     None in the sample implementation, but future versions may throw errors
+    ///
+    func fetchItems() async throws -> [Item]
+    {
+        let now = Date()        /* Example shared item-creation timestamp */
+
+        return [
+            Item(title: "Example Item", detail: "Sample content", createdAt: now),
+            Item(title: "Second Item",  detail: "Another sample", createdAt: now.addingTimeInterval(60))
+        ]
+    }
+}
+
+
+// -------------------------------------- MARK: - View Model ------------------------------------ //
+
+
+///
+/// Presentation state for a screen or feature
+///
+/// @section    Purpose
+///     Separate view state and business interaction from the UI rendering layer
+///
+@MainActor
+final class ItemListViewModel: ObservableObject
+{
+    @Published private(set) var items: [Item] = []              /* Example current item collection */
+    @Published private(set) var isLoading     = false           /* Example loading-state indicator */
+
+    @Published private(set) var errorMessage: String?           /* Example current error message */
+
+    private let service: any ItemServiceProtocol        /* Example injected data-access dependency */
+
+
+    ///
+    /// @fcn        ItemListViewModel.init
+    /// @brief      Create the view model with a concrete service dependency
+    /// @details    Default injection keeps the model easy to test and replace
+    ///
+    /// @param[in]  service  concrete service implementation
+    ///
+    /// @return     (ItemListViewModel) configured instance
+    ///
+    init(service: any ItemServiceProtocol = ItemService())
+    {
+        self.service = service          /* Assign the injected service to the local property */
+    }
+
+
+    ///
+    /// @fcn        ItemListViewModel.loadItems()
+    /// @brief      Load the latest data and update state
+    /// @details    This method drives UI state transitions and captures service failures
+    ///
+    /// @return     (Void) state is updated in-place
+    ///
+    /// @pre        service must be valid and initialized
+    /// @post       items and errorMessage reflect current load result
+    ///
+    func loadItems() async
+    {
+        isLoading    = true     /* Indicate that a loading operation is in progress */
+        errorMessage = nil      /* Clear any existing error message                 */
+
+
+        do
+        {
+            //Fetch attempt
+            items = try await service.fetchItems()
+        }
+        catch let error as AppError
+        {                               /* Example recognized application error */
+            //Handle known application errors
+            errorMessage = error.localizedDescription
+        }
+        catch
+        {
+            //Handle unexpected errors
+            errorMessage = error.localizedDescription
+        }
+
+
+        //Update state
+        isLoading = false
+    }
+}
+
+
+// -------------------------------------- MARK: - Utility --------------------------------------- //
+
+
+///
+/// @fcn        formatDate(_:style:)
+/// @brief      Format a date using the requested date style and a short time
+/// @details    Creates a DateFormatter for this call and applies the supplied date style before
+///             formatting the value
+///
+/// @param[in]  date   Date value to format
+/// @param[in]  style  DateFormatter date style to apply
+///
+/// @return     (String) formatted date and short time
+///
+func formatDate(_ date: Date, style: DateFormatter.Style = .medium) -> String
+{
+    let formatter = DateFormatter()     /* Example date-and-time formatter */
+
+
+    formatter.dateStyle = style         /* Set the desired date style */
+    formatter.timeStyle = .short        /* Set the desired time style */
+
+    return formatter.string(from: date)
+}
+
+
+// -------------------------------------- MARK: - Entry Point ----------------------------------- //
+
+
+///
+/// Example app entry used when integrated into a larger app target
+///
+/// In a real app, this method would be called from the application entry or a scene setup
+///
+/// @section    Purpose
+///     Demonstrate a lightweight app entry pattern for the template
+///
+enum AppEntry
+{
+    ///
+    /// @fcn        AppEntry.run()
+    /// @brief      Launch the sample flow for the template
+    /// @details    This method is intentionally small and easy to follow during debugging
+    ///
+    /// @return     (Void) writes example output to the console
+    ///
+    static func run() async
+    {
+        let viewModel = await ItemListViewModel(service: ItemService())         /* Example item-list presentation state */
+
+        // Load items from the service
+        await viewModel.loadItems()
+
+        // Retrieve the loaded items from the view model
+        let items = await viewModel.items       /* Example loaded item collection */
+
+        // Iterate over the retrieved items and print their details
+        for item in items
+        {
+            print("\(item.title) - \(formatDate(item.createdAt))")
+        }
+
+
+        // Check for any error messages and print them if present
+        if let errorMessage = await viewModel.errorMessage
+        {                                                       /* Example reported loading error */
+            print("Error: \(errorMessage)")
+        }
+    }
+}

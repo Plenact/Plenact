@@ -1,0 +1,207 @@
+# Today's Focus: give shape to your attention
+
+> **Data-model context — October 24, 2026:** The [current application/data plan](../Strategy/Architecture/Application-Data-Plan.md) supersedes older cloud, ownership and cross-device assumptions below. Model 1.0 is published for iOS/web/Windows; runtime synchronization remains unimplemented. Dated feature/design evidence below retains its original scope.
+
+> Plenact helps you give shape to your attention. Today's Focus honors that shape.
+
+## Product intent
+
+Today's Focus reflects **you**: your chosen sequence, commitments, energy, interests,
+contexts, and reasons for acting. It helps you return to the shape you gave today.
+Time is one useful signal, not the definition of focus. The most important item,
+the most anticipated item, a demanding responsibility, and an opportunity with a
+meaningful reward may each deserve attention for different reasons.
+
+Plenact must not reduce those reasons to an opaque urgency score. A person's own
+arrangement carries information that a generic rule may miss. There is no single
+correct ranking for every customer or every day.
+
+## Current implementation
+
+The initial experience remains one calm list that dwindles as you finish:
+
+| Choice | Initial value | Optional behavior |
+| --- | --- | --- |
+| Keep Day Lists in time order | On: timed Cards stay chronological; untimed Cards keep manual positions | Off: manually arrange Day Lists and choose Day list or chronological Focus order |
+| Grouping | Continuous list | Day list sections |
+| Inclusion filters | All eligible items | Up Next, Important, Bookmarked, or any combination |
+| Completed items | Hidden | Keep visible and allow unchecking |
+| Visible row capacity | Four | 1–12 or expand all rows; matches are never truncated |
+
+These preferences persist locally through the existing planning-preferences store,
+including installations without an account profile. Missing fields in older data
+receive the initial values above. Both Account & Settings and Plan Settings expose
+a dedicated **Today's Focus** section with normal Save/Cancel behavior. There is
+a small inclusion-filter chooser on the Today panel: tap **Today's Focus** to switch
+Up Next, Important, or Bookmarked independently, or choose All items to clear all
+three switches. The title no longer opens Today's Plan; the Today date/subheader
+still does. The completion count and Open today retain their existing Day navigation.
+Choosing a filter applies immediately and persists; other settings retain Save/Cancel.
+An active filter label appears beneath the title, and an empty match says “No items
+match your Focus choices,” distinct from the entire Day list being complete.
+
+### A user's existing structure is meaningful
+
+“Keep Day Lists in time order” is enabled by default, including for older saved
+preferences without this field. It maintains canonical date-associated Day Lists
+in time order and applies the same policy to Focus. Equal times retain their
+relative order; untimed and date-only Cards keep their manually chosen positions. Existing section
+boundaries stay intact in the actual Lists. Personal Lists and archived Lists are
+excluded, and sorting does not change Card content or create edit-history records.
+
+Turning the switch off also allows manual arrangement of timed Cards.
+The separately saved Focus order then controls the preview. Sorting a preview
+alone does not rewrite its Day List. Both settings screens retain Save/Cancel.
+
+Optional grouping reads the existing Day list section dividers **before** filtering
+completed items. Named sections retain their titles and source sequence. Sections
+with no eligible items disappear. Items before the first divider use “Before first
+section”; an unnamed divider uses “Untitled section.” Repeated heading text does
+not merge distinct sections. Dividers are context, never actionable Focus items.
+
+This lets the user express “Must happen,” “Looking forward to,” “Heavy lifting,”
+“Family,” or any other pattern using their own words. Plenact does not assign an
+importance level, emotional meaning, or ranking to a heading's text.
+
+### Ordering and grouping are independent
+
+Automatic time order uses an explicit timed start, or a timed due value when no
+timed start exists. Clock times are compared in the planning calendar; date-only
+values count as untimed. Canonical Lists are normalized on load, preference changes,
+and saved edits, including retained weeks and newly recreated Day Lists.
+
+With automatic ordering disabled, the separate chronological Focus option uses a
+start date when present, otherwise a due date. Time-only values are interpreted on
+the displayed Today date; date-only values use the beginning of their date. Full
+dates retain their dates. Equal values and undated items retain their relative order.
+
+With grouping enabled, chronology applies **within** each section. Section order
+still follows the Day list. Without grouping, chronology applies across the preview.
+This choice does not add an extra overdue boost, create overdue sections,
+or change the order as the clock advances within the day.
+
+Focus rows keep a single title line without a Start/Due subtitle. The compact time
+on the right is shown only for All items or selections including Up Next and opens
+the in-place editor for that schedule value.
+
+### Filtering, limits, and completion
+
+Inclusion filters use **OR**: enabling Important and Bookmarked includes an item
+matching either signal, once. With all three switches off, all non-divider Day
+items are eligible. These filters do not search other days or Library lists.
+Importance uses the existing owner-qualified Library importance store; bookmarks
+use the current Week owner's saved-card IDs. Mark important is available in dated
+Day/Week Card and Note details as well as Library details. Reused card IDs in other
+owners cannot supply a match. Hide completed items remains independent and applies
+even to important, bookmarked, and Up Next matches.
+
+**Up Next** includes active schedule windows and schedules still ahead today. Ended
+time slots are excluded even when unchecked. A start without a finish remains Up
+Next until its start passes; a due-only time remains until due. Date-only targets
+remain eligible through their calendar day. Time-only values use today's local
+wall clock. Unscheduled items do not match Up Next but can match Important or
+Bookmarked. Source ordering remains authoritative unless Chronological is selected;
+Up Next is an eligibility filter, not a separate sort. The minute timeline refreshes
+schedule eligibility. Explicit importance/bookmarks may retain an ended item when
+those switches are also enabled.
+
+Fresh default-week data marks existing Work and Gym entries important after the
+initial checked save. Full-month demonstration data marks its existing dinner and
+Call the accountant examples important. Demo matching also recognizes the exact
+titles Dinner and Call Accountant. This does not add those records to Jmr, rewrite
+existing weeks, reapply importance on every launch, or change the user's bookmarks.
+
+Filtering and ordering retain every matching Card and Note. The configured row
+count controls only the viewport height, never the result set. Additional matches
+remain available through the inner list's native vertical scrolling. Section
+headings receive extra height and do not consume the visible-item allowance.
+Zero (Expand all rows) expands the preview to all matches instead of capping it.
+
+With Hide completed items enabled, checking an item removes it and reveals the
+next eligible item. With the preference disabled, completed items stay in place
+with a checked control and struck-through title; users can uncheck them directly.
+Progress always counts all non-divider items in today's source Day list.
+
+By default four items are visible before the inner list scrolls. Visible section labels
+receive additional space instead of squeezing those items. The panel shrinks with
+fewer items and preserves the existing padding beneath its section. All-complete
+and empty-list messages remain distinct. Card/Note navigation, checkbox actions,
+and confirmed swipe deletion operate on the original records through existing
+save paths. Nothing in the derived preview owns a second copy of an item.
+
+## Design directions, not implemented promises
+
+The following need further exploration with users and should not be inferred from
+this implementation:
+
+- Explicit personal order inside Focus independent of Day list order.
+- Grouping or selecting by existing labels, including handling multiple labels
+  without silently duplicating an item or choosing one label for the user.
+- Deliberate signals for importance, anticipation, burden, risk, and reward.
+  First determine whether existing sections, labels, and Today's Plan priorities
+  already express the need before adding more fields to every Card.
+- An optional, quiet place for missed targets or submitted deliverables in or near
+  Focus. No guilt-driven default backlog, automatic carryover, or alerts.
+- Different arrangements on different days, saved patterns, and explicit links
+  between Today's Plan and Focus. Today's Plan priorities are currently a separate
+  feature; this work does not silently promote them into the Focus preview.
+- Alternate visual presentations. The current calm list is a useful starting point,
+  not a prohibition on exploration.
+
+## Acceptance principles
+
+1. Existing users see the same ordered, unfinished-item preview until opting in.
+2. Each optional arrangement has explainable rules and stable ties.
+3. Source order and section membership survive filtering and preview sorting.
+4. No automatic interpretation of excitement, burden, risk, or reward.
+5. Completion is visible or hidden by choice, initially hidden.
+6. Detailed settings remain away from daily action; the title offers only a compact inclusion-filter chooser.
+7. Preview interactions retain canonical ownership and checked saves.
+8. Improvements serve the user's attention, rather than asking the user to serve
+   a ranking system.
+
+## Filter color cues
+
+The Focus title opens a compact chooser with colored text. All is black in light
+mode and white in dark mode. Progress remains italic. Combinations use deliberately
+assigned colors rather than RGB averaging, which made selections too similar:
+
+| Selection | Light | Dark |
+| --- | --- | --- |
+| Up Next (A), blue | #1D4ED8 | #93B8FF |
+| Important (B), red | #B42336 | #FF9BA8 |
+| Bookmarked (C), green | #276524 | #A3DA83 |
+| AB, purple | #7E22CE | #D3A6FF |
+| AC, teal | #00666B | #70D8D4 |
+| BC, orange | #9A4100 | #FFBB78 |
+| ABC, neutral | #535766 | #C9CBD4 |
+
+These colors are visual cues, not ranking rules. Automated contrast checks cover
+representative cream and dark surfaces; translucent/custom surfaces still need
+visual verification. No palette guarantees every viewer can distinguish every
+state by color alone, so names and explicit selection controls remain available.
+After a filter update or dismissal of the chooser with active filters (even without a selection change),
+the active filter names appear for three seconds,
+then fade over 250 ms. Further changes restart that interval. Reduce Motion skips
+the fade. The title's accessible value always retains the active filter names;
+chooser selection controls remain explicit, so color is never the sole signal.
+Progress continues to count the full source Day list, not only matching items.
+
+The filter popover stays open while toggling choices or choosing All items.
+Selections save immediately; tapping outside dismisses the chooser. Filter changes
+refresh the preview without replacing the view that owns its presentation state.
+
+## Trailing item context
+
+Focus rows show a compact local time beside the shortcut arrow whenever the item
+has a timed start or due value (timed start wins). Date-only values do not count.
+Without a time, Important and Bookmarked markers share a compact slot. When both
+apply, the star overlaps the bookmark slightly in front and below it.
+This context is independent of active filters. Time visually takes precedence over
+both markers; VoiceOver retains time, importance, and bookmark information.
+
+Dismissing the chooser with All items active does not show a confirmation subtitle.
+
+When All items is selected, its trailing checkmark also acts as an explicit Close
+Focus filters button with a 44-point target. Tapping All items still clears filters;
+tapping the checkmark dismisses without changing the selection.

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:weekly-review",
+  "title": "Private weekly reflection and decisions",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "weekly_review"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "source_review_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start_date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "format": "date"
+        },
+        "time_zone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "first_weekday": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "step": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "highlights": {
+          "type": "string"
+        },
+        "learned": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string"
+        },
+        "constraints": {
+          "type": "string"
+        },
+        "risks": {
+          "type": "string"
+        },
+        "priorities": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/priority"
+          }
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:plenact:user-data:1.0:planning-types#/$defs/review_decision"
+          }
+        },
+        "updated_at_utc": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completed_at_utc": {
+          "anyOf": [
+            {
+              "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/utc_timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "source_review_key",
+        "start_date",
+        "time_zone",
+        "first_weekday",
+        "step",
+        "highlights",
+        "learned",
+        "direction",
+        "constraints",
+        "risks",
+        "priorities",
+        "decisions",
+        "updated_at_utc",
+        "completed_at_utc"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

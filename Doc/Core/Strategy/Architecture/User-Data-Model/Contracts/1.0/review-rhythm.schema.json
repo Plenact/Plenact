@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Supported Plenact User Data Model versions: 1.0. Final specification; runtime integration is separately tracked.",
+  "$id": "urn:plenact:user-data:1.0:review-rhythm",
+  "title": "Shared invitation/notification intent; OS permissions and scheduling remain device local",
+  "type": "object",
+  "properties": {
+    "user_data_model_version": {
+      "const": "1.0"
+    },
+    "payload_schema_version": {
+      "const": 1
+    },
+    "record_type": {
+      "const": "review_rhythm"
+    },
+    "id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "workspace_id": {
+      "$ref": "urn:plenact:user-data:1.0:content-types#/$defs/uuid"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "daily_invitations": {
+          "type": "boolean"
+        },
+        "weekly_invitations": {
+          "type": "boolean"
+        },
+        "daily_minutes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1439
+        },
+        "weekly_minutes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1439
+        },
+        "weekly_weekday": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "daily_notifications": {
+          "type": "boolean"
+        },
+        "weekly_notifications": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "daily_invitations",
+        "weekly_invitations",
+        "daily_minutes",
+        "weekly_minutes",
+        "weekly_weekday",
+        "daily_notifications",
+        "weekly_notifications"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "user_data_model_version",
+    "payload_schema_version",
+    "record_type",
+    "id",
+    "workspace_id",
+    "payload"
+  ],
+  "additionalProperties": false
+}

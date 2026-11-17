@@ -1,0 +1,25 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "calendar_index",
+  "id": "30000000-0000-4000-8000-000000000003",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "source_store_version": 1,
+    "first_weekday": 2,
+    "current_week_start_date": "2026-10-19",
+    "week_ids": [
+      "30000000-0000-4000-8000-000000000002"
+    ],
+    "checklist_link_weeks": [
+      {
+        "checklist_item_id": "20000000-0000-4000-8000-000000000042",
+        "week_id": "30000000-0000-4000-8000-000000000002"
+      },
+      {
+        "checklist_item_id": "20000000-0000-4000-8000-000000000042",
+        "week_id": "30000000-0000-4000-8000-000000000080"
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "review_rhythm",
+  "id": "30000000-0000-4000-8000-000000000014",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "daily_invitations": true,
+    "weekly_invitations": true,
+    "daily_minutes": 1440,
+    "weekly_minutes": 1080,
+    "weekly_weekday": 1,
+    "daily_notifications": false,
+    "weekly_notifications": false
+  }
+}

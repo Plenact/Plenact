@@ -1,0 +1,9 @@
+{
+  "kind": "date_and_time",
+  "local_date_time": "2026-10-24T07:00:00.000",
+  "time_zone": "America/Chicago",
+  "tzdb_version": "2025b",
+  "utc_instant": "2026-10-24T12:00:00.000Z",
+  "utc_offset": "-05:00",
+  "occurrence": "unique"
+}

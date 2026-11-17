@@ -1,6 +1,6 @@
 # Plenact for iOS
 
-Version: 1.4   (10/23/26)
+Version: 1.4*   (11/17/26)
 
 Revision history: [Changelog](CHANGELOG.md) · [Published releases](https://github.com/Plenact/Plenact/releases)
 
@@ -17,6 +17,8 @@ Yes!! Great detail, can you help us implement this new feature? :)
 This is beautiful, thank you Alex!! Can you help me with a good git commit message for these updates? :)
 
 # Opens
+
+- Sync workspace docs
 
 - Database
 

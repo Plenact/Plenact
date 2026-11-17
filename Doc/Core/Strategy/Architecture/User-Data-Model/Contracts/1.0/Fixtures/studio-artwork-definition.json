@@ -1,0 +1,26 @@
+{
+  "user_data_model_version": "1.0",
+  "payload_schema_version": 1,
+  "record_type": "studio_artwork",
+  "id": "40000000-0000-4000-8000-000000000006",
+  "workspace_id": "20000000-0000-4000-8000-000000000001",
+  "payload": {
+    "name": "Saved example artwork",
+    "surface": {
+      "material": "photo",
+      "color": "EDE3CA",
+      "secondary_color": "C4DADB",
+      "strength": 0.65,
+      "readability": 0.55,
+      "vertical_position": 0.5,
+      "zoom": 1.25,
+      "shows_in_previews": true,
+      "photo_asset_id": "20000000-0000-4000-8000-000000000020",
+      "remote_photo": null
+    },
+    "header": null,
+    "italic_subtitle": false,
+    "title_color": null,
+    "text_color": null
+  }
+}

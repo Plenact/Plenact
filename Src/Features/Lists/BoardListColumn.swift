@@ -811,7 +811,6 @@ struct KanbanListView: View
                     .modifier(
                         ListItemSwipeDelete(
                             enabled: editMode != .active,
-                            allowsFullSwipe: onSwipeDelete != nil,
                             onRequest:
                             {
                                 if let onSwipeDelete

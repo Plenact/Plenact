@@ -20,12 +20,11 @@ import UniformTypeIdentifiers
 struct ListItemSwipeDelete: ViewModifier
 {
     let enabled: Bool
-    let allowsFullSwipe: Bool
     let onRequest: () -> Void
 
     func body(content: Content) -> some View
     {
-        content.swipeActions(edge: .trailing, allowsFullSwipe: allowsFullSwipe)
+        content.swipeActions(edge: .trailing, allowsFullSwipe: false)
         {
             if enabled
             {

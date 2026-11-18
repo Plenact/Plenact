@@ -638,8 +638,10 @@ extension PlenactBoardDocumentTests
                     ]
                 }
 
-                XCTAssertEqual(cards.count, expected.count)
-                for (card, slot) in zip(cards, expected)
+                XCTAssertEqual(cards.count, expected.count + 1)
+                XCTAssertTrue(cards[2].isSectionDivider)
+                XCTAssertNil(cards[2].sectionHeading)
+                for (card, slot) in zip(cards.filter { !$0.isSectionDivider }, expected)
                 {
                     XCTAssertEqual(card.word, slot.0)
 

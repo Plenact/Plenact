@@ -755,11 +755,17 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 scroll.layoutIfNeeded()
                 let start = scroll.contentOffset
                 let top = -scroll.adjustedContentInset.top
-                // Keep the last row at the native scroll limit, including on short days.
-                let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
-                let end = min(top + initialScroll.distance, bottom)
+                let end = top + initialScroll.distance
                 guard start.y < end, !scroll.isTracking, !scroll.isDecelerating,
                       !initialScroll.requiresTop || abs(start.y - top) < 1 else { return }
+
+                // Short days need enough range to scroll the complete overview above the header.
+                // The Day footer independently clamps its resting position to the viewport.
+                let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
+                if bottom < end
+                {
+                    scroll.contentInset.bottom += end - bottom
+                }
 
                 guard initialScroll.duration > 0 else
                 {

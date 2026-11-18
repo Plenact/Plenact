@@ -768,7 +768,7 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
     var summary: String         /* Aggregate operation results */
     {
         let names = [                                                                                   /* Names used by this operation */
-            "word": "Title", "subtitleOverride": "Subtitle", "descriptionOverride": "Description",
+            "word": "Title", "todayFocusTitle": "Today’s Focus title", "subtitleOverride": "Subtitle", "descriptionOverride": "Description",
             "isTitleChecked": "Completion", "startDate": "Start date", "startDateKind": "Start date",
             "location": "Location", "dueDate": "Due date", "dueDateKind": "Due date", "checklists": "Checklists",
             "members": "Members", "labelIDs": "Labels", "attachments": "Attachments",
@@ -995,7 +995,7 @@ extension CardEditRecord
     {
         changes.filter
         {
-            ["word", "subtitleOverride", "descriptionOverride", "startDate", "startDateKind",
+            ["word", "todayFocusTitle", "subtitleOverride", "descriptionOverride", "startDate", "startDateKind",
              "dueDate", "dueDateKind"].contains($0.field)
         }
     }
@@ -1056,6 +1056,8 @@ extension CardEditRecord
             {
             case "word":
                 restored.word = try restore(change, card.word)
+            case "todayFocusTitle":
+                restored.todayFocusTitle = try restore(change, card.todayFocusTitle)
             case "subtitleOverride":
                 restored.subtitleOverride = try restore(change, card.subtitleOverride)
             case "descriptionOverride":

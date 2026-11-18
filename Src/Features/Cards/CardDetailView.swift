@@ -383,6 +383,8 @@ struct CardDetailView: View
     @State var showsReactionsInPreviews: Bool?                                          /* Reactions In Previews visibility                             */
     @State var reactions:                [ItemEmojiReaction]?                           /* Stored item reactions                                        */
     @State var reactionAuthorID = LocalReactionIdentity.current()                       /* Reaction author ID                                           */
+    @State private var showsFocusTitleEditor = false
+    @State private var focusTitleDraft = ""
     @State var titleText:  String                                                       /* Editable card title displayed in the detail header           */
     @State var appearance: ItemAppearance?                                              /* Resolved appearance choices                                  */
     @State var showsAppearanceCover = false                                             /* Appearance Cover visibility                                  */
@@ -720,6 +722,7 @@ struct CardDetailView: View
         updated.isEditingLocked = isEditingLocked
         updated.showsReactionsInPreviews = showsReactionsInPreviews
         updated.reactions = reactions
+        updated.todayFocusTitle = lastSavedHistoryCard.todayFocusTitle
         updated.word = titleText
         updated.appearance = appearance
         updated.subtitleOverride = lastSavedHistoryCard.subtitleOverride == nil
@@ -1089,6 +1092,14 @@ struct CardDetailView: View
                         editingHeaderField = .subtitle
                     }
                 }
+
+                Button("Today’s Focus title", systemImage: "textformat")
+                {
+                    dismissEditing()
+                    focusTitleDraft = lastSavedHistoryCard.todayFocusTitle ?? ""
+                    showsFocusTitleEditor = true
+                }
+                .disabled(onTitleToggle == nil && onUpdateMovedNote == nil && relocatedCard == nil)
 
                 Button("Appearance", systemImage: "paintpalette")
                 {
@@ -1808,6 +1819,19 @@ struct CardDetailView: View
                 }
             }
 
+            .alert("Today’s Focus title", isPresented: $showsFocusTitleEditor)
+            {
+                TextField("Use card or note title", text: $focusTitleDraft)
+                Button("Save")
+                {
+                    _ = saveFocusTitle(focusTitleDraft)
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            message:
+            {
+                Text("Use a shorter title in Today’s Focus. Leave this blank to use the card or note title.")
+            }
             .alert("Attachment notice", isPresented: $showingAttachmentNotice)
             {
                 Button("OK", role: .cancel)

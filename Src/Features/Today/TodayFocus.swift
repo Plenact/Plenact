@@ -535,7 +535,7 @@ struct TodayFocusSection: View
                             {
                                 VStack(alignment: .leading, spacing: 1)
                                 {
-                                    Text(card.word)
+                                    Text(card.resolvedTodayFocusTitle)
                                     .font(.system(size: isPad ? padTaskSize : phoneTaskSize, weight: .medium))
                                     .foregroundStyle(card.isTitleChecked ? Color.secondary : Color.primary)
                                     .italic(card.isTitleChecked)
@@ -597,7 +597,7 @@ struct TodayFocusSection: View
                         }
 
                         .buttonStyle(TodayFocusSelectionStyle(isSelected: selectedFocusCard?.id == card.id))
-                        .accessibilityLabel("Open \(card.word)")
+                        .accessibilityLabel("Open \(card.resolvedTodayFocusTitle)")
                         .accessibilityValue(
                             [
                                 (showsSchedule ? entry.previewTime : nil).map
@@ -614,6 +614,7 @@ struct TodayFocusSection: View
                     }
                 }
                 .listRowInsets(EdgeInsets())
+                .listRowSeparator(entry.id == entries.last?.id ? .hidden : .visible, edges: .bottom)
                 .listRowBackground(Color.clear)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false)
                 {

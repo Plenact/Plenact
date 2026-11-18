@@ -358,7 +358,9 @@ struct PlanningRoutineLibrary: Codable, Equatable
                     ],
                     descriptionOverride: slot.title == "Gym"
                     ? "Choose what fits today: gym, meditation, walking, or massage." : "",
-                    subtitleOverride: "", showsDueDateInList: true, startDateKind: .dateAndTime,
+                    subtitleOverride: "",
+                    todayFocusTitle: slot.title == "Morning Starbucks Pow-wow" ? ExampleCardLocations.morningFocusTitle : nil,
+                    showsDueDateInList: true, startDateKind: .dateAndTime,
                     dueDateKind: .dateAndTime, location: ExampleCardLocations.location(for: slot.title))
             }
         }
@@ -368,8 +370,28 @@ struct PlanningRoutineLibrary: Codable, Equatable
 
         template.id = jmrID
 
+        template.collection.lists = addingMorningDividers(to: template.collection.lists)
         return template.demonstratingFocus()
     }()
+    /// Insert an unnamed divider after the morning planning Card in each bundled routine day.
+    static func addingMorningDividers(to lists: [KanbanList]) -> [KanbanList]
+    {
+        var lists = lists
+        var nextID = (lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
+        for index in lists.indices
+        {
+            guard let morning = lists[index].cards.firstIndex(where: { $0.word == "Morning Starbucks Pow-wow" }),
+                  morning + 1 == lists[index].cards.count || !lists[index].cards[morning + 1].isSectionDivider
+            else { continue }
+
+            lists[index].cards.insert(
+                KanbanCard(id: nextID, word: "---", listTitle: lists[index].title, isDivider: true, checklists: []),
+                at: morning + 1)
+            nextID += 1
+        }
+        return lists
+    }
+
     /// Optional examples are added to the library without replacing an existing routine
     static let sectionExamples: [PlanningRoutineTemplate] =     /* Section examples */
     {
@@ -483,7 +505,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
 
         return Self(
             templates: [work.demonstratingFocus(), vacation.demonstratingFocus(), jmr] + sectionExamples,
-            defaultWeekID: jmrID, bundledRoutineRevision: 5)
+            defaultWeekID: jmrID, bundledRoutineRevision: 6)
     }()
 }
 
@@ -514,7 +536,7 @@ enum PlanningRoutineStore
     ///
     static func validate(_ value: PlanningRoutineLibrary) throws
     {
-        guard value.version == 1, (0 ... 5).contains(value.bundledRoutineRevision ?? 0),
+        guard value.version == 1, (0 ... 6).contains(value.bundledRoutineRevision ?? 0),
         Set(value.templates.map(\.id)).count == value.templates.count,
         value.defaultWeekID == nil
         || value.templates.contains(where:
@@ -687,6 +709,17 @@ enum PlanningRoutineStore
             }
 
             result.bundledRoutineRevision = 5
+        }
+
+        if (result.bundledRoutineRevision ?? 0) < 6
+        {
+            for index in result.templates.indices
+            where result.templates[index].id == PlanningRoutineLibrary.jmrID && result.templates[index].collection.isActive
+            {
+                result.templates[index].collection.lists = PlanningRoutineLibrary.addingMorningDividers(
+                    to: result.templates[index].collection.lists)
+            }
+            result.bundledRoutineRevision = 6
         }
 
         return result

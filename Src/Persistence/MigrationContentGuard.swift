@@ -14,7 +14,7 @@ import Foundation
 enum MigrationContentGuard
 {
     static let fields: [String: Set<String>] = [        /* Record fields under review */
-        "KanbanCard": ["id", "editHistory", "word", "listTitle", "isDivider", "isTitleChecked", "editingLocked", "members", "labelIDs", "startDate", "location", "dueDate", "createdAt", "descriptionOverride", "startDateKind", "dueDateKind", "showsDueDateInList", "sectionLayout", "subtitleOverride", "checklists", "showsReactionsInPreviews", "reactions", "comments", "attachments", "coverAttachmentID", "appearance", "dismissedActivityIDs", "listDisplayFormat", "itemPresentation"],
+        "KanbanCard": ["id", "editHistory", "word", "listTitle", "isDivider", "isTitleChecked", "editingLocked", "members", "labelIDs", "startDate", "location", "dueDate", "createdAt", "descriptionOverride", "startDateKind", "dueDateKind", "showsDueDateInList", "sectionLayout", "todayFocusTitle", "subtitleOverride", "checklists", "showsReactionsInPreviews", "reactions", "comments", "attachments", "coverAttachmentID", "appearance", "dismissedActivityIDs", "listDisplayFormat", "itemPresentation"],
         "KanbanList": ["id", "title", "subtitleOverride", "cards", "archivedCards", "isArchived", "appearance", "defaultItemPresentation"],
         "PersonalCollection": ["id", "title", "kind", "icon", "color", "lists", "savedCardIDs", "isArchived", "boardAppearance", "collectionDescription"],
         "PlanningCalendarDocument": ["version", "currentWeekKey", "firstWeekday", "weeks", "checklistLinkWeeks"],

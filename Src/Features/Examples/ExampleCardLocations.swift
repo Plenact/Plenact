@@ -17,13 +17,16 @@ import Foundation
 ///
 enum ExampleCardLocations
 {
+    static let starbucks = "Starbucks, 240 W Murdock Ave, Oshkosh, WI 54901"
+    static let morningFocusTitle = "Pow-wow"
+
     static let gym                    =                                                 /* Workout Card fixture */
         "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902"
     static let work                   =                                                 /* Work display text    */
         "Mercury Marine Plant 33, 505 Marion Road, Oshkosh, WI 54901"
     static let migrationKey           =                                                 /* Migration key        */
-        "Plenact.ExampleCardLocations.Applied.v1"
-    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v1"        /* Backup key           */
+        "Plenact.ExampleCardLocations.Applied.v3"
+    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v3"        /* Backup key           */
     private static let boardKey       = "Plenact.Board.v1"                              /* Board key            */
     private static let collectionsKey = "Plenact.PersonalCollections.v1"                /* Collections key      */
 
@@ -54,6 +57,8 @@ enum ExampleCardLocations
     {
         switch title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         {
+        case "morning starbucks pow-wow":
+            return starbucks
         case "gym":
             return gym
         case "work":
@@ -86,6 +91,15 @@ enum ExampleCardLocations
             let cards = list.cards.map          /* Card records under consideration */
             {
             card in
+                if card.word.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "morning starbucks pow-wow",
+                   !card.isSectionDivider, !card.isEditingLocked
+                {
+                    var updated = card
+                    updated.todayFocusTitle = morningFocusTitle
+                    updated.location = starbucks
+                    return updated
+                }
+
                 guard card.presentation == .card, !card.isSectionDivider, !card.isEditingLocked,
                 CardLocation.normalized(card.location) == nil,
                 let location = location(for: card.word) else

@@ -20,6 +20,14 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
 {
     let id:                    Int              /* Stable numeric identifier for the card             */
     var editHistory: [CardEditRecord]? = nil    /* Saved content changes; absent on legacy records    */
+    var todayFocusTitle: String? = nil
+
+    var resolvedTodayFocusTitle: String
+    {
+        let title = todayFocusTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return title.isEmpty ? word : title
+    }
+
     var word:                  String           /* Display word shown as the card's title             */
     var listTitle:             String           /* Name of the list where the card resides            */
     var isDivider:             Bool             /* Whether this item is a movable section divider     */
@@ -170,6 +178,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             dismissedActivityIDs: dismissedActivityIDs,
             descriptionOverride: descriptionOverride,
             subtitleOverride: subtitleOverride,
+            todayFocusTitle: todayFocusTitle,
             presentation: presentation,
             createdAt: creationDate ?? createdAt,
             appearance: appearance,
@@ -582,6 +591,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         dismissedActivityIDs:     Set<String>          = [],
         descriptionOverride:      String?              = nil,
         subtitleOverride:         String?              = nil,
+        todayFocusTitle:           String?              = nil,
         presentation:             ItemPresentation     = .card,
         createdAt:                Date?                = nil,
         appearance:               ItemAppearance?      = nil,
@@ -620,6 +630,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         self.coverAttachmentID = coverAttachmentID
         self.dismissedActivityIDs = dismissedActivityIDs        /* Set of activity IDs that were dismissed by user */
         self.descriptionOverride = descriptionOverride          /* Optional user-edited description                */
+        self.todayFocusTitle = todayFocusTitle
         self.subtitleOverride = subtitleOverride                /* Optional user-edited subtitle                   */
 
         let retainedPresentation =                              /* Retained presentation */
@@ -692,6 +703,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
             dismissedActivityIDs: try container.decodeIfPresent(Set<String>.self, forKey: .dismissedActivityIDs) ?? [],
             descriptionOverride: try container.decodeIfPresent(String.self, forKey: .descriptionOverride),
             subtitleOverride: try container.decodeIfPresent(String.self, forKey: .subtitleOverride),
+            todayFocusTitle: try container.decodeIfPresent(String.self, forKey: .todayFocusTitle),
             presentation: try container.decodeIfPresent(ItemPresentation.self, forKey: .itemPresentation) ?? .card,
             createdAt: try container.decodeIfPresent(Date.self, forKey: .createdAt),
             appearance: try container.decodeIfPresent(ItemAppearance.self, forKey: .appearance),
@@ -742,6 +754,7 @@ struct KanbanCard: Identifiable, Hashable, Codable, Sendable
         case coverAttachmentID
         case dismissedActivityIDs
         case descriptionOverride
+        case todayFocusTitle
         case subtitleOverride
         case itemPresentation
         case listDisplayFormat

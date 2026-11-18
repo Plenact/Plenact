@@ -836,6 +836,15 @@ extension CardDetailView
 
 
     /// Route an already prepared edit through the active owner
+    func saveFocusTitle(_ title: String) -> Bool
+    {
+        guard !isEditingLocked, !hasDeletedCard, !hasMovedCard else { return false }
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        var updated = workingCardSnapshot
+        updated.todayFocusTitle = title.isEmpty ? nil : title
+        return saveEditedSnapshot(updated.recordingEdits(from: lastSavedHistoryCard))
+    }
+
     private func saveEditedSnapshot(_ updatedCard: KanbanCard) -> Bool
     {
         if relocatedCard != nil

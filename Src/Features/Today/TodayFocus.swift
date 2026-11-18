@@ -133,6 +133,55 @@ struct TodayFocusSection: View
     let onOpenCard:      (KanbanCard) -> Void           /* Open card callback                      */
     let onDeleteCard:    (Int)        -> Bool           /* Delete card callback                    */
     let onOpenTodayList: ()           -> Void           /* Open the focused single-list Today view */
+    var onOpenTodayWeek: (() -> Void)? = nil
+
+
+    @ViewBuilder
+    private var focusNavigationLinks: some View
+    {
+        Button(action: onOpenTodayList)
+        {
+            HStack(spacing: 6)
+            {
+                Image(systemName: "arrow.left")
+                    .accessibilityHidden(true)
+                Image(systemName: "list.bullet")
+                    .accessibilityHidden(true)
+                Text("Day view")
+                    .opacity(showsSelectionContext ? 1 : 0)
+                    .accessibilityHidden(true)
+            }
+            .fixedSize()
+            .frame(minHeight: 44)
+        }
+        .accessibilityLabel("Day view")
+        .accessibilityHint("Open today’s list in Day view")
+        .accessibilityIdentifier("today.focus.openDay")
+
+        if let onOpenTodayWeek
+        {
+            Spacer(minLength: 16)
+            Button(action: onOpenTodayWeek)
+            {
+                HStack(spacing: 6)
+                {
+                    Text("Week view")
+                        .opacity(showsSelectionContext ? 1 : 0)
+                        .accessibilityHidden(true)
+                    Image(systemName: "rectangle.split.3x1")
+                        .accessibilityHidden(true)
+                    Image(systemName: "arrow.right")
+                        .accessibilityHidden(true)
+                }
+                .fixedSize()
+                .frame(minHeight: 44)
+            }
+            .accessibilityLabel("Week view")
+            .accessibilityHint("Open Week view at today’s list")
+            .accessibilityIdentifier("today.focus.openWeek")
+        }
+    }
+
 
     ///
     /// @fcn        TodayFocusSection.focusDateControl
@@ -723,15 +772,14 @@ struct TodayFocusSection: View
                 }
 
 
-                Button(action: onOpenTodayList)
+                HStack
                 {
-                    Label("See today’s list", systemImage: "arrow.right")
-                    .font(.system(.subheadline, design: .serif).italic().weight(.medium))
-                    .frame(minHeight: 32)
+                    focusNavigationLinks
                 }
-
                 .buttonStyle(.plain)
-                .foregroundStyle(.tint)
+                .foregroundStyle(showsSelectionContext ? Color.accentColor : Color.secondary)
+                .font(.system(.subheadline, design: .serif).italic().weight(.medium))
+
             }
             else
             {

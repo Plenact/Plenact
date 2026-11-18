@@ -868,6 +868,13 @@ struct TodayHomeView: View
                             {
                                 focusedListID = focus?.id
                                 showsTodayList = focus != nil
+                            },
+                            onOpenTodayWeek:
+                            {
+                                if let focus
+                                {
+                                    onOpenBoardList(focus.id)
+                                }
                             }
                         )
                         .onChange(of: Calendar.current.startOfDay(for: focusDate))

@@ -542,12 +542,19 @@ struct QuickNoteComposer: View
         {
             VStack(alignment: .leading, spacing: 18)
             {
-                destinationPicker
-                TextField("Note title", text: $title, axis: .vertical).textInputAutocapitalization(
-                    .sentences
-                )
-                .font(.largeTitle.weight(.bold))
+                HStack(alignment: .firstTextBaseline, spacing: 12)
+                {
+                    TextField("Note title", text: $title, axis: .vertical)
+                        .textInputAutocapitalization(.sentences)
+                        .font(.largeTitle.weight(.bold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    destinationPicker
+                        .fixedSize(horizontal: true, vertical: false)
+                }
                 NoteCreationDateLabel(createdAt: createdAt)
+                RichTextEditor(placeholder: "Start writing...", text: $description, minimumHeight: 320)
+
                 CreationAttachmentList(draft: attachmentDraft)
                 if captureAction == .photo || !photos.isEmpty
                 {
@@ -572,7 +579,6 @@ struct QuickNoteComposer: View
                     }
                 }
 
-                RichTextEditor(placeholder: "Start writing...", text: $description, minimumHeight: 320)
             } .padding(20).frame(maxWidth: .infinity, alignment: .leading)
         } .background(Color(.systemGroupedBackground))
     }

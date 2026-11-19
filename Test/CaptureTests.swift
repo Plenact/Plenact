@@ -187,11 +187,9 @@ extension PlenactBoardDocumentTests
 
     ///
     /// @fcn        PlenactBoardDocumentTests.testNewComposerSharesTitleAndRichBodyAcrossCardAndNote
-    /// @brief      Verify that new Composer Shares Title And Rich Body Across Card And Note
-    /// @details    Exercises `UIApplication.shared.connectedScenes.compactMap`, `scene.windows.first`, `.constant`.
-    ///             Checks `XCTAssertEqual(noteTitle.text, "Shared draft title")`;
-    ///             `XCTAssertEqual(PlanRichText.runs(PlanRichText.encode(writing.attributedText)),
-    ///             PlanRichText.runs(body))`
+    /// @brief      Verify separate Card and Note editors restore their retained writing
+    /// @details    Opens both presentations independently, checks their title and rich body,
+    ///             and verifies that creation has no Card/Note segmented selector
     ///
     /// @return     (Void) no return value
     /// @throws     Errors from throwing dependencies propagate unless handled within this operation
@@ -199,144 +197,60 @@ extension PlenactBoardDocumentTests
     @MainActor
     func testNewComposerSharesTitleAndRichBodyAcrossCardAndNote() async throws
     {
-        let scene =                                                             /* Owning window scene    */
-            try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap
-            {
-                $0 as? UIWindowScene
-            } .first)
-        let previous = scene.windows.first(where: \.isKeyWindow)                /* Prior key window       */
-        let window   = UIWindow(windowScene: scene)                             /* Synthetic scene window */
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let suite = "Plenact.SeparateComposers." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let lists = [KanbanList(id: 0, title: "Monday", cards: [])]
+        let richBody = PlanRichText.prefix
+            + Data("[{\"text\":\"Keep this writing\",\"bold\":true,\"italic\":false}]".utf8).base64EncodedString()
 
-        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
-
-        let lists = [KanbanList(id: 0, title: "Monday", cards: [])]                     /* Ordered List records   */
-        let host  = UIHostingController(                                                /* Synthetic SwiftUI host */
-            rootView: QuickNoteComposer(lists: .constant(lists), initialListID: 0)
-            {
-                _, _, _, _, _, _ in
-                XCTFail("Switching formats must not create content")
-            })
-
-        window.rootViewController = host
-
-        window.makeKeyAndVisible()
         defer
         {
-            window.isHidden = true;
-            window.rootViewController = nil;
-
+            window.isHidden = true
+            window.rootViewController = nil
             previous?.makeKey()
+            defaults.removePersistentDomain(forName: suite)
         }
 
-        try await Task.sleep(for: .milliseconds(300))
-
-
         ///
-        /// @fcn        PlenactBoardDocumentTests.testNewComposerSharesTitleAndRichBodyAcrossCardAndNote.descendants
-        /// @brief      Find descendants in the hosted view hierarchy
-        /// @details    Recursively inspects native subviews. Returns all collected matches in hierarchy order
-        ///
-        /// @param[in]  view  Native view inspected or synchronized by the operation
-        ///
-        /// @return     ([UIView]) resulting values in the ordering described above
+        /// @fcn        PlenactBoardDocumentTests.testNewComposerSharesTitleAndRichBodyAcrossCardAndNote.descendants(_:)
+        /// @brief      Collect native controls in the hosted composer
+        /// @param[in]  view  Root view to inspect
+        /// @return     ([UIView]) root and descendant controls
         ///
         func descendants(_ view: UIView) -> [UIView]
         {
             [view] + view.subviews.flatMap(descendants)
         }
 
-        let title = try XCTUnwrap(              /* User-facing title */
-            descendants(host.view).compactMap
-            {
-                $0 as? UITextView
-            } .first
-            {
-                String(describing: type(of: $0)).contains("VerticalTextView")
-            })
+        for presentation in [ItemPresentation.card, .note]
+        {
+            let draftKey = suite + "." + presentation.rawValue
+            ListCreationDraft(title: "Retained title", subtitle: "Retained subtitle", description: richBody)
+                .save(key: draftKey)
+            let host = UIHostingController(rootView:
+                QuickNoteComposer(lists: .constant(lists), initialListID: 0,
+                                  draftKey: draftKey, initialPresentation: presentation)
+                { _, _, _, _, _, _ in XCTFail("Opening an editor must not create content") }
+            )
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            window.rootViewController = host
+            window.makeKeyAndVisible()
+            try await Task.sleep(for: .milliseconds(350))
 
-        title.becomeFirstResponder()
-        title.insertText("Shared draft title")
-
-        let details = try XCTUnwrap(            /* Details comparison fixture */
-            descendants(host.view).compactMap
-            {
-                $0 as? UITextView
-            } .first
-            {
-                $0.accessibilityLabel == "Details (optional)"
-            })
-        let body =                              /* Note or description text   */
-        PlanRichText.prefix
-        + Data("[{\"text\":\"Keep this writing\",\"bold\":true,\"italic\":false}]".utf8).base64EncodedString()
-
-        details.attributedText = PlanRichText.attributed(body)
-
-        details.delegate?.textViewDidChange?(details)
-
-        let picker = try XCTUnwrap(descendants(host.view).compactMap    /* Native selection control */
-            {
-                $0 as? UISegmentedControl
-            } .first)
-
-        picker.selectedSegmentIndex = 1
-
-        picker.sendActions(for: .valueChanged)
-        try await Task.sleep(for: .milliseconds(350))
-
-        let noteTitle = try XCTUnwrap(          /* Note title */
-            descendants(host.view).compactMap
-            {
-                $0 as? UITextView
-            } .first
-            {
-                String(describing: type(of: $0)).contains("VerticalTextView")
-            })
-
-        XCTAssertEqual(noteTitle.text, "Shared draft title")
-
-        let writing = try XCTUnwrap(            /* Writing comparison fixture */
-            descendants(host.view).compactMap
-            {
-                $0 as? UITextView
-            } .first
-            {
-                $0.accessibilityLabel == "Start writing..."
-            })
-
-        XCTAssertEqual(PlanRichText.runs(PlanRichText.encode(writing.attributedText)), PlanRichText.runs(body))
-        noteTitle.becomeFirstResponder()
-        noteTitle.insertText(" edited")
-
-        writing.attributedText = PlanRichText.attributed("Edited note body")
-
-        writing.delegate?.textViewDidChange?(writing)
-
-        picker.selectedSegmentIndex = 0
-
-        picker.sendActions(for: .valueChanged)
-        try await Task.sleep(for: .milliseconds(350))
-
-        let returnedTitle = try XCTUnwrap(      /* Returned title */
-            descendants(host.view).compactMap
-            {
-                $0 as? UITextView
-            } .first
-            {
-                String(describing: type(of: $0)).contains("VerticalTextView")
-            })
-
-        XCTAssertEqual(returnedTitle.text, "Shared draft title edited")
-
-        let returnedDetails = try XCTUnwrap(    /* Returned details */
-            descendants(host.view).compactMap
-            {
-                $0 as? UITextView
-            } .first
-            {
-                $0.accessibilityLabel == "Details (optional)"
-            })
-
-        XCTAssertEqual(PlanRichText.encode(returnedDetails.attributedText), "Edited note body")
+            let controls = descendants(host.view)
+            XCTAssertFalse(controls.contains { $0 is UISegmentedControl })
+            let title = try XCTUnwrap(controls.compactMap { $0 as? UITextView }.first
+                { String(describing: type(of: $0)).contains("VerticalTextView") })
+            XCTAssertEqual(title.text, "Retained title")
+            let placeholder = presentation == .note ? "Start writing..." : "Details (optional)"
+            let editor = try XCTUnwrap(controls.compactMap { $0 as? UITextView }.first
+                { $0.accessibilityLabel == placeholder })
+            XCTAssertEqual(PlanRichText.runs(PlanRichText.encode(editor.attributedText)), PlanRichText.runs(richBody))
+            UserDefaults.standard.removeObject(forKey: draftKey)
+        }
     }
 
 

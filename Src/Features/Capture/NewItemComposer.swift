@@ -74,7 +74,7 @@ struct QuickNoteComposer: View
 
     @Environment(\.dismiss) private var dismiss         /* Close the full-size editor */
 
-    @State private var presentation: ItemPresentation           /* Current presentation style */
+    private let presentation: ItemPresentation           /* Current presentation style */
     @State private var createdAt   = Date.now                   /* Created at                 */
     @State private var subtitle    = ""                         /* Supporting item text       */
     @State private var title       = ""                         /* New card title             */
@@ -125,12 +125,11 @@ struct QuickNoteComposer: View
         }
 
         _subtitle = State(initialValue: savedDraft?.subtitle ?? "")
-        _presentation = State(
-            initialValue: captureAction?.presentation ?? template?.presentation ?? initialPresentation ?? lists
+        presentation = captureAction?.presentation ?? template?.presentation ?? initialPresentation ?? lists
             .wrappedValue.first(where:
                 {
                     $0.id == initialListID
-                })?.newItemPresentation ?? .card)
+                })?.newItemPresentation ?? .card
 
         // Explicit inline writing takes priority over a previously retained composer title
         let suppliedTitle =     /* Supplied title */
@@ -530,152 +529,179 @@ struct QuickNoteComposer: View
     }
 
 
+    ///
+    /// @fcn        QuickNoteComposer.newNoteContent
+    /// @brief      Present the dedicated writing-first New Note content
+    /// @details    Includes the destination, title, body, attachments, and optional dates
+    ///
+    /// @return     (some View) New Note editor content
+    ///
+    private var newNoteContent: some View
+    {
+        ScrollView
+        {
+            VStack(alignment: .leading, spacing: 18)
+            {
+                destinationPicker
+                TextField("Note title", text: $title, axis: .vertical).textInputAutocapitalization(
+                    .sentences
+                )
+                .font(.largeTitle.weight(.bold))
+                NoteCreationDateLabel(createdAt: createdAt)
+                CreationAttachmentList(draft: attachmentDraft)
+                if captureAction == .photo || !photos.isEmpty
+                {
+                    photoControls
+                }
+
+                if captureAction == .voice
+                {
+                    voiceControls
+                }
+
+                if captureAction == .drawing || !drawings.isEmpty
+                {
+                    drawingControls
+                }
+
+                if onSaveCapture != nil
+                {
+                    DisclosureGroup("Start and stop dates")
+                    {
+                        dateControls
+                    }
+                }
+
+                RichTextEditor(placeholder: "Start writing...", text: $description, minimumHeight: 320)
+            } .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        } .background(Color(.systemGroupedBackground))
+    }
+
+
+    ///
+    /// @fcn        QuickNoteComposer.newCardContent
+    /// @brief      Present the dedicated New Card form
+    /// @details    Includes title, subtitle, details, actions, attachments, dates, and destination
+    ///
+    /// @return     (some View) New Card editor content
+    ///
+    private var newCardContent: some View
+    {
+        Form
+        {
+            Section(presentation.title)
+            {
+                TextField("Title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
+                .lineLimit(1 ... 6)
+                TextField("Subtitle (optional)", text: $subtitle).textInputAutocapitalization(.sentences)
+                RichTextEditor(placeholder: "Details (optional)", text: $description)
+            }
+
+
+            if (template != nil || captureAction == .checklist || !actions.isEmpty) && presentation == .card
+            {
+                Section("Actions")
+                {
+                    ForEach($actions)
+                    {
+                        $action in
+                        TextField("Action", text: $action.title).textInputAutocapitalization(.sentences)
+                    }
+                    .onDelete
+                    {
+                        actions.remove(atOffsets: $0)
+                    }
+
+                    Button("Add action", systemImage: "plus")
+                    {
+                        actions.append(KanbanChecklistItem(title: ""))
+                    }
+                }
+            }
+
+
+            Section("Attachments")
+            {
+                CreationAttachmentList(draft: attachmentDraft)
+            }
+
+            if captureAction == .photo || !photos.isEmpty
+            {
+                Section("Photos")
+                {
+                    photoControls
+                }
+            }
+
+            if captureAction == .voice
+            {
+                Section("Voice capture")
+                {
+                    voiceControls
+                }
+            }
+
+            if captureAction == .drawing || !drawings.isEmpty
+            {
+                Section("Drawings")
+                {
+                    drawingControls
+                }
+            }
+
+            if onSaveCapture != nil
+            {
+                Section("Dates")
+                {
+                    DisclosureGroup("Start and stop dates")
+                    {
+                        dateControls
+                    }
+                }
+            }
+
+
+            Section("Add to")
+            {
+                if lists.isEmpty
+                {
+                    Text("Create a list in Week before adding a card.")
+                    .foregroundStyle(.secondary)
+                }
+                else
+                {
+                    Picker("List", selection: $selectedListID)
+                    {
+                        Text("Choose a list").tag(nil as Int?)
+                        ForEach(lists)
+                        {
+                            list in
+                            Text(list.title).tag(Optional(list.id))
+                        }
+                    }
+
+                    .pickerStyle(.menu)
+                }
+            }
+        }
+    }
+
+
     var body: some View         /* Quick Note Composer layout             */
     {                           /* New-card form and destination controls */
         NavigationStack
         {
             VStack(spacing: 0)
             {
-                ContentCreationKindPicker(presentation: $presentation).padding(.horizontal, 20).padding(.vertical, 12)
                 if presentation == .note
                 {
-                    ScrollView
-                    {
-                        VStack(alignment: .leading, spacing: 18)
-                        {
-                            destinationPicker
-                            TextField("Note title", text: $title, axis: .vertical).textInputAutocapitalization(
-                                .sentences
-                            )
-                            .font(.largeTitle.weight(.bold))
-                            NoteCreationDateLabel(createdAt: createdAt)
-                            CreationAttachmentList(draft: attachmentDraft)
-                            if captureAction == .photo || !photos.isEmpty
-                            {
-                                photoControls
-                            }
-
-                            if captureAction == .voice
-                            {
-                                voiceControls
-                            }
-
-                            if captureAction == .drawing || !drawings.isEmpty
-                            {
-                                drawingControls
-                            }
-
-                            if onSaveCapture != nil
-                            {
-                                DisclosureGroup("Start and stop dates")
-                                {
-                                    dateControls
-                                }
-                            }
-
-                            RichTextEditor(placeholder: "Start writing...", text: $description, minimumHeight: 320)
-                        } .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-                    } .background(Color(.systemGroupedBackground))
+                    newNoteContent
+                        .accessibilityIdentifier("capture.newNote")
                 }
                 else
                 {
-                    Form
-                    {
-                        Section(presentation.title)
-                        {
-                            TextField("Title", text: $title, axis: .vertical).textInputAutocapitalization(.sentences)
-                            .lineLimit(1 ... 6)
-                            TextField("Subtitle (optional)", text: $subtitle).textInputAutocapitalization(.sentences)
-                            RichTextEditor(placeholder: "Details (optional)", text: $description)
-                        }
-
-
-                        if (template != nil || captureAction == .checklist || !actions.isEmpty) && presentation == .card
-                        {
-                            Section("Actions")
-                            {
-                                ForEach($actions)
-                                {
-                                    $action in
-                                    TextField("Action", text: $action.title).textInputAutocapitalization(.sentences)
-                                }
-                                .onDelete
-                                {
-                                    actions.remove(atOffsets: $0)
-                                }
-
-                                Button("Add action", systemImage: "plus")
-                                {
-                                    actions.append(KanbanChecklistItem(title: ""))
-                                }
-                            }
-                        }
-
-
-                        Section("Attachments")
-                        {
-                            CreationAttachmentList(draft: attachmentDraft)
-                        }
-
-                        if captureAction == .photo || !photos.isEmpty
-                        {
-                            Section("Photos")
-                            {
-                                photoControls
-                            }
-                        }
-
-                        if captureAction == .voice
-                        {
-                            Section("Voice capture")
-                            {
-                                voiceControls
-                            }
-                        }
-
-                        if captureAction == .drawing || !drawings.isEmpty
-                        {
-                            Section("Drawings")
-                            {
-                                drawingControls
-                            }
-                        }
-
-                        if onSaveCapture != nil
-                        {
-                            Section("Dates")
-                            {
-                                DisclosureGroup("Start and stop dates")
-                                {
-                                    dateControls
-                                }
-                            }
-                        }
-
-
-                        Section("Add to")
-                        {
-                            if lists.isEmpty
-                            {
-                                Text("Create a list in Week before adding a card.")
-                                .foregroundStyle(.secondary)
-                            }
-                            else
-                            {
-                                Picker("List", selection: $selectedListID)
-                                {
-                                    Text("Choose a list").tag(nil as Int?)
-                                    ForEach(lists)
-                                    {
-                                        list in
-                                        Text(list.title).tag(Optional(list.id))
-                                    }
-                                }
-
-                                .pickerStyle(.menu)
-                            }
-                        }
-                    }
+                    newCardContent
+                        .accessibilityIdentifier("capture.newCard")
                 }
             }
 
@@ -816,11 +842,6 @@ struct QuickNoteComposer: View
             }
 
             ListCreationDraft(title: title, subtitle: subtitle, description: description).save(key: draftKey)
-        }
-        .onChange(of: presentation)
-        {
-            _, _ in
-            registerKeyboardDraft()
         }
         .onDisappear
         {

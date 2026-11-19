@@ -1840,6 +1840,14 @@ extension MigrationStudioTests
                 XCTAssertEqual(old.changes, new.changes)
                 XCTAssertEqual(old.timestamp.timeIntervalSince1970, new.timestamp.timeIntervalSince1970, accuracy: 0.00101)
             }
+            /// @fcn        MigrationStudioTests.withoutEditedHistory(_:)
+            /// @brief      Remove edit-history fields from nested migration comparison values
+            /// @details    Remove edit-history fields from nested migration comparison values
+            ///
+            /// @param[in]  value  Value inspected, merged, or formatted
+            ///
+            /// @return     (Any) result produced from the current inputs and state
+            ///
             func withoutEditedHistory(_ value: Any) -> Any
             {
                 if var object = value as? [String: Any]

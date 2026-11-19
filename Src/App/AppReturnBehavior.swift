@@ -187,6 +187,14 @@ private struct AppReturnProtection: ViewModifier
 extension View
 {
     /// Mark an open item or unfinished editor as protected from automatic return resets
+    /// @fcn        View.protectsAppReturn(_:)
+    /// @brief      Mark interactive content as protection against automatic navigation
+    /// @details    Applies the return-protection modifier with the supplied active state
+    ///
+    /// @param[in]  active  Active supplied to this operation
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     func protectsAppReturn(_ active: Bool = true) -> some View
     {
         modifier(AppReturnProtection(active: active))

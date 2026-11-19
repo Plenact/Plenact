@@ -648,6 +648,14 @@ struct CardHistoryAuthor: Codable, Hashable, Sendable
 
     var label: String { name ?? "Local author" }
 
+    /// @fcn        CardHistoryAuthor.local(in:)
+    /// @brief      Resolve stable local author attribution from the saved profile
+    /// @details    Combines the local reaction identity with the optional saved profile display name
+    ///
+    /// @param[in]  defaults  Preferences domain supplying the saved values
+    ///
+    /// @return     (Self) result produced from the current inputs and state
+    ///
     static func local(in defaults: UserDefaults = .standard) -> Self
     {
         let name = LocalProfileStore.load(from: defaults)?.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -707,6 +715,17 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
         case id, timestamp, changes
     }
 
+    /// @fcn        CardEditRecord.init(id:timestamp:changes:context:)
+    /// @brief      Initialize the stored values and dependencies
+    /// @details    Assigns the supplied values to the new instance
+    ///
+    /// @param[in]  id  Stable identity of the revision or return request
+    /// @param[in]  timestamp  Timestamp of the stored revision
+    /// @param[in]  changes  Field changes retained by this revision
+    /// @param[in]  context  Framework context or retained revision attribution
+    ///
+    /// @return     (CardEditRecord) initialized instance
+    ///
     init(id: UUID, timestamp: Date, changes: [CardEditChange], context: CardHistoryContext? = nil)
     {
         self.id = id
@@ -715,6 +734,15 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
         self.context = context
     }
 
+    /// @fcn        CardEditRecord.init(from:)
+    /// @brief      Initialize the stored values and dependencies
+    /// @details    Assigns the supplied values to the new instance
+    ///
+    /// @param[in]  decoder  Decoder supplying the persisted record
+    ///
+    /// @return     (CardEditRecord) initialized instance
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     init(from decoder: Decoder) throws
     {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -735,6 +763,13 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
         }
     }
 
+    /// @fcn        CardEditRecord.storedChanges()
+    /// @brief      Encode history context alongside the stored field changes
+    /// @details    Appends encoded attribution context without nesting earlier revision records
+    ///
+    /// @return     ([CardEditChange]) result produced from the current inputs and state
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func storedChanges() throws -> [CardEditChange]
     {
         guard let context else
@@ -749,6 +784,15 @@ struct CardEditRecord: Codable, Hashable, Identifiable, Sendable
             newValue: try encoder.encode(context))]
     }
 
+    /// @fcn        CardEditRecord.encode(to:)
+    /// @brief      Encode the revision identity, timestamp, and retained changes
+    /// @details    Uses the established Codable keys and includes context with the stored changes
+    ///
+    /// @param[in]  encoder  Encoder receiving the persisted record
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func encode(to encoder: Encoder) throws
     {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -952,6 +996,12 @@ extension KanbanCard
         editHistory?.last { $0.context?.origin == nil }
     }
 
+    /// @fcn        KanbanCard.clearingRevisionHistory()
+    /// @brief      Clear earlier revisions while retaining the latest edit attribution
+    /// @details    Retains the most recent revision metadata and removes earlier recoverable values
+    ///
+    /// @return     (KanbanCard) result produced from the current inputs and state
+    ///
     func clearingRevisionHistory() -> KanbanCard
     {
         guard let latest = revisions.last else
@@ -967,6 +1017,15 @@ extension KanbanCard
         return cleared
     }
 
+    /// @fcn        KanbanCard.recordCreation(_:author:)
+    /// @brief      Record the first creation event for an actionable item
+    /// @details    Skips dividers and records that already have creation attribution
+    ///
+    /// @param[in]  origin  Source of the initial item creation
+    /// @param[in]  author  Optional attribution for the new history event
+    ///
+    /// @return     (Void) no return value
+    ///
     mutating func recordCreation(_ origin: CardHistoryOrigin, author: CardHistoryAuthor? = nil)
     {
         guard !isSectionDivider, creationHistory == nil, let createdAt else
@@ -1000,6 +1059,18 @@ extension CardEditRecord
         }
     }
 
+    /// @fcn        CardEditRecord.undo(on:replacingConflicts:author:at:)
+    /// @brief      Restore the selected revision or deletion through its accepted save boundary
+    /// @details    Checks the selected recovery record and retains it when restoration is rejected
+    ///
+    /// @param[in]  card  Complete Card or Note record
+    /// @param[in]  replacingConflicts  Whether confirmed conflicting field values may be replaced
+    /// @param[in]  author  Optional attribution for the new history event
+    /// @param[in]  date  Date represented by this operation
+    ///
+    /// @return     (KanbanCard) result produced from the current inputs and state
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func undo(
         on card:            KanbanCard,
         replacingConflicts: Bool               = false,
@@ -1038,6 +1109,16 @@ extension CardEditRecord
         let decoder = JSONDecoder()
         let null = Data("null".utf8)
 
+        /// @fcn        CardEditRecord.restore(_:_:)
+        /// @brief      Restore a field value after checking its current value for conflicts
+        /// @details    Decodes the expected value before restoring the previous value or reporting a conflict
+        ///
+        /// @param[in]  change  Mutation or stored field change to apply
+        /// @param[in]  current  Current field value checked before restoration
+        ///
+        /// @return     (Value) result produced from the current inputs and state
+        /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+        ///
         func restore<Value: Codable & Equatable>(_ change: CardEditChange, _ current: Value) throws -> Value
         {
             let expected = try decoder.decode(Value.self, from: change.newValue ?? null)

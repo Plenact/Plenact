@@ -126,12 +126,30 @@ enum CardBackgroundPortfolio
          "Spring blossoms", "Wildflower meadow", "Evening coast", "Autumn glow", "Lavender fields",
          "Rainy window", "Twilight clouds", "Winter slopes", "Sunlit shadows", "Bamboo calm"]
 
+    /// @fcn        CardBackgroundPortfolio.assetName(at:)
+    /// @brief      Resolve the bundled background asset name at an index
+    /// @details    Resolve the bundled background asset name at an index
+    ///
+    /// @param[in]  index  Zero-based index into the background portfolio
+    ///
+    /// @return     (String) result produced from the current inputs and state
+    ///
     static func assetName(at index: Int) -> String
     {
         String(format: "CardBackground%02d", index + 1)
     }
 
     /// Materialize an immutable local photo so backups and portable exports include its bytes
+    /// @fcn        CardBackgroundPortfolio.surface(at:directory:)
+    /// @brief      Prepare a portable photo surface from a bundled background image
+    /// @details    Validates the portfolio index and prepares its stored photo representation
+    ///
+    /// @param[in]  index  Zero-based index into the background portfolio
+    /// @param[in]  directory  Optional destination directory for generated media
+    ///
+    /// @return     (StudioSurface) result produced from the current inputs and state
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     static func surface(at index: Int, directory: URL? = nil) throws -> StudioSurface
     {
         guard titles.indices.contains(index) else
@@ -158,6 +176,16 @@ enum CardBackgroundPortfolio
     }
 
     /// Advance only after a usable photo has been prepared; a saved Note keeps its chosen photo
+    /// @fcn        CardBackgroundPortfolio.nextSurface(defaults:directory:)
+    /// @brief      Select the next background and advance the saved rotation
+    /// @details    Reads the saved rotation index, prepares the surface, and advances the next selection
+    ///
+    /// @param[in]  defaults  Preferences domain supplying the saved values
+    /// @param[in]  directory  Optional destination directory for generated media
+    ///
+    /// @return     (StudioSurface) result produced from the current inputs and state
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     static func nextSurface(defaults: UserDefaults = .standard, directory: URL? = nil) throws -> StudioSurface
     {
         let index   = max(0, defaults.integer(forKey: rotationKey)) % titles.count      /* Next image  */

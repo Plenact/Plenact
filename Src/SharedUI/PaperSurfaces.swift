@@ -16,6 +16,14 @@ struct CardShelfEdgeFade: ViewModifier
 {
     static let edgeWidth: CGFloat = 16          /* Width of each fade */
 
+    /// @fcn        CardShelfEdgeFade.body(content:)
+    /// @brief      Compose the decorated content and its interaction controls
+    /// @details    Builds the modifier surface from its current state and forwards actions to the owner
+    ///
+    /// @param[in]  content  Original view receiving the modifier
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     func body(content: Content) -> some View
     {
         content

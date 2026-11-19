@@ -24,6 +24,13 @@ import XCTest
 extension PlenactBoardDocumentTests
 {
     /// A held Day Card scrolls at the edge and detaching cancels without committing a drop
+    /// @fcn        PlenactBoardDocumentTests.testDayCardEdgeScrollingStopsWhenSourceDetaches()
+    /// @brief      Verify day card edge scrolling stops when source detaches
+    /// @details    A held Day Card scrolls at the edge and detaching cancels without committing a drop
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     @MainActor
     func testDayCardEdgeScrollingStopsWhenSourceDetaches() async throws
     {
@@ -75,6 +82,13 @@ extension PlenactBoardDocumentTests
 
 
     /// Exercise the mounted Day List's actual native source and receiver against its live binding
+    /// @fcn        PlenactBoardDocumentTests.testDayViewDragReordersCardsInLiveList()
+    /// @brief      Verify day view drag reorders cards in live list
+    /// @details    Exercise the mounted Day List's actual native source and receiver against its live binding
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     @MainActor
     func testDayViewDragReordersCardsInLiveList() async throws
     {
@@ -111,6 +125,14 @@ extension PlenactBoardDocumentTests
         try await Task.sleep(for: .milliseconds(500))
         host.view.layoutIfNeeded()
 
+        /// @fcn        PlenactBoardDocumentTests.descendants(_:)
+        /// @brief      Collect a view and its descendants for the hosted interaction test
+        /// @details    Collect a view and its descendants for the hosted interaction test
+        ///
+        /// @param[in]  view  Native view whose hierarchy or gestures are inspected
+        ///
+        /// @return     ([UIView]) result produced from the current inputs and state
+        ///
         func descendants(_ view: UIView) -> [UIView]
         {
             [view] + view.subviews.flatMap(descendants)
@@ -743,6 +765,13 @@ extension PlenactBoardDocumentTests
 
 
     /// Manual untimed placements survive the same normalization used after saving and reopening
+    /// @fcn        PlenactBoardDocumentTests.testUntimedDayCardsCanMoveAroundTimedCards()
+    /// @brief      Verify untimed day cards can move around timed cards
+    /// @details    Manual untimed placements survive the same normalization used after saving and reopening
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testUntimedDayCardsCanMoveAroundTimedCards() throws
     {
         var early = KanbanCard(id: 1, word: "Early", listTitle: "Day", checklists: [])
@@ -1396,6 +1425,12 @@ extension PlenactBoardDocumentTests
 
 
     /// @brief Verify every bundled background and a complete persistent Note rotation
+    /// @fcn        PlenactBoardDocumentTests.testNoteBackgroundPortfolioRotatesAndRetainsPortablePhotos()
+    /// @details    Exercises the regression scenario with synthetic fixtures and assertions
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testNoteBackgroundPortfolioRotatesAndRetainsPortablePhotos() throws
     {
         let suite    = "Plenact.NoteBackground.Tests." + UUID().uuidString      /* Isolated rotation  */
@@ -1440,6 +1475,12 @@ extension PlenactBoardDocumentTests
 
 
     /// @brief Apply Note photos only during creation while respecting explicit and configured art
+    /// @fcn        PlenactBoardDocumentTests.testNewNotesUsePortfolioWithoutOverridingAppearance()
+    /// @details    Exercises the regression scenario with synthetic fixtures and assertions
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testNewNotesUsePortfolioWithoutOverridingAppearance() throws
     {
         let suite    = "Plenact.NoteCreation.Tests." + UUID().uuidString        /* Isolated rotation   */

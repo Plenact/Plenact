@@ -1238,6 +1238,14 @@ struct CardDetailView: View
     }
 
 
+    /// @fcn        CardDetailView.topHeader(using:)
+    /// @brief      Build the Card detail header and its navigation and action controls
+    /// @details    Adapts Back, location, bookmark, and action controls to the current item presentation
+    ///
+    /// @param[in]  scrollProxy  Proxy for scrolling to detail content
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     private func topHeader(using scrollProxy: ScrollViewProxy) -> some View
     {
         HStack(spacing: 12)
@@ -1327,6 +1335,14 @@ struct CardDetailView: View
     }
 
 
+    /// @fcn        CardDetailView.editableDetail(using:)
+    /// @brief      Build the scrollable Card or Note editor with bounded view types
+    /// @details    Keeps Note and section types bounded while rendering the editable content and scroll margins
+    ///
+    /// @param[in]  scrollProxy  Proxy for scrolling to detail content
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     private func editableDetail(using scrollProxy: ScrollViewProxy) -> some View
     {
         ScrollView

@@ -2269,6 +2269,13 @@ extension PlenactBoardDocumentTests
 
 
     /// Keep the open guide above the same native List when its first Card is added
+    /// @fcn        PlenactBoardDocumentTests.testFocusedListGuidanceStaysOpenWhenFirstCardAppears()
+    /// @brief      Verify focused list guidance stays open when first card appears
+    /// @details    Keep the open guide above the same native List when its first Card is added
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     @MainActor
     func testFocusedListGuidanceStaysOpenWhenFirstCardAppears() async throws
     {
@@ -2278,6 +2285,14 @@ extension PlenactBoardDocumentTests
         let owner    = UUID()                                                   /* Isolate viewport state */
         var list     = KanbanList(id: 4, title: "In the Queue", cards: [])
 
+        /// @fcn        PlenactBoardDocumentTests.focusedView(_:)
+        /// @brief      Build the focused List used by the guidance regression test
+        /// @details    Build the focused List used by the guidance regression test
+        ///
+        /// @param[in]  list  List containing the affected item
+        ///
+        /// @return     (some View) view displaying the current content and controls
+        ///
         func focusedView(_ list: KanbanList) -> some View
         {
             TodayListDetailView(lists: .constant([list]), reservedLists: [], labelLibrary: .constant(.starter),
@@ -2286,6 +2301,14 @@ extension PlenactBoardDocumentTests
                 .environment(\.cardMovementSource, owner)
         }
 
+        /// @fcn        PlenactBoardDocumentTests.collection(in:)
+        /// @brief      Find a native collection view in the hosted view hierarchy
+        /// @details    Find a native collection view in the hosted view hierarchy
+        ///
+        /// @param[in]  view  Native view whose hierarchy or gestures are inspected
+        ///
+        /// @return     (UICollectionView?) result produced from the current inputs and state
+        ///
         func collection(in view: UIView) -> UICollectionView?
         {
             if let collection = view as? UICollectionView

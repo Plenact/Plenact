@@ -23,6 +23,13 @@ import XCTest
 extension PlenactBoardDocumentTests
 {
     /// A date switched inside Day View targets the active List in that date's current Week snapshot
+    /// @fcn        PlenactBoardDocumentTests.testSwitchedCalendarDayTargetsItsOwnWeekAndCurrentListMapping()
+    /// @brief      Verify switched calendar day targets its own week and current list mapping
+    /// @details    A date switched inside Day View targets the active List in that date's current Week snapshot
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testSwitchedCalendarDayTargetsItsOwnWeekAndCurrentListMapping() throws
     {
         var calendar = Calendar.current         /* Same local date context used by the document */

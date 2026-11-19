@@ -1228,6 +1228,14 @@ struct BoardListsView: View
     }
 
 
+    /// @fcn        BoardListsView.plateDueTodayCount(at:)
+    /// @brief      Count eligible On the Table items due on the local day
+    /// @details    Uses the current local calendar to inspect the eligible On the Table records
+    ///
+    /// @param[in]  date  Date represented by this operation
+    ///
+    /// @return     (Int) result produced from the current inputs and state
+    ///
     private func plateDueTodayCount(at date: Date) -> Int
     {
         let calendar = Calendar.autoupdatingCurrent     /* Local day boundary */
@@ -1237,6 +1245,14 @@ struct BoardListsView: View
     }
 
 
+    /// @fcn        BoardListsView.plateHeader(dueTodayCount:)
+    /// @brief      Build the collapsible On the Table heading with its due count
+    /// @details    Combines the due count with the control that toggles the preview section
+    ///
+    /// @param[in]  dueTodayCount  Due today count supplied to this operation
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     private func plateHeader(dueTodayCount: Int) -> some View
     {
         Button

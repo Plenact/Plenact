@@ -836,6 +836,14 @@ extension CardDetailView
 
 
     /// Route an already prepared edit through the active owner
+    /// @fcn        CardDetailView.saveFocusTitle(_:)
+    /// @brief      Normalize and save the optional Today's Focus title
+    /// @details    Trims whitespace, stores an empty override as nil, and records the accepted change
+    ///
+    /// @param[in]  title  User-entered title to normalize and save
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     func saveFocusTitle(_ title: String) -> Bool
     {
         guard !isEditingLocked, !hasDeletedCard, !hasMovedCard else { return false }
@@ -845,6 +853,14 @@ extension CardDetailView
         return saveEditedSnapshot(updated.recordingEdits(from: lastSavedHistoryCard))
     }
 
+    /// @fcn        CardDetailView.saveEditedSnapshot(_:)
+    /// @brief      Save a complete edit through the item's current owner
+    /// @details    Routes edits through the relocated or original owner before updating local history state
+    ///
+    /// @param[in]  updatedCard  Complete proposed item snapshot
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     private func saveEditedSnapshot(_ updatedCard: KanbanCard) -> Bool
     {
         if relocatedCard != nil
@@ -879,6 +895,12 @@ extension CardDetailView
     }
 
 
+    /// @fcn        CardDetailView.clearRevisionHistory()
+    /// @brief      Save the removal of earlier item revisions
+    /// @details    Requires an editable retained item with revisions and saves the cleared history snapshot
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     func clearRevisionHistory() -> Bool
     {
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked, !lastSavedHistoryCard.revisions.isEmpty else
@@ -890,6 +912,16 @@ extension CardDetailView
     }
 
 
+    /// @fcn        CardDetailView.undoRevision(_:replacingConflicts:)
+    /// @brief      Restore selected revision fields and synchronize the editor state
+    /// @details    Applies the revision with conflict handling and restores the editor’s working fields
+    ///
+    /// @param[in]  revision  Revision supplied to this operation
+    /// @param[in]  replacingConflicts  Whether confirmed conflicting field values may be replaced
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func undoRevision(_ revision: CardEditRecord, replacingConflicts: Bool) throws
     {
         guard !hasDeletedCard, !hasMovedCard, !isEditingLocked else
@@ -1356,6 +1388,15 @@ extension CardDetailView
     }
 
 
+    /// @fcn        CardDetailView.adjustCurrentImportance(by:)
+    /// @brief      Adjust importance in the item's current owning collection
+    /// @details    Uses the relocated owner when present and otherwise delegates to the current importance
+    ///             controls
+    ///
+    /// @param[in]  direction  Direction supplied to this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     func adjustCurrentImportance(by direction: Int)
     {
         if let relocatedCard
@@ -1371,6 +1412,14 @@ extension CardDetailView
 
 
     /// Adopt the saved destination without closing the Card or Note editor
+    /// @fcn        CardDetailView.followMovedCard(_:)
+    /// @brief      Retarget the open editor to the moved Card and its destination
+    /// @details    Refreshes the working identity, List title, and saved snapshot from the accepted move result
+    ///
+    /// @param[in]  result  Result supplied to this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     func followMovedCard(_ result: CardMoveResult)
     {
         relocatedCard = result
@@ -1389,6 +1438,15 @@ extension CardDetailView
     }
 
 
+    /// @fcn        CardDetailView.saveRelocatedChange(_:)
+    /// @brief      Save a mutation against the relocated Card's active owner
+    /// @details    Requires a current relocation result and workspace access before saving the supplied
+    ///             mutation
+    ///
+    /// @param[in]  change  Mutation or stored field change to apply
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     @discardableResult
     func saveRelocatedChange(_ change: (inout PersonalCollection, Int, Int) -> Void) -> Bool
     {

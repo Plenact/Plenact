@@ -962,6 +962,14 @@ struct CardEditHistorySheet: View
     }
 
 
+    /// @fcn        CardEditHistorySheet.revisionRow(_:)
+    /// @brief      Build a revision entry with its timestamp, changed fields, and Undo action
+    /// @details    Shows the revision summary and details with controls for supported recoverable fields
+    ///
+    /// @param[in]  record  Revision record displayed or restored
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     private func revisionRow(_ record: CardEditRecord) -> some View
     {
         VStack(alignment: .leading, spacing: 8)
@@ -1005,6 +1013,15 @@ struct CardEditHistorySheet: View
     }
 
 
+    /// @fcn        CardEditHistorySheet.applyUndo(_:replacingConflicts:)
+    /// @brief      Apply revision Undo and present conflicts or failures
+    /// @details    Calls the revision callback and retains conflict information for explicit confirmation
+    ///
+    /// @param[in]  record  Revision record displayed or restored
+    /// @param[in]  replacingConflicts  Whether confirmed conflicting field values may be replaced
+    ///
+    /// @return     (Void) no return value
+    ///
     private func applyUndo(_ record: CardEditRecord, replacingConflicts: Bool = false)
     {
         do
@@ -1022,12 +1039,29 @@ struct CardEditHistorySheet: View
     }
 
 
+    /// @fcn        CardEditHistorySheet.timestamp(_:fallback:)
+    /// @brief      Format a revision timestamp or return its fallback label
+    /// @details    Formats a known date using abbreviated date and short time styles
+    ///
+    /// @param[in]  date  Date represented by this operation
+    /// @param[in]  fallback  Display text used when no timestamp is available
+    ///
+    /// @return     (String) result produced from the current inputs and state
+    ///
     private func timestamp(_ date: Date?, fallback: String) -> String
     {
         date?.formatted(date: .abbreviated, time: .shortened) ?? fallback
     }
 
 
+    /// @fcn        CardEditHistorySheet.fieldLabel(_:)
+    /// @brief      Resolve the readable name of a revision field
+    /// @details    Maps persisted revision field keys to labels shown in the history sheet
+    ///
+    /// @param[in]  field  Stored field name used to select its representation
+    ///
+    /// @return     (String) result produced from the current inputs and state
+    ///
     private func fieldLabel(_ field: String) -> String
     {
         switch field
@@ -1043,6 +1077,15 @@ struct CardEditHistorySheet: View
     }
 
 
+    /// @fcn        CardEditHistorySheet.valueLabel(_:field:)
+    /// @brief      Decode a stored revision field into a readable value
+    /// @details    Decodes supported JSON field values for presentation and handles absent values
+    ///
+    /// @param[in]  value  Value inspected, merged, or formatted
+    /// @param[in]  field  Stored field name used to select its representation
+    ///
+    /// @return     (String) result produced from the current inputs and state
+    ///
     private func valueLabel(_ value: Data?, field: String) -> String
     {
         guard let value else { return "None" }

@@ -23,6 +23,12 @@ import XCTest
 extension PlenactBoardDocumentTests
 {
     /// Reject shared Board removal callbacks even when invoked without the visible menus
+    /// @fcn        PlenactBoardDocumentTests.testPrimaryListColumnsRejectRemoval()
+    /// @brief      Verify primary list columns reject removal
+    /// @details    Reject shared Board removal callbacks even when invoked without the visible menus
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     func testPrimaryListColumnsRejectRemoval()
     {
@@ -41,6 +47,13 @@ extension PlenactBoardDocumentTests
 
 
     /// Verify primary List containers reject removal while ordinary Lists and Boards retain it
+    /// @fcn        PlenactBoardDocumentTests.testPrimaryListsRejectArchiveAndDeletion()
+    /// @brief      Verify primary lists reject archive and deletion
+    /// @details    Verify primary List containers reject removal while ordinary Lists and Boards retain it
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testPrimaryListsRejectArchiveAndDeletion() throws
     {
         let suite    = "Plenact.PrimaryListTests." + UUID().uuidString          /* Isolated preferences */

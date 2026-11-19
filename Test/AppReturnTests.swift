@@ -15,6 +15,12 @@ import XCTest
 final class AppReturnTests: XCTestCase
 {
     /// Manual completion follows visual order, not weekday mappings or today's date
+    /// @fcn        AppReturnTests.testManualWeekOpeningUsesLeftmostActiveList()
+    /// @brief      Verify manual week opening uses leftmost active list
+    /// @details    Manual completion follows visual order, not weekday mappings or today's date
+    ///
+    /// @return     (Void) no return value
+    ///
     func testManualWeekOpeningUsesLeftmostActiveList()
     {
         let date = Date(timeIntervalSince1970: 1_793_016_000)           /* Date used by this operation */
@@ -39,6 +45,12 @@ final class AppReturnTests: XCTestCase
 
 
     /// Ordinary additive edits and day templates must not trigger Week completion navigation
+    /// @fcn        AppReturnTests.testManualWeekCompletionScope()
+    /// @brief      Verify manual week completion scope
+    /// @details    Ordinary additive edits and day templates must not trigger Week completion navigation
+    ///
+    /// @return     (Void) no return value
+    ///
     func testManualWeekCompletionScope()
     {
         let week =                                                      /* Synthetic week fixture */
@@ -58,6 +70,13 @@ final class AppReturnTests: XCTestCase
 
 
     /// A destination not yet mounted reads the new top position without resetting another owner
+    /// @fcn        AppReturnTests.testManualWeekOpeningResetsOnlyItsViewport()
+    /// @brief      Verify manual week opening resets only its viewport
+    /// @details    A destination not yet mounted reads the new top position without resetting another owner
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testManualWeekOpeningResetsOnlyItsViewport() throws
     {
         let domain =                                                            /* Lookup or storage namespace       */
@@ -99,6 +118,12 @@ final class AppReturnTests: XCTestCase
 
 
     /// Measure root navigation value sizes without mounting or importing a workspace
+    /// @fcn        AppReturnTests.testRootNavigationValueSize()
+    /// @brief      Verify root navigation value size
+    /// @details    Measure root navigation value sizes without mounting or importing a workspace
+    ///
+    /// @return     (Void) no return value
+    ///
     func testRootNavigationValueSize()
     {
         let bodyBytes       = MemoryLayout<AppRootView.Body>.size       /* Root view value size       */
@@ -114,6 +139,12 @@ final class AppReturnTests: XCTestCase
 
 
     /// Start the quick-add preview after reveal, then return once at 1.5 seconds unless cancelled
+    /// @fcn        AppReturnTests.testTodayQuickAddPreviewWaitsForRevealAndReturnsAfterIdle()
+    /// @brief      Verify today quick add preview waits for reveal and returns after idle
+    /// @details    Start the quick-add preview after reveal, then return once at 1.5 seconds unless cancelled
+    ///
+    /// @return     (Void) no return value
+    ///
     func testTodayQuickAddPreviewWaitsForRevealAndReturnsAfterIdle()
     {
         let now      = ContinuousClock.now      /* Synthetic monotonic time        */
@@ -144,6 +175,12 @@ final class AppReturnTests: XCTestCase
 
 
     /// Verify visible-time boundaries, permanent cancellation and stale timer rejection
+    /// @fcn        AppReturnTests.testDailyOverviewDeadlineAndCancellation()
+    /// @brief      Verify daily overview deadline and cancellation
+    /// @details    Verify visible-time boundaries, permanent cancellation and stale timer rejection
+    ///
+    /// @return     (Void) no return value
+    ///
     func testDailyOverviewDeadlineAndCancellation()
     {
         let now      = ContinuousClock.now      /* Current reference instant   */
@@ -173,6 +210,12 @@ final class AppReturnTests: XCTestCase
 
 
     /// Observe typing only in the owning scene, then detach without affecting controls
+    /// @fcn        AppReturnTests.testDailyOverviewObservesOnlyItsOwnWindow()
+    /// @brief      Verify daily overview observes only its own window
+    /// @details    Observe typing only in the owning scene, then detach without affecting controls
+    ///
+    /// @return     (Void) no return value
+    ///
     func testDailyOverviewObservesOnlyItsOwnWindow()
     {
         let window     =                                                        /* Synthetic scene window */
@@ -216,6 +259,12 @@ final class AppReturnTests: XCTestCase
 
 
     /// Reduce Motion switches directly and cancellation removes transient visuals
+    /// @fcn        AppReturnTests.testDailyOverviewFadeRespectsReduceMotion()
+    /// @brief      Verify daily overview fade respects reduce motion
+    /// @details    Reduce Motion switches directly and cancellation removes transient visuals
+    ///
+    /// @return     (Void) no return value
+    ///
     func testDailyOverviewFadeRespectsReduceMotion()
     {
         let fade     = DailyOverviewFade()      /* Fade comparison fixture */
@@ -508,6 +557,14 @@ final class AppReturnTests: XCTestCase
 
             memory.record(470, for: "position")
             memory.flush()
+            /// @fcn        AppReturnTests.screen(_:)
+            /// @brief      Build the hosted screen used by the navigation regression test
+            /// @details    Build the hosted screen used by the navigation regression test
+            ///
+            /// @param[in]  request  Request supplied to this operation
+            ///
+            /// @return     (some View) view displaying the current content and controls
+            ///
             func screen(_ request: Int) -> some View
             {
                 ScrollView(horizontal ? .horizontal : .vertical)
@@ -533,6 +590,14 @@ final class AppReturnTests: XCTestCase
             }
             try await Task.sleep(for: .milliseconds(300))
             host.view.layoutIfNeeded()
+            /// @fcn        AppReturnTests.find(_:)
+            /// @brief      Find the eligible scroll view in the hosted view hierarchy
+            /// @details    Find the eligible scroll view in the hosted view hierarchy
+            ///
+            /// @param[in]  view  Native view whose hierarchy or gestures are inspected
+            ///
+            /// @return     (UIScrollView?) result produced from the current inputs and state
+            ///
             func find(_ view: UIView) -> UIScrollView?
             {
                 if let scroll = view as? UIScrollView,
@@ -545,6 +610,12 @@ final class AppReturnTests: XCTestCase
 
             let scroll = try XCTUnwrap(find(host.view))         /* Native scroll view */
 
+            /// @fcn        AppReturnTests.offset()
+            /// @brief      Read the inset-normalized scroll offset on the selected axis
+            /// @details    Read the inset-normalized scroll offset on the selected axis
+            ///
+            /// @return     (CGFloat) result produced from the current inputs and state
+            ///
             func offset() -> CGFloat
             {
                 horizontal ? scroll.contentOffset.x + scroll.adjustedContentInset.left
@@ -605,6 +676,15 @@ final class AppReturnTests: XCTestCase
             defaults.removePersistentDomain(forName: domain)
             previous?.makeKeyAndVisible()
         }
+        /// @fcn        AppReturnTests.screen(_:target:)
+        /// @brief      Build the hosted screen used by the navigation regression test
+        /// @details    Build the hosted screen used by the navigation regression test
+        ///
+        /// @param[in]  request  Request supplied to this operation
+        /// @param[in]  target  Target supplied to this operation
+        ///
+        /// @return     (some View) view displaying the current content and controls
+        ///
         func screen(_ request: Int, target: Int? = nil) -> some View
         {
             ContentView(lists: .constant(lists), boardTitle: "Return test", onListsChanged: { _ in },
@@ -612,6 +692,14 @@ final class AppReturnTests: XCTestCase
                 .environment(\.appReturnResetRequest, request)
                 .environment(\.appReturnTargetListID, target)
         }
+        /// @fcn        AppReturnTests.scrolls(_:)
+        /// @brief      Collect native scroll views from the hosted view hierarchy
+        /// @details    Collect native scroll views from the hosted view hierarchy
+        ///
+        /// @param[in]  view  Native view whose hierarchy or gestures are inspected
+        ///
+        /// @return     ([UIScrollView]) result produced from the current inputs and state
+        ///
         func scrolls(_ view: UIView) -> [UIScrollView]
         {
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrolls)

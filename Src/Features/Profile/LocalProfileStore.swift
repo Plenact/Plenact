@@ -288,6 +288,14 @@ enum NewCardLayoutStore
 {
     private static let key = "Plenact.NewCardLayout.v1"         /* Device preference key */
 
+    /// @fcn        NewCardLayoutStore.load(from:)
+    /// @brief      Load and validate the saved default Card layout
+    /// @details    Load and validate the saved default Card layout
+    ///
+    /// @param[in]  defaults  Preferences domain supplying the saved values
+    ///
+    /// @return     (CardSectionLayout?) result produced from the current inputs and state
+    ///
     static func load(from defaults: UserDefaults = .standard) -> CardSectionLayout?
     {
         guard let data = defaults.data(forKey: key) else
@@ -298,6 +306,15 @@ enum NewCardLayoutStore
         return try? JSONDecoder().decode(CardSectionLayout.self, from: data)
     }
 
+    /// @fcn        NewCardLayoutStore.save(_:to:)
+    /// @brief      Save the default Card layout for future items
+    /// @details    Save the default Card layout for future items
+    ///
+    /// @param[in]  layout  Layout supplied to this operation
+    /// @param[in]  defaults  Preferences domain supplying the saved values
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     static func save(_ layout: CardSectionLayout, to defaults: UserDefaults = .standard) -> Bool
     {
         if layout == CardSectionLayout()

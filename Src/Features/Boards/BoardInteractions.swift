@@ -568,6 +568,15 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
         /// Give a held Day Card priority over its enclosing List's scrolling gesture
+        /// @fcn        BoardCardDragSource.Coordinator.configureDirectReorder(in:)
+        /// @brief      Install or remove the hold gesture for direct Card reordering
+        /// @details    Enables the hold recognizer for direct drop and makes the enclosing scroll pan wait for
+        ///             it
+        ///
+        /// @param[in]  view  Native view whose hierarchy or gestures are inspected
+        ///
+        /// @return     (Void) no return value
+        ///
         private func configureDirectReorder(in view: UIView)
         {
             guard source.onDirectDrop != nil else
@@ -609,6 +618,15 @@ struct BoardCardDragSource: UIViewRepresentable
         }
 
 
+        /// @fcn        BoardCardDragSource.Coordinator.gestureRecognizer(_:shouldReceive:)
+        /// @brief      Allow a reorder gesture only from an eligible Card region
+        /// @details    Checks the touch in the hosting Card container before accepting the reorder gesture
+        ///
+        /// @param[in]  gestureRecognizer  Recognizer requesting eligibility for the touch
+        /// @param[in]  touch  Touch inspected against the Card's drag region
+        ///
+        /// @return     (Bool) whether the operation or eligibility check succeeds
+        ///
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool
         {
             guard let container else
@@ -619,6 +637,14 @@ struct BoardCardDragSource: UIViewRepresentable
         }
 
 
+        /// @fcn        BoardCardDragSource.Coordinator.directReorderChanged(_:)
+        /// @brief      Forward the hold gesture state and window location to reordering
+        /// @details    Converts the touch into window coordinates before forwarding the gesture phase
+        ///
+        /// @param[in]  gesture  Native long-press gesture supplying state and position
+        ///
+        /// @return     (Void) no return value
+        ///
         @objc private func directReorderChanged(_ gesture: UILongPressGestureRecognizer)
         {
             guard let window = gesture.view?.window else
@@ -630,6 +656,15 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
         /// Commit only a completed hold; cancelled gestures leave canonical content unchanged
+        /// @fcn        BoardCardDragSource.Coordinator.handleDirectReorder(_:at:)
+        /// @brief      Track held Card movement and commit only a completed drop
+        /// @details    Preserves the last valid insertion point and clears cancelled drag sessions
+        ///
+        /// @param[in]  state  Current phase of the direct reorder gesture
+        /// @param[in]  point  Touch or drop position in the expected coordinate space
+        ///
+        /// @return     (Void) no return value
+        ///
         func handleDirectReorder(_ state: UIGestureRecognizer.State, at point: CGPoint)
         {
             guard source.onDirectDrop != nil else
@@ -673,6 +708,14 @@ struct BoardCardDragSource: UIViewRepresentable
 
 
         /// Keep a held Card moving through a long Day List near either visible edge
+        /// @fcn        BoardCardDragSource.Coordinator.scrollDirectReorder(_:)
+        /// @brief      Scroll near the List edges while a held Card remains attached
+        /// @details    Uses the retained finger position and scroll viewport to advance near visible edges
+        ///
+        /// @param[in]  link  Display-link tick used for edge scrolling
+        ///
+        /// @return     (Void) no return value
+        ///
         @objc private func scrollDirectReorder(_ link: CADisplayLink)
         {
             guard isDragging, let scroll = reorderScroll, let point = reorderPoint,

@@ -701,6 +701,12 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
 
         /// Report a return only after the list settles at the top following a scroll away.
+        /// @fcn        BoardViewportScrollProbe.Coordinator.observeReturnToTop()
+        /// @brief      Report a settled return to the top after scrolling past the summary
+        /// @details    Waits for dragging and deceleration to finish before reporting a return to the top
+        ///
+        /// @return     (Void) no return value
+        ///
         private func observeReturnToTop()
         {
             guard restored, onReturnToTop != nil, let scroll else { return }
@@ -742,6 +748,13 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
 
         /// Scroll the native rows together so the user can pull back to the original top.
+        /// @fcn        BoardViewportScrollProbe.Coordinator.applyInitialScroll()
+        /// @brief      Scroll the summary and Card rows together to the requested offset
+        /// @details    Adds range for short Lists and animates native offsets until completion or user
+        ///             interruption
+        ///
+        /// @return     (Void) no return value
+        ///
         private func applyInitialScroll()
         {
             guard restored, let initialScroll, appliedScrollID != initialScroll.id, initialScroll.distance > 0,

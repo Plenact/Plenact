@@ -322,6 +322,14 @@ extension PlenactBoardDocumentTests
 
 
     /// Follow-up edits use the moved Card's owner and identity even when another owner shares its ID
+    /// @fcn        PlenactBoardDocumentTests.testMovedCardSavesEditsAtDestinationAndRejectsReusedIdentity()
+    /// @brief      Verify moved card saves edits at destination and rejects reused identity
+    /// @details    Follow-up edits use the moved Card's owner and identity even when another owner shares its
+    ///             ID
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testMovedCardSavesEditsAtDestinationAndRejectsReusedIdentity() throws
     {
         let date = Date(timeIntervalSince1970: 1_793_016_000)

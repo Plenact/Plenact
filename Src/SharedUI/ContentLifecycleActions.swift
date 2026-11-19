@@ -22,6 +22,14 @@ struct ListItemSwipeDelete: ViewModifier
     let enabled: Bool
     let onRequest: () -> Void
 
+    /// @fcn        ListItemSwipeDelete.body(content:)
+    /// @brief      Compose the decorated content and its interaction controls
+    /// @details    Builds the modifier surface from its current state and forwards actions to the owner
+    ///
+    /// @param[in]  content  Original view receiving the modifier
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     func body(content: Content) -> some View
     {
         content.swipeActions(edge: .trailing, allowsFullSwipe: false)
@@ -145,6 +153,16 @@ struct ListSwipeUndo
         let media: Set<String>
         let cleanMedia: ((Set<String>) -> Void)?
 
+        /// @fcn        ListSwipeUndo.Deletion.restoring(in:bookmarks:)
+        /// @brief      Merge a deleted item into its original List without overwriting later edits
+        /// @details    Checks destination availability and identity uniqueness, then uses neighboring Cards to
+        ///             recover position
+        ///
+        /// @param[in]  lists  Current ordered Lists, including retained archive records
+        /// @param[in]  saved  Current saved item identities
+        ///
+        /// @return     (([KanbanList], Set<Int>)?) result produced from the current inputs and state
+        ///
         func restoring(in lists: [KanbanList], bookmarks saved: Set<Int>) -> ([KanbanList], Set<Int>)?
         {
             var snapshot = lists
@@ -173,6 +191,19 @@ struct ListSwipeUndo
         }
     }
 
+    /// @fcn        ListSwipeUndo.delete(_:from:bookmarks:reduceMotion:cleanMedia:save:)
+    /// @brief      Save a swipe deletion and retain its item and media for Undo
+    /// @details    Protects media before saving and appends an Undo snapshot only after accepted deletion
+    ///
+    /// @param[in]  card  Complete Card or Note record
+    /// @param[in]  list  List containing the affected item
+    /// @param[in]  bookmarks  Current saved item identities
+    /// @param[in]  reduceMotion  Whether animations should be reduced
+    /// @param[in]  cleanMedia  Cleanup callback for released attachment filenames
+    /// @param[in]  save  Callback that saves deletion and reports acceptance
+    ///
+    /// @return     (Void) no return value
+    ///
     mutating func delete(_ card: KanbanCard, from list: KanbanList, bookmarks: Set<Int>,
                          reduceMotion: Bool, cleanMedia: ((Set<String>) -> Void)?, save: (Int) -> Bool)
     {
@@ -208,6 +239,15 @@ struct ListSwipeUndo
         }
     }
 
+    /// @fcn        ListSwipeUndo.undo(_:restore:)
+    /// @brief      Restore the selected revision or deletion through its accepted save boundary
+    /// @details    Checks the selected recovery record and retains it when restoration is rejected
+    ///
+    /// @param[in]  deletion  Retained item deletion to restore
+    /// @param[in]  restore  Callback that saves restoration and reports acceptance
+    ///
+    /// @return     (Void) no return value
+    ///
     @MainActor
     mutating func undo(_ deletion: Deletion, restore: (Deletion) -> Bool)
     {
@@ -225,6 +265,12 @@ struct ListSwipeUndo
         CardAttachmentStore.releaseUndoMedia(token: deletion.token)
     }
 
+    /// @fcn        ListSwipeUndo.expire()
+    /// @brief      Release expired deletion snapshots and request unused-media cleanup
+    /// @details    Clears pending snapshots, releases their media protection, and invokes each cleanup callback
+    ///
+    /// @return     (Void) no return value
+    ///
     mutating func expire()
     {
         let expired = deletions
@@ -253,6 +299,14 @@ struct ListSwipeUndoBanner: ViewModifier
     @Environment(\.workspaceBottomBarTopInset) private var toolbarTopInset
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// @fcn        ListSwipeUndoBanner.body(content:)
+    /// @brief      Compose the decorated content and its interaction controls
+    /// @details    Builds the modifier surface from its current state and forwards actions to the owner
+    ///
+    /// @param[in]  content  Original view receiving the modifier
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     func body(content: Content) -> some View
     {
         content

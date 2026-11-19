@@ -326,6 +326,16 @@ struct ContentView: View
     @State private var swipeUndo = ListSwipeUndo()
     @Environment(\.accessibilityReduceMotion) private var reduceSwipeMotion
 
+    /// @fcn        ContentView.swipeDelete(_:from:)
+    /// @brief      Delete the selected Card through the shared Undo history
+    /// @details    Resolves the current source List and delegates checked deletion to the shared recovery
+    ///             history
+    ///
+    /// @param[in]  card  Complete Card or Note record
+    /// @param[in]  listID  Identity of the destination or affected List
+    ///
+    /// @return     (Void) no return value
+    ///
     private func swipeDelete(_ card: KanbanCard, from listID: Int)
     {
         guard let list = lists.first(where: { $0.id == listID }) else { return }
@@ -333,6 +343,15 @@ struct ContentView: View
                          cleanMedia: planningCalendarAccess?.cleanDeletedMedia, save: deleteCard)
     }
 
+    /// @fcn        ContentView.restoreSwipeDeletion(_:)
+    /// @brief      Restore the deleted Card and bookmark through its owning save callback
+    /// @details    Merges the retained record into current Lists and submits the restored bookmarks to the
+    ///             owner
+    ///
+    /// @param[in]  deletion  Retained item deletion to restore
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     private func restoreSwipeDeletion(_ deletion: ListSwipeUndo.Deletion) -> Bool
     {
         guard let (snapshot, bookmarks) = deletion.restoring(in: lists + archivedLists, bookmarks: savedCardIDs)

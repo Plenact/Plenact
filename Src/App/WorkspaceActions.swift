@@ -1490,6 +1490,17 @@ extension AppRootView
     }
 
 
+    /// @fcn        AppRootView.movePlanningCardWithResult(_:source:destination:documentOverride:)
+    /// @brief      Move a Card to its destination and return its saved identity
+    /// @details    Resolves the source owner and saves the move before publishing its destination result
+    ///
+    /// @param[in]  card  Complete Card or Note record
+    /// @param[in]  source  Source supplied to this operation
+    /// @param[in]  destination  Destination supplied to this operation
+    /// @param[in]  documentOverride  Document override supplied to this operation
+    ///
+    /// @return     (CardMoveResult?) result produced from the current inputs and state
+    ///
     func movePlanningCardWithResult(
         _ card:           KanbanCard,
         source:           UUID?,
@@ -2518,6 +2529,15 @@ extension AppRootView
     }
 
 
+    /// @fcn        AppRootView.restoreWeekCardDeletion(_:_:)
+    /// @brief      Save and publish restored Week content and bookmarks
+    /// @details    Delegates to the checked Week commit and returns false when saving throws
+    ///
+    /// @param[in]  snapshot  Complete restored List snapshot to save
+    /// @param[in]  bookmarks  Current saved item identities
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     func restoreWeekCardDeletion(_ snapshot: [KanbanList], _ bookmarks: Set<Int>) -> Bool
     {
         do

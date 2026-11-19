@@ -17,12 +17,24 @@ final class ItemToolbarVisibility
     private(set) var isHidden = false
     private var keepsVisible = false
 
+    /// @fcn        ItemToolbarVisibility.reset()
+    /// @brief      Show the item toolbar and rearm its idle dismissal
+    /// @details    Clears the keep-visible override and makes the toolbar available for a new idle timer
+    ///
+    /// @return     (Void) no return value
+    ///
     func reset()
     {
         isHidden = false
         keepsVisible = false
     }
 
+    /// @fcn        ItemToolbarVisibility.hideIfIdle()
+    /// @brief      Hide the item toolbar unless an interaction has kept it visible
+    /// @details    Checks the keep-visible override before setting the hidden state
+    ///
+    /// @return     (Void) no return value
+    ///
     func hideIfIdle()
     {
         if !keepsVisible
@@ -31,6 +43,12 @@ final class ItemToolbarVisibility
         }
     }
 
+    /// @fcn        ItemToolbarVisibility.keepVisible()
+    /// @brief      Show the item toolbar and retain it for the current session
+    /// @details    Sets the keep-visible override and immediately reveals the toolbar
+    ///
+    /// @return     (Void) no return value
+    ///
     func keepVisible()
     {
         keepsVisible = true
@@ -48,6 +66,15 @@ struct WorkspaceItemToolbars
         entries.last
     }
 
+    /// @fcn        WorkspaceItemToolbars.update(_:presentation:)
+    /// @brief      Register or remove an item toolbar for its current presentation
+    /// @details    Matches toolbar instances by identity before updating the active presentation entries
+    ///
+    /// @param[in]  toolbar  Toolbar supplied to this operation
+    /// @param[in]  presentation  Presentation supplied to this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     mutating func update(_ toolbar: ItemToolbarVisibility, presentation: ItemPresentation?)
     {
         if let index = entries.firstIndex(where: { $0.toolbar === toolbar })
@@ -115,6 +142,14 @@ struct ItemToolbarRevealButton: View
 
 extension View
 {
+    /// @fcn        View.keepItemToolbarVisibleOnTouch(_:)
+    /// @brief      Keep the item toolbar visible when its controls receive a touch
+    /// @details    Uses a simultaneous zero-distance gesture to observe touches on the toolbar controls
+    ///
+    /// @param[in]  toolbar  Toolbar supplied to this operation
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     func keepItemToolbarVisibleOnTouch(_ toolbar: ItemToolbarVisibility?) -> some View
     {
         simultaneousGesture(

@@ -22,10 +22,27 @@ struct CardMoveResult
 
 
     /// Save a follow-up change against the destination's current snapshot
+    /// @fcn        CardMoveResult.saveChange(using:_:)
+    /// @brief      Save a change against the Card's current destination owner
+    /// @details    Resolves the current active destination before applying and persisting the supplied mutation
+    ///
+    /// @param[in]  access  Access supplied to this operation
+    /// @param[in]  change  Mutation or stored field change to apply
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     func saveChange(
         using access: PlanningCalendarAccess,
         _ change:     (inout PersonalCollection, Int, Int) -> Void) -> Bool
     {
+        /// @fcn        CardMoveResult.apply(to:)
+        /// @brief      Apply the requested change to the matching active destination record
+        /// @details    Locates the destination Card by identity and rejects unavailable or stale owners
+        ///
+        /// @param[in,out]  collection  Collection supplied to this operation
+        ///
+        /// @return     (Bool) whether the operation or eligibility check succeeds
+        ///
         func apply(to collection: inout PersonalCollection) -> Bool
         {
             guard collection.isActive,
@@ -390,6 +407,14 @@ struct CardDestinationMenu: View
         sourceOverride ?? source
     }
 
+    /// @fcn        CardDestinationMenu.isCurrentDestination(_:)
+    /// @brief      Check whether a movement destination already owns the open Card
+    /// @details    Compares the requested destination against the Card’s current owner and List
+    ///
+    /// @param[in]  destination  Destination supplied to this operation
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     private func isCurrentDestination(_ destination: CardMoveDestination) -> Bool
     {
         let currentWeek = calendarAccess?.document.weeks.first
@@ -410,6 +435,14 @@ struct CardDestinationMenu: View
         return (destination.columnTitle ?? destination.title) == card.listTitle
     }
 
+    /// @fcn        CardDestinationMenu.completeMove(_:)
+    /// @brief      Report a completed Card move or dismiss the original presentation
+    /// @details    Passes the destination result to the follow callback or closes the source presentation
+    ///
+    /// @param[in]  result  Result supplied to this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     private func completeMove(_ result: CardMoveResult)
     {
         if let onCardMoved

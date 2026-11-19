@@ -753,6 +753,14 @@ enum PortableStructuralEdits
                 deleted.insert(record["id"] as! String)
             }
         }
+        /// @fcn        PortableStructuralEdits.collectNestedIDs(_:)
+        /// @brief      Collect nested record identities from dictionaries and arrays
+        /// @details    Walks nested dictionaries and arrays to include embedded identities
+        ///
+        /// @param[in]  value  Value inspected, merged, or formatted
+        ///
+        /// @return     (Void) no return value
+        ///
         func collectNestedIDs(_ value: Any)
         {
             if let object = value as? [String: Any]
@@ -838,6 +846,15 @@ enum PortableStructuralEdits
             !deleted.contains(($0["payload"] as! [String: Any])["card_id"] as! String)
         }
 
+        /// @fcn        PortableStructuralEdits.referencesDeleted(_:field:)
+        /// @brief      Detect references to deleted records in nested content
+        /// @details    Recurses through nested values and checks identity references against the deleted set
+        ///
+        /// @param[in]  value  Value inspected, merged, or formatted
+        /// @param[in]  field  Stored field name used to select its representation
+        ///
+        /// @return     (Bool) whether the operation or eligibility check succeeds
+        ///
         func referencesDeleted(_ value: Any, field: String = "") -> Bool
         {
             if let object = value as? [String: Any]

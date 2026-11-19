@@ -130,6 +130,15 @@ enum CardAttachmentStore
     private static let undoMediaLock = NSLock()
     private static var undoMedia: [UUID: Set<String>] = [:]
 
+    /// @fcn        CardAttachmentStore.retainForUndo(_:token:)
+    /// @brief      Protect attachment filenames while a deletion can be undone
+    /// @details    Stores the token-owned filename set under the shared media lock
+    ///
+    /// @param[in]  files  Attachment filenames retained for Undo
+    /// @param[in]  token  Identity of the attachment-retention session
+    ///
+    /// @return     (Void) no return value
+    ///
     static func retainForUndo(_ files: Set<String>, token: UUID)
     {
         undoMediaLock.lock()
@@ -137,6 +146,14 @@ enum CardAttachmentStore
         undoMedia[token] = files
     }
 
+    /// @fcn        CardAttachmentStore.releaseUndoMedia(token:)
+    /// @brief      Release attachment protection for a completed Undo session
+    /// @details    Removes the token-owned filename set under the shared media lock
+    ///
+    /// @param[in]  token  Identity of the attachment-retention session
+    ///
+    /// @return     (Void) no return value
+    ///
     static func releaseUndoMedia(token: UUID)
     {
         undoMediaLock.lock()

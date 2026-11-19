@@ -374,6 +374,14 @@ struct PlanningRoutineLibrary: Codable, Equatable
         return template.demonstratingFocus()
     }()
     /// Insert an unnamed divider after the morning planning Card in each bundled routine day.
+    /// @fcn        PlanningRoutineLibrary.addingMorningDividers(to:)
+    /// @brief      Insert an unnamed divider after the morning planning Card
+    /// @details    Uses fresh Card identities and skips days already containing a divider at that position
+    ///
+    /// @param[in]  lists  Current ordered Lists, including retained archive records
+    ///
+    /// @return     ([KanbanList]) result produced from the current inputs and state
+    ///
     static func addingMorningDividers(to lists: [KanbanList]) -> [KanbanList]
     {
         var lists = lists

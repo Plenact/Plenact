@@ -16,6 +16,13 @@ import XCTest
 final class PlanSettingsTests: XCTestCase
 {
     /// Verify a saved layout seeds new Cards and respects explicit layouts and other item types
+    /// @fcn        PlanSettingsTests.testDefaultCardLayoutSeedsNewCardsAndResetsForFutureCards()
+    /// @brief      Verify default card layout seeds new cards and resets for future cards
+    /// @details    Verify a saved layout seeds new Cards and respects explicit layouts and other item types
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testDefaultCardLayoutSeedsNewCardsAndResetsForFutureCards() throws
     {
         let suite    = "Plenact.NewCardLayout.Tests." + UUID().uuidString       /* Isolated settings */

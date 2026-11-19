@@ -524,6 +524,12 @@ struct PlanningCalendarWeekView: View
 
 
     /// Complete navigation only after the inner Day presentation finishes dismissing
+    /// @fcn        PlanningCalendarWeekView.finishDayExit()
+    /// @brief      Apply the requested Calendar or Week destination after Day dismissal
+    /// @details    Consumes the pending exit and selects the requested Week and List or closes the Calendar
+    ///
+    /// @return     (Void) no return value
+    ///
     private func finishDayExit()
     {
         let exit = dayExit      /* Pending destination */
@@ -851,6 +857,16 @@ struct PlanningDaySelection
     }
 
 
+    /// @fcn        PlanningDaySelection.resolve(_:in:calendar:)
+    /// @brief      Resolve the selected date to a List in its owning Week
+    /// @details    Looks up the represented day key and resolves its retained List identity
+    ///
+    /// @param[in]  date  Date represented by this operation
+    /// @param[in]  week  Week supplied to this operation
+    /// @param[in]  calendar  Calendar used for local dates and Week boundaries
+    ///
+    /// @return     (Self?) result produced from the current inputs and state
+    ///
     static func resolve(_ date: Date, in week: DatedPlanningWeek, calendar: Calendar) -> Self?
     {
         guard let id = week.dayListIDs[PlanningDate.key(date, calendar: calendar)],

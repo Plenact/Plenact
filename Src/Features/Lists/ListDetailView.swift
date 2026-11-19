@@ -622,6 +622,14 @@ struct TodayListDetailView: View
     }
 
 
+    /// @fcn        TodayListDetailView.dismissDaySummary(allowingPartialVisibility:)
+    /// @brief      Request the shared slide-out animation for the Day summary
+    /// @details    Cancels idle dismissal and advances the scroll request with the requested visibility policy
+    ///
+    /// @param[in]  allowingPartialVisibility  Allowing partial visibility supplied to this operation
+    ///
+    /// @return     (Void) no return value
+    ///
     private func dismissDaySummary(allowingPartialVisibility: Bool = false)
     {
         isDaySummaryDismissalPending = false
@@ -634,6 +642,15 @@ struct TodayListDetailView: View
     {
         static var defaultValue: Anchor<CGRect>? { nil }
 
+        /// @fcn        TodayListDetailView.DayFooterBounds.reduce(value:nextValue:)
+        /// @brief      Keep the latest available Day footer anchor
+        /// @details    Retains the next non-nil anchor or preserves the current preference value
+        ///
+        /// @param[in,out]  value  Value inspected, merged, or formatted
+        /// @param[in]  nextValue  Next value supplied to this operation
+        ///
+        /// @return     (Void) no return value
+        ///
         static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?)
         {
             value = nextValue() ?? value
@@ -1659,12 +1676,28 @@ struct TodayListDetailView: View
     }
 
 
+    /// @fcn        TodayListDetailView.canSwipeDelete(_:)
+    /// @brief      Accept a deliberate left swipe outside active reorder and edit sessions
+    /// @details    Requires leftward intent stronger than vertical movement and no active Card drag
+    ///
+    /// @param[in]  drag  Drag translation and starting location
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     private func canSwipeDelete(_ drag: DragGesture.Value) -> Bool
     {
         editMode != .active && draggedCardID == nil && slidingOutCardID == nil
             && -drag.translation.width > abs(drag.translation.height) * 2
     }
 
+    /// @fcn        TodayListDetailView.slideOutCard(_:)
+    /// @brief      Animate the row offscreen before committing its swipe deletion
+    /// @details    Honors Reduce Motion and commits deletion after the row’s slide completes
+    ///
+    /// @param[in]  card  Complete Card or Note record
+    ///
+    /// @return     (Void) no return value
+    ///
     private func slideOutCard(_ card: KanbanCard)
     {
         guard !reduceSummaryMotion else
@@ -1688,6 +1721,15 @@ struct TodayListDetailView: View
         }
     }
 
+    /// @fcn        TodayListDetailView.swipeDelete(_:)
+    /// @brief      Delete the selected Card through the shared Undo history
+    /// @details    Resolves the current source List and delegates checked deletion to the shared recovery
+    ///             history
+    ///
+    /// @param[in]  card  Complete Card or Note record
+    ///
+    /// @return     (Void) no return value
+    ///
     private func swipeDelete(_ card: KanbanCard)
     {
         guard let focusedList else { return }
@@ -1695,6 +1737,15 @@ struct TodayListDetailView: View
                          cleanMedia: planningCalendarAccess?.cleanDeletedMedia, save: deleteCard)
     }
 
+    /// @fcn        TodayListDetailView.restoreSwipeDeletion(_:)
+    /// @brief      Restore the deleted Card and bookmark through its owning save callback
+    /// @details    Merges the retained record into current Lists and submits the restored bookmarks to the
+    ///             owner
+    ///
+    /// @param[in]  deletion  Retained item deletion to restore
+    ///
+    /// @return     (Bool) whether the operation or eligibility check succeeds
+    ///
     private func restoreSwipeDeletion(_ deletion: ListSwipeUndo.Deletion) -> Bool
     {
         guard let (snapshot, bookmarks) = deletion.restoring(in: lists + reservedLists, bookmarks: savedCardIDs)

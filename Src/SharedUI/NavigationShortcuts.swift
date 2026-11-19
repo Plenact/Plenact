@@ -132,6 +132,15 @@ struct LowerCornerBackShortcut: ViewModifier
         }
     }
 
+    /// @fcn        LowerCornerBackShortcut.backTarget(height:action:)
+    /// @brief      Build the lower-corner Back touch target
+    /// @details    Build the lower-corner Back touch target
+    ///
+    /// @param[in]  height  Height of the lower-corner touch region
+    /// @param[in]  action  Action performed when the target is activated
+    ///
+    /// @return     (some View) view displaying the current content and controls
+    ///
     private func backTarget(height: CGFloat, action: @escaping () -> Void) -> some View
     {
         Color.clear

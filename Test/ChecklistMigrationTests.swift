@@ -70,6 +70,14 @@ final class ChecklistMigrationTests: XCTestCase
         }
         try await Task.sleep(for: .milliseconds(500))
         host.view.layoutIfNeeded()
+        /// @fcn        ChecklistMigrationTests.editor(in:)
+        /// @brief      Find a text-field editor in a native view hierarchy
+        /// @details    Find a text-field editor in a native view hierarchy
+        ///
+        /// @param[in]  view  Native view whose hierarchy or gestures are inspected
+        ///
+        /// @return     (UITextField?) result produced from the current inputs and state
+        ///
         func editor(in view: UIView) -> UITextField?
         {
             if let field = view as? UITextField

@@ -23,6 +23,13 @@ import XCTest
 extension PlenactBoardDocumentTests
 {
     /// Clearing removes reversible values through the List save boundary and retains attribution
+    /// @fcn        PlenactBoardDocumentTests.testClearRevisionHistoryPersistsWithoutErasingCreationOrLastEdit()
+    /// @brief      Verify clear revision history persists without erasing creation or last edit
+    /// @details    Clearing removes reversible values through the List save boundary and retains attribution
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testClearRevisionHistoryPersistsWithoutErasingCreationOrLastEdit() throws
     {
         let date = Date(timeIntervalSince1970: 1_793_016_000)
@@ -61,6 +68,13 @@ extension PlenactBoardDocumentTests
 
 
     /// Undo one supported revision without removing later unrelated changes or origin
+    /// @fcn        PlenactBoardDocumentTests.testCardRevisionUndoPreservesLaterChangesAndRequiresConflictConfirmation()
+    /// @brief      Verify card revision undo preserves later changes and requires conflict confirmation
+    /// @details    Undo one supported revision without removing later unrelated changes or origin
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     func testCardRevisionUndoPreservesLaterChangesAndRequiresConflictConfirmation() throws
     {
         let date = Date(timeIntervalSince1970: 1_793_016_000)
@@ -138,6 +152,14 @@ extension PlenactBoardDocumentTests
             previous?.makeKeyAndVisible()
         }
 
+        /// @fcn        PlenactBoardDocumentTests.scrollers(_:)
+        /// @brief      Collect native scroll views for the detail-layout assertions
+        /// @details    Collect native scroll views for the detail-layout assertions
+        ///
+        /// @param[in]  view  Native view whose hierarchy or gestures are inspected
+        ///
+        /// @return     ([UIScrollView]) result produced from the current inputs and state
+        ///
         func scrollers(_ view: UIView) -> [UIScrollView]
         {
             ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrollers)
@@ -158,6 +180,16 @@ extension PlenactBoardDocumentTests
 
         defer { try? FileManager.default.removeItem(at: photoURL) }
 
+        /// @fcn        PlenactBoardDocumentTests.pixels(in:rect:)
+        /// @brief      Capture rendered pixels from the requested native-view rectangle
+        /// @details    Capture rendered pixels from the requested native-view rectangle
+        ///
+        /// @param[in]  view  Native view whose hierarchy or gestures are inspected
+        /// @param[in]  rect  Rect supplied to this operation
+        ///
+        /// @return     (Data) result produced from the current inputs and state
+        /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+        ///
         func pixels(in view: UIView, rect: CGRect) throws -> Data
         {
             let image = UIGraphicsImageRenderer(bounds: view.bounds).image
@@ -217,6 +249,13 @@ extension PlenactBoardDocumentTests
 
             XCTAssertGreaterThan(safeTop, 20)
 
+            /// @fcn        PlenactBoardDocumentTests.topPixels()
+            /// @brief      Capture the hosted detail header pixels for comparison
+            /// @details    Capture the hosted detail header pixels for comparison
+            ///
+            /// @return     (Data) result produced from the current inputs and state
+            /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+            ///
             func topPixels() throws -> Data
             {
                 let image = UIGraphicsImageRenderer(bounds: host.view.bounds).image
@@ -825,6 +864,13 @@ extension PlenactBoardDocumentTests
     }
 
 
+    /// @fcn        PlenactBoardDocumentTests.testCardAndNoteBackUseOwningListNavigationPath()
+    /// @brief      Verify card and note back use owning list navigation path
+    /// @details    Exercises the regression scenario with synthetic fixtures and assertions
+    ///
+    /// @return     (Void) no return value
+    /// @throws     Propagates errors from validation, decoding, persistence, or throwing callbacks
+    ///
     @MainActor
     func testCardAndNoteBackUseOwningListNavigationPath() async throws
     {

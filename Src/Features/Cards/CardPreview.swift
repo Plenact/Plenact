@@ -100,6 +100,7 @@ struct KanbanCardView: View
     var compactCards:        Bool                  = false                      /* Compact cards                                                 */
     var titleColor:          ListPreviewTextColor? = nil                        /* Title color                                                   */
     var supportingTextColor: ListPreviewTextColor? = nil                        /* Supporting text color                                         */
+    var labelsInFooter = false
     var listedOnDate:        Date?                 = nil                        // Assigned day from the list, independent of its editable title
     /// Layout preset used to select compact card dimensions
     var presentation: BoardPresentation = .standard     /* Board layout controlling the card row's density     */
@@ -279,7 +280,7 @@ struct KanbanCardView: View
 
     var body: some View                                                 /* Kanban Card layout                    */
     {                                                                   /* Compact card summary and card actions */
-        VStack(alignment: .leading, spacing: compactCards ? 2 : 9)
+        VStack(alignment: .leading, spacing: compactCards ? 2 : (labelsInFooter ? 5 : 9))
         {
             if (card.displayFormat == .title || card.displayFormat == .text) && !compactCards
             {
@@ -317,63 +318,126 @@ struct KanbanCardView: View
 
                 HStack(alignment: .top, spacing: 8)
                 {
-                    if card.displayFormat == .picture
+                    VStack(alignment: .leading, spacing: 8)
                     {
-                        Group
+                        HStack(alignment: labelsInFooter ? .center : .top, spacing: 8)
                         {
-                            if let attachment = card.coverAttachment
+                            if card.displayFormat == .picture
                             {
-                                CardCoverPreview(attachment: attachment, height: 44)
+                                Group
+                                {
+                                    if let attachment = card.coverAttachment
+                                    {
+                                        CardCoverPreview(attachment: attachment, height: 44)
+                                    }
+                                    else
+                                    {
+                                        Image(systemName: "photo").foregroundStyle(.secondary)
+                                    }
+                                }
+                                .frame(width: 44, height: 44)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .modifier(CardVisualCompletion(card: card, onToggle: onToggle))
+                            }
+                            else if card.presentation == .note
+                            {
+                                Image(systemName: "note.text")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 44, height: 44)
+                                .accessibilityLabel("Note")
                             }
                             else
                             {
-                                Image(systemName: "photo").foregroundStyle(.secondary)
+                                Button
+                                {
+                                    onToggle()
+                                }
+                                label:
+                                {
+                                    Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
+                                    .font(.headline)
+                                    .foregroundStyle(card.isTitleChecked ? .green : .secondary)
+                                    .frame(width: 44, height: 44)
+                                }
+
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
+                                .disabled(card.isEditingLocked)
+                            }
+
+
+                            ItemAppearanceMark(appearance: card.appearance)
+                            Text(card.word)
+                            .font(.headline)
+                            .foregroundStyle((card.appearance?.cardTitleColor ?? titleColor)?.color ?? .primary)
+                            .lineLimit(
+                                dynamicTypeSize.isAccessibilitySize
+                                ? nil : (compactCards ? 1 : (presentation == .overview ? 2 : 3))
+                            )
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .layoutPriority(1)
+                        }
+
+                        if !compactCards && presentation == .standard && card.presentation == .note
+                        {
+                            if !noteExcerpt.isEmpty
+                            {
+                                Text(noteExcerpt)
+                                .font(.subheadline)
+                                .foregroundStyle(
+                                    (card.appearance?.cardTextColor ?? supportingTextColor)?.color ?? .secondary
+                                )
+                                .lineSpacing(3)
+                                .lineLimit(3)
+                                .truncationMode(.tail)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .fixedSize(horizontal: false, vertical: true)
                             }
                         }
-                        .frame(width: 44, height: 44)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .modifier(CardVisualCompletion(card: card, onToggle: onToggle))
-                    }
-                    else if card.presentation == .note
-                    {
-                        Image(systemName: "note.text")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, height: 44)
-                        .accessibilityLabel("Note")
-                    }
-                    else
-                    {
-                        Button
+                        else if !compactCards && presentation == .standard && !card.subtitle.isEmpty
                         {
-                            onToggle()
-                        }
-                        label:
-                        {
-                            Image(systemName: card.isTitleChecked ? "checkmark.square.fill" : "square")
-                            .font(.headline)
-                            .foregroundStyle(card.isTitleChecked ? .green : .secondary)
-                            .frame(width: 44, height: 44)
+                            Text(card.subtitle)
+                            .font((card.appearance?.subtitleItalic ?? inheritedSubtitleItalic) ? .subheadline.italic() : .subheadline)
+                            .foregroundStyle((card.appearance?.cardTextColor ?? supportingTextColor)?.color ?? .secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                         }
 
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(card.isTitleChecked ? "Uncheck card title" : "Check card title")
-                        .disabled(card.isEditingLocked)
+
+                        if !labelsInFooter && !compactCards && presentation == .standard && !cardLabels.isEmpty
+                        {
+                            ViewThatFits(in: .horizontal)
+                            {
+                                HStack(spacing: 5)
+                                {
+                                    ForEach(cardLabels.prefix(3))
+                                    {
+                                        label in
+                                        KanbanLabelChip(label: label)
+                                    }
+
+
+                                    if cardLabels.count > 3
+                                    {
+                                        Text("+\(cardLabels.count - 3)")
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(.secondary)
+                                    }
+                                }
+
+                                .fixedSize(horizontal: true, vertical: false)
+                                Text("\(cardLabels.count) labels")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            }
+                        }
                     }
-
-
-                    ItemAppearanceMark(appearance: card.appearance)
-                    Text(card.word)
-                    .font(.headline)
-                    .foregroundStyle((card.appearance?.cardTitleColor ?? titleColor)?.color ?? .primary)
-                    .lineLimit(
-                        dynamicTypeSize.isAccessibilitySize
-                        ? nil : (compactCards ? 1 : (presentation == .overview ? 2 : 3))
-                    )
-                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .layoutPriority(1)
-                    VStack(alignment: .trailing, spacing: 4)
+
+                    VStack(alignment: .trailing, spacing: labelsInFooter ? 8 : 4)
                     {
                         HStack(alignment: .top, spacing: 4)
                         {
@@ -393,63 +457,21 @@ struct KanbanCardView: View
                 }
                 .itemBannerBackground(card.appearance)
 
-                if !compactCards && presentation == .standard && card.presentation == .note
+                HStack(alignment: .center, spacing: 4)
                 {
-                    if !noteExcerpt.isEmpty
-                    {
-                        Text(noteExcerpt)
-                        .font(.subheadline)
-                        .foregroundStyle(
-                            (card.appearance?.cardTextColor ?? supportingTextColor)?.color ?? .secondary
-                        )
-                        .lineSpacing(3)
-                        .lineLimit(3)
-                        .truncationMode(.tail)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                else if !compactCards && presentation == .standard && !card.subtitle.isEmpty
-                {
-                    Text(card.subtitle)
-                    .font((card.appearance?.subtitleItalic ?? inheritedSubtitleItalic) ? .subheadline.italic() : .subheadline)
-                    .foregroundStyle((card.appearance?.cardTextColor ?? supportingTextColor)?.color ?? .secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                }
-
-
-                if !compactCards && presentation == .standard && !cardLabels.isEmpty
-                {
-                    ViewThatFits(in: .horizontal)
+                    if labelsInFooter && !compactCards && presentation == .standard
                     {
                         HStack(spacing: 5)
                         {
-                            ForEach(cardLabels.prefix(3))
+                            ForEach(cardLabels)
                             {
                                 label in
                                 KanbanLabelChip(label: label)
                             }
-
-
-                            if cardLabels.count > 3
-                            {
-                                Text("+\(cardLabels.count - 3)")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.secondary)
-                            }
                         }
-
-                        .fixedSize(horizontal: true, vertical: false)
-                        Text("\(cardLabels.count) labels")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .padding(.trailing, cardLabels.isEmpty ? 0 : 2)
                     }
-                }
 
-
-                HStack(alignment: .center, spacing: 4)
-                {
                     ViewThatFits(in: .horizontal)
                     {
                         if !dynamicTypeSize.isAccessibilitySize
@@ -488,9 +510,14 @@ struct KanbanCardView: View
             card.displayFormat == .picture && !compactCards ? 0 : (compactCards || presentation == .overview ? 8 : 12)
         )
         .padding(
-            .vertical,
+            .top,
             card.displayFormat == .picture && !compactCards
             ? 0 : (compactCards ? 4 : (presentation == .overview ? 8 : 12))
+        )
+        .padding(
+            .bottom,
+            card.displayFormat == .picture && !compactCards
+            ? 0 : (compactCards ? 4 : (presentation == .overview ? 8 : (labelsInFooter ? 8 : 12)))
         )
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(

@@ -336,7 +336,7 @@ struct TodayListDetailView: View
     ///
     private func cardPreviewHeight(_ card: KanbanCard) -> CGFloat
     {
-        usesCompactCards(card) ? 64 : BoardPresentation.standard.minimumCardHeight
+        usesCompactCards(card) ? 64 : BoardPresentation.standard.minimumCardHeight - (representedDate != nil ? 8 : 0)
     }
 
 
@@ -380,6 +380,7 @@ struct TodayListDetailView: View
                     card: card.appearance, list: focusedList?.appearance),
                 supportingTextColor: effectiveBoardAppearance.resolvedTextColor(
                     card: card.appearance, list: focusedList?.appearance),
+                labelsInFooter: representedDate != nil,
                 listedOnDate: representedDate,
                 labelLibrary: labelLibrary,
                 onUpdateCard: updateCard,

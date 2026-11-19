@@ -286,6 +286,7 @@ struct SavedCardsView: View
     @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards =        /* Uses square recent cards */
         false
     @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion                    /* Reduce recent motion     */
+    @State private var recentShelfHeight: CGFloat = 0
     @State private var isRecentShelfCollapsed = false                                           /* Recent disclosure state  */
     @Environment(\.appReturnResetRequest) private var appReturnResetRequest                     /* App return reset request */
     @State private var query                           = ""                                     /* Search text              */
@@ -656,7 +657,7 @@ struct SavedCardsView: View
     {
         let isCollapsed = revisit == nil && isRecentShelfCollapsed      /* Shelf disclosure on the main Activity view */
 
-        return VStack(alignment: .leading, spacing: 10)
+        return VStack(alignment: .leading, spacing: 0)
         {
             if revisit == nil
             {
@@ -684,7 +685,7 @@ struct SavedCardsView: View
 
                     Button
                     {
-                        withAnimation(reduceRecentMotion ? nil : .easeInOut(duration: 0.2))
+                        withAnimation(reduceRecentMotion ? nil : .easeInOut(duration: 0.875))
                         {
                             isRecentShelfCollapsed.toggle()
                         }
@@ -702,10 +703,23 @@ struct SavedCardsView: View
                     .accessibilityIdentifier("activity.recent.toggleDisclosure")
                 }
             }
-            if !isCollapsed
-            {
-                recentShelfContent
-            }
+            recentShelfContent
+                .padding(.top, 10)
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self)
+                {
+                    $0.size.height
+                }
+                action:
+                {
+                    recentShelfHeight = $0
+                }
+                .frame(height: isCollapsed ? 0 : (recentShelfHeight > 0 ? recentShelfHeight : nil),
+                       alignment: .top)
+                .clipped()
+                .opacity(isCollapsed ? 0 : 1)
+                .allowsHitTesting(!isCollapsed)
+                .accessibilityHidden(isCollapsed)
         }
     }
 
@@ -1205,7 +1219,12 @@ struct SavedCardsView: View
                             }
                             action:
                             {
-                                activityHeaderHeight = $0
+                                height in
+                                withAnimation(reduceRecentMotion || activityHeaderHeight == 0
+                                              ? nil : .easeInOut(duration: 0.875))
+                                {
+                                    activityHeaderHeight = height
+                                }
                             }
                     }
                     .scrollIndicators(.hidden)

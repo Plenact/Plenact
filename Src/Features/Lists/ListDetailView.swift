@@ -108,6 +108,7 @@ struct TodayListDetailView: View
 
     @State private var isEditingList                   = false                          /* Editing List state                                */
     @State private var isEditingAppearance             = false                          /* Editing Appearance state                          */
+    @State private var newItemPresentation: ItemPresentation?
     @State private var showsNewCard                    = false                          /* New Card visibility                               */
     @State private var inlineCaptureDraft              = InlineListCaptureDraft()       /* Inline capture draft                              */
     @State private var editMode:     EditMode          = .inactive                      /* Whether Today rows expose native reorder controls */
@@ -470,9 +471,16 @@ struct TodayListDetailView: View
             onCreate: addCard,
             onOpenComposer:
             {
+                newItemPresentation = nil
                 showsNewCard = true
             },
-            keepsFocusAfterSubmit: representedDate == nil
+            keepsFocusAfterSubmit: representedDate == nil,
+            onChoosePresentation: representedDate == nil ? nil :
+            {
+                presentation in
+                newItemPresentation = presentation
+                showsNewCard = true
+            }
         )
 
         .padding(12)
@@ -1474,6 +1482,7 @@ struct TodayListDetailView: View
                 ListItemComposer(
                     list: focusedList, draftKey: ListCreationDraft.key(collectionID: dayMovementSource, listID: listID),
                     initialTitle: inlineCaptureDraft.title,
+                    initialPresentation: newItemPresentation,
                     onCreate:
                     {
                         capture in

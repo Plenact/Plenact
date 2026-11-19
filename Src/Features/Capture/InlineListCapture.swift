@@ -262,6 +262,7 @@ struct InlineListCapture: View
     let onCreate:                      (QuickCaptureSubmission) -> Bool         /* Create callback           */
     let onOpenComposer:                ()                       -> Void         /* Open composer callback    */
     var keepsFocusAfterSubmit = true
+    var onChoosePresentation: ((ItemPresentation) -> Void)? = nil
     @FocusState private var isFocused: Bool                                     /* Native editor focus state */
 
     var body: some View         /* Inline List Capture layout */
@@ -300,6 +301,22 @@ struct InlineListCapture: View
             .accessibilityLabel("Add \(list.newItemPresentation.title.lowercased()) to \(list.title)")
             .accessibilityHint("Opens the full editor with your entered title.")
             .accessibilityIdentifier("list.inlineCapture.add")
+            .contextMenu
+            {
+                if let onChoosePresentation
+                {
+                    Button("New Card", systemImage: "rectangle")
+                    {
+                        isFocused = false
+                        onChoosePresentation(.card)
+                    }
+                    Button("New Note", systemImage: "note.text")
+                    {
+                        isFocused = false
+                        onChoosePresentation(.note)
+                    }
+                }
+            }
         }
         .frame(minHeight: 44)
         .offset(y: reduceMotion || isPresented ? 0 : -120)
@@ -415,13 +432,14 @@ struct ListItemComposer: View
     let list:         KanbanList                                /* List under consideration */
     let draftKey:     String                                    /* Draft key                */
     var initialTitle: String = ""                               /* Initial title            */
+    var initialPresentation: ItemPresentation? = nil
     let onCreate:     (QuickCaptureSubmission) -> Bool          /* Create callback          */
 
     var body:         some View         /* List Item Composer layout */
     {
         QuickNoteComposer(
             lists: .constant([list]), initialListID: list.id, initialTitle: initialTitle,
-            draftKey: draftKey, initialPresentation: list.newItemPresentation,
+            draftKey: draftKey, initialPresentation: initialPresentation ?? list.newItemPresentation,
             onSaveCapture: onCreate
         )
         {

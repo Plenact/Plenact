@@ -346,7 +346,7 @@ extension PlenactBoardDocumentTests
     /// @brief      Verify that legacy Bundled Focus Metadata Upgrade Does Not Rewrite Stored Plans Or Custom
     ///             Templates
     /// @details    Exercises `PlanningRoutineStore.load`, `upgraded.templates.dropFirst().allSatisfy`,
-    ///             `upgraded.templates.dropFirst`. Checks `XCTAssertEqual(upgraded.bundledRoutineRevision, 5)`;
+    ///             `upgraded.templates.dropFirst`. Checks `XCTAssertEqual(upgraded.bundledRoutineRevision, 7)`;
     ///             `XCTAssertEqual(upgraded.templates[0], custom)`
     ///
     /// @return     (Void) no return value
@@ -385,7 +385,7 @@ extension PlenactBoardDocumentTests
         let upgraded =                                          /* Value in the current format */
             try PlanningRoutineStore.load(from: defaults)
 
-        XCTAssertEqual(upgraded.bundledRoutineRevision, 5)
+        XCTAssertEqual(upgraded.bundledRoutineRevision, 7)
         XCTAssertEqual(upgraded.templates[0], custom)
         XCTAssertNil(upgraded.templates[0].exampleFocus)
         XCTAssertTrue(upgraded.templates.dropFirst().allSatisfy
@@ -594,7 +594,7 @@ extension PlenactBoardDocumentTests
 
         XCTAssertEqual(template.name, "Jmr")
         XCTAssertEqual(template.kind, .week)
-        XCTAssertEqual(template.itemCount, 28)
+        XCTAssertEqual(template.itemCount, 35)
         XCTAssertEqual(template.collection.lists.count, 7)
         XCTAssertEqual(PlanningRoutineLibrary.seeded.defaultWeekID, template.id)
         for firstWeekday in [1, 2]
@@ -614,7 +614,7 @@ extension PlenactBoardDocumentTests
                 let weekday = calendar.component(.weekday, from: day)           /* Calendar weekday number          */
                 let cards   =                                                   /* Card records under consideration */
                     try XCTUnwrap(applied.list(on: day)?.cards)
-                let expected: [(String, Int, Int, Int, Int)]                    /* Expected operation result        */
+                var expected: [(String, Int, Int, Int, Int)]                    /* Expected operation result        */
 
                 if weekday == 7
                 {
@@ -638,12 +638,17 @@ extension PlenactBoardDocumentTests
                     ]
                 }
 
+                expected.append(("Sleep", 21, 0, 21, 30))
                 XCTAssertEqual(cards.count, expected.count + 1)
                 XCTAssertTrue(cards[2].isSectionDivider)
                 XCTAssertNil(cards[2].sectionHeading)
                 for (card, slot) in zip(cards.filter { !$0.isSectionDivider }, expected)
                 {
                     XCTAssertEqual(card.word, slot.0)
+                    let icon = try XCTUnwrap(card.appearance?.customIcon)
+                    XCTAssertFalse(icon.imageData.isEmpty)
+                    let reopened = try JSONDecoder().decode(KanbanCard.self, from: JSONEncoder().encode(card))
+                    XCTAssertEqual(reopened.appearance?.customIcon, icon)
 
                     let start =                                                                 /* Required schedule endpoints */
                         try XCTUnwrap(card.startDate), stop = try XCTUnwrap(card.dueDate)

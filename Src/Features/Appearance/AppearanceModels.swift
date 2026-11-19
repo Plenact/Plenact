@@ -6,6 +6,8 @@
 //
 // --------------------------------------------------------------------------------------------------
 import Foundation
+import UIKit
+import ImageIO
 
 
 ///
@@ -421,6 +423,7 @@ enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable
 ///
 struct ItemAppearance: Hashable, Codable, Sendable
 {
+    var customIcon: CustomItemIcon? = nil
     var accent:                        ItemAccent?                      /* Selected accent color                                */
     var icon:                          PersonalCollectionIcon?          /* Selected display icon                                */
     var background:                    ItemAccent?           =          /* Resolved background appearance                       */
@@ -470,7 +473,7 @@ struct ItemAppearance: Hashable, Codable, Sendable
 
     var isEmpty: Bool           /* Empty state */
     {
-        sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil
+        customIcon == nil && sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil
         && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil
         && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil
         && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil && subtitleItalic == nil && studioSurface == nil && studioCardSurface == nil
@@ -546,5 +549,82 @@ enum NewCardAppearanceDefaults
         }
 
         card.appearance = appearance.isEmpty ? nil : appearance
+    }
+}
+
+
+/// A self-contained image icon retained with each item that uses it.
+struct CustomItemIcon: Codable, Hashable, Identifiable, Sendable
+{
+    let id: UUID
+    let title: String
+    let imageData: Data
+}
+
+/// Stores reusable image icons and the bundled routine choices.
+enum CustomItemIconLibrary
+{
+    static let key = "Plenact.CustomItemIcons.v1"
+
+    /// @fcn CustomItemIconLibrary.bundled
+    /// @brief Prepare reusable routine icons with stable identities
+    /// @return ([CustomItemIcon]) colored image icons for routine activities
+    static let bundled: [CustomItemIcon] =
+    {
+        let entries = [
+            ("Wake", "sunrise.fill", UIColor.systemOrange),
+            ("Morning Starbucks Pow-wow", "cup.and.saucer.fill", UIColor.systemBrown),
+            ("Work", "briefcase.fill", UIColor.systemBlue),
+            ("Gym", "dumbbell.fill", UIColor.systemGreen),
+            ("Sleep", "moon.stars.fill", UIColor.systemIndigo),
+            ("Car Wash", "car.fill", UIColor.systemTeal),
+            ("Church", "building.columns.fill", UIColor.systemPurple)
+        ]
+        return entries.enumerated().compactMap
+        {
+            index, entry in
+            guard let image = UIImage(systemName: entry.1,
+                withConfiguration: UIImage.SymbolConfiguration(pointSize: 88, weight: .regular))?
+                .withTintColor(entry.2, renderingMode: .alwaysOriginal),
+                  let data = image.pngData(),
+                  let id = UUID(uuidString: String(format: "B28FA7CD-1928-44CA-99E0-CDA2EE8401%02d", index))
+            else { return nil }
+            return CustomItemIcon(id: id, title: entry.0 == "Morning Starbucks Pow-wow" ? "Pow-wow" : entry.0, imageData: data)
+        }
+    }()
+
+    /// @fcn CustomItemIconLibrary.load
+    /// @brief Load imported icons alongside the bundled routine icons
+    /// @return ([CustomItemIcon]) available reusable icons
+    static func load() -> [CustomItemIcon]
+    {
+        bundled + ((try? UserDefaults.standard.data(forKey: key).map
+            { try JSONDecoder().decode([CustomItemIcon].self, from: $0) }) ?? [])
+    }
+
+    /// @fcn CustomItemIconLibrary.importImage
+    /// @brief Downsample and retain a reusable image icon
+    /// @param[in] data Image file bytes supplied by Photos or Files
+    /// @param[in] title Display name for the imported icon
+    /// @return (CustomItemIcon) saved icon with bounded image dimensions
+    /// @throws Image decoding, encoding, or persistence failure
+    static func importImage(_ data: Data, title: String) throws -> CustomItemIcon
+    {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: 128
+              ] as CFDictionary),
+              let png = UIImage(cgImage: thumbnail).pngData()
+        else { throw CocoaError(.fileReadCorruptFile) }
+
+        let icon = CustomItemIcon(id: UUID(), title: title, imageData: png)
+        var imported = load().filter { !bundled.map(\.id).contains($0.id) }
+        imported.append(icon)
+        let saved = try JSONEncoder().encode(imported)
+        UserDefaults.standard.set(saved, forKey: key)
+        guard UserDefaults.standard.data(forKey: key) == saved else { throw CocoaError(.fileWriteUnknown) }
+        return icon
     }
 }

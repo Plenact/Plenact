@@ -25,8 +25,8 @@ enum ExampleCardLocations
     static let work                   =                                                 /* Work display text    */
         "Mercury Marine Plant 33, 505 Marion Road, Oshkosh, WI 54901"
     static let migrationKey           =                                                 /* Migration key        */
-        "Plenact.ExampleCardLocations.Applied.v3"
-    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v3"        /* Backup key           */
+        "Plenact.ExampleCardLocations.Applied.v4"
+    static let backupKey              = "Plenact.ExampleCardLocations.Backup.v4"        /* Backup key           */
     private static let boardKey       = "Plenact.Board.v1"                              /* Board key            */
     private static let collectionsKey = "Plenact.PersonalCollections.v1"                /* Collections key      */
 
@@ -90,7 +90,17 @@ enum ExampleCardLocations
 
             let cards = list.cards.map          /* Card records under consideration */
             {
-            card in
+            original in
+                var card = original
+                if !card.isSectionDivider, !card.isEditingLocked,
+                   card.appearance?.customIcon == nil,
+                   let icon = PlanningRoutineLibrary.routineAppearance(for: card.word)?.customIcon
+                {
+                    var appearance = card.appearance ?? ItemAppearance()
+                    appearance.customIcon = icon
+                    appearance.icon = nil
+                    card.appearance = appearance
+                }
                 if card.word.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "morning starbucks pow-wow",
                    !card.isSectionDivider, !card.isEditingLocked
                 {

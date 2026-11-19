@@ -32,7 +32,8 @@ enum MigrationContentGuard
         "CardSectionLayout": ["order", "hidden"],
         "CardEditRecord": ["id", "timestamp", "changes"],
         "CardEditChange": ["field", "previousValue", "newValue"],
-        "ItemAppearance": ["accent", "icon", "background", "listBackground", "cardBackground", "cardTitleColor", "cardTextColor", "addItemTextColor", "sectionCollapsed", "hideEmptySubtitle", "studioSurface", "studioCardSurface", "subtitleItalic", "cardDetail", "listViewMode", "iconColor", "showsIconInHeader", "listBackgroundOpacity"],
+        "CustomItemIcon": ["id", "title", "imageData"],
+        "ItemAppearance": ["customIcon", "accent", "icon", "background", "listBackground", "cardBackground", "cardTitleColor", "cardTextColor", "addItemTextColor", "sectionCollapsed", "hideEmptySubtitle", "studioSurface", "studioCardSurface", "subtitleItalic", "cardDetail", "listViewMode", "iconColor", "showsIconInHeader", "listBackgroundOpacity"],
         "BoardAppearance": ["bannerBackground", "listBackground", "cardBackground", "cardDetail", "collectionBackground", "cardTitleColor", "cardTextColor", "addItemTextColor", "studioSurface", "studioCardSurface", "subtitleItalic"],
         "StudioSurface": ["material", "color", "secondaryColor", "strength", "readability", "verticalPosition", "zoom", "showsInPreviews", "photoFileName", "remotePhoto"],
         "StudioRemotePhoto": ["id", "imageURL", "photographer", "profileURL", "downloadURL"],
@@ -203,7 +204,7 @@ enum MigrationContentGuard
         }
 
         let children: [String: String] =                                                /* Nested view or record values */
-            ["collections": "PersonalCollection", "collection": "PersonalCollection",
+            ["customIcon": "CustomItemIcon", "collections": "PersonalCollection", "collection": "PersonalCollection",
             "weeks": "DatedPlanningWeek", "templates": "PlanningRoutineTemplate", "exampleFocus": "PlanningExampleFocus",
             "lists": "KanbanList", "cards": "KanbanCard", "archivedCards": "KanbanCard", "checklists": "KanbanChecklist",
             "items": "KanbanChecklistItem", "content": "action_content", "detail": "KanbanChecklistActionDetail",

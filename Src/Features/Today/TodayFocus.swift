@@ -1131,6 +1131,10 @@ private struct TodayFocusItemMark: View
                 .frame(width: markSize, height: markSize)
                 .clipShape(RoundedRectangle(cornerRadius: 3))
             }
+            else if card.appearance?.customIcon != nil
+            {
+                ItemAppearanceMark(appearance: card.appearance)
+            }
             else
             {
                 Image(systemName: card.appearance?.icon?.rawValue

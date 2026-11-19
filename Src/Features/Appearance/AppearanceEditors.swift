@@ -12,6 +12,7 @@ import PencilKit
 import PhotosUI
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 
 ///
@@ -31,6 +32,12 @@ struct ItemAppearanceSheet: View
     let inheritedAddItemTextColor:   Color?                                             /* Inherited add item text color */
     let onSaveDisplay:               ((ItemAppearance?, ItemDisplayFormat) -> Bool)?    /* Save display callback         */
     @State private var draft:        ItemAppearance                                     /* Local editing draft           */
+
+    @State private var customIcons = CustomItemIconLibrary.load()
+    @State private var customPhoto: PhotosPickerItem?
+    @State private var showsCustomPhotos = false
+    @State private var showsCustomFiles = false
+    @State private var customIconError: String?
 
     @State private var draftDisplay: ItemDisplayFormat?         /* Draft display                  */
     @Environment(\.dismiss) private var dismiss                 /* Close the current presentation */
@@ -77,6 +84,20 @@ struct ItemAppearanceSheet: View
         _draft = State(initialValue: appearance ?? ItemAppearance())
     }
 
+
+    /// @fcn ItemAppearanceSheet.addCustomIcon
+    /// @brief Save an imported icon and select it in the appearance draft
+    /// @param[in] data Imported image bytes
+    /// @param[in] title Library display name
+    /// @return (Void) updates the reusable library and draft
+    /// @throws Image import or persistence failure
+    private func addCustomIcon(_ data: Data, title: String) throws
+    {
+        let icon = try CustomItemIconLibrary.importImage(data, title: title)
+        customIcons = CustomItemIconLibrary.load()
+        draft.customIcon = icon
+        draft.icon = nil
+    }
 
     var body: some View         /* Item Appearance layout */
     {
@@ -251,16 +272,93 @@ struct ItemAppearanceSheet: View
 
                 Section("Leading icon")
                 {
-                    Picker("Icon", selection: $draft.icon)
+                    Menu
                     {
-                        Text("None").tag(Optional<PersonalCollectionIcon>.none)
+                        Button("None")
+                        {
+                            draft.icon = nil
+                            draft.customIcon = nil
+                        }
                         ForEach(PersonalCollectionIcon.allCases, id: \.self)
                         {
                             icon in
-                            Label(icon.title, systemImage: icon.rawValue).tag(Optional(icon))
+                            Button
+                            {
+                                draft.icon = icon
+                                draft.customIcon = nil
+                            }
+                            label:
+                            {
+                                Label(icon.title, systemImage: icon.rawValue)
+                            }
+                        }
+                        Menu("Custom icons")
+                        {
+                            ForEach(customIcons)
+                            {
+                                icon in
+                                Button
+                                {
+                                    draft.customIcon = icon
+                                    draft.icon = nil
+                                }
+                                label:
+                                {
+                                    if let image = UIImage(data: icon.imageData)
+                                    {
+                                        Label { Text(icon.title) } icon: { Image(uiImage: image) }
+                                    }
+                                }
+                            }
+                            Divider()
+                            Button("Add from Photos…") { showsCustomPhotos = true }
+                            Button("Add from Files…") { showsCustomFiles = true }
+                        }
+                    }
+                    label:
+                    {
+                        HStack
+                        {
+                            Text("Icon").foregroundStyle(.primary)
+                            Spacer()
+                            ItemAppearanceMark(appearance: draft)
+                            Text(draft.customIcon?.title ?? draft.icon?.title ?? "None")
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.up.chevron.down").font(.caption)
                         }
                     }
                     .accessibilityIdentifier("appearance.icon")
+                    .photosPicker(isPresented: $showsCustomPhotos, selection: $customPhoto, matching: .images)
+                    .task(id: customPhoto)
+                    {
+                        guard let photo = customPhoto else { return }
+                        do
+                        {
+                            guard let data = try await photo.loadTransferable(type: Data.self)
+                            else { throw CocoaError(.fileReadCorruptFile) }
+                            try addCustomIcon(data, title: "Custom icon")
+                        }
+                        catch { customIconError = error.localizedDescription }
+                        customPhoto = nil
+                    }
+                    .fileImporter(isPresented: $showsCustomFiles, allowedContentTypes: [.image])
+                    {
+                        result in
+                        do
+                        {
+                            let url = try result.get()
+                            let access = url.startAccessingSecurityScopedResource()
+                            defer { if access { url.stopAccessingSecurityScopedResource() } }
+                            try addCustomIcon(Data(contentsOf: url), title: url.deletingPathExtension().lastPathComponent)
+                        }
+                        catch { customIconError = error.localizedDescription }
+                    }
+                    .alert("Could not add icon", isPresented: Binding(
+                        get: { customIconError != nil }, set: { if !$0 { customIconError = nil } }))
+                    {
+                        Button("OK") { customIconError = nil }
+                    }
+                    message: { Text(customIconError ?? "") }
                 }
 
                 if showsListBackground

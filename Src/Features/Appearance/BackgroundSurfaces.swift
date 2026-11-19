@@ -155,7 +155,15 @@ struct ItemAppearanceMark: View
 
     var body: some View         /* Item Appearance Mark layout */
     {
-        if let icon = appearance?.icon
+        if let custom = appearance?.customIcon, let image = UIImage(data: custom.imageData)
+        {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 22, height: 22)
+                .accessibilityHidden(true)
+        }
+        else if let icon = appearance?.icon
         {
             Image(systemName: icon.rawValue)
             .foregroundStyle(appearance?.iconColor?.color ?? Color.secondary)

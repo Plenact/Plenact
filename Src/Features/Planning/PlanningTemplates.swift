@@ -325,7 +325,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
         {
             let weekday = calendar.component(.weekday, from: day)               /* Calendar weekday number     */
             let slots   =                                                       /* Available layout positions  */
-                weekday == 7 ? saturday : (weekday == 1 ? sunday : weekdays)
+                (weekday == 7 ? saturday : (weekday == 1 ? sunday : weekdays)) + [("Sleep", 21, 0, 21, 30)]
             let listID  =                                                       /* Owner-local List identifier */
                 week.dayListIDs[PlanningDate.key(day, calendar: calendar)]!
             let index   = week.collection.lists.firstIndex                      /* Element position            */
@@ -351,7 +351,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
                     labelIDs: [
                         slot.title == "Work"
                         ? "day-work"
-                        : (slot.title == "Gym" || slot.title == "Wake"
+                        : (slot.title == "Gym" || slot.title == "Wake" || slot.title == "Sleep"
                             ? "day-health"
                             : (slot.title == "Church"
                                 ? "day-spirit" : (slot.title == "Car Wash" ? "day-home" : "day-personal")))
@@ -360,6 +360,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
                     ? "Choose what fits today: gym, meditation, walking, or massage." : "",
                     subtitleOverride: "",
                     todayFocusTitle: slot.title == "Morning Starbucks Pow-wow" ? ExampleCardLocations.morningFocusTitle : nil,
+                    appearance: routineAppearance(for: slot.title),
                     showsDueDateInList: true, startDateKind: .dateAndTime,
                     dueDateKind: .dateAndTime, location: ExampleCardLocations.location(for: slot.title))
             }
@@ -398,6 +399,57 @@ struct PlanningRoutineLibrary: Codable, Equatable
             nextID += 1
         }
         return lists
+    }
+
+    /// @fcn PlanningRoutineLibrary.routineAppearance
+    /// @brief Select the reusable image icon for a bundled activity
+    /// @param[in] title Routine Card title
+    /// @return (ItemAppearance?) appearance containing the matching image icon
+    static func routineAppearance(for title: String) -> ItemAppearance?
+    {
+        let name = title == "Morning Starbucks Pow-wow" ? "Pow-wow" : title
+        guard let icon = CustomItemIconLibrary.bundled.first(where: { $0.title == name }) else { return nil }
+        var appearance = ItemAppearance()
+        appearance.customIcon = icon
+        return appearance
+    }
+
+    /// @fcn PlanningRoutineLibrary.updateRoutineIconsAndSleep
+    /// @brief Add routine icons and a timed Sleep Card to retained Jmr days
+    /// @param[in] template Saved Jmr template to update
+    /// @return (PlanningRoutineTemplate) template with the routine additions
+    static func updateRoutineIconsAndSleep(_ template: PlanningRoutineTemplate) -> PlanningRoutineTemplate
+    {
+        var template = template
+        let calendar = template.calendar
+        var nextID = (template.collection.lists.flatMap(\.allCards).map(\.id).max() ?? -1) + 1
+        for index in template.collection.lists.indices
+        {
+            for cardIndex in template.collection.lists[index].cards.indices
+            {
+                let card = template.collection.lists[index].cards[cardIndex]
+                if let icon = routineAppearance(for: card.word)?.customIcon,
+                   card.appearance?.customIcon == nil
+                {
+                    var appearance = card.appearance ?? ItemAppearance()
+                    appearance.customIcon = icon
+                    appearance.icon = nil
+                    template.collection.lists[index].cards[cardIndex].appearance = appearance
+                }
+            }
+            guard !template.collection.lists[index].cards.contains(where: { $0.word == "Sleep" }),
+                  let day = template.collection.lists[index].cards.compactMap(\.startDate).first
+            else { continue }
+            template.collection.lists[index].cards.append(KanbanCard(
+                id: nextID, word: "Sleep", listTitle: template.collection.lists[index].title,
+                startDate: calendar.date(bySettingHour: 21, minute: 0, second: 0, of: day),
+                dueDate: calendar.date(bySettingHour: 21, minute: 30, second: 0, of: day),
+                checklists: [], labelIDs: ["day-health"], descriptionOverride: "", subtitleOverride: "",
+                appearance: routineAppearance(for: "Sleep"),
+                showsDueDateInList: true, startDateKind: .dateAndTime, dueDateKind: .dateAndTime))
+            nextID += 1
+        }
+        return template
     }
 
     /// Optional examples are added to the library without replacing an existing routine
@@ -513,7 +565,7 @@ struct PlanningRoutineLibrary: Codable, Equatable
 
         return Self(
             templates: [work.demonstratingFocus(), vacation.demonstratingFocus(), jmr] + sectionExamples,
-            defaultWeekID: jmrID, bundledRoutineRevision: 6)
+            defaultWeekID: jmrID, bundledRoutineRevision: 7)
     }()
 }
 
@@ -544,7 +596,7 @@ enum PlanningRoutineStore
     ///
     static func validate(_ value: PlanningRoutineLibrary) throws
     {
-        guard value.version == 1, (0 ... 6).contains(value.bundledRoutineRevision ?? 0),
+        guard value.version == 1, (0 ... 7).contains(value.bundledRoutineRevision ?? 0),
         Set(value.templates.map(\.id)).count == value.templates.count,
         value.defaultWeekID == nil
         || value.templates.contains(where:
@@ -728,6 +780,16 @@ enum PlanningRoutineStore
                     to: result.templates[index].collection.lists)
             }
             result.bundledRoutineRevision = 6
+        }
+
+        if (result.bundledRoutineRevision ?? 0) < 7
+        {
+            for index in result.templates.indices
+            where result.templates[index].id == PlanningRoutineLibrary.jmrID && result.templates[index].collection.isActive
+            {
+                result.templates[index] = PlanningRoutineLibrary.updateRoutineIconsAndSleep(result.templates[index])
+            }
+            result.bundledRoutineRevision = 7
         }
 
         return result
@@ -1114,7 +1176,8 @@ enum PlanningTemplateApplication
                 checklists: card.checklists.map(freshChecklist), members: card.members, labelIDs: card.labelIDs,
                 attachments: attachments, coverAttachmentID: cover,
                 descriptionOverride: card.presentation == .note ? (card.descriptionOverride ?? "") : card.funParagraph,
-                subtitleOverride: card.subtitle, presentation: card.presentation, createdAt: now,
+                subtitleOverride: card.subtitle, todayFocusTitle: card.todayFocusTitle,
+                presentation: card.presentation, createdAt: now,
                 appearance: card.appearance,
                 listDisplayFormat: card.listDisplayFormat, sectionLayout: card.sectionLayout,
                 showsDueDateInList: card.showsDueDateInList,

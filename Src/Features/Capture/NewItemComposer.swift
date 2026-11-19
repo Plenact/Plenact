@@ -20,6 +20,7 @@ import SwiftUI
 ///
 struct QuickNoteComposer: View
 {
+    @State private var isFullscreen = false
     @State private var keyboardContextID     = UUID()                                           /* Keyboard context ID        */
     @StateObject private var attachmentDraft = CreationAttachmentDraft()                        /* Attachment draft           */
     @Binding var lists: [KanbanList]                                                            /* Current destination lists  */
@@ -490,6 +491,8 @@ struct QuickNoteComposer: View
     private func finishDraft()
     {
         acceptsDraftEdits = false
+        PlenactKeyboard.shared.removeContext(keyboardContextID)
+        voice.cleanup()
 
         if let draftKey
         {
@@ -693,7 +696,46 @@ struct QuickNoteComposer: View
     }
 
 
-    var body: some View         /* Quick Note Composer layout             */
+    ///
+    /// @fcn        QuickNoteComposer.body
+    /// @brief      Present the composer as a sheet or a fullscreen editor
+    /// @details    Both presentations edit the same draft state; changing size never submits it
+    /// @return     (some View) resizable capture presentation
+    ///
+    var body: some View
+    {
+        Group
+        {
+            if !isFullscreen
+            {
+                composerContent
+            }
+            else
+            {
+                Color(.systemGroupedBackground)
+            }
+        }
+        .presentationDetents([.large])
+        .fullScreenCover(isPresented: $isFullscreen)
+        {
+            composerContent
+        }
+        .onDisappear
+        {
+            if !isFullscreen
+            {
+                PlenactKeyboard.shared.removeContext(keyboardContextID)
+                voice.cleanup()
+            }
+        }
+    }
+
+    ///
+    /// @fcn        QuickNoteComposer.composerContent
+    /// @brief      Build the shared card or note editor and its capture controls
+    /// @return     (some View) navigation editor retaining the owner's draft state
+    ///
+    private var composerContent: some View
     {                           /* New-card form and destination controls */
         NavigationStack
         {
@@ -715,6 +757,20 @@ struct QuickNoteComposer: View
             .navigationBarTitleDisplayMode(.inline)
             .toolbar
             {
+                ToolbarItem(placement: .principal)
+                {
+                    ComposerTitleSwipeArea(title: "New \(presentation.title.lowercased())")
+                    {
+                        expands in
+                        isFullscreen = expands
+                    }
+                    .frame(width: 170, height: 44)
+                        .accessibilityHint(isFullscreen ? "Swipe down to return to the sheet" : "Swipe up for fullscreen")
+                        .accessibilityAction(named: isFullscreen ? "Return to sheet" : "Expand fullscreen")
+                        {
+                            isFullscreen.toggle()
+                        }
+                }
                 ToolbarItem(placement: .cancellationAction)
                 {
                     Button("Cancel")
@@ -849,10 +905,6 @@ struct QuickNoteComposer: View
 
             ListCreationDraft(title: title, subtitle: subtitle, description: description).save(key: draftKey)
         }
-        .onDisappear
-        {
-            PlenactKeyboard.shared.removeContext(keyboardContextID)
-        }
         .task
         {
             if captureAction == .drawing && !offeredDrawing
@@ -965,10 +1017,6 @@ struct QuickNoteComposer: View
                 voice.cancelTranscription()
             }
         }
-        .onDisappear
-        {
-            voice.cleanup()
-        }
         .interactiveDismissDisabled(voice.isRecording || voice.isStarting || voice.isTranscribing)
         .confirmationDialog(
             "Replace this recording and transcript?", isPresented: $replaceRecording, titleVisibility: .visible
@@ -1008,7 +1056,6 @@ struct QuickNoteComposer: View
         {
             Text(mediaError ?? "")
         }
-        .presentationDetents([.large])
     }
 }
 
@@ -1124,6 +1171,106 @@ struct NewPersonalNoteComposer: View
                 QuickCaptureSubmission(
                     listID: id, title: title, body: body, subtitle: subtitle,
                     presentation: presentation ?? .note, actions: actions, attachments: [], schedule: nil))
+        }
+    }
+}
+
+
+/// Native title-bar swipe handling that cooperates with the sheet's own pan recognizer.
+private struct ComposerTitleSwipeArea: UIViewRepresentable
+{
+    let title: String
+    let onSwipe: (Bool) -> Void
+
+    /// @fcn        ComposerTitleSwipeArea.makeUIView(context:)
+    /// @brief      Create an accessible title with native swipe handling
+    /// @return     (TitleView) title-bar gesture surface
+    func makeUIView(context: Context) -> TitleView
+    {
+        TitleView()
+    }
+
+    /// @fcn        ComposerTitleSwipeArea.updateUIView(_:context:)
+    /// @brief      Refresh the displayed title and expansion callback
+    func updateUIView(_ view: TitleView, context: Context)
+    {
+        view.text = title
+        view.onSwipe = onSwipe
+    }
+
+    final class TitleView: UILabel, UIGestureRecognizerDelegate
+    {
+        var onSwipe: ((Bool) -> Void)?
+        private weak var gestureWindow: UIWindow?
+        private var handledSwipe = false
+        private lazy var pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+
+        /// @fcn        TitleView.init(frame:)
+        /// @brief      Style the composer navigation title
+        override init(frame: CGRect)
+        {
+            super.init(frame: frame)
+            font = .preferredFont(forTextStyle: .headline)
+            textAlignment = .center
+            adjustsFontForContentSizeCategory = true
+            isAccessibilityElement = true
+            accessibilityTraits = .header
+            pan.delegate = self
+            pan.cancelsTouchesInView = false
+        }
+
+        /// @fcn        TitleView.init(coder:)
+        /// @brief      Disable storyboard construction for this programmatic title
+        required init?(coder: NSCoder)
+        {
+            fatalError("Use init(frame:)")
+        }
+
+        /// @fcn        TitleView.didMoveToWindow
+        /// @brief      Observe title-bar swipes above SwiftUI and sheet gesture handling
+        override func didMoveToWindow()
+        {
+            super.didMoveToWindow()
+            gestureWindow?.removeGestureRecognizer(pan)
+            gestureWindow = window
+            window?.addGestureRecognizer(pan)
+        }
+
+        /// @fcn        TitleView.gestureRecognizerShouldBegin(_:)
+        /// @brief      Accept vertical gestures beginning in the central title bar
+        /// @return     (Bool) whether this gesture belongs to the composer title
+        override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool
+        {
+            guard let window, let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
+            let location = pan.location(in: window)
+            let titleFrame = convert(bounds, to: window)
+            let velocity = pan.velocity(in: window)
+            handledSwipe = false
+            return location.y >= titleFrame.minY - 8 && location.y <= titleFrame.maxY + 8
+                && location.x > 80 && location.x < window.bounds.width - 80
+                && abs(velocity.y) > abs(velocity.x)
+        }
+
+        /// @fcn        TitleView.gestureRecognizer(_:shouldRecognizeSimultaneouslyWith:)
+        /// @brief      Allow the system sheet recognizer to track the same swipe
+        /// @return     (Bool) simultaneous recognition enabled
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool
+        {
+            true
+        }
+
+        /// @fcn        TitleView.handlePan(_:)
+        /// @brief      Expand or restore once a deliberate vertical swipe crosses the threshold
+        @objc private func handlePan(_ recognizer: UIPanGestureRecognizer)
+        {
+            guard !handledSwipe, recognizer.state == .changed || recognizer.state == .ended else { return }
+            let translation = recognizer.translation(in: gestureWindow)
+            guard abs(translation.y) >= 28, abs(translation.y) > abs(translation.x) else { return }
+            handledSwipe = true
+            onSwipe?(translation.y < 0)
         }
     }
 }

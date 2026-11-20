@@ -610,6 +610,24 @@ enum ImportanceStarStyle: String, CaseIterable, Codable, Identifiable
 enum DayListTimeOrder
 {
     ///
+    /// @fcn        DayListTimeOrder.displacesTimedDrop(_:ordered:movedCardID:)
+    /// @brief      Identify a timed card whose requested slot is rejected by chronological ordering
+    /// @param[in]  proposed     Requested arrangement after a drop
+    /// @param[in]  ordered      Arrangement after the Day time-order policy
+    /// @param[in]  movedCardID  Released card identity
+    /// @return     (Bool) true only when a timed card cannot retain its requested position
+    ///
+    static func displacesTimedDrop(_ proposed: [KanbanCard], ordered: [KanbanCard], movedCardID: Int) -> Bool
+    {
+        guard let index = proposed.firstIndex(where: { $0.id == movedCardID }),
+              !proposed[index].isSectionDivider,
+              time(for: proposed[index], on: .now, calendar: .current) != nil,
+              let finalIndex = ordered.firstIndex(where: { $0.id == movedCardID }) else { return false }
+        return index != finalIndex
+    }
+
+
+    ///
     /// @fcn        DayListTimeOrder.time
     /// @brief      Resolve a Card's timed start, or timed due value when no timed start exists
     /// @details    Date-only values are untimed. Anchoring clock components to one represented

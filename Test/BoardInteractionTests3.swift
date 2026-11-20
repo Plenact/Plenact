@@ -862,6 +862,19 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(DayListTimeOrder.cards(ordered, calendar: calendar), ordered)
         XCTAssertEqual(Set(ordered), Set(input), "Sorting must preserve every Card value")
 
+        XCTAssertTrue(DayListTimeOrder.displacesTimedDrop(input, ordered: ordered, movedCardID: 5),
+            "A timed card displaced by sorting needs an explanation")
+        XCTAssertFalse(DayListTimeOrder.displacesTimedDrop(input, ordered: ordered, movedCardID: 1),
+            "A timed card retaining its requested slot must stay quiet")
+        XCTAssertFalse(DayListTimeOrder.displacesTimedDrop(input, ordered: ordered, movedCardID: 2),
+            "Untimed cards remain manually movable")
+        XCTAssertFalse(DayListTimeOrder.displacesTimedDrop(input, ordered: ordered, movedCardID: 4),
+            "A date without a time must not trigger the notice")
+        XCTAssertFalse(DayListTimeOrder.displacesTimedDrop(ordered, ordered: ordered, movedCardID: 6),
+            "Equal-time cards may retain their manual order")
+        XCTAssertFalse(DayListTimeOrder.displacesTimedDrop(input, ordered: ordered, movedCardID: -1))
+
+
         let preferences =                                       /* Planning and display choices */
             LocalProfilePreferences(todayFocusItemCount: 0)
 

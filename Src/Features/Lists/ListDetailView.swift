@@ -19,6 +19,7 @@ import UniformTypeIdentifiers
 struct TodayListDetailView: View
 {
     @Environment(\.accessibilityReduceMotion) private var reduceSummaryMotion
+    @State private var timeOrderNoticeID: UUID?
     @State private var daySummaryScrollID = 0
     @State private var canDismissPartiallyVisibleSummary = false
     @State private var daySummaryHeight: CGFloat = 0
@@ -282,7 +283,12 @@ struct TodayListDetailView: View
 
         do
         {
-            return try BoardCardMovement.move(cardID, to: listID, before: target.beforeCardID, in: &lists)
+            var proposedLists = lists
+            let moved = try BoardCardMovement.move(cardID, to: listID, before: target.beforeCardID, in: &proposedLists)
+            guard moved, let index = proposedLists.firstIndex(where: { $0.id == listID }) else { return false }
+            proposedLists[index].cards = resolveDayDrop(proposedLists[index].cards, movedCardID: cardID)
+            lists = proposedLists
+            return true
         }
         catch
         {
@@ -1122,6 +1128,7 @@ struct TodayListDetailView: View
             {
                 _, _ in
 
+                timeOrderNoticeID = nil
                 checkmarkReset = nil
                 slidingOutCardID = nil
                 swipeUndo.expire()
@@ -1129,10 +1136,44 @@ struct TodayListDetailView: View
             .onDisappear
             {
                 slidingOutCardID = nil
+                timeOrderNoticeID = nil
                 checkmarkReset = nil
                 swipeUndo.expire()
             }
             .modifier(ListSwipeUndoBanner(history: $swipeUndo, accessibilityID: "day.item.delete.undo", restore: restoreSwipeDeletion))
+            .overlay(alignment: .top)
+            {
+                if timeOrderNoticeID != nil
+                {
+                    HStack(alignment: .top, spacing: 10)
+                    {
+                        Image(systemName: "clock")
+                        VStack(alignment: .leading, spacing: 4)
+                        {
+                            Text("Scheduled cards stay in time order.").font(.subheadline.weight(.semibold))
+                            Text("Change this card’s time or turn off time ordering to move it.").font(.caption)
+                        }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
+                    .padding(12)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("day.item.timeOrder.notice")
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .task(id: timeOrderNoticeID)
+            {
+                guard timeOrderNoticeID != nil else { return }
+                do
+                {
+                    try await Task.sleep(for: .seconds(4))
+                    withAnimation(.easeInOut(duration: 0.25)) { timeOrderNoticeID = nil }
+                }
+                catch { }
+            }
             .modifier(
                 ListCheckmarkResetConfirmation(
                     list: focusedList, session: $checkmarkReset,
@@ -1604,7 +1645,7 @@ struct TodayListDetailView: View
             return
         }
 
-        cards = reordered
+        cards = resolveDayDrop(reordered, movedCardID: cardID)
 
         DaySections.reveal(cardID, in: &cards)
 
@@ -1612,6 +1653,28 @@ struct TodayListDetailView: View
         {
             lists[listIndex].cards = cards
         }
+    }
+
+
+    ///
+    /// @fcn        TodayListDetailView.resolveDayDrop(_:movedCardID:)
+    /// @brief      Apply enabled Day time ordering and explain a displaced drop
+    /// @details    Untimed items, manual ordering, and drops retaining their requested slot stay quiet
+    /// @param[in]  proposed     Requested card arrangement
+    /// @param[in]  movedCardID  Identity of the card released by the user
+    /// @return     ([KanbanCard]) canonical arrangement under the active ordering preference
+    ///
+    private func resolveDayDrop(_ proposed: [KanbanCard], movedCardID: Int) -> [KanbanCard]
+    {
+        guard representedDate != nil, PlanPreferencesStore.load().keepsDayListsInTimeOrder else { return proposed }
+        let ordered = DayListTimeOrder.cards(proposed)
+        if DayListTimeOrder.displacesTimedDrop(proposed, ordered: ordered, movedCardID: movedCardID)
+        {
+            withAnimation(.easeInOut(duration: 0.25)) { timeOrderNoticeID = UUID() }
+            UIAccessibility.post(notification: .announcement, argument:
+                "Scheduled cards stay in time order. Change this card’s time or turn off time ordering to move it.")
+        }
+        return ordered
     }
 
 

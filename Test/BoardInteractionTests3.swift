@@ -897,6 +897,49 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testDayFreeRowsRetainDroppedSlots
+    /// @brief      Move untimed cards and individual dividers throughout a time-ordered Day list
+    /// @details    Includes named dividers, date-only cards, and moves across section boundaries
+    /// @return     (Void) records free-placement and content-preservation regressions
+    ///
+    func testDayFreeRowsRetainDroppedSlots()
+    {
+        var early = KanbanCard(id: 1, word: "Early", listTitle: "Today", checklists: [])
+        early.startDate = Calendar.current.date(bySettingHour: 5, minute: 0, second: 0, of: .now)
+        early.startDateKind = .time
+        var late = KanbanCard(id: 2, word: "Late", listTitle: "Today", checklists: [])
+        late.startDate = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: .now)
+        late.startDateKind = .time
+        let untimed = KanbanCard(id: 3, word: "Untimed", listTitle: "Today", checklists: [])
+        var dateOnly = KanbanCard(id: 4, word: "Date only", listTitle: "Today", checklists: [])
+        dateOnly.startDate = .now
+        dateOnly.startDateKind = .date
+        let namedDivider = KanbanCard(id: 5, word: "--- Afternoon", listTitle: "Today", isDivider: true)
+        let plainDivider = KanbanCard(id: 6, word: "---", listTitle: "Today", isDivider: true)
+        let original = [early, untimed, namedDivider, late, dateOnly, plainDivider]
+
+        for movedID in [3, 4, 5, 6]
+        {
+            for destination in original.indices
+            {
+                var proposed = original
+                BoardCardReordering.move(movedID, to: destination, in: &proposed)
+                let ordered = DayListTimeOrder.cards(proposed)
+                XCTAssertEqual(ordered[destination].id, movedID,
+                    "Untimed and divider rows must retain every requested slot")
+                XCTAssertEqual(Set(ordered), Set(original), "Moving must preserve every complete record")
+                XCTAssertFalse(DayListTimeOrder.displacesTimedDrop(proposed, ordered: ordered, movedCardID: movedID))
+            }
+        }
+
+        var movedDivider = original
+        BoardCardReordering.move(5, to: 0, in: &movedDivider)
+        XCTAssertEqual(movedDivider.map(\.id), [5, 1, 3, 2, 4, 6],
+            "Dragging a named divider must not carry its former section members")
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testDayTimeOrderingPreservesSectionsAndNonDayLists
     /// @brief      Limit canonical sorting to active date-mapped Lists and existing sections
     /// @details    Reorders no Card across a divider, creates no history entries, and leaves personal

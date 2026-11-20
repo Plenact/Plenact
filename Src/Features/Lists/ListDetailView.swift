@@ -790,7 +790,7 @@ struct TodayListDetailView: View
                                     .contentShape(Rectangle())
                                     .background
                                     {
-                                        if card.sectionHeading == nil
+                                        if representedDate != nil || card.sectionHeading == nil
                                         {
                                             cardDragSource(for: card.id)
                                         }
@@ -1613,7 +1613,8 @@ struct TodayListDetailView: View
     ///
     /// @fcn        TodayListDetailView.moveCard(_:toIndex:)
     /// @brief      Reorder one focused-list record without changing its content
-    /// @details    Uses the shared bounded card-order operation on the canonical Week binding
+    /// @details    Moves individual Day rows, including named dividers, while retaining whole-section
+    ///             movement for other focused lists. Time ordering preserves untimed and divider slots
     ///
     /// @param[in]  cardID            Stable identity of the record being moved
     /// @param[in]  destinationIndex  Requested zero-based destination position
@@ -1637,8 +1638,15 @@ struct TodayListDetailView: View
 
         var cards = lists[listIndex].cards      /* Mutable focused-list card order */
 
-        let reordered =                                                         /* Items in the requested order */
-            DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
+        var reordered = cards                                                   /* Items in the requested order */
+        if representedDate != nil
+        {
+            BoardCardReordering.move(cardID, to: destinationIndex, in: &reordered)
+        }
+        else
+        {
+            reordered = DaySections.reordered(cards, itemID: cardID, to: destinationIndex)
+        }
 
         guard reordered != cards else
         {

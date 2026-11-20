@@ -64,7 +64,7 @@ struct SavedCardResult: Identifiable
 ///
 enum ActivityFocus: String, CaseIterable, Identifiable
 {
-    case saved = "Saved", dueSoon = "Due soon", labels = "By label"
+    case dueSoon = "Due soon", saved = "Saved", labels = "By label"
     var id: String                                                      /* Record or view identity */
     {
         rawValue
@@ -318,7 +318,7 @@ struct SavedCardsView: View
     @State private var query                           = ""                                     /* Search text              */
     @State private var showsSearch                     = false                                  /* Search visibility        */
     @State private var confirmsClear                   = false                                  /* Confirms clear           */
-    @State private var focus:            ActivityFocus = .saved                                 /* Today Focus selection    */
+    @State private var focus:            ActivityFocus = .dueSoon                                 /* Today Focus selection    */
     @State private var activityHeaderHeight: CGFloat   = 0                                      /* Activity header height   */
 
     @State private var historicalTarget: ActivityRecentResult?          /* Historical target   */
@@ -1429,7 +1429,7 @@ struct SavedCardsView: View
         {
             _, _ in
 
-            focus = .saved
+            focus = .dueSoon
             query = ""
             showsSearch = false
             selectedLabelID = nil

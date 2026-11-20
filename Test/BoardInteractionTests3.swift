@@ -1999,6 +1999,7 @@ extension PlenactBoardDocumentTests
         let window   = UIWindow(windowScene: scene)                     /* Synthetic scene window */
         let host     = UIHostingController(rootView: SavedCardsView(    /* Synthetic SwiftUI host */
             planningDocument: nil,
+            revisitDestination: .constant(.bookmarked),
             lists: [list],
             savedCardIDs: Set(cards.map(\.id)),
             collections: .constant([]),

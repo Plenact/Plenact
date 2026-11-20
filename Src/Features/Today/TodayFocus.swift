@@ -613,7 +613,8 @@ struct TodayFocusSection: View
                             } .joined(separator: ", "))
                     }
                 }
-                .listRowInsets(EdgeInsets())
+                // Leave a clear lane for the List's vertical scroll indicator beside the row arrow.
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 12))
                 .listRowSeparator(entry.id == entries.last?.id ? .hidden : .visible, edges: .bottom)
                 .listRowBackground(Color.clear)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false)

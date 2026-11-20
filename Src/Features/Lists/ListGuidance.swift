@@ -193,50 +193,15 @@ struct SessionListGuidance: View
                 return
             }
 
-            if toggleRequest > 0
-            {
-                // Expand the reserved space with the card so capture follows the same curve
-                withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
-                {
-                    hasPreparedLayout = true
-                    isVisible = true
-
-                    onReveal()
-                    onPresentationChange(true)
-                }
-
-                return
-            }
-
-            // Initial entry prepares the row while capture is hidden before revealing both
-            var layoutTransaction = Transaction(animation: nil)         /* Layout transaction */
-
-            layoutTransaction.disablesAnimations = true
-
-            withTransaction(layoutTransaction)
+            // Initial entry and header toggles expand the row and slide its content in one
+            // transaction, so the list/capture below follows the same entrance curve.
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
             {
                 hasPreparedLayout = true
-
+                isVisible = true
                 onReveal()
+                onPresentationChange(true)
             }
-
-            do
-            {
-                try await Task.sleep(for: .milliseconds(50))
-            }
-            catch
-            {
-                return
-            }
-
-            guard !Task.isCancelled else
-            {
-                return
-            }
-
-            isVisible = true
-
-            onPresentationChange(true)
         }
         .sheet(isPresented: $showsReadingView)
         {

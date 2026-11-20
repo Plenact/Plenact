@@ -352,20 +352,12 @@ struct InlineListCapture: View
     ///
     private func createInline()
     {
-        let previousRevealID = CreatedContentReveal.shared.target?.id           /* Previous reveal ID */
-
         guard draft.submit(to: list, onCreate: onCreate) else
         {
             return
         }
 
-        // Keep successive captures at the footer rather than centering the new Card above it
-        if let request = CreatedContentReveal.shared.target,
-        request.id != previousRevealID, request.listID == list.id
-        {
-            CreatedContentReveal.shared.complete(request)
-        }
-
+        // Keep the owner's reveal request so the new row scrolls into view after submission.
         isFocused = keepsFocusAfterSubmit
     }
 }

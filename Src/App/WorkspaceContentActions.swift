@@ -320,7 +320,7 @@ extension AppRootView
 
         lists = updatedLists
 
-        if let card = created.first
+        if let card = created.last
         {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             CreatedContentReveal.shared.request(listID: listID, card: card)

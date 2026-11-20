@@ -590,7 +590,7 @@ extension ContentView
 
         lists = snapshot
 
-        if let card = created.first
+        if let card = created.last
         {
             CreatedContentReveal.shared.request(listID: capture.listID, card: card)
         }

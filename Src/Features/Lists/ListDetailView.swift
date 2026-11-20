@@ -2010,7 +2010,7 @@ struct TodayListDetailView: View
 
         lists[listIndex] = updated
 
-        if let card = created.first
+        if let card = created.last
         {
             CreatedContentReveal.shared.request(listID: listID, card: card)
         }

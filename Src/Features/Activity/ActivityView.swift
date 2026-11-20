@@ -312,6 +312,7 @@ struct SavedCardsView: View
     @AppStorage("Plenact.ActivityRecentSquareCards") private var usesSquareRecentCards =        /* Uses square recent cards */
         false
     @Environment(\.accessibilityReduceMotion) private var reduceRecentMotion                    /* Reduce recent motion     */
+    @State private var isBrowserCollapsed = false
     @State private var recentShelfHeight: CGFloat = 0
     @State private var isRecentShelfCollapsed = false                                           /* Recent disclosure state  */
     @Environment(\.appReturnResetRequest) private var appReturnResetRequest                     /* App return reset request */
@@ -464,6 +465,95 @@ struct SavedCardsView: View
         .accessibilityLabel("Activity view: " + focus.rawValue)
     }
 
+    /// @fcn        SavedCardsView.browserCollapsePrompt(_:)
+    /// @brief      Make the browser's introduction a full-width collapse target
+    /// @param[in]  text  Description of the selected Activity section
+    /// @return     (some View) accessible introductory button
+    private func browserCollapsePrompt(_ text: String) -> some View
+    {
+        Button
+        {
+            isBrowserCollapsed = true
+        }
+        label:
+        {
+            Text(text).font(.caption).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Collapse " + focus.rawValue)
+        .accessibilityHint(text)
+        .accessibilityIdentifier("activity.browser.collapse")
+    }
+
+    /// @fcn        SavedCardsView.browserPanel
+    /// @brief      Clip the mounted browser into a compact three-line expansion handle
+    /// @details    Keeps the ScrollView's viewport height and identity stable to retain its offset
+    /// @return     (some View) animated browser surface
+    private var browserPanel: some View
+    {
+        GeometryReader
+        {
+            geometry in
+            ZStack(alignment: .top)
+            {
+                ScrollView(.vertical)
+                {
+                    activityBrowserContents
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(width: max(0, geometry.size.width - 32), height: max(0, geometry.size.height - 32), alignment: .top)
+                .padding(16)
+                .opacity(isBrowserCollapsed ? 0 : 1)
+                .allowsHitTesting(!isBrowserCollapsed)
+                .accessibilityHidden(isBrowserCollapsed)
+                .accessibilityIdentifier("activity.browser.contents")
+                .id(focus)
+
+                if isBrowserCollapsed
+                {
+                    Button
+                    {
+                        isBrowserCollapsed = false
+                    }
+                    label:
+                    {
+                        VStack(spacing: 5)
+                        {
+                            ForEach(0..<3, id: \.self)
+                            {
+                                _ in
+                                Capsule().fill(.secondary.opacity(0.6)).frame(height: 2)
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Expand " + focus.rawValue)
+                    .accessibilityIdentifier("activity.browser.expand")
+                    .transition(.opacity)
+                }
+            }
+            .frame(height: isBrowserCollapsed ? 56 : geometry.size.height, alignment: .top)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay
+            {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.68), lineWidth: 1)
+                    .allowsHitTesting(false)
+            }
+            .shadow(color: .black.opacity(0.10), radius: 12, x: 0, y: 5)
+            .animation(.easeInOut(duration: reduceRecentMotion ? 0.2 : 0.6), value: isBrowserCollapsed)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+
     private var focusContent: some View         /* Focus content */
     {
         VStack(alignment: .leading, spacing: 12)
@@ -501,13 +591,11 @@ struct SavedCardsView: View
                         Image(systemName: "chevron.down").font(.caption)
                     } .frame(minHeight: 44)
                 } .disabled(availableFocusLabels.isEmpty)
-                Text("Cards and notes using this label across your Week and Plans.")
-                .font(.caption).foregroundStyle(.secondary)
+                browserCollapsePrompt("Cards and notes using this label across your Week and Plans.")
             }
             else
             {
-                Text("Unfinished items that are overdue or due within the next 7 days.")
-                .font(.caption).foregroundStyle(.secondary)
+                browserCollapsePrompt("Unfinished items that are overdue or due within the next 7 days.")
             }
 
             if focusedItems.isEmpty
@@ -1102,6 +1190,11 @@ struct SavedCardsView: View
     {
         VStack(alignment: .leading, spacing: 16)
         {
+            if revisit == nil && focus == .saved
+            {
+                browserCollapsePrompt("Bookmarked cards and notes across your Week and Plans.")
+                    .padding(.horizontal, 16).padding(.top, 12)
+            }
             if revisit == nil && focus != .saved
             {
                 focusContent
@@ -1392,16 +1485,7 @@ struct SavedCardsView: View
 
                     if hasBrowser
                     {
-                        ScrollView(.vertical)
-                        {
-                            activityBrowserContents
-                        }
-                        .scrollBounceBehavior(.basedOnSize)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .modifier(TodayPanelSurface())
-                        .accessibilityIdentifier("activity.browser.contents")
-                        .id(focus)
+                        browserPanel
                     }
                     else
                     {
@@ -1429,6 +1513,7 @@ struct SavedCardsView: View
         {
             _, _ in
 
+            isBrowserCollapsed = false
             focus = .dueSoon
             query = ""
             showsSearch = false
@@ -1442,6 +1527,7 @@ struct SavedCardsView: View
         .onChange(of: revisit, initial: true)
         {
             _, choice in
+            isBrowserCollapsed = false
             if choice != nil
             {
                 query = "";
@@ -1452,6 +1538,7 @@ struct SavedCardsView: View
         .onChange(of: focus)
         {
             _, value in
+            isBrowserCollapsed = false
             if value == .labels && selectedFocusLabel == nil
             {
                 selectedLabelID = availableFocusLabels.first?.id

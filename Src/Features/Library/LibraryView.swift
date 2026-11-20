@@ -1605,9 +1605,9 @@ struct BoardListsView: View
                         }
                         label:
                         {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                            Image(systemName: "chevron.up").foregroundStyle(.secondary)
                         }
-                        .accessibilityLabel("Close recent items")
+                        .accessibilityLabel("Collapse recent items")
                     }
 
                     if availableRecents.isEmpty

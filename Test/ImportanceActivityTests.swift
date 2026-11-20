@@ -1149,6 +1149,44 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testActivityCompletionAndUndoPreserveLiveContent
+    /// @brief      Complete and restore a Due soon card without reverting unrelated edits
+    /// @return     (Void) validates eligibility, owner isolation, and locked/archive rejection
+    ///
+    func testActivityCompletionAndUndoPreserveLiveContent() throws
+    {
+        let calendar = planningTestCalendar()
+        let now = try XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar))
+        let card = KanbanCard(id: 1, word: "Due item", listTitle: "Plans", dueDate: now)
+        let original = KanbanList(id: 2, title: "Plans", cards: [card])
+        XCTAssertTrue(ActivityFocusSelection.isDueSoon(card, now: now, calendar: calendar))
+        var completed = try XCTUnwrap(ActivityCardCompletion.updatedList(original, cardID: 1, checked: true))
+        XCTAssertTrue(completed.cards[0].isTitleChecked)
+        XCTAssertEqual(completed.cards[0].dueDate, card.dueDate)
+        XCTAssertEqual(completed.cards[0].word, card.word)
+        XCTAssertFalse(original.cards[0].isTitleChecked, "Preparing a save must not mutate the original owner")
+        XCTAssertFalse(ActivityFocusSelection.isDueSoon(completed.cards[0], now: now, calendar: calendar))
+
+        completed.cards[0].word = "Edited during Undo window"
+        let restored = try XCTUnwrap(ActivityCardCompletion.updatedList(completed, cardID: 1, checked: false))
+        XCTAssertFalse(restored.cards[0].isTitleChecked)
+        XCTAssertEqual(restored.cards[0].word, "Edited during Undo window")
+        XCTAssertEqual(restored.cards[0].dueDate, card.dueDate)
+        XCTAssertTrue(ActivityFocusSelection.isDueSoon(restored.cards[0], now: now, calendar: calendar))
+
+        var locked = original
+        locked.cards[0].isEditingLocked = true
+        XCTAssertNil(ActivityCardCompletion.updatedList(locked, cardID: 1, checked: true))
+        var archived = original
+        archived.isArchived = true
+        XCTAssertNil(ActivityCardCompletion.updatedList(archived, cardID: 1, checked: true))
+        XCTAssertNil(ActivityCardCompletion.updatedList(original, cardID: -1, checked: true))
+        let divider = KanbanList(id: 3, title: "Plans", cards: [KanbanCard(id: 1, word: "---", listTitle: "Plans", isDivider: true)])
+        XCTAssertNil(ActivityCardCompletion.updatedList(divider, cardID: 1, checked: true))
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testActivityDueSoonIncludesOverdueAndExcludesCompletedUndatedAndLaterItems
     /// @brief      Verify that activity Due Soon Includes Overdue And Excludes Completed Undated And Later Items
     /// @details    Exercises `XCTUnwrap(PlanningDate.date("2026-10-12", calendar: calendar)).addingTimeInterval`,

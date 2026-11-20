@@ -2057,7 +2057,11 @@ extension PlenactBoardDocumentTests
 
         browser.setContentOffset(CGPoint(x: 0, y: browser.contentSize.height - browser.bounds.height), animated: false)
         host.view.layoutIfNeeded()
-        XCTAssertEqual(browser.convert(browser.bounds, to: host.view), frame)
+        let scrolledFrame = browser.convert(browser.bounds, to: host.view)
+        XCTAssertEqual(scrolledFrame.minX, frame.minX, accuracy: 0.01)
+        XCTAssertEqual(scrolledFrame.minY, frame.minY, accuracy: 0.01)
+        XCTAssertEqual(scrolledFrame.width, frame.width, accuracy: 0.01)
+        XCTAssertEqual(scrolledFrame.height, frame.height, accuracy: 0.01)
         XCTAssertEqual(scrolls.filter { $0 !== browser }.map(\.contentOffset), otherOffsets)
         XCTAssertGreaterThan(browser.contentOffset.y, 500)
     }

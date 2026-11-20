@@ -154,6 +154,27 @@ enum ActivityFocusSelection
 }
 
 
+/// Updates only the completion field of a live, editable Activity item.
+enum ActivityCardCompletion
+{
+    /// @fcn        ActivityCardCompletion.updatedList(_:cardID:checked:)
+    /// @brief      Prepare a completion edit without replacing unrelated card content
+    /// @param[in]  list     Current owner list
+    /// @param[in]  cardID   Owner-local card identity
+    /// @param[in]  checked  Requested completion state
+    /// @return     (KanbanList?) edited list, or nil for missing, archived, or locked content
+    static func updatedList(_ list: KanbanList, cardID: Int, checked: Bool) -> KanbanList?
+    {
+        guard !list.isArchived,
+              let index = list.cards.firstIndex(where: { $0.id == cardID }),
+              !list.cards[index].isSectionDivider, !list.cards[index].isEditingLocked else { return nil }
+        var updated = list
+        updated.cards[index].isTitleChecked = checked
+        return updated
+    }
+}
+
+
 ///
 /// Defines the toolbar's revisit destinations
 ///
@@ -270,6 +291,11 @@ struct ToolbarRevisitMenu: View
 ///
 struct SavedCardsView: View
 {
+    @Environment(\.planningCalendarAccess) private var completionAccess
+    @Environment(\.workspaceBottomBarHeight) private var completionToolbarHeight
+    @Environment(\.workspaceBottomBarTopInset) private var completionToolbarTopInset
+    @State private var pendingCompletions: [LibraryRecentItem] = []
+
     let planningDocument:   PlanningCalendarDocument?                   /* Planning document   */
     var revisitDestination: Binding<ToolbarRevisitDestination?> =       /* Revisit destination */
         .constant(nil)
@@ -386,7 +412,9 @@ struct SavedCardsView: View
         case .dueSoon:
             return items.filter
             {
-                ActivityFocusSelection.isDueSoon($0.card, calendar: focusCalendar)
+                result in
+                ActivityFocusSelection.isDueSoon(result.card, calendar: focusCalendar)
+                    || pendingCompletions.contains(where: { $0.id == result.id })
             } .sorted
             {
                 if $0.card.dueDate != $1.card.dueDate
@@ -497,35 +525,159 @@ struct SavedCardsView: View
             ForEach(focusedItems)
             {
                 result in
-                Button
+                HStack(alignment: .top, spacing: 12)
                 {
-                    openRecent(result)
-                }
-                label:
-                {
-                    HStack(alignment: .top, spacing: 12)
+                    if focus == .dueSoon && result.card.presentation == .card
+                    {
+                        Button
+                        {
+                            if result.card.isTitleChecked
+                            {
+                                undoCompletion(result.item)
+                            }
+                            else if saveCompletion(result, checked: true)
+                            {
+                                withAnimation(.easeInOut(duration: 0.25))
+                                {
+                                    pendingCompletions.append(result.item)
+                                }
+                            }
+                        }
+                        label:
+                        {
+                            Image(systemName: result.card.isTitleChecked ? "checkmark.square.fill" : "square")
+                                .foregroundStyle(result.card.isTitleChecked ? Color.green : Color.secondary)
+                                .frame(width: 44, height: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(result.card.isEditingLocked)
+                        .accessibilityLabel(result.card.isTitleChecked ? "Undo checked off: " + result.card.word : "Check off: " + result.card.word)
+                        .accessibilityValue(result.card.isTitleChecked ? "Completed" : "Not completed")
+                        .accessibilityIdentifier("activity.dueSoon.check." + result.id)
+                    }
+                    else
                     {
                         Image(systemName: result.card.presentation == .note ? "note.text" : "rectangle")
-                        .foregroundStyle(Color.accentColor)
-                        VStack(alignment: .leading, spacing: 4)
-                        {
-                            Text(result.card.word).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                            Text(result.location).font(.caption).foregroundStyle(.secondary)
-                            Text(
-                                focus == .dueSoon
-                                ? ActivityFocusSelection.dueReason(result.card, calendar: focusCalendar)
-                                : "Label: " + (selectedFocusLabel?.name ?? "")
-                            )
-                            .font(.caption).foregroundStyle(focus == .dueSoon ? Color.orange : Color.secondary)
-                        }
+                            .foregroundStyle(Color.accentColor)
+                    }
 
-                        Spacer()
-                        Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(.secondary)
-                    } .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                } .buttonStyle(.plain).accessibilityHint("Opens this item in " + result.location)
+                    Button
+                    {
+                        openRecent(result)
+                    }
+                    label:
+                    {
+                        HStack(alignment: .top)
+                        {
+                            VStack(alignment: .leading, spacing: 4)
+                            {
+                                Text(result.card.word).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                                    .strikethrough(result.card.isTitleChecked)
+                                Text(result.location).font(.caption).foregroundStyle(.secondary)
+                                Text(focus == .dueSoon
+                                     ? ActivityFocusSelection.dueReason(result.card, calendar: focusCalendar)
+                                     : "Label: " + (selectedFocusLabel?.name ?? ""))
+                                    .font(.caption).foregroundStyle(focus == .dueSoon ? Color.orange : Color.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens this item in " + result.location)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .transition(reduceRecentMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom)))
             }
         } .padding(16)
+    }
+
+
+    /// @fcn        SavedCardsView.saveCompletion(_:checked:)
+    /// @brief      Save completion through the item's current, owner-qualified workspace
+    /// @param[in]  result   Live Activity item and its owner
+    /// @param[in]  checked  Requested completion state
+    /// @return     (Bool) whether the canonical owner accepted and persisted the edit
+    private func saveCompletion(_ result: ActivityRecentResult, checked: Bool) -> Bool
+    {
+        guard let access = completionAccess else { return false }
+        if var week = access.document.weeks.first(where: { $0.id == result.item.collectionID })
+        {
+            if week.startKey == access.document.currentWeekKey
+            {
+                // Activity receives active lists; retain archived lists in the persisted Week.
+                for liveList in lists
+                {
+                    if let index = week.collection.lists.firstIndex(where: { $0.id == liveList.id })
+                    {
+                        week.collection.lists[index] = liveList
+                    }
+                    else
+                    {
+                        week.collection.lists.append(liveList)
+                    }
+                }
+            }
+            guard let index = week.collection.lists.firstIndex(where: { $0.id == result.list.id }),
+                  let updated = ActivityCardCompletion.updatedList(week.collection.lists[index], cardID: result.card.id, checked: checked)
+            else { return false }
+            week.collection.lists[index] = updated
+            return access.saveWeek(week)
+        }
+        guard var collection = access.library.first(where: { $0.id == result.item.collectionID && $0.isActive }),
+              let index = collection.lists.firstIndex(where: { $0.id == result.list.id }),
+              let updated = ActivityCardCompletion.updatedList(collection.lists[index], cardID: result.card.id, checked: checked)
+        else { return false }
+        collection.lists[index] = updated
+        return access.saveLibrary(collection)
+    }
+
+    /// @fcn        SavedCardsView.undoCompletion(_:)
+    /// @brief      Restore only the live completion state and remove its pending notice
+    /// @param[in]  item  Owner-qualified identity of the completed card
+    private func undoCompletion(_ item: LibraryRecentItem)
+    {
+        guard let result = availableFocusItems.first(where: { $0.id == item.id }),
+              !result.card.isTitleChecked || saveCompletion(result, checked: false) else { return }
+        withAnimation(.easeInOut(duration: 0.3))
+        {
+            pendingCompletions.removeAll { $0.id == item.id }
+        }
+    }
+
+    /// @fcn        SavedCardsView.completionNotice
+    /// @brief      Keep the completion Undo action clear of the workspace toolbar
+    /// @return     (some View) transient completion notice, including newest-first Undo
+    @ViewBuilder private var completionNotice: some View
+    {
+        if let pending = pendingCompletions.last
+        {
+            GeometryReader
+            {
+                geometry in
+                HStack(spacing: 16)
+                {
+                    Label("Card checked off", systemImage: "checkmark.circle.fill")
+                        .font(.subheadline).foregroundStyle(.primary)
+                    Spacer(minLength: 8)
+                    Button("Undo", systemImage: "arrow.uturn.backward") { undoCompletion(pending) }
+                        .font(.headline).frame(minHeight: 44)
+                        .accessibilityLabel("Undo checked off")
+                        .accessibilityIdentifier("activity.dueSoon.undo")
+                }
+                .padding(.horizontal, 16).padding(.vertical, 8)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+                .padding(.horizontal, 16)
+                .padding(.bottom, max(0, completionToolbarHeight - geometry.safeAreaInsets.bottom) + completionToolbarTopInset + 12)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+            }
+            .transition(reduceRecentMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        }
     }
 
 
@@ -1263,6 +1415,15 @@ struct SavedCardsView: View
             .id(revisit)
         }
 
+        .overlay(alignment: .bottom) { completionNotice }
+        .task(id: pendingCompletions.last?.id)
+        {
+            guard !pendingCompletions.isEmpty else { return }
+            do { try await Task.sleep(for: .seconds(4)) }
+            catch { return }
+            withAnimation(.easeInOut(duration: 0.45)) { pendingCompletions.removeAll() }
+        }
+        .onDisappear { pendingCompletions.removeAll() }
         .id(appReturnResetRequest)
         .onChange(of: appReturnResetRequest)
         {

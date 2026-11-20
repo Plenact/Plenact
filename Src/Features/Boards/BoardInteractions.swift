@@ -618,6 +618,23 @@ struct BoardCardDragSource: UIViewRepresentable
         }
 
 
+        /// @fcn        BoardCardDragSource.Coordinator.gestureRecognizer(_:shouldBeRequiredToFailBy:)
+        /// @brief      Give direct Day reordering priority over competing row long presses
+        /// @details    The divider context menu must wait for a held reorder; ordinary pans and
+        ///             native Board dragging retain their existing gesture relationships
+        /// @param[in]  gestureRecognizer       Direct reorder recognizer seeking priority
+        /// @param[in]  otherGestureRecognizer  Competing row recognizer
+        /// @return     (Bool) whether the other long press must wait for the reorder to fail
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool
+        {
+            source.onDirectDrop != nil && gestureRecognizer === reorderGesture
+                && otherGestureRecognizer is UILongPressGestureRecognizer
+        }
+
+
         /// @fcn        BoardCardDragSource.Coordinator.gestureRecognizer(_:shouldReceive:)
         /// @brief      Allow a reorder gesture only from an eligible Card region
         /// @details    Checks the touch in the hosting Card container before accepting the reorder gesture

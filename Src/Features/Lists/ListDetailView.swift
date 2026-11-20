@@ -761,7 +761,8 @@ struct TodayListDetailView: View
 
                                             lists[index].cards = DaySections.moved(
                                                 lists[index].cards, sectionID: card.id, offset: offset)
-                                        }
+                                        },
+                                        onDelete: representedDate == nil ? nil : { deleteCard(card.id) }
                                     )
                                     .buttonStyle(.plain)
                                     .modifier(HideNavigationLinkIndicator())
@@ -776,7 +777,10 @@ struct TodayListDetailView: View
                                     )
                                     .contextMenu
                                     {
-                                        ItemDisplayFormatMenu(card: card, onUpdate: updateCard)
+                                        if representedDate == nil
+                                        {
+                                            ItemDisplayFormatMenu(card: card, onUpdate: updateCard)
+                                        }
                                     }
                                     .modifier(
                                         ContentLifecycleActions(
@@ -784,7 +788,8 @@ struct TodayListDetailView: View
                                             onDelete:
                                             {
                                                 deleteCard(card.id)
-                                            }
+                                            },
+                                            showsContextMenu: representedDate == nil
                                         )
                                     )
                                     .contentShape(Rectangle())

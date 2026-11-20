@@ -62,6 +62,11 @@ extension PlenactBoardDocumentTests
         scroll.addSubview(cell)
         cell.contentView.addSubview(probe)
         coordinator.install(from: probe)
+        let reorder = try XCTUnwrap(coordinator.reorderGesture)
+        XCTAssertTrue(coordinator.gestureRecognizer(reorder, shouldBeRequiredToFailBy: UILongPressGestureRecognizer()),
+            "A competing divider long press must wait for Day reordering")
+        XCTAssertFalse(coordinator.gestureRecognizer(reorder, shouldBeRequiredToFailBy: UIPanGestureRecognizer()),
+            "Unrelated pans must retain their existing relationship")
 
         let point = scroll.convert(CGPoint(x: 180, y: 395), to: window)
 
@@ -119,7 +124,7 @@ extension PlenactBoardDocumentTests
             defaults.removePersistentDomain(forName: suite)
             UserDefaults.standard.removeObject(forKey: BoardViewportMemory.prefix + owner.uuidString + ".focused." + PlanningDate.key(date))
         }
-        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 1400)
         window.rootViewController = host
         window.makeKeyAndVisible()
         try await Task.sleep(for: .milliseconds(500))
@@ -177,6 +182,54 @@ extension PlenactBoardDocumentTests
         XCTAssertFalse(source.isDragging)
         XCTAssertEqual(records[0].cards.map(\.id), [1, 0, 2])
         XCTAssertEqual(Set(records[0].cards), Set(original))
+
+        // Rows inserted while the Day list is already mounted need the same native drag installation.
+        records[0].cards.append(KanbanCard(id: 3, word: "New untimed", listTitle: "Synthetic day"))
+        host.rootView = view
+        try await Task.sleep(for: .milliseconds(300))
+        host.view.layoutIfNeeded()
+        let insertedSources = descendants(native).flatMap(\.interactions).compactMap
+            { ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator }
+            .sorted { ($0.container?.convert(.zero, to: window).y ?? 0) < ($1.container?.convert(.zero, to: window).y ?? 0) }
+        XCTAssertEqual(insertedSources.count, 4, "Newly created Day rows must install their drag source")
+        let insertedSource = try XCTUnwrap(insertedSources.last)
+        let insertedContainer = try XCTUnwrap(insertedSource.container)
+        let firstContainer = try XCTUnwrap(insertedSources.first?.container)
+        let insertedStart = insertedContainer.convert(CGPoint(x: 150, y: 20), to: window)
+        let insertedEnd = firstContainer.convert(CGPoint(x: 150, y: 1), to: window)
+        insertedSource.handleDirectReorder(.began, at: insertedStart)
+        try XCTUnwrap(insertedSource.reorderGesture).state = .began
+        insertedSource.handleDirectReorder(.changed, at: insertedEnd)
+        try await Task.sleep(for: .milliseconds(100))
+        insertedSource.handleDirectReorder(.ended, at: insertedEnd)
+        XCTAssertEqual(records[0].cards.first?.id, 3, "A card created in the mounted Day view must retain its new position")
+
+        for (id, title) in [(4, "--- Section"), (5, "---")]
+        {
+            records[0].cards.append(contentsOf: records[0].makeItems(startingAt: id, titles: title))
+            host.rootView = view
+            try await Task.sleep(for: .milliseconds(300))
+            host.view.layoutIfNeeded()
+            let rowSources = descendants(native).flatMap(\.interactions).compactMap
+                { ($0 as? UIDragInteraction)?.delegate as? BoardCardDragSource.Coordinator }
+                .sorted { ($0.container?.convert(.zero, to: window).y ?? 0) < ($1.container?.convert(.zero, to: window).y ?? 0) }
+            XCTAssertEqual(rowSources.count, records[0].cards.count, "Each divider needs a native source")
+            let dividerSource = try XCTUnwrap(rowSources.last)
+            let dividerContainer = try XCTUnwrap(dividerSource.container)
+            XCTAssertFalse(dividerContainer.interactions.contains { $0 is UIContextMenuInteraction },
+                "The divider row must reserve its long press for dragging")
+            let destinationContainer = try XCTUnwrap(rowSources.first?.container)
+            let dividerStart = dividerContainer.convert(CGPoint(x: 150, y: dividerContainer.bounds.midY), to: window)
+            let dividerEnd = destinationContainer.convert(CGPoint(x: 150, y: 1), to: window)
+            dividerSource.handleDirectReorder(.began, at: dividerStart)
+            try XCTUnwrap(dividerSource.reorderGesture).state = .began
+            dividerSource.handleDirectReorder(.changed, at: dividerEnd)
+            try await Task.sleep(for: .milliseconds(100))
+            dividerSource.handleDirectReorder(.ended, at: dividerEnd)
+            XCTAssertEqual(records[0].cards.first?.id, id, "A Day-created divider must retain its dropped position")
+        }
+
+
     }
 
 

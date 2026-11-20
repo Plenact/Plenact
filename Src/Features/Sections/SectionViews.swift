@@ -56,6 +56,8 @@ struct DaySectionRow: View
     let onMove:   (Int)        -> Void                          /* Move the selected item           */
     var onOpen:   (()          -> Void)? = nil                  /* Open the selected destination    */
     @Environment(\.cardMovementAccess) private var movement     /* Owner-qualified transfer context */
+    var onDelete: (() -> Bool)? = nil
+    @State private var confirmsDelete = false
     @State private var showsMove = false                        /* Move visibility                  */
 
     @ViewBuilder private var heading: some View         /* Section heading text */
@@ -111,55 +113,74 @@ struct DaySectionRow: View
                 } .buttonStyle(.borderless)
                 .accessibilityLabel(
                     card.appearance?.sectionCollapsed == true ? "Expand section" : "Collapse section")
+            }
+            if card.sectionHeading != nil || onDelete != nil
+            {
                 Menu
                 {
-                    if movement.moveSection != nil
+                    if card.sectionHeading != nil
                     {
-                        Button("Move section to…", systemImage: "arrowshape.turn.up.right")
+                        if movement.moveSection != nil
                         {
-                            showsMove = true
-                        }
-                    }
-
-                    Menu("Section color", systemImage: "paintpalette")
-                    {
-                        Button("Default")
-                        {
-                            setColor(nil)
-                        }
-
-                        ForEach(ItemAccent.allCases, id: \.self)
-                        {
-                            color in
-                            Button
+                            Button("Move section to…", systemImage: "arrowshape.turn.up.right")
                             {
-                                setColor(color)
-                            }
-                            label:
-                            {
-                                Label(color.rawValue.capitalized, systemImage: "circle.fill").foregroundStyle(
-                                    color.color)
+                                showsMove = true
                             }
                         }
-                    }
 
-                    Button("Move section earlier", systemImage: "arrow.up")
-                    {
-                        onMove(-1)
+                        Menu("Section color", systemImage: "paintpalette")
+                        {
+                            Button("Default")
+                            {
+                                setColor(nil)
+                            }
+
+                            ForEach(ItemAccent.allCases, id: \.self)
+                            {
+                                color in
+                                Button
+                                {
+                                    setColor(color)
+                                }
+                                label:
+                                {
+                                    Label(color.rawValue.capitalized, systemImage: "circle.fill").foregroundStyle(
+                                        color.color)
+                                }
+                            }
+                        }
+
+                        Button("Move section earlier", systemImage: "arrow.up")
+                        {
+                            onMove(-1)
+                        }
+                        .disabled(headings.first?.id == card.id)
+                        Button("Move section later", systemImage: "arrow.down")
+                        {
+                            onMove(1)
+                        }
+                        .disabled(headings.last?.id == card.id)
                     }
-                    .disabled(headings.first?.id == card.id)
-                    Button("Move section later", systemImage: "arrow.down")
+                    if onDelete != nil
                     {
-                        onMove(1)
+                        ItemDisplayFormatMenu(card: card, onUpdate: onUpdate)
+                        Button("Delete divider", systemImage: "trash", role: .destructive)
+                        {
+                            confirmsDelete = true
+                        }
                     }
-                    .disabled(headings.last?.id == card.id)
                 }
                 label:
                 {
                     Image(systemName: "ellipsis").frame(width: 44, height: 44)
                 }
-                .accessibilityLabel("Section options for " + (card.sectionHeading ?? ""))
+                .accessibilityLabel(card.sectionHeading.map { "Section options for " + $0 } ?? "Divider options")
             }
+        }
+        .confirmationDialog("Delete divider?", isPresented: $confirmsDelete, titleVisibility: .visible)
+        {
+            Button("Delete divider", role: .destructive) { _ = onDelete?() }
+            Button("Cancel", role: .cancel) { }
         }
         .sheet(isPresented: $showsMove)
         {

@@ -61,6 +61,7 @@ struct ContentLifecycleActions: ViewModifier
     let kind:      String                               /* Card or List                                              */
     let onArchive: (() -> Void)?                        /* Optional retention action; dividers support deletion only */
     let onDelete:  ()  -> Bool                          /* Owner reports saved removal of the confirmed record       */
+    var showsContextMenu = true
     @State private var confirmsDelete = false           /* Permanent removal confirmation                            */
     @Environment(\.dismiss) private var dismiss         /* Close snapshot projections after mutation                 */
 
@@ -79,19 +80,22 @@ struct ContentLifecycleActions: ViewModifier
         content
         .contextMenu
         {
-            if let onArchive
-            {                                                           /* Archive action offered by the menu's owner */
-                Button("Archive \(kind)", systemImage: "archivebox")
-                {
-                    onArchive();
-                    dismiss()
-                }
-            }
-
-
-            Button("Delete \(kind)", systemImage: "trash", role: .destructive)
+            if showsContextMenu
             {
-                confirmsDelete = true
+                if let onArchive
+                {                                                           /* Archive action offered by the menu's owner */
+                    Button("Archive \(kind)", systemImage: "archivebox")
+                    {
+                        onArchive();
+                        dismiss()
+                    }
+                }
+
+
+                Button("Delete \(kind)", systemImage: "trash", role: .destructive)
+                {
+                    confirmsDelete = true
+                }
             }
         }
         .accessibilityActions

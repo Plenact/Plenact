@@ -107,7 +107,7 @@ struct TodayPerspectiveSection: View
                     ForEach(tomorrowItems.prefix(2))
                     {
                         card in
-                        Text(card.word).font(.subheadline).lineLimit(2)
+                        Text(card.word).completedItemTitle(card.isTitleChecked, font: .subheadline, color: .primary).lineLimit(2)
                     }
 
                     if tomorrowItems.count > 2

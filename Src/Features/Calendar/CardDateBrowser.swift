@@ -259,8 +259,7 @@ struct TodayCalendarView: View
                                         .foregroundStyle(.secondary)
                                         VStack(alignment: .leading, spacing: 3)
                                         {
-                                            Text(result.title)
-                                            .foregroundStyle(.primary)
+                                            Text(result.title).completedItemTitle(lists.first(where: { $0.id == result.listID })?.cards.first(where: { $0.id == result.cardID })?.isTitleChecked == true, font: .body, color: .primary)
                                             Text("\(result.listTitle) · \(result.dateLabel)")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)

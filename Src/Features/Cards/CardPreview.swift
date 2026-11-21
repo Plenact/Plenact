@@ -286,9 +286,7 @@ struct KanbanCardView: View
             {
                 HStack(alignment: .top, spacing: 8)
                 {
-                    Text(card.word)
-                    .font(card.displayFormat == .title ? .title2.weight(.bold) : .body)
-                    .foregroundStyle((card.appearance?.cardTitleColor ?? titleColor)?.color ?? .primary)
+                    Text(card.word).completedItemTitle(card.isTitleChecked, font: card.displayFormat == .title ? .title2.weight(.bold) : .body, color: (card.appearance?.cardTitleColor ?? titleColor)?.color ?? .primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(card.displayFormat == .title ? .isHeader : [])
@@ -367,10 +365,8 @@ struct KanbanCardView: View
                             }
 
 
-                            ItemAppearanceMark(appearance: card.appearance)
-                            Text(card.word)
-                            .font(.headline)
-                            .foregroundStyle((card.appearance?.cardTitleColor ?? titleColor)?.color ?? .primary)
+                            ItemAppearanceMark(appearance: card.appearance, isCompleted: card.isTitleChecked)
+                            Text(card.word).completedItemTitle(card.isTitleChecked, font: .headline, color: (card.appearance?.cardTitleColor ?? titleColor)?.color ?? .primary)
                             .lineLimit(
                                 dynamicTypeSize.isAccessibilitySize
                                 ? nil : (compactCards ? 1 : (presentation == .overview ? 2 : 3))
@@ -838,8 +834,8 @@ struct SingleListNoteRow: View
 
                 VStack(alignment: .leading, spacing: 5)
                 {
-                    Text(card.word).font(.body.weight(.medium)).foregroundStyle(.primary)
-                    .lineLimit(2).strikethrough(card.isTitleChecked)
+                    Text(card.word).completedItemTitle(card.isTitleChecked, font: .body.weight(.medium), color: .primary)
+                    .lineLimit(2)
                     if !preview.isEmpty
                     {
                         Text(preview)

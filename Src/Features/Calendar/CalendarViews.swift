@@ -538,7 +538,7 @@ struct PlanningCalendarResultRow: View
             .foregroundStyle(result.card.isTitleChecked ? Color.green : Color.secondary)
             VStack(alignment: .leading, spacing: 4)
             {
-                Text(result.card.word).foregroundStyle(.primary)
+                Text(result.card.word).completedItemTitle(result.card.isTitleChecked, font: .body, color: .primary)
                 Text("\(result.collectionTitle) · \(result.listTitle)").font(.caption).foregroundStyle(.secondary)
             }
 

@@ -360,7 +360,7 @@ struct LibraryPlateTile: View
                 Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
             }
 
-            Text(item.card.word).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(3)
+            Text(item.card.word).completedItemTitle(item.card.isTitleChecked, font: .subheadline.weight(.semibold), color: .primary).lineLimit(3)
             Spacer(minLength: 4)
         }
         .padding(12)
@@ -447,7 +447,7 @@ struct LibraryLabelMatchesView: View
                             .foregroundStyle(label.color.color)
                             VStack(alignment: .leading, spacing: 4)
                             {
-                                Text(result.card.word).font(.headline).foregroundStyle(.primary)
+                                Text(result.card.word).completedItemTitle(result.card.isTitleChecked, font: .headline, color: .primary)
                                 Text(result.collectionTitle + " · " + result.listTitle).font(.caption).foregroundStyle(
                                     .secondary)
                             }

@@ -1149,6 +1149,81 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testCompletedTitleTypographyInNativeEditors
+    /// @brief      Verify completed Card and Note editors render regular italic grey titles
+    /// @return     (Void) validates native fonts, preserved unfinished styling, and dark-mode contrast
+    ///
+    @MainActor
+    func testCompletedTitleTypographyInNativeEditors() async throws
+    {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: VStack
+        {
+            TextField("Card", text: .constant("Completed card"))
+                .completedItemTitle(true, font: .title2.bold(), color: .red)
+            TextField("Note", text: .constant("Completed note"))
+                .completedItemTitle(true, font: .largeTitle.bold(), color: .red)
+            TextField("Open", text: .constant("Open card"))
+                .completedItemTitle(false, font: .title2.bold(), color: .red)
+        })
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        host.overrideUserInterfaceStyle = .light
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+
+        /// @fcn        testCompletedTitleTypographyInNativeEditors.fields(_:)
+        /// @brief      Collect native text fields from the hosted editors
+        /// @return     ([UITextField]) mounted editor fields
+        func fields(_ view: UIView) -> [UITextField]
+        {
+            (view as? UITextField).map { [$0] } ?? view.subviews.flatMap(fields)
+        }
+        /// @fcn        testCompletedTitleTypographyInNativeEditors.assertColor(_:_:)
+        /// @brief      Compare rendered colors in a common RGB space
+        func assertColor(_ actual: UIColor?, _ expected: UIColor) throws
+        {
+            let actual = try XCTUnwrap(actual)
+            var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+            var er: CGFloat = 0, eg: CGFloat = 0, eb: CGFloat = 0, ea: CGFloat = 0
+            XCTAssertTrue(actual.getRed(&ar, green: &ag, blue: &ab, alpha: &aa))
+            XCTAssertTrue(expected.getRed(&er, green: &eg, blue: &eb, alpha: &ea))
+            for (a, e) in zip([ar, ag, ab, aa], [er, eg, eb, ea])
+            {
+                XCTAssertEqual(a, e, accuracy: 0.001)
+            }
+        }
+        let editors = fields(host.view)
+        let card = try XCTUnwrap(editors.first(where: { $0.text == "Completed card" }))
+        let note = try XCTUnwrap(editors.first(where: { $0.text == "Completed note" }))
+        let open = try XCTUnwrap(editors.first(where: { $0.text == "Open card" }))
+        for editor in [card, note]
+        {
+            let font = try XCTUnwrap(editor.font)
+            XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitItalic))
+            XCTAssertFalse(font.fontDescriptor.symbolicTraits.contains(.traitBold))
+            try assertColor(editor.textColor?.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light)), .darkGray)
+        }
+        XCTAssertGreaterThan(try XCTUnwrap(note.font).pointSize, try XCTUnwrap(card.font).pointSize)
+        XCTAssertTrue(try XCTUnwrap(open.font).fontDescriptor.symbolicTraits.contains(.traitBold))
+        XCTAssertFalse(try XCTUnwrap(open.font).fontDescriptor.symbolicTraits.contains(.traitItalic))
+        host.overrideUserInterfaceStyle = .dark
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        try assertColor(card.textColor?.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark)), .lightGray)
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testActivityCompletionAndUndoPreserveLiveContent
     /// @brief      Complete and restore a Due soon card without reverting unrelated edits
     /// @return     (Void) validates eligibility, owner isolation, and locked/archive rejection

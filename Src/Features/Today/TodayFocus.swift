@@ -588,11 +588,7 @@ struct TodayFocusSection: View
                             {
                                 VStack(alignment: .leading, spacing: 1)
                                 {
-                                    Text(card.resolvedTodayFocusTitle)
-                                    .font(.system(size: isPad ? padTaskSize : phoneTaskSize, weight: .medium))
-                                    .foregroundStyle(card.isTitleChecked ? Color.secondary : Color.primary)
-                                    .italic(card.isTitleChecked)
-                                    .strikethrough(card.isTitleChecked)
+                                    Text(card.resolvedTodayFocusTitle).completedItemTitle(card.isTitleChecked, font: .system(size: isPad ? padTaskSize : phoneTaskSize, weight: .medium), color: .primary)
                                     .lineLimit(1)
                                 }
 
@@ -1250,7 +1246,7 @@ private struct TodayFocusItemMark: View
             }
             else if card.appearance?.customIcon != nil
             {
-                ItemAppearanceMark(appearance: card.appearance)
+                ItemAppearanceMark(appearance: card.appearance, isCompleted: card.isTitleChecked)
             }
             else
             {
@@ -1258,6 +1254,7 @@ private struct TodayFocusItemMark: View
                     ?? (card.presentation == .note ? ItemDisplayFormat.note : .card).symbol)
                 .font(.system(size: markSize - 3, weight: .regular))
                 .foregroundStyle(card.appearance?.iconColor?.color ?? Color.secondary)
+                .completedItemIcon(card.isTitleChecked)
             }
         }
         .frame(width: markSize, height: markSize)

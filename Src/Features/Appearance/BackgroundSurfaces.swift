@@ -152,23 +152,28 @@ extension ItemAccent
 struct ItemAppearanceMark: View
 {
     let appearance: ItemAppearance?     /* Resolved appearance choices */
+    var isCompleted = false
 
     var body: some View         /* Item Appearance Mark layout */
     {
-        if let custom = appearance?.customIcon, let image = UIImage(data: custom.imageData)
+        Group
         {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 22, height: 22)
+            if let custom = appearance?.customIcon, let image = UIImage(data: custom.imageData)
+            {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+                    .accessibilityHidden(true)
+            }
+            else if let icon = appearance?.icon
+            {
+                Image(systemName: icon.rawValue)
+                .foregroundStyle(appearance?.iconColor?.color ?? Color.secondary)
                 .accessibilityHidden(true)
+            }
         }
-        else if let icon = appearance?.icon
-        {
-            Image(systemName: icon.rawValue)
-            .foregroundStyle(appearance?.iconColor?.color ?? Color.secondary)
-            .accessibilityHidden(true)
-        }
+        .completedItemIcon(isCompleted)
     }
 }
 
@@ -760,5 +765,59 @@ extension EnvironmentValues
         {
             self[SubtitleItalicKey.self] = newValue
         }
+    }
+}
+
+
+extension View
+{
+    /// @fcn        View.completedItemTitle(_:font:color:)
+    /// @brief      Render completed Card and Note titles with consistent subdued typography
+    /// @param[in]  checked  Canonical completion state
+    /// @param[in]  font     Existing title font retained for unfinished items
+    /// @param[in]  color    Existing title color retained for unfinished items
+    /// @return     (some View) regular-weight italic grey completed title, or its normal styling
+    func completedItemTitle(_ checked: Bool, font: Font = .body, color: Color = .primary) -> some View
+    {
+        self
+            .font(checked ? font.weight(.regular).italic() : font)
+            .foregroundStyle(checked ? Color(uiColor: UIColor
+                {
+                    traits in
+                    traits.userInterfaceStyle == .dark ? .lightGray : .darkGray
+                }) : color)
+    }
+}
+
+
+/// A centered shear gives image icons an italic lean without rotating their baseline.
+private struct CompletedItemIconSlant: GeometryEffect
+{
+    var amount: CGFloat
+    var animatableData: CGFloat
+    {
+        get { amount }
+        set { amount = newValue }
+    }
+
+    /// @fcn        CompletedItemIconSlant.effectValue(size:)
+    /// @brief      Slant the icon forward while preserving its center and layout size
+    /// @return     (ProjectionTransform) horizontal shear around the icon's vertical center
+    func effectValue(size: CGSize) -> ProjectionTransform
+    {
+        ProjectionTransform(CGAffineTransform(a: 1, b: 0, c: -amount, d: 1,
+            tx: amount * size.height / 2, ty: 0))
+    }
+}
+
+extension View
+{
+    /// @fcn        View.completedItemIcon(_:)
+    /// @brief      Match a completed item's icon to its italic title
+    /// @param[in]  checked  Canonical completion state
+    /// @return     (some View) gently slanted completed icon, or its upright original
+    func completedItemIcon(_ checked: Bool) -> some View
+    {
+        modifier(CompletedItemIconSlant(amount: checked ? 0.22 : 0))
     }
 }

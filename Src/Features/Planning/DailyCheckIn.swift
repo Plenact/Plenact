@@ -281,7 +281,7 @@ struct TodayVisionView: View
                             source in
                             VStack(alignment: .leading, spacing: 8)
                             {
-                                Text(source.card.word).font(.headline)
+                                Text(source.card.word).completedItemTitle(source.card.isTitleChecked, font: .headline, color: .primary)
                                 Text(source.collectionTitle + " · " + source.listTitle).font(.caption).foregroundStyle(
                                     .secondary)
                                 Button(
@@ -334,7 +334,7 @@ struct TodayVisionView: View
                             priority in
                             HStack
                             {
-                                Text(priority.resolve(in: sources)?.card.word ?? priority.title)
+                                Text(priority.resolve(in: sources)?.card.word ?? priority.title).completedItemTitle(priority.resolve(in: sources)?.card.isTitleChecked == true, font: .body, color: .primary)
                                 Spacer()
                                 Image(systemName: "line.3.horizontal").foregroundStyle(.secondary).accessibilityHidden(
                                     true)
@@ -1370,7 +1370,7 @@ struct TodayCheckInView: View
                             .foregroundStyle(source?.card.isTitleChecked == true ? Color.green : Color.secondary)
                             VStack(alignment: .leading, spacing: 5)
                             {
-                                Text(source?.card.word ?? priority.title).font(.headline)
+                                Text(source?.card.word ?? priority.title).completedItemTitle(source?.card.isTitleChecked == true, font: .headline, color: .primary)
                                 Text(
                                     source == nil
                                     ? "Unavailable · remove this link and choose the item again if needed"
@@ -1721,8 +1721,7 @@ struct TodayPlanSummaryPanel: View
                             .foregroundStyle(source?.card.isTitleChecked == true ? Color.green : Color.secondary)
                             VStack(alignment: .leading, spacing: 4)
                             {
-                                Text(source?.card.word ?? priority.title).font(
-                                    .system(size: bodySize, weight: .semibold))
+                                Text(source?.card.word ?? priority.title).completedItemTitle(source?.card.isTitleChecked == true, font: .system(size: bodySize, weight: .semibold), color: .primary)
                                 Text(
                                     source == nil
                                     ? "Unavailable · saved context retained"

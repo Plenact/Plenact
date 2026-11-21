@@ -643,7 +643,7 @@ struct PersonalCollectionSettingsView: View
                             }
 
 
-                            Text(card.word)
+                            Text(card.word).completedItemTitle(card.isTitleChecked, font: .body, color: .primary)
                         }
                     }
                 }

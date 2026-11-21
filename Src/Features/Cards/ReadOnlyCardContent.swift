@@ -43,7 +43,7 @@ struct ReadOnlyCardContent: View
                     .font(.caption).foregroundStyle(.secondary)
                 }
 
-                SlideableHeaderText(text: card.word).font(.title2.bold())
+                SlideableHeaderText(text: card.word).completedItemTitle(card.isTitleChecked, font: .title2.bold())
                 if !card.subtitle.isEmpty
                 {
                     Text(card.subtitle)

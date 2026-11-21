@@ -779,7 +779,7 @@ struct PeriodicReviewView: View
                                 ForEach(review.priorities)
                                 {
                                     priority in
-                                    Text(priority.resolve(in: sources)?.card.word ?? priority.title)
+                                    Text(priority.resolve(in: sources)?.card.word ?? priority.title).completedItemTitle(priority.resolve(in: sources)?.card.isTitleChecked == true, font: .body, color: .primary)
                                 }
                                 .onDelete
                                 {

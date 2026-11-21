@@ -567,7 +567,7 @@ struct ChecklistItemTypeEditor: View
                                 })
                             {
                                 card in
-                                Text(card.word + " · " + card.listTitle).tag(Optional(card.id))
+                                Text(card.word + " · " + card.listTitle).completedItemTitle(card.isTitleChecked).tag(Optional(card.id))
                             }
                         }
                     }
@@ -657,6 +657,7 @@ struct CardInfoEditorSheet: View
     let presentation: ItemPresentation                          /* Item kind used for accessible creation labels */
 
     @Environment(\.dismiss) private var dismiss         /* Dismiss action for the sheet         */
+    private let isTitleChecked: Bool
     @State private var title:       String              /* Draft text for the title field       */
     @State private var subtitle:    String              /* Draft text for the subtitle field    */
     @State private var description: String              /* Draft text for the description field */
@@ -694,6 +695,7 @@ struct CardInfoEditorSheet: View
     ///
     init(card: KanbanCard, onSave: @escaping (String, String, String) -> Void)
     {
+        self.isTitleChecked = card.isTitleChecked
         self.onSave = onSave
         self.presentation = card.presentation
         _title = State(initialValue: card.word)
@@ -723,6 +725,7 @@ struct CardInfoEditorSheet: View
                 Section("Card details")
                 {
                     TextField("Title", text: $title).textInputAutocapitalization(.sentences)
+                        .completedItemTitle(isTitleChecked)
 
                     TextField("Subtitle", text: $subtitle).textInputAutocapitalization(.sentences)
                 }

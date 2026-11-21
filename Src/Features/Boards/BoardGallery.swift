@@ -209,10 +209,7 @@ struct BoardGalleryTile: View
 
             HStack(alignment: .top, spacing: 6)
             {
-                Text(card.word).font(card.displayFormat == .title ? .title3.weight(.semibold) : .headline)
-                .foregroundStyle(
-                    boardAppearance.resolvedTitleColor(card: card.appearance, list: appearance)?.color ?? .primary
-                ).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+                Text(card.word).completedItemTitle(card.isTitleChecked, font: card.displayFormat == .title ? .title3.weight(.semibold) : .headline, color: boardAppearance.resolvedTitleColor(card: card.appearance, list: appearance)?.color ?? .primary).lineLimit(3).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 ImportantItemIndicator(cardID: card.id)
             }

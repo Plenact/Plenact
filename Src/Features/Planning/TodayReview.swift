@@ -415,7 +415,7 @@ struct TodayReviewView: View
 
                             VStack(alignment: .leading, spacing: 4)
                             {
-                                Text(source?.card.word ?? priority.title)
+                                Text(source?.card.word ?? priority.title).completedItemTitle(source?.card.isTitleChecked == true, font: .body, color: .primary)
                                 Text(
                                     source == nil
                                     ? "Unavailable · saved context retained"
@@ -449,7 +449,7 @@ struct TodayReviewView: View
                             source in
                             VStack(alignment: .leading, spacing: 8)
                             {
-                                Text(source.card.word).font(.headline)
+                                Text(source.card.word).completedItemTitle(source.card.isTitleChecked, font: .headline, color: .primary)
                                 Text(source.collectionTitle + " · " + source.listTitle).font(.caption).foregroundStyle(
                                     .secondary)
                                 if let due = source.card.dueDate
@@ -1280,7 +1280,7 @@ struct WeeklyReviewView: View
                             source in
                             VStack(alignment: .leading, spacing: 8)
                             {
-                                Text(source.card.word).font(.headline)
+                                Text(source.card.word).completedItemTitle(source.card.isTitleChecked, font: .headline, color: .primary)
                                 if let due = source.card.dueDate
                                 {
                                     Label("Due · " + source.card.dueDateKind.label(for: due), systemImage: "calendar")
@@ -1354,7 +1354,7 @@ struct WeeklyReviewView: View
                         ForEach(draft.priorities)
                         {
                             priority in
-                            Text(priority.resolve(in: sources)?.card.word ?? priority.title)
+                            Text(priority.resolve(in: sources)?.card.word ?? priority.title).completedItemTitle(priority.resolve(in: sources)?.card.isTitleChecked == true, font: .body, color: .primary)
                         }
                         .onDelete
                         {

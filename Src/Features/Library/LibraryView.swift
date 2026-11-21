@@ -1433,7 +1433,7 @@ struct BoardListsView: View
                     {
                         VStack(alignment: .leading, spacing: 10)
                         {
-                            Text(card.word).font(.headline).foregroundStyle(.primary).lineLimit(2)
+                            Text(card.word).completedItemTitle(card.isTitleChecked, font: .headline, color: .primary).lineLimit(2)
                             Text(
                                 card.subtitle.isEmpty
                                 ? PlanRichText.plain(card.descriptionOverride ?? "") : card.subtitle

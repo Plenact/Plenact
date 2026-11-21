@@ -851,10 +851,10 @@ struct CardDetailView: View
 
                         HStack(alignment: .firstTextBaseline, spacing: 8)
                         {
-                            ItemAppearanceMark(appearance: appearance)
+                            ItemAppearanceMark(appearance: appearance, isCompleted: titleChecked)
                             TextField("Note title", text: $titleText, axis: .vertical)
                             .textInputAutocapitalization(.sentences)
-                            .font(.largeTitle.weight(.bold))
+                            .completedItemTitle(titleChecked, font: .largeTitle.weight(.bold))
                             .focused($focusedField, equals: .title)
                             .accessibilityLabel("Note title")
                             .onChange(of: titleText)
@@ -1432,7 +1432,7 @@ struct CardDetailView: View
             {
                 HStack(alignment: .firstTextBaseline, spacing: 8)
                 {
-                    ItemAppearanceMark(appearance: appearance)
+                    ItemAppearanceMark(appearance: appearance, isCompleted: titleChecked)
                     Group
                     {
                         if editingHeaderField == .title
@@ -1468,7 +1468,7 @@ struct CardDetailView: View
                             .accessibilityIdentifier("card.readableTitle")
                         }
                     }
-                    .font(.title2.weight(.bold))
+                    .completedItemTitle(titleChecked, font: .title2.weight(.bold))
                     .layoutPriority(1)
                 }
 

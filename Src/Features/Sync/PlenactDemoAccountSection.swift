@@ -576,12 +576,13 @@ struct PlenactDemoAccountSection: View
                 if isEditor, let cardBinding = cardBinding(cardID: card.id)
                 {                                                               /* Editable remote-card binding */
                     TextField("Card title", text: cardBinding.word).textInputAutocapitalization(.sentences)
+                        .completedItemTitle(card.isTitleChecked)
                     Toggle("Complete", isOn: cardBinding.isTitleChecked)
                     .font(.caption)
                 }
                 else
                 {
-                    Text(card.word)
+                    Text(card.word).completedItemTitle(card.isTitleChecked)
                 }
 
 

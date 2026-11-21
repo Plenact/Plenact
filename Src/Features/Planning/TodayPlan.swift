@@ -565,7 +565,7 @@ struct TodayPlanView: View
                 .font(.title3)
                 VStack(alignment: .leading, spacing: 5)
                 {
-                    Text(source?.card.word ?? priority.title).font(.headline).foregroundStyle(.primary)
+                    Text(source?.card.word ?? priority.title).completedItemTitle(source?.card.isTitleChecked == true, font: .headline, color: .primary)
                     if DailyCheckInProgress.focus(plan: draft, sources: sources)?.id == priority.id
                     {
                         Label("Next focus", systemImage: "scope").font(.caption).foregroundStyle(.blue)
@@ -1043,7 +1043,7 @@ struct DailyPriorityPicker: View
                                 selected ? Color.accentColor : .secondary)
                             VStack(alignment: .leading, spacing: 4)
                             {
-                                Text(source.card.word).font(.headline).foregroundStyle(.primary)
+                                Text(source.card.word).completedItemTitle(source.card.isTitleChecked, font: .headline, color: .primary)
                                 Text(priority.location).font(.caption).foregroundStyle(.secondary)
                             }
 

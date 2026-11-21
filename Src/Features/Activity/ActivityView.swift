@@ -659,8 +659,8 @@ struct SavedCardsView: View
                         {
                             VStack(alignment: .leading, spacing: 4)
                             {
-                                Text(result.card.word).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                                    .strikethrough(result.card.isTitleChecked)
+                                Text(result.card.word).completedItemTitle(result.card.isTitleChecked, font: .subheadline.weight(.semibold), color: .primary)
+
                                 Text(result.location).font(.caption).foregroundStyle(.secondary)
                                 Text(focus == .dueSoon
                                      ? ActivityFocusSelection.dueReason(result.card, calendar: focusCalendar)
@@ -999,7 +999,7 @@ struct SavedCardsView: View
                                             RoundedRectangle(cornerRadius: 8))
                                 }
 
-                                Text(result.card.word).font(.subheadline.weight(.semibold)).lineLimit(usesSquareRecentCards ? 2 : 3)
+                                Text(result.card.word).completedItemTitle(result.card.isTitleChecked, font: .subheadline.weight(.semibold), color: .primary).lineLimit(usesSquareRecentCards ? 2 : 3)
                                 Spacer(minLength: 0)
                                 Text(result.location).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                             }
@@ -1243,8 +1243,7 @@ struct SavedCardsView: View
                                         .foregroundStyle(.orange)
                                         VStack(alignment: .leading, spacing: 3)
                                         {
-                                            Text(result.card.word)
-                                            .foregroundStyle(.primary)
+                                            Text(result.card.word).completedItemTitle(result.card.isTitleChecked, font: .body, color: .primary)
                                             Text(result.listTitle)
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
@@ -1308,8 +1307,7 @@ struct SavedCardsView: View
                                         .foregroundStyle(.orange)
                                         VStack(alignment: .leading, spacing: 3)
                                         {
-                                            Text(result.card.word)
-                                            .foregroundStyle(.primary)
+                                            Text(result.card.word).completedItemTitle(result.card.isTitleChecked, font: .body, color: .primary)
                                             Text(
                                                 result.collectionTitle == result.listTitle
                                                 ? result.collectionTitle

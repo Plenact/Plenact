@@ -1224,6 +1224,55 @@ extension PlenactBoardDocumentTests
 
 
     ///
+    /// @fcn        PlenactBoardDocumentTests.testFocusCompletionUndoRestoresNewestFirstWithoutReplacingContent
+    /// @brief      Restore queued Focus completions by exact owner and retain intervening edits
+    /// @return     (Void) validates Card/Note restoration, stacking, expiry, and stale/locked rejection
+    ///
+    func testFocusCompletionUndoRestoresNewestFirstWithoutReplacingContent()
+    {
+        let card = KanbanCard(id: 1, word: "Card", listTitle: "Monday", isTitleChecked: true,
+                              createdAt: Date(timeIntervalSince1970: 100))
+        let note = KanbanCard(id: 2, word: "Note", listTitle: "Monday", isTitleChecked: true,
+                              presentation: .note, createdAt: Date(timeIntervalSince1970: 101))
+        let other = card.replacingLocation(id: 1, listTitle: "Tuesday")
+        var lists = [KanbanList(id: 10, title: "Monday", cards: [card, note]),
+                     KanbanList(id: 11, title: "Tuesday", cards: [other])]
+        var history = FocusCompletionUndoHistory()
+        history.record(card, listID: 10)
+        history.record(other, listID: 11)
+        history.record(note, listID: 10)
+        XCTAssertEqual(history.entries.last?.presentation, .note)
+        lists[0].cards[1].word = "Edited note"
+        XCTAssertTrue(history.undo(in: &lists))
+        XCTAssertFalse(lists[0].cards[1].isTitleChecked)
+        XCTAssertEqual(lists[0].cards[1].word, "Edited note")
+        XCTAssertTrue(lists[0].cards[0].isTitleChecked)
+        XCTAssertTrue(lists[1].cards[0].isTitleChecked)
+        XCTAssertEqual(history.entries.count, 2)
+        XCTAssertTrue(history.undo(in: &lists))
+        XCTAssertFalse(lists[1].cards[0].isTitleChecked)
+        XCTAssertTrue(lists[0].cards[0].isTitleChecked)
+        XCTAssertTrue(history.undo(in: &lists))
+        XCTAssertFalse(lists[0].cards[0].isTitleChecked)
+        XCTAssertTrue(history.entries.isEmpty)
+        XCTAssertFalse(history.undo(in: &lists))
+
+        lists[0].cards[0].isTitleChecked = true
+        history.record(lists[0].cards[0], listID: 10)
+        lists[0].cards[0].isEditingLocked = true
+        XCTAssertFalse(history.undo(in: &lists))
+        XCTAssertEqual(history.entries.count, 1)
+        lists[0].cards[0].isEditingLocked = false
+        lists[0].cards[0] = lists[0].cards[0].replacingLocation(id: 1, listTitle: "Monday",
+                                                            creationDate: Date(timeIntervalSince1970: 999))
+        XCTAssertFalse(history.undo(in: &lists), "Reused IDs must not restore a different item")
+        history.expire()
+        XCTAssertTrue(history.entries.isEmpty)
+        XCTAssertTrue(lists[0].cards[0].isTitleChecked, "Expiry retains the saved completion")
+    }
+
+
+    ///
     /// @fcn        PlenactBoardDocumentTests.testActivityCompletionAndUndoPreserveLiveContent
     /// @brief      Complete and restore a Due soon card without reverting unrelated edits
     /// @return     (Void) validates eligibility, owner isolation, and locked/archive rejection

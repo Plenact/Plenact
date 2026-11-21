@@ -921,6 +921,23 @@ struct TodayFocusSection: View
             card in
             Text("Permanently delete “\(card.word)”? This cannot be undone.")
         }
+        .onChange(of: cards)
+        {
+            _, current in
+            let restored = collapsingRowIDs.filter
+            {
+                id in current.contains(where: { $0.id == id && !$0.isTitleChecked })
+            }
+            guard !restored.isEmpty else { return }
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 0.4))
+            {
+                for id in restored
+                {
+                    completingRows.removeValue(forKey: id)
+                    collapsingRowIDs.remove(id)
+                }
+            }
+        }
         .task(id: completionWorkKey)
         {
             guard !completingRows.isEmpty else { return }

@@ -12,6 +12,50 @@ import Speech
 import SwiftUI
 
 
+/// Retains only identities and completion state for newest-first Focus Undo.
+struct FocusCompletionUndoHistory
+{
+    struct Entry
+    {
+        let token = UUID()
+        let listID: Int
+        let cardID: Int
+        let createdAt: Date?
+        let presentation: ItemPresentation
+    }
+    private(set) var entries: [Entry] = []
+
+    /// @fcn        FocusCompletionUndoHistory.record(_:listID:)
+    /// @brief      Retain one accepted Focus completion without copying editable content
+    mutating func record(_ card: KanbanCard, listID: Int)
+    {
+        entries.append(Entry(listID: listID, cardID: card.id, createdAt: card.createdAt, presentation: card.presentation))
+    }
+
+    /// @fcn        FocusCompletionUndoHistory.undo(in:)
+    /// @brief      Restore only the latest live item's completion field
+    /// @return     (Bool) true after a valid restoration or an already-unchecked item
+    mutating func undo(in lists: inout [KanbanList]) -> Bool
+    {
+        guard let entry = entries.last,
+              let listIndex = lists.firstIndex(where: { $0.id == entry.listID && !$0.isArchived }),
+              let cardIndex = lists[listIndex].cards.firstIndex(where:
+                { $0.id == entry.cardID && $0.createdAt == entry.createdAt && !$0.isSectionDivider }),
+              !lists[listIndex].cards[cardIndex].isEditingLocked else { return false }
+        lists[listIndex].cards[cardIndex].isTitleChecked = false
+        entries.removeLast()
+        return true
+    }
+
+    /// @fcn        FocusCompletionUndoHistory.expire()
+    /// @brief      Discard expired shortcuts while retaining canonical completion edits
+    mutating func expire()
+    {
+        entries.removeAll()
+    }
+}
+
+
 ///
 /// Presents today's plan selection and direct access to existing board lists
 ///
@@ -89,6 +133,7 @@ struct TodayHomeView: View
     @AppStorage("Plenact.LibraryImportant.v1") private var focusImportantData =         /* Focus important data                 */
         Data()
     @Environment(\.workspaceBottomBarHeight) private var focusToolbarHeight             /* Focus toolbar height                 */
+    @State private var focusCompletionUndo = FocusCompletionUndoHistory()
     @State private var bookmarkNoticeRevision          = UUID()                         /* Bookmark notice revision             */
     @State private var focusDate                       = Date.now                       /* Focus date                           */
     @State private var perspectiveSectionTop:  CGFloat = 0                              /* Perspective section top              */
@@ -301,6 +346,41 @@ struct TodayHomeView: View
         }
 
         .animation(.easeOut(duration: 0.15), value: isContentScrolled)
+    }
+
+
+    /// @fcn        TodayHomeView.focusCompletionUndoNotice
+    /// @brief      Offer newest-first Undo for Focus check-offs above the workspace toolbar
+    /// @return     (some View) completion notice while accepted check-offs remain undoable
+    @ViewBuilder
+    private var focusCompletionUndoNotice: some View
+    {
+        if let entry = focusCompletionUndo.entries.last
+        {
+            HStack(spacing: 16)
+            {
+                Text("\(entry.presentation.title) checked off")
+                Spacer(minLength: 8)
+                Button("Undo", systemImage: "arrow.uturn.backward")
+                {
+                    withAnimation(.easeInOut(duration: reduceWelcomeMotion ? 0.2 : 0.4))
+                    {
+                        _ = focusCompletionUndo.undo(in: &lists)
+                    }
+                }
+                .fontWeight(.semibold)
+                .frame(minHeight: 44)
+                .accessibilityLabel("Undo checked off")
+                .accessibilityIdentifier("today.focus.completion.undo")
+            }
+            .font(.subheadline)
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
+            .accessibilityElement(children: .contain)
+            .id(entry.token)
+            .transition(reduceWelcomeMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+        }
     }
 
 
@@ -854,7 +934,16 @@ struct TodayHomeView: View
                                 cardID in
                                 if let focus
                                 {                                               /* Weekday list available for navigation */
+                                    let before = lists.first(where: { $0.id == focus.id })?.cards.first(where: { $0.id == cardID })
                                     onToggleCardCompletion(focus.id, cardID)
+                                    if let before, !before.isTitleChecked,
+                                       lists.first(where: { $0.id == focus.id })?.cards.first(where: { $0.id == cardID })?.isTitleChecked == true
+                                    {
+                                        withAnimation(.easeInOut(duration: 0.3))
+                                        {
+                                            focusCompletionUndo.record(before, listID: focus.id)
+                                        }
+                                    }
                                 }
                             },
                             onOpenCard:
@@ -1030,6 +1119,17 @@ struct TodayHomeView: View
 
                 removedFocusBookmark = nil
                 bookmarkNoticeRevision = UUID()
+                focusCompletionUndo.expire()
+            }
+            .task(id: focusCompletionUndo.entries.last?.token)
+            {
+                guard !focusCompletionUndo.entries.isEmpty else { return }
+                do { try await Task.sleep(for: .seconds(5)) }
+                catch { return }
+                withAnimation(.easeInOut(duration: reduceWelcomeMotion ? 0.2 : 0.4))
+                {
+                    focusCompletionUndo.expire()
+                }
             }
             .task(id: bookmarkNoticeRevision)
             {
@@ -1052,6 +1152,7 @@ struct TodayHomeView: View
             {
                 removedFocusBookmark = nil
                 bookmarkNoticeRevision = UUID()
+                focusCompletionUndo.expire()
             }
             .background
             {
@@ -1415,6 +1516,9 @@ struct TodayHomeView: View
                 VStack
                 {
                     Spacer(minLength: 0)
+                    focusCompletionUndoNotice
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, max(0, focusToolbarHeight - geometry.safeAreaInsets.bottom) + 12)
                     focusBookmarkUndoNotice
                     .padding(.horizontal, 20)
                     .padding(.bottom, max(0, focusToolbarHeight - geometry.safeAreaInsets.bottom) + 12)
@@ -1425,6 +1529,8 @@ struct TodayHomeView: View
                         reduceWelcomeMotion ? 0.15 : (removedFocusBookmark != nil ? 0.5 : 1.75)),
                     value: removedFocusBookmark != nil
                 )
+                .animation(.easeInOut(duration: reduceWelcomeMotion ? 0.15 : 0.35),
+                           value: focusCompletionUndo.entries.last?.token)
             }
         }
     }

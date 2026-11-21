@@ -103,9 +103,62 @@ struct TodayFocusSection: View
     var visibleItemCount:  Int = 4              /* Visible item count                                     */
     let chronological:     Bool                 /* Time-ordered entries                                   */
 
+    private struct CompletingRow
+    {
+        let entry: TodayFocusEntry
+        let index: Int
+        let token = UUID()
+    }
+    @State private var completingRows: [Int: CompletingRow] = [:]
+    @State private var collapsingRowIDs: Set<Int> = []
+
+    /// @fcn        TodayFocusSection.completionWorkKey
+    /// @brief      Restart section-owned animation work when the saved completion reaches Focus
+    /// @return     (String) pending identities with their canonical completion and visibility states
+    private var completionWorkKey: String
+    {
+        completingRows.keys.sorted().map
+        {
+            id in
+            let pending = completingRows[id]!
+            let checked = cards.first(where: { $0.id == id })?.isTitleChecked == true
+            let included = entries.contains(where: { $0.card.id == id })
+            return "\(pending.token):\(checked):\(included)"
+        }.joined(separator: "|")
+    }
+
+    /// @fcn        TodayFocusSection.displayEntries
+    /// @brief      Retain completed rows at their former slots until their departure finishes
+    /// @return     ([TodayFocusEntry]) live entries with temporary completion previews
+    private var displayEntries: [TodayFocusEntry]
+    {
+        var displayed = entries
+        for pending in completingRows.values.sorted(by: { $0.index < $1.index })
+        {
+            guard !displayed.contains(where: { $0.id == pending.entry.id }),
+                  let live = cards.first(where: { $0.id == pending.entry.card.id }) else { continue }
+            let entry = TodayFocusEntry(card: live, sectionID: pending.entry.sectionID, heading: pending.entry.heading)
+            displayed.insert(entry, at: min(pending.index, displayed.count))
+        }
+        return displayed
+    }
+
+    /// @fcn        TodayFocusSection.toggleCompletion(_:)
+    /// @brief      Save completion immediately while retaining the outgoing row for its animation
+    /// @param[in]  entry  Focus entry whose completion control was tapped
+    private func toggleCompletion(_ entry: TodayFocusEntry)
+    {
+        guard completingRows[entry.card.id] == nil else { return }
+        if !entry.card.isTitleChecked, let index = displayEntries.firstIndex(where: { $0.id == entry.id })
+        {
+            completingRows[entry.card.id] = CompletingRow(entry: entry, index: index)
+        }
+        onToggleCard(entry.card.id)
+    }
+
     private var openCards: [KanbanCard]         /* Open cards */
     {
-        entries.map(\.card)
+        displayEntries.map(\.card)
     }
 
     var includesImportant                             = false           /* Includes important      */
@@ -274,7 +327,7 @@ struct TodayFocusSection: View
     ///
     private func beginsGroup(_ entry: TodayFocusEntry) -> Bool
     {
-        guard groupsBySection, let index = entries.firstIndex(where:
+        guard groupsBySection, let index = displayEntries.firstIndex(where:
             {
                 $0.id == entry.id
             }) else
@@ -282,18 +335,18 @@ struct TodayFocusSection: View
             return false
         }
 
-        return index == 0 || entries[index - 1].sectionID != entry.sectionID
+        return index == 0 || displayEntries[index - 1].sectionID != entry.sectionID
     }
 
 
     private var rowCapacity: Int        /* Row capacity */
     {
-        visibleItemCount == 0 ? max(entries.count, 1) : ((1 ... 12).contains(visibleItemCount) ? visibleItemCount : 4)
+        visibleItemCount == 0 ? max(displayEntries.count, 1) : ((1 ... 12).contains(visibleItemCount) ? visibleItemCount : 4)
     }
 
     private var visibleHeadingCount: Int        /* Visible heading count */
     {
-        entries.prefix(rowCapacity).filter
+        displayEntries.filter { !collapsingRowIDs.contains($0.card.id) }.prefix(rowCapacity).filter
         {
             beginsGroup($0)
         } .count
@@ -301,7 +354,7 @@ struct TodayFocusSection: View
 
     private var rowsHeight: CGFloat     /* Rows height */
     {
-        rowHeight * CGFloat(min(entries.count, rowCapacity)) + headingHeight * CGFloat(visibleHeadingCount)
+        rowHeight * CGFloat(min(displayEntries.filter { !collapsingRowIDs.contains($0.card.id) }.count, rowCapacity)) + headingHeight * CGFloat(visibleHeadingCount)
     }
 
     private var listingCapacity: CGFloat        /* Listing capacity */
@@ -488,7 +541,7 @@ struct TodayFocusSection: View
     {
         List
         {
-            ForEach(entries)
+            ForEach(displayEntries)
             {
                 entry in
 
@@ -510,7 +563,7 @@ struct TodayFocusSection: View
                     {
                         Button
                         {
-                            onToggleCard(card.id)
+                            toggleCompletion(entry)
                         }
                         label:
                         {
@@ -613,9 +666,16 @@ struct TodayFocusSection: View
                             } .joined(separator: ", "))
                     }
                 }
+                .offset(y: reduceMotion || !collapsingRowIDs.contains(card.id) ? 0 : -rowHeight)
+                .opacity(collapsingRowIDs.contains(card.id) ? 0 : 1)
+                .frame(height: collapsingRowIDs.contains(card.id) ? 0 : nil, alignment: .top)
+                .clipped()
+                .animation(.easeInOut(duration: reduceMotion ? 0.2 : 0.7), value: collapsingRowIDs.contains(card.id))
+                .allowsHitTesting(completingRows[card.id] == nil)
+                .environment(\.defaultMinListRowHeight, 0)
                 // Leave a clear lane for the List's vertical scroll indicator beside the row arrow.
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 12))
-                .listRowSeparator(entry.id == entries.last?.id ? .hidden : .visible, edges: .bottom)
+                .listRowSeparator(collapsingRowIDs.contains(card.id) || entry.id == displayEntries.last?.id ? .hidden : .visible, edges: .bottom)
                 .listRowBackground(Color.clear)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false)
                 {
@@ -864,6 +924,62 @@ struct TodayFocusSection: View
         {
             card in
             Text("Permanently delete “\(card.word)”? This cannot be undone.")
+        }
+        .task(id: completionWorkKey)
+        {
+            guard !completingRows.isEmpty else { return }
+            do
+            {
+                // A stable section task survives native row recycling. Its key changes when
+                // canonical completion arrives, so an older snapshot cannot skip the fade.
+                try await Task.sleep(for: .milliseconds(35))
+                let pending = completingRows
+                let departing = pending.keys.filter
+                {
+                    id in
+                    cards.first(where: { $0.id == id })?.isTitleChecked == true
+                        && !entries.contains(where: { $0.card.id == id })
+                }
+                let retained = pending.keys.filter
+                {
+                    id in
+                    cards.first(where: { $0.id == id })?.isTitleChecked == true
+                        && entries.contains(where: { $0.card.id == id })
+                }
+                if departing.isEmpty && retained.isEmpty
+                {
+                    // A rejected edit must not leave its checkbox disabled indefinitely.
+                    // A successful save changes completionWorkKey and cancels this fallback.
+                    try await Task.sleep(for: .seconds(1))
+                    for (id, row) in pending where completingRows[id]?.token == row.token
+                    {
+                        completingRows.removeValue(forKey: id)
+                    }
+                    return
+                }
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 0.7))
+                {
+                    collapsingRowIDs.formUnion(departing)
+                }
+                try await Task.sleep(for: .milliseconds(reduceMotion ? 200 : 700))
+                for id in departing + retained where completingRows[id]?.token == pending[id]?.token
+                {
+                    completingRows.removeValue(forKey: id)
+                    collapsingRowIDs.remove(id)
+                }
+            }
+            catch { }
+        }
+        .onDisappear
+        {
+            completingRows.removeAll()
+            collapsingRowIDs.removeAll()
+        }
+        .onChange(of: list?.id)
+        {
+            _, _ in
+            completingRows.removeAll()
+            collapsingRowIDs.removeAll()
         }
         .onChange(of: filterLabel)
         {

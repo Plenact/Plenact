@@ -1,0 +1,10 @@
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php/$1 [END]
+
+# Preserve only application-verified strong digests after hosting header filters.
+<IfModule mod_headers.c>
+    Header always set ETag "expr=%{resp:X-Plenact-Verified-ETag}" "expr=-n %{resp:X-Plenact-Verified-ETag}"
+</IfModule>

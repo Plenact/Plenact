@@ -1,0 +1,1246 @@
+{
+  "account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+  "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+  "epoch": "b2cbdf60-8ed1-4f0c-ae45-2b6ea64a0fce",
+  "records": [
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "account",
+      "id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "display_name": "Synthetic owner",
+        "account_kind": "personal",
+        "created_at_utc": "2026-10-24T12:00:00.000Z"
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "workspace",
+      "id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "owner_account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+        "display_name": "Synthetic workspace",
+        "calendar_system": "gregorian",
+        "state": "active"
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "user_preferences",
+      "id": "b865ccbd-0992-439b-8698-c9221772a80a",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+        "preferences": {
+          "default_list_id": null,
+          "uses_reduced_content": false,
+          "scrolls_overflowing_titles": false,
+          "importance_star_style": "tucked",
+          "enables_lower_corner_back": false,
+          "uses_large_controls": false,
+          "randomizes_new_card_headers": false,
+          "randomizes_new_card_backgrounds": false,
+          "shows_due_dates_on_new_cards": true,
+          "preferred_maps_app": "apple",
+          "keeps_day_lists_in_time_order": true,
+          "today_focus_order": "chronological",
+          "today_focus_groups_by_section": false,
+          "today_focus_includes_up_next": true,
+          "today_focus_includes_important": true,
+          "today_focus_includes_bookmarked": true,
+          "today_focus_hides_completed": false,
+          "today_focus_item_count": 4,
+          "shows_navigation_labels": true
+        }
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "studio_settings",
+      "id": "1e349bf2-2de4-40ea-b4a2-e9029f447de2",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+        "views": [
+          {
+            "destination": "today",
+            "surface": {
+              "material": "photo",
+              "color": "EDE3CA",
+              "secondary_color": "C4DADB",
+              "strength": 0.65,
+              "readability": 0.55,
+              "vertical_position": 0.5,
+              "zoom": 1.25,
+              "shows_in_previews": true,
+              "photo_asset_id": "93dfc744-ea91-4cae-afb8-e2aa48cef493",
+              "remote_photo": null
+            }
+          }
+        ],
+        "default_card_surface": null,
+        "default_note_surface": {
+          "material": "photo",
+          "color": "EDE3CA",
+          "secondary_color": "C4DADB",
+          "strength": 0.65,
+          "readability": 0.55,
+          "vertical_position": 0.5,
+          "zoom": 1.25,
+          "shows_in_previews": true,
+          "photo_asset_id": "93dfc744-ea91-4cae-afb8-e2aa48cef493",
+          "remote_photo": null
+        },
+        "varies_new_surfaces": false,
+        "varies_new_headers": true,
+        "palette": [
+          "EDE3CA",
+          "DDE8D8"
+        ]
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "today_shortcuts",
+      "id": "91dd85f9-561d-488b-b398-f271053d262e",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "items": [
+          {
+            "collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+            "list_id": "8566e4ad-e25f-48c4-b210-c3541b670ee2"
+          }
+        ]
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "workspace_display_preferences",
+      "id": "a9a6ee53-8cf7-4169-a61a-e61fe0319b7b",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "board_presentation": null,
+        "card_covers_enabled": true,
+        "activity_shows_covers": null,
+        "activity_recent_square_cards": false,
+        "library_shows_collection_previews": null,
+        "library_scrolls_collection_previews": false
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "user_profile",
+      "id": "428d85b9-0d8d-4ae8-acab-c9033547403f",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+        "source_profile_id": "8efd1517-2132-42e8-bc6a-fd97258e6ff1",
+        "source_created_at_utc": "2026-10-24T12:00:00.000Z",
+        "display_name": "Synthetic owner",
+        "email": "",
+        "context": "",
+        "avatar_color": {
+          "red": 0.1,
+          "green": 0.2,
+          "blue": 0.3,
+          "legacy_token": null
+        },
+        "avatar_foreground_color": {
+          "red": 1,
+          "green": 1,
+          "blue": 1,
+          "legacy_token": null
+        },
+        "avatar_icon": "person.crop.circle",
+        "avatar_asset_id": "93dfc744-ea91-4cae-afb8-e2aa48cef493"
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "label_category",
+      "id": "45f9186a-0b68-4e58-8319-0903187d283b",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "name": "Example category"
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "label",
+      "id": "975f56cd-29ad-419f-9c4f-f44118e8a3c5",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "name": "Example label",
+        "category_id": "45f9186a-0b68-4e58-8319-0903187d283b",
+        "color": "green"
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "studio_artwork",
+      "id": "12d1c6ac-2590-4d2b-b927-5042efd5cd66",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "name": "Saved example artwork",
+        "surface": {
+          "material": "photo",
+          "color": "EDE3CA",
+          "secondary_color": "C4DADB",
+          "strength": 0.65,
+          "readability": 0.55,
+          "vertical_position": 0.5,
+          "zoom": 1.25,
+          "shows_in_previews": true,
+          "photo_asset_id": "93dfc744-ea91-4cae-afb8-e2aa48cef493",
+          "remote_photo": null
+        },
+        "header": null,
+        "italic_subtitle": false,
+        "title_color": null,
+        "text_color": null
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "content_selection",
+      "id": "133e4ee3-8b4f-4c02-845f-9d027ae6abe7",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+        "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+        "bookmarked": true,
+        "importance": 5
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "unavailable_reference",
+      "id": "afc00c3c-5364-48bf-9d70-f0e18492017b",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "target_type": "card",
+        "target_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+        "reason": "legacy_unresolved",
+        "display_text": null
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "collection",
+      "id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "title": "Synthetic board",
+        "kind": "board",
+        "icon": "square.stack.3d.up",
+        "color": {
+          "red": 0.1,
+          "green": 0.3,
+          "blue": 0.4,
+          "legacy_token": null
+        },
+        "description": null,
+        "archived": false,
+        "board_appearance": {
+          "banner_background": null,
+          "collection_background": null,
+          "list_background": null,
+          "card_background": null,
+          "card_detail": null,
+          "card_title_color": null,
+          "card_text_color": null,
+          "add_item_text_color": null,
+          "studio_surface": null,
+          "studio_card_surface": null,
+          "subtitle_italic": true
+        },
+        "preferred_focused_list_id": "8566e4ad-e25f-48c4-b210-c3541b670ee2",
+        "list_ids": [
+          "8566e4ad-e25f-48c4-b210-c3541b670ee2"
+        ]
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "collection",
+      "id": "e86fbd93-fe13-462a-b321-4f00090a5b32",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "title": "Template source",
+        "kind": "board",
+        "icon": "square.stack.3d.up",
+        "color": {
+          "red": 0.1,
+          "green": 0.3,
+          "blue": 0.4,
+          "legacy_token": null
+        },
+        "description": null,
+        "archived": false,
+        "board_appearance": {
+          "banner_background": null,
+          "collection_background": null,
+          "list_background": null,
+          "card_background": null,
+          "card_detail": null,
+          "card_title_color": null,
+          "card_text_color": null,
+          "add_item_text_color": null,
+          "studio_surface": null,
+          "studio_card_surface": null,
+          "subtitle_italic": true
+        },
+        "preferred_focused_list_id": "e8cb03d5-f6a4-4a2e-a039-476d88b9d74f",
+        "list_ids": [
+          "e8cb03d5-f6a4-4a2e-a039-476d88b9d74f"
+        ]
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "list",
+      "id": "8566e4ad-e25f-48c4-b210-c3541b670ee2",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+        "title": "Today",
+        "subtitle_override": "",
+        "archived": false,
+        "default_item_presentation": null,
+        "appearance": null,
+        "card_ids": [
+          "88fdadb1-0613-4cf4-8f5e-485e40190bff"
+        ],
+        "archived_card_ids": [
+          "c6dbefeb-4f14-4c78-b29e-afb74f457b22"
+        ]
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "list",
+      "id": "e8cb03d5-f6a4-4a2e-a039-476d88b9d74f",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "collection_id": "e86fbd93-fe13-462a-b321-4f00090a5b32",
+        "title": "Today",
+        "subtitle_override": "",
+        "archived": false,
+        "default_item_presentation": null,
+        "appearance": null,
+        "card_ids": [
+          "f28c3bb0-f0bd-4397-9c18-e4ebe7be622d"
+        ],
+        "archived_card_ids": []
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "card",
+      "id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "list_id": "8566e4ad-e25f-48c4-b210-c3541b670ee2",
+        "archived": false,
+        "title": "Gym — synthetic sample",
+        "is_divider": false,
+        "completed": false,
+        "editing_locked": false,
+        "presentation": "card",
+        "display_format": null,
+        "description_override": "",
+        "subtitle_override": null,
+        "location": "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902",
+        "start": {
+          "kind": "date_and_time",
+          "local_date_time": "2026-10-24T07:00:00.000",
+          "time_zone": "America/Chicago",
+          "tzdb_version": "2025b",
+          "utc_instant": "2026-10-24T12:00:00.000Z",
+          "utc_offset": "-05:00",
+          "occurrence": "unique"
+        },
+        "start_kind": "date_and_time",
+        "due": {
+          "kind": "date",
+          "date": "2026-10-24"
+        },
+        "due_kind": "date",
+        "shows_due_date_in_list": true,
+        "source_created_at_utc": null,
+        "checklists": [
+          {
+            "id": "5d736068-7c1f-4add-883f-f7c82145cbf9",
+            "title": "All four action variants",
+            "items": [
+              {
+                "id": "ed0a697b-67cf-4500-97ec-6b4c18dc2b7d",
+                "title": "Checklist action",
+                "completed": false,
+                "content": {
+                  "kind": "standard"
+                },
+                "retained_detail": {
+                  "id": "0842bb5b-8bf2-4e0c-8e17-2d73584302e3",
+                  "description": "Inactive detail retained on type change",
+                  "checklists": [],
+                  "comments": [
+                    {
+                      "id": "f3393dc0-29b5-4ac7-8e77-1e21be02e0ad",
+                      "author": "Synthetic author",
+                      "body": "Keep this text: café 🌿",
+                      "source_created_at_utc": "2026-10-24T12:00:00.000Z",
+                      "author_account_id": null
+                    }
+                  ]
+                },
+                "retained_card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "retained_url": "https://example.com/retained",
+                "linked_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f"
+              },
+              {
+                "id": "5a86f5b0-5e29-412d-b33c-f950df4088dd",
+                "title": "Checklist action",
+                "completed": false,
+                "content": {
+                  "kind": "linked_card",
+                  "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e"
+                },
+                "retained_detail": null,
+                "retained_card_id": null,
+                "retained_url": null,
+                "linked_collection_id": null
+              },
+              {
+                "id": "eb00b809-27ec-4e2e-8461-f5ca758babf1",
+                "title": "Checklist action",
+                "completed": false,
+                "content": {
+                  "kind": "action_detail",
+                  "detail": {
+                    "id": "97bc40fe-5d76-48b3-b518-982f34788724",
+                    "description": "Editable detail",
+                    "checklists": [
+                      {
+                        "id": "8c7dba56-94ee-4dd7-be87-4982f3930a3e",
+                        "title": "Nested",
+                        "items": [
+                          {
+                            "id": "60c9fc5b-5084-480c-a8b6-c997e7c3c3ec",
+                            "title": "Checklist action",
+                            "completed": false,
+                            "content": {
+                              "kind": "standard"
+                            },
+                            "retained_detail": null,
+                            "retained_card_id": null,
+                            "retained_url": null,
+                            "linked_collection_id": null
+                          }
+                        ]
+                      }
+                    ],
+                    "comments": []
+                  }
+                },
+                "retained_detail": null,
+                "retained_card_id": null,
+                "retained_url": null,
+                "linked_collection_id": null
+              },
+              {
+                "id": "2a99e818-68ae-4f1e-b9cd-e80494e34645",
+                "title": "Checklist action",
+                "completed": false,
+                "content": {
+                  "kind": "web_link",
+                  "url": "https://example.com/path?q=hello"
+                },
+                "retained_detail": null,
+                "retained_card_id": null,
+                "retained_url": null,
+                "linked_collection_id": null
+              }
+            ]
+          }
+        ],
+        "members": [
+          {
+            "id": "d5a08afe-2032-4586-8137-ce17d0f239a5",
+            "kind": "manual",
+            "user_id": null,
+            "display_name": "Manual person",
+            "identity_scope": "manual"
+          }
+        ],
+        "label_ids": [
+          "975f56cd-29ad-419f-9c4f-f44118e8a3c5"
+        ],
+        "comments": [],
+        "reactions": [
+          {
+            "id": "033deecf-66f7-494d-bae4-acdbdfe94cbc",
+            "emoji": "🌿",
+            "source_author_id": "3a1afcb4-3e92-415b-880d-43815e88ad6f",
+            "source_created_at_utc": "2026-10-24T12:00:00.000Z",
+            "author_account_id": null
+          }
+        ],
+        "shows_reactions_in_previews": false,
+        "attachments": [
+          {
+            "id": "c654f53f-15b9-4986-b6a1-8b966afc5852",
+            "kind": "photo",
+            "asset_id": "93dfc744-ea91-4cae-afb8-e2aa48cef493",
+            "url": null,
+            "source_added_at_utc": "2026-10-24T12:00:00.000Z",
+            "example_image": null,
+            "drawing_asset_id": "156647fe-96b0-4765-b67c-6f4010106da1",
+            "caption": "Editable original retained"
+          }
+        ],
+        "cover_attachment_id": "c654f53f-15b9-4986-b6a1-8b966afc5852",
+        "dismissed_activity_ids": [
+          "legacy-generated-item"
+        ],
+        "appearance": {
+          "accent": null,
+          "icon": null,
+          "background": null,
+          "list_background": null,
+          "card_background": null,
+          "card_detail": null,
+          "card_title_color": null,
+          "card_text_color": null,
+          "add_item_text_color": null,
+          "studio_surface": {
+            "material": "photo",
+            "color": "EDE3CA",
+            "secondary_color": "C4DADB",
+            "strength": 0.65,
+            "readability": 0.55,
+            "vertical_position": 0.5,
+            "zoom": 1.25,
+            "shows_in_previews": true,
+            "photo_asset_id": "93dfc744-ea91-4cae-afb8-e2aa48cef493",
+            "remote_photo": null
+          },
+          "studio_card_surface": null,
+          "subtitle_italic": false,
+          "section_collapsed": null,
+          "hide_empty_subtitle": null,
+          "list_view_mode": null,
+          "icon_color": null,
+          "shows_icon_in_header": null,
+          "list_background_opacity": null
+        },
+        "section_layout": {
+          "order": [
+            "details",
+            "description",
+            "checklists",
+            "activity",
+            "media",
+            "quick_actions"
+          ],
+          "hidden": [
+            "activity"
+          ]
+        },
+        "edit_history": [
+          {
+            "id": "b0f49ada-2d3c-41b1-946b-8d676eca9fed",
+            "source_timestamp_utc": "2026-10-24T12:00:00.000Z",
+            "changes": [
+              {
+                "field": "word",
+                "previous_value": {
+                  "encoding": "base64",
+                  "source_format": "swift_codable_json",
+                  "source_model_version": "local_legacy",
+                  "data": "Ikd5bSI="
+                },
+                "new_value": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "card",
+      "id": "c6dbefeb-4f14-4c78-b29e-afb74f457b22",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "list_id": "8566e4ad-e25f-48c4-b210-c3541b670ee2",
+        "archived": true,
+        "title": "Archived note",
+        "is_divider": false,
+        "completed": false,
+        "editing_locked": false,
+        "presentation": "note",
+        "display_format": null,
+        "description_override": "Archived writing",
+        "subtitle_override": null,
+        "location": "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902",
+        "start": null,
+        "start_kind": "time",
+        "due": null,
+        "due_kind": "date",
+        "shows_due_date_in_list": true,
+        "source_created_at_utc": null,
+        "checklists": [],
+        "members": [],
+        "label_ids": [],
+        "comments": [],
+        "reactions": null,
+        "shows_reactions_in_previews": false,
+        "attachments": null,
+        "cover_attachment_id": null,
+        "dismissed_activity_ids": [
+          "legacy-generated-item"
+        ],
+        "appearance": null,
+        "section_layout": {
+          "order": [
+            "details",
+            "description",
+            "checklists",
+            "activity",
+            "media",
+            "quick_actions"
+          ],
+          "hidden": [
+            "activity"
+          ]
+        },
+        "edit_history": null
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "card",
+      "id": "f28c3bb0-f0bd-4397-9c18-e4ebe7be622d",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "list_id": "e8cb03d5-f6a4-4a2e-a039-476d88b9d74f",
+        "archived": false,
+        "title": "Template-only card",
+        "is_divider": false,
+        "completed": false,
+        "editing_locked": false,
+        "presentation": "note",
+        "display_format": null,
+        "description_override": "Archived writing",
+        "subtitle_override": null,
+        "location": "Planet Fitness, 1971 S Koeller St, Oshkosh, WI 54902",
+        "start": null,
+        "start_kind": "time",
+        "due": null,
+        "due_kind": "date",
+        "shows_due_date_in_list": true,
+        "source_created_at_utc": null,
+        "checklists": [],
+        "members": [],
+        "label_ids": [],
+        "comments": [],
+        "reactions": null,
+        "shows_reactions_in_previews": false,
+        "attachments": null,
+        "cover_attachment_id": null,
+        "dismissed_activity_ids": [
+          "legacy-generated-item"
+        ],
+        "appearance": null,
+        "section_layout": {
+          "order": [
+            "details",
+            "description",
+            "checklists",
+            "activity",
+            "media",
+            "quick_actions"
+          ],
+          "hidden": [
+            "activity"
+          ]
+        },
+        "edit_history": null
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "calendar_index",
+      "id": "be778777-4de6-476a-ab57-e82e9625351a",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "source_store_version": 1,
+        "first_weekday": 2,
+        "current_week_start_date": "2026-10-19",
+        "week_ids": [
+          "8c2b84de-1799-4a3e-83fa-72b1ee50eae4"
+        ],
+        "checklist_link_weeks": [
+          {
+            "checklist_item_id": "5a86f5b0-5e29-412d-b33c-f950df4088dd",
+            "week_id": "8c2b84de-1799-4a3e-83fa-72b1ee50eae4"
+          }
+        ]
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "calendar_week",
+      "id": "8c2b84de-1799-4a3e-83fa-72b1ee50eae4",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "start_date": "2026-10-19",
+        "collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+        "first_weekday": 2,
+        "time_zone": "America/Chicago",
+        "time_zone_source": "user_confirmed",
+        "day_lists": [
+          {
+            "date": "2026-10-24",
+            "list_id": "8566e4ad-e25f-48c4-b210-c3541b670ee2"
+          }
+        ],
+        "explicitly_saved": true
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "daily_plan",
+      "id": "65ee9fc3-6d8b-4c9a-8dfb-ce7261b1252f",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "date": "2026-10-24",
+        "time_zone": "America/Chicago",
+        "intention": "A quiet start",
+        "constraints": "",
+        "concerns": "",
+        "priorities": [
+          {
+            "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+            "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          }
+        ],
+        "updated_at_utc": "2026-10-24T12:00:00.000Z",
+        "check_in": {
+          "focus": {
+            "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+            "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          },
+          "changed": "Latest submitted text",
+          "saved_at_utc": "2026-10-24T12:00:00.000Z"
+        },
+        "check_ins": [
+          {
+            "id": "legacy:2026-10-24",
+            "saved_at_utc": "2026-10-24T12:00:00.000Z",
+            "changed": "Retained check-in",
+            "focus": {
+              "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+              "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+              "title": "Historical unavailable item",
+              "source_location": "Week · Saturday",
+              "source_created_at_utc": null
+            },
+            "intention": "Earlier intention",
+            "constraints": "",
+            "concerns": "",
+            "priorities": [
+              {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              }
+            ],
+            "completed_tasks": null,
+            "total_tasks": null,
+            "notes": null,
+            "unavailable": null,
+            "legacy": true,
+            "mood": null
+          },
+          {
+            "id": "3bcb843b-e7d9-4cc4-8cc3-f43560d49c47",
+            "saved_at_utc": "2026-10-24T12:00:00.000Z",
+            "changed": "Retained check-in",
+            "focus": {
+              "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+              "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+              "title": "Historical unavailable item",
+              "source_location": "Week · Saturday",
+              "source_created_at_utc": null
+            },
+            "intention": "Earlier intention",
+            "constraints": "",
+            "concerns": "",
+            "priorities": [
+              {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              }
+            ],
+            "completed_tasks": 1,
+            "total_tasks": 3,
+            "notes": 0,
+            "unavailable": 1,
+            "legacy": false,
+            "mood": {
+              "emoji": "🙂",
+              "label": "Good"
+            }
+          }
+        ],
+        "evening_review": {
+          "step": 2,
+          "completed_at_utc": "2026-10-24T12:00:00.000Z",
+          "helped": "A walk",
+          "difficult": "",
+          "tomorrow": "Rest",
+          "decisions": [
+            {
+              "id": "5a10f1bd-bb31-4a01-89ad-c0fd72967017",
+              "source": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+                "title": "Historical title — preserved",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "result": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "action": {
+                "kind": "keep"
+              },
+              "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+            },
+            {
+              "id": "94c755c6-67a8-481d-bc11-aa9ea0bf53a0",
+              "source": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+                "title": "Historical title — preserved",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "result": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "action": {
+                "kind": "keep_tomorrow"
+              },
+              "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+            },
+            {
+              "id": "595939b1-053a-49c5-aabe-9765287a144b",
+              "source": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+                "title": "Historical title — preserved",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "result": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "action": {
+                "kind": "table"
+              },
+              "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+            },
+            {
+              "id": "8ccc9c58-ba3f-4ad3-82fd-0c29f9b0880d",
+              "source": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+                "title": "Historical title — preserved",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "result": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "action": {
+                "kind": "complete"
+              },
+              "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+            },
+            {
+              "id": "0e7588e4-1cdf-422f-81ec-ce594c3d6c73",
+              "source": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+                "title": "Historical title — preserved",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "result": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "action": {
+                "kind": "archive"
+              },
+              "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+            },
+            {
+              "id": "79cadb82-bd17-400b-b0d4-85076b25da5c",
+              "source": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+                "title": "Historical title — preserved",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "result": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "action": {
+                "kind": "queue"
+              },
+              "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+            },
+            {
+              "id": "982ceba0-b0f3-41ff-b593-a2eb1c5e8c62",
+              "source": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+                "title": "Historical title — preserved",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "result": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "action": {
+                "kind": "tomorrow"
+              },
+              "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+            },
+            {
+              "id": "013b3590-c8b1-431b-ada8-4194137c6424",
+              "source": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+                "title": "Historical title — preserved",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "result": {
+                "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+                "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+                "title": "Historical unavailable item",
+                "source_location": "Week · Saturday",
+                "source_created_at_utc": null
+              },
+              "action": {
+                "kind": "date",
+                "date": "2026-10-26"
+              },
+              "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+            }
+          ],
+          "achievements": [
+            {
+              "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+              "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+              "title": "Historical title — preserved",
+              "source_location": "Week · Saturday",
+              "source_created_at_utc": null
+            }
+          ]
+        },
+        "vision_step": 2,
+        "vision_completed_at_utc": "2026-10-24T12:00:00.000Z"
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "weekly_review",
+      "id": "fa4daaf9-b043-4937-a3a1-7b9495d6d0f6",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "source_review_key": "synthetic-week:2026-10-19",
+        "start_date": "2026-10-19",
+        "time_zone": "America/Chicago",
+        "first_weekday": 2,
+        "step": 1,
+        "highlights": "",
+        "learned": "",
+        "direction": "",
+        "constraints": "",
+        "risks": "",
+        "priorities": [
+          {
+            "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+            "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          }
+        ],
+        "decisions": [
+          {
+            "id": "5a10f1bd-bb31-4a01-89ad-c0fd72967017",
+            "source": {
+              "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+              "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+              "title": "Historical title — preserved",
+              "source_location": "Week · Saturday",
+              "source_created_at_utc": null
+            },
+            "result": {
+              "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+              "card_id": "a6dac069-fcde-45e3-9954-47e78cb4ed4e",
+              "title": "Historical unavailable item",
+              "source_location": "Week · Saturday",
+              "source_created_at_utc": null
+            },
+            "action": {
+              "kind": "keep"
+            },
+            "recorded_at_utc": "2026-10-24T12:00:00.000Z"
+          }
+        ],
+        "updated_at_utc": "2026-10-24T12:00:00.000Z",
+        "completed_at_utc": null
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "periodic_review",
+      "id": "62284d9e-859b-4940-aaae-84a8e000312a",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "title": "October reflection",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-31",
+        "time_zone": "America/Chicago",
+        "step": 2,
+        "highlights": "",
+        "learned": "",
+        "direction": "",
+        "risks": "",
+        "starting_objectives": [
+          {
+            "id": "84e27b4c-d093-4e2a-a9e5-36708165c8d6",
+            "title": "Make room for rest",
+            "status": "active",
+            "progress": "Earlier progress",
+            "next_step": "Plan a pause"
+          }
+        ],
+        "objectives": [
+          {
+            "id": "84e27b4c-d093-4e2a-a9e5-36708165c8d6",
+            "title": "Make room for rest",
+            "status": "paused",
+            "progress": "New reflection",
+            "next_step": "Plan a pause"
+          }
+        ],
+        "priorities": [
+          {
+            "source_collection_id": "ed4ac36c-1759-40b3-b9ad-b454676f989f",
+            "card_id": "88fdadb1-0613-4cf4-8f5e-485e40190bff",
+            "title": "Historical title — preserved",
+            "source_location": "Week · Saturday",
+            "source_created_at_utc": null
+          }
+        ],
+        "updated_at_utc": "2026-10-24T12:00:00.000Z",
+        "completed_at_utc": null
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "planning_template",
+      "id": "7c376ce3-98cf-4e35-b7f6-6affb1fafe68",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "name": "Synthetic week routine",
+        "kind": "week",
+        "anchor_date": "2026-10-19",
+        "time_zone": "America/Chicago",
+        "first_weekday": 2,
+        "collection_id": "e86fbd93-fe13-462a-b321-4f00090a5b32",
+        "weekdays": [
+          {
+            "weekday": 7,
+            "list_id": "e8cb03d5-f6a4-4a2e-a039-476d88b9d74f"
+          }
+        ],
+        "example_focus": {
+          "important": [
+            "f28c3bb0-f0bd-4397-9c18-e4ebe7be622d"
+          ],
+          "bookmarked": [
+            "f28c3bb0-f0bd-4397-9c18-e4ebe7be622d"
+          ],
+          "all_day": []
+        }
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "template_library",
+      "id": "541158fa-471e-475e-a8c6-2dbfb35259a4",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "source_store_version": 1,
+        "template_ids": [
+          "7c376ce3-98cf-4e35-b7f6-6affb1fafe68"
+        ],
+        "default_week_id": "7c376ce3-98cf-4e35-b7f6-6affb1fafe68",
+        "bundled_routine_revision": 5
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "review_rhythm",
+      "id": "549cf528-5c2a-4643-bc5c-6e5ccaa2d2ae",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "daily_invitations": true,
+        "weekly_invitations": true,
+        "daily_minutes": 1230,
+        "weekly_minutes": 1080,
+        "weekly_weekday": 1,
+        "daily_notifications": false,
+        "weekly_notifications": false
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "asset",
+      "id": "93dfc744-ea91-4cae-afb8-e2aa48cef493",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+        "kind": "image",
+        "mime_type": "image/png",
+        "original_name": "sample.png",
+        "content_state": "described",
+        "byte_length": "68",
+        "sha256": "5f5f068537ed746c846ffed710c11c976b97182bb817a6ef1949d6954cc7c907",
+        "source_format": "png",
+        "derived_from_asset_id": "156647fe-96b0-4765-b67c-6f4010106da1",
+        "source_created_at_utc": null,
+        "attribution": null
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "asset",
+      "id": "156647fe-96b0-4765-b67c-6f4010106da1",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+        "kind": "drawing_original",
+        "mime_type": "application/octet-stream",
+        "original_name": "opaque-original.bin",
+        "content_state": "described",
+        "byte_length": "62",
+        "sha256": "eb564fa34a5b9093e97285acc78fc3a08c1d40f693867ad170d2c3688e4cb787",
+        "source_format": "test.opaque",
+        "derived_from_asset_id": null,
+        "source_created_at_utc": null,
+        "attribution": null
+      }
+    },
+    {
+      "user_data_model_version": "1.0",
+      "payload_schema_version": 1,
+      "record_type": "asset",
+      "id": "3b885bbe-861e-494a-be2a-0c2a39082747",
+      "workspace_id": "64610821-43bb-4c58-a52a-df9e1780811f",
+      "payload": {
+        "account_id": "180e37e7-9a96-4d74-bf00-9f4c4d008248",
+        "kind": "binary",
+        "mime_type": "application/octet-stream",
+        "original_name": null,
+        "content_state": "unavailable",
+        "byte_length": null,
+        "sha256": null,
+        "source_format": null,
+        "derived_from_asset_id": null,
+        "source_created_at_utc": null,
+        "attribution": null
+      }
+    }
+  ]
+}

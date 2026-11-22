@@ -1,0 +1,42 @@
+{
+  "database": "justirl2_plenact_m1_stage",
+  "evidence": "Operator-provided phpMyAdmin output, November 21, 2026",
+  "migrations": [
+    {
+      "id": "001_core",
+      "source": "001_core.sql",
+      "source_sha256": "cb58318d79e2afe764400390012abf85bbd6bf34940e12da8556f75fed025fc8",
+      "reported_applied_at_utc": "2026-11-21 11:24:14.344813",
+      "observed_tables": 8,
+      "observed_engine": "InnoDB",
+      "observed_table_collation": "utf8mb4_unicode_ci"
+    },
+    {
+      "id": "002_invite_auth",
+      "source": "002_invite_auth.sql",
+      "source_sha256": "cfd94e68ba8b7675386aa4e9507886d71d71749cb04ba7bfc79efb2f1eca0feb",
+      "observed_tables": 3,
+      "observed_engine": "InnoDB",
+      "observed_table_collation": "utf8mb4_unicode_ci",
+      "checksum_equality_confirmed": true
+    },
+    {
+      "id": "003_snapshot_leases",
+      "source": "003_snapshot_leases.sql",
+      "source_sha256": "61acedc898e6d7e0b42413414552a48c9d5e6f53b31ff1ffcf186cb2fd831e86",
+      "observed_tables": 2,
+      "observed_engine": "InnoDB",
+      "observed_table_collation": "utf8mb4_unicode_ci",
+      "checksum_equality_confirmed": true
+    },
+    {
+      "id": "004_asset_transfer",
+      "source": "004_asset_transfer.sql",
+      "source_sha256": "bdced641119b900fc91c4016ec400f3e03665ae091c62072912e02e454e6d26a",
+      "observed_tables": 4,
+      "observed_engine": "InnoDB",
+      "observed_table_collation": "utf8mb4_unicode_ci",
+      "checksum_equality_confirmed": true
+    }
+  ]
+}

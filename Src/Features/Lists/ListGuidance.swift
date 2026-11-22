@@ -32,6 +32,8 @@ struct SessionListGuidance: View
         _ in
     }
 
+    var onVisibilityChange: (Bool) -> Void = { _ in }     /* Actual guide visibility, including retraction */
+
     @State private var reportedInitialPresentation = false                      /* Reported initial presentation */
     @State private var automaticRevealAttempted    = false                      /* Automatic reveal attempted    */
     @State private var handledToggleRequest        = 0                          /* Handled toggle request        */
@@ -67,7 +69,8 @@ struct SessionListGuidance: View
         onPresentationChange: @escaping (Bool) -> Void =
         {
             _ in
-        }
+        },
+        onVisibilityChange: @escaping (Bool) -> Void = { _ in }
     )
     {
         self.list = list
@@ -75,6 +78,7 @@ struct SessionListGuidance: View
         self.onReveal = onReveal
         self.toggleRequest = toggleRequest
         self.onPresentationChange = onPresentationChange
+        self.onVisibilityChange = onVisibilityChange
         _entryWasEmpty = State(initialValue: list.cards.isEmpty && DefaultListTutorial.guidance(for: list.title) != nil)
     }
 
@@ -139,6 +143,7 @@ struct SessionListGuidance: View
             reportedInitialPresentation = true
 
             onPresentationChange(!entryWasEmpty)
+            onVisibilityChange(isVisible)
         }
         .task(id: toggleRequest)
         {
@@ -182,6 +187,7 @@ struct SessionListGuidance: View
                 withAnimation(.easeInOut(duration: reduceMotion ? 0.2 : 1.9))
                 {
                     isVisible = false
+                    onVisibilityChange(false)
                     hasPreparedLayout = false
                 }
 
@@ -199,6 +205,7 @@ struct SessionListGuidance: View
             {
                 hasPreparedLayout = true
                 isVisible = true
+                onVisibilityChange(true)
                 onReveal()
                 onPresentationChange(true)
             }
@@ -228,5 +235,56 @@ struct SessionListGuidance: View
                 }
             }
         }
+    }
+}
+
+
+/// Blends the toolbar fade into a tapered glow as the built-in guide appears.
+/// Animating the masks themselves keeps both edges soft throughout the card's slide.
+struct SessionListGuidanceFade: View, Animatable
+{
+    var tint: Color
+    var progress: CGFloat
+
+    var animatableData: CGFloat
+    {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View
+    {
+        let reveal = min(max(progress, 0), 1)
+
+        Rectangle()
+            .fill(Color(.systemGray3).opacity(0.65))
+            .overlay(tint.opacity(0.20))
+            .mask
+            {
+                LinearGradient(
+                    stops: [
+                        .init(color: .black.opacity(1 - Double(reveal)), location: 0),
+                        .init(color: .black, location: 0.28 * reveal),
+                        .init(color: .clear, location: 1)
+                    ],
+                    startPoint: .top, endPoint: .bottom)
+            }
+            .mask
+            {
+                LinearGradient(
+                    stops: [
+                        .init(color: .black.opacity(1 - Double(reveal)), location: 0),
+                        .init(color: .black, location: 0.16),
+                        .init(color: .black, location: 0.84),
+                        .init(color: .black.opacity(1 - Double(reveal)), location: 1)
+                    ],
+                    startPoint: .leading, endPoint: .trailing)
+            }
+            .frame(height: 12 + 8 * reveal)
+            .padding(.horizontal, 12 * reveal)
+            .opacity(1 - 0.45 * Double(reveal))
+            .offset(y: 4)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }

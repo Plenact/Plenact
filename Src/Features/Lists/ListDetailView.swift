@@ -47,6 +47,7 @@ struct TodayListDetailView: View
     var onOpenSelectedWeek: ((PlanningDaySelection) -> Void)? = nil     /* Switch to the selected date’s Week */
 
     @State private var focusedViewportMemory: BoardViewportMemory?      /* Focused viewport memory */
+    @State private var isGuidanceVisible = false                       /* Actual guide visibility */
     @State private var guidanceFooterVisible: Bool?                     /* Guidance footer visible */
     @State private var selectedDay: PlanningDaySelection?               /* Selected day            */
 
@@ -452,6 +453,10 @@ struct TodayListDetailView: View
             onPresentationChange:
             {
                 guidanceFooterVisible = $0
+            },
+            onVisibilityChange:
+            {
+                isGuidanceVisible = $0
             }
         )
     }
@@ -1049,19 +1054,15 @@ struct TodayListDetailView: View
                         }
                         .overlay(alignment: .top)
                         {
-                            Rectangle()
-                            .fill(Color(.systemGray3).opacity(0.65))
-                            .overlay(headerColor.opacity(0.20))
-                            .mask
-                            {
-                                LinearGradient(
-                                    colors: [.black, .clear],
-                                    startPoint: .top, endPoint: .bottom)
-                            }
-                            .frame(height: 12)
-                            .offset(y: 4)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
+                            SessionListGuidanceFade(
+                                tint: headerColor,
+                                progress: representedDate == nil
+                                    && DefaultListTutorial.guidance(for: focusedList.title) != nil
+                                    && isGuidanceVisible ? 1 : 0
+                            )
+                            .animation(
+                                .easeInOut(duration: reduceSummaryMotion ? 0.2 : 1.9),
+                                value: isGuidanceVisible)
                         }
 
                         .task(id: cardViewport.size)

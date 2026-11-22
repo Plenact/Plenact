@@ -219,7 +219,7 @@ struct SessionListGuidance: View
                     ReadOnlyCardContent(card: guide, labels: labels, onOpenAttachment:
                         {
                             _ in
-                        }, showsUnlockHint: false)
+                        }, showsUnlockHint: false, showsReadOnlyBadge: false)
                     .navigationTitle("About this List")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar

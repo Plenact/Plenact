@@ -27,6 +27,7 @@ struct ReadOnlyCardContent: View
     let labels:           LabelLibrary                  /* Available label definitions */
     let onOpenAttachment: (KanbanAttachment) -> Void    /* Open attachment callback    */
     var showsUnlockHint = true                          /* Unlock Hint visibility      */
+    var showsReadOnlyBadge = true                        /* Read-only status visibility */
 
     var body: some View         /* Read Only Card Content layout */
     {
@@ -34,9 +35,12 @@ struct ReadOnlyCardContent: View
         {
             VStack(alignment: .leading, spacing: 18)
             {
-                Label("Read-only", systemImage: "lock.fill")
-                .font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
-                .accessibilityIdentifier("card.editingLocked")
+                if showsReadOnlyBadge
+                {
+                    Label("Read-only", systemImage: "lock.fill")
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("card.editingLocked")
+                }
                 if showsUnlockHint
                 {
                     Text("Use Unlock editing in the actions menu to make changes.")

@@ -214,6 +214,8 @@ struct KanbanListView: View
     /// @return     (some Gesture) hold/drag sequence with transient holding-state updates
     /// @post       Successful holds report optional drag values; ending calls onListDragEnded
     ///
+    private var canOpenFocusedList: Bool { onOpenDayView != nil }
+
     private var canOpenDatedDay: Bool           /* Open Dated Day availability */
     {
         assignedDate != nil && onOpenDayView != nil
@@ -225,7 +227,7 @@ struct KanbanListView: View
         {
             (isCurrentDay ? "Today. Open " : "Open ") + $0.formatted(.dateTime.weekday(.wide).month(.wide).day().year())
         }
-        ?? list.title
+        ?? "Open \(list.title)"
     }
 
     @ViewBuilder private var listSubtitle: some View    /* List subtitle */
@@ -461,7 +463,7 @@ struct KanbanListView: View
                 .simultaneousGesture(
                     TapGesture().onEnded
                     {
-                        if !isNamingNewList && canOpenDatedDay && !isHoldingList
+                        if !isNamingNewList && canOpenFocusedList && !isHoldingList
                         {
                             onOpenDayView?()
                         }
@@ -469,11 +471,13 @@ struct KanbanListView: View
                 )
                 .accessibilityElement(children: isNamingNewList ? .contain : .combine)
                 .modifier(
-                    DayHeaderAccessibility(label: dayOpeningLabel, action: canOpenDatedDay ? onOpenDayView : nil)
+                    DayHeaderAccessibility(label: dayOpeningLabel, action: canOpenFocusedList ? onOpenDayView : nil)
                 )
                 .accessibilityHint(
-                    canOpenDatedDay
-                    ? "Opens this day. Touch and hold to drag this list instead."
+                    canOpenFocusedList
+                    ? (canOpenDatedDay
+                        ? "Opens this day. Back returns to this Week. Touch and hold to drag this list instead."
+                        : "Opens this list. Back returns to this Board. Touch and hold to drag this list instead.")
                     : "Touch and hold to drag this list. Keep holding near either screen edge to move across the board."
                 )
                 .accessibilityAction(named: "Move earlier")

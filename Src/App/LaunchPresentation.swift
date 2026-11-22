@@ -590,3 +590,52 @@ struct TodayWelcomeGlow: ViewModifier
         .scaleEffect(highlighted && !reduceMotion ? 1.035 : 1, anchor: circular ? .center : .leading)
     }
 }
+
+
+/// Retains the loading artwork until its native opacity animation has finished.
+struct PlenactLaunchFadeOverlay: UIViewControllerRepresentable
+{
+    let fadesShadow: Bool
+    let progress: PlenactLaunchProgress
+    let isReady: Bool
+    let reducesMotion: Bool
+    let onFinished: () -> Void
+
+    final class Coordinator
+    {
+        var started = false
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIHostingController<PlenactLoadingView>
+    {
+        let controller = UIHostingController(rootView:
+            PlenactLoadingView(fadesShadow: fadesShadow, progress: progress))
+        controller.view.backgroundColor = UIColor(named: "LaunchBackground")
+        return controller
+    }
+
+    func updateUIViewController(_ controller: UIHostingController<PlenactLoadingView>, context: Context)
+    {
+        guard !context.coordinator.started else { return }
+        controller.rootView = PlenactLoadingView(fadesShadow: fadesShadow, progress: progress)
+        guard isReady else { return }
+        context.coordinator.started = true
+
+        // Start after the ready destination and overlay have both been laid out.
+        DispatchQueue.main.async
+        {
+            controller.view.superview?.layoutIfNeeded()
+            UIView.animate(withDuration: reducesMotion ? 0 : 0.35, delay: 0,
+                           options: [.curveEaseInOut, .beginFromCurrentState])
+            {
+                controller.view.alpha = 0
+            }
+            completion:
+            {
+                _ in onFinished()
+            }
+        }
+    }
+}

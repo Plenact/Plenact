@@ -48,6 +48,7 @@ struct AppRootView: View
     @AppStorage(ReviewRhythmStore.key) var reviewRhythmPreferencesData =                        /* Review rhythm preferences data               */
         Data()
     @Environment(\.scenePhase) var scenePhase                                                   /* Scene phase                                  */
+    @State private var launchOverlayVisible = true
     @State var launchShadowFading                        = false                                /* Launch shadow fading                         */
     @State var launchProgress                            =                                      /* Launch progress                              */
         PlenactLaunchProgress()
@@ -125,7 +126,7 @@ struct AppRootView: View
     ///
     var body: some View         /* Primary app navigation                   */
     {                           /* Primary Today and Board navigation shell */
-        Group
+        ZStack
         {
             if let workspaceRecoveryError
             {
@@ -166,12 +167,18 @@ struct AppRootView: View
                     navigationContent
                 }
                 .id(workspaceGeneration)
-                .transition(.opacity)
+                .allowsHitTesting(!launchOverlayVisible)
+                .accessibilityHidden(launchOverlayVisible)
             }
-            else
+
+            if launchOverlayVisible, workspaceRecoveryError == nil, !isSwitchingWorkspace
             {
-                PlenactLoadingView(fadesShadow: launchShadowFading, progress: launchProgress)
-                .transition(.opacity)
+                PlenactLaunchFadeOverlay(
+                    fadesShadow: launchShadowFading, progress: launchProgress,
+                    isReady: hasLoadedBoard, reducesMotion: reduceLaunchMotion,
+                    onFinished: { launchOverlayVisible = false })
+                    .ignoresSafeArea()
+                    .zIndex(1)
             }
         }
 
@@ -203,7 +210,6 @@ struct AppRootView: View
                     appReturnProtectionIDs.remove(id)
                 }
             })
-        .animation(reduceLaunchMotion ? nil : .easeInOut(duration: 0.45), value: hasLoadedBoard)
         .environmentObject(welcomeCue)
         .environment(\.localBackupRestore, LocalBackupRestoreAccess(restore: { backup in
 

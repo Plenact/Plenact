@@ -261,6 +261,7 @@ struct InlineListCapture: View
     @Environment(\.accessibilityReduceMotion) private var reduceMotion          /* Reduced-motion preference */
     let onCreate:                      (QuickCaptureSubmission) -> Bool         /* Create callback           */
     let onOpenComposer:                ()                       -> Void         /* Open composer callback    */
+    var docksAddButton = false
     var keepsFocusAfterSubmit = true
     var onChoosePresentation: ((ItemPresentation) -> Void)? = nil
     @FocusState private var isFocused: Bool                                     /* Native editor focus state */
@@ -301,6 +302,13 @@ struct InlineListCapture: View
             .accessibilityLabel("Add \(list.newItemPresentation.title.lowercased()) to \(list.title)")
             .accessibilityHint("Opens the full editor with your entered title.")
             .accessibilityIdentifier("list.inlineCapture.add")
+            .anchorPreference(key: InlineCaptureAddButtonBounds.self, value: .bounds)
+            {
+                docksAddButton ? $0 : nil
+            }
+            .opacity(docksAddButton ? 0 : 1)
+            .allowsHitTesting(!docksAddButton)
+            .accessibilityHidden(docksAddButton)
             .contextMenu
             {
                 if let onChoosePresentation
@@ -506,5 +514,17 @@ enum ListItemCreation
         }?.id
 
         return cards
+    }
+}
+
+
+/// Geometry for the Day capture button's transition between its row and viewport dock.
+struct InlineCaptureAddButtonBounds: PreferenceKey
+{
+    static var defaultValue: Anchor<CGRect>? { nil }
+
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?)
+    {
+        value = nextValue() ?? value
     }
 }

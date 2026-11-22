@@ -320,6 +320,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     var initialScroll: InitialScroll? = nil
     var returnToTopDistance: CGFloat = 0
     var onReturnToTop: ((Bool) -> Void)? = nil
+    var onScrollMotion: ((Bool) -> Void)? = nil
 
     struct InitialScroll
     {
@@ -393,7 +394,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         view.isUserInteractionEnabled = false
 
         context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest, initialScroll: initialScroll, returnToTopDistance: returnToTopDistance,
-                                      onReturnToTop: onReturnToTop)
+                                      onReturnToTop: onReturnToTop, onScrollMotion: onScrollMotion)
 
         view.attached =
         {
@@ -422,7 +423,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
     func updateUIView(_ view: Marker, context: Context)
     {
         context.coordinator.configure(memory: memory, key: key, horizontal: horizontal, resetRequest: resetRequest, initialScroll: initialScroll, returnToTopDistance: returnToTopDistance,
-                                      onReturnToTop: onReturnToTop)
+                                      onReturnToTop: onReturnToTop, onScrollMotion: onScrollMotion)
         if view.window != nil
         {
             context.coordinator.findScroll(from: view)
@@ -469,6 +470,8 @@ struct BoardViewportScrollProbe: UIViewRepresentable
 
         private var initialScroll: InitialScroll?
         private var appliedScrollID: Int?
+        private var onScrollMotion: ((Bool) -> Void)?
+        private var scrollMotionTask: Task<Void, Never>?
         private var onReturnToTop: ((Bool) -> Void)?
         private var returnToTopDistance: CGFloat = 0
         private var hasScrolledAway = false
@@ -493,8 +496,9 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         func configure(memory: BoardViewportMemory?, key: String, horizontal: Bool, resetRequest: Int = 0,
                        initialScroll: InitialScroll? = nil, returnToTopDistance: CGFloat = 0,
-                       onReturnToTop: ((Bool) -> Void)? = nil)
+                       onReturnToTop: ((Bool) -> Void)? = nil, onScrollMotion: ((Bool) -> Void)? = nil)
         {
+            self.onScrollMotion = onScrollMotion
             self.initialScroll = initialScroll
             self.onReturnToTop = onReturnToTop
             self.returnToTopDistance = returnToTopDistance
@@ -688,6 +692,7 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 {
                     self?.capture()
                     self?.observeReturnToTop()
+                    self?.observeScrollMotion()
                 }
             }
 
@@ -696,6 +701,22 @@ struct BoardViewportScrollProbe: UIViewRepresentable
                 [weak self] in
                 self?.restore()
                 self?.applyInitialScroll()
+            }
+        }
+
+
+        /// Observe movement without replacing the native scroll delegate (including iOS 17).
+        private func observeScrollMotion()
+        {
+            guard onScrollMotion != nil, let scroll,
+                  scroll.isDragging || scroll.isDecelerating else { return }
+            scrollMotionTask?.cancel()
+            scrollMotionTask = Task { [weak self] in
+                guard let self, !Task.isCancelled else { return }
+                self.onScrollMotion?(true)
+                do { try await Task.sleep(for: .milliseconds(150)) }
+                catch { return }
+                self.onScrollMotion?(false)
             }
         }
 
@@ -887,6 +908,8 @@ struct BoardViewportScrollProbe: UIViewRepresentable
         ///
         func finish()
         {
+            scrollMotionTask?.cancel()
+            scrollMotionTask = nil
             initialScrollTask?.cancel()
             initialScrollTask = nil
             returnToTopTask?.cancel()

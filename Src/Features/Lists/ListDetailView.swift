@@ -29,6 +29,8 @@ struct TodayListDetailView: View
         isDaySummaryDismissalPending ?? autoDismissesDaySummary
     }
     @State private var isDayVisible = false
+    @State private var isDayKeyboardVisible = false
+    @State private var isDayListInMotion = false
     var autoDismissesDaySummary = false
 
     @State private var keyboardDetailPath: [KanbanCard] = []            /* Keyboard detail path     */
@@ -485,6 +487,7 @@ struct TodayListDetailView: View
                 newItemPresentation = nil
                 showsNewCard = true
             },
+            docksAddButton: representedDate != nil,
             keepsFocusAfterSubmit: representedDate == nil,
             onChoosePresentation: representedDate == nil ? nil :
             {
@@ -678,6 +681,126 @@ struct TodayListDetailView: View
     }
 
     private var dayFooterHeight: CGFloat { 4 + dayBottomSafeInset }
+
+
+    private var dayBackdrop: some View
+    {
+    // Keep decorative scheduling-list chrome at the screen bottom while the
+    // foreground List continues to avoid the keyboard for inline capture.
+    ZStack
+    {
+        if let personalListBackground
+        {
+            CollectionBackgroundSurface(background: personalListBackground).ignoresSafeArea()
+        }
+        else
+        {
+            Color(.systemGray6).ignoresSafeArea()
+        }
+        if let surface = focusedList?.appearance?.studioSurface ?? effectiveBoardAppearance.studioSurface
+        {
+            StudioSurfaceView(surface: surface).ignoresSafeArea()
+        }
+
+
+        if representedDate == nil
+        {
+            Rectangle()
+                .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
+                .frame(height: 4)
+                .background
+                {
+                    headerColor.ignoresSafeArea(edges: .bottom)
+                }
+                .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+    .ignoresSafeArea(
+        .keyboard,
+        edges: representedDate == nil
+            && DefaultListTutorial.guidance(for: focusedList?.title ?? "") != nil
+            ? .bottom : [])
+    }
+
+
+    private func dayAddButtonOverlay(anchor: Anchor<CGRect>?, focusedList: KanbanList) -> some View
+    {
+        GeometryReader
+        {
+            viewport in
+            if representedDate != nil, !isDayKeyboardVisible, editMode != .active
+            {
+                let rowButton = anchor.map { viewport[$0] }
+                let dockY = max(22, viewport.size.height - dayFooterHeight + 26)
+                let buttonY = min(rowButton?.midY ?? dockY, dockY)
+                let isDocked = rowButton == nil || (rowButton?.midY ?? 0) > dockY
+                Button
+                {
+                    newItemPresentation = nil
+                    showsNewCard = true
+                }
+                label:
+                {
+                    ZStack
+                    {
+                        Circle()
+                            .fill(headerColor)
+                        Circle()
+                            .strokeBorder(Color(red: 0.82, green: 0.68, blue: 0.40), lineWidth: 3)
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Color(red: 0.82, green: 0.68, blue: 0.40))
+                    }
+                        .frame(width: 22, height: 22)
+                        .frame(width: 44, height: 44)
+                        .background
+                        {
+                            if isDocked
+                            {
+                                Circle()
+                                    .fill(.regularMaterial)
+                                    .mask
+                                    {
+                                        RadialGradient(
+                                            stops: [
+                                                .init(color: .black, location: 0),
+                                                .init(color: .black.opacity(0.8), location: 0.35),
+                                                .init(color: .clear, location: 1)
+                                            ],
+                                            center: .center, startRadius: 0, endRadius: 22)
+                                    }
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add \(focusedList.newItemPresentation.title.lowercased()) to \(focusedList.title)")
+                .accessibilityHint("Opens the full editor with your entered title.")
+                .accessibilityIdentifier("list.inlineCapture.add")
+                .contextMenu
+                {
+                    Button("New Card", systemImage: "rectangle")
+                    {
+                        newItemPresentation = .card
+                        showsNewCard = true
+                    }
+                    Button("New Note", systemImage: "note.text")
+                    {
+                        newItemPresentation = .note
+                        showsNewCard = true
+                    }
+                }
+                .scaleEffect(isDayListInMotion ? 2 : 1, anchor: .bottomTrailing)
+                .offset(x: isDayListInMotion && isDocked ? 12 : 0,
+                        y: isDayListInMotion && isDocked ? 12 : 0)
+                .animation(.easeInOut(duration: reduceSummaryMotion ? 0 : 0.2), value: isDayListInMotion)
+                .position(x: rowButton?.midX ?? max(22, viewport.size.width - 42), y: buttonY)
+            }
+        }
+    }
 
 
     private var dayContent: some View                   /* Day content                                           */
@@ -905,6 +1028,11 @@ struct TodayListDetailView: View
                             }
                         }
 
+                        .overlayPreferenceValue(InlineCaptureAddButtonBounds.self)
+                        {
+                            anchor in
+                            dayAddButtonOverlay(anchor: anchor, focusedList: focusedList)
+                        }
                         .overlayPreferenceValue(DayFooterBounds.self)
                         {
                             anchor in
@@ -955,7 +1083,8 @@ struct TodayListDetailView: View
                                 onReturnToTop: representedDate != nil ?
                                 {
                                     isDaySummaryDismissalPending = $0
-                                } : nil
+                                } : nil,
+                                onScrollMotion: representedDate != nil ? { isDayListInMotion = $0 } : nil
                             )
                         )
                         .modifier(RevealCreatedContent(lists: [focusedList], existingProxy: scrollProxy))
@@ -1082,47 +1211,7 @@ struct TodayListDetailView: View
                 }
             }
 
-            .background
-            {
-                // Keep decorative scheduling-list chrome at the screen bottom while the
-                // foreground List continues to avoid the keyboard for inline capture.
-                ZStack
-                {
-                    if let personalListBackground
-                    {
-                        CollectionBackgroundSurface(background: personalListBackground).ignoresSafeArea()
-                    }
-                    else
-                    {
-                        Color(.systemGray6).ignoresSafeArea()
-                    }
-                    if let surface = focusedList?.appearance?.studioSurface ?? effectiveBoardAppearance.studioSurface
-                    {
-                        StudioSurfaceView(surface: surface).ignoresSafeArea()
-                    }
-
-
-                    if representedDate == nil
-                    {
-                        Rectangle()
-                            .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
-                            .frame(height: 4)
-                            .background
-                            {
-                                headerColor.ignoresSafeArea(edges: .bottom)
-                            }
-                            .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
-                            .frame(maxHeight: .infinity, alignment: .bottom)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                    }
-                }
-                .ignoresSafeArea(
-                    .keyboard,
-                    edges: representedDate == nil
-                        && DefaultListTutorial.guidance(for: focusedList?.title ?? "") != nil
-                        ? .bottom : [])
-            }
+            .background { dayBackdrop }
             .onGeometryChange(for: CGFloat.self)
             {
                 $0.safeAreaInsets.bottom
@@ -1141,6 +1230,14 @@ struct TodayListDetailView: View
                 {
                     checkmarkReset = nil
                 }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification))
+            {
+                _ in isDayKeyboardVisible = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
+            {
+                _ in isDayKeyboardVisible = false
             }
             .onChange(of: listID)
             {

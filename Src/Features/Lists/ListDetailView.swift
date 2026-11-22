@@ -686,35 +686,6 @@ struct TodayListDetailView: View
         {
             ZStack
             {
-                if let personalListBackground
-                {
-                    CollectionBackgroundSurface(background: personalListBackground).ignoresSafeArea()
-                }
-                else
-                {
-                    Color(.systemGray6).ignoresSafeArea()
-                }
-                if let surface = focusedList?.appearance?.studioSurface ?? effectiveBoardAppearance.studioSurface
-                {
-                    StudioSurfaceView(surface: surface).ignoresSafeArea()
-                }
-
-
-                if representedDate == nil
-                {
-                    Rectangle()
-                        .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
-                        .frame(height: 4)
-                        .background
-                        {
-                            headerColor.ignoresSafeArea(edges: .bottom)
-                        }
-                        .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
-                        .frame(maxHeight: .infinity, alignment: .bottom)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                }
-
                 if let focusedList
                 {                       /* Selected list available for rendering */
                     ScrollViewReader
@@ -1111,6 +1082,47 @@ struct TodayListDetailView: View
                 }
             }
 
+            .background
+            {
+                // Keep decorative scheduling-list chrome at the screen bottom while the
+                // foreground List continues to avoid the keyboard for inline capture.
+                ZStack
+                {
+                    if let personalListBackground
+                    {
+                        CollectionBackgroundSurface(background: personalListBackground).ignoresSafeArea()
+                    }
+                    else
+                    {
+                        Color(.systemGray6).ignoresSafeArea()
+                    }
+                    if let surface = focusedList?.appearance?.studioSurface ?? effectiveBoardAppearance.studioSurface
+                    {
+                        StudioSurfaceView(surface: surface).ignoresSafeArea()
+                    }
+
+
+                    if representedDate == nil
+                    {
+                        Rectangle()
+                            .fill(Color(red: 0.82, green: 0.68, blue: 0.40))
+                            .frame(height: 4)
+                            .background
+                            {
+                                headerColor.ignoresSafeArea(edges: .bottom)
+                            }
+                            .shadow(color: Color(red: 0.72, green: 0.56, blue: 0.30).opacity(0.4), radius: 5, y: 3)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .ignoresSafeArea(
+                    .keyboard,
+                    edges: representedDate == nil
+                        && DefaultListTutorial.guidance(for: focusedList?.title ?? "") != nil
+                        ? .bottom : [])
+            }
             .onGeometryChange(for: CGFloat.self)
             {
                 $0.safeAreaInsets.bottom

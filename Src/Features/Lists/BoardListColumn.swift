@@ -878,6 +878,9 @@ struct KanbanListView: View
         .background(.clear)
         .frame(height: cardCollectionHeight)
         .background(BoardViewportScrollProbe(memory: viewportMemory, key: "list:\(list.id)"))
+        // Native swipe presentation survives isEditing = false. Recreate only the row
+        // collection on list navigation; the viewport probe restores its saved offset.
+        .id(swipeDismissalGeneration)
         .modifier(RevealCreatedContent(lists: [list]))
         .onPreferenceChange(BoardCardHeightPreferenceKey.self)
         {
@@ -913,6 +916,8 @@ struct KanbanListView: View
     /// @post       Content edits delegate to the parent; tint/watch and edit mode remain local.
     ///             Ending the hold resets drag through the parent callback
     ///
+    @Environment(\.boardSwipeDismissalGeneration) private var swipeDismissalGeneration
+
     var body: some View         /* Kanban List layout             */
     {                           /* List panel and card collection */
         VStack(spacing: 0)

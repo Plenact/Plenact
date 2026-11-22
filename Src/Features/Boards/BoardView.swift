@@ -323,6 +323,7 @@ struct ContentView: View
         boardZoomScale * (draggedListID != nil && !reducesMotion ? (isPanoramic ? 0.94 : 0.72) : 1)
     }
 
+    @State private var swipeDismissalGeneration = 0
     @State private var swipeUndo = ListSwipeUndo()
     @Environment(\.accessibilityReduceMotion) private var reduceSwipeMotion
 
@@ -1055,6 +1056,7 @@ struct ContentView: View
                                                 memory: viewportMemory, key: "horizontal", horizontal: true))
                                     }
 
+                                    .environment(\.boardSwipeDismissalGeneration, swipeDismissalGeneration)
                                     .contentMargins(.horizontal, horizontalInset, for: .scrollContent)
                                     .scrollTargetBehavior(BoardZoomScrollBehavior(panoramic: usesFreeBoardScrolling))
                                     .scrollPosition(
@@ -1119,6 +1121,7 @@ struct ContentView: View
                                             return
                                         }
 
+                                        swipeDismissalGeneration &+= 1
                                         lastReportedVisibleListID = listID
 
                                         onListViewed(listID)

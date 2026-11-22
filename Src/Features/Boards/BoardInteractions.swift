@@ -1558,3 +1558,18 @@ struct BoardListCenterPreferenceKey: PreferenceKey
             })
     }
 }
+
+
+private struct BoardSwipeDismissalGenerationKey: EnvironmentKey
+{
+    static let defaultValue = 0
+}
+
+extension EnvironmentValues
+{
+    var boardSwipeDismissalGeneration: Int
+    {
+        get { self[BoardSwipeDismissalGenerationKey.self] }
+        set { self[BoardSwipeDismissalGenerationKey.self] = newValue }
+    }
+}

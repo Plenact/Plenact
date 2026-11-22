@@ -552,6 +552,7 @@ struct TodayHomeView: View
             {
                 openedShortcut = $0
             })
+            .offset(y: -5)
     }
 
 

@@ -328,8 +328,10 @@ struct TodayShortcutGrid: View
                         .frame(width: usesLargeIcons ? 60 : 44, height: usesLargeIcons ? 60 : 44)
                         Text(destination.list.title).font(.subheadline.weight(.semibold)).lineLimit(2)
                         .foregroundStyle(.primary).multilineTextAlignment(.center)
+                        .offset(y: -3)
                         Text("\(destination.list.cards.filter { !$0.isSectionDivider } .count) cards").font(.caption)
                         .foregroundStyle(.secondary)
+                        .offset(y: -9)
                     }
                     .padding(.vertical, 12).padding(.horizontal, 4)
                     .frame(maxWidth: .infinity, minHeight: usesLargeIcons ? 150 : 130, alignment: .top)

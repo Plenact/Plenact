@@ -2384,27 +2384,26 @@ extension AppRootView
             CardAttachmentStore.fileNames(in: lists).subtracting(
                 CardAttachmentStore.fileNames(in: snapshot))            /* Media removed by clearing Week content */
 
-        if var document = calendarDocument,
-        var current = document.weeks.first(where:
-            {
-                $0.startKey == document.currentWeekKey
-            })
+        var updatedCalendar = calendarDocument
+        if var document = updatedCalendar,
+           var current = document.weeks.first(where: { $0.startKey == document.currentWeekKey })
         {
-            current.collection.lists = snapshot;
+            current.collection.lists = snapshot
             current.collection.savedCardIDs = bookmarks
-
             document.upsert(current)
-            try PlanningCalendarStore.save(document)
-
-            calendarDocument = document
+            updatedCalendar = document
         }
 
-        try KanbanBoardPersistence.saveListsChecked(snapshot)
-
+        // Publish deletion and its recovery history together, only after every save succeeds.
+        try DailyReviewTransaction.perform
+        {
+            if let document = updatedCalendar { try PlanningCalendarStore.save(document) }
+            try KanbanBoardPersistence.saveListsChecked(snapshot)
+            SavedCardPersistence.save(bookmarks)
+        }
+        calendarDocument = updatedCalendar
         lists = snapshot
         savedCardIDs = bookmarks
-
-        SavedCardPersistence.save(bookmarks)
         cleanDeletedMedia(candidates)
     }
 

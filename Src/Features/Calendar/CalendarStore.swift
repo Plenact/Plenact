@@ -74,8 +74,10 @@ enum PlanningCalendarStore
     static func save(_ document: PlanningCalendarDocument, to defaults: UserDefaults = .standard) throws
     {
         // Retained corrupt or unsupported data must not be silently overwritten
-        _ = try load(from: defaults)
-
-        defaults.set(try JSONEncoder().encode(document), forKey: key)
+        let previous = try load(from: defaults)
+        let data = try JSONEncoder().encode(document)
+        let history = try DayListHistoryStore.recording(from: previous, to: document, defaults: defaults)
+        defaults.set(history, forKey: DayListHistoryStore.key)
+        defaults.set(data, forKey: key)
     }
 }

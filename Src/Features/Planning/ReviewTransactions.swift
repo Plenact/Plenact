@@ -21,7 +21,7 @@ enum DailyReviewTransaction
     static let key  = "Plenact.DailyReviewTransaction.v1"       /* Lookup or persistence key   */
     static let keys = [                                         /* Keys used by this operation */
         PlanningCalendarStore.key, "Plenact.Board.v1", "Plenact.PersonalCollections.v1", "Plenact.SavedCardIDs.v1",
-        DailyPlanStore.key, WeeklyReviewStore.key
+        DailyPlanStore.key, WeeklyReviewStore.key, DayListHistoryStore.key
     ]
 
 
@@ -102,7 +102,7 @@ enum DailyReviewTransaction
 
         let capturedKeys = snapshot["keys"] as? [String] ?? keys        /* Captured keys */
 
-        guard Set(keys).isSubset(of: Set(capturedKeys)),
+        guard Set(keys.filter { $0 != DayListHistoryStore.key }).isSubset(of: Set(capturedKeys)),
         Set(capturedKeys).isSubset(of: Set(keys + ["Plenact.LibraryImportant.v1"])),
         Set(previous.keys).isSubset(of: Set(capturedKeys))
         else

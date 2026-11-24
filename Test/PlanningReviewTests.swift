@@ -2023,3 +2023,125 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(purple.blue, 206.0 / 255, accuracy: 0.000001)
     }
 }
+
+
+extension PlenactBoardDocumentTests
+{
+    func testDayHistoryPersistsDeletionAndRestoresContentPositionAndBookmark() throws
+    {
+        let suite = "Plenact.DayHistoryTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let date = Date.now
+        var week = DatedPlanningWeek.make(for: date)
+        let dayKey = PlanningDate.key(date)
+        let listID = try XCTUnwrap(week.dayListIDs[dayKey])
+        let index = try XCTUnwrap(week.collection.lists.firstIndex(where: { $0.id == listID }))
+        let list = week.collection.lists[index]
+        let first = list.makeItem(id: 101, title: "First")
+        var deleted = list.makeItem(id: 102, title: "Retained note", presentationOverride: .note)
+        deleted.attachments = [KanbanAttachment(fileName: "day-history-synthetic.txt")]
+        let last = list.makeItem(id: 103, title: "Last")
+        week.collection.lists[index].cards = [first, deleted, last]
+        week.collection.savedCardIDs = [deleted.id]
+        var document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        try PlanningCalendarStore.save(document, to: defaults)
+        XCTAssertTrue(try DayListHistoryStore.load(from: defaults).isEmpty)
+
+        document.weeks[0].collection.lists[index].cards.remove(at: 1)
+        document.weeks[0].collection.savedCardIDs = []
+        try PlanningCalendarStore.save(document, to: defaults)
+        let reopened = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let deletion = try XCTUnwrap(DayListHistoryStore.load(from: reopened).first(where: { $0.action == "Deleted" }))
+        XCTAssertEqual(deletion.ownerID, week.id)
+        XCTAssertEqual(deletion.dayKey, dayKey)
+        XCTAssertEqual(deletion.deletedCard?.attachments, deleted.attachments)
+        XCTAssertEqual(try DayListHistoryStore.retainedFiles(from: reopened), ["day-history-synthetic.txt"])
+        let (restored, bookmarks) = try XCTUnwrap(deletion.restoring(in: document.weeks[0].collection.lists, bookmarks: []))
+        XCTAssertEqual(restored[index].cards.map(\.id), [101, 102, 103])
+        XCTAssertEqual(bookmarks, [102])
+        XCTAssertNil(deletion.restoring(in: restored, bookmarks: bookmarks))
+        document.weeks[0].collection.lists = restored
+        document.weeks[0].collection.savedCardIDs = bookmarks
+        try PlanningCalendarStore.save(document, to: reopened)
+        let history = try DayListHistoryStore.load(from: reopened)
+        XCTAssertTrue(history.contains(where: { $0.action == "Restored" }))
+        XCTAssertNotNil(history.first(where: { $0.id == deletion.id })?.restoredAt)
+        XCTAssertTrue(try DayListHistoryStore.retainedFiles(from: reopened).isEmpty)
+        XCTAssertTrue(try DayListHistoryStore.load(from: reopened, now: .now.addingTimeInterval(31 * 86400)).isEmpty)
+    }
+
+    func testDayHistoryTracksEditsAndMovesWithoutTreatingMovesAsDeletions() throws
+    {
+        let suite = "Plenact.DayHistoryTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var week = DatedPlanningWeek.make(for: .now)
+        let ids = week.dayListIDs.sorted(by: { $0.key < $1.key }).prefix(2).map(\.value)
+        let first = try XCTUnwrap(week.collection.lists.firstIndex(where: { $0.id == ids[0] }))
+        let second = try XCTUnwrap(week.collection.lists.firstIndex(where: { $0.id == ids[1] }))
+        let card = week.collection.lists[first].makeItem(id: 201, title: "A task")
+        week.collection.lists[first].cards = [card]
+        var document = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        try PlanningCalendarStore.save(document, to: defaults)
+        document.weeks[0].collection.lists[first].cards[0].isTitleChecked = true
+        try PlanningCalendarStore.save(document, to: defaults)
+        let moved = document.weeks[0].collection.lists[first].cards.removeFirst()
+        document.weeks[0].collection.lists[second].cards.append(moved)
+        try PlanningCalendarStore.save(document, to: defaults)
+        let history = try DayListHistoryStore.load(from: defaults)
+        XCTAssertTrue(history.contains(where: { $0.action == "Completed" }))
+        XCTAssertTrue(history.contains(where: { $0.action == "Moved out" }))
+        XCTAssertTrue(history.contains(where: { $0.action == "Moved in" }))
+        XCTAssertFalse(history.contains(where: { $0.deletedCard != nil }))
+        XCTAssertTrue(history.allSatisfy { $0.ownerID == week.id })
+    }
+
+    @MainActor
+    func testDayHistoryRollsBackWithFailedCalendarTransaction() throws
+    {
+        let suite = "Plenact.DayHistoryTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var week = DatedPlanningWeek.make(for: .now)
+        let listID = try XCTUnwrap(week.dayListIDs.values.first)
+        let index = try XCTUnwrap(week.collection.lists.firstIndex(where: { $0.id == listID }))
+        week.collection.lists[index].cards = [week.collection.lists[index].makeItem(id: 301, title: "Keep me")]
+        let original = PlanningCalendarDocument(currentWeekKey: week.startKey, weeks: [week])
+        try PlanningCalendarStore.save(original, to: defaults)
+        var deleted = original
+        deleted.weeks[0].collection.lists[index].cards = []
+        XCTAssertThrowsError(try DailyReviewTransaction.perform(in: defaults)
+        {
+            try PlanningCalendarStore.save(deleted, to: defaults)
+            throw CocoaError(.fileWriteUnknown)
+        })
+        XCTAssertEqual(try PlanningCalendarStore.load(from: defaults), original)
+        XCTAssertTrue(try DayListHistoryStore.load(from: defaults).isEmpty)
+        defaults.set(Data("invalid history".utf8), forKey: DayListHistoryStore.key)
+        XCTAssertThrowsError(try PlanningCalendarStore.save(deleted, to: defaults))
+        XCTAssertEqual(try PlanningCalendarStore.load(from: defaults), original)
+    }
+}
+
+
+extension PlenactBoardDocumentTests
+{
+    @MainActor
+    func testDayHistoryDoesNotBreakRecoveryOfOlderTransactionJournals() throws
+    {
+        let suite = "Plenact.DayHistoryLegacyTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let data = try DailyReviewTransaction.begin(in: defaults)
+        var journal = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
+        journal["keys"] = DailyReviewTransaction.keys.filter { $0 != DayListHistoryStore.key }
+        var previous = try XCTUnwrap(journal["previous"] as? [String: Any])
+        previous.removeValue(forKey: DayListHistoryStore.key)
+        journal["previous"] = previous
+        defaults.set(try PropertyListSerialization.data(fromPropertyList: journal, format: .binary, options: 0),
+                     forKey: DailyReviewTransaction.key)
+        XCTAssertNoThrow(try DailyReviewTransaction.recover(in: defaults))
+        XCTAssertNil(defaults.data(forKey: DailyReviewTransaction.key))
+    }
+}

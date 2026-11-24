@@ -29,6 +29,7 @@ struct TodayListDetailView: View
         isDaySummaryDismissalPending ?? autoDismissesDaySummary
     }
     @State private var isDayVisible = false
+    @State private var showsDayHistory = false
     @State private var isDayKeyboardVisible = false
     @State private var isDayListInMotion = false
     var autoDismissesDaySummary = false
@@ -536,6 +537,19 @@ struct TodayListDetailView: View
             else
             {
                 dayContent
+            }
+        }
+        .sheet(isPresented: $showsDayHistory)
+        {
+            if let day = representedDate,
+               let owner = planningCalendarAccess?.document.week(for: day)?.id ?? dayMovementSource
+            {
+                DayListHistorySheet(ownerID: owner, dayKey: PlanningDate.key(day),
+                                    title: focusedList?.title ?? "Day", onRestore: restoreDayHistory)
+            }
+            else
+            {
+                ContentUnavailableView("History unavailable", systemImage: "clock.arrow.circlepath")
             }
         }
         .sheet(isPresented: $showsWeekSelector)
@@ -1451,6 +1465,11 @@ struct TodayListDetailView: View
                         .accessibilityLabel("Open this week")
                         Menu
                         {
+                            if representedDate != nil
+                            {
+                                Button("History", systemImage: "clock.arrow.circlepath") { showsDayHistory = true }
+                                Divider()
+                            }
                             Picker(
                                 "View as",
                                 selection: Binding(
@@ -1931,6 +1950,23 @@ struct TodayListDetailView: View
         guard let focusedList else { return }
         swipeUndo.delete(card, from: focusedList, bookmarks: savedCardIDs, reduceMotion: reduceSummaryMotion,
                          cleanMedia: planningCalendarAccess?.cleanDeletedMedia, save: deleteCard)
+    }
+
+    private func restoreDayHistory(_ entry: DayListHistoryStore.Entry) -> Bool
+    {
+        guard let day = representedDate,
+              let owner = planningCalendarAccess?.document.week(for: day)?.id ?? dayMovementSource,
+              entry.ownerID == owner, entry.dayKey == PlanningDate.key(day), entry.listID == listID,
+              Date.now.timeIntervalSince(entry.timestamp) < DayListHistoryStore.retention,
+              let (snapshot, bookmarks) = entry.restoring(in: lists + reservedLists, bookmarks: savedCardIDs),
+              let restore = onRestoreDeletedCard
+        else { return false }
+        let media = (entry.deletedCard?.attachments ?? []).flatMap(\.storedFileNames)
+        guard media.allSatisfy({ name in
+            guard let url = CardAttachmentStore.fileURL(for: KanbanAttachment(fileName: name)) else { return false }
+            return FileManager.default.fileExists(atPath: url.path)
+        }) else { return false }
+        return restore(snapshot, bookmarks)
     }
 
     /// @fcn        TodayListDetailView.restoreSwipeDeletion(_:)

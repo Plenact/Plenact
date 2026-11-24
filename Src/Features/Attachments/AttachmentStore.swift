@@ -229,6 +229,7 @@ enum CardAttachmentStore
     {
         let retained =                                                  /* State retained for recovery */
             retained.union(try PlanningRoutineStore.retainedFiles())
+                .union(try DayListHistoryStore.retainedFiles())
 
         undoMediaLock.lock()
         defer { undoMediaLock.unlock() }
@@ -416,7 +417,9 @@ enum CardAttachmentStore
             return
         }
 
-        let fileNames = fileNames.union(templateFiles)          /* File names */
+        // Unreadable recovery storage must never cause recoverable media to be erased.
+        guard let historyFiles = try? DayListHistoryStore.retainedFiles() else { return }
+        let fileNames = fileNames.union(templateFiles).union(historyFiles)          /* File names */
 
         guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         else

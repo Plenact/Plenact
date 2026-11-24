@@ -185,6 +185,7 @@ struct TodayFocusSection: View
     let onToggleCard:    (Int)        -> Void           /* Toggle local completion state           */
     let onOpenCard:      (KanbanCard) -> Void           /* Open card callback                      */
     let onDeleteCard:    (Int)        -> Bool           /* Delete card callback                    */
+    var onSwipeDeleteCard: ((KanbanCard) -> Void)? = nil
     let onOpenTodayList: ()           -> Void           /* Open the focused single-list Today view */
     var onOpenTodayWeek: (() -> Void)? = nil
 
@@ -677,7 +678,14 @@ struct TodayFocusSection: View
                 {
                     Button
                     {
-                        deletingCard = card
+                        if let onSwipeDeleteCard
+                        {
+                            onSwipeDeleteCard(card)
+                        }
+                        else
+                        {
+                            deletingCard = card
+                        }
                     }
                     label:
                     {

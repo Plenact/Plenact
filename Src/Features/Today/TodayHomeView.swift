@@ -134,6 +134,7 @@ struct TodayHomeView: View
         Data()
     @Environment(\.workspaceBottomBarHeight) private var focusToolbarHeight             /* Focus toolbar height                 */
     @State private var focusCompletionUndo = FocusCompletionUndoHistory()
+    @State private var focusDeletionUndo = ListSwipeUndo()
     @State private var bookmarkNoticeRevision          = UUID()                         /* Bookmark notice revision             */
     @State private var focusDate                       = Date.now                       /* Focus date                           */
     @State private var perspectiveSectionTop:  CGFloat = 0                              /* Perspective section top              */
@@ -291,6 +292,27 @@ struct TodayHomeView: View
     ///
     /// @return     (some View) padded header with noninteractive background and fade
     /// @post       Rendering does not change scroll or navigation state
+    private func swipeDeleteFocusCard(_ card: KanbanCard)
+    {
+        guard let list = calendarDayList(focusDate, in: lists),
+              list.cards.contains(where: { $0.id == card.id && $0.createdAt == card.createdAt })
+        else { return }
+        removedFocusBookmark = nil
+        focusCompletionUndo.expire()
+        focusDeletionUndo.delete(card, from: list, bookmarks: savedCardIDs,
+                                 reduceMotion: reduceWelcomeMotion,
+                                 cleanMedia: planningCalendarAccess?.cleanDeletedMedia, save: onDeleteCard)
+    }
+
+    private func restoreFocusDeletion(_ deletion: ListSwipeUndo.Deletion) -> Bool
+    {
+        guard let restore = onRestoreDeletedCard,
+              let (snapshot, bookmarks) = deletion.restoring(in: lists + archivedLists, bookmarks: savedCardIDs)
+        else { return false }
+        return restore(snapshot, bookmarks)
+    }
+
+
     ///
     private var todayHeaderPanel: some View     /* Today header panel                   */
     {                                           /* Styled container for Today's heading */
@@ -954,6 +976,7 @@ struct TodayHomeView: View
                                 openedFocusCard = card
                             },
                             onDeleteCard: onDeleteCard,
+                            onSwipeDeleteCard: swipeDeleteFocusCard,
                             onOpenTodayList:
                             {
                                 focusedListID = focus?.id
@@ -1112,6 +1135,9 @@ struct TodayHomeView: View
                 _, _ in
                 welcomeCue.cancel()
             }
+            .modifier(ListSwipeUndoBanner(history: $focusDeletionUndo,
+                                          accessibilityID: "today.focus.delete.undo",
+                                          clearsWorkspaceToolbar: true, restore: restoreFocusDeletion))
             .scrollBounceBehavior(.always, axes: .vertical)
             .scrollIndicators(.hidden)
             .onChange(of: planningCalendarAccess?.document.currentWeekKey)
@@ -1121,6 +1147,7 @@ struct TodayHomeView: View
                 removedFocusBookmark = nil
                 bookmarkNoticeRevision = UUID()
                 focusCompletionUndo.expire()
+                focusDeletionUndo.expire()
             }
             .task(id: focusCompletionUndo.entries.last?.token)
             {
@@ -1154,6 +1181,7 @@ struct TodayHomeView: View
                 removedFocusBookmark = nil
                 bookmarkNoticeRevision = UUID()
                 focusCompletionUndo.expire()
+                focusDeletionUndo.expire()
             }
             .background
             {

@@ -1195,3 +1195,88 @@ extension PlenactBoardDocumentTests
         )
     }
 }
+
+
+extension PlenactBoardDocumentTests
+{
+    @MainActor
+    func testNewCardFiveMinutePickerKeepsVisibleDateAndTimeFields() async throws
+    {
+        let host = UIHostingController(rootView:
+            HStack
+            {
+                Text("Start")
+                Spacer()
+                FiveMinuteDatePicker(selection: .constant(.now), label: "Start").fixedSize()
+            }.padding())
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+        try await Task.sleep(for: .milliseconds(300))
+        host.view.layoutIfNeeded()
+        func findPicker(in view: UIView) -> UIDatePicker?
+        {
+            if let picker = view as? UIDatePicker { return picker }
+            return view.subviews.compactMap { findPicker(in: $0) }.first
+        }
+        let picker = try XCTUnwrap(findPicker(in: host.view))
+        XCTAssertGreaterThanOrEqual(picker.bounds.width, 220)
+        XCTAssertGreaterThanOrEqual(picker.bounds.height, 36)
+        XCTAssertEqual(picker.minuteInterval, 5)
+        XCTAssertEqual(picker.datePickerMode, .dateAndTime)
+    }
+}
+
+
+extension PlenactBoardDocumentTests
+{
+    @MainActor
+    func testCardTimeFieldWheelUsesFiveMinuteStepsAndKeepsSelectedDay() async throws
+    {
+        let selected = Date(timeIntervalSince1970: 1_795_600_800)
+        var saved = selected
+        let host = UIHostingController(rootView:
+            FiveMinuteDatePicker(selection: Binding(get: { saved }, set: { saved = $0 }),
+                                 label: "Time", mode: .time, style: .wheels)
+                .environment(\.locale, Locale(identifier: "en_US_POSIX")))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+        }
+        try await Task.sleep(for: .milliseconds(300))
+        host.view.layoutIfNeeded()
+        func findPicker(in view: UIView) -> UIDatePicker?
+        {
+            if let picker = view as? UIDatePicker { return picker }
+            return view.subviews.compactMap { findPicker(in: $0) }.first
+        }
+        let picker = try XCTUnwrap(findPicker(in: host.view))
+        XCTAssertEqual(picker.minuteInterval, 5)
+        XCTAssertEqual(picker.datePickerMode, .time)
+        XCTAssertEqual(picker.preferredDatePickerStyle, .wheels)
+        XCTAssertGreaterThan(picker.bounds.width, 150)
+        XCTAssertGreaterThanOrEqual(picker.bounds.height, 180)
+        XCTAssertEqual(saved, selected)
+        picker.setDate(selected.addingTimeInterval(300), animated: false)
+        picker.sendActions(for: .valueChanged)
+        XCTAssertEqual(saved, picker.date)
+        XCTAssertTrue(Calendar.current.isDate(saved, inSameDayAs: selected))
+    }
+}

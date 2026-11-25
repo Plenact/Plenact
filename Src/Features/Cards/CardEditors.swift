@@ -429,8 +429,11 @@ struct CardDateEditorSheet: View
 
                     if kind.includesTime
                     {
-                        DatePicker("Time", selection: $date, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(.wheel)
+                        HStack
+                        {
+                            Text("Time")
+                            FiveMinuteDatePicker(selection: $date, label: "Time", mode: .time, style: .wheels)
+                        }
                         .environment(\.locale, Locale(identifier: "en_US_POSIX"))
                         .frame(maxHeight: 180)
                     }
@@ -1105,5 +1108,60 @@ struct CardEditHistorySheet: View
             guard let text = try? decoder.decode(String.self, from: value) else { return "Unavailable" }
             return text.isEmpty ? "Empty" : text
         }
+    }
+}
+
+
+/// Native five-minute date/time picker with compact and wheel presentations.
+struct FiveMinuteDatePicker: UIViewRepresentable
+{
+    @Binding var selection: Date
+    let label: String
+    var mode: UIDatePicker.Mode = .dateAndTime
+    var style: UIDatePickerStyle = .compact
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+    @Environment(\.timeZone) private var timeZone
+
+    func makeCoordinator() -> Coordinator { Coordinator(selection: $selection) }
+
+    func makeUIView(context: Context) -> UIDatePicker
+    {
+        let picker = UIDatePicker()
+        picker.datePickerMode = mode
+        picker.preferredDatePickerStyle = style
+        picker.minuteInterval = 5
+        picker.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
+        picker.setContentHuggingPriority(.required, for: .horizontal)
+        return picker
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIDatePicker, context: Context) -> CGSize?
+    {
+        if style == .wheels
+        {
+            return CGSize(width: proposal.width ?? 320, height: 180)
+        }
+        // Compact UIKit pickers can report no intrinsic width before their first layout.
+        // Supply a usable ideal size instead of letting SwiftUI collapse them to a tiny pill.
+        let fitting = uiView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        return CGSize(width: max(220, fitting.width), height: max(36, fitting.height))
+    }
+
+    func updateUIView(_ picker: UIDatePicker, context: Context)
+    {
+        context.coordinator.selection = $selection
+        picker.calendar = calendar
+        picker.locale = locale
+        picker.timeZone = timeZone
+        picker.accessibilityLabel = label
+        if picker.date != selection { picker.setDate(selection, animated: false) }
+    }
+
+    final class Coordinator: NSObject
+    {
+        var selection: Binding<Date>
+        init(selection: Binding<Date>) { self.selection = selection }
+        @objc func changed(_ picker: UIDatePicker) { selection.wrappedValue = picker.date }
     }
 }

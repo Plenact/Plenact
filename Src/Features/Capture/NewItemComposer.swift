@@ -237,17 +237,39 @@ struct QuickNoteComposer: View
             Toggle("Start date", isOn: $hasStartDate)
             if hasStartDate
             {
-                DatePicker(
-                    "Start", selection: $startDate,
-                    displayedComponents: includesDateTime ? [.date, .hourAndMinute] : [.date])
+                if includesDateTime
+                {
+                    HStack
+                    {
+                        Text("Start")
+                        Spacer()
+                        CreationFiveMinuteDatePicker(selection: $startDate, label: "Start")
+                            .fixedSize()
+                    }
+                }
+                else
+                {
+                    DatePicker("Start", selection: $startDate, displayedComponents: [.date])
+                }
             }
 
             Toggle("Stop date", isOn: $hasStopDate)
             if hasStopDate
             {
-                DatePicker(
-                    "Stop", selection: $stopDate,
-                    displayedComponents: includesDateTime ? [.date, .hourAndMinute] : [.date])
+                if includesDateTime
+                {
+                    HStack
+                    {
+                        Text("Stop")
+                        Spacer()
+                        CreationFiveMinuteDatePicker(selection: $stopDate, label: "Stop")
+                            .fixedSize()
+                    }
+                }
+                else
+                {
+                    DatePicker("Stop", selection: $stopDate, displayedComponents: [.date])
+                }
             }
 
             Toggle("Include times", isOn: $includesDateTime)
@@ -1272,5 +1294,46 @@ private struct ComposerTitleSwipeArea: UIViewRepresentable
             handledSwipe = true
             onSwipe?(translation.y < 0)
         }
+    }
+}
+
+
+/// Creation-scoped compact date/time control; other date editors retain their existing precision.
+private struct CreationFiveMinuteDatePicker: UIViewRepresentable
+{
+    @Binding var selection: Date
+    let label: String
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+    @Environment(\.timeZone) private var timeZone
+
+    func makeCoordinator() -> Coordinator { Coordinator(selection: $selection) }
+
+    func makeUIView(context: Context) -> UIDatePicker
+    {
+        let picker = UIDatePicker()
+        picker.datePickerMode = .dateAndTime
+        picker.preferredDatePickerStyle = .compact
+        picker.minuteInterval = 5
+        picker.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .valueChanged)
+        picker.setContentHuggingPriority(.required, for: .horizontal)
+        return picker
+    }
+
+    func updateUIView(_ picker: UIDatePicker, context: Context)
+    {
+        context.coordinator.selection = $selection
+        picker.calendar = calendar
+        picker.locale = locale
+        picker.timeZone = timeZone
+        picker.accessibilityLabel = label
+        if picker.date != selection { picker.setDate(selection, animated: false) }
+    }
+
+    final class Coordinator: NSObject
+    {
+        var selection: Binding<Date>
+        init(selection: Binding<Date>) { self.selection = selection }
+        @objc func changed(_ picker: UIDatePicker) { selection.wrappedValue = picker.date }
     }
 }

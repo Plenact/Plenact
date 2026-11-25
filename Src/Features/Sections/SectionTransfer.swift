@@ -275,7 +275,7 @@ enum SectionTransfer
             }
 
             return KanbanChecklist(
-                id: sourceChecklist.id, title: sourceChecklist.title, items: items,
+                id: sourceChecklist.id, title: sourceChecklist.title, subtitle: sourceChecklist.subtitle, showsCompletedCount: sourceChecklist.showsCompletedCount, items: items,
                 completedItemIndices: sourceChecklist.completedItemIndices)
         }
 

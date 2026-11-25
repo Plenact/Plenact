@@ -42,6 +42,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
 
             for index in cards.indices
             {
+                cards[index] = ChecklistCountCreationDefaults.card(
+                    cards[index], parent: appearance?.showsChecklistCompletedCount ?? true)
                 if let old = previous[cards[index].id]
                 {
                     cards[index] = cards[index].recordingEdits(from: old)
@@ -292,7 +294,7 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         )
 
         NewCardAppearanceDefaults.apply(to: &card, preferences: creationPreferences, origin: origin)
-        return card
+        return ChecklistCountCreationDefaults.card(card, parent: appearance?.showsChecklistCompletedCount ?? true)
     }
 
 
@@ -329,7 +331,8 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         title:               String,
         cards:               [KanbanCard],
         archivedCards:       [KanbanCard]     = [],
-        newItemPresentation: ItemPresentation = .card
+        newItemPresentation: ItemPresentation = .card,
+        creationPreferences: LocalProfilePreferences = PlanPreferencesStore.load()
     )
     {
         self.id = id
@@ -337,6 +340,11 @@ struct KanbanList: Identifiable, Hashable, Codable, Sendable
         self.cards = cards
         self.archivedCards = archivedCards
         self.defaultItemPresentation = newItemPresentation == .card ? nil : newItemPresentation
+        var initialAppearance = ItemAppearance()
+        initialAppearance.showsChecklistCompletedCount = creationPreferences.showsChecklistCompletedCount ?? true
+        self.appearance = initialAppearance
+        self.cards = cards.map { ChecklistCountCreationDefaults.card($0, parent: initialAppearance.showsChecklistCompletedCount ?? true) }
+        self.archivedCards = archivedCards.map { ChecklistCountCreationDefaults.card($0, parent: initialAppearance.showsChecklistCompletedCount ?? true) }
     }
 
 

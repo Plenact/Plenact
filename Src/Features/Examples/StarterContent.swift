@@ -168,7 +168,7 @@ enum SampleData
         ]
         let enrichedFirstChecklist = KanbanChecklist(           /* Demonstration checklist */
             id: firstChecklist.id,
-            title: firstChecklist.title,
+            title: firstChecklist.title, subtitle: firstChecklist.subtitle, showsCompletedCount: firstChecklist.showsCompletedCount,
             items: firstChecklist.items + [linkedAction] + detailActions
         )
 

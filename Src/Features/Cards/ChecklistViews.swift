@@ -111,7 +111,7 @@ struct ChecklistActionDetailView: View
 
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
-            title: checklist.title,
+            title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
             items: items
         )
     }
@@ -168,6 +168,10 @@ struct ChecklistActionDetailView: View
                     checklist in
                     Section(checklist.title)
                     {
+                        if let subtitle = checklist.subtitle
+                        {
+                            Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                        }
                         ForEach(checklist.items)
                         {
                             item in
@@ -281,6 +285,7 @@ struct ChecklistActionDetailView: View
 struct ChecklistBlock: View
 {
     let checklist: KanbanChecklist                                                                      /* The checklist data rendered by the block                                */
+    var onChangeCompletedCount: ((Bool) -> Void)? = nil
     let linkedCardsByID:                                                                                /* Linked cards by ID                                                      */
     [Int: KanbanCard]                                                                                   /* Linked cards keyed by stable ID                                         */
     let onDelete:     ()       -> Void                                                                  /* The action invoked when the checklist is deleted                        */
@@ -292,6 +297,7 @@ struct ChecklistBlock: View
     let onOpenActionDetail:                                                                             /* Open action detail callback                                             */
     (UUID)                         -> Void                                                              /* The action invoked for reduced detail                                   */
     let onRename:         (String) -> Void                                                              /* The action invoked when the checklist title is renamed                  */
+    var onEditHeading: ((String, String) -> Void)? = nil
     let onToggleAllItems: ()       -> Void                                                              /* The action invoked when all items are toggled                           */
     let onMove:                                                                                         /* Move the selected item                                                  */
     (ChecklistMoveDirection) -> Void                                                                    /* The action invoked when the checklist is moved                          */
@@ -308,6 +314,7 @@ struct ChecklistBlock: View
     @State private var newItemText        = ""          /* Pending checklist item text                                     */
     @State private var confirmsDeletion   = false       /* Confirms deletion                                               */
     @State private var isRenaming         = false       /* Whether the checklist title is currently being renamed          */
+    @State private var subtitleDraft      = ""
     @State private var titleDraft         = ""          /* The draft text for the checklist title being edited             */
     @State private var hideCompletedItems = false       /* Checklist completed-item filter                                 */
     @State private var isCollapsed        = false       /* Whether the checklist's items are currently collapsed from view */
@@ -557,22 +564,44 @@ struct ChecklistBlock: View
         {
             HStack
             {
-                Text(checklist.title)
-                .font(.subheadline.weight(.semibold))
-                .contentShape(Rectangle())
+                Button
+                {
+                    titleDraft = checklist.title
+                    subtitleDraft = checklist.subtitle ?? ""
+                    isRenaming = true
+                }
+                label:
+                {
+                    VStack(alignment: .leading, spacing: 3)
+                    {
+                        Text(checklist.title).font(.subheadline.weight(.semibold))
+                        if let subtitle = checklist.subtitle
+                        {
+                            Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("checklist.editHeading")
                 .onLongPressGesture(minimumDuration: 0.5)
                 {
                     titleDraft = checklist.title
+                    subtitleDraft = checklist.subtitle ?? ""
                     isRenaming = true
                 }
 
-                .accessibilityHint("Touch and hold to rename this checklist")
+                .accessibilityHint("Edit this checklist title and subtitle")
 
                 Spacer()
 
-                Text("\(checklist.completed)/\(checklist.items.count)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                if checklist.showsCompletedCount ?? true
+                {
+                    Text("\(checklist.completed)/\(checklist.items.count)")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("checklist.completedCount")
+                }
 
                 Button
                 {
@@ -596,6 +625,15 @@ struct ChecklistBlock: View
                 Menu
                 {
                     Toggle("Hide Completed", isOn: $hideCompletedItems)
+                    if let onChangeCompletedCount
+                    {
+                        Button((checklist.showsCompletedCount ?? true)
+                               ? "Hide completed count" : "Show completed count")
+                        {
+                            onChangeCompletedCount(!(checklist.showsCompletedCount ?? true))
+                        }
+                    }
+
 
                     Button
                     {
@@ -645,6 +683,7 @@ struct ChecklistBlock: View
                     Button
                     {
                         titleDraft = checklist.title
+                        subtitleDraft = checklist.subtitle ?? ""
                         isRenaming = true
                     }
                     label:
@@ -768,23 +807,29 @@ struct ChecklistBlock: View
                 onChangeType?(updated) ?? false
             }
         }
-        .alert("Rename Checklist", isPresented: $isRenaming)
+        .alert("Edit Checklist", isPresented: $isRenaming)
         {
             TextField("Checklist title", text: $titleDraft).textInputAutocapitalization(.sentences)
+            if onEditHeading != nil
+            {
+                TextField("Subtitle (optional)", text: $subtitleDraft).textInputAutocapitalization(.sentences)
+                    .accessibilityIdentifier("checklist.subtitle")
+            }
             Button("Cancel", role: .cancel)
             {
             }
 
             Button("Save")
             {
-                onRename(titleDraft)
+                if let onEditHeading { onEditHeading(titleDraft, subtitleDraft) }
+                else { onRename(titleDraft) }
             }
 
             .disabled(titleDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         message:
         {
-            Text("Enter a name for this checklist.")
+            Text("Enter a title and an optional subtitle for this checklist.")
         }
     }
 }

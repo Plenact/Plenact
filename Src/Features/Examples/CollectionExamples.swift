@@ -589,7 +589,7 @@ enum PersonalBoardExample: String, CaseIterable, Identifiable
                 board.lists[listIndex].cards[source].checklists[0]
 
             board.lists[listIndex].cards[source].checklists[0] = KanbanChecklist(
-                id: checklist.id, title: checklist.title, items: checklist.items + [item])
+                id: checklist.id, title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount, items: checklist.items + [item])
         }
 
         var archived = KanbanCard(                                                                      /* Archived records or state */

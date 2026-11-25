@@ -47,7 +47,7 @@ enum DailyReviewTransaction
 
         var previous: [String: Any] = [:]       /* Previous value for comparison */
 
-        guard Set(additionalKeys).isSubset(of: ["Plenact.LibraryImportant.v1"]) else
+        guard Set(additionalKeys).isSubset(of: ["Plenact.LibraryImportant.v1", PlanningRoutineStore.key]) else
         {
             throw CocoaError(.fileWriteUnknown)
         }
@@ -103,7 +103,7 @@ enum DailyReviewTransaction
         let capturedKeys = snapshot["keys"] as? [String] ?? keys        /* Captured keys */
 
         guard Set(keys.filter { $0 != DayListHistoryStore.key }).isSubset(of: Set(capturedKeys)),
-        Set(capturedKeys).isSubset(of: Set(keys + ["Plenact.LibraryImportant.v1"])),
+        Set(capturedKeys).isSubset(of: Set(keys + ["Plenact.LibraryImportant.v1", PlanningRoutineStore.key])),
         Set(previous.keys).isSubset(of: Set(capturedKeys))
         else
         {

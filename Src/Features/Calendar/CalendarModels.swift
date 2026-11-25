@@ -708,7 +708,7 @@ extension PlanningCalendarDocument
                         }
 
                         return KanbanChecklist(
-                            id: checklist.id, title: checklist.title, items: items,
+                            id: checklist.id, title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount, items: items,
                             completedItemIndices: checklist.completedItemIndices)
                     }
 
@@ -847,7 +847,7 @@ extension PlanningCalendarDocument
                     }
 
                     return KanbanChecklist(
-                        id: checklist.id, title: checklist.title, items: items,
+                        id: checklist.id, title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount, items: items,
                         completedItemIndices: checklist.completedItemIndices)
                 }
 

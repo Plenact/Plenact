@@ -150,6 +150,7 @@ struct AccountSettingsView: View
     @State private var todayFocusIncludesImportant:  Bool                               /* Today focus includes important    */
     @State private var todayFocusIncludesBookmarked: Bool                               /* Today focus includes bookmarked   */
     @State private var preferredMapsApp:             PreferredMapsApp                   /* Preferred maps app                */
+    @State private var showsChecklistCompletedCount: Bool?
     @State private var keepsDayListsInTimeOrder:     Bool                               /* Chronological Day List ordering   */
     @State private var todayFocusOrder:              TodayFocusOrder                    /* Today focus order                 */
     @State private var todayFocusGroupsBySection:    Bool                               /* Today focus groups by section     */
@@ -244,6 +245,7 @@ struct AccountSettingsView: View
         _todayFocusIncludesBookmarked = State(initialValue: preferences.todayFocusIncludesBookmarked)
         _preferredMapsApp = State(initialValue: preferences.preferredMapsApp)
         _keepsDayListsInTimeOrder = State(initialValue: preferences.keepsDayListsInTimeOrder)
+        _showsChecklistCompletedCount = State(initialValue: preferences.showsChecklistCompletedCount)
         _todayFocusOrder = State(initialValue: preferences.todayFocusOrder)
         _todayFocusGroupsBySection = State(initialValue: preferences.todayFocusGroupsBySection)
         _todayFocusHidesCompleted = State(initialValue: preferences.todayFocusHidesCompleted)
@@ -323,7 +325,8 @@ struct AccountSettingsView: View
                 enablesLowerCornerBack: enablesLowerCornerBack,
                 importanceStarStyle: importanceStarStyle,
                 keepsDayListsInTimeOrder: keepsDayListsInTimeOrder,
-                preferredMapsApp: preferredMapsApp
+                preferredMapsApp: preferredMapsApp,
+                showsChecklistCompletedCount: showsChecklistCompletedCount
             )
         )
 

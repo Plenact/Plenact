@@ -485,6 +485,13 @@ struct AppRootView: View
 
             SavedCardPersistence.save(savedCardIDs)
 
+            do { try captureChecklistCountCreationDefaults() }
+            catch
+            {
+                workspaceRecoveryError = "Could not preserve checklist count settings. Your saved data has been retained."
+                return
+            }
+
             launchProgress.stage = .welcome
 
             await Task.yield()
@@ -1306,5 +1313,51 @@ struct AppNavigationSurface<Content: View>: View
     var body: some View         /* App Navigation Surface layout */
     {
         content()
+    }
+}
+
+
+extension AppRootView
+{
+    /// Upgrade former inherited values once; fully captured owners pass through unchanged afterward.
+    @MainActor
+    private func captureChecklistCountCreationDefaults() throws
+    {
+        let app = PlanPreferencesStore.load().showsChecklistCompletedCount ?? true
+        let capturedLists = ChecklistCountCreationDefaults.lists(lists, parent: app)
+        var capturedCalendar = calendarDocument
+        if var document = capturedCalendar
+        {
+            for index in document.weeks.indices
+            {
+                document.weeks[index].collection.lists = ChecklistCountCreationDefaults.lists(
+                    document.weeks[index].collection.lists, parent: app)
+            }
+            capturedCalendar = document
+        }
+        let capturedCollections = collections.map { original -> PersonalCollection in
+            var owner = original
+            owner.lists = ChecklistCountCreationDefaults.lists(owner.lists, parent: app)
+            return owner
+        }
+        let templateBaseline = try PlanningRoutineStore.load()
+        var templates = templateBaseline
+        for index in templates.templates.indices
+        {
+            templates.templates[index].collection.lists = ChecklistCountCreationDefaults.lists(
+                templates.templates[index].collection.lists, parent: app)
+        }
+        guard capturedLists != lists || capturedCalendar != calendarDocument
+            || capturedCollections != collections || templates != templateBaseline else { return }
+        try DailyReviewTransaction.perform(additionalKeys: [PlanningRoutineStore.key])
+        {
+            if let document = capturedCalendar, document != calendarDocument { try PlanningCalendarStore.save(document) }
+            if capturedLists != lists { try KanbanBoardPersistence.saveListsChecked(capturedLists) }
+            if capturedCollections != collections { try PersonalCollectionStore.saveChecked(capturedCollections) }
+            if templates != templateBaseline { try PlanningRoutineStore.save(templates, baseline: templateBaseline) }
+        }
+        lists = capturedLists
+        calendarDocument = capturedCalendar
+        collections = capturedCollections
     }
 }

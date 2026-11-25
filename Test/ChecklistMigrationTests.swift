@@ -504,3 +504,159 @@ final class ChecklistMigrationTests: XCTestCase
         XCTAssertEqual(decoded.members[0].displayName, "Jim")
     }
 }
+
+
+extension ChecklistMigrationTests
+{
+    func testChecklistSubtitleRoundTripAndLegacyCompatibility() throws
+    {
+        let id = UUID()
+        let legacy: [String: Any] = ["id": id.uuidString, "title": "Packing", "items": ["Passport"]]
+        let old = try JSONDecoder().decode(KanbanChecklist.self,
+            from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertNil(old.subtitle)
+        let checklist = KanbanChecklist(id: id, title: old.title, subtitle: "  Before leaving home  ", items: old.items)
+        let reopened = try JSONDecoder().decode(KanbanChecklist.self, from: JSONEncoder().encode(checklist))
+        XCTAssertEqual(reopened.subtitle, "Before leaving home")
+        XCTAssertEqual(reopened.items, old.items)
+        XCTAssertEqual(reopened.id, id)
+        let cleared = KanbanChecklist(id: id, title: checklist.title, subtitle: " \n ", items: checklist.items)
+        XCTAssertNil(cleared.subtitle)
+        let raw = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(cleared)) as? [String: Any])
+        XCTAssertNil(raw["subtitle"])
+    }
+
+    func testChecklistSubtitlesSurviveNestedCheckmarkResetAndRestore() throws
+    {
+        let inner = KanbanChecklist(title: "Inner", subtitle: "Nested context", items: ["A"], completed: 1)
+        let detail = KanbanChecklistActionDetail(description: "Details", checklists: [inner], comments: [])
+        let checklist = KanbanChecklist(title: "Outer", subtitle: "Whole checklist context", showsCompletedCount: false,
+            items: [KanbanChecklistItem(title: "Step", isCompleted: true, content: .actionDetail(detail))])
+        let card = KanbanCard(id: 42, word: "Card", listTitle: "Today", checklists: [checklist])
+        var list = KanbanList(id: 7, title: "Today", cards: [card])
+        let (undo, reset) = ListCheckmarkReset.reset(list)
+        list.cards = reset
+        XCTAssertEqual(list.cards[0].checklists[0].subtitle, checklist.subtitle)
+        XCTAssertEqual(list.cards[0].checklists[0].showsCompletedCount, false)
+        XCTAssertEqual(list.cards[0].checklists[0].items[0].retainedDetail?.checklists[0].subtitle, inner.subtitle)
+        let restored = try XCTUnwrap(undo.restoring(list))
+        XCTAssertEqual(restored[0].checklists[0].subtitle, checklist.subtitle)
+        XCTAssertTrue(restored[0].checklists[0].items[0].isCompleted)
+    }
+
+    func testTemplateCapturePreservesChecklistSubtitlesAndClearsCompletion() throws
+    {
+        let date = Date.now
+        var week = DatedPlanningWeek.make(for: date)
+        let id = try XCTUnwrap(week.dayListIDs[PlanningDate.key(date)])
+        let index = try XCTUnwrap(week.collection.lists.firstIndex(where: { $0.id == id }))
+        let checklist = KanbanChecklist(title: "Prepare", subtitle: "Before the meeting", showsCompletedCount: false, items: ["Agenda"], completed: 1)
+        week.collection.lists[index].cards = [KanbanCard(id: 43, word: "Meeting", listTitle: "Today", checklists: [checklist])]
+        let template = try PlanningRoutineTemplate.capture(name: "My week", week: week, calendar: .current)
+        let copied = try XCTUnwrap(template.collection.lists.flatMap(\.cards).first?.checklists.first)
+        XCTAssertEqual(copied.subtitle, checklist.subtitle)
+        XCTAssertEqual(copied.showsCompletedCount, false)
+        XCTAssertEqual(copied.completed, 0)
+    }
+
+    @MainActor
+    func testPortableExportRefusesUnsupportedChecklistSubtitleRatherThanDroppingIt() throws
+    {
+        let checklist = KanbanChecklist(title: "Steps", subtitle: "Important context", items: ["One"])
+        let raw = try JSONSerialization.jsonObject(with: JSONEncoder().encode(checklist))
+        XCTAssertThrowsError(try MigrationContentGuard.check(raw, type: "KanbanChecklist"))
+    }
+}
+
+
+extension ChecklistMigrationTests
+{
+    func testLegacyCompletedCountResolutionForInitialCapture() throws
+    {
+        XCTAssertTrue(ChecklistCompletedCountVisibility.resolve(app: true))
+        XCTAssertFalse(ChecklistCompletedCountVisibility.resolve(app: false))
+        XCTAssertTrue(ChecklistCompletedCountVisibility.resolve(app: false, list: true))
+        XCTAssertFalse(ChecklistCompletedCountVisibility.resolve(app: true, list: false))
+        XCTAssertFalse(ChecklistCompletedCountVisibility.resolve(app: false, list: true, card: false))
+        XCTAssertTrue(ChecklistCompletedCountVisibility.resolve(app: true, list: false, card: true))
+        XCTAssertTrue(ChecklistCompletedCountVisibility.resolve(app: false, list: true, card: false, checklist: true))
+        XCTAssertFalse(ChecklistCompletedCountVisibility.resolve(app: true, list: false, card: true, checklist: false))
+        // Legacy nil values are resolved only while capturing the initial snapshot.
+        var override: Bool? = false
+        XCTAssertFalse(ChecklistCompletedCountVisibility.resolve(app: true, checklist: override))
+        override = nil
+        XCTAssertTrue(ChecklistCompletedCountVisibility.resolve(app: true, checklist: override))
+        XCTAssertFalse(ChecklistCompletedCountVisibility.resolve(app: false, checklist: override))
+    }
+
+    func testCompletedCountOverridesRoundTripWithoutLosingExplicitFalse() throws
+    {
+        var preferences = LocalProfilePreferences()
+        XCTAssertNil(preferences.showsChecklistCompletedCount)
+        preferences.showsChecklistCompletedCount = false
+        let restoredPreferences = try JSONDecoder().decode(LocalProfilePreferences.self,
+            from: JSONEncoder().encode(preferences))
+        XCTAssertEqual(restoredPreferences.showsChecklistCompletedCount, false)
+        var appearance = ItemAppearance()
+        XCTAssertTrue(appearance.isEmpty)
+        appearance.showsChecklistCompletedCount = false
+        XCTAssertFalse(appearance.isEmpty)
+        let restoredAppearance = try JSONDecoder().decode(ItemAppearance.self, from: JSONEncoder().encode(appearance))
+        XCTAssertEqual(restoredAppearance.showsChecklistCompletedCount, false)
+        let checklist = KanbanChecklist(title: "Steps", subtitle: "Context", showsCompletedCount: false, items: ["One"])
+        let restoredChecklist = try JSONDecoder().decode(KanbanChecklist.self, from: JSONEncoder().encode(checklist))
+        XCTAssertEqual(restoredChecklist.showsCompletedCount, false)
+        XCTAssertEqual(restoredChecklist.subtitle, "Context")
+        let legacy: [String: Any] = ["id": UUID().uuidString, "title": "Old checklist", "items": []]
+        let old = try JSONDecoder().decode(KanbanChecklist.self, from: JSONSerialization.data(withJSONObject: legacy))
+        XCTAssertNil(old.showsCompletedCount)
+        let rawPreferences = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(LocalProfilePreferences())) as? [String: Any])
+        XCTAssertNil(rawPreferences["showsChecklistCompletedCount"])
+    }
+}
+
+
+extension ChecklistMigrationTests
+{
+    func testCompletedCountDefaultsAreCapturedAtEachCreationBoundary() throws
+    {
+        var app = LocalProfilePreferences(showsChecklistCompletedCount: false)
+        var list = KanbanList(id: 80, title: "A List", cards: [], creationPreferences: app)
+        XCTAssertEqual(list.appearance?.showsChecklistCompletedCount, false)
+        app.showsChecklistCompletedCount = true
+        let card = list.makeItem(id: 81, title: "A Card", actions: ["Step"], creationPreferences: app)
+        XCTAssertEqual(card.appearance?.showsChecklistCompletedCount, false)
+        XCTAssertEqual(card.checklists.first?.showsCompletedCount, false)
+        list.cards = [card]
+        list.appearance?.showsChecklistCompletedCount = true
+        XCTAssertEqual(list.cards[0].appearance?.showsChecklistCompletedCount, false)
+        let later = list.makeItem(id: 82, title: "A Note", presentationOverride: .note)
+        XCTAssertEqual(later.appearance?.showsChecklistCompletedCount, true)
+        var edited = card
+        edited.appearance?.showsChecklistCompletedCount = true
+        XCTAssertEqual(edited.checklists.first?.showsCompletedCount, false)
+        edited.checklists.append(KanbanChecklist(title: "New checklist", items: ["New step"]))
+        list.cards = [edited]
+        XCTAssertEqual(list.cards[0].checklists[0].showsCompletedCount, false)
+        XCTAssertEqual(list.cards[0].checklists[1].showsCompletedCount, true)
+        let newList = KanbanList(id: 90, title: "Later List", cards: [], creationPreferences: app)
+        XCTAssertEqual(newList.appearance?.showsChecklistCompletedCount, true)
+    }
+
+    func testLegacyCountSnapshotIsStableAcrossParentChangesAndRelaunch() throws
+    {
+        let checklist = KanbanChecklist(title: "Legacy checklist", items: ["Step"])
+        let card = KanbanCard(id: 50, word: "Legacy card", listTitle: "Legacy List", checklists: [checklist])
+        // Decode a legacy shape to exercise absent settings, rather than the new creation initializer.
+        let raw: [String: Any] = ["id": 49, "title": "Legacy List", "cards": [
+            try JSONSerialization.jsonObject(with: JSONEncoder().encode(card))]]
+        let legacy = try JSONDecoder().decode(KanbanList.self, from: JSONSerialization.data(withJSONObject: raw))
+        let captured = ChecklistCountCreationDefaults.lists([legacy], parent: false)
+        XCTAssertEqual(captured[0].appearance?.showsChecklistCompletedCount, false)
+        XCTAssertEqual(captured[0].cards[0].appearance?.showsChecklistCompletedCount, false)
+        XCTAssertEqual(captured[0].cards[0].checklists[0].showsCompletedCount, false)
+        let reopened = try JSONDecoder().decode([KanbanList].self, from: JSONEncoder().encode(captured))
+        let afterParentChange = ChecklistCountCreationDefaults.lists(reopened, parent: true)
+        XCTAssertEqual(afterParentChange, reopened)
+    }
+}

@@ -152,6 +152,18 @@ struct ItemAppearanceSheet: View
                     }
                 }
 
+                Section("Checklists")
+                {
+                    Toggle("Show completed count", isOn: Binding(
+                        get: { draft.showsChecklistCompletedCount ?? true },
+                        set: { draft.showsChecklistCompletedCount = $0 }))
+                    .accessibilityIdentifier("appearance.checklistCompletedCount")
+                    Text(showsListBackground
+                         ? "Used as the initial setting for new Cards and Notes in this List. Existing items keep their own choice."
+                         : "Used as the initial setting for new checklists in this item. Existing checklists keep their own choice.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+
                 Section("Subtitle style")
                 {
                     Picker("Italic subtitle", selection: $draft.subtitleItalic)

@@ -860,7 +860,7 @@ struct PlanningTemplateChecklistEditor: View
                 values in
 
                 checklist = KanbanChecklist(
-                    id: checklist.id, title: checklist.title, items: values, completedItemIndices: [])
+                    id: checklist.id, title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount, items: values, completedItemIndices: [])
             })
     }
 
@@ -880,9 +880,16 @@ struct PlanningTemplateChecklistEditor: View
                         title in
 
                         checklist = KanbanChecklist(
-                            id: checklist.id, title: title, items: checklist.items, completedItemIndices: [])
+                            id: checklist.id, title: title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount, items: checklist.items, completedItemIndices: [])
                     })
             ).textInputAutocapitalization(.sentences)
+            TextField("Subtitle (optional)", text: Binding(
+                get: { checklist.subtitle ?? "" },
+                set: { subtitle in
+                    checklist = KanbanChecklist(id: checklist.id, title: checklist.title,
+                                                subtitle: subtitle, showsCompletedCount: checklist.showsCompletedCount, items: checklist.items, completedItemIndices: [])
+                }))
+                .textInputAutocapitalization(.sentences)
             ForEach(items)
             {
                 $item in

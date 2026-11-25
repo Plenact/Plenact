@@ -1606,7 +1606,7 @@ extension CardDetailView
     ///
     func addChecklist(using scrollProxy: ScrollViewProxy)
     {
-        let checklist = KanbanChecklist(title: "Checklist", items: [""])        /* New checklist with an initial item */
+        let checklist = KanbanChecklist(title: "Checklist", showsCompletedCount: appearance?.showsChecklistCompletedCount ?? true, items: [""])        /* New checklist with an initial item */
 
         checklists.append(checklist)
 
@@ -1655,13 +1655,14 @@ extension CardDetailView
     ///
     /// @param[in]  checklistID  Stable identifier of the checklist to rename
     /// @param[in]  title        Proposed checklist title
+    /// @param[in]  subtitle     Proposed context; nil preserves the existing value, empty text clears it
     ///
     /// @return     (Void) updates the checklist and parent card when the title is non-empty
     ///
     /// @pre        checklistID identifies a checklist in the current card
     /// @post       The checklist displays the trimmed title; blank titles leave state unchanged
     ///
-    func renameChecklist(with checklistID: UUID, to title: String)
+    func renameChecklist(with checklistID: UUID, to title: String, subtitle: String? = nil)
     {
         guard
         let checklistIndex = checklists.firstIndex(where:
@@ -1686,7 +1687,7 @@ extension CardDetailView
 
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
-            title: trimmedTitle,
+            title: trimmedTitle, subtitle: subtitle ?? checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
             items: checklist.items,
             completedItemIndices: checklist.completedItemIndices
         )
@@ -1731,7 +1732,7 @@ extension CardDetailView
 
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
-            title: checklist.title,
+            title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
             items: checklist.items,
             completedItemIndices: completedIndices
         )
@@ -1842,7 +1843,7 @@ extension CardDetailView
         let checklist = checklists[checklistIndex]      /* Checklist group and items */
 
         checklists[checklistIndex] = KanbanChecklist(
-            id: checklist.id, title: checklist.title,
+            id: checklist.id, title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
             items: checklist.items + titles.map
             {
                 KanbanChecklistItem(title: $0)
@@ -1899,7 +1900,7 @@ extension CardDetailView
         // Update the checklist with the new set of completed item indices
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
-            title: checklist.title,
+            title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
             items: checklist.items,
             completedItemIndices: completedItemIndices
         )
@@ -1954,7 +1955,7 @@ extension CardDetailView
         // Update the checklist with the modified items array
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
-            title: checklist.title,
+            title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
             items: items,
             completedItemIndices: checklist.completedItemIndices
         )
@@ -2025,7 +2026,7 @@ extension CardDetailView
         // Update the checklist with the recalculated completed item indices
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
-            title: checklist.title,
+            title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
             items: items,
             completedItemIndices: completedItemIndices
         )
@@ -2082,7 +2083,7 @@ extension CardDetailView
 
         checklists[checklistIndex] = KanbanChecklist(
             id: checklist.id,
-            title: checklist.title,
+            title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
             items: items
         )
 
@@ -2115,6 +2116,16 @@ extension CardDetailView
 
         ChecklistBlock(
             checklist: checklist,
+            onChangeCompletedCount:
+            {
+                value in
+                guard let index = checklists.firstIndex(where: { $0.id == checklist.id }) else { return }
+                let previous = checklists
+                let current = checklists[index]
+                checklists[index] = KanbanChecklist(id: current.id, title: current.title,
+                    subtitle: current.subtitle, showsCompletedCount: value, items: current.items)
+                if !syncCardState() { checklists = previous }
+            },
             linkedCardsByID: linkedCardsByID,
             onDelete:
             {
@@ -2150,6 +2161,11 @@ extension CardDetailView
             {
                 title in
                 renameChecklist(with: checklist.id, to: title)
+            },
+            onEditHeading:
+            {
+                title, subtitle in
+                renameChecklist(with: checklist.id, to: title, subtitle: subtitle)
             },
             onToggleAllItems:
             {
@@ -2199,7 +2215,7 @@ extension CardDetailView
 
                 items[position] = updated
                 checklists[index] = KanbanChecklist(
-                    id: checklist.id, title: checklists[index].title, items: items,
+                    id: checklist.id, title: checklists[index].title, subtitle: checklists[index].subtitle, showsCompletedCount: checklists[index].showsCompletedCount, items: items,
                     completedItemIndices: checklists[index].completedItemIndices)
 
                 if !syncCardState()

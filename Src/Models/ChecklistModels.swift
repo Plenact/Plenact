@@ -409,6 +409,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
 {
     let id:    UUID                     /* Stable checklist ID     */
     let title: String                   /* Checklist display title */
+    let showsCompletedCount: Bool?      /* nil is a legacy value awaiting its initial parent snapshot */
+    let subtitle: String?               /* Optional checklist context */
     let items: [KanbanChecklistItem]    /* Ordered action records  */
 
     ///
@@ -453,6 +455,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     ///
     /// @param[in]  id                    Stable checklist identifier
     /// @param[in]  title                 User-facing checklist title
+    /// @param[in]  subtitle              Optional context beneath the checklist title; blank values are omitted
     /// @param[in]  items                 Stable checklist action records
     /// @param[in]  completed             Optional number of leading items to mark complete
     /// @param[in]  completedItemIndices  Optional explicit completion positions
@@ -462,6 +465,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     init(
         id:                   UUID = UUID(),
         title:                String,
+        subtitle:             String? = nil,
+        showsCompletedCount:  Bool? = nil,
         items:                [KanbanChecklistItem] = [],
         completed:            Int?                  = nil,
         completedItemIndices: Set<Int>?             = nil
@@ -486,7 +491,10 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
 
 
         self.id = id
+        self.showsCompletedCount = showsCompletedCount
         self.title = title
+        let context = subtitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.subtitle = context?.isEmpty == false ? context : nil
         self.items = normalizedItems
     }
 
@@ -509,6 +517,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
         let id        = try container.decode(UUID.self, forKey: .id)            /* Checklist ID     */
         let title     = try container.decode(String.self, forKey: .title)       /* Checklist title  */
 
+        let subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle)
+        let showsCompletedCount = try container.decodeIfPresent(Bool.self, forKey: .showsCompletedCount)
         if var currentItems = try? container.decode([KanbanChecklistItem].self, forKey: .items)
         {                                                                                       /* Current actions */
             if let legacyCompletedIndices = try container.decodeIfPresent(Set<Int>.self, forKey: .completedItemIndices)
@@ -520,7 +530,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
             }
 
 
-            self.init(id: id, title: title, items: currentItems)
+            self.init(id: id, title: title, subtitle: subtitle, showsCompletedCount: showsCompletedCount, items: currentItems)
 
             return
         }
@@ -540,7 +550,7 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
         }
 
 
-        self.init(id: id, title: title, items: migratedItems)
+        self.init(id: id, title: title, subtitle: subtitle, showsCompletedCount: showsCompletedCount, items: migratedItems)
     }
 
 
@@ -562,6 +572,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
 
         try container.encode(id, forKey: .id)
         try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(subtitle, forKey: .subtitle)
+        try container.encodeIfPresent(showsCompletedCount, forKey: .showsCompletedCount)
         try container.encode(items, forKey: .items)
     }
 
@@ -576,6 +588,8 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
     {
         case id                         /* Checklist identity        */
         case title                      /* Checklist display title   */
+        case subtitle                   /* Optional checklist context */
+        case showsCompletedCount
         case items                      /* Current or legacy actions */
         case completedItemIndices       /* Revision 0 completion     */
     }
@@ -610,5 +624,64 @@ struct KanbanChecklist: Identifiable, Hashable, Codable, Sendable
                         "\(components[0])-\(components[1])-\(components[2])-\(components[3])-\(itemComponent)"          /* Migrated UUID text */
 
         return UUID(uuidString: migratedValue) ?? UUID()
+    }
+}
+
+
+/// Resolve legacy inheritance when taking an initial, saved creation-default snapshot.
+enum ChecklistCompletedCountVisibility
+{
+    static func resolve(app: Bool, list: Bool? = nil, card: Bool? = nil, checklist: Bool? = nil) -> Bool
+    {
+        checklist ?? card ?? list ?? app
+    }
+}
+
+
+/// Capture a parent's current choice once. Explicit saved choices never follow later parent changes.
+enum ChecklistCountCreationDefaults
+{
+    static func checklists(_ values: [KanbanChecklist], parent: Bool) -> [KanbanChecklist]
+    {
+        values.map { list in
+            let items = list.items.map { original -> KanbanChecklistItem in
+                var item = original
+                if let detail = item.retainedDetail
+                {
+                    var updated = detail
+                    updated.checklists = checklists(detail.checklists, parent: parent)
+                    item.retainedDetail = updated
+                    if case .actionDetail = item.content { item.content = .actionDetail(updated) }
+                }
+                return item
+            }
+            return KanbanChecklist(id: list.id, title: list.title, subtitle: list.subtitle,
+                                   showsCompletedCount: list.showsCompletedCount ?? parent, items: items)
+        }
+    }
+
+    static func card(_ original: KanbanCard, parent: Bool) -> KanbanCard
+    {
+        var card = original
+        var appearance = card.appearance ?? ItemAppearance()
+        let choice = appearance.showsChecklistCompletedCount ?? parent
+        appearance.showsChecklistCompletedCount = choice
+        card.appearance = appearance
+        card.checklists = checklists(card.checklists, parent: choice)
+        return card
+    }
+
+    static func lists(_ values: [KanbanList], parent: Bool) -> [KanbanList]
+    {
+        values.map { original in
+            var list = original
+            var appearance = list.appearance ?? ItemAppearance()
+            let choice = appearance.showsChecklistCompletedCount ?? parent
+            appearance.showsChecklistCompletedCount = choice
+            list.appearance = appearance
+            list.cards = list.cards.map { card($0, parent: choice) }
+            list.archivedCards = list.archivedCards.map { card($0, parent: choice) }
+            return list
+        }
     }
 }

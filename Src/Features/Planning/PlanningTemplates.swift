@@ -231,7 +231,7 @@ struct PlanningRoutineTemplate: Codable, Hashable, Identifiable
                 return result
             }
 
-            return KanbanChecklist(id: source.id, title: source.title, items: items, completedItemIndices: [])
+            return KanbanChecklist(id: source.id, title: source.title, subtitle: source.subtitle, showsCompletedCount: source.showsCompletedCount, items: items, completedItemIndices: [])
         }
 
         for index in collection.lists.indices
@@ -1133,7 +1133,7 @@ enum PlanningTemplateApplication
                 return KanbanChecklistItem(title: item.title, content: content)
             }
 
-            return KanbanChecklist(title: source.title, items: items, completedItemIndices: [])
+            return KanbanChecklist(title: source.title, subtitle: source.subtitle, showsCompletedCount: source.showsCompletedCount, items: items, completedItemIndices: [])
         }
 
 

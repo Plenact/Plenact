@@ -223,6 +223,15 @@ struct PlanSettingsModulePage: View
             {
                 Text("Existing plans keep their dates. Due date visibility is a default for new Cards and can be changed on each Card.")
             }
+            Section("Checklists")
+            {
+                Toggle("Show checklist completed count", isOn: Binding(
+                    get: { preferences.showsChecklistCompletedCount ?? true },
+                    set: { preferences.showsChecklistCompletedCount = $0 }))
+                    .accessibilityIdentifier("settings.checklistCompletedCount")
+                Text("Initial setting for new Lists. Each List supplies the initial setting for new Cards and Notes, which supply it for new checklists. Existing items keep their saved choices.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section
             {
                 Button("Planning Templates", systemImage: "doc.on.doc", action: onTemplates)

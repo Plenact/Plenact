@@ -767,6 +767,7 @@ enum DayListTimeOrder
 ///
 struct LocalProfilePreferences: Hashable, Codable
 {
+    var showsChecklistCompletedCount: Bool? = nil
     var defaultListID:                Int?                      /* Preferred Today list                                             */
     var usesReducedContent:           Bool                      /* Hide supporting copy                                             */
     var scrollsOverflowingTitles:     Bool                      /* Scrolls overflowing titles                                       */
@@ -796,6 +797,7 @@ struct LocalProfilePreferences: Hashable, Codable
     ///
     private enum CodingKeys: String, CodingKey
     {
+        case showsChecklistCompletedCount
         case defaultListID
         case usesReducedContent
         case scrollsOverflowingTitles
@@ -871,9 +873,11 @@ struct LocalProfilePreferences: Hashable, Codable
         enablesLowerCornerBack:       Bool                = true,
         importanceStarStyle:          ImportanceStarStyle = .tucked,
         keepsDayListsInTimeOrder:     Bool                = true,
-        preferredMapsApp:             PreferredMapsApp    = .apple
+        preferredMapsApp:             PreferredMapsApp    = .apple,
+        showsChecklistCompletedCount: Bool? = nil
     )
     {
+        self.showsChecklistCompletedCount = showsChecklistCompletedCount
         self.scrollsOverflowingTitles = scrollsOverflowingTitles
         self.enablesLowerCornerBack = enablesLowerCornerBack
         self.importanceStarStyle = importanceStarStyle
@@ -1073,7 +1077,8 @@ struct LocalProfilePreferences: Hashable, Codable
             ?? .tucked,
             keepsDayListsInTimeOrder: try container.decodeIfPresent(Bool.self, forKey: .keepsDayListsInTimeOrder)
             ?? true,
-            preferredMapsApp: try container.decodeIfPresent(PreferredMapsApp.self, forKey: .preferredMapsApp) ?? .apple
+            preferredMapsApp: try container.decodeIfPresent(PreferredMapsApp.self, forKey: .preferredMapsApp) ?? .apple,
+            showsChecklistCompletedCount: try container.decodeIfPresent(Bool.self, forKey: .showsChecklistCompletedCount)
         )
     }
 }

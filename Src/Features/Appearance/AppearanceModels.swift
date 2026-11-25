@@ -423,6 +423,7 @@ enum SingleListViewMode: String, CaseIterable, Codable, Sendable, Identifiable
 ///
 struct ItemAppearance: Hashable, Codable, Sendable
 {
+    var showsChecklistCompletedCount: Bool? = nil
     var customIcon: CustomItemIcon? = nil
     var accent:                        ItemAccent?                      /* Selected accent color                                */
     var icon:                          PersonalCollectionIcon?          /* Selected display icon                                */
@@ -473,7 +474,7 @@ struct ItemAppearance: Hashable, Codable, Sendable
 
     var isEmpty: Bool           /* Empty state */
     {
-        customIcon == nil && sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil
+        showsChecklistCompletedCount == nil && customIcon == nil && sectionCollapsed != true && cardBackground == nil && listViewMode == nil && iconColor == nil
         && listBackgroundOpacity == nil && showsIconInHeader == nil && accent == nil && icon == nil
         && background == nil && listBackground == nil && hideEmptySubtitle != true && cardDetail == nil
         && cardTitleColor == nil && cardTextColor == nil && addItemTextColor == nil && subtitleItalic == nil && studioSurface == nil && studioCardSurface == nil

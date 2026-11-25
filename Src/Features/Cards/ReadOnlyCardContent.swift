@@ -195,7 +195,14 @@ struct ReadOnlyChecklistContent: View
             checklist in
             VStack(alignment: .leading, spacing: 10)
             {
-                Text(checklist.title).font(.headline)
+                VStack(alignment: .leading, spacing: 3)
+                {
+                    Text(checklist.title).font(.headline)
+                    if let subtitle = checklist.subtitle
+                    {
+                        Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
                 ForEach(Array(checklist.items.enumerated()), id: \.element.id)
                 {
                     index, item in

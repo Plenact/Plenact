@@ -584,6 +584,10 @@ struct ArchivedCardInspectionView: View
                 checklist in
                 Section(checklist.title)
                 {
+                    if let subtitle = checklist.subtitle
+                    {
+                        Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                    }
                     ForEach(checklist.items)
                     {
                         item in

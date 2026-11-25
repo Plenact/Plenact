@@ -168,7 +168,7 @@ struct ListCheckmarkReset: Equatable
         {
             checklist in
             KanbanChecklist(
-                id: checklist.id, title: checklist.title,
+                id: checklist.id, title: checklist.title, subtitle: checklist.subtitle, showsCompletedCount: checklist.showsCompletedCount,
                 items: checklist.items.map
                 {
                     original in

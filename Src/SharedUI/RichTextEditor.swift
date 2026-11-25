@@ -41,6 +41,7 @@ enum PlanRichText
         var italic:   Bool    = false           /* Inherited subtitle emphasis */
         var color:    String? = nil             /* Resolved color value        */
         var fontName: String? = nil             /* Font name                   */
+        var imageFileName: String? = nil
         var fontSize: Double? = nil             /* Font size                   */
     }
 
@@ -82,7 +83,7 @@ enum PlanRichText
     ///
     static func plain(_ value: String) -> String
     {
-        runs(value)?.map(\.text).joined() ?? value
+        runs(value)?.map { $0.imageFileName == nil ? $0.text : "[Image]" }.joined() ?? value
     }
 
 
@@ -102,6 +103,11 @@ enum PlanRichText
 
         for run in runs(value) ?? [Run(text: value)]
         {
+            if let file = run.imageFileName
+            {
+                result.append(NSAttributedString(attachment: PlanInlineImageAttachment(fileName: file)))
+                continue
+            }
             var traits: UIFontDescriptor.SymbolicTraits = []    /* Native display traits */
 
             if run.bold
@@ -186,13 +192,14 @@ enum PlanRichText
                     italic: traits.contains(.traitItalic),
                     color: attributes[NSAttributedString.Key("PlenactColor")] as? String,
                     fontName: attributes[NSAttributedString.Key("PlenactFontName")] as? String,
+                    imageFileName: (attributes[.attachment] as? PlanInlineImageAttachment)?.fileName,
                     fontSize: attributes[NSAttributedString.Key("PlenactFontSize")] as? Double))
         }
 
         guard
         runs.contains(where:
             {
-                $0.bold || $0.italic || $0.color != nil || $0.fontName != nil || $0.fontSize != nil
+                $0.imageFileName != nil || $0.bold || $0.italic || $0.color != nil || $0.fontName != nil || $0.fontSize != nil
             }
         )
         else
@@ -233,7 +240,7 @@ enum PlanRichText
 
             for run in runs
             {
-                var part       = AttributedString(run.text)             /* Current parsed content part */
+                var part       = AttributedString(run.imageFileName == nil ? run.text : "[Image]")             /* Current parsed content part */
                 let family     =                                        /* Family operation value      */
                     run.fontName == "System" ? nil : run.fontName
                 var font: Font =                                        /* Resolved text font          */
@@ -291,6 +298,7 @@ struct RichTextEditor: UIViewRepresentable
     var focus:         Binding<Bool>? = nil     /* Today Focus selection */
     var minimumHeight: CGFloat        = 80      /* Minimum height        */
     var verticalInset: CGFloat        = 6       /* Vertical inset        */
+    var onPasteImages: (([UIImage], NSAttributedString, NSRange) -> NSAttributedString?)? = nil
 
 
     ///
@@ -320,8 +328,14 @@ struct RichTextEditor: UIViewRepresentable
     ///
     func makeUIView(context: Context) -> UITextView
     {
-        let view = UITextView()         /* View being rendered */
+        let view = PlanRichTextView()         /* View being rendered */
 
+        if onPasteImages != nil
+        {
+            view.pasteImages = { [weak coordinator = context.coordinator] images, body, range in
+                coordinator?.parent.onPasteImages?(images, body, range)
+            }
+        }
         view.autocapitalizationType = .sentences
         view.backgroundColor = .clear
         view.isScrollEnabled = false
@@ -390,6 +404,12 @@ struct RichTextEditor: UIViewRepresentable
     func updateUIView(_ view: UITextView, context: Context)
     {
         context.coordinator.parent = self
+        if let native = view as? PlanRichTextView
+        {
+            native.pasteImages = onPasteImages == nil ? nil : { [weak coordinator = context.coordinator] images, body, range in
+                coordinator?.parent.onPasteImages?(images, body, range)
+            }
+        }
 
         if PlanRichText.encode(view.attributedText) != text
         {
@@ -798,6 +818,114 @@ struct RichTextEditor: UIViewRepresentable
 
                 return attributes
             }
+        }
+    }
+}
+
+
+/// A stable body reference to media owned by the Note's attachment collection.
+final class PlanInlineImageAttachment: NSTextAttachment
+{
+    let fileName: String
+
+    init(fileName: String)
+    {
+        self.fileName = fileName
+        super.init(data: nil, ofType: nil)
+        if fileName == (fileName as NSString).lastPathComponent, fileName != ".", fileName != "..",
+           let url = CardAttachmentStore.fileURL(for: KanbanAttachment(fileName: fileName))
+        {
+            image = UIImage(contentsOfFile: url.path)
+        }
+        if image == nil { image = UIImage(systemName: "photo") }
+        fit(width: 280)
+    }
+
+    required init?(coder: NSCoder)
+    {
+        fileName = coder.decodeObject(forKey: "PlenactImageFileName") as? String ?? ""
+        super.init(coder: coder)
+    }
+
+    override func encode(with coder: NSCoder)
+    {
+        super.encode(with: coder)
+        coder.encode(fileName, forKey: "PlenactImageFileName")
+    }
+
+    func fit(width: CGFloat)
+    {
+        guard let image, image.size.width > 0 else { return }
+        let width = min(max(1, width), image.size.width)
+        bounds = CGRect(x: 0, y: 0, width: width, height: width * image.size.height / image.size.width)
+    }
+}
+
+/// Uses the system Paste command; clipboard bytes are read only after the user requests Paste.
+final class PlanRichTextView: UITextView
+{
+    var imagePasteboard: UIPasteboard = .general
+    var pasteImages: (([UIImage], NSAttributedString, NSRange) -> NSAttributedString?)?
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool
+    {
+        if action == #selector(paste(_:)), pasteImages != nil, isEditable, imagePasteboard.hasImages
+        { return true }
+        return super.canPerformAction(action, withSender: sender)
+    }
+
+    override func paste(_ sender: Any?)
+    {
+        guard isEditable, let pasteImages, imagePasteboard.hasImages else
+        {
+            super.paste(sender)
+            return
+        }
+        let images = imagePasteboard.images ?? imagePasteboard.image.map { [$0] } ?? []
+        guard !images.isEmpty else { return }
+        let previous = NSAttributedString(attributedString: attributedText)
+        let selection = selectedRange
+        guard let inserted = pasteImages(images, previous, selection) else { return }
+        let position = selection.location + inserted.length - (previous.length - selection.length)
+        replaceBody(inserted, selection: NSRange(location: position, length: 0))
+        undoManager?.setActionName("Paste image")
+    }
+
+    private func replaceBody(_ value: NSAttributedString, selection: NSRange)
+    {
+        let old = NSAttributedString(attributedString: attributedText)
+        let oldSelection = selectedRange
+        undoManager?.registerUndo(withTarget: self) { target in
+            target.replaceBody(old, selection: oldSelection)
+        }
+        textStorage.setAttributedString(value)
+        selectedRange = selection
+        var attributes = typingAttributes
+        attributes.removeValue(forKey: .attachment)
+        typingAttributes = attributes
+        delegate?.textViewDidChange?(self)
+        invalidateIntrinsicContentSize()
+    }
+
+    override func layoutSubviews()
+    {
+        super.layoutSubviews()
+        let width = bounds.width - textContainerInset.left - textContainerInset.right
+            - textContainer.lineFragmentPadding * 2
+        guard width > 1 else { return }
+        var changed = false
+        textStorage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: textStorage.length))
+        {
+            value, _, _ in
+            guard let image = value as? PlanInlineImageAttachment else { return }
+            let previous = image.bounds
+            image.fit(width: width)
+            changed = changed || image.bounds != previous
+        }
+        if changed
+        {
+            layoutManager.invalidateLayout(forCharacterRange: NSRange(location: 0, length: textStorage.length), actualCharacterRange: nil)
+            invalidateIntrinsicContentSize()
         }
     }
 }

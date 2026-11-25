@@ -2301,3 +2301,85 @@ extension PlenactBoardDocumentTests
         XCTAssertEqual(board.lists[0].newItemPresentation, .card)
     }
 }
+
+
+extension PlenactBoardDocumentTests
+{
+    @MainActor
+    func testInlineNoteImageRoundTripsAtCursorWithOwnedMedia() async throws
+    {
+        let note = KanbanCard(id: 905, word: "Image paste test", listTitle: "Test", checklists: [],
+                              descriptionOverride: "Before after", presentation: .note)
+        var saved = note
+        let host = UIHostingController(rootView: CardDetailView(card: note, onTitleToggle: { saved = $0 }))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer
+        {
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKeyAndVisible()
+            try? CardAttachmentStore.removeDeletedFiles(Set((saved.attachments ?? []).flatMap(\.storedFileNames)), keeping: [])
+        }
+        try await Task.sleep(for: .milliseconds(300))
+        host.view.layoutIfNeeded()
+        func findBody(in view: UIView) -> PlanRichTextView?
+        {
+            if let body = view as? PlanRichTextView, body.pasteImages != nil { return body }
+            return view.subviews.compactMap { findBody(in: $0) }.first
+        }
+        let editor = try XCTUnwrap(findBody(in: host.view))
+        let board = UIPasteboard.withUniqueName()
+        editor.imagePasteboard = board
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 500, height: 100)).image { context in
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 500, height: 100))
+        }
+        board.image = image
+        editor.becomeFirstResponder()
+        editor.selectedRange = NSRange(location: 7, length: 0)
+        XCTAssertTrue(editor.canPerformAction(#selector(UIResponderStandardEditActions.paste(_:)), withSender: nil))
+        editor.paste(nil)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(PlanRichText.plain(saved.descriptionOverride ?? ""), "Before [Image]after")
+        let file = try XCTUnwrap(PlanRichText.runs(saved.descriptionOverride ?? "")?.compactMap(\.imageFileName).first)
+        XCTAssertTrue(saved.attachments?.contains(where: { $0.fileName == file }) == true)
+        let reopened = PlanRichText.attributed(saved.descriptionOverride ?? "")
+        let attachment = try XCTUnwrap(reopened.attribute(.attachment, at: 7, effectiveRange: nil) as? PlanInlineImageAttachment)
+        XCTAssertEqual(attachment.fileName, file)
+        XCTAssertNotNil(attachment.image)
+        XCTAssertEqual(editor.selectedRange.location, 8)
+        let undo = try XCTUnwrap(editor.undoManager)
+        XCTAssertTrue(undo.canUndo)
+        undo.undo()
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(PlanRichText.plain(saved.descriptionOverride ?? ""), "Before after")
+    }
+
+    @MainActor
+    func testInlineImagePasteFailurePreservesTextAndSelection() throws
+    {
+        let editor = PlanRichTextView()
+        editor.attributedText = NSAttributedString(string: "Keep 😀 this")
+        let selection = NSRange(location: 8, length: 0)
+        editor.selectedRange = selection
+        let board = UIPasteboard.withUniqueName()
+        board.image = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2)).image { _ in }
+        editor.imagePasteboard = board
+        var requested = false
+        editor.pasteImages = { _, body, range in
+            requested = true
+            XCTAssertEqual(body.string, "Keep 😀 this")
+            XCTAssertEqual(range, selection)
+            return nil
+        }
+        editor.paste(nil)
+        XCTAssertTrue(requested)
+        XCTAssertEqual(editor.text, "Keep 😀 this")
+        XCTAssertEqual(editor.selectedRange, selection)
+    }
+}

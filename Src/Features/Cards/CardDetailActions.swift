@@ -2394,3 +2394,50 @@ extension CardDetailView
         .accessibilityIdentifier("note.addMenu")
     }
 }
+
+
+extension CardDetailView
+{
+    /// Save body placement and owned media together before changing the visible editor.
+    func pasteInlineNoteImages(_ images: [UIImage], into body: NSAttributedString, at range: NSRange) -> NSAttributedString?
+    {
+        guard presentation == .note, !hasDeletedCard, !hasMovedCard, !isEditingLocked,
+              range.location >= 0, range.location <= body.length,
+              range.length >= 0, range.length <= body.length - range.location else { return nil }
+        let previous = attachments
+        var imported: [KanbanAttachment] = []
+        do
+        {
+            let insertion = NSMutableAttributedString(string: "")
+            for image in images
+            {
+                guard let bytes = image.pngData() else { throw CocoaError(.fileReadCorruptFile) }
+                let media = try CardAttachmentStore.saveMedia(bytes, kind: .photo, fileExtension: "png")
+                imported.append(media)
+                guard let file = media.fileName else { throw CocoaError(.fileWriteUnknown) }
+                if insertion.length > 0 { insertion.append(NSAttributedString(string: "\n")) }
+                insertion.append(NSAttributedString(attachment: PlanInlineImageAttachment(fileName: file)))
+            }
+            let inserted = NSMutableAttributedString(attributedString: body)
+            inserted.replaceCharacters(in: range, with: insertion)
+            let encoded = PlanRichText.encode(inserted)
+            var updated = workingCardSnapshot
+            updated.descriptionOverride = encoded
+            updated.attachments = previous + imported
+            guard saveEditedSnapshot(updated.recordingEdits(from: lastSavedHistoryCard)) else
+            { throw CocoaError(.fileWriteUnknown) }
+            attachments = previous + imported
+            hasEditedDescription = true
+            descriptionText = encoded
+            return inserted
+        }
+        catch
+        {
+            try? CardAttachmentStore.removeDeletedFiles(Set(imported.flatMap(\.storedFileNames)),
+                                                       keeping: Set(previous.flatMap(\.storedFileNames)))
+            attachmentNoticeMessage = "Could not paste the image. Your Note was retained. Please try again."
+            showingAttachmentNotice = true
+            return nil
+        }
+    }
+}

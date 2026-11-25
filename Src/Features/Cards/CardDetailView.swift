@@ -662,9 +662,17 @@ struct CardDetailView: View
     /// @details    Keeps the gallery's view-builder expression separate from the full card editor
     /// @return     (some View) horizontal photo gallery and remaining media
     ///
+    var noteGalleryAttachments: [KanbanAttachment]
+    {
+        let files = Set((PlanRichText.runs(descriptionText) ?? []).compactMap(\.imageFileName))
+        return workingCardSnapshot.attachmentsExcludingCover.filter {
+            presentation != .note || !files.contains($0.fileName ?? "")
+        }
+    }
+
     var attachmentGallery: some View                                            /* Attachment gallery                            */
     {                                                                           /* Attached media displayed with editing actions */
-        attachmentGallery(workingCardSnapshot.attachmentsExcludingCover)
+        attachmentGallery(noteGalleryAttachments)
     }
 
 
@@ -895,7 +903,8 @@ struct CardDetailView: View
 
             RichTextEditor(
                 placeholder: "Start writing...", text: descriptionEditingBinding,
-                focus: richTextFocusBinding(for: .description), minimumHeight: 280
+                focus: richTextFocusBinding(for: .description), minimumHeight: 280,
+                onPasteImages: isEditingLocked ? nil : pasteInlineNoteImages
             )
             .accessibilityLabel("Note body")
             .onChange(of: descriptionText)
@@ -910,7 +919,7 @@ struct CardDetailView: View
                 .accessibilityIdentifier("note.selectedCoverPreview")
             }
 
-            if !workingCardSnapshot.attachmentsExcludingCover.isEmpty
+            if !noteGalleryAttachments.isEmpty
             {
                 attachmentGallery
             }

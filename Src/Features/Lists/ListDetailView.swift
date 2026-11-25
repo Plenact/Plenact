@@ -31,7 +31,6 @@ struct TodayListDetailView: View
     @State private var isDayVisible = false
     @State private var showsDayHistory = false
     @State private var isDayKeyboardVisible = false
-    @State private var isDayListInMotion = false
     var autoDismissesDaySummary = false
 
     @State private var keyboardDetailPath: [KanbanCard] = []            /* Keyboard detail path     */
@@ -807,10 +806,9 @@ struct TodayListDetailView: View
                         showsNewCard = true
                     }
                 }
-                .scaleEffect(isDayListInMotion ? 2 : 1, anchor: .bottomTrailing)
-                .offset(x: isDayListInMotion && isDocked ? 12 : 0,
-                        y: isDayListInMotion && isDocked ? 12 : 0)
-                .animation(.easeInOut(duration: reduceSummaryMotion ? 0 : 0.2), value: isDayListInMotion)
+                .scaleEffect(isDocked ? 2 : 1, anchor: .bottomTrailing)
+                .offset(x: isDocked ? 12 : 0, y: isDocked ? 12 : 0)
+                .animation(.easeInOut(duration: reduceSummaryMotion ? 0 : 0.2), value: isDocked)
                 .position(x: rowButton?.midX ?? max(22, viewport.size.width - 42), y: buttonY)
             }
         }
@@ -1097,8 +1095,7 @@ struct TodayListDetailView: View
                                 onReturnToTop: representedDate != nil ?
                                 {
                                     isDaySummaryDismissalPending = $0
-                                } : nil,
-                                onScrollMotion: representedDate != nil ? { isDayListInMotion = $0 } : nil
+                                } : nil
                             )
                         )
                         .modifier(RevealCreatedContent(lists: [focusedList], existingProxy: scrollProxy))
